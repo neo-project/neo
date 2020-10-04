@@ -618,11 +618,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             (VM.Types.Boolean, bool) result1 = Check_SetGasPerBlock(snapshot, 10 * NativeContract.GAS.Factor);
             result1.Item2.Should().BeTrue();
             result1.Item1.GetBoolean().Should().BeTrue();
-
-            snapshot.PersistingBlock.Index++;
-            result = Check_GetGasPerBlock(snapshot);
-            result.Item2.Should().BeTrue();
-            result.Item1.Should().Be(10 * NativeContract.GAS.Factor);
         }
 
         [TestMethod]

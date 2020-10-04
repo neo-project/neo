@@ -17,7 +17,7 @@ namespace Neo.SmartContract.Native.Oracle
 {
     public sealed class OracleContract : NativeContract
     {
-        private const int MaxUrlLength = byte.MaxValue;
+        private const int MaxUrlLength = 256;
         private const int MaxFilterLength = 128;
         private const int MaxCallbackLength = 32;
         private const int MaxUserDataLength = 512;
@@ -157,10 +157,7 @@ namespace Neo.SmartContract.Native.Oracle
             }));
 
             //Add the id to the IdList
-            var list = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)), () => new StorageItem(new IdList())).GetInteroperable<IdList>();
-            if (list.Count + 1 > StorageItem.MaxInteropEntries)
-                throw new InvalidOperationException("There are a lot of pending responses for this url");
-            list.Add(id);
+            engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)), () => new StorageItem(new IdList())).GetInteroperable<IdList>().Add(id);
         }
 
         [ContractMethod(0_01000000, CallFlags.None)]

@@ -134,7 +134,6 @@ namespace Neo.SmartContract.Native
             StorageItem storage = engine.Snapshot.Storages.GetOrAdd(key, () => new StorageItem(new byte[1]));
             List<UInt160> accounts = storage.GetSerializableList<UInt160>();
             if (accounts.Contains(account)) return false;
-            if ((accounts.Count + 1) > StorageItem.MaxInteropEntries) throw new ArgumentException("Maximum number of blocked accounts exceeded");
             engine.Snapshot.Storages.GetAndChange(key);
             accounts.Add(account);
             accounts.Sort();

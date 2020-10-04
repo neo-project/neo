@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native.Tokens
 {
@@ -69,20 +70,20 @@ namespace Neo.SmartContract.Native.Tokens
             if (value.IsZero || start >= end) return BigInteger.Zero;
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
 
+            GasRecord gasRecord = snapshot.Storages[CreateStorageKey(Prefix_GasPerBlock)].GetInteroperable<GasRecord>();
             BigInteger sum = 0;
-            foreach (var gasRecord in snapshot.Storages.Find(CreateStorageKey(Prefix_GasPerBlock).ToArray())
-                .Select(u => (index: BitConverter.ToUInt32(u.Key.Key, u.Key.Key.Length - sizeof(uint)), gasPerBlock: (BigInteger)u.Value))
-                .Where(u => u.index < end)
-                .OrderByDescending(u => u.index))
+            for (var i = gasRecord.Count - 1; i >= 0; i--)
             {
-                if (gasRecord.index > start)
+                var currentIndex = gasRecord[i].Index;
+                if (currentIndex >= end) continue;
+                if (currentIndex > start)
                 {
-                    sum += gasRecord.gasPerBlock * (end - gasRecord.index);
-                    end = gasRecord.index;
+                    sum += gasRecord[i].GasPerBlock * (end - currentIndex);
+                    end = currentIndex;
                 }
                 else
                 {
-                    sum += gasRecord.gasPerBlock * (end - start);
+                    sum += gasRecord[i].GasPerBlock * (end - start);
                     break;
                 }
             }
@@ -104,7 +105,11 @@ namespace Neo.SmartContract.Native.Tokens
 
             // Initialize economic parameters
 
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_GasPerBlock).Add(0u), new StorageItem(5 * GAS.Factor));
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_GasPerBlock), new StorageItem(new GasRecord
+            {
+                (0, 5 * GAS.Factor)
+            }));
+
             Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), TotalAmount);
         }
 
@@ -139,10 +144,12 @@ namespace Neo.SmartContract.Native.Tokens
             if (gasPerBlock < 0 || gasPerBlock > 10 * GAS.Factor)
                 throw new ArgumentOutOfRangeException(nameof(gasPerBlock));
             if (!CheckCommittee(engine)) return false;
-
             uint index = engine.Snapshot.PersistingBlock.Index + 1;
-            StorageItem entry = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_GasPerBlock).Add(index), () => new StorageItem(gasPerBlock));
-            entry.Set(gasPerBlock);
+            GasRecord gasRecord = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_GasPerBlock)).GetInteroperable<GasRecord>();
+            if (gasRecord[^1].Index == index)
+                gasRecord[^1] = (index, gasPerBlock);
+            else
+                gasRecord.Add((index, gasPerBlock));
             return true;
         }
 
@@ -150,12 +157,11 @@ namespace Neo.SmartContract.Native.Tokens
         public BigInteger GetGasPerBlock(StoreView snapshot)
         {
             var index = snapshot.PersistingBlock.Index;
-            foreach (var gasRecord in snapshot.Storages.Find(CreateStorageKey(Prefix_GasPerBlock).ToArray())
-                .Select(u => (index: BitConverter.ToUInt32(u.Key.Key, u.Key.Key.Length - sizeof(uint)), gasPerBlock: (BigInteger)u.Value))
-                .OrderByDescending(u => u.index))
+            GasRecord gasRecord = snapshot.Storages[CreateStorageKey(Prefix_GasPerBlock)].GetInteroperable<GasRecord>();
+            for (var i = gasRecord.Count - 1; i >= 0; i--)
             {
-                if (gasRecord.index <= index)
-                    return gasRecord.gasPerBlock;
+                if (gasRecord[i].Index <= index)
+                    return gasRecord[i].GasPerBlock;
             }
             throw new InvalidOperationException();
         }
@@ -323,6 +329,23 @@ namespace Neo.SmartContract.Native.Tokens
             public StackItem ToStackItem(ReferenceCounter referenceCounter)
             {
                 return new Struct(referenceCounter) { Registered, Votes };
+            }
+        }
+
+        private sealed class GasRecord : List<(uint Index, BigInteger GasPerBlock)>, IInteroperable
+        {
+            public void FromStackItem(StackItem stackItem)
+            {
+                foreach (StackItem item in (Array)stackItem)
+                {
+                    Struct @struct = (Struct)item;
+                    Add(((uint)@struct[0].GetInteger(), @struct[1].GetInteger()));
+                }
+            }
+
+            public StackItem ToStackItem(ReferenceCounter referenceCounter)
+            {
+                return new Array(referenceCounter, this.Select(p => new Struct(referenceCounter, new StackItem[] { p.Index, p.GasPerBlock })));
             }
         }
     }
