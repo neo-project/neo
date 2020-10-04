@@ -1,16 +1,11 @@
 #pragma warning disable IDE0051
 
-using Neo.Cryptography;
 using Neo.Cryptography.ECC;
-using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
-using Neo.VM;
-using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Neo.SmartContract.Native.Designate
 {
@@ -18,6 +13,8 @@ namespace Neo.SmartContract.Native.Designate
     {
         public override string Name => "Designation";
         public override int Id => -5;
+
+        private const int MaxRoleEntries = 32;
 
         internal DesignateContract()
         {
@@ -28,7 +25,7 @@ namespace Neo.SmartContract.Native.Designate
         {
             foreach (byte role in Enum.GetValues(typeof(Role)))
             {
-                engine.Snapshot.Storages.Add(CreateStorageKey(role), new StorageItem(new NodeList()));
+                engine.Snapshot.Storages.Add(CreateStorageKey(role), new StorageItem(new byte[1]));
             }
         }
 
@@ -37,7 +34,7 @@ namespace Neo.SmartContract.Native.Designate
         {
             if (!Enum.IsDefined(typeof(Role), role))
                 throw new ArgumentOutOfRangeException(nameof(role));
-            return snapshot.Storages[CreateStorageKey((byte)role)].GetInteroperable<NodeList>().ToArray();
+            return snapshot.Storages[CreateStorageKey((byte)role)].GetSerializableList<ECPoint>(MaxRoleEntries).ToArray();
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
@@ -47,24 +44,10 @@ namespace Neo.SmartContract.Native.Designate
             if (!Enum.IsDefined(typeof(Role), role))
                 throw new ArgumentOutOfRangeException(nameof(role));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            NodeList list = engine.Snapshot.Storages.GetAndChange(CreateStorageKey((byte)role)).GetInteroperable<NodeList>();
+            List<ECPoint> list = engine.Snapshot.Storages.GetAndChange(CreateStorageKey((byte)role)).GetSerializableList<ECPoint>(MaxRoleEntries);
             list.Clear();
             list.AddRange(nodes);
             list.Sort();
-        }
-
-        private class NodeList : List<ECPoint>, IInteroperable
-        {
-            public void FromStackItem(StackItem stackItem)
-            {
-                foreach (StackItem item in (VM.Types.Array)stackItem)
-                    Add(ECPoint.DecodePoint(item.GetSpan(), ECCurve.Secp256r1));
-            }
-
-            public StackItem ToStackItem(ReferenceCounter referenceCounter)
-            {
-                return new VM.Types.Array(referenceCounter, this.Select(p => (StackItem)p.ToArray()));
-            }
         }
     }
 }

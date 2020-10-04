@@ -96,9 +96,9 @@ namespace Neo.Ledger
             return (T)cache;
         }
 
-        public List<T> GetSerializableList<T>() where T : ISerializable, new()
+        public List<T> GetSerializableList<T>(int max = 0x1000000) where T : ISerializable, new()
         {
-            cache ??= new List<T>(value.AsSerializableArray<T>());
+            cache ??= new List<T>(value.AsSerializableArray<T>(max));
             value = null;
             return (List<T>)cache;
         }
