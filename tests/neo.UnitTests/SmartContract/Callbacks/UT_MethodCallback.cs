@@ -41,6 +41,7 @@ namespace Neo.UnitTests.SmartContract.Callbacks
                     Events = new ContractEventDescriptor[0],
                 },
                 Script = new byte[] { 1, 2, 3 },
+                ScriptHash = new byte[] { 1, 2, 3 }.ToScriptHash(),
             };
             contract.Manifest.Hash = contract.ScriptHash;
             engine.LoadScript(contract.Script);

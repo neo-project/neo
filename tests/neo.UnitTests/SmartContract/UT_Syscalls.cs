@@ -327,6 +327,9 @@ namespace Neo.UnitTests.SmartContract
                 contractA = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP }.Concat(script.ToArray()).ToArray() };
                 contractB = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() };
                 contractC = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() };
+                contractA.ScriptHash = contractA.Script.ToScriptHash();
+                contractB.ScriptHash = contractB.Script.ToScriptHash();
+                contractC.ScriptHash = contractC.Script.ToScriptHash();
 
                 // Init A,B,C contracts
                 // First two drops is for drop method and arguments

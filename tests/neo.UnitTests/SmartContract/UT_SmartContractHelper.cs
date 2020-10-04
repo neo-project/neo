@@ -159,6 +159,7 @@ namespace Neo.UnitTests.SmartContract
             var contract = new ContractState()
             {
                 Script = "11".HexToBytes(), // 17 PUSH1
+                ScriptHash = "11".HexToBytes().ToScriptHash(),
                 Manifest = TestUtils.CreateDefaultManifest(UInt160.Zero),
                 Abi = TestUtils.CreateDefaultAbi("verify", ContractParameterType.Boolean, ContractParameterType.Signature), // Offset = 0
             };

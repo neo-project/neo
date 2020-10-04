@@ -50,6 +50,7 @@ namespace Neo.SmartContract
             {
                 Id = Snapshot.ContractId.GetAndChange().NextId++,
                 Script = nef.Script.ToArray(),
+                ScriptHash = hash,
                 Abi = nef.Abi,
                 Manifest = ContractManifest.Parse(manifest)
             };
