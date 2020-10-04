@@ -20,26 +20,16 @@ namespace Neo.Ledger
         public bool HasStorage => Manifest.Features.HasFlag(ContractFeatures.HasStorage);
         public bool Payable => Manifest.Features.HasFlag(ContractFeatures.Payable);
 
-        private UInt160 _scriptHash;
-        public UInt160 ScriptHash
-        {
-            get
-            {
-                if (_scriptHash == null)
-                {
-                    _scriptHash = Script.ToScriptHash();
-                }
-                return _scriptHash;
-            }
-        }
+        public UInt160 ScriptHash { get; set; }
 
-        int ISerializable.Size => sizeof(int) + Script.GetVarSize() + Abi.Size + Manifest.Size;
+        int ISerializable.Size => sizeof(int) + UInt160.Length + Script.GetVarSize() + Abi.Size + Manifest.Size;
 
         ContractState ICloneable<ContractState>.Clone()
         {
             return new ContractState
             {
                 Id = Id,
+                ScriptHash = ScriptHash,
                 Script = Script,
                 Abi = Abi.Clone(),
                 Manifest = Manifest.Clone(),
@@ -49,6 +39,7 @@ namespace Neo.Ledger
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Id = reader.ReadInt32();
+            ScriptHash = reader.ReadSerializable<UInt160>();
             Script = reader.ReadVarBytes();
             Abi = reader.ReadSerializable<ContractAbi>();
             Manifest = reader.ReadSerializable<ContractManifest>();
@@ -57,6 +48,7 @@ namespace Neo.Ledger
         void ICloneable<ContractState>.FromReplica(ContractState replica)
         {
             Id = replica.Id;
+            ScriptHash = replica.ScriptHash;
             Script = replica.Script;
             Abi = replica.Abi.Clone();
             Manifest = replica.Manifest.Clone();
@@ -70,6 +62,7 @@ namespace Neo.Ledger
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(Id);
+            writer.Write(ScriptHash);
             writer.WriteVarBytes(Script);
             writer.Write(Abi);
             writer.Write(Manifest);
@@ -88,7 +81,7 @@ namespace Neo.Ledger
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new StackItem[] { Script, Abi.ToString(), Manifest.ToString(), HasStorage, Payable });
+            return new Array(referenceCounter, new StackItem[] { ScriptHash.ToArray(), Script, Abi.ToString(), Manifest.ToString(), HasStorage, Payable });
         }
     }
 }

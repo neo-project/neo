@@ -157,7 +157,7 @@ namespace Neo.UnitTests.SmartContract
             var manifest_zeroLength = new byte[] { };
             Assert.ThrowsException<ArgumentException>(() => engine.CreateContract(nefFile, manifest_zeroLength));
 
-            manifest.Hash = nef.Script.ToScriptHash();
+            manifest.Hash = nefFile.ToScriptHash();
             engine.CreateContract(nefFile, manifest.ToJson().ToByteArray(false));
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -183,12 +183,12 @@ namespace Neo.UnitTests.SmartContract
             var nefFile = nef.ToArray();
             Assert.ThrowsException<InvalidOperationException>(() => engine.UpdateContract(nefFile, new byte[0]));
 
-            var manifest = TestUtils.CreateDefaultManifest(nef.Script.ToScriptHash());
+            var manifest = TestUtils.CreateDefaultManifest(nefFile.ToScriptHash());
             byte[] privkey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair key = new KeyPair(privkey);
             ECPoint pubkey = key.PublicKey;
-            byte[] signature = Crypto.Sign(nef.Script.ToScriptHash().ToArray(), privkey, pubkey.EncodePoint(false).Skip(1).ToArray());
+            byte[] signature = Crypto.Sign(nefFile.ToScriptHash().ToArray(), privkey, pubkey.EncodePoint(false).Skip(1).ToArray());
             manifest.Groups = new ContractGroup[]
             {
                 new ContractGroup()

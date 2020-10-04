@@ -43,7 +43,7 @@ namespace Neo.SmartContract
 
             AddGas(StoragePrice * (nef.Script.Length + nef.Abi.Length + manifest.Length));
 
-            UInt160 hash = nef.Script.ToScriptHash();
+            UInt160 hash = nefFile.ToScriptHash();
             ContractState contract = Snapshot.Contracts.TryGet(hash);
             if (contract != null) throw new InvalidOperationException($"Contract Already Exists: {hash}");
             contract = new ContractState
@@ -67,6 +67,8 @@ namespace Neo.SmartContract
             ContractMethodDescriptor md = contract.Abi.GetMethod("_deploy");
             if (md != null)
                 CallContractInternal(contract, md, new Array(ReferenceCounter) { false }, CallFlags.All, CheckReturnType.EnsureIsEmpty);
+
+            SendNotification(hash, "ContractCreated", new Array());
         }
 
         protected internal void UpdateContract(byte[] nefFile, byte[] manifest)
@@ -86,19 +88,22 @@ namespace Neo.SmartContract
                 if (nef.Abi.Length == 0 || nef.Abi.Length > ContractAbi.MaxLength)
                     throw new ArgumentException($"Invalid Abi Length: {nef.Abi.Length}");
 
-                UInt160 hash_new = nef.Script.ToScriptHash();
+                UInt160 hash_new = nefFile.ToScriptHash();
                 if (hash_new.Equals(CurrentScriptHash) || Snapshot.Contracts.TryGet(hash_new) != null)
                     throw new InvalidOperationException($"Adding Contract Hash Already Exist: {hash_new}");
                 contract = new ContractState
                 {
                     Id = contract.Id,
                     Script = nef.Script.ToArray(),
+                    ScriptHash = hash_new,
                     Abi = nef.Abi,
                     Manifest = contract.Manifest
                 };
                 contract.Manifest.Hash = hash_new;
                 Snapshot.Contracts.Add(hash_new, contract);
                 Snapshot.Contracts.Delete(CurrentScriptHash);
+
+                SendNotification(hash_new, "ContractUpdated", new Array { CurrentScriptHash.ToArray() });
             }
             if (manifest != null)
             {
