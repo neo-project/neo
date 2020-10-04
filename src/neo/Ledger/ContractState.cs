@@ -14,8 +14,8 @@ namespace Neo.Ledger
     {
         public int Id;
         public byte[] Script;
-        public ContractManifest Manifest;
         public ContractAbi Abi;
+        public ContractManifest Manifest;
 
         public bool HasStorage => Manifest.Features.HasFlag(ContractFeatures.HasStorage);
         public bool Payable => Manifest.Features.HasFlag(ContractFeatures.Payable);
