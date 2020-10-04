@@ -9,6 +9,9 @@ namespace Neo.Ledger
 {
     public class StorageItem : ICloneable<StorageItem>, ISerializable
     {
+        public const int MaxInteropEntries = 32;
+        public const int MaxIteropEntrySize = 512;
+
         private byte[] value;
         private object cache;
         public bool IsConstant;
@@ -86,7 +89,7 @@ namespace Neo.Ledger
             if (cache is null)
             {
                 var interoperable = new T();
-                interoperable.FromStackItem(BinarySerializer.Deserialize(value, 16, 34));
+                interoperable.FromStackItem(BinarySerializer.Deserialize(value, MaxInteropEntries, MaxIteropEntrySize));
                 cache = interoperable;
             }
             value = null;
