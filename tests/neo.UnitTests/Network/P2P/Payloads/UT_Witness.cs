@@ -29,13 +29,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.InvocationScript.Should().BeNull();
         }
 
-        private Witness PrepareDummyWitness(int maxAccounts)
+        private Witness PrepareDummyWitness(int pubKeys, int m)
         {
-            var address = new WalletAccount[maxAccounts];
-            var wallets = new NEP6Wallet[maxAccounts];
-            var walletsUnlocks = new IDisposable[maxAccounts];
+            var address = new WalletAccount[pubKeys];
+            var wallets = new NEP6Wallet[pubKeys];
+            var walletsUnlocks = new IDisposable[pubKeys];
 
-            for (int x = 0; x < maxAccounts; x++)
+            for (int x = 0; x < pubKeys; x++)
             {
                 wallets[x] = TestUtils.GenerateTestWallet();
                 walletsUnlocks[x] = wallets[x].Unlock("123");
@@ -44,9 +44,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Generate multisignature
 
-            var multiSignContract = Contract.CreateMultiSigContract(maxAccounts, address.Select(a => a.GetKey().PublicKey).ToArray());
+            var multiSignContract = Contract.CreateMultiSigContract(m, address.Select(a => a.GetKey().PublicKey).ToArray());
 
-            for (int x = 0; x < maxAccounts; x++)
+            for (int x = 0; x < pubKeys; x++)
             {
                 wallets[x].CreateAccount(multiSignContract, address[x].GetKey());
             }
@@ -70,7 +70,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Witnesses = new Witness[0]
             });
 
-            for (int x = 0; x < maxAccounts; x++)
+            for (int x = 0; x < m; x++)
             {
                 Assert.IsTrue(wallets[x].Sign(data));
             }
@@ -82,7 +82,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void MaxSize_OK()
         {
-            var witness = PrepareDummyWitness(10);
+            var witness = PrepareDummyWitness(10, 10);
 
             // Check max size
 
@@ -101,11 +101,20 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void MaxSize_Error()
         {
-            var witness = PrepareDummyWitness(11);
+            var witness = new Witness
+            {
+                InvocationScript = new byte[1025],
+                VerificationScript = new byte[10]
+            };
 
             // Check max size
 
-            Assert.IsTrue(witness.Size > 1024);
+            Assert.ThrowsException<FormatException>(() => witness.ToArray().AsSerializable<Witness>());
+
+            // Check max size
+
+            witness.InvocationScript = new byte[10];
+            witness.VerificationScript = new byte[1025];
             Assert.ThrowsException<FormatException>(() => witness.ToArray().AsSerializable<Witness>());
         }
 
