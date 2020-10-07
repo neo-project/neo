@@ -66,7 +66,7 @@ namespace Neo.SmartContract
         {
             if (script is null && manifest is null) throw new ArgumentException();
 
-            AddGas(StoragePrice * (script?.Length ?? 0 + manifest?.Length ?? 0));
+            AddGas(StoragePrice * ((script?.Length ?? 0) + (manifest?.Length ?? 0)));
 
             var contract = Snapshot.Contracts.TryGet(CurrentScriptHash);
             if (contract is null) throw new InvalidOperationException($"Updating Contract Does Not Exist: {CurrentScriptHash}");
