@@ -17,7 +17,7 @@ namespace Neo.SmartContract.Native.Oracle
 {
     public sealed class OracleContract : NativeContract
     {
-        private const int MaxUrlLength = byte.MaxValue;
+        private const int MaxUrlLength = 256;
         private const int MaxFilterLength = 128;
         private const int MaxCallbackLength = 32;
         private const int MaxUserDataLength = 512;
