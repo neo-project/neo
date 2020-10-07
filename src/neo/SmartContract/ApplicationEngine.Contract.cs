@@ -81,7 +81,7 @@ namespace Neo.SmartContract
                 throw new ArgumentException($"Invalid NefFile");
 
             NefFile nef = nefFile?.AsSerializable<NefFile>();
-            AddGas(StoragePrice * (nef is null ? manifest.Length : nef.Script.Length + nef.Abi.Length + (manifest?.Length ?? 0)));
+            AddGas(StoragePrice * ((nef is null ? manifest.Length : nef.Script.Length + nef.Abi.Length + (manifest?.Length ?? 0)));
 
             var contract = Snapshot.Contracts.TryGet(CurrentScriptHash);
             if (contract is null) throw new InvalidOperationException($"Updating Contract Does Not Exist: {CurrentScriptHash}");
