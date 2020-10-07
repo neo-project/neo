@@ -7,6 +7,7 @@ using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -71,9 +72,8 @@ namespace Neo.SmartContract.Native.Tokens
 
             BigInteger sum = 0;
             foreach (var gasRecord in snapshot.Storages.Find(CreateStorageKey(Prefix_GasPerBlock).ToArray())
-                .Select(u => (index: BitConverter.ToUInt32(u.Key.Key, u.Key.Key.Length - sizeof(uint)), gasPerBlock: (BigInteger)u.Value))
-                .Where(u => u.index < end)
-                .OrderByDescending(u => u.index))
+                .Select(u => (index: BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.AsSpan(u.Key.Key.Length - sizeof(uint))), gasPerBlock: (BigInteger)u.Value))
+                .Where(u => u.index < end))
             {
                 if (gasRecord.index > start)
                 {
@@ -104,7 +104,7 @@ namespace Neo.SmartContract.Native.Tokens
 
             // Initialize economic parameters
 
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_GasPerBlock).Add(0u), new StorageItem(5 * GAS.Factor));
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u), new StorageItem(5 * GAS.Factor));
             Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), TotalAmount);
         }
 
@@ -141,7 +141,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (!CheckCommittee(engine)) return false;
 
             uint index = engine.Snapshot.PersistingBlock.Index + 1;
-            StorageItem entry = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_GasPerBlock).Add(index), () => new StorageItem(gasPerBlock));
+            StorageItem entry = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(index), () => new StorageItem(gasPerBlock));
             entry.Set(gasPerBlock);
             return true;
         }
@@ -151,8 +151,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             var index = snapshot.PersistingBlock.Index;
             foreach (var gasRecord in snapshot.Storages.Find(CreateStorageKey(Prefix_GasPerBlock).ToArray())
-                .Select(u => (index: BitConverter.ToUInt32(u.Key.Key, u.Key.Key.Length - sizeof(uint)), gasPerBlock: (BigInteger)u.Value))
-                .OrderByDescending(u => u.index))
+                .Select(u => (index: BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.AsSpan(u.Key.Key.Length - sizeof(uint))), gasPerBlock: (BigInteger)u.Value)))
             {
                 if (gasRecord.index <= index)
                     return gasRecord.gasPerBlock;
