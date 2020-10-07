@@ -76,6 +76,9 @@ namespace Neo.SmartContract
         protected internal void UpdateContract(byte[] nefFile, byte[] manifest)
         {
             if (nefFile is null && manifest is null) throw new ArgumentException();
+            if (nefFile != null &&
+                nefFile.Length > (NefFile.StaticSize + IO.Helper.GetVarSize(MaxContractLength) + MaxContractLength + IO.Helper.GetVarSize(ContractAbi.MaxLength) + ContractAbi.MaxLength))
+                throw new ArgumentException($"Invalid NefFile");
 
             NefFile nef = nefFile?.AsSerializable<NefFile>();
             AddGas(StoragePrice * (nef is null ? manifest.Length : nef.Script.Length + nef.Abi.Length + (manifest?.Length ?? 0)));
@@ -83,7 +86,7 @@ namespace Neo.SmartContract
             var contract = Snapshot.Contracts.TryGet(CurrentScriptHash);
             if (contract is null) throw new InvalidOperationException($"Updating Contract Does Not Exist: {CurrentScriptHash}");
 
-            if (nef?.Script != null)
+            if (nef != null)
             {
                 if (nef.Script.Length == 0 || nef.Script.Length > MaxContractLength)
                     throw new ArgumentException($"Invalid Script Length: {nef.Script.Length}");
@@ -118,7 +121,7 @@ namespace Neo.SmartContract
                 if (!contract.HasStorage && Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)).Any())
                     throw new InvalidOperationException($"Contract Does Not Support Storage But Uses Storage");
             }
-            if (nef?.Script != null)
+            if (nef != null)
             {
                 ContractMethodDescriptor md = contract.Abi.GetMethod("_deploy");
                 if (md != null)
