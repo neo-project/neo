@@ -30,13 +30,14 @@ namespace Neo.SmartContract
 
         protected internal void CreateContract(byte[] nefFile, byte[] manifest)
         {
-            if (nefFile.Length == 0)
+            if (nefFile.Length == 0 ||
+                nefFile.Length > (NefFile.StaticSize + IO.Helper.GetVarSize(MaxContractLength) + MaxContractLength + IO.Helper.GetVarSize(ContractAbi.MaxLength) + ContractAbi.MaxLength))
                 throw new ArgumentException($"Invalid NefFile");
             if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
                 throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
-            if (nef.Script.Length > MaxContractLength)
+            if (nef.Script.Length == 0 || nef.Script.Length > MaxContractLength)
                 throw new ArgumentException($"Invalid Script Length: {nef.Script.Length}");
             if (nef.Abi.Length == 0 || nef.Abi.Length > ContractAbi.MaxLength)
                 throw new ArgumentException($"Invalid Abi Length: {nef.Abi.Length}");
