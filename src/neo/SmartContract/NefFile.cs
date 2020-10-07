@@ -45,7 +45,7 @@ namespace Neo.SmartContract
         /// </summary>
         public byte[] Script { get; set; }
 
-        private const int StaticSize =
+        internal const int StaticSize =
             sizeof(uint) +      // Magic
             32 +                // Compiler
             (sizeof(int) * 4);  // Version
