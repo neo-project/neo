@@ -149,14 +149,17 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public BigInteger GetGasPerBlock(StoreView snapshot)
         {
+            BigInteger value = 0;
             var index = snapshot.PersistingBlock.Index;
             foreach (var gasRecord in snapshot.Storages.Find(CreateStorageKey(Prefix_GasPerBlock).ToArray())
                 .Select(u => (index: BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.AsSpan(u.Key.Key.Length - sizeof(uint))), gasPerBlock: (BigInteger)u.Value)))
             {
-                if (gasRecord.index <= index)
-                    return gasRecord.gasPerBlock;
+                if (gasRecord.index > index) break;
+                value = gasRecord.gasPerBlock;
             }
-            throw new InvalidOperationException();
+
+            if (value == 0) throw new InvalidOperationException();
+            return value;
         }
 
         [ContractMethod(0_03000000, CallFlags.AllowStates)]
