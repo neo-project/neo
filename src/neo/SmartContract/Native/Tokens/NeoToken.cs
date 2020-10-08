@@ -65,7 +65,7 @@ namespace Neo.SmartContract.Native.Tokens
             GAS.Mint(engine, account, gas);
         }
 
-        private BigInteger CalculateBonus(StoreView snapshot, BigInteger value, uint start, uint end)
+        internal BigInteger CalculateBonus(StoreView snapshot, BigInteger value, uint start, uint end)
         {
             if (value.IsZero || start >= end) return BigInteger.Zero;
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
@@ -73,7 +73,8 @@ namespace Neo.SmartContract.Native.Tokens
             BigInteger sum = 0;
             foreach (var gasRecord in snapshot.Storages.Find(CreateStorageKey(Prefix_GasPerBlock).ToArray())
                 .Select(u => (index: BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.AsSpan(u.Key.Key.Length - sizeof(uint))), gasPerBlock: (BigInteger)u.Value))
-                .Where(u => u.index < end))
+                .Where(u => u.index < end)
+                .OrderByDescending(u => u.index))
             {
                 if (gasRecord.index > start)
                 {

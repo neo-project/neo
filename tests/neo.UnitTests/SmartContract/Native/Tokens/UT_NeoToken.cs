@@ -621,6 +621,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             snapshot.PersistingBlock.Index++;
             result = Check_GetGasPerBlock(snapshot);
+            NativeContract.NEO.CalculateBonus(snapshot, 1000, 0, snapshot.PersistingBlock.Index+1).Should().Be(6500);
             result.Item2.Should().BeTrue();
             result.Item1.Should().Be(10 * NativeContract.GAS.Factor);
         }
