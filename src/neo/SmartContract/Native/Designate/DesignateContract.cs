@@ -40,7 +40,7 @@ namespace Neo.SmartContract.Native.Designate
             return snapshot.Storages[CreateStorageKey((byte)role)].GetInteroperable<NodeList>().ToArray();
         }
 
-        [ContractMethod(0, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_02000000, CallFlags.AllowModifyStates)]
         private void DesignateAsRole(ApplicationEngine engine, Role role, ECPoint[] nodes)
         {
             if (nodes.Length == 0) throw new ArgumentException(nameof(nodes));

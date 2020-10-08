@@ -13,9 +13,9 @@ namespace Neo.SmartContract.Native.Tokens
     public abstract class Nep5Token<TState> : NativeContract
         where TState : AccountState, new()
     {
-        [ContractMethod(0, CallFlags.None)]
+        [ContractMethod(180, CallFlags.None)]
         public abstract string Symbol { get; }
-        [ContractMethod(0, CallFlags.None)]
+        [ContractMethod(30, CallFlags.None)]
         public abstract byte Decimals { get; }
         public BigInteger Factor { get; }
 

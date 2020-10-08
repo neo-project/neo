@@ -28,7 +28,7 @@ namespace Neo.SmartContract.Native
         public static OracleContract Oracle { get; } = new OracleContract();
         public static DesignateContract Designate { get; } = new DesignateContract();
 
-        [ContractMethod(0, CallFlags.None)]
+        [ContractMethod(180, CallFlags.None)]
         public abstract string Name { get; }
         public byte[] Script { get; }
         public UInt160 Hash { get; }
