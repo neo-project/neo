@@ -30,5 +30,19 @@ namespace Neo.Ledger
                 Notifications = engine.Notifications.ToArray();
             }
         }
+
+        partial class PreBlockExecuted : ApplicationExecuted
+        {
+            internal PreBlockExecuted(ApplicationEngine engine) : base(engine)
+            {
+            }
+        }
+
+        partial class PostBlockExecuted : ApplicationExecuted
+        {
+            internal PostBlockExecuted(ApplicationEngine engine) : base(engine)
+            {
+            }
+        }
     }
 }

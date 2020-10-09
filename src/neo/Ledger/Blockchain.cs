@@ -441,7 +441,7 @@ namespace Neo.Ledger
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot);
                     engine.LoadScript(onPersistScript);
                     if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
-                    ApplicationExecuted application_executed = new ApplicationExecuted(engine);
+                    ApplicationExecuted application_executed = new PreBlockExecuted(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
@@ -481,7 +481,7 @@ namespace Neo.Ledger
                 {
                     engine.LoadScript(postPersistScript);
                     if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
-                    ApplicationExecuted application_executed = new ApplicationExecuted(engine);
+                    ApplicationExecuted application_executed = new PostBlockExecuted(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
