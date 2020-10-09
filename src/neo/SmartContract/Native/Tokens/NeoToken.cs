@@ -171,7 +171,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (committee.Votes > 0)
             {
                 BigInteger voterSumRewardPerNEO = factor * gasPerBlock * VoterRewardRatio * 100000000L * m / (m + n) / 100 / committee.Votes; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
-                StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(pubkey).AddBigEndian(engine.Snapshot.PersistingBlock.Index);
+                StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(pubkey).AddBigEndian(engine.Snapshot.PersistingBlock.Index + 1);
                 byte[] border = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(pubkey).ToArray();
                 (_, var item) = engine.Snapshot.Storages.FindRange(voterRewardKey.ToArray(), border, SeekDirection.Backward).FirstOrDefault();
                 voterSumRewardPerNEO += (item ?? BigInteger.Zero);
