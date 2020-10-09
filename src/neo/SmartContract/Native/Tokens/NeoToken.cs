@@ -73,6 +73,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (value.IsZero || start >= end) return BigInteger.Zero;
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
+            if (start > 0 && (start - 1) / CommitteeEpoch == (end - 1) / CommitteeEpoch) return BigInteger.Zero;
 
             BigInteger neoHolderReward = CalculateNeoHolderReward(snapshot, value, start, end);
             if (vote is null) return neoHolderReward;
@@ -184,7 +185,7 @@ namespace Neo.SmartContract.Native.Tokens
                         engine.Snapshot.Storages.Add(voterRewardKey, new StorageItem(voterSumRewardPerNEO));
                     }
                 }
-            }            
+            }
         }
 
         [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
