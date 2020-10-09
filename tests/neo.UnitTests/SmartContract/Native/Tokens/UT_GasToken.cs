@@ -44,7 +44,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var keyCount = snapshot.Storages.GetChangeSet().Count();
 
             var supply = NativeContract.GAS.TotalSupply(snapshot);
-            supply.Should().Be(3000000525000000); // 3000000000000000 + 25000000 * 21 (neo holder reward)
+            supply.Should().Be(3000000025000000); // 3000000000000000 + 25000000 (neo holder reward)
 
             // Check unclaim
 
@@ -68,7 +68,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             unclaim.State.Should().BeTrue();
 
             supply = NativeContract.GAS.TotalSupply(snapshot);
-            supply.Should().Be(3000050525000000);
+            supply.Should().Be(3000050025000000);
 
             snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 3); // Gas
 
