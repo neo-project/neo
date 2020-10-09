@@ -35,8 +35,6 @@ namespace Neo.SmartContract.Native.Tokens
         private const byte CommitteeRewardRatio = 5;
         private const byte VoterRewardRatio = 85;
 
-        private int CommitteeEpoch = ProtocolSettings.Default.CommitteeMembersCount;
-
         internal NeoToken()
         {
             this.TotalAmount = 100000000 * Factor;
@@ -75,7 +73,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
 
             BigInteger neoHolderReward = CalculateNeoHolderReward(snapshot, value, start, end);
-            if (vote is null || (start > 0 && (start - 1) / CommitteeEpoch == (end - 1) / CommitteeEpoch)) return neoHolderReward;
+            if (vote is null) return neoHolderReward;
 
             byte[] border = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).ToArray();
             byte[] keyStart = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(start).ToArray();
@@ -121,7 +119,7 @@ namespace Neo.SmartContract.Native.Tokens
             }
         }
 
-        private bool ShouldRefreshCommittee(uint height) => height % CommitteeEpoch == 0;
+        private bool ShouldRefreshCommittee(uint height) => height % ProtocolSettings.Default.CommitteeMembersCount == 0;
 
         internal override void Initialize(ApplicationEngine engine)
         {
