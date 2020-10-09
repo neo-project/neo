@@ -35,6 +35,8 @@ namespace Neo.SmartContract.Native.Tokens
         private const byte CommitteeRewardRatio = 5;
         private const byte VoterRewardRatio = 85;
 
+        private int CommitteeEpoch = ProtocolSettings.Default.CommitteeMembersCount;
+
         internal NeoToken()
         {
             this.TotalAmount = 100000000 * Factor;
@@ -119,7 +121,7 @@ namespace Neo.SmartContract.Native.Tokens
             }
         }
 
-        private bool ShouldRefreshCommittee(uint height) => height % ProtocolSettings.Default.CommitteeMembersCount == 0;
+        private bool ShouldRefreshCommittee(uint height) => height % CommitteeEpoch == 0;
 
         internal override void Initialize(ApplicationEngine engine)
         {

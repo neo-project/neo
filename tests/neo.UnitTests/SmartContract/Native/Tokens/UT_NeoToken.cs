@@ -312,7 +312,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             }
 
             //register more candidates,committee member change
-            snapshot.PersistingBlock = new Block{ Index = 0};
+            snapshot.PersistingBlock = new Block { Index = 0 };
             for (int i = 0; i < ProtocolSettings.Default.CommitteeMembersCount - 1; i++)
             {
                 Check_RegisterValidator(snapshot, Blockchain.StandbyCommittee[i].ToArray());
