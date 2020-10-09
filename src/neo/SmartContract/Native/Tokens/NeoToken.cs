@@ -142,7 +142,7 @@ namespace Neo.SmartContract.Native.Tokens
             base.OnPersist(engine);
 
             // Set next committee
-            if (ShouldRefreshCommittee(engine.Snapshot.Height))
+            if (ShouldRefreshCommittee(engine.Snapshot.PersistingBlock.Index))
             {
                 StorageItem storageItem = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Committee));
                 var cachedCommittee = new CachedCommittee(ComputeCommitteeMembers(engine.Snapshot));
@@ -156,27 +156,33 @@ namespace Neo.SmartContract.Native.Tokens
 
             // Distribute GAS for committee
 
-            int m = ProtocolSettings.Default.CommitteeMembersCount;
-            int n = ProtocolSettings.Default.ValidatorsCount;
-            int index = (int)(engine.Snapshot.PersistingBlock.Index % (uint)m);
-            var gasPerBlock = GetGasPerBlock(engine.Snapshot);
-            var committee = GetCommitteeFromCache(engine.Snapshot).ElementAt(index);
-            var pubkey = committee.PublicKey;
-            var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
-            GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100);
-
-            // Record the cumulative reward of the voters of committee
-
-            var factor = index < n ? 2 : 1;
-            if (committee.Votes > 0)
+            if (ShouldRefreshCommittee(engine.Snapshot.PersistingBlock.Index))
             {
-                BigInteger voterSumRewardPerNEO = factor * gasPerBlock * VoterRewardRatio * 100000000L * m / (m + n) / 100 / committee.Votes; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
-                StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(pubkey).AddBigEndian(engine.Snapshot.PersistingBlock.Index + 1);
-                byte[] border = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(pubkey).ToArray();
-                (_, var item) = engine.Snapshot.Storages.FindRange(voterRewardKey.ToArray(), border, SeekDirection.Backward).FirstOrDefault();
-                voterSumRewardPerNEO += (item ?? BigInteger.Zero);
-                engine.Snapshot.Storages.Add(voterRewardKey, new StorageItem(voterSumRewardPerNEO));
-            }
+                int m = ProtocolSettings.Default.CommitteeMembersCount;
+                int n = ProtocolSettings.Default.ValidatorsCount;
+                var gasPerBlock = GetGasPerBlock(engine.Snapshot);
+                var committee = GetCommitteeFromCache(engine.Snapshot);
+                for (var index = 0; index < committee.Count; index++)
+                {
+                    var member = committee.ElementAt(index);
+                    var pubkey = member.PublicKey;
+                    var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
+                    GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100);
+
+                    // Record the cumulative reward of the voters of committee
+
+                    var factor = index < n ? 2 : 1;
+                    if (member.Votes > 0)
+                    {
+                        BigInteger voterSumRewardPerNEO = factor * gasPerBlock * VoterRewardRatio * 100000000L * m / (m + n) / 100 / member.Votes; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
+                        StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(pubkey).AddBigEndian(engine.Snapshot.PersistingBlock.Index + 1);
+                        byte[] border = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(pubkey).ToArray();
+                        (_, var item) = engine.Snapshot.Storages.FindRange(voterRewardKey.ToArray(), border, SeekDirection.Backward).FirstOrDefault();
+                        voterSumRewardPerNEO += (item ?? BigInteger.Zero);
+                        engine.Snapshot.Storages.Add(voterRewardKey, new StorageItem(voterSumRewardPerNEO));
+                    }
+                }
+            }            
         }
 
         [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
