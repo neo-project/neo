@@ -14,7 +14,7 @@ namespace Neo.UnitTests.Cryptography.MPT
             {
                 Value = Encoding.ASCII.GetBytes("hello")
             };
-            var code = n.Encode();
+            var code = n.EncodeWithReference();
             var m = MPTNode.Decode(code);
             Assert.IsInstanceOfType(m, n.GetType());
         }

@@ -20,7 +20,7 @@ namespace Neo.Cryptography.MPT
         internal override void EncodeSpecific(BinaryWriter writer)
         {
             for (int i = 0; i < ChildCount; i++)
-                WriteHash(writer, Children[i].Hash);
+                Children[i].EncodeAsChild(writer);
         }
 
         internal override void DecodeSpecific(BinaryReader reader)

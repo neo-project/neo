@@ -1,5 +1,6 @@
 using Neo.IO;
 using System;
+using System.Collections.Generic;
 
 namespace Neo.Cryptography.MPT
 {
@@ -32,8 +33,8 @@ namespace Neo.Cryptography.MPT
                 case HashNode hashNode:
                     {
                         if (hashNode.IsEmpty) break;
-                        var newNode = Resolve(hashNode);
-                        if (newNode is null) break;
+                        var newNode = Resolve(hashNode.Hash);
+                        if (newNode is null) throw new KeyNotFoundException("Internal error, can't resolve hash when mpt get");
                         node = newNode;
                         return TryGet(ref node, path, out value);
                     }

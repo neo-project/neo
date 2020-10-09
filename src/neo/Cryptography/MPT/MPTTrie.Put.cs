@@ -1,5 +1,6 @@
 using Neo.IO;
 using System;
+using System.Collections.Generic;
 
 namespace Neo.Cryptography.MPT
 {
@@ -44,13 +45,14 @@ namespace Neo.Cryptography.MPT
                             if (path.IsEmpty)
                             {
                                 node = v;
-                                PutToStore(node);
+                                PutNode(node);
+                                if (!full) DeleteNode(leafNode.Hash);
                                 return true;
                             }
                             var branch = new BranchNode();
                             branch.Children[BranchNode.ChildCount - 1] = leafNode;
                             Put(ref branch.Children[path[0]], path[1..], v);
-                            PutToStore(branch);
+                            PutNode(branch);
                             node = branch;
                             return true;
                         }
@@ -63,45 +65,57 @@ namespace Neo.Cryptography.MPT
                             var result = Put(ref extensionNode.Next, path[extensionNode.Key.Length..], val);
                             if (result)
                             {
+                                if (!full) DeleteNode(extensionNode.Hash);
                                 extensionNode.SetDirty();
-                                PutToStore(extensionNode);
+                                PutNode(extensionNode);
                             }
                             return result;
                         }
+                        if (!full) DeleteNode(extensionNode.Hash);
                         var prefix = CommonPrefix(extensionNode.Key, path);
                         var pathRemain = path[prefix.Length..];
                         var keyRemain = extensionNode.Key.AsSpan(prefix.Length);
-                        var son = new BranchNode();
-                        MPTNode grandSon1 = HashNode.EmptyNode;
-                        MPTNode grandSon2 = HashNode.EmptyNode;
-
-                        Put(ref grandSon1, keyRemain[1..], extensionNode.Next);
-                        son.Children[keyRemain[0]] = grandSon1;
-
-                        if (pathRemain.IsEmpty)
+                        var child = new BranchNode();
+                        MPTNode grandChild1 = MPTNode.EmptyNode;
+                        MPTNode grandChild2 = MPTNode.EmptyNode;
+                        if (keyRemain.Length == 1)
                         {
-                            Put(ref grandSon2, pathRemain, val);
-                            son.Children[BranchNode.ChildCount - 1] = grandSon2;
+                            child.Children[keyRemain[0]] = extensionNode.Next;
                         }
                         else
                         {
-                            Put(ref grandSon2, pathRemain[1..], val);
-                            son.Children[pathRemain[0]] = grandSon2;
+                            var exNode = new ExtensionNode
+                            {
+                                Key = keyRemain[1..].ToArray(),
+                                Next = extensionNode.Next,
+                            };
+                            PutNode(exNode);
+                            child.Children[keyRemain[0]] = exNode;
                         }
-                        PutToStore(son);
+                        if (pathRemain.IsEmpty)
+                        {
+                            Put(ref grandChild2, pathRemain, val);
+                            child.Children[BranchNode.ChildCount - 1] = grandChild2;
+                        }
+                        else
+                        {
+                            Put(ref grandChild2, pathRemain[1..], val);
+                            child.Children[pathRemain[0]] = grandChild2;
+                        }
+                        PutNode(child);
                         if (prefix.Length > 0)
                         {
                             var exNode = new ExtensionNode()
                             {
                                 Key = prefix.ToArray(),
-                                Next = son,
+                                Next = child,
                             };
-                            PutToStore(exNode);
+                            PutNode(exNode);
                             node = exNode;
                         }
                         else
                         {
-                            node = son;
+                            node = child;
                         }
                         return true;
                     }
@@ -118,8 +132,9 @@ namespace Neo.Cryptography.MPT
                         }
                         if (result)
                         {
+                            if (!full) DeleteNode(branchNode.Hash);
                             branchNode.SetDirty();
-                            PutToStore(branchNode);
+                            PutNode(branchNode);
                         }
                         return result;
                     }
@@ -139,14 +154,14 @@ namespace Neo.Cryptography.MPT
                                     Key = path.ToArray(),
                                     Next = val,
                                 };
-                                PutToStore(newNode);
+                                PutNode(newNode);
                             }
                             node = newNode;
-                            if (val is LeafNode) PutToStore(val);
+                            if (val is LeafNode) PutNode(val);
                             return true;
                         }
-                        newNode = Resolve(hashNode);
-                        if (newNode is null) return false;
+                        newNode = Resolve(hashNode.Hash);
+                        if (newNode is null) throw new KeyNotFoundException("Internal error, can't resolve hash when mpt put");
                         node = newNode;
                         return Put(ref node, path, val);
                     }

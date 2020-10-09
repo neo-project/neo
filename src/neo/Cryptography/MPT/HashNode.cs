@@ -10,8 +10,6 @@ namespace Neo.Cryptography.MPT
 
         public override UInt256 Hash => hash;
         protected override NodeType Type => NodeType.HashNode;
-        public bool IsEmpty => Hash is null;
-        public static HashNode EmptyNode { get; } = new HashNode();
 
         public HashNode()
         {
@@ -24,7 +22,7 @@ namespace Neo.Cryptography.MPT
 
         internal override void EncodeSpecific(BinaryWriter writer)
         {
-            WriteHash(writer, hash);
+            EncodeAsChild(writer);
         }
 
         internal override void DecodeSpecific(BinaryReader reader)

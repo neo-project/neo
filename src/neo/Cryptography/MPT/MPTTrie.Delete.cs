@@ -18,11 +18,12 @@ namespace Neo.Cryptography.MPT
         {
             switch (node)
             {
-                case LeafNode _:
+                case LeafNode ln:
                     {
                         if (path.IsEmpty)
                         {
-                            node = HashNode.EmptyNode;
+                            node = MPTNode.EmptyNode;
+                            if (!full) DeleteNode(ln.Hash);
                             return true;
                         }
                         return false;
@@ -33,7 +34,8 @@ namespace Neo.Cryptography.MPT
                         {
                             var result = TryDelete(ref extensionNode.Next, path[extensionNode.Key.Length..]);
                             if (!result) return false;
-                            if (extensionNode.Next is HashNode hashNode && hashNode.IsEmpty)
+                            if (!full) DeleteNode(extensionNode.Hash);
+                            if (extensionNode.Next.IsEmpty)
                             {
                                 node = extensionNode.Next;
                                 return true;
@@ -42,9 +44,10 @@ namespace Neo.Cryptography.MPT
                             {
                                 extensionNode.Key = Concat(extensionNode.Key, sn.Key);
                                 extensionNode.Next = sn.Next;
+                                if (!full) DeleteNode(sn.Hash);
                             }
                             extensionNode.SetDirty();
-                            PutToStore(extensionNode);
+                            PutNode(extensionNode);
                             return true;
                         }
                         return false;
@@ -61,16 +64,17 @@ namespace Neo.Cryptography.MPT
                             result = TryDelete(ref branchNode.Children[path[0]], path[1..]);
                         }
                         if (!result) return false;
+                        if (!full) DeleteNode(branchNode.Hash);
                         List<byte> childrenIndexes = new List<byte>(BranchNode.ChildCount);
                         for (int i = 0; i < BranchNode.ChildCount; i++)
                         {
-                            if (branchNode.Children[i] is HashNode hn && hn.IsEmpty) continue;
+                            if (branchNode.Children[i].IsEmpty) continue;
                             childrenIndexes.Add((byte)i);
                         }
                         if (childrenIndexes.Count > 1)
                         {
                             branchNode.SetDirty();
-                            PutToStore(branchNode);
+                            PutNode(branchNode);
                             return true;
                         }
                         var lastChildIndex = childrenIndexes[0];
@@ -82,14 +86,15 @@ namespace Neo.Cryptography.MPT
                         }
                         if (lastChild is HashNode hashNode)
                         {
-                            lastChild = Resolve(hashNode);
-                            if (lastChild is null) return false;
+                            lastChild = Resolve(hashNode.Hash);
+                            if (lastChild is null) throw new System.ArgumentNullException("Invalid hash node");
                         }
                         if (lastChild is ExtensionNode exNode)
                         {
+                            if (!full) DeleteNode(exNode.Hash);
                             exNode.Key = Concat(childrenIndexes.ToArray(), exNode.Key);
                             exNode.SetDirty();
-                            PutToStore(exNode);
+                            PutNode(exNode);
                             node = exNode;
                             return true;
                         }
@@ -98,17 +103,17 @@ namespace Neo.Cryptography.MPT
                             Key = childrenIndexes.ToArray(),
                             Next = lastChild,
                         };
-                        PutToStore(node);
+                        PutNode(node);
                         return true;
                     }
                 case HashNode hashNode:
                     {
                         if (hashNode.IsEmpty)
                         {
-                            return true;
+                            return false;
                         }
-                        var newNode = Resolve(hashNode);
-                        if (newNode is null) return false;
+                        var newNode = Resolve(hashNode.Hash);
+                        if (newNode is null) throw new KeyNotFoundException("Internal error, can't resolve hash when mpt delete");
                         node = newNode;
                         return TryDelete(ref node, path);
                     }

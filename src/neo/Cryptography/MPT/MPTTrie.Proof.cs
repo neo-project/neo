@@ -2,6 +2,7 @@ using Neo.IO;
 using Neo.Persistence;
 using System;
 using System.Collections.Generic;
+using static Neo.Helper;
 
 namespace Neo.Cryptography.MPT
 {
@@ -32,8 +33,8 @@ namespace Neo.Cryptography.MPT
                 case HashNode hashNode:
                     {
                         if (hashNode.IsEmpty) break;
-                        var newNode = Resolve(hashNode);
-                        if (newNode is null) break;
+                        var newNode = Resolve(hashNode.Hash);
+                        if (newNode is null) throw new KeyNotFoundException("Internal error, can't resolve hash when mpt getproof");
                         node = newNode;
                         return GetProof(ref node, path, set);
                     }
@@ -63,9 +64,9 @@ namespace Neo.Cryptography.MPT
         {
             using var memoryStore = new MemoryStore();
             foreach (byte[] data in proof)
-                memoryStore.Put(Prefix, Crypto.Hash256(data), data);
+                memoryStore.Put(Prefix, Crypto.Hash256(data), new ByteArrayWrapper(Concat(data, new byte[] { 1 })).ToArray());
             using ISnapshot snapshot = memoryStore.GetSnapshot();
-            var trie = new MPTTrie<TKey, TValue>(snapshot, root);
+            var trie = new MPTTrie<TKey, TValue>(snapshot, root, false);
             return trie[key];
         }
     }

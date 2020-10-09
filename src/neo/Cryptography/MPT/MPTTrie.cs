@@ -1,4 +1,5 @@
 using Neo.IO;
+using Neo.IO.Caching;
 using Neo.Persistence;
 using System;
 
@@ -9,22 +10,25 @@ namespace Neo.Cryptography.MPT
         where TValue : class, ISerializable, new()
     {
         private const byte Prefix = 0xf0;
-
+        private bool full;
         private readonly ISnapshot store;
+        private readonly DataCache<UInt256, ByteArrayWrapper> cache;
         private MPTNode root;
 
         public MPTNode Root => root;
 
-        public MPTTrie(ISnapshot store, UInt256 root)
+        public MPTTrie(ISnapshot store, UInt256 root, bool full_state = false)
         {
             this.store = store ?? throw new ArgumentNullException();
-            this.root = root is null ? HashNode.EmptyNode : new HashNode(root);
+            this.cache = new StoreDataCache<UInt256, ByteArrayWrapper>(store, Prefix);
+            this.root = root is null ? MPTNode.EmptyNode : new HashNode(root);
+            this.full = full_state;
         }
 
-        private MPTNode Resolve(HashNode n)
+        private MPTNode Resolve(UInt256 hash)
         {
-            var data = store.TryGet(Prefix, n.Hash.ToArray());
-            return MPTNode.Decode(data);
+            var data = cache.TryGet(hash);
+            return MPTNode.Decode(data?.Value);
         }
 
         private static byte[] ToNibbles(ReadOnlySpan<byte> path)
@@ -50,9 +54,38 @@ namespace Neo.Cryptography.MPT
             return key;
         }
 
-        private void PutToStore(MPTNode node)
+        private void PutNode(MPTNode np)
         {
-            store.Put(Prefix, node.Hash.ToArray(), node.Encode());
+            var n = Resolve(np.Hash);
+            if (n is null)
+            {
+                np.Reference = 1;
+                cache.Add(np.Hash, np.EncodeWithReference());
+                return;
+            }
+            n.Reference++;
+            cache.GetAndChange(np.Hash).Value = n.EncodeWithReference();
+        }
+
+        private void DeleteNode(UInt256 hash)
+        {
+            var n = Resolve(hash);
+            if (n is null)
+            {
+                return;
+            }
+            if (1 < n.Reference)
+            {
+                n.Reference--;
+                cache.GetAndChange(hash).Value = n.EncodeWithReference();
+                return;
+            }
+            cache.Delete(hash);
+        }
+
+        public void Commit()
+        {
+            cache.Commit();
         }
     }
 }
