@@ -45,10 +45,14 @@ namespace Neo.SmartContract
         /// </summary>
         public byte[] Script { get; set; }
 
-        internal const int StaticSize =
+        private const int StaticSize =
             sizeof(uint) +      // Magic
             32 +                // Compiler
             (sizeof(int) * 4);  // Version
+
+        public static readonly int MaxLength = StaticSize +
+            IO.Helper.GetVarSize(1024 * 1024) + (1024 * 1024) +
+            IO.Helper.GetVarSize(ContractAbi.MaxLength) + ContractAbi.MaxLength;
 
         public int Size =>
             StaticSize +
