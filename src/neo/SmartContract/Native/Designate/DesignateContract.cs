@@ -43,7 +43,7 @@ namespace Neo.SmartContract.Native.Designate
         [ContractMethod(0, CallFlags.AllowModifyStates)]
         private void DesignateAsRole(ApplicationEngine engine, Role role, ECPoint[] nodes)
         {
-            if (nodes.Length == 0 || nodes.Length > StorageItem.MaxInteropEntries) throw new ArgumentException(nameof(nodes));
+            if (nodes.Length == 0 || nodes.Length > engine.MaxStackSize) throw new ArgumentException(nameof(nodes));
             if (!Enum.IsDefined(typeof(Role), role))
                 throw new ArgumentOutOfRangeException(nameof(role));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();

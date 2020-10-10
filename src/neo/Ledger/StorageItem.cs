@@ -1,5 +1,6 @@
 using Neo.IO;
 using Neo.SmartContract;
+using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,8 +10,17 @@ namespace Neo.Ledger
 {
     public class StorageItem : ICloneable<StorageItem>, ISerializable
     {
-        public const int MaxInteropEntries = 32;
-        public const int MaxIteropEntrySize = 512;
+        private static readonly uint MaxStackSize;
+        private static readonly uint MaxItemSize;
+
+        static StorageItem()
+        {
+            // Init default values with the the default application engine values
+
+            using var engine = ApplicationEngine.Create(TriggerType.All, null, null);
+            MaxItemSize = engine.MaxItemSize;
+            MaxStackSize = engine.MaxStackSize;
+        }
 
         private byte[] value;
         private object cache;
@@ -89,7 +99,7 @@ namespace Neo.Ledger
             if (cache is null)
             {
                 var interoperable = new T();
-                interoperable.FromStackItem(BinarySerializer.Deserialize(value, MaxInteropEntries, MaxIteropEntrySize));
+                interoperable.FromStackItem(BinarySerializer.Deserialize(value, MaxStackSize, MaxItemSize));
                 cache = interoperable;
             }
             value = null;
