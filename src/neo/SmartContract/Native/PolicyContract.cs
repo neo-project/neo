@@ -1,12 +1,15 @@
 #pragma warning disable IDE0051
 
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -60,13 +63,14 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        public UInt160[] GetBlockedAccounts(StoreView snapshot)
+        public IIterator GetBlockedAccounts(StoreView snapshot)
         {
-            return snapshot.Storages.TryGet(CreateStorageKey(Prefix_BlockedAccounts))
-                ?.GetSerializableList<UInt160>().ToArray()
-                ?? Array.Empty<UInt160>();
+            return new ArrayWrapper<UInt160>(
+                snapshot.Storages.TryGet(CreateStorageKey(Prefix_BlockedAccounts))?.GetSerializableList<UInt160>() ?? new List<UInt160>(),
+                a => a.ToArray());
         }
 
+        [ContractMethod(0_02000000, CallFlags.AllowStates)]
         public bool IsAnyAccountBlocked(StoreView snapshot, params UInt160[] hashes)
         {
             if (hashes.Length == 0) return false;
