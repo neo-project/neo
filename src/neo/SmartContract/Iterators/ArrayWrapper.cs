@@ -4,17 +4,14 @@ using System.Collections.Generic;
 
 namespace Neo.SmartContract.Iterators
 {
-    internal class ArrayWrapper<T> : IIterator
+    internal class ArrayWrapper : IIterator
     {
-        private readonly IReadOnlyList<T> array;
-        private readonly Func<T, StackItem> conversion;
-
+        private readonly IReadOnlyList<StackItem> array;
         private int index = -1;
 
-        public ArrayWrapper(IReadOnlyList<T> array, Func<T, StackItem> conversion)
+        public ArrayWrapper(IReadOnlyList<StackItem> array)
         {
             this.array = array;
-            this.conversion = conversion;
         }
 
         public void Dispose()
@@ -41,12 +38,7 @@ namespace Neo.SmartContract.Iterators
         {
             if (index < 0)
                 throw new InvalidOperationException();
-            return conversion(array[index]);
+            return array[index];
         }
-    }
-
-    internal class ArrayWrapper : ArrayWrapper<StackItem>
-    {
-        public ArrayWrapper(IReadOnlyList<StackItem> array) : base(array, (a) => a) { }
     }
 }
