@@ -35,13 +35,13 @@ namespace Neo.SmartContract
             if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
                 throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
 
+            AddGas(StoragePrice * (nefFile.Length + manifest.Length));
+
             NefFile nef = nefFile.AsSerializable<NefFile>();
             if (nef.Script.Length == 0 || nef.Script.Length > MaxContractLength)
                 throw new ArgumentException($"Invalid Script Length: {nef.Script.Length}");
             if (nef.Abi.Length == 0 || nef.Abi.Length > ContractAbi.MaxLength)
                 throw new ArgumentException($"Invalid Abi Length: {nef.Abi.Length}");
-
-            AddGas(StoragePrice * (nefFile.Length + manifest.Length));
 
             UInt160 hash = nefFile.ToScriptHash();
             ContractState contract = Snapshot.Contracts.TryGet(hash);
