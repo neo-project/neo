@@ -4,6 +4,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.Buffers.Binary;
@@ -169,6 +170,7 @@ namespace Neo.SmartContract
                 }
                 else
                 {
+                    if (NativeContract.IsNative(hashes[i])) return false;
                     if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
                     offset = 0;
                 }
