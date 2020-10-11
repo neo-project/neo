@@ -10,18 +10,6 @@ namespace Neo.Ledger
 {
     public class StorageItem : ICloneable<StorageItem>, ISerializable
     {
-        private static readonly uint MaxStackSize;
-        private static readonly uint MaxItemSize;
-
-        static StorageItem()
-        {
-            // Init default values with the the default application engine values
-
-            using var engine = ApplicationEngine.Create(TriggerType.All, null, null);
-            MaxItemSize = engine.MaxItemSize;
-            MaxStackSize = engine.MaxStackSize;
-        }
-
         private byte[] value;
         private object cache;
         public bool IsConstant;
@@ -99,7 +87,7 @@ namespace Neo.Ledger
             if (cache is null)
             {
                 var interoperable = new T();
-                interoperable.FromStackItem(BinarySerializer.Deserialize(value, MaxStackSize, MaxItemSize));
+                interoperable.FromStackItem(BinarySerializer.Deserialize(value, ExecutionEngineLimits.Default.MaxStackSize, ExecutionEngineLimits.Default.MaxItemSize));
                 cache = interoperable;
             }
             value = null;

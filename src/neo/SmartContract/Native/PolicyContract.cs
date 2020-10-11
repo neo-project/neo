@@ -1,15 +1,12 @@
 #pragma warning disable IDE0051
 
-using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -60,14 +57,6 @@ namespace Neo.SmartContract.Native
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_FeePerByte));
             if (item is null) return 1000;
             return (long)(BigInteger)item;
-        }
-
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        public IIterator GetBlockedAccounts(StoreView snapshot)
-        {
-            return new ArrayWrapper<UInt160>(
-                snapshot.Storages.TryGet(CreateStorageKey(Prefix_BlockedAccounts))?.GetSerializableList<UInt160>() ?? new List<UInt160>(),
-                a => a.ToArray());
         }
 
         [ContractMethod(0_02000000, CallFlags.AllowStates)]
@@ -138,7 +127,7 @@ namespace Neo.SmartContract.Native
             StorageItem storage = engine.Snapshot.Storages.GetOrAdd(key, () => new StorageItem(new byte[1]));
             List<UInt160> accounts = storage.GetSerializableList<UInt160>();
             if (accounts.Contains(account)) return false;
-            if ((accounts.Count + 1) > engine.MaxStackSize) throw new ArgumentException("Maximum number of blocked accounts exceeded");
+            if ((accounts.Count + 1) > engine.Limits.MaxStackSize) throw new ArgumentException("Maximum number of blocked accounts exceeded");
             engine.Snapshot.Storages.GetAndChange(key);
             accounts.Add(account);
             accounts.Sort();
