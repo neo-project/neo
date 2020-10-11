@@ -704,26 +704,26 @@ namespace Neo.UnitTests.SmartContract
             tx.Script = new byte[] { 0x01, 0x02, 0x03 };
         }
 
-        private static ApplicationEngine GetEngine(bool hasContainer = false, bool hasSnapshot = false, bool addScript = true)
+        private static ApplicationEngine GetEngine(bool hasContainer = false, bool hasSnapshot = false, bool addScript = true, long gas = 20_00000000)
         {
             var tx = TestUtils.GetTransaction(UInt160.Zero);
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
             ApplicationEngine engine;
             if (hasContainer && hasSnapshot)
             {
-                engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot);
+                engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, gas);
             }
             else if (hasContainer && !hasSnapshot)
             {
-                engine = ApplicationEngine.Create(TriggerType.Application, tx, null);
+                engine = ApplicationEngine.Create(TriggerType.Application, tx, null, gas);
             }
             else if (!hasContainer && hasSnapshot)
             {
-                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas);
             }
             else
             {
-                engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+                engine = ApplicationEngine.Create(TriggerType.Application, null, null, gas);
             }
             if (addScript)
             {

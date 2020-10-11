@@ -128,7 +128,6 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestContract_Create()
         {
-            var engine = GetEngine(false, true);
             var nef = new NefFile()
             {
                 Script = new byte[0x01],
@@ -137,6 +136,7 @@ namespace Neo.UnitTests.SmartContract
                 Version = new Version(1, 2, 3, 4)
             };
             var nefFile = nef.ToArray();
+            var engine = GetEngine(false, true);
             Assert.ThrowsException<ArgumentException>(() => engine.CreateContract(nefFile, new byte[ContractManifest.MaxLength + 1]));
 
             var manifest = TestUtils.CreateDefaultManifest(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
@@ -149,6 +149,8 @@ namespace Neo.UnitTests.SmartContract
                 Compiler = "",
                 Version = new Version(1, 2, 3, 4)
             };
+            Assert.ThrowsException<InvalidOperationException>(() => engine.CreateContract(script_exceedMaxLength.ToArray(), manifest.ToJson().ToByteArray(true)));
+            engine = GetEngine(false, true, gas: 2000_00000000);
             Assert.ThrowsException<FormatException>(() => engine.CreateContract(script_exceedMaxLength.ToArray(), manifest.ToJson().ToByteArray(true)));
 
             var script_zeroLength = new byte[] { };
