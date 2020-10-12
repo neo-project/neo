@@ -158,7 +158,7 @@ namespace Neo.SmartContract.Native.Oracle
 
             //Add the id to the IdList
             var list = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)), () => new StorageItem(new IdList())).GetInteroperable<IdList>();
-            if (list.Count + 1 > engine.Limits.MaxStackSize)
+            if (list.Count >= 256)
                 throw new InvalidOperationException("There are too many pending responses for this url");
             list.Add(id);
         }
