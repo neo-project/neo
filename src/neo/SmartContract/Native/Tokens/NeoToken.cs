@@ -71,12 +71,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
 
             BigInteger sum = 0;
-            foreach (var gasRecord in snapshot.Storages.FindRange(
-                CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u).ToArray(),
-                CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(end).ToArray())
-                .Select(u => (index: BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.AsSpan(u.Key.Key.Length - sizeof(uint))), gasPerBlock: (BigInteger)u.Value))
-                .OrderByDescending(u => u.index)
-                )
+            foreach (var gasRecord in GetSortedGasRecords(snapshot, end))
             {
                 if (gasRecord.index > start)
                 {
@@ -152,15 +147,20 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public BigInteger GetGasPerBlock(StoreView snapshot)
         {
-            var index = snapshot.PersistingBlock.Index;
+            return GetSortedGasRecords(snapshot, snapshot.PersistingBlock.Index + 1).First().gasPerBlock;
+        }
 
-            return snapshot.Storages.FindRange(
+        private IEnumerable<(uint index, BigInteger gasPerBlock)> GetSortedGasRecords(StoreView snapshot, uint to)
+        {
+            foreach (var entry in snapshot.Storages.FindRange(
                 CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u).ToArray(),
-                CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(index + 1).ToArray())
+                CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(to).ToArray())
                 .Select(u => (index: BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.AsSpan(u.Key.Key.Length - sizeof(uint))), gasPerBlock: (BigInteger)u.Value))
                 .OrderByDescending(u => u.index)
-                .First()
-                .gasPerBlock;
+                )
+            {
+                yield return entry;
+            }
         }
 
         [ContractMethod(0_03000000, CallFlags.AllowStates)]
