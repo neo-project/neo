@@ -65,7 +65,7 @@ namespace Neo.SmartContract.Native.Tokens
             GAS.Mint(engine, account, gas);
         }
 
-        internal BigInteger CalculateBonus(StoreView snapshot, BigInteger value, uint start, uint end)
+        private BigInteger CalculateBonus(StoreView snapshot, BigInteger value, uint start, uint end)
         {
             if (value.IsZero || start >= end) return BigInteger.Zero;
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
