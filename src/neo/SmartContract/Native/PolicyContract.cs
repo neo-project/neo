@@ -68,12 +68,9 @@ namespace Neo.SmartContract.Native
         {
             if (hashes.Length == 0) return false;
 
-            foreach (var (key, value) in snapshot.Storages.FindRange(
-                CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(0u).ToArray(),
-                CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(uint.MaxValue).ToArray()
-                ))
+            foreach (var (_, data) in GetBlockedAccounts(snapshot))
             {
-                var blockedList = value.GetSerializableList<UInt160>().ToArray();
+                var blockedList = data.ToArray();
 
                 // blockedList can't be empty
 
@@ -133,8 +130,12 @@ namespace Neo.SmartContract.Native
 
             // Read all for sorting
 
-            List<UInt160> accounts = GetBlockedAccounts(engine.Snapshot, (chunk, data) => !data.Contains(account));
-            if (accounts == null) return false;
+            List<UInt160> accounts = new List<UInt160>();
+            foreach (var (_, data) in GetBlockedAccounts(engine.Snapshot))
+            {
+                if (data.Contains(account)) return false;
+                accounts.AddRange(data);
+            }
 
             // Store them
 
@@ -152,15 +153,16 @@ namespace Neo.SmartContract.Native
             // Read all
 
             uint last_chunk = 0;
-            List<UInt160> accounts = GetBlockedAccounts(engine.Snapshot, (chunk, data) =>
+            List<UInt160> accounts = new List<UInt160>();
+            foreach (var (chunkId, data) in GetBlockedAccounts(engine.Snapshot))
             {
-                last_chunk = Math.Max(chunk, last_chunk);
-                return true;
-            });
+                accounts.AddRange(data);
+                last_chunk = Math.Max(chunkId, last_chunk);
+            }
 
             // Remove it from list
 
-            if (accounts?.Remove(account) != true) return false;
+            if (accounts.Remove(account) != true) return false;
 
             // Store them
 
@@ -173,10 +175,8 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        private List<UInt160> GetBlockedAccounts(StoreView snapshot, Func<uint, List<UInt160>, bool> onChunk)
+        private IEnumerable<(uint chunk, List<UInt160> data)> GetBlockedAccounts(StoreView snapshot)
         {
-            List<UInt160> accounts = new List<UInt160>();
-
             foreach (var (key, value) in snapshot.Storages.FindRange
                 (
                 CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(0u).ToArray(),
@@ -185,11 +185,9 @@ namespace Neo.SmartContract.Native
             {
                 var chunk = BinaryPrimitives.ReadUInt32BigEndian(key.Key.AsSpan(key.Key.Length - sizeof(uint)));
                 var list = value.GetSerializableList<UInt160>();
-                if (onChunk(chunk, list) != true) return null;
-                accounts.AddRange(list);
-            }
 
-            return accounts;
+                yield return (chunk, list);
+            }
         }
 
         private uint StoreBlockedAccounts(StoreView snapshot, List<UInt160> accounts)
