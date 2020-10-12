@@ -75,12 +75,11 @@ namespace Neo.SmartContract.Native
             {
                 var blockedList = value.GetSerializableList<UInt160>().ToArray();
 
-                if (blockedList.Length > 0)
+                // blockedList can't be empty
+
+                foreach (var acc in hashes)
                 {
-                    foreach (var acc in hashes)
-                    {
-                        if (Array.BinarySearch(blockedList, acc) >= 0) return true;
-                    }
+                    if (Array.BinarySearch(blockedList, acc) >= 0) return true;
                 }
             }
 
