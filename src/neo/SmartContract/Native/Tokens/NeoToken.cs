@@ -71,10 +71,12 @@ namespace Neo.SmartContract.Native.Tokens
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
 
             BigInteger sum = 0;
-            foreach (var gasRecord in snapshot.Storages.Find(CreateStorageKey(Prefix_GasPerBlock).ToArray())
+            foreach (var gasRecord in snapshot.Storages.FindRange(
+                CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u).ToArray(),
+                CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(end).ToArray())
                 .Select(u => (index: BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.AsSpan(u.Key.Key.Length - sizeof(uint))), gasPerBlock: (BigInteger)u.Value))
-                .Where(u => u.index < end)
-                .OrderByDescending(u => u.index))
+                .OrderByDescending(u => u.index)
+                )
             {
                 if (gasRecord.index > start)
                 {
@@ -152,10 +154,13 @@ namespace Neo.SmartContract.Native.Tokens
         {
             var index = snapshot.PersistingBlock.Index;
 
-            return snapshot.Storages.Find(CreateStorageKey(Prefix_GasPerBlock).ToArray())
-                .Where(u => BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.AsSpan(u.Key.Key.Length - sizeof(uint))) <= index)
-                .Select(u => (BigInteger)u.Value)
-                .Last();
+            return snapshot.Storages.FindRange(
+                CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u).ToArray(),
+                CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(index + 1).ToArray())
+                .Select(u => (index: BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.AsSpan(u.Key.Key.Length - sizeof(uint))), gasPerBlock: (BigInteger)u.Value))
+                .OrderByDescending(u => u.index)
+                .First()
+                .gasPerBlock;
         }
 
         [ContractMethod(0_03000000, CallFlags.AllowStates)]
