@@ -24,7 +24,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_MaxBlockSize = 12;
         private const byte Prefix_MaxBlockSystemFee = 17;
 
-        private const byte BlockChunkLength = 100;
+        private const byte BlockedChunkLength = 200;
 
         public PolicyContract()
         {
@@ -133,32 +133,14 @@ namespace Neo.SmartContract.Native
 
             // Read all for sorting
 
-            List<UInt160> accounts = new List<UInt160>();
-            foreach (var (key, value) in engine.Snapshot.Storages.FindRange(
-                CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(0u).ToArray(),
-                CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(uint.MaxValue).ToArray()
-                ))
-            {
-                var list = value.GetSerializableList<UInt160>();
-                if (list.Contains(account)) return false;
-                accounts.AddRange(list);
-            }
+            List<UInt160> accounts = GetBlockedAccounts(engine.Snapshot, (chunk, data) => !data.Contains(account));
+            if (accounts == null) return false;
+
+            // Store them
+
             accounts.Add(account);
             accounts.Sort();
-
-            // Store chunks
-
-            uint chunk = 0;
-            for (int x = 0; x < accounts.Count; x += BlockChunkLength, chunk++)
-            {
-                var entry = engine.Snapshot.Storages.GetAndChange(
-                    CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(chunk),
-                    () => new StorageItem(new byte[1] { 0x00 }));
-
-                var list = entry.GetSerializableList<UInt160>();
-                list.Clear();
-                list.AddRange(accounts.Skip(x * BlockChunkLength).Take(BlockChunkLength));
-            }
+            StoreBlockedAccounts(engine.Snapshot, accounts);
             return true;
         }
 
@@ -167,40 +149,63 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittee(engine)) return false;
 
-            // Read all for remove
+            // Read all
 
             uint last_chunk = 0;
-            List<UInt160> accounts = new List<UInt160>();
-            foreach (var (key, value) in engine.Snapshot.Storages.FindRange(
-                CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(0u).ToArray(),
-                CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(uint.MaxValue).ToArray()
-                ))
+            List<UInt160> accounts = GetBlockedAccounts(engine.Snapshot, (chunk, data) =>
             {
-                accounts.AddRange(value.GetSerializableList<UInt160>());
-                last_chunk = BinaryPrimitives.ReadUInt32BigEndian(key.Key.AsSpan(key.Key.Length - sizeof(uint)));
-            }
+                last_chunk = Math.Max(chunk, last_chunk);
+                return true;
+            });
 
-            if (!accounts.Remove(account)) return false;
+            // Remove it from list
 
-            // Store chunks
+            if (accounts?.Remove(account) != true) return false;
 
-            uint chunk = 0;
-            for (int x = 0; x < accounts.Count; x += BlockChunkLength, chunk++)
-            {
-                var entry = engine.Snapshot.Storages.GetAndChange(
-                    CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(chunk),
-                    () => new StorageItem(new byte[1] { 0x00 }));
+            // Store them
 
-                var list = entry.GetSerializableList<UInt160>();
-                list.Clear();
-                list.AddRange(accounts.Skip(x * BlockChunkLength).Take(BlockChunkLength));
-            }
+            var chunk = StoreBlockedAccounts(engine.Snapshot, accounts);
 
             if (chunk <= last_chunk)
             {
                 engine.Snapshot.Storages.Delete(CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(last_chunk));
             }
             return true;
+        }
+
+        private List<UInt160> GetBlockedAccounts(StoreView snapshot, Func<uint, List<UInt160>, bool> onChunk)
+        {
+            List<UInt160> accounts = new List<UInt160>();
+
+            foreach (var (key, value) in snapshot.Storages.FindRange
+                (
+                CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(0u).ToArray(),
+                CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(uint.MaxValue).ToArray()
+                ))
+            {
+                var chunk = BinaryPrimitives.ReadUInt32BigEndian(key.Key.AsSpan(key.Key.Length - sizeof(uint)));
+                var list = value.GetSerializableList<UInt160>();
+                if (onChunk(chunk, list) != true) return null;
+                accounts.AddRange(list);
+            }
+
+            return accounts;
+        }
+
+        private uint StoreBlockedAccounts(StoreView snapshot, List<UInt160> accounts)
+        {
+            uint chunk = 0;
+            for (int x = 0; x < accounts.Count; x += BlockedChunkLength, chunk++)
+            {
+                var entry = snapshot.Storages.GetAndChange(
+                    CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(chunk),
+                    () => new StorageItem(new byte[1] { 0x00 }));
+
+                var list = entry.GetSerializableList<UInt160>();
+                list.Clear();
+                list.AddRange(accounts.Skip(x * BlockedChunkLength).Take(BlockedChunkLength));
+            }
+            return chunk;
         }
     }
 }
