@@ -25,15 +25,10 @@ namespace Neo.SmartContract.Manifest
         {
             get
             {
-                int size = Length;
+                int size = Utility.StrictUTF8.GetByteCount(ToString());
                 return IO.Helper.GetVarSize(size) + size;
             }
         }
-
-        /// <summary>
-        /// Length
-        /// </summary>
-        public int Length => Utility.StrictUTF8.GetByteCount(ToString());
 
         /// <summary>
         /// Methods is an array of Method objects which describe the details of each method in the contract.

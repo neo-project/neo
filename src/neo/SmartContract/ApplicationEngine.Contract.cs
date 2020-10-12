@@ -40,8 +40,8 @@ namespace Neo.SmartContract
             NefFile nef = nefFile.AsSerializable<NefFile>();
             if (nef.Script.Length == 0 || nef.Script.Length > MaxContractLength)
                 throw new ArgumentException($"Invalid Script Length: {nef.Script.Length}");
-            if (nef.Abi.Length == 0 || nef.Abi.Length > ContractAbi.MaxLength)
-                throw new ArgumentException($"Invalid Abi Length: {nef.Abi.Length}");
+            if (nef.Abi.Size == 0 || nef.Abi.Size > ContractAbi.MaxLength)
+                throw new ArgumentException($"Invalid Abi Length: {nef.Abi.Size}");
 
             UInt160 hash = nefFile.ToScriptHash();
             ContractState contract = Snapshot.Contracts.TryGet(hash);
@@ -88,8 +88,8 @@ namespace Neo.SmartContract
             {
                 if (nef.Script.Length == 0 || nef.Script.Length > MaxContractLength)
                     throw new ArgumentException($"Invalid Script Length: {nef.Script.Length}");
-                if (nef.Abi.Length == 0 || nef.Abi.Length > ContractAbi.MaxLength)
-                    throw new ArgumentException($"Invalid Abi Length: {nef.Abi.Length}");
+                if (nef.Abi.Size == 0 || nef.Abi.Size > ContractAbi.MaxLength)
+                    throw new ArgumentException($"Invalid Abi Length: {nef.Abi.Size}");
 
                 UInt160 hash_new = nefFile.ToScriptHash();
                 if (hash_new.Equals(CurrentScriptHash) || Snapshot.Contracts.TryGet(hash_new) != null)
