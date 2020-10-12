@@ -6,7 +6,9 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -64,15 +66,19 @@ namespace Neo.SmartContract.Native
         {
             if (hashes.Length == 0) return false;
 
-            var blockedList = snapshot.Storages.TryGet(CreateStorageKey(Prefix_BlockedAccounts))
-                ?.GetSerializableList<UInt160>().ToArray()
-                ?? Array.Empty<UInt160>();
-
-            if (blockedList.Length > 0)
+            foreach (var (key, value) in snapshot.Storages.FindRange(
+                CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(0u).ToArray(),
+                CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(uint.MaxValue).ToArray()
+                ))
             {
-                foreach (var acc in hashes)
+                var blockedList = value.GetSerializableList<UInt160>().ToArray();
+
+                if (blockedList.Length > 0)
                 {
-                    if (Array.BinarySearch(blockedList, acc) >= 0) return true;
+                    foreach (var acc in hashes)
+                    {
+                        if (Array.BinarySearch(blockedList, acc) >= 0) return true;
+                    }
                 }
             }
 
@@ -123,14 +129,35 @@ namespace Neo.SmartContract.Native
         private bool BlockAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine)) return false;
-            StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
-            StorageItem storage = engine.Snapshot.Storages.GetOrAdd(key, () => new StorageItem(new byte[1]));
-            List<UInt160> accounts = storage.GetSerializableList<UInt160>();
-            if (accounts.Contains(account)) return false;
-            if ((accounts.Count + 1) > engine.Limits.MaxStackSize) throw new ArgumentException("Maximum number of blocked accounts exceeded");
-            engine.Snapshot.Storages.GetAndChange(key);
+
+            // Read all for sorting
+
+            List<UInt160> accounts = new List<UInt160>();
+            foreach (var (key, value) in engine.Snapshot.Storages.FindRange(
+                CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(0u).ToArray(),
+                CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(uint.MaxValue).ToArray()
+                ))
+            {
+                var list = value.GetSerializableList<UInt160>();
+                if (list.Contains(account)) return false;
+                accounts.AddRange(list);
+            }
             accounts.Add(account);
             accounts.Sort();
+
+            // Store chunks
+
+            uint chunk = 0;
+            for (int x = 0; x < accounts.Count; x += 100, chunk++)
+            {
+                var entry = engine.Snapshot.Storages.GetAndChange(
+                    CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(chunk),
+                    () => new StorageItem(new byte[1] { 0x00 }));
+
+                var list = entry.GetSerializableList<UInt160>();
+                list.Clear();
+                list.AddRange(accounts.Skip(x * 100).Take(100));
+            }
             return true;
         }
 
@@ -138,14 +165,40 @@ namespace Neo.SmartContract.Native
         private bool UnblockAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine)) return false;
-            StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
-            StorageItem storage = engine.Snapshot.Storages.TryGet(key);
-            if (storage is null) return false;
-            List<UInt160> accounts = storage.GetSerializableList<UInt160>();
-            int index = accounts.IndexOf(account);
-            if (index < 0) return false;
-            engine.Snapshot.Storages.GetAndChange(key);
-            accounts.RemoveAt(index);
+
+            // Read all for remove
+
+            uint last_chunk = 0;
+            List<UInt160> accounts = new List<UInt160>();
+            foreach (var (key, value) in engine.Snapshot.Storages.FindRange(
+                CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(0u).ToArray(),
+                CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(uint.MaxValue).ToArray()
+                ))
+            {
+                accounts.AddRange(value.GetSerializableList<UInt160>());
+                last_chunk = BinaryPrimitives.ReadUInt32BigEndian(key.Key.AsSpan(key.Key.Length - sizeof(uint)));
+            }
+
+            if (!accounts.Remove(account)) return false;
+
+            // Store chunks
+
+            uint chunk = 0;
+            for (int x = 0; x < accounts.Count; x += 100, chunk++)
+            {
+                var entry = engine.Snapshot.Storages.GetAndChange(
+                    CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(chunk),
+                    () => new StorageItem(new byte[1] { 0x00 }));
+
+                var list = entry.GetSerializableList<UInt160>();
+                list.Clear();
+                list.AddRange(accounts.Skip(x * 100).Take(100));
+            }
+
+            if (chunk <= last_chunk)
+            {
+                engine.Snapshot.Storages.Delete(CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(last_chunk));
+            }
             return true;
         }
     }
