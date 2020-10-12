@@ -24,6 +24,8 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_MaxBlockSize = 12;
         private const byte Prefix_MaxBlockSystemFee = 17;
 
+        private const byte BlockChunkLength = 100;
+
         public PolicyContract()
         {
             Manifest.Features = ContractFeatures.HasStorage;
@@ -148,7 +150,7 @@ namespace Neo.SmartContract.Native
             // Store chunks
 
             uint chunk = 0;
-            for (int x = 0; x < accounts.Count; x += 100, chunk++)
+            for (int x = 0; x < accounts.Count; x += BlockChunkLength, chunk++)
             {
                 var entry = engine.Snapshot.Storages.GetAndChange(
                     CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(chunk),
@@ -156,7 +158,7 @@ namespace Neo.SmartContract.Native
 
                 var list = entry.GetSerializableList<UInt160>();
                 list.Clear();
-                list.AddRange(accounts.Skip(x * 100).Take(100));
+                list.AddRange(accounts.Skip(x * BlockChunkLength).Take(BlockChunkLength));
             }
             return true;
         }
@@ -184,7 +186,7 @@ namespace Neo.SmartContract.Native
             // Store chunks
 
             uint chunk = 0;
-            for (int x = 0; x < accounts.Count; x += 100, chunk++)
+            for (int x = 0; x < accounts.Count; x += BlockChunkLength, chunk++)
             {
                 var entry = engine.Snapshot.Storages.GetAndChange(
                     CreateStorageKey(Prefix_BlockedAccounts).AddBigEndian(chunk),
@@ -192,7 +194,7 @@ namespace Neo.SmartContract.Native
 
                 var list = entry.GetSerializableList<UInt160>();
                 list.Clear();
-                list.AddRange(accounts.Skip(x * 100).Take(100));
+                list.AddRange(accounts.Skip(x * BlockChunkLength).Take(BlockChunkLength));
             }
 
             if (chunk <= last_chunk)
