@@ -58,15 +58,10 @@ namespace Neo.SmartContract.Native
             return (long)(BigInteger)item;
         }
 
-        [ContractMethod(0_02000000, CallFlags.AllowStates)]
-        public bool IsAnyAccountBlocked(StoreView snapshot, params UInt160[] hashes)
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        public bool IsBlocked(StoreView snapshot, UInt160 account)
         {
-            foreach (var account in hashes)
-            {
-                if (snapshot.Storages.Contains(CreateStorageKey(Prefix_BlockedAccount).Add(account))) return true;
-            }
-
-            return false;
+            return snapshot.Storages.Contains(CreateStorageKey(Prefix_BlockedAccount).Add(account));
         }
 
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
