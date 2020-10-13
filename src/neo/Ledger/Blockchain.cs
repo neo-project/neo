@@ -434,7 +434,9 @@ namespace Neo.Ledger
                     header_index.Add(block.Hash);
                     snapshot.HeaderHashIndex.GetAndChange().Set(block);
                 }
-                List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
+                List<ApplicationExecuted> pre_application_executed = new List<ApplicationExecuted>();
+                List<ApplicationExecuted> post_application_executed = new List<ApplicationExecuted>();
+                List<ApplicationExecuted> tx_application_executed = new List<ApplicationExecuted>();
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
                 {
@@ -443,7 +445,7 @@ namespace Neo.Ledger
                     if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
                     ApplicationExecuted application_executed = new ApplicationExecuted(engine);
                     Context.System.EventStream.Publish(application_executed);
-                    all_application_executed.Add(application_executed);
+                    pre_application_executed.Add(application_executed);
                 }
                 snapshot.Blocks.Add(block.Hash, block.Trim());
                 StoreView clonedSnapshot = snapshot.Clone();
@@ -473,7 +475,7 @@ namespace Neo.Ledger
                         }
                         ApplicationExecuted application_executed = new ApplicationExecuted(engine);
                         Context.System.EventStream.Publish(application_executed);
-                        all_application_executed.Add(application_executed);
+                        tx_application_executed.Add(application_executed);
                     }
                 }
                 snapshot.BlockHashIndex.GetAndChange().Set(block);
@@ -483,10 +485,10 @@ namespace Neo.Ledger
                     if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
                     ApplicationExecuted application_executed = new ApplicationExecuted(engine);
                     Context.System.EventStream.Publish(application_executed);
-                    all_application_executed.Add(application_executed);
+                    post_application_executed.Add(application_executed);
                 }
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
-                    plugin.OnPersist(snapshot, all_application_executed);
+                    plugin.OnPersist(snapshot, pre_application_executed, tx_application_executed, post_application_executed);
                 snapshot.Commit();
                 List<Exception> commitExceptions = null;
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)

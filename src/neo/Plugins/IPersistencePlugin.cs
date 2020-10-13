@@ -7,7 +7,11 @@ namespace Neo.Plugins
 {
     public interface IPersistencePlugin
     {
-        void OnPersist(StoreView snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList) { }
+        void OnPersist(StoreView snapshot,
+            IReadOnlyList<ApplicationExecuted> preApplicationExecutedList,
+            IReadOnlyList<ApplicationExecuted> applicationExecutedList,
+            IReadOnlyList<ApplicationExecuted> postApplicationExecutedList)
+        { }
         void OnCommit(StoreView snapshot) { }
         bool ShouldThrowExceptionFromCommit(Exception ex) => false;
     }

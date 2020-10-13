@@ -11,7 +11,7 @@ namespace Neo.Ledger
     {
         partial class ApplicationExecuted
         {
-            public Transaction Transaction;
+            public readonly Transaction Transaction;
             public TriggerType Trigger { get; internal set; }
             public VMState VMState { get; internal set; }
             public Exception Exception { get; internal set; }
