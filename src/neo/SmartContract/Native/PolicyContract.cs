@@ -61,8 +61,6 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_02000000, CallFlags.AllowStates)]
         public bool IsAnyAccountBlocked(StoreView snapshot, params UInt160[] hashes)
         {
-            if (hashes.Length == 0) return false;
-
             foreach (var account in hashes)
             {
                 if (snapshot.Storages.Contains(CreateStorageKey(Prefix_BlockedAccounts).Add(account))) return true;
