@@ -17,7 +17,7 @@ namespace Neo.SmartContract.Native
 
         private const byte Prefix_MaxTransactionsPerBlock = 23;
         private const byte Prefix_FeePerByte = 10;
-        private const byte Prefix_BlockedAccounts = 15;
+        private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_MaxBlockSize = 12;
         private const byte Prefix_MaxBlockSystemFee = 17;
 
@@ -63,7 +63,7 @@ namespace Neo.SmartContract.Native
         {
             foreach (var account in hashes)
             {
-                if (snapshot.Storages.Contains(CreateStorageKey(Prefix_BlockedAccounts).Add(account))) return true;
+                if (snapshot.Storages.Contains(CreateStorageKey(Prefix_BlockedAccount).Add(account))) return true;
             }
 
             return false;
@@ -114,7 +114,7 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittee(engine)) return false;
 
-            var key = CreateStorageKey(Prefix_BlockedAccounts).Add(account);
+            var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
             if (engine.Snapshot.Storages.Contains(key)) return false;
 
             engine.Snapshot.Storages.Add(key, new StorageItem(new byte[] { 0x01 }));
@@ -126,7 +126,7 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittee(engine)) return false;
 
-            var key = CreateStorageKey(Prefix_BlockedAccounts).Add(account);
+            var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
             if (!engine.Snapshot.Storages.Contains(key)) return false;
 
             engine.Snapshot.Storages.Delete(key);
