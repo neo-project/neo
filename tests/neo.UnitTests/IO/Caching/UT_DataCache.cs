@@ -344,7 +344,9 @@ namespace Neo.UnitTests.IO.Caching
             items[0].Value.Should().Be(new MyValue("value5"));
             items[1].Key.Should().Be(new MyKey("key4"));
             items[1].Value.Should().Be(new MyValue("value4"));
-            items.Count().Should().Be(2);
+            items[2].Key.Should().Be(new MyKey("key3"));
+            items[2].Value.Should().Be(new MyValue("value3"));
+            items.Count().Should().Be(3);
         }
 
         [TestMethod]
