@@ -171,6 +171,8 @@ namespace Neo.IO.Caching
             foreach (var (key, value) in Seek(start, direction))
                 if (comparer.Compare(key.ToArray(), end) <= 0)
                     yield return (key, value);
+                else
+                    yield break;
         }
 
         public IEnumerable<Trackable> GetChangeSet()
