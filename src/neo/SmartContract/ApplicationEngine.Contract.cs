@@ -49,7 +49,7 @@ namespace Neo.SmartContract
             contract = new ContractState
             {
                 Id = Snapshot.ContractId.GetAndChange().NextId++,
-                Script = nef.Script.ToArray(),
+                Script = nef.Script,
                 ScriptHash = hash,
                 Abi = nef.Abi,
                 Manifest = ContractManifest.Parse(manifest)
