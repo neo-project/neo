@@ -68,8 +68,6 @@ namespace Neo.SmartContract
             ContractMethodDescriptor md = contract.Abi.GetMethod("_deploy");
             if (md != null)
                 CallContractInternal(contract, md, new Array(ReferenceCounter) { false }, CallFlags.All, CheckReturnType.EnsureIsEmpty);
-
-            SendNotification(hash, "ContractCreated", new Array());
         }
 
         protected internal void UpdateContract(byte[] nefFile, byte[] manifest)
@@ -105,8 +103,6 @@ namespace Neo.SmartContract
                 contract.Manifest.Hash = hash_new;
                 Snapshot.Contracts.Add(hash_new, contract);
                 Snapshot.Contracts.Delete(CurrentScriptHash);
-
-                SendNotification(hash_new, "ContractUpdated", new Array { CurrentScriptHash.ToArray() });
             }
             if (manifest != null)
             {
