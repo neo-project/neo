@@ -10,7 +10,7 @@ namespace Neo.Cryptography.MPT
         where TValue : class, ISerializable, new()
     {
         private const byte Prefix = 0xf0;
-        private bool full;
+        private readonly bool full;
         private readonly ISnapshot store;
         private readonly DataCache<UInt256, ByteArrayWrapper> cache;
         private MPTNode root;
