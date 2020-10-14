@@ -153,8 +153,8 @@ namespace Neo.SmartContract.Native.Tokens
         private IEnumerable<(uint index, BigInteger gasPerBlock)> GetSortedGasRecords(StoreView snapshot, uint to)
         {
             return snapshot.Storages.FindRange(
-                CreateStorageKey(Prefix_GasPerBlock).ToArray(),
-                CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u).ToArray(), IO.Caching.SeekDirection.Backward).
+                CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(to).ToArray(),
+                CreateStorageKey(Prefix_GasPerBlock).ToArray(), IO.Caching.SeekDirection.Backward).
                 Select(u => (index: BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.AsSpan(u.Key.Key.Length - sizeof(uint))), gasPerBlock: (BigInteger)u.Value));
         }
 
