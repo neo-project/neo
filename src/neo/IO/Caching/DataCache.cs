@@ -154,6 +154,8 @@ namespace Neo.IO.Caching
             foreach (var (key, value) in Seek(key_prefix, SeekDirection.Forward))
                 if (key.ToArray().AsSpan().StartsWith(key_prefix))
                     yield return (key, value);
+                else
+                    yield break;
         }
 
         /// <summary>
