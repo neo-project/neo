@@ -19,7 +19,7 @@ namespace Neo.SmartContract.Native.Tokens
         internal override void Initialize(ApplicationEngine engine)
         {
             UInt160 account = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators);
-            Mint(engine, account, 30_000_000 * Factor);
+            Mint(engine, account, 100_000_000 * Factor); // Mint for Neo2.x migration. If there is any surplus, we'll burn it later
         }
 
         protected override void OnPersist(ApplicationEngine engine)
