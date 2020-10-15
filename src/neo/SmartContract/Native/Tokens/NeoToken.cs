@@ -2,6 +2,7 @@
 
 using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.VM;
@@ -71,16 +72,16 @@ namespace Neo.SmartContract.Native.Tokens
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
 
             BigInteger sum = 0;
-            foreach (var gasRecord in GetSortedGasRecords(snapshot, end))
+            foreach (var (index, gasPerBlock) in GetSortedGasRecords(snapshot, end))
             {
-                if (gasRecord.index > start)
+                if (index > start)
                 {
-                    sum += gasRecord.gasPerBlock * (end - gasRecord.index);
-                    end = gasRecord.index;
+                    sum += gasPerBlock * (end - index);
+                    end = index;
                 }
                 else
                 {
-                    sum += gasRecord.gasPerBlock * (end - start);
+                    sum += gasPerBlock * (end - start);
                     break;
                 }
             }
@@ -147,15 +148,15 @@ namespace Neo.SmartContract.Native.Tokens
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public BigInteger GetGasPerBlock(StoreView snapshot)
         {
-            return GetSortedGasRecords(snapshot, snapshot.PersistingBlock.Index + 1).First().gasPerBlock;
+            return GetSortedGasRecords(snapshot, snapshot.PersistingBlock.Index + 1).First().GasPerBlock;
         }
 
-        private IEnumerable<(uint index, BigInteger gasPerBlock)> GetSortedGasRecords(StoreView snapshot, uint to)
+        private IEnumerable<(uint Index, BigInteger GasPerBlock)> GetSortedGasRecords(StoreView snapshot, uint end)
         {
-            return snapshot.Storages.FindRange(
-                CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(to).ToArray(),
-                CreateStorageKey(Prefix_GasPerBlock).ToArray(), IO.Caching.SeekDirection.Backward).
-                Select(u => (index: BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.AsSpan(u.Key.Key.Length - sizeof(uint))), gasPerBlock: (BigInteger)u.Value));
+            byte[] key = CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(end).ToArray();
+            byte[] boundary = CreateStorageKey(Prefix_GasPerBlock).ToArray();
+            return snapshot.Storages.FindRange(key, boundary, SeekDirection.Backward)
+                .Select(u => (BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.AsSpan(^sizeof(uint))), (BigInteger)u.Value));
         }
 
         [ContractMethod(0_03000000, CallFlags.AllowStates)]
