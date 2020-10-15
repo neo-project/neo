@@ -38,13 +38,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (engine.Snapshot.PersistingBlock != null)
             {
-                // Try to claim before spend
-
-                var unclaimed = NEO.UnclaimedGas(engine.Snapshot, account, engine.Snapshot.PersistingBlock.Index);
-                if (unclaimed >= amount)
-                {
-                    NEO.DistributeGas(engine, account);
-                }
+                NEO.DistributeGas(engine, account);
             }
 
             if (state.Balance < amount) throw new InvalidOperationException();

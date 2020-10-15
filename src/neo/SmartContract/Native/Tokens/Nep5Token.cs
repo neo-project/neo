@@ -78,7 +78,7 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey key = CreateStorageKey(Prefix_Account).Add(account);
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(key);
             TState state = storage.GetInteroperable<TState>();
-            if (state.Balance < amount) OnBurnMoreThanExpected(engine, account, state, amount - state.Balance);
+            if (state.Balance < amount) OnBurnMoreThanExpected(engine, account, state, amount);
             OnBalanceChanging(engine, account, state, -amount);
             if (state.Balance == amount)
                 engine.Snapshot.Storages.Delete(key);
