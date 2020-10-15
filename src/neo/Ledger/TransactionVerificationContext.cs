@@ -28,8 +28,8 @@ namespace Neo.Ledger
             BigInteger fee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
             if (balance >= fee) return true;
 
-            BigInteger pending = NativeContract.NEO.UnclaimedGas(snapshot, tx.Sender, snapshot.Height);
-            return balance + pending >= fee;
+            BigInteger unclaimed = NativeContract.NEO.UnclaimedGas(snapshot, tx.Sender, snapshot.Height);
+            return balance + unclaimed >= fee;
         }
 
         public void RemoveTransaction(Transaction tx)
