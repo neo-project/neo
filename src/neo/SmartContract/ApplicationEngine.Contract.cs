@@ -180,10 +180,9 @@ namespace Neo.SmartContract
             CallFlags callingFlags = state.CallFlags;
 
             if (args.Count != method.Parameters.Length) throw new InvalidOperationException($"Method {method.Name} Expects {method.Parameters.Length} Arguments But Receives {args.Count} Arguments");
-            ExecutionContext context_new = LoadScript(contract.Script, method.Offset);
+            ExecutionContext context_new = LoadScript(contract.Script, flags & callingFlags, contract.ScriptHash, method.Offset);
             state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
-            state.CallFlags = flags & callingFlags;
 
             if (NativeContract.IsNative(contract.ScriptHash))
             {
@@ -197,7 +196,7 @@ namespace Neo.SmartContract
             }
 
             method = contract.Abi.GetMethod("_initialize");
-            if (method != null) LoadContext(context_new.Clone(method.Offset));
+            if (method != null) LoadClonedContext(context_new, method.Offset, false);
         }
 
         protected internal bool IsStandardContract(UInt160 hash)

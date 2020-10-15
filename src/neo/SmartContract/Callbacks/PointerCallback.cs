@@ -19,7 +19,7 @@ namespace Neo.SmartContract.Callbacks
 
         public override void LoadContext(ApplicationEngine engine, Array args)
         {
-            engine.LoadContext(context.Clone(pointer), true);
+            engine.LoadClonedContext(context, pointer, true);
             for (int i = args.Count - 1; i >= 0; i--)
                 engine.Push(args[i]);
         }

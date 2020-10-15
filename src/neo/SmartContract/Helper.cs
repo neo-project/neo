@@ -177,7 +177,7 @@ namespace Neo.SmartContract
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas))
                 {
                     CallFlags callFlags = verifiable.Witnesses[i].StateDependent ? CallFlags.AllowStates : CallFlags.None;
-                    ExecutionContext context = engine.LoadScript(verification, callFlags, offset);
+                    ExecutionContext context = engine.LoadScript(verification, callFlags, hashes[i], offset);
                     if (NativeContract.IsNative(hashes[i]))
                     {
                         using ScriptBuilder sb = new ScriptBuilder();
@@ -187,7 +187,7 @@ namespace Neo.SmartContract
                     }
                     else if (init != null)
                     {
-                        engine.LoadContext(context.Clone(init.Offset), false);
+                        engine.LoadClonedContext(context, init.Offset, false);
                     }
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) return false;
