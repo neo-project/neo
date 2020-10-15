@@ -28,7 +28,7 @@ namespace Neo.SmartContract.Native.Designate
         {
             foreach (byte role in Enum.GetValues(typeof(Role)))
             {
-                engine.Snapshot.Storages.Add(CreateStorageKey(role), new StorageItem(new NodeList()));
+                engine.Snapshot.Storages.Add(CreateStorageKey(role), new StorageItem(new NodeMap()));
             }
         }
 
@@ -37,33 +37,71 @@ namespace Neo.SmartContract.Native.Designate
         {
             if (!Enum.IsDefined(typeof(Role), role))
                 throw new ArgumentOutOfRangeException(nameof(role));
-            return snapshot.Storages[CreateStorageKey((byte)role)].GetInteroperable<NodeList>().ToArray();
+            NodeMap map = snapshot.Storages[CreateStorageKey((byte)role)].GetInteroperable<NodeMap>();
+            List<uint> keys = map.Keys.ToList();
+            if (keys.Count == 0) return System.Array.Empty<ECPoint>();
+            keys.Sort();
+            return map[keys.Last()].ToArray();
+        }
+
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        public ECPoint[] GetDesignatedByRoleAndIndex(StoreView snapshot, Role role, uint index)
+        {
+            if (!Enum.IsDefined(typeof(Role), role))
+                throw new ArgumentOutOfRangeException(nameof(role));
+            if (snapshot.Height + 2 < index)
+                throw new ArgumentOutOfRangeException(nameof(index));
+            NodeMap map = snapshot.Storages[CreateStorageKey((byte)role)].GetInteroperable<NodeMap>();
+            List<uint> keys = map.Keys.ToList();
+            if (keys.Count == 0) return System.Array.Empty<ECPoint>();
+            keys.Sort();
+
+            uint height = 0;
+            foreach (uint h in keys)
+            {
+                if (index <= h) break;
+                height = h;
+            }
+
+            if (0 < height)
+                return map[height].ToArray();
+
+            return System.Array.Empty<ECPoint>();
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
-        private void DesignateAsRole(ApplicationEngine engine, Role role, ECPoint[] nodes)
+        private bool DesignateAsRole(ApplicationEngine engine, Role role, ECPoint[] nodes)
         {
             if (nodes.Length == 0) throw new ArgumentException(nameof(nodes));
             if (!Enum.IsDefined(typeof(Role), role))
                 throw new ArgumentOutOfRangeException(nameof(role));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            NodeList list = engine.Snapshot.Storages.GetAndChange(CreateStorageKey((byte)role)).GetInteroperable<NodeList>();
-            list.Clear();
-            list.AddRange(nodes);
-            list.Sort();
+            NodeMap map = engine.Snapshot.Storages.GetAndChange(CreateStorageKey((byte)role)).GetInteroperable<NodeMap>();
+            map[engine.Snapshot.Height + 1] = nodes.ToList();
+            return true;
         }
 
-        private class NodeList : List<ECPoint>, IInteroperable
+        private class NodeMap : Dictionary<uint, List<ECPoint>>, IInteroperable
         {
             public void FromStackItem(StackItem stackItem)
             {
-                foreach (StackItem item in (VM.Types.Array)stackItem)
-                    Add(ECPoint.DecodePoint(item.GetSpan(), ECCurve.Secp256r1));
+                foreach (var element in (Map)stackItem)
+                {
+                    uint height = (uint)element.Key.GetInteger();
+                    List<ECPoint> list = ((VM.Types.Array)element.Value).Select(p => p.GetSpan().AsSerializable<ECPoint>()).ToList();
+                    Add(height, list);
+                }
             }
 
             public StackItem ToStackItem(ReferenceCounter referenceCounter)
             {
-                return new VM.Types.Array(referenceCounter, this.Select(p => (StackItem)p.ToArray()));
+                Map map = new Map(referenceCounter);
+                foreach (var item in this)
+                {
+                    VM.Types.Array arr = new VM.Types.Array(item.Value.Select(p => (StackItem)p.ToArray()));
+                    map[item.Key] = arr;
+                }
+                return map;
             }
         }
     }
