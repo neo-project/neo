@@ -42,7 +42,9 @@ namespace Neo.IO
 
         public bool Equals(ByteArrayWrapper other)
         {
-            if (other is null || other.Value is null || Value is null) return false;
+            if (other is null) return false;
+            if (other.Value is null && Value is null) return true;
+            if (other.Value is null || Value is null) return false;
             return Value.SequenceEqual<byte>(other.Value);
         }
 
