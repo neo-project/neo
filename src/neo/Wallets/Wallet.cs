@@ -325,7 +325,10 @@ namespace Neo.Wallets
             }
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                var balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
+                var balances_gas = accounts.Select(p => ( 
+                    Account: p,
+                    Value: NativeContract.GAS.BalanceOf(snapshot, p) + NativeContract.NEO.UnclaimedGas(snapshot, p, snapshot.Height)
+                    )).Where(p => p.Value.Sign > 0).ToList();
                 return MakeTransaction(snapshot, script, cosigners ?? Array.Empty<Signer>(), attributes ?? Array.Empty<TransactionAttribute>(), balances_gas);
             }
         }
