@@ -55,6 +55,13 @@ namespace Neo.SmartContract.Native.Tokens
             CheckCandidate(engine.Snapshot, key, candidate);
         }
 
+        internal void DistributeGas(ApplicationEngine engine, UInt160 account)
+        {
+            StorageItem storage = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Account).Add(account));
+            if (storage is null) return;
+            DistributeGas(engine, account, storage.GetInteroperable<NeoAccountState>());
+        }
+
         private void DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
         {
             // PersistingBlock is null when running under the debugger
