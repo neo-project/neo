@@ -3,12 +3,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
-using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Designate;
 using Neo.UnitTests.Extensions;
-using System;
 using System.Linq;
 using System.Numerics;
 
