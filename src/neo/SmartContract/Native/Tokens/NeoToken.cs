@@ -72,7 +72,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
 
             BigInteger sum = 0;
-            foreach (var (index, gasPerBlock) in GetSortedGasRecords(snapshot, end))
+            foreach (var (index, gasPerBlock) in GetSortedGasRecords(snapshot, end - 1))
             {
                 if (index > start)
                 {
