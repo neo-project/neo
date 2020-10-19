@@ -167,7 +167,7 @@ namespace Neo.SmartContract.Native.Tokens
                 for (index = 0; index < committee.Count; index++)
                 {
                     var member = committee.ElementAt(index);
-                    var factor = index < n ? 2 : 1;
+                    var factor = index < n ? 2 : 1; // The `voter` rewards of validator will double than other committee's
                     if (member.Votes > 0)
                     {
                         BigInteger voterSumRewardPerNEO = factor * voterRewardOfEachCommittee / member.Votes;
