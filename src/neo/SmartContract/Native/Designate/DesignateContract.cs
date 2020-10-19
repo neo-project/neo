@@ -40,7 +40,6 @@ namespace Neo.SmartContract.Native.Designate
             NodeMap map = snapshot.Storages[CreateStorageKey((byte)role)].GetInteroperable<NodeMap>();
             List<uint> keys = map.Keys.ToList();
             if (keys.Count == 0) return System.Array.Empty<ECPoint>();
-            keys.Sort();
             return map[keys.Last()].ToArray();
         }
 
