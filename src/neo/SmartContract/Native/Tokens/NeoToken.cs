@@ -138,8 +138,9 @@ namespace Neo.SmartContract.Native.Tokens
             if (ShouldRefreshCommittee(engine.Snapshot.PersistingBlock.Index))
             {
                 StorageItem storageItem = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Committee));
-                var cachedCommittee = new CachedCommittee(ComputeCommitteeMembers(engine.Snapshot));
-                storageItem.Value = BinarySerializer.Serialize(cachedCommittee.ToStackItem(null), 4096);
+                var cachedCommittee = storageItem.GetInteroperable<CachedCommittee>();
+                cachedCommittee.Clear();
+                cachedCommittee.AddRange(ComputeCommitteeMembers(engine.Snapshot));
             }
         }
 
