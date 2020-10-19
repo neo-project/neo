@@ -54,7 +54,6 @@ namespace Neo.SmartContract.Native.Designate
             NodeMap map = snapshot.Storages[CreateStorageKey((byte)role)].GetInteroperable<NodeMap>();
             List<uint> keys = map.Keys.ToList();
             if (keys.Count == 0) return System.Array.Empty<ECPoint>();
-            keys.Sort();
 
             uint height = 0;
             foreach (uint h in keys)
@@ -78,7 +77,9 @@ namespace Neo.SmartContract.Native.Designate
                 throw new ArgumentOutOfRangeException(nameof(role));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             NodeMap map = engine.Snapshot.Storages.GetAndChange(CreateStorageKey((byte)role)).GetInteroperable<NodeMap>();
-            map[engine.Snapshot.Height + 1] = nodes.ToList();
+            List<ECPoint> list = nodes.ToList();
+            list.Sort();
+            map[engine.Snapshot.Height + 1] = list;
             return true;
         }
 
