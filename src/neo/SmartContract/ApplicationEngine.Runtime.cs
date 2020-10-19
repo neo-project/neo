@@ -195,7 +195,7 @@ namespace Neo.SmartContract
             if (hash != null) // must filter by scriptHash
                 notifications = notifications.Where(p => p.ScriptHash == hash);
             NotifyEventArgs[] array = notifications.ToArray();
-            if (array.Length > MaxStackSize) throw new InvalidOperationException();
+            if (array.Length > Limits.MaxStackSize) throw new InvalidOperationException();
             return array;
         }
     }
