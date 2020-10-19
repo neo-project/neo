@@ -6,7 +6,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -18,7 +17,7 @@ namespace Neo.SmartContract.Native
 
         private const byte Prefix_MaxTransactionsPerBlock = 23;
         private const byte Prefix_FeePerByte = 10;
-        private const byte Prefix_BlockedAccounts = 15;
+        private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_MaxBlockSize = 12;
         private const byte Prefix_MaxBlockSystemFee = 17;
 
@@ -60,30 +59,9 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        public UInt160[] GetBlockedAccounts(StoreView snapshot)
+        public bool IsBlocked(StoreView snapshot, UInt160 account)
         {
-            return snapshot.Storages.TryGet(CreateStorageKey(Prefix_BlockedAccounts))
-                ?.GetSerializableList<UInt160>().ToArray()
-                ?? Array.Empty<UInt160>();
-        }
-
-        public bool IsAnyAccountBlocked(StoreView snapshot, params UInt160[] hashes)
-        {
-            if (hashes.Length == 0) return false;
-
-            var blockedList = snapshot.Storages.TryGet(CreateStorageKey(Prefix_BlockedAccounts))
-                ?.GetSerializableList<UInt160>().ToArray()
-                ?? Array.Empty<UInt160>();
-
-            if (blockedList.Length > 0)
-            {
-                foreach (var acc in hashes)
-                {
-                    if (Array.BinarySearch(blockedList, acc) >= 0) return true;
-                }
-            }
-
-            return false;
+            return snapshot.Storages.Contains(CreateStorageKey(Prefix_BlockedAccount).Add(account));
         }
 
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
@@ -130,13 +108,11 @@ namespace Neo.SmartContract.Native
         private bool BlockAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine)) return false;
-            StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
-            StorageItem storage = engine.Snapshot.Storages.GetOrAdd(key, () => new StorageItem(new byte[1]));
-            List<UInt160> accounts = storage.GetSerializableList<UInt160>();
-            if (accounts.Contains(account)) return false;
-            engine.Snapshot.Storages.GetAndChange(key);
-            accounts.Add(account);
-            accounts.Sort();
+
+            var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
+            if (engine.Snapshot.Storages.Contains(key)) return false;
+
+            engine.Snapshot.Storages.Add(key, new StorageItem(new byte[] { 0x01 }));
             return true;
         }
 
@@ -144,14 +120,11 @@ namespace Neo.SmartContract.Native
         private bool UnblockAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine)) return false;
-            StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
-            StorageItem storage = engine.Snapshot.Storages.TryGet(key);
-            if (storage is null) return false;
-            List<UInt160> accounts = storage.GetSerializableList<UInt160>();
-            int index = accounts.IndexOf(account);
-            if (index < 0) return false;
-            engine.Snapshot.Storages.GetAndChange(key);
-            accounts.RemoveAt(index);
+
+            var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
+            if (!engine.Snapshot.Storages.Contains(key)) return false;
+
+            engine.Snapshot.Storages.Delete(key);
             return true;
         }
     }
