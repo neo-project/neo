@@ -226,7 +226,7 @@ namespace Neo.SmartContract
                 else
                 {
                     int count = (int)item.GetInteger();
-                    if (count > MaxStackSize) throw new InvalidOperationException();
+                    if (count > Limits.MaxStackSize) throw new InvalidOperationException();
                     av = Array.CreateInstance(descriptor.Type.GetElementType(), count);
                     for (int i = 0; i < av.Length; i++)
                         av.SetValue(descriptor.Converter(Pop()), i);
