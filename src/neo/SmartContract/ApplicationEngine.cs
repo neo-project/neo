@@ -167,7 +167,6 @@ namespace Neo.SmartContract
             var state = context.GetState<ExecutionContextState>();
             context = context.Clone(initialPosition);
             context.GetState<ExecutionContextState>().ScriptHash = state.ScriptHash;
-
             // Configure CurrentContext and load the cloned one
             if (checkReturnValue)
                 GetInvocationState(CurrentContext).NeedCheckReturnValue = CheckReturnType.EnsureNotEmpty;
@@ -176,12 +175,13 @@ namespace Neo.SmartContract
 
         public ExecutionContext LoadScript(Script script, CallFlags callFlags, UInt160 scriptHash = null, int initialPosition = 0)
         {
-            // TODO: We can call first create context and avoid override void LoadContext(ExecutionContext context) before configure
-            // https://github.com/neo-project/neo-vm/pull/374
-            ExecutionContext context = LoadScript(script, initialPosition);
+            // Create and configure context
+            ExecutionContext context = CreateContext(script, initialPosition);
             var state = context.GetState<ExecutionContextState>();
             state.CallFlags = callFlags;
-            if (scriptHash != null) state.ScriptHash = scriptHash;
+            state.ScriptHash = scriptHash ?? ((byte[])script).ToScriptHash();
+            // Load context
+            LoadContext(context);
             return context;
         }
 
