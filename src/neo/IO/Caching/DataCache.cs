@@ -154,11 +154,15 @@ namespace Neo.IO.Caching
             foreach (var (key, value) in Seek(key_prefix, SeekDirection.Forward))
                 if (key.ToArray().AsSpan().StartsWith(key_prefix))
                     yield return (key, value);
+                else
+                    yield break;
         }
 
         /// <summary>
         /// Find the entries that between [start, end)
         /// </summary>
+        /// <param name="start">Start key (inclusive)</param>
+        /// <param name="end">End key (exclusive)</param>
         /// <param name="direction">The search direction.</param>
         /// <returns>Entries found with the desired range</returns>
         public IEnumerable<(TKey Key, TValue Value)> FindRange(byte[] start, byte[] end, SeekDirection direction = SeekDirection.Forward)
@@ -169,6 +173,8 @@ namespace Neo.IO.Caching
             foreach (var (key, value) in Seek(start, direction))
                 if (comparer.Compare(key.ToArray(), end) < 0)
                     yield return (key, value);
+                else
+                    yield break;
         }
 
         public IEnumerable<Trackable> GetChangeSet()

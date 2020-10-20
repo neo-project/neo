@@ -607,7 +607,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void TestEconomicParameter()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
             snapshot.PersistingBlock = new Block { Index = 0 };
 
             (BigInteger, bool) result = Check_GetGasPerBlock(snapshot);
@@ -618,6 +618,18 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             (VM.Types.Boolean, bool) result1 = Check_SetGasPerBlock(snapshot, 10 * NativeContract.GAS.Factor);
             result1.Item2.Should().BeTrue();
             result1.Item1.GetBoolean().Should().BeTrue();
+
+            snapshot.PersistingBlock.Index++;
+            result = Check_GetGasPerBlock(snapshot);
+            result.Item2.Should().BeTrue();
+            result.Item1.Should().Be(10 * NativeContract.GAS.Factor);
+
+            // Check calculate bonus
+            StorageItem storage = snapshot.Storages.GetOrAdd(CreateStorageKey(20, UInt160.Zero.ToArray()), () => new StorageItem(new NeoAccountState()));
+            NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
+            state.Balance = 1000;
+            state.BalanceHeight = 0;
+            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, snapshot.PersistingBlock.Index + 1).Should().Be(6500);
         }
 
         [TestMethod]

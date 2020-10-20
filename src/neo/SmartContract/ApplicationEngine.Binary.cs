@@ -15,12 +15,12 @@ namespace Neo.SmartContract
 
         protected internal byte[] BinarySerialize(StackItem item)
         {
-            return BinarySerializer.Serialize(item, MaxItemSize);
+            return BinarySerializer.Serialize(item, Limits.MaxItemSize);
         }
 
         protected internal StackItem BinaryDeserialize(byte[] data)
         {
-            return BinarySerializer.Deserialize(data, MaxStackSize, MaxItemSize, ReferenceCounter);
+            return BinarySerializer.Deserialize(data, Limits.MaxStackSize, Limits.MaxItemSize, ReferenceCounter);
         }
 
         protected internal string Base64Encode(byte[] data)
