@@ -51,7 +51,7 @@ namespace Neo.SmartContract.Native.Designate
             if (snapshot.Height + 2 < index)
                 throw new ArgumentOutOfRangeException(nameof(index));
             List<uint> keys = snapshot.Storages.Find(CreateStorageKey((byte)role).ToArray())
-                .Select(p => p.Key.Key.Skip(1).ToArray())
+                .Select(p => p.Key.Key[1..])
                 .Where(p => p.Length == sizeof(uint))
                 .Select(p => BitConverter.ToUInt32(p))
                 .ToList();
@@ -73,7 +73,7 @@ namespace Neo.SmartContract.Native.Designate
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
-        private bool DesignateAsRole(ApplicationEngine engine, Role role, ECPoint[] nodes)
+        private void DesignateAsRole(ApplicationEngine engine, Role role, ECPoint[] nodes)
         {
             if (nodes.Length == 0 || nodes.Length > 32)
                 throw new ArgumentException();
@@ -87,7 +87,6 @@ namespace Neo.SmartContract.Native.Designate
             list.Sort();
             StorageItem current = engine.Snapshot.Storages.GetAndChange(CreateStorageKey((byte)role));
             current.Value = BitConverter.GetBytes(index);
-            return true;
         }
 
         private class NodeList : List<ECPoint>, IInteroperable
