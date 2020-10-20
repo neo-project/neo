@@ -64,7 +64,14 @@ namespace Neo.Network.P2P.Payloads
         public override bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
         {
             if (Gas.GetData() % 100000000 != 0) return false;
-            if (References is null || NetworkFee < ProtocolSettings.Default.MinimumNetworkFee) return false;
+            try
+            {
+                if (References is null || NetworkFee < ProtocolSettings.Default.MinimumNetworkFee) return false;
+            }
+            catch (IndexOutOfRangeException)
+            {
+                return false;
+            }
             return base.Verify(snapshot, mempool);
         }
     }
