@@ -82,24 +82,26 @@ namespace Neo.Network.P2P.Payloads
         }
 
         private IReadOnlyDictionary<CoinReference, TransactionOutput> _references;
+        private bool hasCalculatedReferences = false;
         public IReadOnlyDictionary<CoinReference, TransactionOutput> References
         {
             get
             {
-                if (_references == null)
+                if (!hasCalculatedReferences && _references == null)
                 {
+                    hasCalculatedReferences = true;
                     Dictionary<CoinReference, TransactionOutput> dictionary = new Dictionary<CoinReference, TransactionOutput>();
                     foreach (var group in Inputs.GroupBy(p => p.PrevHash))
                     {
                         Transaction tx = Blockchain.Singleton.Store.GetTransaction(group.Key);
                         if (tx == null) return null;
-                        foreach (var reference in group.Select(p => new
+                        foreach (var reference in group)
                         {
-                            Input = p,
-                            Output = tx.Outputs[p.PrevIndex]
-                        }))
-                        {
-                            dictionary.Add(reference.Input, reference.Output);
+                            if (reference.PrevIndex >= Outputs.Length)
+                            {
+                                return null;
+                            }
+                            dictionary.Add(reference, tx.Outputs[reference.PrevIndex]);
                         }
                     }
                     _references = dictionary;
@@ -269,61 +271,54 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
         {
-            try
-            {
-                if (Size > MaxTransactionSize) return false;
-                for (int i = 1; i < Inputs.Length; i++)
-                    for (int j = 0; j < i; j++)
-                        if (Inputs[i].PrevHash == Inputs[j].PrevHash && Inputs[i].PrevIndex == Inputs[j].PrevIndex)
-                            return false;
-                if (mempool.Where(p => p != this).SelectMany(p => p.Inputs).Intersect(Inputs).Count() > 0)
-                    return false;
-                if (snapshot.IsDoubleSpend(this))
-                    return false;
-                foreach (var group in Outputs.GroupBy(p => p.AssetId))
-                {
-                    AssetState asset = snapshot.Assets.TryGet(group.Key);
-                    if (asset == null) return false;
-                    if (asset.Expiration <= snapshot.Height + 1 && asset.AssetType != AssetType.GoverningToken && asset.AssetType != AssetType.UtilityToken)
+            if (Size > MaxTransactionSize) return false;
+            for (int i = 1; i < Inputs.Length; i++)
+                for (int j = 0; j < i; j++)
+                    if (Inputs[i].PrevHash == Inputs[j].PrevHash && Inputs[i].PrevIndex == Inputs[j].PrevIndex)
                         return false;
-                    foreach (TransactionOutput output in group)
-                        if (output.Value.GetData() % (long)Math.Pow(10, 8 - asset.Precision) != 0)
-                            return false;
-                }
-                TransactionResult[] results = GetTransactionResults()?.ToArray();
-                if (results == null) return false;
-                TransactionResult[] results_destroy = results.Where(p => p.Amount > Fixed8.Zero).ToArray();
-                if (results_destroy.Length > 1) return false;
-                if (results_destroy.Length == 1 && results_destroy[0].AssetId != Blockchain.UtilityToken.Hash)
-                    return false;
-                if (SystemFee > Fixed8.Zero && (results_destroy.Length == 0 || results_destroy[0].Amount < SystemFee))
-                    return false;
-                TransactionResult[] results_issue = results.Where(p => p.Amount < Fixed8.Zero).ToArray();
-                switch (Type)
-                {
-                    case TransactionType.MinerTransaction:
-                    case TransactionType.ClaimTransaction:
-                        if (results_issue.Any(p => p.AssetId != Blockchain.UtilityToken.Hash))
-                            return false;
-                        break;
-                    case TransactionType.IssueTransaction:
-                        if (results_issue.Any(p => p.AssetId == Blockchain.UtilityToken.Hash))
-                            return false;
-                        break;
-                    default:
-                        if (results_issue.Length > 0)
-                            return false;
-                        break;
-                }
-                if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.ECDH02 || p.Usage == TransactionAttributeUsage.ECDH03) > 1)
-                    return false;
-                if (!VerifyReceivingScripts()) return false;
-                return this.VerifyWitnesses(snapshot);
-            }
-            catch (Exception)
-            {
+            if (mempool.Where(p => p != this).SelectMany(p => p.Inputs).Intersect(Inputs).Count() > 0)
                 return false;
+            if (snapshot.IsDoubleSpend(this))
+                return false;
+            foreach (var group in Outputs.GroupBy(p => p.AssetId))
+            {
+                AssetState asset = snapshot.Assets.TryGet(group.Key);
+                if (asset == null) return false;
+                if (asset.Expiration <= snapshot.Height + 1 && asset.AssetType != AssetType.GoverningToken && asset.AssetType != AssetType.UtilityToken)
+                    return false;
+                foreach (TransactionOutput output in group)
+                    if (output.Value.GetData() % (long)Math.Pow(10, 8 - asset.Precision) != 0)
+                        return false;
             }
+            TransactionResult[] results = GetTransactionResults()?.ToArray();
+            if (results == null) return false;
+            TransactionResult[] results_destroy = results.Where(p => p.Amount > Fixed8.Zero).ToArray();
+            if (results_destroy.Length > 1) return false;
+            if (results_destroy.Length == 1 && results_destroy[0].AssetId != Blockchain.UtilityToken.Hash)
+                return false;
+            if (SystemFee > Fixed8.Zero && (results_destroy.Length == 0 || results_destroy[0].Amount < SystemFee))
+                return false;
+            TransactionResult[] results_issue = results.Where(p => p.Amount < Fixed8.Zero).ToArray();
+            switch (Type)
+            {
+                case TransactionType.MinerTransaction:
+                case TransactionType.ClaimTransaction:
+                    if (results_issue.Any(p => p.AssetId != Blockchain.UtilityToken.Hash))
+                        return false;
+                    break;
+                case TransactionType.IssueTransaction:
+                    if (results_issue.Any(p => p.AssetId == Blockchain.UtilityToken.Hash))
+                        return false;
+                    break;
+                default:
+                    if (results_issue.Length > 0)
+                        return false;
+                    break;
+            }
+            if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.ECDH02 || p.Usage == TransactionAttributeUsage.ECDH03) > 1)
+                return false;
+            if (!VerifyReceivingScripts()) return false;
+            return this.VerifyWitnesses(snapshot);
         }
 
         private bool VerifyReceivingScripts()
