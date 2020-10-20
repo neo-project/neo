@@ -32,9 +32,9 @@ namespace Neo.Network.P2P.Payloads
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
-            UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
-            if (NativeContract.Policy.IsAnyAccountBlocked(snapshot, hashes))
-                return VerifyResult.PolicyFail;
+            foreach (UInt160 hash in GetScriptHashesForVerifying(snapshot))
+                if (NativeContract.Policy.IsBlocked(snapshot, hash))
+                    return VerifyResult.PolicyFail;
             if (NativeContract.Policy.GetMaxBlockSystemFee(snapshot) < SystemFee)
                 return VerifyResult.PolicyFail;
             if (!(context?.CheckTransaction(this, snapshot) ?? true)) return VerifyResult.InsufficientFunds;

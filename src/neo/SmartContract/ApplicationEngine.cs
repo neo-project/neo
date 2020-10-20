@@ -88,7 +88,7 @@ namespace Neo.SmartContract
             InvocationState state = GetInvocationState(CurrentContext);
             state.ReturnType = typeof(void);
             state.Callback = onComplete;
-            CallContract(hash, method, new VMArray(args));
+            CallContract(hash, method, new VMArray(ReferenceCounter, args));
         }
 
         internal void CallFromNativeContract<T>(Action<T> onComplete, UInt160 hash, string method, params StackItem[] args)
@@ -96,7 +96,7 @@ namespace Neo.SmartContract
             InvocationState state = GetInvocationState(CurrentContext);
             state.ReturnType = typeof(T);
             state.Callback = onComplete;
-            CallContract(hash, method, new VMArray(args));
+            CallContract(hash, method, new VMArray(ReferenceCounter, args));
         }
 
         protected override void ContextUnloaded(ExecutionContext context)
@@ -217,7 +217,7 @@ namespace Neo.SmartContract
                 else
                 {
                     int count = (int)item.GetInteger();
-                    if (count > MaxStackSize) throw new InvalidOperationException();
+                    if (count > Limits.MaxStackSize) throw new InvalidOperationException();
                     av = Array.CreateInstance(descriptor.Type.GetElementType(), count);
                     for (int i = 0; i < av.Length; i++)
                         av.SetValue(descriptor.Converter(Pop()), i);
