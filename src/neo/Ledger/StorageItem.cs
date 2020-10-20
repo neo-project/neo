@@ -1,5 +1,6 @@
 using Neo.IO;
 using Neo.SmartContract;
+using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -86,7 +87,7 @@ namespace Neo.Ledger
             if (cache is null)
             {
                 var interoperable = new T();
-                interoperable.FromStackItem(BinarySerializer.Deserialize(value, 16, 34));
+                interoperable.FromStackItem(BinarySerializer.Deserialize(value, ExecutionEngineLimits.Default.MaxStackSize, ExecutionEngineLimits.Default.MaxItemSize));
                 cache = interoperable;
             }
             value = null;
