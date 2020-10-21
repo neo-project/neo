@@ -161,7 +161,7 @@ namespace Neo.SmartContract
             base.LoadContext(context);
         }
 
-        internal void LoadClonedContext(ExecutionContext context, int initialPosition, bool checkReturnValue)
+        internal protected void LoadClonedContext(ExecutionContext context, int initialPosition, bool checkReturnValue)
         {
             // Copy script hash
             var state = context.GetState<ExecutionContextState>();
