@@ -9,6 +9,7 @@ using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -28,8 +29,8 @@ namespace Neo.SmartContract.Native.Designate
         {
             foreach (byte role in Enum.GetValues(typeof(Role)))
             {
-                engine.Snapshot.Storages.Add(CreateStorageKey(role), new StorageItem(BitConverter.GetBytes(0u)));
-                engine.Snapshot.Storages.Add(CreateStorageKey(role).Add(0u), new StorageItem(new NodeList()));
+                engine.Snapshot.Storages.Add(CreateStorageKey(role), new StorageItem(BitConverter.GetBytes(0u))); // Same as BigEndian
+                engine.Snapshot.Storages.Add(CreateStorageKey(role).AddBigEndian(0u), new StorageItem(new NodeList()));
             }
         }
 
@@ -51,14 +52,13 @@ namespace Neo.SmartContract.Native.Designate
             if (snapshot.Height + 2 < index)
                 throw new ArgumentOutOfRangeException(nameof(index));
             List<uint> keys = snapshot.Storages.Find(CreateStorageKey((byte)role).ToArray())
-                .Select(p => p.Key.Key[1..])
-                .Where(p => p.Length == sizeof(uint))
-                .Select(p => BitConverter.ToUInt32(p))
+                .Where(p => p.Key.Key.Length == sizeof(uint) + 1)
+                .Select(p => BinaryPrimitives.ReadUInt32BigEndian(p.Key.Key.AsSpan(1, sizeof(uint))))
                 .ToList();
-            keys.Sort();
 
             if (keys.Count == 0) return System.Array.Empty<ECPoint>();
 
+            keys.Sort();
             uint height = 0;
             foreach (uint h in keys)
             {
@@ -67,7 +67,7 @@ namespace Neo.SmartContract.Native.Designate
             }
 
             if (0 < height)
-                return snapshot.Storages[CreateStorageKey((byte)role).Add(height)].GetInteroperable<NodeList>().ToArray();
+                return snapshot.Storages[CreateStorageKey((byte)role).AddBigEndian(height)].GetInteroperable<NodeList>().ToArray();
 
             return System.Array.Empty<ECPoint>();
         }
@@ -81,12 +81,13 @@ namespace Neo.SmartContract.Native.Designate
                 throw new ArgumentOutOfRangeException(nameof(role));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             uint index = engine.Snapshot.Height + 1;
-            NodeList list = engine.Snapshot.Storages.GetAndChange(CreateStorageKey((byte)role).Add(index), () => new StorageItem(new NodeList())).GetInteroperable<NodeList>();
+            NodeList list = engine.Snapshot.Storages.GetAndChange(CreateStorageKey((byte)role).AddBigEndian(index), () => new StorageItem(new NodeList())).GetInteroperable<NodeList>();
             list.Clear();
             list.AddRange(nodes);
             list.Sort();
             StorageItem current = engine.Snapshot.Storages.GetAndChange(CreateStorageKey((byte)role));
-            current.Value = BitConverter.GetBytes(index);
+            current.Value = new byte[sizeof(uint)];
+            BinaryPrimitives.WriteUInt32BigEndian(current.Value, index);
         }
 
         private class NodeList : List<ECPoint>, IInteroperable
