@@ -218,7 +218,7 @@ namespace Neo.SmartContract
                         state[0].GetSpan().ToArray()    /* From */,
                         state[2].GetInteger()           /* Amount */
                     },
-                    CallFlags.None, CheckReturnType.EnsureIsEmpty);
+                    CallFlags.All, CheckReturnType.EnsureIsEmpty);
             }
         }
 
