@@ -166,7 +166,9 @@ namespace Neo.SmartContract
             // Copy script hash
             var state = context.GetState<ExecutionContextState>();
             context = context.Clone(initialPosition);
-            context.GetState<ExecutionContextState>().ScriptHash = state.ScriptHash;
+            var newState = context.GetState<ExecutionContextState>();
+            newState.CallFlags = state.CallFlags;
+            newState.ScriptHash = state.ScriptHash;
             // Configure CurrentContext and load the cloned one
             if (checkReturnValue)
                 GetInvocationState(CurrentContext).NeedCheckReturnValue = CheckReturnType.EnsureNotEmpty;
