@@ -1,6 +1,7 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Oracle;
 using Neo.VM.Types;
@@ -187,6 +188,38 @@ namespace Neo.SmartContract
             Notify?.Invoke(this, notification);
             notifications ??= new List<NotifyEventArgs>();
             notifications.Add(notification);
+
+            // React to transfer event
+
+            if (eventName == "Transfer")
+            {
+                if (state.Count < 3) throw new ArgumentException("Wrong transfer definition");
+
+                var to = new UInt160(state[1].GetSpan());
+                var contract = Snapshot.Contracts.TryGet(to);
+                if (contract == null) return;
+                if (!contract.Payable) throw new InvalidOperationException("Not payable contract");
+
+                // Validate
+
+                var method = contract.Manifest.Abi.GetMethod("_fallback");
+                if (method == null) return;
+
+                ContractManifest currentManifest = Snapshot.Contracts.TryGet(CurrentScriptHash)?.Manifest;
+                if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, method.Name))
+                    throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {to} From Contract {CurrentScriptHash}");
+
+                // Call _fallback method
+
+                CallContractInternal(contract, method,
+                    new Array(ReferenceCounter)
+                    {
+                        CurrentScriptHash.ToArray()     /* Token */,
+                        state[0].GetSpan().ToArray()    /* From */,
+                        state[2].GetInteger()           /* Amount */
+                    },
+                    CallFlags.None, CheckReturnType.EnsureIsEmpty);
+            }
         }
 
         protected internal NotifyEventArgs[] GetNotifications(UInt160 hash)

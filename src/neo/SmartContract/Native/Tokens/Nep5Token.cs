@@ -89,6 +89,12 @@ namespace Neo.SmartContract.Native.Tokens
             engine.SendNotification(Hash, "Transfer", new Array { account.ToArray(), StackItem.Null, amount });
         }
 
+        [ContractMethod(0_01000000, CallFlags.AllowStates, Name = "_fallback")]
+        public virtual void OnFallback(UInt160 token, UInt160 from, BigInteger amount)
+        {
+            throw new InvalidOperationException();
+        }
+
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public virtual BigInteger TotalSupply(StoreView snapshot)
         {
