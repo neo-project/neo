@@ -481,6 +481,11 @@ namespace Neo.Wallets
                         networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
                     networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice * n;
                 }
+                else if (witness_script.IsSolidTransfer())
+                {
+                    // Empty invocation script
+                    size += Array.Empty<byte>().GetVarSize() + witness_script.GetVarSize();
+                }
                 else
                 {
                     //We can support more contract types in the future.
