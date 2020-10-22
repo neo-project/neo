@@ -360,6 +360,8 @@ namespace Neo.Wallets
                     // Recalculate fee with solid state witnesses
 
                     tx.NetworkFee = CalculateNetworkFee(snapshot, tx);
+                    if (balances_gas.Where(u => u.Account == tx.Sender).First().Value >= tx.SystemFee + tx.NetworkFee) return tx;
+
                     throw new InvalidOperationException("Insufficient GAS");
                 }
 
