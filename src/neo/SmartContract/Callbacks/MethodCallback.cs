@@ -7,7 +7,7 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Callbacks
 {
-    internal class MethodCallback : SyscallCallback
+    public class MethodCallback : SyscallCallback
     {
         private readonly ContractState contract;
         private readonly ContractMethodDescriptor method;

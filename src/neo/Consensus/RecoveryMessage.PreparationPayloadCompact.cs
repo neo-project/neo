@@ -1,5 +1,6 @@
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using System;
 using System.IO;
 
 namespace Neo.Consensus
@@ -8,16 +9,18 @@ namespace Neo.Consensus
     {
         public class PreparationPayloadCompact : ISerializable
         {
-            public ushort ValidatorIndex;
+            public byte ValidatorIndex;
             public byte[] InvocationScript;
 
             int ISerializable.Size =>
-                sizeof(ushort) +                //ValidatorIndex
+                sizeof(byte) +                  //ValidatorIndex
                 InvocationScript.GetVarSize();  //InvocationScript
 
             void ISerializable.Deserialize(BinaryReader reader)
             {
-                ValidatorIndex = reader.ReadUInt16();
+                ValidatorIndex = reader.ReadByte();
+                if (ValidatorIndex >= ProtocolSettings.Default.ValidatorsCount)
+                    throw new FormatException();
                 InvocationScript = reader.ReadVarBytes(1024);
             }
 

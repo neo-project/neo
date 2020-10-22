@@ -1,13 +1,14 @@
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
+using System;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
     public class ConsensusData : ISerializable
     {
-        public uint PrimaryIndex;
+        public byte PrimaryIndex;
         public ulong Nonce;
 
         private UInt256 _hash = null;
@@ -23,17 +24,19 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        public int Size => IO.Helper.GetVarSize((int)PrimaryIndex) + sizeof(ulong);
+        public int Size => sizeof(byte) + sizeof(ulong);
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            PrimaryIndex = (uint)reader.ReadVarInt((ulong)ProtocolSettings.Default.MaxValidatorsCount - 1);
+            PrimaryIndex = reader.ReadByte();
+            if (PrimaryIndex >= ProtocolSettings.Default.ValidatorsCount)
+                throw new FormatException();
             Nonce = reader.ReadUInt64();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.WriteVarInt(PrimaryIndex);
+            writer.Write(PrimaryIndex);
             writer.Write(Nonce);
         }
 

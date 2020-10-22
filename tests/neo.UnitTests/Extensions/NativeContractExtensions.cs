@@ -17,7 +17,7 @@ namespace Neo.UnitTests.Extensions
 
         public static StackItem Call(this NativeContract contract, StoreView snapshot, IVerifiable container, string method, params ContractParameter[] args)
         {
-            var engine = new ApplicationEngine(TriggerType.Application, container, snapshot, 0, true);
+            var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot);
 
             engine.LoadScript(contract.Script);
 
@@ -33,7 +33,9 @@ namespace Neo.UnitTests.Extensions
 
             if (engine.Execute() != VMState.HALT)
             {
-                throw new InvalidOperationException();
+                Exception exception = engine.FaultException;
+                while (exception?.InnerException != null) exception = exception.InnerException;
+                throw exception ?? new InvalidOperationException();
             }
 
             return engine.ResultStack.Pop();

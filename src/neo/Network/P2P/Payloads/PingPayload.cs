@@ -27,7 +27,7 @@ namespace Neo.Network.P2P.Payloads
             return new PingPayload
             {
                 LastBlockIndex = height,
-                Timestamp = DateTime.UtcNow.ToTimestamp(),
+                Timestamp = TimeProvider.Current.UtcNow.ToTimestamp(),
                 Nonce = nonce
             };
         }

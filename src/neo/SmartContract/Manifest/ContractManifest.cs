@@ -20,7 +20,14 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// Serialized size
         /// </summary>
-        public int Size => ToJson().ToString().GetVarSize();
+        public int Size
+        {
+            get
+            {
+                int size = Utility.StrictUTF8.GetByteCount(ToString());
+                return IO.Helper.GetVarSize(size) + size;
+            }
+        }
 
         /// <summary>
         /// Contract hash
@@ -36,6 +43,11 @@ namespace Neo.SmartContract.Manifest
         /// The features field describes what features are available for the contract.
         /// </summary>
         public ContractFeatures Features { get; set; }
+
+        /// <summary>
+        /// NEP10 - SupportedStandards
+        /// </summary>
+        public string[] SupportedStandards { get; set; }
 
         /// <summary>
         /// For technical details of ABI, please refer to NEP-3: NeoContract ABI. (https://github.com/neo-project/proposals/blob/master/nep-3.mediawiki)
@@ -101,20 +113,21 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public JObject ToJson()
         {
-            var feature = new JObject();
-            feature["storage"] = Features.HasFlag(ContractFeatures.HasStorage);
-            feature["payable"] = Features.HasFlag(ContractFeatures.Payable);
-
-            var json = new JObject();
-            json["groups"] = new JArray(Groups.Select(u => u.ToJson()).ToArray());
-            json["features"] = feature;
-            json["abi"] = Abi.ToJson();
-            json["permissions"] = Permissions.Select(p => p.ToJson()).ToArray();
-            json["trusts"] = Trusts.ToJson();
-            json["safemethods"] = SafeMethods.ToJson();
-            json["extra"] = Extra;
-
-            return json;
+            return new JObject
+            {
+                ["groups"] = Groups.Select(u => u.ToJson()).ToArray(),
+                ["features"] = new JObject
+                {
+                    ["storage"] = Features.HasFlag(ContractFeatures.HasStorage),
+                    ["payable"] = Features.HasFlag(ContractFeatures.Payable)
+                },
+                ["supportedstandards"] = SupportedStandards.Select(u => new JString(u)).ToArray(),
+                ["abi"] = Abi.ToJson(),
+                ["permissions"] = Permissions.Select(p => p.ToJson()).ToArray(),
+                ["trusts"] = Trusts.ToJson(),
+                ["safemethods"] = SafeMethods.ToJson(),
+                ["extra"] = Extra
+            };
         }
 
         /// <summary>
@@ -127,6 +140,7 @@ namespace Neo.SmartContract.Manifest
             {
                 Groups = Groups.Select(p => p.Clone()).ToArray(),
                 Features = Features,
+                SupportedStandards = SupportedStandards[..],
                 Abi = Abi.Clone(),
                 Permissions = Permissions.Select(p => p.Clone()).ToArray(),
                 Trusts = Trusts,
@@ -143,7 +157,7 @@ namespace Neo.SmartContract.Manifest
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.WriteVarString(ToJson().ToString());
+            writer.WriteVarString(ToString());
         }
 
         public void Deserialize(BinaryReader reader)
@@ -153,15 +167,16 @@ namespace Neo.SmartContract.Manifest
 
         private void DeserializeFromJson(JObject json)
         {
-            Abi = ContractAbi.FromJson(json["abi"]);
             Groups = ((JArray)json["groups"]).Select(u => ContractGroup.FromJson(u)).ToArray();
             Features = ContractFeatures.NoProperty;
+            if (json["features"]["storage"].AsBoolean()) Features |= ContractFeatures.HasStorage;
+            if (json["features"]["payable"].AsBoolean()) Features |= ContractFeatures.Payable;
+            SupportedStandards = ((JArray)json["supportedstandards"]).Select(u => u.AsString()).ToArray();
+            Abi = ContractAbi.FromJson(json["abi"]);
             Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u)).ToArray();
             Trusts = WildcardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString()));
             SafeMethods = WildcardContainer<string>.FromJson(json["safemethods"], u => u.AsString());
             Extra = json["extra"];
-            if (json["features"]["storage"].AsBoolean()) Features |= ContractFeatures.HasStorage;
-            if (json["features"]["payable"].AsBoolean()) Features |= ContractFeatures.Payable;
         }
 
         /// <summary>

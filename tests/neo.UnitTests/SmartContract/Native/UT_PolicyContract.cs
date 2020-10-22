@@ -6,6 +6,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
+using System;
 using System.Linq;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -20,17 +21,9 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void Check_SupportedStandards() => NativeContract.Policy.SupportedStandards().Should().BeEquivalentTo(new string[] { "NEP-10" });
-
-        [TestMethod]
-        public void Check_Initialize()
+        public void Check_Default()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var keyCount = snapshot.Storages.GetChangeSet().Count();
-
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
-
-            (keyCount + 5).Should().Be(snapshot.Storages.GetChangeSet().Count());
 
             var ret = NativeContract.Policy.Call(snapshot, "getMaxTransactionsPerBlock");
             ret.Should().BeOfType<VM.Types.Integer>();
@@ -47,10 +40,6 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
             ret.Should().BeOfType<VM.Types.Integer>();
             ret.GetInteger().Should().Be(1000);
-
-            ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
-            ret.Should().BeOfType<VM.Types.Array>();
-            ((VM.Types.Array)ret).Count.Should().Be(0);
         }
 
         [TestMethod]
@@ -65,7 +54,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
+            NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
 
             // Without signature
 
@@ -80,10 +69,11 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // More than expected
 
-            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
-                 "setMaxBlockSize", new ContractParameter(ContractParameterType.Integer) { Value = Neo.Network.P2P.Message.PayloadMaxSize });
-            ret.Should().BeOfType<VM.Types.Boolean>();
-            ret.GetBoolean().Should().BeFalse();
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                 "setMaxBlockSize", new ContractParameter(ContractParameterType.Integer) { Value = Neo.Network.P2P.Message.PayloadMaxSize + 1 });
+            });
 
             ret = NativeContract.Policy.Call(snapshot, "getMaxBlockSize");
             ret.Should().BeOfType<VM.Types.Integer>();
@@ -113,7 +103,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
+            NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
 
             // Without signature
 
@@ -128,10 +118,11 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Less than expected
 
-            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
                  "setMaxBlockSystemFee", new ContractParameter(ContractParameterType.Integer) { Value = -1000 });
-            ret.Should().BeOfType<VM.Types.Boolean>();
-            ret.GetBoolean().Should().BeFalse();
+            });
 
             ret = NativeContract.Policy.Call(snapshot, "getMaxBlockSystemFee");
             ret.Should().BeOfType<VM.Types.Integer>();
@@ -159,7 +150,7 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
+            NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
 
             // Without signature
 
@@ -194,7 +185,7 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
             snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
+            NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
 
             // Without signature
 
@@ -220,6 +211,57 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void Check_BlockAccount()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            // Fake blockchain
+
+            snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
+            snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
+
+            NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
+
+            // Without signature
+
+            var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(UInt160.Zero),
+                "blockAccount",
+                new ContractParameter(ContractParameterType.ByteArray) { Value = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01").ToArray() });
+            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.GetBoolean().Should().BeFalse();
+
+            // With signature
+
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+              "blockAccount",
+              new ContractParameter(ContractParameterType.ByteArray) { Value = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01").ToArray() });
+            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.GetBoolean().Should().BeTrue();
+
+            // Same account
+            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                "blockAccount",
+                new ContractParameter(ContractParameterType.ByteArray) { Value = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01").ToArray() });
+            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.GetBoolean().Should().BeFalse();
+
+            // Account B
+
+            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                "blockAccount",
+                new ContractParameter(ContractParameterType.ByteArray) { Value = UInt160.Parse("0xb400ff00ff00ff00ff00ff00ff00ff00ff00ff01").ToArray() });
+            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.GetBoolean().Should().BeTrue();
+
+            // Check
+
+            NativeContract.Policy.IsBlocked(snapshot, UInt160.Zero).Should().BeFalse();
+            NativeContract.Policy.IsBlocked(snapshot, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01")).Should().BeTrue();
+            NativeContract.Policy.IsBlocked(snapshot, UInt160.Parse("0xb400ff00ff00ff00ff00ff00ff00ff00ff00ff01")).Should().BeTrue();
+        }
+
+        [TestMethod]
         public void Check_Block_UnblockAccount()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
@@ -231,7 +273,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
-            NativeContract.Policy.Initialize(new ApplicationEngine(TriggerType.Application, null, snapshot, 0));
+            NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
 
             // Block without signature
 
@@ -240,9 +282,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeFalse();
 
-            ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
-            ret.Should().BeOfType<VM.Types.Array>();
-            ((VM.Types.Array)ret).Count.Should().Be(0);
+            NativeContract.Policy.IsBlocked(snapshot, UInt160.Zero).Should().BeFalse();
 
             // Block with signature
 
@@ -251,10 +291,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeTrue();
 
-            ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
-            ret.Should().BeOfType<VM.Types.Array>();
-            ((VM.Types.Array)ret).Count.Should().Be(1);
-            ((VM.Types.Array)ret)[0].GetSpan().ToArray().Should().BeEquivalentTo(UInt160.Zero.ToArray());
+            NativeContract.Policy.IsBlocked(snapshot, UInt160.Zero).Should().BeTrue();
 
             // Unblock without signature
 
@@ -263,10 +300,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeFalse();
 
-            ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
-            ret.Should().BeOfType<VM.Types.Array>();
-            ((VM.Types.Array)ret).Count.Should().Be(1);
-            ((VM.Types.Array)ret)[0].GetSpan().ToArray().Should().BeEquivalentTo(UInt160.Zero.ToArray());
+            NativeContract.Policy.IsBlocked(snapshot, UInt160.Zero).Should().BeTrue();
 
             // Unblock with signature
 
@@ -275,32 +309,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeTrue();
 
-            ret = NativeContract.Policy.Call(snapshot, "getBlockedAccounts");
-            ret.Should().BeOfType<VM.Types.Array>();
-            ((VM.Types.Array)ret).Count.Should().Be(0);
-        }
-
-        [TestMethod]
-        public void TestCheckPolicy()
-        {
-            Transaction tx = Blockchain.GenesisBlock.Transactions[0];
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-
-            StorageKey storageKey = new StorageKey
-            {
-                Id = NativeContract.Policy.Id,
-                Key = new byte[sizeof(byte)]
-            };
-            storageKey.Key[0] = 15;
-            snapshot.Storages.Add(storageKey, new StorageItem
-            {
-                Value = new UInt160[] { tx.Sender }.ToByteArray(),
-            });
-
-            NativeContract.Policy.CheckPolicy(tx, snapshot).Should().BeFalse();
-
-            snapshot = Blockchain.Singleton.GetSnapshot();
-            NativeContract.Policy.CheckPolicy(tx, snapshot).Should().BeTrue();
+            NativeContract.Policy.IsBlocked(snapshot, UInt160.Zero).Should().BeFalse();
         }
     }
 }

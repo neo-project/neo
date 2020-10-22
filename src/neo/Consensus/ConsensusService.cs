@@ -29,6 +29,7 @@ namespace Neo.Consensus
         private readonly IActorRef blockchain;
         private ICancelable timer_token;
         private DateTime block_received_time;
+        private uint block_received_index;
         private bool started = false;
 
         /// <summary>
@@ -64,20 +65,24 @@ namespace Neo.Consensus
 
         private bool AddTransaction(Transaction tx, bool verify)
         {
-            if (verify && tx.Verify(context.Snapshot, context.SendersFeeMonitor.GetSenderFee(tx.Sender)) != VerifyResult.Succeed)
+            if (verify)
             {
-                Log($"Invalid transaction: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
-                RequestChangeView(ChangeViewReason.TxInvalid);
-                return false;
-            }
-            if (!NativeContract.Policy.CheckPolicy(tx, context.Snapshot))
-            {
-                Log($"reject tx: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
-                RequestChangeView(ChangeViewReason.TxRejectedByPolicy);
-                return false;
+                VerifyResult result = tx.Verify(context.Snapshot, context.VerificationContext);
+                if (result == VerifyResult.PolicyFail)
+                {
+                    Log($"reject tx: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
+                    RequestChangeView(ChangeViewReason.TxRejectedByPolicy);
+                    return false;
+                }
+                else if (result != VerifyResult.Succeed)
+                {
+                    Log($"Invalid transaction: {tx.Hash}{Environment.NewLine}{tx.ToArray().ToHexString()}", LogLevel.Warning);
+                    RequestChangeView(ChangeViewReason.TxInvalid);
+                    return false;
+                }
             }
             context.Transactions[tx.Hash] = tx;
-            context.SendersFeeMonitor.AddSenderFee(tx);
+            context.VerificationContext.AddTransaction(tx);
             return CheckPrepareResponse();
         }
 
@@ -131,6 +136,8 @@ namespace Neo.Consensus
         {
             if (context.CommitPayloads.Count(p => p?.ConsensusMessage.ViewNumber == context.ViewNumber) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
+                block_received_index = context.Block.Index;
+                block_received_time = TimeProvider.Current.UtcNow;
                 Block block = context.CreateBlock();
                 Log($"relay block: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
                 blockchain.Tell(block);
@@ -184,11 +191,16 @@ namespace Neo.Consensus
                 }
                 else
                 {
-                    TimeSpan span = TimeProvider.Current.UtcNow - block_received_time;
-                    if (span >= Blockchain.TimePerBlock)
-                        ChangeTimer(TimeSpan.Zero);
-                    else
-                        ChangeTimer(Blockchain.TimePerBlock - span);
+                    TimeSpan span = Blockchain.TimePerBlock;
+                    if (block_received_index + 1 == context.Block.Index)
+                    {
+                        var diff = TimeProvider.Current.UtcNow - block_received_time;
+                        if (diff >= span)
+                            span = TimeSpan.Zero;
+                        else
+                            span -= diff;
+                    }
+                    ChangeTimer(span);
                 }
             }
             else
@@ -287,7 +299,7 @@ namespace Neo.Consensus
             {
                 return;
             }
-            context.LastSeenMessage[payload.ValidatorIndex] = (int)payload.BlockIndex;
+            context.LastSeenMessage[context.Validators[payload.ValidatorIndex]] = payload.BlockIndex;
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
                 if (!plugin.OnConsensusMessage(payload))
                     return;
@@ -317,7 +329,6 @@ namespace Neo.Consensus
         private void OnPersistCompleted(Block block)
         {
             Log($"persist block: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
-            block_received_time = TimeProvider.Current.UtcNow;
             knownHashes.Clear();
             InitializeConsensus(0);
         }
@@ -433,7 +444,7 @@ namespace Neo.Consensus
             context.Block.ConsensusData.Nonce = message.Nonce;
             context.TransactionHashes = message.TransactionHashes;
             context.Transactions = new Dictionary<UInt256, Transaction>();
-            context.SendersFeeMonitor = new SendersFeeMonitor();
+            context.VerificationContext = new TransactionVerificationContext();
             for (int i = 0; i < context.PreparationPayloads.Length; i++)
                 if (context.PreparationPayloads[i] != null)
                     if (!context.PreparationPayloads[i].GetDeserializedMessage<PrepareResponse>().PreparationHash.Equals(payload.Hash))
