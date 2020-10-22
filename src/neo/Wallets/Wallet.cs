@@ -542,6 +542,11 @@ namespace Neo.Wallets
                         fSuccess |= context.Add(deployed);
                     }
                 }
+                else
+                {
+                    // Check solid transfer for example
+                    fSuccess |= context.IsCompleted(scriptHash);
+                }
             }
 
             return fSuccess;
