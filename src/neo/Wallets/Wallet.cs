@@ -252,6 +252,9 @@ namespace Neo.Wallets
             {
                 accounts = new[] { from };
             }
+
+            Dictionary<UInt160, byte[]> solidTransferVerificationScripts = new Dictionary<UInt160, byte[]>();
+
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 Dictionary<UInt160, Signer> cosignerList = cosigners?.ToDictionary(p => p.Account) ?? new Dictionary<UInt160, Signer>();
@@ -321,6 +324,8 @@ namespace Neo.Wallets
                                         Account = solidTransferHash,
                                         Scopes = WitnessScope.None
                                     };
+
+                                    solidTransferVerificationScripts[solidTransferHash] = solidTransferScript;
                                 }
                             }
                         }
@@ -332,7 +337,33 @@ namespace Neo.Wallets
                 if (balances_gas is null)
                     balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
 
-                return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), Array.Empty<TransactionAttribute>(), balances_gas);
+                var tx = MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), Array.Empty<TransactionAttribute>(), balances_gas);
+
+                if (solidTransferVerificationScripts.Count > 0)
+                {
+                    // Init witnesses
+
+                    var hashes = tx.GetScriptHashesForVerifying(snapshot);
+                    tx.Witnesses = new Witness[hashes.Length];
+                    for (int x = 0; x < hashes.Length; x++)
+                    {
+                        if (solidTransferVerificationScripts.TryGetValue(hashes[x], out var vs))
+                        {
+                            tx.Witnesses[x] = new Witness()
+                            {
+                                InvocationScript = Array.Empty<byte>(),
+                                VerificationScript = vs
+                            };
+                        }
+                    }
+
+                    // Recalculate fee with solid state witnesses
+
+                    tx.NetworkFee = CalculateNetworkFee(snapshot, tx);
+                    throw new InvalidOperationException("Insufficient GAS");
+                }
+
+                return tx;
             }
         }
 
