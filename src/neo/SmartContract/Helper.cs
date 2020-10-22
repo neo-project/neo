@@ -131,7 +131,7 @@ namespace Neo.SmartContract
             else if (script[0] == (byte)OpCode.PUSHINT8)
             {
                 if (script.Length != 66) return false;
-                index = 2; // TODO OPTIMIZE UT POR QUE NO LO HACE SOLO
+                index = 2;
             }
             else if (script[0] == (byte)OpCode.PUSHINT16)
             {
