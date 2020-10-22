@@ -204,7 +204,7 @@ namespace Neo.SmartContract
 
                 // Validate
 
-                var method = contract.Manifest.Abi.GetMethod("_fallback");
+                var method = contract.Manifest.Abi.GetMethod("_onPaymentReceived");
                 if (method == null) return;
 
                 ContractManifest currentManifest = Snapshot.Contracts.TryGet(CurrentScriptHash)?.Manifest;
