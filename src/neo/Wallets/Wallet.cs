@@ -298,6 +298,30 @@ namespace Neo.Wallets
                                 }
                                 sb.EmitAppCall(output.AssetId, "transfer", account, output.ScriptHash, value);
                                 sb.Emit(OpCode.ASSERT);
+
+                                // Solid transfer
+
+                                if (output.SolidTransfer)
+                                {
+                                    byte[] solidTransferScript;
+                                    using (ScriptBuilder sbSolid = new ScriptBuilder())
+                                    {
+                                        sbSolid.EmitPush(value);
+                                        sbSolid.EmitAppCall(output.AssetId, "balanceOf", account);
+                                        sbSolid.Emit(OpCode.EQUAL);
+                                        sbSolid.Emit(OpCode.ASSERT);
+                                        solidTransferScript = sbSolid.ToArray();
+                                    }
+
+                                    // Add signer
+
+                                    var solidTransferHash = solidTransferScript.ToScriptHash();
+                                    cosignerList[solidTransferHash] = new Signer()
+                                    {
+                                        Account = solidTransferHash,
+                                        Scopes = WitnessScope.None
+                                    };
+                                }
                             }
                         }
                         if (assetId.Equals(NativeContract.GAS.Hash))
