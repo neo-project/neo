@@ -261,7 +261,14 @@ namespace Neo.SmartContract.Native.Tokens
 
         internal ECPoint[] ComputeNextBlockValidators(StoreView snapshot)
         {
-            return ComputeCommitteeMembers(snapshot).Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray();
+            if (ShouldRefreshCommittee(snapshot.Height + 1))
+            {
+                return ComputeCommitteeMembers(snapshot).Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray();
+            }
+            else
+            {
+                return GetNextBlockValidators(snapshot);
+            }
         }
 
         private IEnumerable<ECPoint> ComputeCommitteeMembers(StoreView snapshot)
