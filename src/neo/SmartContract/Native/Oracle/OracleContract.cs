@@ -1,6 +1,7 @@
 #pragma warning disable IDE0051
 
 using Neo.Cryptography;
+using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -65,6 +66,11 @@ namespace Neo.SmartContract.Native.Oracle
         public IEnumerable<(ulong, OracleRequest)> GetRequests(StoreView snapshot)
         {
             return snapshot.Storages.Find(new KeyBuilder(Id, Prefix_Request).ToArray()).Select(p => (BitConverter.ToUInt64(p.Key.Key, 1), p.Value.GetInteroperable<OracleRequest>()));
+        }
+
+        public ECPoint[] GetOracleNodes(StoreView snapshot)
+        {
+            return Designate.GetDesignatedByRole(snapshot, Role.Oracle);
         }
 
         public IEnumerable<OracleRequest> GetRequestsByUrl(StoreView snapshot, string url)
