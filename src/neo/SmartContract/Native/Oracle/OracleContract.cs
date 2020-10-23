@@ -68,6 +68,7 @@ namespace Neo.SmartContract.Native.Oracle
             return snapshot.Storages.Find(new KeyBuilder(Id, Prefix_Request).ToArray()).Select(p => (BitConverter.ToUInt64(p.Key.Key, 1), p.Value.GetInteroperable<OracleRequest>()));
         }
 
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public ECPoint[] GetOracleNodes(StoreView snapshot)
         {
             return Designate.GetDesignatedByRole(snapshot, Role.Oracle);
