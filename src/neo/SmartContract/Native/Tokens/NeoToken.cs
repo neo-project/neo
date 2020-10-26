@@ -194,7 +194,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(5_00000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
         private bool Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
         {
             if (!engine.CheckWitnessInternal(account)) return false;
