@@ -94,7 +94,7 @@ namespace Neo.SmartContract.Native.Tokens
                 snapshot.Storages.Delete(key);
         }
 
-        private bool ShouldRefreshCommittee(uint height) => height % (ProtocolSettings.Default.CommitteeMembersCount + ProtocolSettings.Default.ValidatorsCount) == 0;
+        public bool ShouldRefreshCommittee(uint height) => height % (ProtocolSettings.Default.CommitteeMembersCount + ProtocolSettings.Default.ValidatorsCount) == 0;
 
         internal override void Initialize(ApplicationEngine engine)
         {
@@ -261,14 +261,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         internal ECPoint[] ComputeNextBlockValidators(StoreView snapshot)
         {
-            if (ShouldRefreshCommittee(snapshot.Height + 1))
-            {
-                return ComputeCommitteeMembers(snapshot).Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray();
-            }
-            else
-            {
-                return GetNextBlockValidators(snapshot);
-            }
+            return ComputeCommitteeMembers(snapshot).Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray();
         }
 
         private IEnumerable<ECPoint> ComputeCommitteeMembers(StoreView snapshot)
