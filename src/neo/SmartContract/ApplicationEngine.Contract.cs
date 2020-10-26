@@ -135,9 +135,17 @@ namespace Neo.SmartContract
             if (method.StartsWith('_')) throw new ArgumentException($"Invalid Method Name: {method}");
 
             ContractState contract = Snapshot.Contracts.TryGet(contractHash);
-            if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
+            if (contract is null)
+            {
+                if (flags.HasFlag(CallFlags.IfExists)) return;
+                throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
+            }
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
-            if (md is null) throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
+            if (md is null)
+            {
+                if (flags.HasFlag(CallFlags.IfExists)) return;
+                throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
+            }
 
             ContractManifest currentManifest = Snapshot.Contracts.TryGet(CurrentScriptHash)?.Manifest;
             if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, method))
