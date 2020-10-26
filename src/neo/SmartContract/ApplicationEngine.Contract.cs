@@ -20,6 +20,8 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Contract_Destroy = Register("System.Contract.Destroy", nameof(DestroyContract), 0_01000000, CallFlags.AllowModifyStates, false);
         public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 0_01000000, CallFlags.AllowCall, false);
         public static readonly InteropDescriptor System_Contract_CallEx = Register("System.Contract.CallEx", nameof(CallContractEx), 0_01000000, CallFlags.AllowCall, false);
+        public static readonly InteropDescriptor System_Contract_CallIfExists = Register("System.Contract.CallIfExists", nameof(CallIfExistsContract), 0_01000000, CallFlags.AllowCall, false);
+        public static readonly InteropDescriptor System_Contract_CallCallIfExistsEx = Register("System.Contract.CallIfExistsEx", nameof(CallIfExistsContractEx), 0_01000000, CallFlags.AllowCall, false);
         public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 0_00030000, CallFlags.AllowStates, true);
         public static readonly InteropDescriptor System_Contract_GetCallFlags = Register("System.Contract.GetCallFlags", nameof(GetCallFlags), 0_00030000, CallFlags.None, false);
         /// <summary>
@@ -120,24 +122,44 @@ namespace Neo.SmartContract
 
         protected internal void CallContract(UInt160 contractHash, string method, Array args)
         {
-            CallContractInternal(contractHash, method, args, CallFlags.All);
+            CallContractInternal(contractHash, method, args, CallFlags.All, true);
+        }
+
+        protected internal void CallIfExistsContract(UInt160 contractHash, string method, Array args)
+        {
+            CallContractInternal(contractHash, method, args, CallFlags.All, false);
         }
 
         protected internal void CallContractEx(UInt160 contractHash, string method, Array args, CallFlags callFlags)
         {
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
-            CallContractInternal(contractHash, method, args, callFlags);
+            CallContractInternal(contractHash, method, args, callFlags, true);
         }
 
-        private void CallContractInternal(UInt160 contractHash, string method, Array args, CallFlags flags)
+        protected internal void CallIfExistsContractEx(UInt160 contractHash, string method, Array args, CallFlags callFlags)
+        {
+            if ((callFlags & ~CallFlags.All) != 0)
+                throw new ArgumentOutOfRangeException(nameof(callFlags));
+            CallContractInternal(contractHash, method, args, callFlags, false);
+        }
+
+        private void CallContractInternal(UInt160 contractHash, string method, Array args, CallFlags flags, bool mustExists)
         {
             if (method.StartsWith('_')) throw new ArgumentException($"Invalid Method Name: {method}");
 
             ContractState contract = Snapshot.Contracts.TryGet(contractHash);
-            if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
+            if (contract is null)
+            {
+                if (!mustExists) return;
+                throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
+            }
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
-            if (md is null) throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
+            if (md is null)
+            {
+                if (!mustExists) return;
+                throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
+            }
 
             ContractManifest currentManifest = Snapshot.Contracts.TryGet(CurrentScriptHash)?.Manifest;
             if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, method))
