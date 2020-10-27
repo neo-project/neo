@@ -162,7 +162,7 @@ namespace Neo.Wallets
             byte[] addresshash = new byte[4];
             Buffer.BlockCopy(data, 3, addresshash, 0, 4);
             byte[] datapassphrase = Encoding.UTF8.GetBytes(passphrase);
-            byte[] derivedkey = SCrypt.DeriveKey(datapassphrase, addresshash, N, r, p, 64);
+            byte[] derivedkey = Crypto.DeriveSCryptKey(datapassphrase, addresshash, N, r, p, 64);
             Array.Clear(datapassphrase, 0, datapassphrase.Length);
             byte[] derivedhalf1 = derivedkey[..32];
             byte[] derivedhalf2 = derivedkey[32..];

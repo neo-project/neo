@@ -6,6 +6,11 @@ namespace Neo.Cryptography
 {
     public static class Crypto
     {
+        public static byte[] DeriveSCryptKey(byte[] password, byte[] salt, int N, int r, int p, int derivedKeyLength)
+        {
+            return Org.BouncyCastle.Crypto.Generators.SCrypt.Generate(password, salt, N, r, p, derivedKeyLength);
+        }
+
         public static byte[] Hash160(ReadOnlySpan<byte> message)
         {
             return message.Sha256().RIPEMD160();
