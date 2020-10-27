@@ -81,10 +81,12 @@ namespace Neo.SmartContract.Native.Designate
                 throw new ArgumentOutOfRangeException(nameof(role));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             uint index = engine.Snapshot.Height + 1;
-            NodeList list = engine.Snapshot.Storages.GetAndChange(CreateStorageKey((byte)role).AddBigEndian(index), () => new StorageItem(new NodeList())).GetInteroperable<NodeList>();
-            list.Clear();
+            if (engine.Snapshot.Storages.Contains(CreateStorageKey((byte)role).AddBigEndian(index)))
+                throw new InvalidOperationException();
+            NodeList list = new NodeList();
             list.AddRange(nodes);
             list.Sort();
+            engine.Snapshot.Storages.Add(CreateStorageKey((byte)role).AddBigEndian(index), new StorageItem(list));
             StorageItem current = engine.Snapshot.Storages.GetAndChange(CreateStorageKey((byte)role));
             current.Value = new byte[sizeof(uint)];
             BinaryPrimitives.WriteUInt32BigEndian(current.Value, index);
