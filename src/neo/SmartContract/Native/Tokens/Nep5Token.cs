@@ -80,9 +80,9 @@ namespace Neo.SmartContract.Native.Tokens
             engine.SendNotification(Hash, "Transfer",
                 new Array { from == null ? StackItem.Null : from.ToArray(), to == null ? StackItem.Null : to.ToArray(), amount });
 
-            // Call onPayment method if exists
+            if (to == null) return;
 
-            if (engine.Snapshot.PersistingBlock?.Index == 0) return;
+            // Call onPayment method if exists
 
             engine.CallContractEx(to, "onPayment",
                 new Array(engine.ReferenceCounter) { from == null ? StackItem.Null : from.ToArray(), to == null ? StackItem.Null : to.ToArray(), amount },
@@ -123,7 +123,7 @@ namespace Neo.SmartContract.Native.Tokens
             return storage.GetInteroperable<TState>().Balance;
         }
 
-        [ContractMethod(0_08000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_09000000, CallFlags.AllowModifyStates)]
         protected virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
