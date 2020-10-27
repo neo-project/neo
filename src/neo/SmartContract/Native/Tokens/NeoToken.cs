@@ -235,7 +235,7 @@ namespace Neo.SmartContract.Native.Tokens
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
             StorageKey key = CreateStorageKey(Prefix_Candidate).Add(pubkey);
-            if (!engine.Snapshot.Storages.Contains(key)) return true;
+            if (engine.Snapshot.Storages.TryGet(key) is null) return true;
             StorageItem item = engine.Snapshot.Storages.GetAndChange(key);
             CandidateState state = item.GetInteroperable<CandidateState>();
             state.Registered = false;
