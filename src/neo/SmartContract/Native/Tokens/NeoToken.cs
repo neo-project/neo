@@ -317,9 +317,9 @@ namespace Neo.SmartContract.Native.Tokens
         private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> ComputeCommitteeMembers(StoreView snapshot)
         {
             decimal votersCount = (decimal)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_VotersCount)];
-            decimal VoterTurnout = votersCount / (decimal)TotalAmount;
+            decimal voterTurnout = votersCount / (decimal)TotalAmount;
             var candidates = GetCandidates(snapshot);
-            if (VoterTurnout < EffectiveVoterTurnout || candidates.Length < ProtocolSettings.Default.CommitteeMembersCount)
+            if (voterTurnout < EffectiveVoterTurnout || candidates.Length < ProtocolSettings.Default.CommitteeMembersCount)
                 return Blockchain.StandbyCommittee.Select(p => (p, candidates.FirstOrDefault(k => k.PublicKey.Equals(p)).Votes));
             return candidates.OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Take(ProtocolSettings.Default.CommitteeMembersCount);
         }
