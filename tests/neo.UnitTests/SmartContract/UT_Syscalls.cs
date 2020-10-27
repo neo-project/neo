@@ -71,7 +71,7 @@ namespace Neo.UnitTests.SmartContract
                 // Not traceable block
 
                 var height = snapshot.BlockHashIndex.GetAndChange();
-                height.Index = block.Index + Transaction.MaxValidUntilBlockIncrement;
+                height.Index = block.Index + ApplicationEngine.MaxTraceableBlocks;
 
                 var blocks = snapshot.Blocks;
                 var txs = snapshot.Transactions;
