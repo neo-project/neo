@@ -62,8 +62,6 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
-            ContractState contract_to = engine.Snapshot.Contracts.TryGet(account);
-            if (contract_to?.Payable == false) throw new InvalidOperationException("The receiver is not payable");
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Account).Add(account), () => new StorageItem(new TState()));
             TState state = storage.GetInteroperable<TState>();
             OnBalanceChanging(engine, account, state, amount);
