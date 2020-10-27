@@ -62,13 +62,31 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
+            ContractState contract_to = engine.Snapshot.Contracts.TryGet(account);
+            if (contract_to?.Payable == false) throw new InvalidOperationException("The receiver is not payable");
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Account).Add(account), () => new StorageItem(new TState()));
             TState state = storage.GetInteroperable<TState>();
             OnBalanceChanging(engine, account, state, amount);
             state.Balance += amount;
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem(BigInteger.Zero));
             storage.Add(amount);
-            engine.SendNotification(Hash, "Transfer", new Array { StackItem.Null, account.ToArray(), amount });
+            onPostTransfer(engine, null, account, amount);
+        }
+
+        private void onPostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount)
+        {
+            // Send notification
+
+            engine.SendNotification(Hash, "Transfer",
+                new Array { from == null ? StackItem.Null : from.ToArray(), to == null ? StackItem.Null : to.ToArray(), amount });
+
+            // Call onPayment method if exists
+
+            if (engine.Snapshot.PersistingBlock?.Index == 0) return;
+
+            engine.CallContractEx(to, "onPayment",
+                new Array(engine.ReferenceCounter) { from == null ? StackItem.Null : from.ToArray(), to == null ? StackItem.Null : to.ToArray(), amount },
+                CallFlags.All);
         }
 
         internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
@@ -86,7 +104,7 @@ namespace Neo.SmartContract.Native.Tokens
                 state.Balance -= amount;
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
             storage.Add(-amount);
-            engine.SendNotification(Hash, "Transfer", new Array { account.ToArray(), StackItem.Null, amount });
+            onPostTransfer(engine, account, null, amount);
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
@@ -146,7 +164,7 @@ namespace Neo.SmartContract.Native.Tokens
                     state_to.Balance += amount;
                 }
             }
-            engine.SendNotification(Hash, "Transfer", new Array { from.ToArray(), to.ToArray(), amount });
+            onPostTransfer(engine, from, to, amount);
             return true;
         }
 

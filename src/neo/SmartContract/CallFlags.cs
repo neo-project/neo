@@ -15,6 +15,7 @@ namespace Neo.SmartContract
         IfExists = 0b10000000,
 
         ReadOnly = AllowStates | AllowCall | AllowNotify,
-        All = AllowStates | AllowModifyStates | AllowCall | AllowNotify
+        Default = AllowStates | AllowModifyStates | AllowCall | AllowNotify,
+        All = IfExists | Default
     }
 }

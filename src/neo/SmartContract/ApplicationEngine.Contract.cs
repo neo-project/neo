@@ -18,8 +18,8 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Contract_Create = Register("System.Contract.Create", nameof(CreateContract), 0, CallFlags.AllowModifyStates, false);
         public static readonly InteropDescriptor System_Contract_Update = Register("System.Contract.Update", nameof(UpdateContract), 0, CallFlags.AllowModifyStates, false);
         public static readonly InteropDescriptor System_Contract_Destroy = Register("System.Contract.Destroy", nameof(DestroyContract), 0_01000000, CallFlags.AllowModifyStates, false);
-        public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 0_01000000, CallFlags.AllowCall, false);
-        public static readonly InteropDescriptor System_Contract_CallEx = Register("System.Contract.CallEx", nameof(CallContractEx), 0_01000000, CallFlags.AllowCall, false);
+        public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 0, CallFlags.AllowCall, false);
+        public static readonly InteropDescriptor System_Contract_CallEx = Register("System.Contract.CallEx", nameof(CallContractEx), 0, CallFlags.AllowCall, false);
         public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 0_00030000, CallFlags.AllowStates, true);
         public static readonly InteropDescriptor System_Contract_GetCallFlags = Register("System.Contract.GetCallFlags", nameof(GetCallFlags), 0_00030000, CallFlags.None, false);
         /// <summary>
@@ -59,7 +59,7 @@ namespace Neo.SmartContract
 
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");
             if (md != null)
-                CallContractInternal(contract, md, new Array(ReferenceCounter) { false }, CallFlags.All, CheckReturnType.EnsureIsEmpty);
+                CallContractInternal(contract, md, new Array(ReferenceCounter) { false }, CallFlags.Default, CheckReturnType.EnsureIsEmpty);
         }
 
         protected internal void UpdateContract(byte[] script, byte[] manifest)
@@ -103,7 +103,7 @@ namespace Neo.SmartContract
             {
                 ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");
                 if (md != null)
-                    CallContractInternal(contract, md, new Array(ReferenceCounter) { true }, CallFlags.All, CheckReturnType.EnsureIsEmpty);
+                    CallContractInternal(contract, md, new Array(ReferenceCounter) { true }, CallFlags.Default, CheckReturnType.EnsureIsEmpty);
             }
         }
 
@@ -120,7 +120,7 @@ namespace Neo.SmartContract
 
         protected internal void CallContract(UInt160 contractHash, string method, Array args)
         {
-            CallContractInternal(contractHash, method, args, CallFlags.All);
+            CallContractInternal(contractHash, method, args, CallFlags.Default);
         }
 
         protected internal void CallContractEx(UInt160 contractHash, string method, Array args, CallFlags callFlags)
@@ -132,6 +132,7 @@ namespace Neo.SmartContract
 
         private void CallContractInternal(UInt160 contractHash, string method, Array args, CallFlags flags)
         {
+            AddGas(0_01000000); // It could be called in other syscalls
             if (method.StartsWith('_')) throw new ArgumentException($"Invalid Method Name: {method}");
 
             ContractState contract = Snapshot.Contracts.TryGet(contractHash);
