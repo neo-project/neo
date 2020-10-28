@@ -405,7 +405,7 @@ namespace Neo.Wallets
                     if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.ScriptHash} verification fault.");
                     if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.ScriptHash} returns false.");
 
-                    networkFee += engine.GasConsumed;
+                    networkFee += engine.GasConsumedWithRatio;
                 }
                 else if (witness_script.IsSignatureContract())
                 {
@@ -430,7 +430,7 @@ namespace Neo.Wallets
                 }
             }
             networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
-            return networkFee;
+            return networkFee / NativeContract.Policy.GetFeeRatio(snapshot);
         }
 
         public bool Sign(ContractParametersContext context)

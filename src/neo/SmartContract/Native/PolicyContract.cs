@@ -20,6 +20,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_MaxBlockSize = 12;
         private const byte Prefix_MaxBlockSystemFee = 17;
+        private const byte Prefix_FeeRatio = 34;
 
         public PolicyContract()
         {
@@ -62,6 +63,14 @@ namespace Neo.SmartContract.Native
         public bool IsBlocked(StoreView snapshot, UInt160 account)
         {
             return snapshot.Storages.Contains(CreateStorageKey(Prefix_BlockedAccount).Add(account));
+        }
+
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        public uint GetFeeRatio(StoreView snapshot)
+        {
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_FeeRatio));
+            if (item is null) return 1;
+            return (uint)(BigInteger)item;
         }
 
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
@@ -125,6 +134,16 @@ namespace Neo.SmartContract.Native
             if (!engine.Snapshot.Storages.Contains(key)) return false;
 
             engine.Snapshot.Storages.Delete(key);
+            return true;
+        }
+
+        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        private bool SetFeeRatio(ApplicationEngine engine, uint value)
+        {
+            if (value == 0) throw new ArgumentOutOfRangeException(nameof(value));
+            if (!CheckCommittee(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeeRatio), () => new StorageItem());
+            storage.Set(value);
             return true;
         }
     }

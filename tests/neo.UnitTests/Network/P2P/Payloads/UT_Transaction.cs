@@ -5,6 +5,7 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Tokens;
@@ -1260,9 +1261,15 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
                 var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
 
-                entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
+                entry.GetInteroperable<AccountState>().Balance = NativeContract.GAS.Factor / 10;
 
                 snapshot.Commit();
+
+                //Change FeeRatio
+                StorageItem storage = snapshot.Storages.GetAndChange(new KeyBuilder(-3, 34), () => new StorageItem());
+                storage.Set(2);
+                snapshot.Commit();
+                NativeContract.Policy.GetFeeRatio(snapshot).Should().Be(2);
 
                 // Make transaction
 
@@ -1285,6 +1292,19 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 tx.Witnesses = data.GetWitnesses();
                 tx.Verify(snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.Succeed);
+
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, tx.SystemFee * NativeContract.Policy.GetFeeRatio(snapshot)))
+                {
+                    engine.LoadScript(tx.Script);
+                    VMState state = engine.Execute();
+                    Assert.AreEqual(state, VMState.HALT);
+                }
+
+                //Revert FeeRatio
+                storage = snapshot.Storages.GetAndChange(new KeyBuilder(-3, 34), () => new StorageItem());
+                storage.Set(1);
+                snapshot.Commit();
+                NativeContract.Policy.GetFeeRatio(snapshot).Should().Be(1);
             }
         }
     }

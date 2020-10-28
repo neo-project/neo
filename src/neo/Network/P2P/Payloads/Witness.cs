@@ -22,7 +22,7 @@ namespace Neo.Network.P2P.Payloads
         public byte[] InvocationScript;
         public byte[] VerificationScript;
 
-        internal long GasConsumed { get; set; }
+        internal long GasConsumedWithRatio { get; set; }
 
         private UInt160 _scriptHash;
         public virtual UInt160 ScriptHash

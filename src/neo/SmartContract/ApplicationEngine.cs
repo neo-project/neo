@@ -3,6 +3,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -42,7 +43,7 @@ namespace Neo.SmartContract
 
         private static IApplicationEngineProvider applicationEngineProvider;
         private static Dictionary<uint, InteropDescriptor> services;
-        private readonly long gas_amount;
+        private readonly long gas_amount_with_ratio;
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new Dictionary<UInt160, int>();
@@ -53,8 +54,9 @@ namespace Neo.SmartContract
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
-        public long GasConsumed { get; private set; } = 0;
-        public long GasLeft => gas_amount - GasConsumed;
+        public long GasConsumedWithRatio = 0;
+        public long GasConsumed => GasConsumedWithRatio / NativeContract.Policy.GetFeeRatio(Snapshot);
+        public long GasLeft => (gas_amount_with_ratio - GasConsumedWithRatio) / NativeContract.Policy.GetFeeRatio(Snapshot);
         public Exception FaultException { get; private set; }
         public UInt160 CurrentScriptHash => CurrentContext?.GetScriptHash();
         public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
@@ -66,13 +68,13 @@ namespace Neo.SmartContract
             this.Trigger = trigger;
             this.ScriptContainer = container;
             this.Snapshot = snapshot;
-            this.gas_amount = gas;
+            this.gas_amount_with_ratio = gas;
         }
 
         protected internal void AddGas(long gas)
         {
-            GasConsumed = checked(GasConsumed + gas);
-            if (GasConsumed > gas_amount)
+            GasConsumedWithRatio = checked(GasConsumedWithRatio + gas);
+            if (GasConsumedWithRatio > gas_amount_with_ratio)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
 

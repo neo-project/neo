@@ -133,7 +133,11 @@ namespace Neo.SmartContract
         internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas, WitnessFlag filter = WitnessFlag.All)
         {
             if (gas < 0) return false;
-            if (gas > MaxVerificationGas) gas = MaxVerificationGas;
+            if (snapshot == null)
+            {
+                gas = MaxVerificationGas;
+            }
+            else if (gas > MaxVerificationGas) gas = MaxVerificationGas;
 
             UInt160[] hashes;
             try
@@ -150,7 +154,7 @@ namespace Neo.SmartContract
                 WitnessFlag flag = verifiable.Witnesses[i].StateDependent ? WitnessFlag.StateDependent : WitnessFlag.StateIndependent;
                 if (!filter.HasFlag(flag))
                 {
-                    gas -= verifiable.Witnesses[i].GasConsumed;
+                    gas -= verifiable.Witnesses[i].GasConsumedWithRatio;
                     if (gas < 0) return false;
                     continue;
                 }
@@ -192,8 +196,8 @@ namespace Neo.SmartContract
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) return false;
                     if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
-                    gas -= engine.GasConsumed;
-                    verifiable.Witnesses[i].GasConsumed = engine.GasConsumed;
+                    gas -= engine.GasConsumedWithRatio;
+                    verifiable.Witnesses[i].GasConsumedWithRatio = engine.GasConsumedWithRatio;
                 }
             }
             return true;
