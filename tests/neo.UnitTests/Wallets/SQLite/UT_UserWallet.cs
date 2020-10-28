@@ -29,7 +29,7 @@ namespace Neo.UnitTests.Wallets.SQLite
         public static void Setup(TestContext ctx)
         {
             path = GetRandomPath();
-            wallet = UserWallet.Create(path, "123456", new ScryptParameters(0, 0, 0));
+            wallet = UserWallet.Create(path, "123456", new ScryptParameters(2, 1, 1));
             byte[] privateKey = new byte[32];
             using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
             {
