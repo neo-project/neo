@@ -151,7 +151,7 @@ namespace Neo.SmartContract
             if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, method))
                 throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contractHash} From Contract {CurrentScriptHash}");
 
-            CallContractInternal(contract, md, args, flags, CheckReturnType.EnsureNotEmpty);
+            CallContractInternal(contract, md, args, flags, flags.HasFlag(CallFlags.IfExists) ? CheckReturnType.EnsureIsEmpty : CheckReturnType.EnsureNotEmpty);
         }
 
         private void CallContractInternal(ContractState contract, ContractMethodDescriptor method, Array args, CallFlags flags, CheckReturnType checkReturnValue)
