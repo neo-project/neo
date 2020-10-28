@@ -95,7 +95,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             NEP6Wallet wallet = new NEP6Wallet(wPath);
             Assert.AreEqual("name", wallet.Name);
-            Assert.AreEqual(new ScryptParameters(0, 0, 0).ToJson().ToString(), wallet.Scrypt.ToJson().ToString());
+            Assert.AreEqual(new ScryptParameters(2, 1, 1).ToJson().ToString(), wallet.Scrypt.ToJson().ToString());
             Assert.AreEqual(new Version("3.0").ToString(), wallet.Version.ToString());
             wallet = new NEP6Wallet("", "test");
             Assert.AreEqual("test", wallet.Name);
@@ -418,7 +418,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             uut.Name.Should().Be("noname");
             uut.Version.Should().Be(new Version("3.0"));
             uut.Scrypt.Should().NotBeNull();
-            uut.Scrypt.N.Should().Be(new ScryptParameters(0, 0, 0).N);
+            uut.Scrypt.N.Should().Be(new ScryptParameters(2, 1, 1).N);
         }
     }
 }
