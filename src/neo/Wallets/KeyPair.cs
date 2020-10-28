@@ -1,5 +1,6 @@
 using Neo.Cryptography;
 using Neo.SmartContract;
+using Org.BouncyCastle.Crypto.Generators;
 using System;
 using System.Text;
 using static Neo.Wallets.Helper;
@@ -56,7 +57,7 @@ namespace Neo.Wallets
             UInt160 script_hash = Contract.CreateSignatureRedeemScript(PublicKey).ToScriptHash();
             string address = script_hash.ToAddress();
             byte[] addresshash = Encoding.ASCII.GetBytes(address).Sha256().Sha256()[..4];
-            byte[] derivedkey = Crypto.DeriveSCryptKey(Encoding.UTF8.GetBytes(passphrase), addresshash, N, r, p, 64);
+            byte[] derivedkey = SCrypt.Generate(Encoding.UTF8.GetBytes(passphrase), addresshash, N, r, p, 64);
             byte[] derivedhalf1 = derivedkey[..32];
             byte[] derivedhalf2 = derivedkey[32..];
             byte[] encryptedkey = XOR(PrivateKey, derivedhalf1).AES256Encrypt(derivedhalf2);
