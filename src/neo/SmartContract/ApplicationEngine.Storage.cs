@@ -85,6 +85,7 @@ namespace Neo.SmartContract
             if (key.Length > MaxStorageKeySize || value.Length > MaxStorageValueSize || context.IsReadOnly)
                 throw new ArgumentException();
 
+            int newDataSize;
             StorageKey skey = new StorageKey
             {
                 Id = context.Id,
@@ -93,17 +94,17 @@ namespace Neo.SmartContract
             StorageItem item = Snapshot.Storages.GetAndChange(skey);
             if (item is null)
             {
+                newDataSize = key.Length + value.Length;
                 Snapshot.Storages.Add(skey, item = new StorageItem());
-                AddGas((key.Length + value.Length) * StoragePrice);
             }
             else
             {
                 if (item.IsConstant) throw new InvalidOperationException();
-                if (value.Length <= item.Value.Length)
-                    AddGas((1 + value.Length / 4) * StoragePrice);
-                else
-                    AddGas((1 + item.Value.Length / 4 + value.Length - item.Value.Length) * StoragePrice); // +1 means base fee
+                newDataSize = (1 + value.Length / 4); // +1 means base fee
+                if (value.Length > item.Value.Length)
+                    newDataSize += value.Length - item.Value.Length;
             }
+            AddGas(newDataSize * StoragePrice);
 
             item.Value = value;
             item.IsConstant = flags.HasFlag(StorageFlags.Constant);
