@@ -571,6 +571,33 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
 
         [TestMethod]
+        public void TestCheckCandidate()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var committee = NativeContract.NEO.GetCommittee(snapshot);
+            var point = committee[0].EncodePoint(true);
+
+            // Prepare Prefix_VoterRewardPerCommittee
+            var storageKey = new KeyBuilder(-1, 23).Add(committee[0]).AddBigEndian(20);
+            snapshot.Storages.Add(storageKey, new StorageItem(new BigInteger(1000)));
+
+            // Prepare Candidate
+            storageKey = new KeyBuilder(-1, 33).Add(committee[0]);
+            snapshot.Storages.Add(storageKey, new StorageItem(new CandidateState { Registered = true, Votes = BigInteger.One }));
+
+            // Unregister candidate
+            var ret = Check_UnregisterCandidate(snapshot, point);
+            ret.State.Should().BeTrue();
+            ret.Result.Should().BeTrue();
+
+            snapshot.PersistingBlock = new Block { Index = 21 };
+            Check_PostPersist(snapshot).Should().BeTrue();
+
+            storageKey = new KeyBuilder(-1, 23).Add(committee[0]);
+            snapshot.Storages.Find(storageKey.ToArray()).ToArray().Length.Should().Be(1);
+        }
+
+        [TestMethod]
         public void TestGetCommittee()
         {
             using (ApplicationEngine engine = NativeContract.NEO.TestCall("getCommittee"))
