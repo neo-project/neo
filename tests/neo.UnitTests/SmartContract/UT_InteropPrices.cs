@@ -74,7 +74,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 var setupPrice = ae.GasConsumed;
                 debugger.Execute();
-                (ae.GasConsumed - setupPrice).Should().Be(ApplicationEngine.StoragePrice * value.Length);
+                (ae.GasConsumed - setupPrice).Should().Be(ApplicationEngine.StoragePrice * (value.Length + 1));
             }
         }
 
@@ -145,7 +145,7 @@ namespace Neo.UnitTests.SmartContract
                 var setupPrice = ae.GasConsumed;
                 debugger.StepInto();
                 debugger.StepInto();
-                (ae.GasConsumed - setupPrice).Should().Be((sItem.Value.Length / 4 + 1) * ApplicationEngine.StoragePrice);
+                (ae.GasConsumed - setupPrice).Should().Be((oldValue.Length / 4 + 1 + value.Length - oldValue.Length) * ApplicationEngine.StoragePrice);
             }
         }
 
