@@ -95,6 +95,7 @@ namespace Neo.SmartContract.Native.Oracle
             if (response == null) throw new ArgumentException("Oracle response was not found");
             OracleRequest request = GetRequest(engine.Snapshot, response.Id);
             if (request == null) throw new ArgumentException("Oracle request was not found");
+            engine.SendNotification(Hash, "Response", new VM.Types.Array { request.OriginalTxid.ToArray(), response.Id, tx.Hash.ToArray() });
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.Limits.MaxStackSize, engine.Limits.MaxItemSize, engine.ReferenceCounter);
             engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, userData, (int)response.Code, response.Result);
         }
@@ -163,9 +164,7 @@ namespace Neo.SmartContract.Native.Oracle
                 {
                     int index = (int)(response.Id % (ulong)nodes.Length);
                     nodes[index].GAS += OracleRequestPrice;
-                }
-
-                engine.SendNotification(Hash, "Response", new VM.Types.Array { request.OriginalTxid.ToArray(), response.Id, tx.Hash.ToArray() });
+                }                
             }
             if (nodes != null)
             {
