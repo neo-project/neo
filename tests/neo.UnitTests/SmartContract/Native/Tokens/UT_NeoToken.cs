@@ -588,7 +588,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             storageKey = new KeyBuilder(-1, 23).Add(committee[0]);
             snapshot.Storages.Find(storageKey.ToArray()).ToArray().Length.Should().Be(1);
 
-
             // Pre-persist
             snapshot.PersistingBlock = new Block { Index = 21 };
             Check_OnPersist(snapshot);
@@ -604,7 +603,6 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             storageKey = new KeyBuilder(-1, 23).Add(committee[0]);
             snapshot.Storages.Find(storageKey.ToArray()).ToArray().Length.Should().Be(0);
-
 
             // Post-persist
             Check_PostPersist(snapshot).Should().BeTrue();
