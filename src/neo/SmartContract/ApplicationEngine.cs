@@ -18,11 +18,12 @@ namespace Neo.SmartContract
 {
     public partial class ApplicationEngine : ExecutionEngine
     {
-        private enum CheckReturnType : byte
+        protected internal enum CheckReturnType : byte
         {
             None = 0,
             EnsureIsEmpty = 1,
-            EnsureNotEmpty = 2
+            EnsureNotEmpty = 2,
+            DropResult = 3
         }
 
         private class InvocationState
@@ -118,6 +119,13 @@ namespace Neo.SmartContract
                             Push(StackItem.Null);
                         else if (context.EvaluationStack.Count > 1)
                             throw new InvalidOperationException();
+                        break;
+                    }
+                case CheckReturnType.DropResult:
+                    {
+                        if (context.EvaluationStack.Count == 1)
+                            context.EvaluationStack.Pop();
+                        else throw new InvalidOperationException();
                         break;
                     }
             }

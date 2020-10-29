@@ -78,11 +78,11 @@ namespace Neo.SmartContract.Native.Tokens
             engine.SendNotification(Hash, "Transfer",
                 new Array { from == null ? StackItem.Null : from.ToArray(), to == null ? StackItem.Null : to.ToArray(), amount });
 
-            if (to == null) return;
+            if (to == null || !engine.ExistsContract(to, "onPayment")) return;
 
             // Call onPayment method if exists
 
-            engine.CallContractEx(to, "onPayment", new Array(engine.ReferenceCounter) { amount }, CallFlags.All);
+            engine.CallContractInternal(to, "onPayment", new Array(engine.ReferenceCounter) { amount }, CallFlags.All, ApplicationEngine.CheckReturnType.DropResult);
         }
 
         internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)

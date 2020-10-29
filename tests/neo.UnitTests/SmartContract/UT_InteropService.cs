@@ -232,7 +232,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestContract_GetCallFlags()
         {
-            GetEngine().GetCallFlags().Should().Be(CallFlags.Default);
+            GetEngine().GetCallFlags().Should().Be(CallFlags.All);
         }
 
         [TestMethod]
@@ -629,7 +629,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Contracts.Add(state.ScriptHash, state);
 
 
-            foreach (var flags in new CallFlags[] { CallFlags.None, CallFlags.AllowCall, CallFlags.AllowModifyStates, CallFlags.Default })
+            foreach (var flags in new CallFlags[] { CallFlags.None, CallFlags.AllowCall, CallFlags.AllowModifyStates, CallFlags.All })
             {
                 var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
                 engine.LoadScript(new byte[] { 0x01 });
@@ -639,7 +639,7 @@ namespace Neo.UnitTests.SmartContract
                 engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
 
                 // Contract doesn't exists
-                Assert.ThrowsException<InvalidOperationException>(() => engine.CallContractEx(UInt160.Zero, method, args, CallFlags.Default));
+                Assert.ThrowsException<InvalidOperationException>(() => engine.CallContractEx(UInt160.Zero, method, args, CallFlags.All));
 
                 // Call with rights
                 engine.CallContractEx(state.ScriptHash, method, args, flags);

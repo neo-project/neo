@@ -15,6 +15,6 @@ namespace Neo.SmartContract
         /// <summary>
         /// Execution context rights
         /// </summary>
-        public CallFlags CallFlags { get; set; } = CallFlags.Default;
+        public CallFlags CallFlags { get; set; } = CallFlags.All;
     }
 }
