@@ -101,7 +101,7 @@ namespace Neo.UnitTests.Wallets
         public static void ClassInit(TestContext context)
         {
             glkey = UT_Crypto.generateCertainKey(32);
-            nep2Key = glkey.Export("pwd", 0, 0, 0);
+            nep2Key = glkey.Export("pwd", 2, 1, 1);
         }
 
         [TestInitialize]
@@ -240,19 +240,19 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestGetPrivateKeyFromNEP2()
         {
-            Action action = () => Wallet.GetPrivateKeyFromNEP2(null, null, 0, 0, 0);
+            Action action = () => Wallet.GetPrivateKeyFromNEP2(null, null, 2, 1, 1);
             action.Should().Throw<ArgumentNullException>();
 
-            action = () => Wallet.GetPrivateKeyFromNEP2("TestGetPrivateKeyFromNEP2", null, 0, 0, 0);
+            action = () => Wallet.GetPrivateKeyFromNEP2("TestGetPrivateKeyFromNEP2", null, 2, 1, 1);
             action.Should().Throw<ArgumentNullException>();
 
-            action = () => Wallet.GetPrivateKeyFromNEP2("3vQB7B6MrGQZaxCuFg4oh", "TestGetPrivateKeyFromNEP2", 0, 0, 0);
+            action = () => Wallet.GetPrivateKeyFromNEP2("3vQB7B6MrGQZaxCuFg4oh", "TestGetPrivateKeyFromNEP2", 2, 1, 1);
             action.Should().Throw<FormatException>();
 
-            action = () => Wallet.GetPrivateKeyFromNEP2(nep2Key, "Test", 0, 0, 0);
+            action = () => Wallet.GetPrivateKeyFromNEP2(nep2Key, "Test", 2, 1, 1);
             action.Should().Throw<FormatException>();
 
-            Wallet.GetPrivateKeyFromNEP2(nep2Key, "pwd", 0, 0, 0).Should().BeEquivalentTo(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 });
+            Wallet.GetPrivateKeyFromNEP2(nep2Key, "pwd", 2, 1, 1).Should().BeEquivalentTo(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 });
         }
 
         [TestMethod]
@@ -278,7 +278,7 @@ namespace Neo.UnitTests.Wallets
         public void TestImport2()
         {
             MyWallet wallet = new MyWallet();
-            wallet.Import(nep2Key, "pwd", 0, 0, 0).Should().NotBeNull();
+            wallet.Import(nep2Key, "pwd", 2, 1, 1).Should().NotBeNull();
         }
 
         [TestMethod]
