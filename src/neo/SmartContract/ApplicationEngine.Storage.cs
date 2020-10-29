@@ -100,9 +100,10 @@ namespace Neo.SmartContract
             else
             {
                 if (item.IsConstant) throw new InvalidOperationException();
-                newDataSize = (1 + item.Value.Length / 4); // +1 means base fee
-                if (value.Length > item.Value.Length)
-                    newDataSize += value.Length - item.Value.Length;
+                if (value.Length <= item.Value.Length)
+                    newDataSize = (1 + value.Length / 4);
+                else
+                    newDataSize = (1 + item.Value.Length / 4 + value.Length - item.Value.Length);
             }
             AddGas(newDataSize * StoragePrice);
 
