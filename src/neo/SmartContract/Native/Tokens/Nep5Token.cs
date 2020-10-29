@@ -78,7 +78,7 @@ namespace Neo.SmartContract.Native.Tokens
             StorageKey key = CreateStorageKey(Prefix_Account).Add(account);
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(key);
             TState state = storage.GetInteroperable<TState>();
-            if (state.Balance < amount) OnBurnMoreThanExpected(engine, account, state, amount);
+            if (state.Balance < amount) throw new InvalidOperationException();
             OnBalanceChanging(engine, account, state, -amount);
             if (state.Balance == amount)
                 engine.Snapshot.Storages.Delete(key);
@@ -88,8 +88,6 @@ namespace Neo.SmartContract.Native.Tokens
             storage.Add(-amount);
             engine.SendNotification(Hash, "Transfer", new Array { account.ToArray(), StackItem.Null, amount });
         }
-
-        protected virtual void OnBurnMoreThanExpected(ApplicationEngine engine, UInt160 acount, TState state, BigInteger amount) => throw new InvalidOperationException();
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
         public virtual BigInteger TotalSupply(StoreView snapshot)

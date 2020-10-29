@@ -1,9 +1,7 @@
 using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using System;
 using System.Linq;
-using System.Numerics;
 
 namespace Neo.SmartContract.Native.Tokens
 {
@@ -28,20 +26,13 @@ namespace Neo.SmartContract.Native.Tokens
         {
             base.OnPersist(engine);
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
+            {
+                NEO.DistributeGas(engine, tx.Sender);
                 Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
+            }
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.Snapshot.PersistingBlock.ConsensusData.PrimaryIndex]).ToScriptHash();
             Mint(engine, primary, engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.NetworkFee));
-        }
-
-        protected override void OnBurnMoreThanExpected(ApplicationEngine engine, UInt160 account, AccountState state, BigInteger amount)
-        {
-            if (engine.Snapshot.PersistingBlock != null)
-            {
-                NEO.DistributeGas(engine, account);
-            }
-
-            if (state.Balance < amount) throw new InvalidOperationException();
         }
     }
 }
