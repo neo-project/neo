@@ -1267,9 +1267,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 //Change FeeRatio
                 StorageItem storage = snapshot.Storages.GetAndChange(new KeyBuilder(-3, 34), () => new StorageItem());
-                storage.Set(2);
+                storage.Set(50);
                 snapshot.Commit();
-                NativeContract.Policy.GetFeeRatio(snapshot).Should().Be(2);
+                NativeContract.Policy.GetFeeRatio(snapshot).Should().Be(50);
 
                 // Make transaction
 
@@ -1293,7 +1293,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 tx.Witnesses = data.GetWitnesses();
                 tx.Verify(snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.Succeed);
 
-                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, tx.SystemFee * NativeContract.Policy.GetFeeRatio(snapshot)))
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, tx.SystemFee * PolicyContract.MaximumRatioVariety / NativeContract.Policy.GetFeeRatio(snapshot)))
                 {
                     engine.LoadScript(tx.Script);
                     VMState state = engine.Execute();
@@ -1302,9 +1302,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 //Revert FeeRatio
                 storage = snapshot.Storages.GetAndChange(new KeyBuilder(-3, 34), () => new StorageItem());
-                storage.Set(1);
+                storage.Set(100);
                 snapshot.Commit();
-                NativeContract.Policy.GetFeeRatio(snapshot).Should().Be(1);
+                NativeContract.Policy.GetFeeRatio(snapshot).Should().Be(100);
             }
         }
     }

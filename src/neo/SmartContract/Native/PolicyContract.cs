@@ -15,6 +15,9 @@ namespace Neo.SmartContract.Native
         public override string Name => "Policy";
         public override int Id => -3;
 
+        public const uint MaximumRatioVariety = 100;
+        private const uint MaximumRatio = MaximumRatioVariety * MaximumRatioVariety;
+
         private const byte Prefix_MaxTransactionsPerBlock = 23;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_BlockedAccount = 15;
@@ -69,7 +72,7 @@ namespace Neo.SmartContract.Native
         public uint GetFeeRatio(StoreView snapshot)
         {
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_FeeRatio));
-            if (item is null) return 1;
+            if (item is null) return 100;
             return (uint)(BigInteger)item;
         }
 
@@ -140,7 +143,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
         private bool SetFeeRatio(ApplicationEngine engine, uint value)
         {
-            if (value == 0) throw new ArgumentOutOfRangeException(nameof(value));
+            if (value == 0 || value > MaximumRatio) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeeRatio), () => new StorageItem());
             storage.Set(value);

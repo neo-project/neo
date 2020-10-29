@@ -55,8 +55,8 @@ namespace Neo.SmartContract
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
         public long GasConsumedWithRatio = 0;
-        public long GasConsumed => GasConsumedWithRatio / NativeContract.Policy.GetFeeRatio(Snapshot);
-        public long GasLeft => (gas_amount_with_ratio - GasConsumedWithRatio) / NativeContract.Policy.GetFeeRatio(Snapshot);
+        public long GasConsumed => GasConsumedWithRatio * NativeContract.Policy.GetFeeRatio(Snapshot) / PolicyContract.MaximumRatioVariety;
+        public long GasLeft => (gas_amount_with_ratio - GasConsumedWithRatio) * NativeContract.Policy.GetFeeRatio(Snapshot) / PolicyContract.MaximumRatioVariety;
         public Exception FaultException { get; private set; }
         public UInt160 CurrentScriptHash => CurrentContext?.GetScriptHash();
         public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;

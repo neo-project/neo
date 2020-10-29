@@ -431,7 +431,7 @@ namespace Neo.Wallets
                 }
             }
             networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
-            return networkFee / NativeContract.Policy.GetFeeRatio(snapshot);
+            return networkFee * NativeContract.Policy.GetFeeRatio(snapshot) / PolicyContract.MaximumRatioVariety;
         }
 
         public bool Sign(ContractParametersContext context)
