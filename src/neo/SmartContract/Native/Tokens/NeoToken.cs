@@ -59,13 +59,11 @@ namespace Neo.SmartContract.Native.Tokens
         {
             StorageItem storage = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Account).Add(account));
             if (storage is null) return;
-            DistributeGas(engine, account, storage.GetInteroperable<NeoAccountState>());
-        }
 
-        private void DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
-        {
             // PersistingBlock is null when running under the debugger
             if (engine.Snapshot.PersistingBlock == null) return;
+
+            var state = storage.GetInteroperable<NeoAccountState>();
 
             BigInteger gas = CalculateBonus(engine.Snapshot, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
             state.BalanceHeight = engine.Snapshot.PersistingBlock.Index;
