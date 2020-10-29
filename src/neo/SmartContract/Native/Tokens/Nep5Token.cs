@@ -78,7 +78,7 @@ namespace Neo.SmartContract.Native.Tokens
             engine.SendNotification(Hash, "Transfer",
                 new Array { from == null ? StackItem.Null : from.ToArray(), to == null ? StackItem.Null : to.ToArray(), amount });
 
-            if (to == null || !engine.ExistsContract(to, "onPayment")) return;
+            if (!engine.ContractExists(to, "onPayment")) return;
 
             // Call onPayment method if exists
 

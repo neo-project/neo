@@ -121,6 +121,8 @@ namespace Neo.SmartContract
 
         internal bool ContractExists(UInt160 contractHash, string method)
         {
+            if (contractHash is null) return false;
+
             ContractState contract = Snapshot.Contracts.TryGet(contractHash);
             if (contract is null) return false;
 
