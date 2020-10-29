@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Designate;
@@ -25,6 +26,10 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestSetAndGet()
         {
             using var snapshot1 = Blockchain.Singleton.GetSnapshot();
+            snapshot1.PersistingBlock = new Block
+            {
+                Index = 1,
+            };
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
             ECPoint[] validators = NativeContract.NEO.ComputeNextBlockValidators(snapshot1);
             var ret = NativeContract.Designate.Call(

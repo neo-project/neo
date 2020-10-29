@@ -54,8 +54,11 @@ namespace Neo.SmartContract.Native.Designate
                 throw new ArgumentException();
             if (!Enum.IsDefined(typeof(Role), role))
                 throw new ArgumentOutOfRangeException(nameof(role));
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            uint index = engine.Snapshot.Height + 2;
+            if (!CheckCommittee(engine))
+                throw new InvalidOperationException(nameof(DesignateAsRole));
+            if (engine.Snapshot.PersistingBlock is null)
+                throw new InvalidOperationException(nameof(DesignateAsRole));
+            uint index = engine.Snapshot.PersistingBlock.Index + 1;
             var key = CreateStorageKey((byte)role).AddBigEndian(index);
             if (engine.Snapshot.Storages.Contains(key))
                 throw new InvalidOperationException();
