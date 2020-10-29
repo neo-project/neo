@@ -585,12 +585,28 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             storageKey = new KeyBuilder(-1, 33).Add(committee[0]);
             snapshot.Storages.Add(storageKey, new StorageItem(new CandidateState { Registered = true, Votes = BigInteger.One }));
 
-            // Unregister candidate
+            storageKey = new KeyBuilder(-1, 23).Add(committee[0]);
+            snapshot.Storages.Find(storageKey.ToArray()).ToArray().Length.Should().Be(1);
+
+
+            // Pre-persist
+            snapshot.PersistingBlock = new Block { Index = 21 };
+            Check_OnPersist(snapshot);
+
+            // Clear votes
+            storageKey = new KeyBuilder(-1, 33).Add(committee[0]);
+            snapshot.Storages.GetAndChange(storageKey).GetInteroperable<CandidateState>().Votes = BigInteger.Zero;
+
+            // Unregister candidate, remove
             var ret = Check_UnregisterCandidate(snapshot, point);
             ret.State.Should().BeTrue();
             ret.Result.Should().BeTrue();
 
-            snapshot.PersistingBlock = new Block { Index = 21 };
+            storageKey = new KeyBuilder(-1, 23).Add(committee[0]);
+            snapshot.Storages.Find(storageKey.ToArray()).ToArray().Length.Should().Be(0);
+
+
+            // Post-persist
             Check_PostPersist(snapshot).Should().BeTrue();
 
             storageKey = new KeyBuilder(-1, 23).Add(committee[0]);
