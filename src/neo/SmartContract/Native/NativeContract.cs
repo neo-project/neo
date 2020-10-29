@@ -141,14 +141,14 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0, CallFlags.AllowModifyStates)]
         protected virtual void OnPersist(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.System)
+            if (engine.Trigger != TriggerType.OnPersist)
                 throw new InvalidOperationException();
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
         protected virtual void PostPersist(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.System)
+            if (engine.Trigger != TriggerType.PostPersist)
                 throw new InvalidOperationException();
         }
 

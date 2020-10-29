@@ -99,7 +99,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestInvoke()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.System, null, snapshot, 0);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, 0);
             engine.LoadScript(testNativeContract.Script);
 
             ByteString method1 = new ByteString(System.Text.Encoding.Default.GetBytes("wrongMethod"));
@@ -123,7 +123,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ApplicationEngine engine1 = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0);
             Assert.ThrowsException<InvalidOperationException>(() => testNativeContract.TestOnPersist(engine1));
 
-            ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.System, null, snapshot, 0);
+            ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, 0);
             testNativeContract.TestOnPersist(engine2);
         }
 
