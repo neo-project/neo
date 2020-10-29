@@ -322,7 +322,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 sb.Emit(OpCode.DROP);
                 onPersistScript = sb.ToArray();
             }
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.SystemPersist, null, snapshot);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot);
             engine.LoadScript(onPersistScript);
             Assert.AreEqual(engine.Execute(), VMState.HALT);
 
@@ -410,7 +410,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             {
                 sb.EmitAppCall(NativeContract.NEO.Hash, "postPersist");
                 sb.Emit(OpCode.RET);
-                ApplicationEngine engine = ApplicationEngine.Create(TriggerType.SystemPostPersist, null, snapshot, (long)(20 * NativeContract.GAS.Factor));
+                ApplicationEngine engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, (long)(20 * NativeContract.GAS.Factor));
                 engine.LoadScript(sb.ToArray());
                 engine.Execute();
                 engine.State.Should().Be(VM.VMState.HALT);

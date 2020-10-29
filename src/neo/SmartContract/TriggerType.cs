@@ -5,8 +5,8 @@ namespace Neo.SmartContract
     [Flags]
     public enum TriggerType : byte
     {
-        SystemPersist = 0x01,
-        SystemPostPersist = 0x02,
+        OnPersist = 0x01,
+        PostPersist = 0x02,
         /// <summary>
         /// The verification trigger indicates that the contract is being invoked as a verification function.
         /// The verification function can accept multiple parameters, and should return a boolean value that indicates the validity of the transaction or block.
@@ -24,7 +24,7 @@ namespace Neo.SmartContract
         /// </summary>
         Application = 0x40,
 
-        System = SystemPersist | SystemPostPersist,
-        All = SystemPersist | SystemPostPersist | Verification | Application
+        System = OnPersist | PostPersist,
+        All = OnPersist | PostPersist | Verification | Application
     }
 }
