@@ -40,6 +40,28 @@ namespace Neo.SmartContract.Native.Oracle
             {
                 new ContractEventDescriptor
                 {
+                    Name = "Request",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "RequestId",
+                            Type = ContractParameterType.Integer
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "Url",
+                            Type = ContractParameterType.String
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "Filter",
+                            Type = ContractParameterType.String
+                        }
+                    }
+                },
+                new ContractEventDescriptor
+                {
                     Name = "Response",
                     Parameters = new ContractParameterDefinition[]
                     {
@@ -192,6 +214,8 @@ namespace Neo.SmartContract.Native.Oracle
             if (list.Count >= 256)
                 throw new InvalidOperationException("There are too many pending responses for this url");
             list.Add(id);
+
+            engine.SendNotification(Hash, "Request", new VM.Types.Array { id, url, filter });
         }
 
         [ContractMethod(0_01000000, CallFlags.None)]
