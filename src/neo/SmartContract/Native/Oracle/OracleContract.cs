@@ -1,6 +1,7 @@
 #pragma warning disable IDE0051
 
 using Neo.Cryptography;
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -34,6 +35,34 @@ namespace Neo.SmartContract.Native.Oracle
         internal OracleContract()
         {
             Manifest.Features = ContractFeatures.HasStorage;
+
+            var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
+            {
+                new ContractEventDescriptor
+                {
+                    Name = "Response",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "OriginalTx",
+                            Type = ContractParameterType.Hash160
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "RequestId",
+                            Type = ContractParameterType.Integer
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "ResponseTx",
+                            Type = ContractParameterType.Hash160
+                        }
+                    }
+                }
+            };
+
+            Manifest.Abi.Events = events.ToArray();
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
@@ -113,6 +142,8 @@ namespace Neo.SmartContract.Native.Oracle
                     int index = (int)(response.Id % (ulong)nodes.Length);
                     nodes[index].GAS += OracleRequestPrice;
                 }
+
+                engine.SendNotification(Hash, "Response", new VM.Types.Array { request.OriginalTxid.ToArray(), response.Id, tx.Hash.ToArray() });
             }
             if (nodes != null)
             {
