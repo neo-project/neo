@@ -46,7 +46,6 @@ namespace Neo.SmartContract.Native.Tokens
 
         protected override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
         {
-            DistributeGas(engine, account, state);
             if (amount.IsZero) return;
             if (state.VoteTo is null) return;
             engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersCount)).Add(amount);
