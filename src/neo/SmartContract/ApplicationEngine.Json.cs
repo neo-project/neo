@@ -10,7 +10,7 @@ namespace Neo.SmartContract
 
         protected internal byte[] JsonSerialize(StackItem item)
         {
-            return JsonSerializer.SerializeToByteArray(item, MaxItemSize);
+            return JsonSerializer.SerializeToByteArray(item, Limits.MaxItemSize);
         }
 
         protected internal StackItem JsonDeserialize(byte[] json)
