@@ -859,7 +859,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         {
             ECPoint[] committees = NativeContract.NEO.GetCommittee(snapshot);
             UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
-            var engine = ApplicationEngine.Create(TriggerType.System,
+            var engine = ApplicationEngine.Create(TriggerType.OnPersist,
                 new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot);
 
             engine.LoadScript(NativeContract.NEO.Script);
@@ -877,7 +877,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         {
             ECPoint[] committees = NativeContract.NEO.GetCommittee(snapshot);
             UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
-            var engine = ApplicationEngine.Create(TriggerType.System,
+            var engine = ApplicationEngine.Create(TriggerType.PostPersist,
                 new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot);
 
             engine.LoadScript(NativeContract.NEO.Script);
