@@ -39,7 +39,8 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Designate.Call(
                 snapshot2,
                 "getDesignatedByRole",
-                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.StateValidator) }
+                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.StateValidator) },
+                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(uint.MaxValue) }
             );
             ret.Should().BeOfType<VM.Types.Array>();
             (ret as VM.Types.Array).Count.Should().Be(7);
@@ -53,7 +54,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Designate.Call(
                 snapshot2,
-                "getDesignatedByRoleAndIndex",
+                "getDesignatedByRole",
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.StateValidator) },
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(2) }
             );
@@ -62,7 +63,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ret = NativeContract.Designate.Call(
                 snapshot2,
-                "getDesignatedByRoleAndIndex",
+                "getDesignatedByRole",
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.StateValidator) },
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(1) }
             );

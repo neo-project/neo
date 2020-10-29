@@ -3,13 +3,13 @@
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
-using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -29,47 +29,22 @@ namespace Neo.SmartContract.Native.Designate
         {
             foreach (byte role in Enum.GetValues(typeof(Role)))
             {
-                engine.Snapshot.Storages.Add(CreateStorageKey(role), new StorageItem(BitConverter.GetBytes(0u))); // Same as BigEndian
                 engine.Snapshot.Storages.Add(CreateStorageKey(role).AddBigEndian(0u), new StorageItem(new NodeList()));
             }
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        public ECPoint[] GetDesignatedByRole(StoreView snapshot, Role role)
+        public ECPoint[] GetDesignatedByRole(StoreView snapshot, Role role, uint index = uint.MaxValue)
         {
             if (!Enum.IsDefined(typeof(Role), role))
                 throw new ArgumentOutOfRangeException(nameof(role));
-            byte[] index = snapshot.Storages[CreateStorageKey((byte)role)].Value;
-            KeyBuilder index_key = CreateStorageKey((byte)role).Add(index);
-            return snapshot.Storages[index_key].GetInteroperable<NodeList>().ToArray();
-        }
-
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        public ECPoint[] GetDesignatedByRoleAndIndex(StoreView snapshot, Role role, uint index)
-        {
-            if (!Enum.IsDefined(typeof(Role), role))
-                throw new ArgumentOutOfRangeException(nameof(role));
-            if (snapshot.Height + 2 < index)
+            if (index != uint.MaxValue && snapshot.Height + 2 < index)
                 throw new ArgumentOutOfRangeException(nameof(index));
-            List<uint> keys = snapshot.Storages.Find(CreateStorageKey((byte)role).ToArray())
-                .Where(p => p.Key.Key.Length == sizeof(uint) + 1)
-                .Select(p => BinaryPrimitives.ReadUInt32BigEndian(p.Key.Key.AsSpan(1, sizeof(uint))))
-                .ToList();
-
-            if (keys.Count == 0) return System.Array.Empty<ECPoint>();
-
-            keys.Sort();
-            uint height = 0;
-            foreach (uint h in keys)
-            {
-                if (index <= h) break;
-                height = h;
-            }
-
-            if (0 < height)
-                return snapshot.Storages[CreateStorageKey((byte)role).AddBigEndian(height)].GetInteroperable<NodeList>().ToArray();
-
-            return System.Array.Empty<ECPoint>();
+            byte[] key = CreateStorageKey((byte)role).AddBigEndian(index).ToArray();
+            byte[] boundary = CreateStorageKey((byte)role).ToArray();
+            return snapshot.Storages.FindRange(key, boundary, SeekDirection.Backward)
+                .Select(u => u.Value.GetInteroperable<NodeList>().ToArray())
+                .FirstOrDefault();
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
@@ -80,7 +55,7 @@ namespace Neo.SmartContract.Native.Designate
             if (!Enum.IsDefined(typeof(Role), role))
                 throw new ArgumentOutOfRangeException(nameof(role));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            uint index = engine.Snapshot.Height + 1;
+            uint index = engine.Snapshot.Height + 2;
             var key = CreateStorageKey((byte)role).AddBigEndian(index);
             if (engine.Snapshot.Storages.Contains(key))
                 throw new InvalidOperationException();
@@ -88,9 +63,6 @@ namespace Neo.SmartContract.Native.Designate
             list.AddRange(nodes);
             list.Sort();
             engine.Snapshot.Storages.Add(key, new StorageItem(list));
-            StorageItem current = engine.Snapshot.Storages.GetAndChange(CreateStorageKey((byte)role));
-            current.Value = new byte[sizeof(uint)];
-            BinaryPrimitives.WriteUInt32BigEndian(current.Value, index);
         }
 
         private class NodeList : List<ECPoint>, IInteroperable
