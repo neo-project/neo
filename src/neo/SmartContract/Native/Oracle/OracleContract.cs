@@ -164,7 +164,7 @@ namespace Neo.SmartContract.Native.Oracle
                 {
                     int index = (int)(response.Id % (ulong)nodes.Length);
                     nodes[index].GAS += OracleRequestPrice;
-                }                
+                }
             }
             if (nodes != null)
             {
