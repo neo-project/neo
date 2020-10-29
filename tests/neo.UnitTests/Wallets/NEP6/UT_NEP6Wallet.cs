@@ -39,7 +39,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             }
             keyPair = new KeyPair(privateKey);
             testScriptHash = Neo.SmartContract.Contract.CreateSignatureContract(keyPair.PublicKey).ScriptHash;
-            nep2key = keyPair.Export("123", 0, 0, 0);
+            nep2key = keyPair.Export("123", 2, 1, 1);
         }
 
         private NEP6Wallet CreateWallet()
@@ -52,7 +52,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             rootPath = GetRandomPath();
             if (!Directory.Exists(rootPath)) Directory.CreateDirectory(rootPath);
             string path = Path.Combine(rootPath, "wallet.json");
-            File.WriteAllText(path, "{\"name\":\"name\",\"version\":\"3.0\",\"scrypt\":{\"n\":0,\"r\":0,\"p\":0},\"accounts\":[],\"extra\":{}}");
+            File.WriteAllText(path, "{\"name\":\"name\",\"version\":\"3.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":{}}");
             return path;
         }
 
@@ -76,7 +76,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             JObject wallet = new JObject();
             wallet["name"] = "name";
             wallet["version"] = new System.Version("3.0").ToString();
-            wallet["scrypt"] = new ScryptParameters(0, 0, 0).ToJson();
+            wallet["scrypt"] = new ScryptParameters(2, 1, 1).ToJson();
             wallet["accounts"] = new JArray();
             wallet["extra"] = new JObject();
             File.WriteAllText(wPath, wallet.ToString());
@@ -95,7 +95,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             NEP6Wallet wallet = new NEP6Wallet(wPath);
             Assert.AreEqual("name", wallet.Name);
-            Assert.AreEqual(new ScryptParameters(0, 0, 0).ToJson().ToString(), wallet.Scrypt.ToJson().ToString());
+            Assert.AreEqual(new ScryptParameters(2, 1, 1).ToJson().ToString(), wallet.Scrypt.ToJson().ToString());
             Assert.AreEqual(new Version("3.0").ToString(), wallet.Version.ToString());
             wallet = new NEP6Wallet("", "test");
             Assert.AreEqual("test", wallet.Name);
@@ -205,7 +205,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestDecryptKey()
         {
-            string nep2key = keyPair.Export("123", 0, 0, 0);
+            string nep2key = keyPair.Export("123", 2, 1, 1);
             uut.Unlock("123");
             KeyPair key1 = uut.DecryptKey(nep2key);
             bool result = key1.Equals(keyPair);
@@ -307,7 +307,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             bool result = uut.Contains(testScriptHash);
             Assert.AreEqual(false, result);
-            uut.Import(nep2key, "123", 0, 0, 0);
+            uut.Import(nep2key, "123", 2, 1, 1);
             result = uut.Contains(testScriptHash);
             Assert.AreEqual(true, result);
             uut.DeleteAccount(testScriptHash);
@@ -316,13 +316,13 @@ namespace Neo.UnitTests.Wallets.NEP6
             JObject wallet = new JObject();
             wallet["name"] = "name";
             wallet["version"] = new Version("3.0").ToString();
-            wallet["scrypt"] = new ScryptParameters(0, 0, 0).ToJson();
+            wallet["scrypt"] = new ScryptParameters(2, 1, 1).ToJson();
             wallet["accounts"] = new JArray();
             wallet["extra"] = new JObject();
             uut = new NEP6Wallet(wallet);
             result = uut.Contains(testScriptHash);
             Assert.AreEqual(false, result);
-            uut.Import(nep2key, "123", 0, 0, 0);
+            uut.Import(nep2key, "123", 2, 1, 1);
             result = uut.Contains(testScriptHash);
             Assert.AreEqual(true, result);
         }
@@ -360,7 +360,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             JObject wallet = new JObject();
             wallet["name"] = "name";
             wallet["version"] = new System.Version("3.0").ToString();
-            wallet["scrypt"] = new ScryptParameters(0, 0, 0).ToJson();
+            wallet["scrypt"] = new ScryptParameters(2, 1, 1).ToJson();
             wallet["accounts"] = new JArray();
             wallet["extra"] = new JObject();
             File.WriteAllText(wPath, wallet.ToString());
@@ -402,12 +402,12 @@ namespace Neo.UnitTests.Wallets.NEP6
             JObject wallet = new JObject();
             wallet["name"] = "name";
             wallet["version"] = new Version("3.0").ToString();
-            wallet["scrypt"] = new ScryptParameters(0, 0, 0).ToJson();
+            wallet["scrypt"] = new ScryptParameters(2, 1, 1).ToJson();
             wallet["accounts"] = new JArray();
             wallet["extra"] = new JObject();
             uut = new NEP6Wallet(wallet);
-            nep2key = keyPair.Export("123", 0, 0, 0);
-            uut.Import(nep2key, "123", 0, 0, 0);
+            nep2key = keyPair.Export("123", 2, 1, 1);
+            uut.Import(nep2key, "123", 2, 1, 1);
             Assert.IsFalse(uut.VerifyPassword("1"));
             Assert.IsTrue(uut.VerifyPassword("123"));
         }
@@ -418,7 +418,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             uut.Name.Should().Be("noname");
             uut.Version.Should().Be(new Version("3.0"));
             uut.Scrypt.Should().NotBeNull();
-            uut.Scrypt.N.Should().Be(new ScryptParameters(0, 0, 0).N);
+            uut.Scrypt.N.Should().Be(new ScryptParameters(2, 1, 1).N);
         }
     }
 }
