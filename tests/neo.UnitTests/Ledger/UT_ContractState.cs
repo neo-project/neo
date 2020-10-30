@@ -3,8 +3,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using System.IO;
 
 namespace Neo.UnitTests.Ledger
@@ -94,6 +96,16 @@ namespace Neo.UnitTests.Ledger
             json["hash"].AsString().Should().Be("0x820944cfdc70976602d71b0091445eedbc661bc5");
             json["script"].AsString().Should().Be("AQ==");
             json["manifest"].AsString().Should().Be(manifest.ToJson().AsString());
+        }
+
+        [TestMethod]
+        public void TestToJson2()
+        {
+            ContractState neocontract = contract;
+            neocontract.Id = -1;
+            JObject json = neocontract.ToJson();
+            json["id"].AsString().Should().Be("-1");
+            json["name"].AsString().Should().Be("NEO");
         }
     }
 }
