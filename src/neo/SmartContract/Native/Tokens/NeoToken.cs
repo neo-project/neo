@@ -94,7 +94,7 @@ namespace Neo.SmartContract.Native.Tokens
                 snapshot.Storages.Delete(key);
         }
 
-        private bool ShouldRefreshCommittee(uint height) => height % (ProtocolSettings.Default.CommitteeMembersCount + ProtocolSettings.Default.ValidatorsCount) == 0;
+        public bool ShouldRefreshCommittee(uint height) => height % (ProtocolSettings.Default.CommitteeMembersCount + ProtocolSettings.Default.ValidatorsCount) == 0;
 
         internal override void Initialize(ApplicationEngine engine)
         {
