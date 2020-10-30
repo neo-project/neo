@@ -1,7 +1,6 @@
 using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using System.Linq;
 
 namespace Neo.SmartContract.Native.Tokens
 {
@@ -25,14 +24,16 @@ namespace Neo.SmartContract.Native.Tokens
         protected override void OnPersist(ApplicationEngine engine)
         {
             base.OnPersist(engine);
+            long totalNetworkFee = 0;
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
             {
                 NEO.DistributeGas(engine, tx.Sender);
                 Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
+                totalNetworkFee += tx.NetworkFee;
             }
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.Snapshot.PersistingBlock.ConsensusData.PrimaryIndex]).ToScriptHash();
-            Mint(engine, primary, engine.Snapshot.PersistingBlock.Transactions.Sum(p => p.NetworkFee));
+            Mint(engine, primary, totalNetworkFee);
         }
     }
 }
