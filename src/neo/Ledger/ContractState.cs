@@ -2,6 +2,7 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -74,6 +75,14 @@ namespace Neo.Ledger
         {
             JObject json = new JObject();
             json["id"] = Id;
+            if (Id < 0)
+            {
+                foreach (var native in NativeContract.Contracts)
+                {
+                    if (Id == native.Id)
+                        json["name"] = native.Name;
+                }
+            }
             json["hash"] = ScriptHash.ToString();
             json["script"] = Convert.ToBase64String(Script);
             json["manifest"] = Manifest.ToJson();
