@@ -3,10 +3,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
-using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
-using Neo.SmartContract.Native;
 using System.IO;
 
 namespace Neo.UnitTests.Ledger
