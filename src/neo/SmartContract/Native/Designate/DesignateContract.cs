@@ -25,16 +25,8 @@ namespace Neo.SmartContract.Native.Designate
             Manifest.Features = ContractFeatures.HasStorage;
         }
 
-        internal override void Initialize(ApplicationEngine engine)
-        {
-            foreach (byte role in Enum.GetValues(typeof(Role)))
-            {
-                engine.Snapshot.Storages.Add(CreateStorageKey(role).AddBigEndian(0u), new StorageItem(new NodeList()));
-            }
-        }
-
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        public ECPoint[] GetDesignatedByRole(StoreView snapshot, Role role, uint index = uint.MaxValue)
+        public ECPoint[] GetDesignatedByRole(StoreView snapshot, Role role, uint index)
         {
             if (!Enum.IsDefined(typeof(Role), role))
                 throw new ArgumentOutOfRangeException(nameof(role));
@@ -44,7 +36,7 @@ namespace Neo.SmartContract.Native.Designate
             byte[] boundary = CreateStorageKey((byte)role).ToArray();
             return snapshot.Storages.FindRange(key, boundary, SeekDirection.Backward)
                 .Select(u => u.Value.GetInteroperable<NodeList>().ToArray())
-                .FirstOrDefault();
+                .First() ?? System.Array.Empty<ECPoint>();
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
