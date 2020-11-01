@@ -110,7 +110,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             if (!candidate.Registered && candidate.Votes.IsZero)
             {
-                foreach (var (rewardKey, _) in snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(pubkey).ToArray()))
+                foreach (var (rewardKey, _) in snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(pubkey).ToArray()).ToArray())
                     snapshot.Storages.Delete(rewardKey);
                 snapshot.Storages.Delete(CreateStorageKey(Prefix_Candidate).Add(pubkey));
             }
