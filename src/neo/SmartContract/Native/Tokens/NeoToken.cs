@@ -46,6 +46,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         protected override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
         {
+            DistributeGas(engine, account, state);
             if (amount.IsZero) return;
             if (state.VoteTo is null) return;
             engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_VotersCount)).Add(amount);
@@ -63,8 +64,11 @@ namespace Neo.SmartContract.Native.Tokens
             // PersistingBlock is null when running under the debugger
             if (engine.Snapshot.PersistingBlock == null) return;
 
-            var state = storage.GetInteroperable<NeoAccountState>();
+            DistributeGas(engine, account, storage.GetInteroperable<NeoAccountState>());
+        }
 
+        private void DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
+        {
             BigInteger gas = CalculateBonus(engine.Snapshot, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
             state.BalanceHeight = engine.Snapshot.PersistingBlock.Index;
             GAS.Mint(engine, account, gas);

@@ -1,6 +1,7 @@
 using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using System.Collections.Generic;
 
 namespace Neo.SmartContract.Native.Tokens
 {
@@ -25,9 +26,10 @@ namespace Neo.SmartContract.Native.Tokens
         {
             base.OnPersist(engine);
             long totalNetworkFee = 0;
+            HashSet<UInt160> distributed = new HashSet<UInt160>();
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
             {
-                NEO.DistributeGas(engine, tx.Sender);
+                if (distributed.Add(tx.Sender)) NEO.DistributeGas(engine, tx.Sender);
                 Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
                 totalNetworkFee += tx.NetworkFee;
             }
