@@ -80,7 +80,7 @@ namespace Neo.Ledger
                 foreach (var native in NativeContract.Contracts)
                 {
                     if (Id == native.Id)
-                   {
+                    {
                         json["name"] = native.Name;
                         break;
                     }
