@@ -36,7 +36,7 @@ namespace Neo.SmartContract.Native.Designate
             byte[] boundary = CreateStorageKey((byte)role).ToArray();
             return snapshot.Storages.FindRange(key, boundary, SeekDirection.Backward)
                 .Select(u => u.Value.GetInteroperable<NodeList>().ToArray())
-                .First() ?? System.Array.Empty<ECPoint>();
+                .FirstOrDefault() ?? System.Array.Empty<ECPoint>();
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
