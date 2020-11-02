@@ -50,7 +50,7 @@ namespace Neo.SmartContract
             }
         }
 
-        private static StackItem Deserialize(BinaryReader reader, uint maxArraySize, uint maxItemSize, ReferenceCounter referenceCounter)
+        public static StackItem Deserialize(BinaryReader reader, uint maxArraySize, uint maxItemSize, ReferenceCounter referenceCounter)
         {
             Stack<StackItem> deserialized = new Stack<StackItem>();
             int undeserialized = 1;
@@ -141,7 +141,7 @@ namespace Neo.SmartContract
             return ms.ToArray();
         }
 
-        private static void Serialize(StackItem item, BinaryWriter writer, uint maxSize)
+        public static void Serialize(StackItem item, BinaryWriter writer, uint maxSize)
         {
             List<CompoundType> serialized = new List<CompoundType>();
             Stack<StackItem> unserialized = new Stack<StackItem>();
