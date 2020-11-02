@@ -12,7 +12,7 @@ using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.SmartContract
 {
-    internal static class BinarySerializer
+    public static class BinarySerializer
     {
         private class ContainerPlaceholder : StackItem
         {
