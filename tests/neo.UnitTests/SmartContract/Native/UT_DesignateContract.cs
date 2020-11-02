@@ -45,7 +45,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 snapshot2,
                 "getDesignatedByRole",
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.StateValidator) },
-                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(uint.MaxValue) }
+                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(2u) }
             );
             ret.Should().BeOfType<VM.Types.Array>();
             (ret as VM.Types.Array).Count.Should().Be(7);
