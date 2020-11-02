@@ -120,6 +120,7 @@ namespace Neo.Network.P2P
         private void OnPersistCompleted(Block block)
         {
             receivedBlockIndex.Remove(block.Index);
+            RequestTasks(false);
         }
 
         protected override void OnReceive(object message)
@@ -293,7 +294,7 @@ namespace Neo.Network.P2P
             var highestBlockIndex = sessions.Values.Max(p => p.LastBlockIndex);
             for (; taskCounts < MaxSyncTasksCount; taskCounts++)
             {
-                if (lastTaskIndex >= highestBlockIndex) break;
+                if (lastTaskIndex >= highestBlockIndex || lastTaskIndex >= Blockchain.Singleton.Height + InvPayload.MaxHashesCount) break;
                 if (!AssignSyncTask(++lastTaskIndex)) break;
             }
         }
