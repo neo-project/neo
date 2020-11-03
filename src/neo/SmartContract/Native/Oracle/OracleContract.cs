@@ -40,7 +40,7 @@ namespace Neo.SmartContract.Native.Oracle
             {
                 new ContractEventDescriptor
                 {
-                    Name = "Request",
+                    Name = "OracleRequest",
                     Parameters = new ContractParameterDefinition[]
                     {
                         new ContractParameterDefinition()
