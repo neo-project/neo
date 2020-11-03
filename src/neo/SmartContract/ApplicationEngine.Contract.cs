@@ -47,6 +47,7 @@ namespace Neo.SmartContract
             contract = new ContractState
             {
                 Id = Snapshot.ContractId.GetAndChange().NextId++,
+                Version = 0,
                 Script = nef.Script,
                 ScriptHash = hash,
                 Manifest = ContractManifest.Parse(manifest)
@@ -96,12 +97,11 @@ namespace Neo.SmartContract
             {
                 if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
                     throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
-                var parsedManifest = ContractManifest.Parse(manifest);
-                if (!parsedManifest.IsValid(contract.ScriptHash))
+                contract.Manifest = ContractManifest.Parse(manifest);
+                if (!contract.Manifest.IsValid(contract.ScriptHash))
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.ScriptHash}");
                 if (!contract.HasStorage && Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)).Any())
                     throw new InvalidOperationException($"Contract Does Not Support Storage But Uses Storage");
-                contract.Manifest = parsedManifest;
             }
             contract.Version++; // Increase the version
             if (nef != null)
