@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.VM.Types;
+using System.Numerics;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -36,6 +37,18 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual("AQIDBA==", engine.Base64Encode(new byte[] { 1, 2, 3, 4 }));
 
             Assert.AreEqual("2VfUX", engine.Base58Encode(new byte[] { 1, 2, 3, 4 }));
+        }
+
+        [TestMethod]
+        public void TestItoaAtoi()
+        {
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+
+            Assert.AreEqual("1", engine.Itoa(BigInteger.One));
+            Assert.AreEqual("-1", engine.Itoa(BigInteger.MinusOne));
+            Assert.AreEqual(-1, engine.Atoi("-1"));
+            Assert.AreEqual(1, engine.Atoi("+1"));
+            Assert.ThrowsException<System.FormatException>(() => engine.Atoi("a"));
         }
 
         [TestMethod]
