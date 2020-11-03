@@ -28,7 +28,7 @@ namespace Neo.UnitTests.SmartContract.Native
             using var snapshot1 = Blockchain.Singleton.GetSnapshot();
             snapshot1.PersistingBlock = new Block
             {
-                Index = 1,
+                Index = 0,
             };
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
             ECPoint[] validators = NativeContract.NEO.ComputeNextBlockValidators(snapshot1);
@@ -45,7 +45,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 snapshot2,
                 "getDesignatedByRole",
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.StateValidator) },
-                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(2u) }
+                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(1u) }
             );
             ret.Should().BeOfType<VM.Types.Array>();
             (ret as VM.Types.Array).Count.Should().Be(7);
@@ -61,16 +61,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 snapshot2,
                 "getDesignatedByRole",
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.StateValidator) },
-                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(2) }
-            );
-            ret.Should().BeOfType<VM.Types.Array>();
-            (ret as VM.Types.Array).Count.Should().Be(7);
-
-            ret = NativeContract.Designate.Call(
-                snapshot2,
-                "getDesignatedByRole",
-                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.StateValidator) },
-                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(1) }
+                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(0) }
             );
             ret.Should().BeOfType<VM.Types.Array>();
             (ret as VM.Types.Array).Count.Should().Be(0);
