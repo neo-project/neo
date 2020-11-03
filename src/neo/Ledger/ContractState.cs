@@ -79,7 +79,15 @@ namespace Neo.Ledger
             if (Id < 0)
             {
                 var native = NativeContract.GetContract(Id);
-                if (native != null) json["name"] = native.Name;
+                if (native != null)
+                {
+                    json["name"] = native.Name;
+                    json["isnative"] = true;
+                }
+                else
+                {
+                    json["isnative"] = false;
+                }
             }
             else
             {
@@ -87,6 +95,8 @@ namespace Neo.Ledger
                 {
                     json["name"] = Manifest.Extra["name"];
                 }
+
+                json["isnative"] = false;
             }
 
             json["hash"] = ScriptHash.ToString();
