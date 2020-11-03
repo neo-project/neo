@@ -17,6 +17,7 @@ namespace Neo.SmartContract.Native
     public abstract class NativeContract
     {
         private static readonly List<NativeContract> contractsList = new List<NativeContract>();
+        private static readonly Dictionary<int, NativeContract> contractsIdDictionary = new Dictionary<int, NativeContract>();
         private static readonly Dictionary<string, NativeContract> contractsNameDictionary = new Dictionary<string, NativeContract>();
         private static readonly Dictionary<UInt160, NativeContract> contractsHashDictionary = new Dictionary<UInt160, NativeContract>();
         private readonly Dictionary<string, ContractMethodMetadata> methods = new Dictionary<string, ContractMethodMetadata>();
@@ -77,6 +78,7 @@ namespace Neo.SmartContract.Native
                 Extra = null
             };
             contractsList.Add(this);
+            contractsIdDictionary.Add(Id, this);
             contractsNameDictionary.Add(Name, this);
             contractsHashDictionary.Add(Hash, this);
         }
@@ -101,6 +103,12 @@ namespace Neo.SmartContract.Native
         public static NativeContract GetContract(string name)
         {
             contractsNameDictionary.TryGetValue(name, out var contract);
+            return contract;
+        }
+
+        public static NativeContract GetContract(int id)
+        {
+            contractsIdDictionary.TryGetValue(id, out var contract);
             return contract;
         }
 

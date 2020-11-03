@@ -75,17 +75,20 @@ namespace Neo.Ledger
         {
             JObject json = new JObject();
             json["id"] = Id;
+
             if (Id < 0)
             {
-                foreach (var native in NativeContract.Contracts)
+                var native = NativeContract.GetContract(Id);
+                if (native != null) json["name"] = native.Name;
+            }
+            else
+            {
+                if (Manifest.Extra != null && Manifest.Extra["name"] != null)
                 {
-                    if (Id == native.Id)
-                    {
-                        json["name"] = native.Name;
-                        break;
-                    }
+                    json["name"] = Manifest.Extra["name"];
                 }
             }
+
             json["hash"] = ScriptHash.ToString();
             json["script"] = Convert.ToBase64String(Script);
             json["manifest"] = Manifest.ToJson();
