@@ -5,6 +5,8 @@ using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
+using System;
+using System.Linq;
 
 namespace Neo.UnitTests.Network.P2P
 {
@@ -22,6 +24,7 @@ namespace Neo.UnitTests.Network.P2P
 
             copy.Command.Should().Be(msg.Command);
             copy.Flags.Should().Be(msg.Flags);
+            msg.Size.Should().Be(payload.Size + 3);
 
             payloadCopy.LastBlockIndex.Should().Be(payload.LastBlockIndex);
             payloadCopy.Nonce.Should().Be(payload.Nonce);
@@ -75,41 +78,83 @@ namespace Neo.UnitTests.Network.P2P
         }
 
         [TestMethod]
-        public void Compression()
+        public void MultipleSizes()
         {
-            var payload = new VersionPayload()
-            {
-                UserAgent = "".PadLeft(1024, '0'),
-                Nonce = 1,
-                Magic = 2,
-                Timestamp = 5,
-                Version = 6,
-                Capabilities = new NodeCapability[]
-                {
-                    new ServerCapability(NodeCapabilityType.TcpServer, 25)
-                }
-            };
-
-            var msg = Message.Create(MessageCommand.Version, payload);
+            var msg = Message.Create(MessageCommand.GetAddr);
             var buffer = msg.ToArray();
 
-            buffer.Length.Should().BeLessThan(80);
+            var length = Message.TryDeserialize(ByteString.Empty, out var copy);
+            Assert.AreEqual(0, length);
+            Assert.IsNull(copy);
+
+            length = Message.TryDeserialize(ByteString.CopyFrom(buffer), out copy);
+            Assert.AreEqual(buffer.Length, length);
+            Assert.IsNotNull(copy);
+
+            length = Message.TryDeserialize(ByteString.CopyFrom(buffer.Take(2).Concat(new byte[] { 0xFD }).ToArray()), out copy);
+            Assert.AreEqual(0, length);
+            Assert.IsNull(copy);
+
+            length = Message.TryDeserialize(ByteString.CopyFrom(buffer.Take(2).Concat(new byte[] { 0xFD, buffer[2], 0x00 }).Concat(buffer.Skip(3)).ToArray()), out copy);
+            Assert.AreEqual(buffer.Length + 2, length);
+            Assert.IsNotNull(copy);
+
+            length = Message.TryDeserialize(ByteString.CopyFrom(buffer.Take(2).Concat(new byte[] { 0xFD, 0x01, 0x00 }).Concat(buffer.Skip(3)).ToArray()), out copy);
+            Assert.AreEqual(0, length);
+            Assert.IsNull(copy);
+
+            length = Message.TryDeserialize(ByteString.CopyFrom(buffer.Take(2).Concat(new byte[] { 0xFE }).Concat(buffer.Skip(3)).ToArray()), out copy);
+            Assert.AreEqual(0, length);
+            Assert.IsNull(copy);
+
+            length = Message.TryDeserialize(ByteString.CopyFrom(buffer.Take(2).Concat(new byte[] { 0xFE, buffer[2], 0x00, 0x00, 0x00 }).Concat(buffer.Skip(3)).ToArray()), out copy);
+            Assert.AreEqual(buffer.Length + 4, length);
+            Assert.IsNotNull(copy);
+
+            length = Message.TryDeserialize(ByteString.CopyFrom(buffer.Take(2).Concat(new byte[] { 0xFF }).Concat(buffer.Skip(3)).ToArray()), out copy);
+            Assert.AreEqual(0, length);
+            Assert.IsNull(copy);
+
+            length = Message.TryDeserialize(ByteString.CopyFrom(buffer.Take(2).Concat(new byte[] { 0xFF, buffer[2], 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }).Concat(buffer.Skip(3)).ToArray()), out copy);
+            Assert.AreEqual(buffer.Length + 8, length);
+            Assert.IsNotNull(copy);
+
+            // Big message
+
+            Assert.ThrowsException<FormatException>(() => Message.TryDeserialize(ByteString.CopyFrom(buffer.Take(2).Concat(new byte[] { 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }).Concat(buffer.Skip(3)).ToArray()), out copy));
+        }
+
+        [TestMethod]
+        public void Compression()
+        {
+            var payload = new Transaction()
+            {
+                Nonce = 1,
+                Version = 0,
+                Attributes = new TransactionAttribute[0],
+                Script = new byte[75],
+                Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
+                Witnesses = new Witness[0],
+            };
+
+            var msg = Message.Create(MessageCommand.Transaction, payload);
+            var buffer = msg.ToArray();
+
+            buffer.Length.Should().Be(128);
+
+            payload.Script = new byte[payload.Script.Length + 10];
+            msg = Message.Create(MessageCommand.Transaction, payload);
+            buffer = msg.ToArray();
+
+            buffer.Length.Should().Be(33);
 
             var copy = buffer.AsSerializable<Message>();
-            var payloadCopy = (VersionPayload)copy.Payload;
+            var payloadCopy = (Transaction)copy.Payload;
 
             copy.Command.Should().Be(msg.Command);
             copy.Flags.Should().HaveFlag(MessageFlags.Compressed);
 
-            payloadCopy.UserAgent.Should().Be(payload.UserAgent);
-            payloadCopy.Nonce.Should().Be(payload.Nonce);
-            payloadCopy.Magic.Should().Be(payload.Magic);
-            payloadCopy.Timestamp.Should().Be(payload.Timestamp);
-            payloadCopy.Version.Should().Be(payload.Version);
-
-            payloadCopy.Capabilities.Length.Should().Be(1);
-            ((ServerCapability)payloadCopy.Capabilities[0]).Type.Should().Be(NodeCapabilityType.TcpServer);
-            ((ServerCapability)payloadCopy.Capabilities[0]).Port.Should().Be(25);
+            payloadCopy.ToArray().ToHexString().Should().Be(payload.ToArray().ToHexString());
         }
     }
 }

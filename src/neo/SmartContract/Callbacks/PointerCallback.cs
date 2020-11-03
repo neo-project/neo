@@ -3,7 +3,7 @@ using Neo.VM.Types;
 
 namespace Neo.SmartContract.Callbacks
 {
-    internal class PointerCallback : CallbackBase
+    public class PointerCallback : CallbackBase
     {
         private readonly ExecutionContext context;
         private readonly int pointer;
@@ -19,7 +19,7 @@ namespace Neo.SmartContract.Callbacks
 
         public override void LoadContext(ApplicationEngine engine, Array args)
         {
-            engine.LoadContext(context.Clone(), pointer);
+            engine.LoadContext(context.Clone(pointer), true);
             for (int i = args.Count - 1; i >= 0; i--)
                 engine.Push(args[i]);
         }

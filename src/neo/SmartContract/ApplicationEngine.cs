@@ -18,12 +18,24 @@ namespace Neo.SmartContract
 {
     public partial class ApplicationEngine : ExecutionEngine
     {
+        private enum CheckReturnType : byte
+        {
+            None = 0,
+            EnsureIsEmpty = 1,
+            EnsureNotEmpty = 2
+        }
+
         private class InvocationState
         {
             public Type ReturnType;
             public Delegate Callback;
-            public bool NeedCheckReturnValue;
+            public CheckReturnType NeedCheckReturnValue;
         }
+
+        /// <summary>
+        /// This constant can be used for testing scripts.
+        /// </summary>
+        private const long TestModeGas = 20_00000000;
 
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
@@ -31,37 +43,36 @@ namespace Neo.SmartContract
         private static IApplicationEngineProvider applicationEngineProvider;
         private static Dictionary<uint, InteropDescriptor> services;
         private readonly long gas_amount;
-        private readonly bool testMode;
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new Dictionary<UInt160, int>();
         private readonly Dictionary<ExecutionContext, InvocationState> invocationStates = new Dictionary<ExecutionContext, InvocationState>();
 
         public static IReadOnlyDictionary<uint, InteropDescriptor> Services => services;
+        private List<IDisposable> Disposables => disposables ??= new List<IDisposable>();
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
         public long GasConsumed { get; private set; } = 0;
-        public long GasLeft => testMode ? -1 : gas_amount - GasConsumed;
+        public long GasLeft => gas_amount - GasConsumed;
         public Exception FaultException { get; private set; }
-        public UInt160 CurrentScriptHash => CurrentContext?.GetState<ExecutionContextState>().ScriptHash;
+        public UInt160 CurrentScriptHash => CurrentContext?.GetScriptHash();
         public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
-        public UInt160 EntryScriptHash => EntryContext?.GetState<ExecutionContextState>().ScriptHash;
+        public UInt160 EntryScriptHash => EntryContext?.GetScriptHash();
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
 
-        protected ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
+        protected ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
             this.Snapshot = snapshot;
             this.gas_amount = gas;
-            this.testMode = testMode;
         }
 
-        internal void AddGas(long gas)
+        protected internal void AddGas(long gas)
         {
             GasConsumed = checked(GasConsumed + gas);
-            if (!testMode && GasConsumed > gas_amount)
+            if (GasConsumed > gas_amount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
 
@@ -76,7 +87,7 @@ namespace Neo.SmartContract
             InvocationState state = GetInvocationState(CurrentContext);
             state.ReturnType = typeof(void);
             state.Callback = onComplete;
-            CallContract(hash, method, new VMArray(args));
+            CallContract(hash, method, new VMArray(ReferenceCounter, args));
         }
 
         internal void CallFromNativeContract<T>(Action<T> onComplete, UInt160 hash, string method, params StackItem[] args)
@@ -84,7 +95,7 @@ namespace Neo.SmartContract
             InvocationState state = GetInvocationState(CurrentContext);
             state.ReturnType = typeof(T);
             state.Callback = onComplete;
-            CallContract(hash, method, new VMArray(args));
+            CallContract(hash, method, new VMArray(ReferenceCounter, args));
         }
 
         protected override void ContextUnloaded(ExecutionContext context)
@@ -93,11 +104,23 @@ namespace Neo.SmartContract
             if (!(UncaughtException is null)) return;
             if (invocationStates.Count == 0) return;
             if (!invocationStates.Remove(CurrentContext, out InvocationState state)) return;
-            if (state.NeedCheckReturnValue)
-                if (context.EvaluationStack.Count == 0)
-                    Push(StackItem.Null);
-                else if (context.EvaluationStack.Count > 1)
-                    throw new InvalidOperationException();
+            switch (state.NeedCheckReturnValue)
+            {
+                case CheckReturnType.EnsureIsEmpty:
+                    {
+                        if (context.EvaluationStack.Count != 0)
+                            throw new InvalidOperationException();
+                        break;
+                    }
+                case CheckReturnType.EnsureNotEmpty:
+                    {
+                        if (context.EvaluationStack.Count == 0)
+                            Push(StackItem.Null);
+                        else if (context.EvaluationStack.Count > 1)
+                            throw new InvalidOperationException();
+                        break;
+                    }
+            }
             switch (state.Callback)
             {
                 case null:
@@ -111,9 +134,11 @@ namespace Neo.SmartContract
             }
         }
 
-        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas, bool testMode = false)
-            => applicationEngineProvider?.Create(trigger, container, snapshot, gas, testMode)
-                ?? new ApplicationEngine(trigger, container, snapshot, gas, testMode);
+        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas = TestModeGas)
+        {
+            return applicationEngineProvider?.Create(trigger, container, snapshot, gas)
+                  ?? new ApplicationEngine(trigger, container, snapshot, gas);
+        }
 
         private InvocationState GetInvocationState(ExecutionContext context)
         {
@@ -129,25 +154,28 @@ namespace Neo.SmartContract
         {
             // Set default execution context state
 
-            context.GetState<ExecutionContextState>().ScriptHash ??= ((byte[])context.Script).ToScriptHash();
+            var state = context.GetState<ExecutionContextState>();
+            state.ScriptHash ??= ((byte[])context.Script).ToScriptHash();
+            invocationCounter.TryAdd(state.ScriptHash, 1);
+
             base.LoadContext(context);
         }
 
-        internal void LoadContext(ExecutionContext context, int initialPosition)
+        internal void LoadContext(ExecutionContext context, bool checkReturnValue)
         {
-            GetInvocationState(CurrentContext).NeedCheckReturnValue = true;
-            context.InstructionPointer = initialPosition;
+            if (checkReturnValue)
+                GetInvocationState(CurrentContext).NeedCheckReturnValue = CheckReturnType.EnsureNotEmpty;
             LoadContext(context);
         }
 
-        public ExecutionContext LoadScript(Script script, CallFlags callFlags)
+        public ExecutionContext LoadScript(Script script, CallFlags callFlags, int initialPosition = 0)
         {
-            ExecutionContext context = LoadScript(script);
+            ExecutionContext context = LoadScript(script, initialPosition);
             context.GetState<ExecutionContextState>().CallFlags = callFlags;
             return context;
         }
 
-        internal StackItem Convert(object value)
+        protected internal StackItem Convert(object value)
         {
             return value switch
             {
@@ -174,7 +202,7 @@ namespace Neo.SmartContract
             };
         }
 
-        internal object Convert(StackItem item, InteropParameterDescriptor descriptor)
+        protected internal object Convert(StackItem item, InteropParameterDescriptor descriptor)
         {
             if (descriptor.IsArray)
             {
@@ -188,7 +216,7 @@ namespace Neo.SmartContract
                 else
                 {
                     int count = (int)item.GetInteger();
-                    if (count > MaxStackSize) throw new InvalidOperationException();
+                    if (count > Limits.MaxStackSize) throw new InvalidOperationException();
                     av = Array.CreateInstance(descriptor.Type.GetElementType(), count);
                     for (int i = 0; i < av.Length; i++)
                         av.SetValue(descriptor.Converter(Pop()), i);
@@ -217,14 +245,19 @@ namespace Neo.SmartContract
             base.Dispose();
         }
 
-        protected override void OnSysCall(uint method)
+        protected void ValidateCallFlags(InteropDescriptor descriptor)
         {
-            InteropDescriptor descriptor = services[method];
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(descriptor.RequiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
+        }
+
+        protected override void OnSysCall(uint method)
+        {
+            InteropDescriptor descriptor = services[method];
+            ValidateCallFlags(descriptor);
             AddGas(descriptor.FixedPrice);
-            List<object> parameters = descriptor.Parameters.Length > 0
+            List<object> parameters = descriptor.Parameters.Count > 0
                 ? new List<object>()
                 : null;
             foreach (var pd in descriptor.Parameters)
@@ -276,22 +309,20 @@ namespace Neo.SmartContract
             Exchange(ref applicationEngineProvider, null);
         }
 
-        public static ApplicationEngine Run(byte[] script, StoreView snapshot,
-            IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long gas = default)
+        public static ApplicationEngine Run(byte[] script, StoreView snapshot = null, IVerifiable container = null, Block persistingBlock = null, int offset = 0, long gas = TestModeGas)
         {
+            SnapshotView disposable = null;
+            if (snapshot is null)
+            {
+                disposable = Blockchain.Singleton.GetSnapshot();
+                snapshot = disposable;
+            }
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? CreateDummyBlock(snapshot);
-            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, gas, testMode);
-            engine.LoadScript(script).InstructionPointer = offset;
+            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, gas);
+            if (disposable != null) engine.Disposables.Add(disposable);
+            engine.LoadScript(script, offset);
             engine.Execute();
             return engine;
-        }
-
-        public static ApplicationEngine Run(byte[] script, IVerifiable container = null, Block persistingBlock = null, int offset = 0, bool testMode = false, long gas = default)
-        {
-            using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
-            {
-                return Run(script, snapshot, container, persistingBlock, offset, testMode, gas);
-            }
         }
 
         internal static bool SetApplicationEngineProvider(IApplicationEngineProvider provider)

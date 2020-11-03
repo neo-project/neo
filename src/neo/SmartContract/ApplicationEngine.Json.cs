@@ -8,12 +8,12 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Json_Serialize = Register("System.Json.Serialize", nameof(JsonSerialize), 0_00100000, CallFlags.None, true);
         public static readonly InteropDescriptor System_Json_Deserialize = Register("System.Json.Deserialize", nameof(JsonDeserialize), 0_00500000, CallFlags.None, true);
 
-        internal byte[] JsonSerialize(StackItem item)
+        protected internal byte[] JsonSerialize(StackItem item)
         {
-            return JsonSerializer.SerializeToByteArray(item, MaxItemSize);
+            return JsonSerializer.SerializeToByteArray(item, Limits.MaxItemSize);
         }
 
-        internal StackItem JsonDeserialize(byte[] json)
+        protected internal StackItem JsonDeserialize(byte[] json)
         {
             return JsonSerializer.Deserialize(JObject.Parse(json, 10), ReferenceCounter);
         }
