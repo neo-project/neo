@@ -58,7 +58,7 @@ namespace Neo.UnitTests.SmartContract
 
             // Wrong length
 
-            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true))
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot))
             using (var script = new ScriptBuilder())
             {
                 // Retrive
@@ -75,7 +75,7 @@ namespace Neo.UnitTests.SmartContract
 
             // All test
 
-            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true))
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot))
             using (var script = new ScriptBuilder())
             {
                 // Notification
@@ -127,7 +127,7 @@ namespace Neo.UnitTests.SmartContract
 
             // Script notifications
 
-            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true))
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot))
             using (var script = new ScriptBuilder())
             {
                 // Notification
@@ -251,9 +251,13 @@ namespace Neo.UnitTests.SmartContract
 
             var engine = GetEngine(true);
             ((Transaction)engine.ScriptContainer).Signers[0].Account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
+            ((Transaction)engine.ScriptContainer).Signers[0].Scopes = WitnessScope.CalledByEntry;
 
+            engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeTrue();
+            engine.CheckWitness(((Transaction)engine.ScriptContainer).Sender.ToArray()).Should().BeTrue();
+
+            ((Transaction)engine.ScriptContainer).Signers = new Signer[0];
             engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeFalse();
-            engine.CheckWitness(((Transaction)engine.ScriptContainer).Sender.ToArray()).Should().BeFalse();
 
             Action action = () => engine.CheckWitness(new byte[0]);
             action.Should().Throw<ArgumentException>();
@@ -307,7 +311,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestRuntime_GetInvocationCounter()
         {
             var engine = GetEngine();
-            Assert.ThrowsException<InvalidOperationException>(() => engine.GetInvocationCounter());
+            Assert.AreEqual(1, engine.GetInvocationCounter());
         }
 
         [TestMethod]
@@ -386,7 +390,7 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             snapshot.Contracts.Add(state.ScriptHash, state);
-            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
             engine.GetContract(state.ScriptHash).Should().BeSameAs(state);
         }
@@ -433,7 +437,7 @@ namespace Neo.UnitTests.SmartContract
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
             snapshot.Storages.Add(storageKey, storageItem);
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
 
             engine.Get(new StorageContext
@@ -491,7 +495,7 @@ namespace Neo.UnitTests.SmartContract
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
             snapshot.Storages.Add(storageKey, storageItem);
-            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
             key = new byte[] { 0x01 };
             value = new byte[] { 0x02 };
@@ -527,7 +531,7 @@ namespace Neo.UnitTests.SmartContract
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
             snapshot.Storages.Add(storageKey, storageItem);
-            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
             var key = new byte[] { 0x01 };
             var value = new byte[] { 0x02 };
@@ -558,7 +562,7 @@ namespace Neo.UnitTests.SmartContract
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
             snapshot.Storages.Add(storageKey, storageItem);
-            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
             state.Manifest.Features = ContractFeatures.HasStorage;
             var key = new byte[] { 0x01 };
@@ -597,7 +601,7 @@ namespace Neo.UnitTests.SmartContract
             state.Manifest.Features = ContractFeatures.HasStorage;
 
             snapshot.Contracts.Add(state.ScriptHash, state);
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
 
             engine.CallContract(state.ScriptHash, method, args);
@@ -627,7 +631,7 @@ namespace Neo.UnitTests.SmartContract
 
             foreach (var flags in new CallFlags[] { CallFlags.None, CallFlags.AllowCall, CallFlags.AllowModifyStates, CallFlags.All })
             {
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
                 engine.LoadScript(new byte[] { 0x01 });
 
                 engine.CallContractEx(state.ScriptHash, method, args, CallFlags.All);
@@ -667,7 +671,7 @@ namespace Neo.UnitTests.SmartContract
             };
             snapshot.Contracts.Add(scriptHash, state);
             snapshot.Storages.Add(storageKey, storageItem);
-            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[0]);
             engine.DestroyContract();
             engine.Snapshot.Storages.Find(BitConverter.GetBytes(0x43000000)).Any().Should().BeFalse();
@@ -676,7 +680,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot = Blockchain.Singleton.GetSnapshot();
             state = TestUtils.GetContract();
             snapshot.Contracts.Add(scriptHash, state);
-            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[0]);
             engine.DestroyContract();
             engine.Snapshot.Storages.Find(BitConverter.GetBytes(0x43000000)).Any().Should().BeFalse();
@@ -703,19 +707,19 @@ namespace Neo.UnitTests.SmartContract
             ApplicationEngine engine;
             if (hasContainer && hasSnapshot)
             {
-                engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, 0, true);
+                engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot);
             }
             else if (hasContainer && !hasSnapshot)
             {
-                engine = ApplicationEngine.Create(TriggerType.Application, tx, null, 0, true);
+                engine = ApplicationEngine.Create(TriggerType.Application, tx, null);
             }
             else if (!hasContainer && hasSnapshot)
             {
-                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0, true);
+                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             }
             else
             {
-                engine = ApplicationEngine.Create(TriggerType.Application, null, null, 0, true);
+                engine = ApplicationEngine.Create(TriggerType.Application, null, null);
             }
             if (addScript)
             {

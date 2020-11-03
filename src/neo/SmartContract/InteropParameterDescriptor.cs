@@ -7,7 +7,7 @@ using System.Reflection;
 
 namespace Neo.SmartContract
 {
-    internal class InteropParameterDescriptor
+    public class InteropParameterDescriptor
     {
         public string Name { get; }
         public Type Type { get; }
@@ -39,13 +39,13 @@ namespace Neo.SmartContract
             [typeof(ECPoint)] = p => p.IsNull ? null : ECPoint.DecodePoint(p.GetSpan(), ECCurve.Secp256r1),
         };
 
-        public InteropParameterDescriptor(ParameterInfo parameterInfo)
+        internal InteropParameterDescriptor(ParameterInfo parameterInfo)
             : this(parameterInfo.ParameterType)
         {
             this.Name = parameterInfo.Name;
         }
 
-        public InteropParameterDescriptor(Type type)
+        internal InteropParameterDescriptor(Type type)
         {
             this.Type = type;
             if (IsEnum)

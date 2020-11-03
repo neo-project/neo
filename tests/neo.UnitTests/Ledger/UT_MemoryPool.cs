@@ -9,6 +9,7 @@ using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Tokens;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -31,6 +32,7 @@ namespace Neo.UnitTests.Ledger
 
         private const byte Prefix_MaxTransactionsPerBlock = 23;
         private const byte Prefix_FeePerByte = 10;
+        private readonly UInt160 senderAccount = UInt160.Zero;
         private MemoryPool _unit;
         private MemoryPool _unit2;
         private TestIMemoryPoolTxObserverPlugin plugin;
@@ -82,12 +84,13 @@ namespace Neo.UnitTests.Ledger
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new Mock<Transaction>();
-            mock.Setup(p => p.VerifyForEachBlock(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyStateDependent(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyStateIndependent()).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
             mock.Object.Attributes = Array.Empty<TransactionAttribute>();
-            mock.Object.Signers = new Signer[] { new Signer() { Account = UInt160.Zero, Scopes = WitnessScope.FeeOnly } };
+            mock.Object.Signers = new Signer[] { new Signer() { Account = senderAccount, Scopes = WitnessScope.None } };
             mock.Object.Witnesses = new[]
             {
                 new Witness
@@ -105,12 +108,14 @@ namespace Neo.UnitTests.Ledger
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new Mock<Transaction>();
-            mock.Setup(p => p.VerifyForEachBlock(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns((StoreView snapshot, TransactionVerificationContext context) => context.CheckTransaction(mock.Object, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
+            UInt160 sender = senderAccount;
             mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyStateDependent(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns((StoreView snapshot, TransactionVerificationContext context) => context.CheckTransaction(mock.Object, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
+            mock.Setup(p => p.VerifyStateIndependent()).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
             mock.Object.Attributes = Array.Empty<TransactionAttribute>();
-            mock.Object.Signers = new Signer[] { new Signer() { Account = UInt160.Zero, Scopes = WitnessScope.FeeOnly } };
+            mock.Object.Signers = new Signer[] { new Signer() { Account = senderAccount, Scopes = WitnessScope.None } };
             mock.Object.Witnesses = new[]
             {
                 new Witness
@@ -147,9 +152,8 @@ namespace Neo.UnitTests.Ledger
             _unit.TryAdd(txToAdd, snapshot);
         }
 
-        private void AddTransactionsWithBalanceVerify(int count, long fee)
+        private void AddTransactionsWithBalanceVerify(int count, long fee, SnapshotView snapshot)
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
             for (int i = 0; i < count; i++)
             {
                 var txToAdd = CreateTransactionWithFeeAndBalanceVerify(fee);
@@ -218,8 +222,14 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void BlockPersistAndReverificationWillAbandonTxAsBalanceTransfered()
         {
+            SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
+            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, long.MaxValue);
+            NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
+            NativeContract.GAS.Mint(engine, UInt160.Zero, 70);
+
             long txFee = 1;
-            AddTransactionsWithBalanceVerify(70, txFee);
+            AddTransactionsWithBalanceVerify(70, txFee, snapshot);
 
             _unit.SortedTxCount.Should().Be(70);
 
@@ -230,11 +240,9 @@ namespace Neo.UnitTests.Ledger
 
             // Simulate the transfer process in tx by burning the balance
             UInt160 sender = block.Transactions[0].Sender;
-            SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, sender);
 
             ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.All, block, snapshot, (long)balance);
-            NativeContract.GAS.Burn(applicationEngine, sender, balance);
+            NativeContract.GAS.Burn(applicationEngine, sender, NativeContract.GAS.BalanceOf(snapshot, sender));
             NativeContract.GAS.Mint(applicationEngine, sender, txFee * 30); // Set the balance to meet 30 txs only
 
             // Persist block and reverify all the txs in mempool, but half of the txs will be discarded

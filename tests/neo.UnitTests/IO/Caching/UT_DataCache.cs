@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace Neo.UnitTests.IO.Caching
 {
-    class MyKey : ISerializable, IEquatable<MyKey>
+    class MyKey : ISerializable, IEquatable<MyKey>, IComparable<MyKey>
     {
         public string Key;
 
@@ -46,6 +46,11 @@ namespace Neo.UnitTests.IO.Caching
         public override int GetHashCode()
         {
             return Key.GetHashCode();
+        }
+
+        public int CompareTo(MyKey obj)
+        {
+            return Key.CompareTo(obj.Key);
         }
     }
 
@@ -117,8 +122,10 @@ namespace Neo.UnitTests.IO.Caching
 
         protected override IEnumerable<(TKey, TValue)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
-            ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
-            return InnerDict.Where(kvp => comparer.Compare(kvp.Key.ToArray(), keyOrPrefix) >= 0).Select(p => (p.Key, p.Value));
+            if (direction == SeekDirection.Forward)
+                return InnerDict.OrderBy(kvp => kvp.Key).Where(kvp => ByteArrayComparer.Default.Compare(kvp.Key.ToArray(), keyOrPrefix) >= 0).Select(p => (p.Key, p.Value));
+            else
+                return InnerDict.OrderByDescending(kvp => kvp.Key).Where(kvp => ByteArrayComparer.Reverse.Compare(kvp.Key.ToArray(), keyOrPrefix) >= 0).Select(p => (p.Key, p.Value));
         }
 
         protected override TValue GetInternal(TKey key)
@@ -137,6 +144,11 @@ namespace Neo.UnitTests.IO.Caching
                 return value.Clone();
             }
             return null;
+        }
+
+        protected override bool ContainsInternal(TKey key)
+        {
+            return InnerDict.ContainsKey(key);
         }
 
         protected override void UpdateInternal(TKey key, TValue value)
@@ -294,9 +306,42 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
             myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4"));
 
-            var items = myDataCache.FindRange(new MyKey("key3"), new MyKey("key5")).ToArray();
+            var items = myDataCache.FindRange(new MyKey("key3").ToArray(), new MyKey("key5").ToArray()).ToArray();
             items[0].Key.Should().Be(new MyKey("key3"));
             items[0].Value.Should().Be(new MyValue("value3"));
+            items[1].Key.Should().Be(new MyKey("key4"));
+            items[1].Value.Should().Be(new MyValue("value4"));
+            items.Count().Should().Be(2);
+
+            // case 2 Need to sort the cache of myDataCache
+
+            myDataCache = new MyDataCache<MyKey, MyValue>();
+            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
+            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
+
+            myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4"));
+            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
+
+            items = myDataCache.FindRange(new MyKey("key3").ToArray(), new MyKey("key5").ToArray()).ToArray();
+            items[0].Key.Should().Be(new MyKey("key3"));
+            items[0].Value.Should().Be(new MyValue("value3"));
+            items[1].Key.Should().Be(new MyKey("key4"));
+            items[1].Value.Should().Be(new MyValue("value4"));
+            items.Count().Should().Be(2);
+
+            // case 3 FindRange by Backward
+
+            myDataCache = new MyDataCache<MyKey, MyValue>();
+            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
+            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
+
+            myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4"));
+            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
+            myDataCache.InnerDict.Add(new MyKey("key5"), new MyValue("value5"));
+
+            items = myDataCache.FindRange(new MyKey("key5").ToArray(), new MyKey("key3").ToArray(), SeekDirection.Backward).ToArray();
+            items[0].Key.Should().Be(new MyKey("key5"));
+            items[0].Value.Should().Be(new MyValue("value5"));
             items[1].Key.Should().Be(new MyKey("key4"));
             items[1].Value.Should().Be(new MyValue("value4"));
             items.Count().Should().Be(2);

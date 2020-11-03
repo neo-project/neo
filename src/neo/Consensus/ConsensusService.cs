@@ -29,6 +29,7 @@ namespace Neo.Consensus
         private readonly IActorRef blockchain;
         private ICancelable timer_token;
         private DateTime block_received_time;
+        private uint block_received_index;
         private bool started = false;
 
         /// <summary>
@@ -135,6 +136,8 @@ namespace Neo.Consensus
         {
             if (context.CommitPayloads.Count(p => p?.ConsensusMessage.ViewNumber == context.ViewNumber) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
             {
+                block_received_index = context.Block.Index;
+                block_received_time = TimeProvider.Current.UtcNow;
                 Block block = context.CreateBlock();
                 Log($"relay block: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
                 blockchain.Tell(block);
@@ -188,11 +191,16 @@ namespace Neo.Consensus
                 }
                 else
                 {
-                    TimeSpan span = TimeProvider.Current.UtcNow - block_received_time;
-                    if (span >= Blockchain.TimePerBlock)
-                        ChangeTimer(TimeSpan.Zero);
-                    else
-                        ChangeTimer(Blockchain.TimePerBlock - span);
+                    TimeSpan span = Blockchain.TimePerBlock;
+                    if (block_received_index + 1 == context.Block.Index)
+                    {
+                        var diff = TimeProvider.Current.UtcNow - block_received_time;
+                        if (diff >= span)
+                            span = TimeSpan.Zero;
+                        else
+                            span -= diff;
+                    }
+                    ChangeTimer(span);
                 }
             }
             else
@@ -291,7 +299,7 @@ namespace Neo.Consensus
             {
                 return;
             }
-            context.LastSeenMessage[payload.ValidatorIndex] = (int)payload.BlockIndex;
+            context.LastSeenMessage[context.Validators[payload.ValidatorIndex]] = payload.BlockIndex;
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
                 if (!plugin.OnConsensusMessage(payload))
                     return;
@@ -321,7 +329,6 @@ namespace Neo.Consensus
         private void OnPersistCompleted(Block block)
         {
             Log($"persist block: height={block.Index} hash={block.Hash} tx={block.Transactions.Length}");
-            block_received_time = TimeProvider.Current.UtcNow;
             knownHashes.Clear();
             InitializeConsensus(0);
         }

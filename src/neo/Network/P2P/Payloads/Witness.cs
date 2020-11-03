@@ -8,8 +8,21 @@ namespace Neo.Network.P2P.Payloads
 {
     public class Witness : ISerializable
     {
+        /// <summary>
+        /// This is designed to allow a MultiSig 21/11 (committee)
+        /// Invocation = 11 * (64 + 2) = 726
+        /// </summary>
+        private const int MaxInvocationScript = 1024;
+
+        /// <summary>
+        /// Verification = m + (PUSH_PubKey * 21) + length + null + syscall = 1 + ((2 + 33) * 21) + 2 + 1 + 5 = 744
+        /// </summary>
+        private const int MaxVerificationScript = 1024;
+
         public byte[] InvocationScript;
         public byte[] VerificationScript;
+
+        internal long GasConsumed { get; set; }
 
         private UInt160 _scriptHash;
         public virtual UInt160 ScriptHash
@@ -24,15 +37,14 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
+        public bool StateDependent => VerificationScript.Length == 0;
+
         public int Size => InvocationScript.GetVarSize() + VerificationScript.GetVarSize();
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            // This is designed to allow a MultiSig 10/10 (around 1003 bytes) ~1024 bytes
-            // Invocation = 10 * 64 + 10 = 650 ~ 664  (exact is 653)
-            InvocationScript = reader.ReadVarBytes(663);
-            // Verification = 10 * 33 + 10 = 340 ~ 360   (exact is 351)
-            VerificationScript = reader.ReadVarBytes(361);
+            InvocationScript = reader.ReadVarBytes(MaxInvocationScript);
+            VerificationScript = reader.ReadVarBytes(MaxVerificationScript);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
