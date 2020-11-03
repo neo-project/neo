@@ -118,7 +118,7 @@ namespace Neo.Network.P2P.Payloads
             if (prev_header == null) return false;
             if (prev_header.Index + 1 != Index) return false;
             if (prev_header.Timestamp >= Timestamp) return false;
-            if (!this.VerifyWitnesses(snapshot, 1_00000000)) return false;
+            if (!this.VerifyWitnesses(snapshot, 0_03333333)) return false;
             return true;
         }
     }

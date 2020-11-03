@@ -145,7 +145,7 @@ namespace Neo.Wallets
                 sb.EmitAppCall(asset_id, "decimals");
                 script = sb.ToArray();
             }
-            using ApplicationEngine engine = ApplicationEngine.Run(script, gas: 20000000L * accounts.Length);
+            using ApplicationEngine engine = ApplicationEngine.Run(script, gas: 666667L * accounts.Length);
             if (engine.State.HasFlag(VMState.FAULT))
                 return new BigDecimal(0, 0);
             byte decimals = (byte)engine.ResultStack.Pop().GetInteger();
@@ -431,7 +431,7 @@ namespace Neo.Wallets
                 }
             }
             networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
-            return networkFee * NativeContract.Policy.GetFeeRatio(snapshot) / PolicyContract.MaximumRatioVariety;
+            return networkFee * NativeContract.Policy.GetFeeRatio(snapshot);
         }
 
         public bool Sign(ContractParametersContext context)

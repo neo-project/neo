@@ -8,10 +8,10 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static readonly InteropDescriptor System_Enumerator_Create = Register("System.Enumerator.Create", nameof(CreateEnumerator), 0_00000400, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Enumerator_Next = Register("System.Enumerator.Next", nameof(EnumeratorNext), 0_01000000, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Enumerator_Value = Register("System.Enumerator.Value", nameof(EnumeratorValue), 0_00000400, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Enumerator_Concat = Register("System.Enumerator.Concat", nameof(ConcatEnumerators), 0_00000400, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Enumerator_Create = Register("System.Enumerator.Create", nameof(CreateEnumerator), 0_00000013, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Enumerator_Next = Register("System.Enumerator.Next", nameof(EnumeratorNext), 0_00033333, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Enumerator_Value = Register("System.Enumerator.Value", nameof(EnumeratorValue), 0_00000013, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Enumerator_Concat = Register("System.Enumerator.Concat", nameof(ConcatEnumerators), 0_00000013, CallFlags.None, false);
 
         protected internal IEnumerator CreateEnumerator(StackItem item)
         {

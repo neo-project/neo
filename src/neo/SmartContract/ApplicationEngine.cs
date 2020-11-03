@@ -36,7 +36,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// This constant can be used for testing scripts.
         /// </summary>
-        private const long TestModeGas = 20_00000000;
+        private const long TestModeGas = 66666667;
 
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
@@ -55,8 +55,8 @@ namespace Neo.SmartContract
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
         public long GasConsumedWithRatio = 0;
-        public long GasConsumed => GasConsumedWithRatio * NativeContract.Policy.GetFeeRatio(Snapshot) / PolicyContract.MaximumRatioVariety;
-        public long GasLeft => (gas_amount_with_ratio - GasConsumedWithRatio) * NativeContract.Policy.GetFeeRatio(Snapshot) / PolicyContract.MaximumRatioVariety;
+        public long GasConsumed => GasConsumedWithRatio * NativeContract.Policy.GetFeeRatio(Snapshot);
+        public long GasLeft => (gas_amount_with_ratio - GasConsumedWithRatio) * NativeContract.Policy.GetFeeRatio(Snapshot);
         public Exception FaultException { get; private set; }
         public UInt160 CurrentScriptHash => CurrentContext?.GetScriptHash();
         public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;

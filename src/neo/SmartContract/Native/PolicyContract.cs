@@ -15,9 +15,7 @@ namespace Neo.SmartContract.Native
         public override string Name => "Policy";
         public override int Id => -3;
 
-        public const uint MaximumRatioVariety = 100;
-        private const uint MaximumRatio = MaximumRatioVariety * MaximumRatioVariety;
-
+        private const uint MaximumRatio = 10000;
         private const byte Prefix_MaxTransactionsPerBlock = 23;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_BlockedAccount = 15;
@@ -30,7 +28,7 @@ namespace Neo.SmartContract.Native
             Manifest.Features = ContractFeatures.HasStorage;
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_00033333, CallFlags.AllowStates)]
         public uint GetMaxTransactionsPerBlock(StoreView snapshot)
         {
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxTransactionsPerBlock));
@@ -38,7 +36,7 @@ namespace Neo.SmartContract.Native
             return (uint)(BigInteger)item;
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_00033333, CallFlags.AllowStates)]
         public uint GetMaxBlockSize(StoreView snapshot)
         {
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxBlockSize));
@@ -46,7 +44,7 @@ namespace Neo.SmartContract.Native
             return (uint)(BigInteger)item;
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_00033333, CallFlags.AllowStates)]
         public long GetMaxBlockSystemFee(StoreView snapshot)
         {
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxBlockSystemFee));
@@ -54,29 +52,29 @@ namespace Neo.SmartContract.Native
             return (long)(BigInteger)item;
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_00033333, CallFlags.AllowStates)]
         public long GetFeePerByte(StoreView snapshot)
         {
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_FeePerByte));
-            if (item is null) return 1000;
+            if (item is null) return 33;
             return (long)(BigInteger)item;
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_00033333, CallFlags.AllowStates)]
         public bool IsBlocked(StoreView snapshot, UInt160 account)
         {
             return snapshot.Storages.Contains(CreateStorageKey(Prefix_BlockedAccount).Add(account));
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_00033333, CallFlags.AllowStates)]
         public uint GetFeeRatio(StoreView snapshot)
         {
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_FeeRatio));
-            if (item is null) return 100;
+            if (item is null) return 30;
             return (uint)(BigInteger)item;
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_00100000, CallFlags.AllowModifyStates)]
         private bool SetMaxBlockSize(ApplicationEngine engine, uint value)
         {
             if (value > Message.PayloadMaxSize) throw new ArgumentOutOfRangeException(nameof(value));
@@ -86,7 +84,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_00100000, CallFlags.AllowModifyStates)]
         private bool SetMaxTransactionsPerBlock(ApplicationEngine engine, uint value)
         {
             if (value > Block.MaxTransactionsPerBlock) throw new ArgumentOutOfRangeException(nameof(value));
@@ -96,7 +94,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_00100000, CallFlags.AllowModifyStates)]
         private bool SetMaxBlockSystemFee(ApplicationEngine engine, long value)
         {
             if (value <= 4007600) throw new ArgumentOutOfRangeException(nameof(value));
@@ -106,7 +104,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_00100000, CallFlags.AllowModifyStates)]
         private bool SetFeePerByte(ApplicationEngine engine, long value)
         {
             if (value < 0 || value > 1_00000000) throw new ArgumentOutOfRangeException(nameof(value));
@@ -116,7 +114,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_00100000, CallFlags.AllowModifyStates)]
         private bool BlockAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine)) return false;
@@ -128,7 +126,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_00100000, CallFlags.AllowModifyStates)]
         private bool UnblockAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine)) return false;
@@ -140,7 +138,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_00100000, CallFlags.AllowModifyStates)]
         private bool SetFeeRatio(ApplicationEngine engine, uint value)
         {
             if (value == 0 || value > MaximumRatio) throw new ArgumentOutOfRangeException(nameof(value));

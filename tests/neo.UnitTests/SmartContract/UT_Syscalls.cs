@@ -3,6 +3,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System.Linq;
@@ -278,7 +279,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Execute
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 100_000_000);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 100_000_000 / NativeContract.Policy.GetFeeRatio(snapshot));
                 engine.LoadScript(script.ToArray());
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
 
@@ -287,7 +288,7 @@ namespace Neo.UnitTests.SmartContract
                 CollectionAssert.AreEqual
                     (
                     engine.ResultStack.Select(u => (int)u.GetInteger()).ToArray(),
-                    new int[] { 99_999_570, 99_999_140, 99_998_650 }
+                    new int[] { 99_999_570, 99_999_150, 99_998_670 }
                     );
             }
 
@@ -307,7 +308,7 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(Integer));
-                Assert.AreEqual(1999999600, engine.ResultStack.Pop().GetInteger());
+                Assert.AreEqual(1999999620, engine.ResultStack.Pop().GetInteger());
             }
         }
 
