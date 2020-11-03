@@ -38,7 +38,9 @@ namespace Neo.UnitTests.Extensions
                 throw exception ?? new InvalidOperationException();
             }
 
-            return engine.ResultStack.Pop();
+            if (0 < engine.ResultStack.Count)
+                return engine.ResultStack.Pop();
+            return null;
         }
     }
 }
