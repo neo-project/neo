@@ -341,7 +341,7 @@ namespace Neo.Wallets
                     Version = 0,
                     Nonce = (uint)rand.Next(),
                     Script = script,
-                    ValidUntilBlock = snapshot.Height + Transaction.MaxValidUntilBlockIncrement,
+                    ValidUntilBlock = snapshot.Height + ProtocolSettings.Default.MaxValidUntilBlockIncrement,
                     Signers = GetSigners(account, cosigners),
                     Attributes = attributes,
                 };
