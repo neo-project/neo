@@ -15,30 +15,21 @@ namespace Neo.Ledger
         public int Id;
         public byte[] Script;
         public ContractManifest Manifest;
+        public uint Version;
 
         public bool HasStorage => Manifest.Features.HasFlag(ContractFeatures.HasStorage);
         public bool Payable => Manifest.Features.HasFlag(ContractFeatures.Payable);
+        public UInt160 ScriptHash { get; set; }
 
-        private UInt160 _scriptHash;
-        public UInt160 ScriptHash
-        {
-            get
-            {
-                if (_scriptHash == null)
-                {
-                    _scriptHash = Script.ToScriptHash();
-                }
-                return _scriptHash;
-            }
-        }
-
-        int ISerializable.Size => sizeof(int) + Script.GetVarSize() + Manifest.Size;
+        int ISerializable.Size => sizeof(int) + sizeof(uint) + UInt160.Length + Script.GetVarSize() + Manifest.Size;
 
         ContractState ICloneable<ContractState>.Clone()
         {
             return new ContractState
             {
                 Id = Id,
+                Version = Version,
+                ScriptHash = ScriptHash,
                 Script = Script,
                 Manifest = Manifest.Clone()
             };
@@ -47,6 +38,8 @@ namespace Neo.Ledger
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Id = reader.ReadInt32();
+            Version = reader.ReadUInt32();
+            ScriptHash = reader.ReadSerializable<UInt160>();
             Script = reader.ReadVarBytes();
             Manifest = reader.ReadSerializable<ContractManifest>();
         }
@@ -54,6 +47,8 @@ namespace Neo.Ledger
         void ICloneable<ContractState>.FromReplica(ContractState replica)
         {
             Id = replica.Id;
+            Version = replica.Version;
+            ScriptHash = replica.ScriptHash;
             Script = replica.Script;
             Manifest = replica.Manifest.Clone();
         }
@@ -66,6 +61,8 @@ namespace Neo.Ledger
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(Id);
+            writer.Write(Version);
+            writer.Write(ScriptHash);
             writer.WriteVarBytes(Script);
             writer.Write(Manifest);
         }
@@ -74,6 +71,7 @@ namespace Neo.Ledger
         {
             JObject json = new JObject();
             json["id"] = Id;
+            json["version"] = Version;
             json["hash"] = ScriptHash.ToString();
             json["script"] = Convert.ToBase64String(Script);
             json["manifest"] = Manifest.ToJson();
@@ -82,7 +80,7 @@ namespace Neo.Ledger
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new StackItem[] { Script, Manifest.ToString(), HasStorage, Payable });
+            return new Array(referenceCounter, new StackItem[] { ScriptHash.ToArray(), Script, Version, Manifest.ToString(), HasStorage, Payable });
         }
     }
 }

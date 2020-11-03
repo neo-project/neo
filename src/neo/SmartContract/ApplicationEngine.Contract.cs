@@ -28,22 +28,27 @@ namespace Neo.SmartContract
         /// </summary>
         public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 0_00010000, CallFlags.None, true);
 
-        protected internal void CreateContract(byte[] script, byte[] manifest)
+        protected internal void CreateContract(byte[] nefFile, byte[] manifest)
         {
-            if (script.Length == 0 || script.Length > MaxContractLength)
-                throw new ArgumentException($"Invalid Script Length: {script.Length}");
+            if (nefFile.Length == 0 || nefFile.Length > NefFile.MaxLength)
+                throw new ArgumentException($"Invalid NefFile Length: {nefFile.Length}");
             if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
                 throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
 
-            AddGas(StoragePrice * (script.Length + manifest.Length));
+            AddGas(StoragePrice * (nefFile.Length + manifest.Length));
 
-            UInt160 hash = script.ToScriptHash();
+            NefFile nef = nefFile.AsSerializable<NefFile>();
+            if (nef.Script.Length == 0 || nef.Script.Length > MaxContractLength)
+                throw new ArgumentException($"Invalid Script Length: {nef.Script.Length}");
+
+            UInt160 hash = nefFile.ToScriptHash();
             ContractState contract = Snapshot.Contracts.TryGet(hash);
             if (contract != null) throw new InvalidOperationException($"Contract Already Exists: {hash}");
             contract = new ContractState
             {
                 Id = Snapshot.ContractId.GetAndChange().NextId++,
-                Script = script.ToArray(),
+                Script = nef.Script,
+                ScriptHash = hash,
                 Manifest = ContractManifest.Parse(manifest)
             };
 
@@ -62,44 +67,44 @@ namespace Neo.SmartContract
                 CallContractInternal(contract, md, new Array(ReferenceCounter) { false }, CallFlags.All, CheckReturnType.EnsureIsEmpty);
         }
 
-        protected internal void UpdateContract(byte[] script, byte[] manifest)
+        protected internal void UpdateContract(byte[] nefFile, byte[] manifest)
         {
-            if (script is null && manifest is null) throw new ArgumentException();
+            if (nefFile is null && manifest is null) throw new ArgumentException();
+            if (nefFile != null && nefFile.Length > NefFile.MaxLength)
+                throw new ArgumentException($"Invalid NefFile Length: {nefFile.Length}");
 
-            AddGas(StoragePrice * ((script?.Length ?? 0) + (manifest?.Length ?? 0)));
+            NefFile nef = nefFile?.AsSerializable<NefFile>();
+            AddGas(StoragePrice * (nef is null ? manifest.Length : nefFile.Length + (manifest?.Length ?? 0)));
 
-            var contract = Snapshot.Contracts.TryGet(CurrentScriptHash);
+            var contract = Snapshot.Contracts.GetAndChange(CurrentScriptHash);
             if (contract is null) throw new InvalidOperationException($"Updating Contract Does Not Exist: {CurrentScriptHash}");
 
-            if (script != null)
+            if (nef != null)
             {
-                if (script.Length == 0 || script.Length > MaxContractLength)
-                    throw new ArgumentException($"Invalid Script Length: {script.Length}");
-                UInt160 hash_new = script.ToScriptHash();
+                if (nef.Script.Length == 0 || nef.Script.Length > MaxContractLength)
+                    throw new ArgumentException($"Invalid Script Length: {nef.Script.Length}");
+
+                UInt160 hash_new = nefFile.ToScriptHash();
                 if (hash_new.Equals(CurrentScriptHash) || Snapshot.Contracts.TryGet(hash_new) != null)
                     throw new InvalidOperationException($"Adding Contract Hash Already Exist: {hash_new}");
-                contract = new ContractState
-                {
-                    Id = contract.Id,
-                    Script = script.ToArray(),
-                    Manifest = contract.Manifest
-                };
-                contract.Manifest.Abi.Hash = hash_new;
-                Snapshot.Contracts.Add(hash_new, contract);
-                Snapshot.Contracts.Delete(CurrentScriptHash);
+
+                // Update script and script hash
+                contract.Script = nef.Script.ToArray();
+                contract.ScriptHash = hash_new;
             }
             if (manifest != null)
             {
                 if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
                     throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
-                contract = Snapshot.Contracts.GetAndChange(contract.ScriptHash);
-                contract.Manifest = ContractManifest.Parse(manifest);
-                if (!contract.Manifest.IsValid(contract.ScriptHash))
+                var parsedManifest = ContractManifest.Parse(manifest);
+                if (!parsedManifest.IsValid(contract.ScriptHash))
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.ScriptHash}");
                 if (!contract.HasStorage && Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)).Any())
                     throw new InvalidOperationException($"Contract Does Not Support Storage But Uses Storage");
+                contract.Manifest = parsedManifest;
             }
-            if (script != null)
+            contract.Version++; // Increase the version
+            if (nef != null)
             {
                 ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");
                 if (md != null)
@@ -164,10 +169,9 @@ namespace Neo.SmartContract
             CallFlags callingFlags = state.CallFlags;
 
             if (args.Count != method.Parameters.Length) throw new InvalidOperationException($"Method {method.Name} Expects {method.Parameters.Length} Arguments But Receives {args.Count} Arguments");
-            ExecutionContext context_new = LoadScript(contract.Script, method.Offset);
+            ExecutionContext context_new = LoadScript(contract.Script, flags & callingFlags, contract.ScriptHash, method.Offset);
             state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
-            state.CallFlags = flags & callingFlags;
 
             if (NativeContract.IsNative(contract.ScriptHash))
             {
@@ -181,7 +185,7 @@ namespace Neo.SmartContract
             }
 
             method = contract.Manifest.Abi.GetMethod("_initialize");
-            if (method != null) LoadContext(context_new.Clone(method.Offset));
+            if (method != null) LoadClonedContext(context_new, method.Offset, false);
         }
 
         protected internal bool IsStandardContract(UInt160 hash)

@@ -57,6 +57,8 @@ namespace Neo.SmartContract
             (sizeof(int) * 4) + // Version
             UInt160.Length;     // ScriptHash
 
+        public static readonly int MaxLength = HeaderSize + sizeof(uint) + IO.Helper.GetVarSize(1024 * 1024) + (1024 * 1024);
+
         public int Size =>
             HeaderSize +        // Header
             sizeof(uint) +      // Checksum

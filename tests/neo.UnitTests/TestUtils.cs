@@ -114,6 +114,7 @@ namespace Neo.UnitTests
             {
                 Id = 0x43000000,
                 Script = new byte[] { 0x01, 0x01, 0x01, 0x01 },
+                ScriptHash = new byte[] { 0x01, 0x01, 0x01, 0x01 }.ToScriptHash(),
                 Manifest = CreateManifest(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), method, ContractParameterType.Any, Enumerable.Repeat(ContractParameterType.Any, parametersCount).ToArray())
             };
         }
