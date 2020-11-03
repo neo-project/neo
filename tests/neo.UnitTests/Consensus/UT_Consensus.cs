@@ -17,8 +17,10 @@ using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Security.Cryptography;
+using static Neo.SmartContract.Native.Tokens.NeoToken;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.UnitTests.Consensus
@@ -277,10 +279,11 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"\nContract updated: {updatedContract.ScriptHash}");
 
             // ===============================================================
+            CachedCommittee cachedCommittee = new CachedCommittee(mockContext.Object.Validators.Select(p => (p, BigInteger.Zero)));
             mockContext.Object.Snapshot.Storages.Delete(CreateStorageKeyForNativeNeo(14));
             mockContext.Object.Snapshot.Storages.Add(CreateStorageKeyForNativeNeo(14), new StorageItem()
             {
-                Value = mockContext.Object.Validators.ToByteArray()
+                Value = BinarySerializer.Serialize(cachedCommittee.ToStackItem(null), 4096)
             });
             mockContext.Object.Snapshot.Commit();
             // ===============================================================
@@ -298,6 +301,8 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("\n\n==========================");
             Console.WriteLine("\nBasic commits Signatures verification");
             // Basic tests for understanding signatures and ensuring signatures of commits are correct on tests
+
+
             var cmPayloadTemp = GetCommitPayloadModifiedAndSignedCopy(commitPayload, 6, kp_array[6], updatedBlockHashData);
             Crypto.VerifySignature(originalBlockHashData, cm.Signature, mockContext.Object.Validators[0]).Should().BeFalse();
             Crypto.VerifySignature(updatedBlockHashData, cm.Signature, mockContext.Object.Validators[0]).Should().BeFalse();
@@ -414,7 +419,11 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("mockContext Reset for returning Blockchain.Singleton snapshot to original state.");
             mockContext.Object.Reset(0);
             mockContext.Object.Snapshot.Storages.Delete(CreateStorageKeyForNativeNeo(14));
-            mockContext.Object.Snapshot.Storages.Add(CreateStorageKeyForNativeNeo(14), new StorageItem(Blockchain.StandbyCommittee.ToByteArray()));
+            cachedCommittee = new CachedCommittee(Blockchain.StandbyCommittee.Select(p => (p, BigInteger.Zero)));
+            mockContext.Object.Snapshot.Storages.Add(CreateStorageKeyForNativeNeo(14), new StorageItem
+            {
+                Value = BinarySerializer.Serialize(cachedCommittee.ToStackItem(null), 4096)
+            });
             mockContext.Object.Snapshot.Commit();
 
             Console.WriteLine("mockContext Reset.");
