@@ -3,6 +3,7 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.Wallets;
 using System;
 using System.IO;
@@ -118,7 +119,7 @@ namespace Neo.Network.P2P.Payloads
             if (prev_header == null) return false;
             if (prev_header.Index + 1 != Index) return false;
             if (prev_header.Timestamp >= Timestamp) return false;
-            if (!this.VerifyWitnesses(snapshot, 1_00000000)) return false;
+            if (!this.VerifyWitnesses(snapshot, 3000000 * NativeContract.Policy.GetBaseExecFee(snapshot))) return false;
             return true;
         }
     }

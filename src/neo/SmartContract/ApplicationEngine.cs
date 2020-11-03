@@ -3,6 +3,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -47,6 +48,7 @@ namespace Neo.SmartContract
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new Dictionary<UInt160, int>();
         private readonly Dictionary<ExecutionContext, InvocationState> invocationStates = new Dictionary<ExecutionContext, InvocationState>();
+        private readonly uint base_exec_fee;
 
         public static IReadOnlyDictionary<uint, InteropDescriptor> Services => services;
         private List<IDisposable> Disposables => disposables ??= new List<IDisposable>();
@@ -67,6 +69,7 @@ namespace Neo.SmartContract
             this.ScriptContainer = container;
             this.Snapshot = snapshot;
             this.gas_amount = gas;
+            this.base_exec_fee = snapshot is null ? PolicyContract.DefaultBaseExecFee : NativeContract.Policy.GetBaseExecFee(Snapshot);
         }
 
         protected internal void AddGas(long gas)
@@ -270,7 +273,7 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction()
         {
             if (CurrentContext.InstructionPointer < CurrentContext.Script.Length)
-                AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
+                AddGas(base_exec_fee * OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
         }
 
         private static Block CreateDummyBlock(StoreView snapshot)

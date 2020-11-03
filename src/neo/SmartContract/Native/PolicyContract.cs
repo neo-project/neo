@@ -14,12 +14,15 @@ namespace Neo.SmartContract.Native
     {
         public override string Name => "Policy";
         public override int Id => -3;
+        public const uint DefaultBaseExecFee = 30;
 
+        private const uint MaxBaseExecFee = 10000;
         private const byte Prefix_MaxTransactionsPerBlock = 23;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_MaxBlockSize = 12;
         private const byte Prefix_MaxBlockSystemFee = 17;
+        private const byte Prefix_BaseExecFee = 18;
 
         public PolicyContract()
         {
@@ -56,6 +59,14 @@ namespace Neo.SmartContract.Native
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_FeePerByte));
             if (item is null) return 1000;
             return (long)(BigInteger)item;
+        }
+
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        public uint GetBaseExecFee(StoreView snapshot)
+        {
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_BaseExecFee));
+            if (item is null) return DefaultBaseExecFee;
+            return (uint)(BigInteger)item;
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
@@ -100,6 +111,16 @@ namespace Neo.SmartContract.Native
             if (value < 0 || value > 1_00000000) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeePerByte), () => new StorageItem());
+            storage.Set(value);
+            return true;
+        }
+
+        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        private bool SetBaseExecFee(ApplicationEngine engine, uint value)
+        {
+            if (value == 0 || value > MaxBaseExecFee) throw new ArgumentOutOfRangeException(nameof(value));
+            if (!CheckCommittee(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_BaseExecFee), () => new StorageItem());
             storage.Set(value);
             return true;
         }

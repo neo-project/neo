@@ -372,6 +372,7 @@ namespace Neo.Wallets
             foreach (UInt160 hash in hashes)
             {
                 byte[] witness_script = GetAccount(hash)?.Contract?.Script;
+                uint base_exec_fee = NativeContract.Policy.GetBaseExecFee(snapshot);
 
                 if (witness_script is null && tx.Witnesses != null)
                 {
@@ -411,19 +412,19 @@ namespace Neo.Wallets
                 else if (witness_script.IsSignatureContract())
                 {
                     size += 67 + witness_script.GetVarSize();
-                    networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice;
+                    networkFee += base_exec_fee * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL]) + ApplicationEngine.ECDsaVerifyPrice;
                 }
                 else if (witness_script.IsMultiSigContract(out int m, out int n))
                 {
                     int size_inv = 66 * m;
                     size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
-                    networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * m;
+                    networkFee += base_exec_fee * ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * m;
                     using (ScriptBuilder sb = new ScriptBuilder())
-                        networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
-                    networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * n;
+                        networkFee += base_exec_fee * ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
+                    networkFee += base_exec_fee * ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * n;
                     using (ScriptBuilder sb = new ScriptBuilder())
-                        networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
-                    networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice * n;
+                        networkFee += base_exec_fee * ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
+                    networkFee += base_exec_fee * ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice * n;
                 }
                 else
                 {
