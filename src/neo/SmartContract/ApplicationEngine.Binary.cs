@@ -1,6 +1,7 @@
 using Neo.Cryptography;
 using Neo.VM.Types;
 using System;
+using System.Globalization;
 using System.Numerics;
 using static System.Convert;
 
@@ -27,19 +28,40 @@ namespace Neo.SmartContract
             return BinarySerializer.Deserialize(data, Limits.MaxStackSize, Limits.MaxItemSize, ReferenceCounter);
         }
 
-        protected internal string Itoa(BigInteger value)
+        protected internal string Itoa(BigInteger value, int @base)
         {
-            return value.ToString();
+            return @base switch
+            {
+                10 => value.ToString(),
+                16 => value.ToString("x2"),
+                _ => throw new ArgumentException(nameof(@base)),
+            };
         }
 
-        protected internal BigInteger Atoi(string value)
+        protected internal BigInteger Atoi(string value, int @base)
         {
-            if (!BigInteger.TryParse(value, out var ret))
+            switch (@base)
             {
-                throw new FormatException();
+                case 10:
+                    {
+                        if (BigInteger.TryParse(value, out var ret))
+                        {
+                            return ret;
+                        }
+                        break;
+                    }
+                case 16:
+                    {
+                        if (BigInteger.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var ret))
+                        {
+                            return ret;
+                        }
+                        break;
+                    }
+                default: throw new ArgumentException(nameof(@base));
             }
 
-            return ret;
+            throw new FormatException();
         }
 
         protected internal string Base64Encode(byte[] data)
