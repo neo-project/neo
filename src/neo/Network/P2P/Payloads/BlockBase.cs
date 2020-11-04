@@ -1,9 +1,7 @@
-using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.SmartContract.Native;
 using Neo.Wallets;
 using System;
 using System.IO;
