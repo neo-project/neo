@@ -90,7 +90,7 @@ namespace Neo.SmartContract.Native.Oracle
             if (response == null) throw new ArgumentException("Oracle response was not found");
             OracleRequest request = GetRequest(engine.Snapshot, response.Id);
             if (request == null) throw new ArgumentException("Oracle request was not found");
-            engine.SendNotification(Hash, "Response", new VM.Types.Array { request.OriginalTxid.ToArray(), response.Id });
+            engine.SendNotification(Hash, "OracleResponse", new VM.Types.Array { request.OriginalTxid.ToArray(), response.Id });
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.Limits.MaxStackSize, engine.Limits.MaxItemSize, engine.ReferenceCounter);
             engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, userData, (int)response.Code, response.Result);
         }
@@ -209,7 +209,7 @@ namespace Neo.SmartContract.Native.Oracle
                 throw new InvalidOperationException("There are too many pending responses for this url");
             list.Add(id);
 
-            engine.SendNotification(Hash, "Request", new VM.Types.Array { id, url, filter });
+            engine.SendNotification(Hash, "OracleRequest", new VM.Types.Array { id, url, filter });
         }
 
         [ContractMethod(0_01000000, CallFlags.None)]
