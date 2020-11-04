@@ -19,6 +19,7 @@ namespace Neo.Network.P2P.Payloads
     public class Transaction : IEquatable<Transaction>, IInventory, IInteroperable
     {
         public const int MaxTransactionSize = 102400;
+        public const uint MaxValidUntilBlockIncrement = 5760; // 24 hour
         /// <summary>
         /// Maximum number of attributes that can be contained within a transaction
         /// </summary>
@@ -282,7 +283,7 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual VerifyResult VerifyStateDependent(StoreView snapshot, TransactionVerificationContext context)
         {
-            if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + ProtocolSettings.Default.MaxValidUntilBlockIncrement)
+            if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
             foreach (UInt160 hash in GetScriptHashesForVerifying(snapshot))
                 if (NativeContract.Policy.IsBlocked(snapshot, hash))
