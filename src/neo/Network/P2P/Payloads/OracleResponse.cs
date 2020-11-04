@@ -14,7 +14,7 @@ namespace Neo.Network.P2P.Payloads
 {
     public class OracleResponse : TransactionAttribute
     {
-        private const int MaxResultSize = 1024;
+        public const int MaxResultSize = ushort.MaxValue;
 
         public static readonly byte[] FixedScript;
 
