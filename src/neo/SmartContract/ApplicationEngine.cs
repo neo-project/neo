@@ -161,7 +161,7 @@ namespace Neo.SmartContract
             base.LoadContext(context);
         }
 
-        internal void LoadContext(ExecutionContext context, bool checkReturnValue)
+        public void LoadContext(ExecutionContext context, bool checkReturnValue)
         {
             if (checkReturnValue)
                 GetInvocationState(CurrentContext).NeedCheckReturnValue = CheckReturnType.EnsureNotEmpty;
