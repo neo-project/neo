@@ -158,7 +158,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // Fast check
 
-                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
+                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee) >= 0);
 
                 // Check
 
@@ -240,7 +240,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // Fast check
 
-                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
+                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee) >= 0);
 
                 // Check
 
@@ -354,7 +354,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 tx.Witnesses.Length.Should().Be(1);
 
                 // Fast check
-                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
+                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee) >= 0);
 
                 // Check
                 long verificationGas = 0;
@@ -441,7 +441,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 tx.Witnesses.Length.Should().Be(1);
 
                 // Fast check
-                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
+                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee) >= 0);
 
                 // Check
                 long verificationGas = 0;
@@ -531,7 +531,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 tx.Witnesses.Length.Should().Be(1);
 
                 // Fast check
-                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
+                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee) >= 0);
 
                 // Check
                 long verificationGas = 0;
@@ -673,7 +673,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 tx.Signers.Length.Should().Be(1);
 
                 // Fast check
-                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
+                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee) >= 0);
 
                 // Check
                 long verificationGas = 0;
@@ -1023,7 +1023,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 tx.Witnesses.Length.Should().Be(1);
 
                 // Fast check
-                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
+                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee) >= 0);
 
                 // Check
                 long verificationGas = 0;

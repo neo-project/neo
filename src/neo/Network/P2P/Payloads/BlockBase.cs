@@ -3,6 +3,7 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.Wallets;
 using System;
 using System.IO;
@@ -118,7 +119,10 @@ namespace Neo.Network.P2P.Payloads
             if (prev_header == null) return false;
             if (prev_header.Index + 1 != Index) return false;
             if (prev_header.Timestamp >= Timestamp) return false;
-            if (!this.VerifyWitnesses(snapshot, 0_03333333)) return false;
+            long remains = this.VerifyWitnesses(snapshot, 1_00000000);
+            if (remains < 0) return false;
+            remains = this.VerifyWitnesses(snapshot, remains, WitnessFlag.None, false);
+            if (remains < 0) return false;
             return true;
         }
     }

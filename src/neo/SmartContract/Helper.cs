@@ -130,11 +130,10 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
-        internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas, WitnessFlag filter = WitnessFlag.All)
+        internal static long VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas, WitnessFlag filter = WitnessFlag.All, bool withRatio = true)
         {
-            if (gas < 0) return false;
-            if (snapshot is null) gas = MaxVerificationGas;
-            else if (gas > MaxVerificationGas) gas = MaxVerificationGas;
+            if (gas < 0) return gas;
+            if (snapshot is null || gas > MaxVerificationGas) gas = MaxVerificationGas;
 
             UInt160[] hashes;
             try
@@ -143,16 +142,24 @@ namespace Neo.SmartContract
             }
             catch (InvalidOperationException)
             {
-                return false;
+                return -1;
             }
-            if (hashes.Length != verifiable.Witnesses.Length) return false;
+            if (hashes.Length != verifiable.Witnesses.Length) return -1;
             for (int i = 0; i < hashes.Length; i++)
             {
                 WitnessFlag flag = verifiable.Witnesses[i].StateDependent ? WitnessFlag.StateDependent : WitnessFlag.StateIndependent;
                 if (!filter.HasFlag(flag))
                 {
-                    gas -= verifiable.Witnesses[i].GasConsumedWithRatio;
-                    if (gas < 0) return false;
+                    if (withRatio)
+                    {
+                        gas -= verifiable.Witnesses[i].GasConsumedWithRatio;
+                        if (gas < 0) return gas;
+                    }
+                    else
+                    {
+                        gas -= verifiable.Witnesses[i].GasConsumedWithoutRatio;
+                        if (gas < 0) return gas;
+                    }
                     continue;
                 }
 
@@ -162,17 +169,17 @@ namespace Neo.SmartContract
                 if (verification.Length == 0)
                 {
                     ContractState cs = snapshot.Contracts.TryGet(hashes[i]);
-                    if (cs is null) return false;
+                    if (cs is null) return -1;
                     ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify");
-                    if (md is null) return false;
+                    if (md is null) return -1;
                     verification = cs.Script;
                     offset = md.Offset;
                     init = cs.Manifest.Abi.GetMethod("_initialize");
                 }
                 else
                 {
-                    if (NativeContract.IsNative(hashes[i])) return false;
-                    if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
+                    if (NativeContract.IsNative(hashes[i])) return -1;
+                    if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return -1;
                     offset = 0;
                 }
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas))
@@ -191,13 +198,14 @@ namespace Neo.SmartContract
                         engine.LoadContext(context.Clone(init.Offset), false);
                     }
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
-                    if (engine.Execute() == VMState.FAULT) return false;
-                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
+                    if (engine.Execute() == VMState.FAULT) return -1;
+                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return -1;
                     gas -= engine.GasConsumedWithRatio;
                     verifiable.Witnesses[i].GasConsumedWithRatio = engine.GasConsumedWithRatio;
+                    verifiable.Witnesses[i].GasConsumedWithoutRatio = engine.GasConsumedWithoutRatio;
                 }
             }
-            return true;
+            return gas;
         }
     }
 }

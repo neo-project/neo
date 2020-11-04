@@ -7,7 +7,7 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public const long StoragePrice = 3333;
+        public const long StoragePrice = 100000;
         public const int MaxStorageKeySize = 64;
         public const int MaxStorageValueSize = ushort.MaxValue;
 
@@ -18,7 +18,7 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Storage_Find = Register("System.Storage.Find", nameof(Find), 0_00033333, CallFlags.AllowStates, false);
         public static readonly InteropDescriptor System_Storage_Put = Register("System.Storage.Put", nameof(Put), 0, CallFlags.AllowModifyStates, false);
         public static readonly InteropDescriptor System_Storage_PutEx = Register("System.Storage.PutEx", nameof(PutEx), 0, CallFlags.AllowModifyStates, false);
-        public static readonly InteropDescriptor System_Storage_Delete = Register("System.Storage.Delete", nameof(Delete), 1 * StoragePrice, CallFlags.AllowModifyStates, false);
+        public static readonly InteropDescriptor System_Storage_Delete = Register("System.Storage.Delete", nameof(Delete), 1 * StoragePrice, CallFlags.AllowModifyStates, false, false);
 
         protected internal StorageContext GetStorageContext()
         {
@@ -107,7 +107,7 @@ namespace Neo.SmartContract
                 else
                     newDataSize = (item.Value.Length - 1) / 4 + 1 + value.Length - item.Value.Length;
             }
-            AddGas(newDataSize * StoragePrice);
+            AddGas(newDataSize * StoragePrice, false);
 
             item.Value = value;
             item.IsConstant = flags.HasFlag(StorageFlags.Constant);

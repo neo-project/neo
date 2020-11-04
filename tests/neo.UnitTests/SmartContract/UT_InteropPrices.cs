@@ -75,7 +75,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 var setupPrice = ae.GasConsumed;
                 debugger.Execute();
-                (ae.GasConsumed - setupPrice).Should().Be(ApplicationEngine.StoragePrice * (1 + value.Length) * NativeContract.Policy.GetFeeRatio(snapshot));
+                (ae.GasConsumed - setupPrice).Should().Be(ApplicationEngine.StoragePrice * (1 + value.Length));
             }
         }
 
@@ -109,7 +109,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 var setupPrice = applicationEngine.GasConsumed;
                 debugger.Execute();
-                (applicationEngine.GasConsumed - setupPrice).Should().Be(1 * ApplicationEngine.StoragePrice * NativeContract.Policy.GetFeeRatio(snapshot));
+                (applicationEngine.GasConsumed - setupPrice).Should().Be(1 * ApplicationEngine.StoragePrice);
             }
         }
 
@@ -146,7 +146,7 @@ namespace Neo.UnitTests.SmartContract
                 var setupPrice = ae.GasConsumed;
                 debugger.StepInto();
                 debugger.StepInto();
-                (ae.GasConsumed - setupPrice).Should().Be((1 + (oldValue.Length / 4) + value.Length - oldValue.Length) * ApplicationEngine.StoragePrice * NativeContract.Policy.GetFeeRatio(snapshot));
+                (ae.GasConsumed - setupPrice).Should().Be((1 + (oldValue.Length / 4) + value.Length - oldValue.Length) * ApplicationEngine.StoragePrice);
             }
         }
 
@@ -186,7 +186,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto(); //syscall Storage.GetContext
                 var setupPrice = ae.GasConsumed;
                 debugger.StepInto(); //syscall Storage.Put
-                (ae.GasConsumed - setupPrice).Should().Be((sItem.Value.Length / 4 + 1) * ApplicationEngine.StoragePrice * NativeContract.Policy.GetFeeRatio(snapshot)); // = PUT basic fee
+                (ae.GasConsumed - setupPrice).Should().Be((sItem.Value.Length / 4 + 1) * ApplicationEngine.StoragePrice); // = PUT basic fee
             }
         }
 

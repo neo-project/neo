@@ -24,7 +24,7 @@ namespace Neo.SmartContract.Native.Designate
         {
             Manifest.Features = ContractFeatures.HasStorage;
         }
-        
+
         [ContractMethod(0_00033333, CallFlags.AllowStates)]
         public ECPoint[] GetDesignatedByRole(StoreView snapshot, Role role, uint index)
         {

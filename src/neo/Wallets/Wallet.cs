@@ -369,6 +369,7 @@ namespace Neo.Wallets
             // base size for transaction: includes const_header + signers + attributes + script + hashes
             int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + tx.Script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
             long networkFee = 0;
+            long networkFeeWithoutRatio = 0;
             foreach (UInt160 hash in hashes)
             {
                 byte[] witness_script = GetAccount(hash)?.Contract?.Script;
@@ -407,6 +408,7 @@ namespace Neo.Wallets
                     if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.ScriptHash} returns false.");
 
                     networkFee += engine.GasConsumedWithRatio;
+                    networkFeeWithoutRatio = engine.GasConsumedWithoutRatio;
                 }
                 else if (witness_script.IsSignatureContract())
                 {
@@ -431,7 +433,7 @@ namespace Neo.Wallets
                 }
             }
             networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
-            return networkFee * NativeContract.Policy.GetFeeRatio(snapshot);
+            return networkFee * NativeContract.Policy.GetFeeRatio(snapshot) + networkFeeWithoutRatio;
         }
 
         public bool Sign(ContractParametersContext context)

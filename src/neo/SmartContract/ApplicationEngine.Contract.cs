@@ -35,7 +35,7 @@ namespace Neo.SmartContract
             if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
                 throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
 
-            AddGas(StoragePrice * (script.Length + manifest.Length));
+            AddGas(StoragePrice * (script.Length + manifest.Length), false);
 
             UInt160 hash = script.ToScriptHash();
             ContractState contract = Snapshot.Contracts.TryGet(hash);
@@ -66,7 +66,7 @@ namespace Neo.SmartContract
         {
             if (script is null && manifest is null) throw new ArgumentException();
 
-            AddGas(StoragePrice * ((script?.Length ?? 0) + (manifest?.Length ?? 0)));
+            AddGas(StoragePrice * ((script?.Length ?? 0) + (manifest?.Length ?? 0)), false);
 
             var contract = Snapshot.Contracts.TryGet(CurrentScriptHash);
             if (contract is null) throw new InvalidOperationException($"Updating Contract Does Not Exist: {CurrentScriptHash}");

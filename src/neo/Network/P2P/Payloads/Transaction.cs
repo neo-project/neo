@@ -295,8 +295,10 @@ namespace Neo.Network.P2P.Payloads
                 if (!attribute.Verify(snapshot, this))
                     return VerifyResult.Invalid;
             long net_fee = (NetworkFee / NativeContract.Policy.GetFeeRatio(snapshot)) - (Size * NativeContract.Policy.GetFeePerByte(snapshot));
-            if (!this.VerifyWitnesses(snapshot, net_fee, WitnessFlag.StateDependent))
-                return VerifyResult.Invalid;
+            long remains = this.VerifyWitnesses(snapshot, net_fee, WitnessFlag.StateDependent);
+            if (remains < 0) return VerifyResult.Invalid;
+            remains = this.VerifyWitnesses(snapshot, remains * NativeContract.Policy.GetFeeRatio(snapshot), WitnessFlag.None, false);
+            if (remains < 0) return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }
 
@@ -304,7 +306,7 @@ namespace Neo.Network.P2P.Payloads
         {
             if (Size > MaxTransactionSize)
                 return VerifyResult.Invalid;
-            if (!this.VerifyWitnesses(null, NetworkFee, WitnessFlag.StateIndependent))
+            if (this.VerifyWitnesses(null, NetworkFee, WitnessFlag.StateIndependent) < 0)
                 return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }

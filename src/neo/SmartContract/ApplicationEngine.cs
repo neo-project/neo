@@ -55,8 +55,11 @@ namespace Neo.SmartContract
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
         public long GasConsumedWithRatio = 0;
-        public long GasConsumed => GasConsumedWithRatio * NativeContract.Policy.GetFeeRatio(Snapshot);
-        public long GasLeft => (gas_amount_with_ratio - GasConsumedWithRatio) * NativeContract.Policy.GetFeeRatio(Snapshot);
+        public long GasConsumedWithoutRatio = 0;
+        public long GasConsumed => GasConsumedWithRatio * NativeContract.Policy.GetFeeRatio(Snapshot) + GasConsumedWithoutRatio;
+        public long GasLeft => Snapshot == null
+            ? gas_amount_with_ratio - GasConsumedWithRatio
+            : (gas_amount_with_ratio - GasConsumedWithRatio) * NativeContract.Policy.GetFeeRatio(Snapshot) - GasConsumedWithoutRatio;
         public Exception FaultException { get; private set; }
         public UInt160 CurrentScriptHash => CurrentContext?.GetScriptHash();
         public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
@@ -71,10 +74,17 @@ namespace Neo.SmartContract
             this.gas_amount_with_ratio = gas;
         }
 
-        protected internal void AddGas(long gas)
+        protected internal void AddGas(long gas, bool withRatio = true)
         {
-            GasConsumedWithRatio = checked(GasConsumedWithRatio + gas);
-            if (GasConsumedWithRatio > gas_amount_with_ratio)
+            if (withRatio)
+            {
+                GasConsumedWithRatio = checked(GasConsumedWithRatio + gas);
+            }
+            else
+            {
+                GasConsumedWithoutRatio = checked(GasConsumedWithoutRatio + gas);
+            }
+            if (GasLeft < 0)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
 
@@ -258,7 +268,7 @@ namespace Neo.SmartContract
         {
             InteropDescriptor descriptor = services[method];
             ValidateCallFlags(descriptor);
-            AddGas(descriptor.FixedPrice);
+            AddGas(descriptor.FixedPrice, descriptor.WithRatio);
             List<object> parameters = descriptor.Parameters.Count > 0
                 ? new List<object>()
                 : null;
@@ -296,11 +306,11 @@ namespace Neo.SmartContract
             };
         }
 
-        private static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags, bool allowCallback)
+        private static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags, bool allowCallback, bool withRatio = true)
         {
             MethodInfo method = typeof(ApplicationEngine).GetMethod(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                 ?? typeof(ApplicationEngine).GetProperty(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).GetMethod;
-            InteropDescriptor descriptor = new InteropDescriptor(name, method, fixedPrice, requiredCallFlags, allowCallback);
+            InteropDescriptor descriptor = new InteropDescriptor(name, method, fixedPrice, requiredCallFlags, allowCallback, withRatio);
             services ??= new Dictionary<uint, InteropDescriptor>();
             services.Add(descriptor.Hash, descriptor);
             return descriptor;
