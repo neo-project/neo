@@ -18,7 +18,7 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Contract_Create = Register("System.Contract.Create", nameof(CreateContract), 0, CallFlags.AllowModifyStates, false);
         public static readonly InteropDescriptor System_Contract_Update = Register("System.Contract.Update", nameof(UpdateContract), 0, CallFlags.AllowModifyStates, false);
         public static readonly InteropDescriptor System_Contract_Destroy = Register("System.Contract.Destroy", nameof(DestroyContract), 0_01000000, CallFlags.AllowModifyStates, false);
-        public static readonly InteropDescriptor System_Contract_Exists = Register("System.Contract.Exists", nameof(ContractExists), 0_01000000, CallFlags.AllowCall, false);
+        public static readonly InteropDescriptor System_Method_Exists = Register("System.Method.Exists", nameof(MethodExists), 0_01000000, CallFlags.AllowCall, false);
         public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 0_01000000, CallFlags.AllowCall, false);
         public static readonly InteropDescriptor System_Contract_CallEx = Register("System.Contract.CallEx", nameof(CallContractEx), 0_01000000, CallFlags.AllowCall, false);
         public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 0_00030000, CallFlags.AllowStates, true);
@@ -119,14 +119,15 @@ namespace Neo.SmartContract
                     Snapshot.Storages.Delete(key);
         }
 
-        internal bool ContractExists(UInt160 contractHash, string method)
+        internal bool MethodExists(UInt160 contractHash, string method)
         {
             if (contractHash is null) return false;
+            if (string.IsNullOrEmpty(method)) return false;
 
             ContractState contract = Snapshot.Contracts.TryGet(contractHash);
             if (contract is null) return false;
 
-            return method == null || contract.Manifest.Abi.GetMethod(method) != null;
+            return contract.Manifest.Abi.GetMethod(method) != null;
         }
 
         protected internal void CallContract(UInt160 contractHash, string method, Array args)
