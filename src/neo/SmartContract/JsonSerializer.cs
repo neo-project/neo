@@ -6,6 +6,7 @@ using System.Collections;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using Array = Neo.VM.Types.Array;
 using Boolean = Neo.VM.Types.Boolean;
@@ -74,7 +75,8 @@ namespace Neo.SmartContract
             using Utf8JsonWriter writer = new Utf8JsonWriter(ms, new JsonWriterOptions
             {
                 Indented = false,
-                SkipValidation = false
+                SkipValidation = false,
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
             });
             Stack stack = new Stack();
             stack.Push(item);

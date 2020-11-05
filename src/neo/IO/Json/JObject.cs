@@ -2,7 +2,7 @@ using Neo.IO.Caching;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace Neo.IO.Json
@@ -144,7 +144,8 @@ namespace Neo.IO.Json
             using Utf8JsonWriter writer = new Utf8JsonWriter(ms, new JsonWriterOptions
             {
                 Indented = indented,
-                SkipValidation = true
+                SkipValidation = true,
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
             });
             Write(writer);
             writer.Flush();

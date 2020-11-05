@@ -163,10 +163,10 @@ namespace Neo.UnitTests.SmartContract
 
             Assert.AreEqual(@"{""test"":true}", parsed.ToString());
 
-            json = @" {""\uAAAA"":   true}";
+            json = @" {""测试"":   true}";
             parsed = JObject.Parse(json);
 
-            Assert.AreEqual(@"{""\uAAAA"":true}", parsed.ToString());
+            Assert.AreEqual(@"{""测试"":true}", parsed.ToString());
 
             json = @"{""a"":}";
             Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
