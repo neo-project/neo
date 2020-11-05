@@ -126,7 +126,7 @@ namespace Neo.Network.P2P.Payloads
                 return false;
             long remains = this.VerifyWitnesses(snapshot, 0_00066666);
             if (remains < 0) return false;
-            remains = this.VerifyWitnesses(snapshot, remains, WitnessFlag.None, false);
+            remains = this.VerifyWitnesses(snapshot, remains * NativeContract.Policy.GetFeeRatio(snapshot), WitnessFlag.None, false);
             if (remains < 0) return false;
             return true;
         }
