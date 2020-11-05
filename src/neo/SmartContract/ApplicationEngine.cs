@@ -126,6 +126,7 @@ namespace Neo.SmartContract
                 case null:
                     break;
                 case Action action:
+                    Pop();
                     action();
                     break;
                 default:
