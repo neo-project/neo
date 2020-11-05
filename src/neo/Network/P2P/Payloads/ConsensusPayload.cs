@@ -124,7 +124,7 @@ namespace Neo.Network.P2P.Payloads
         {
             if (BlockIndex <= snapshot.Height)
                 return false;
-            return this.VerifyWitnesses(snapshot, 60000 * NativeContract.Policy.GetBaseExecFee(snapshot));
+            return this.VerifyWitnesses(snapshot, 0_02000000);
         }
     }
 }
