@@ -34,26 +34,18 @@ namespace Neo.SmartContract
             {
                 10 => value.ToString(),
                 16 => value.ToString("x"),
-                _ => throw new ArgumentOutOfRangeException(nameof(@base)),
+                _ => throw new ArgumentOutOfRangeException(nameof(@base))
             };
         }
 
         protected internal BigInteger Atoi(string value, int @base)
         {
-            switch (@base)
+            return @base switch
             {
-                case 10:
-                    {
-                        return BigInteger.Parse(value);
-                    }
-                case 16:
-                    {
-                        return BigInteger.Parse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
-                    }
-                default: throw new ArgumentException(nameof(@base));
-            }
-
-            throw new FormatException();
+                10 => BigInteger.Parse(value),
+                16 => BigInteger.Parse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture),
+                _ => throw new ArgumentException(nameof(@base))
+            };
         }
 
         protected internal string Base64Encode(byte[] data)
