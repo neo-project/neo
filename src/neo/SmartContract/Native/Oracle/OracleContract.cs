@@ -78,7 +78,7 @@ namespace Neo.SmartContract.Native.Oracle
                         new ContractParameterDefinition()
                         {
                             Name = "OriginalTx",
-                            Type = ContractParameterType.Hash160
+                            Type = ContractParameterType.Hash256
                         }
                     }
                 }
