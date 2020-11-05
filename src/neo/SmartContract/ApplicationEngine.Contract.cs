@@ -119,7 +119,7 @@ namespace Neo.SmartContract
                     Snapshot.Storages.Delete(key);
         }
 
-        internal bool MethodExists(UInt160 contractHash, string method)
+        protected internal bool MethodExists(UInt160 contractHash, string method)
         {
             if (contractHash is null) return false;
             if (string.IsNullOrEmpty(method)) return false;
