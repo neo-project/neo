@@ -34,7 +34,7 @@ namespace Neo.SmartContract
             {
                 10 => value.ToString(),
                 16 => value.ToString("x"),
-                _ => throw new ArgumentException(nameof(@base)),
+                _ => throw new ArgumentOutOfRangeException(nameof(@base)),
             };
         }
 
