@@ -33,7 +33,7 @@ namespace Neo.SmartContract
             return @base switch
             {
                 10 => value.ToString(),
-                16 => value.ToString("x2"),
+                16 => value.ToString("x"),
                 _ => throw new ArgumentException(nameof(@base)),
             };
         }
