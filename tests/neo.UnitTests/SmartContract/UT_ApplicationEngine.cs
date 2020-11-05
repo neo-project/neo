@@ -45,9 +45,9 @@ namespace Neo.UnitTests.SmartContract
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
 
             Assert.AreEqual("1", engine.Itoa(BigInteger.One, 10));
-            Assert.AreEqual("01", engine.Itoa(BigInteger.One, 16));
+            Assert.AreEqual("1", engine.Itoa(BigInteger.One, 16));
             Assert.AreEqual("-1", engine.Itoa(BigInteger.MinusOne, 10));
-            Assert.AreEqual("ff", engine.Itoa(BigInteger.MinusOne, 16));
+            Assert.AreEqual("f", engine.Itoa(BigInteger.MinusOne, 16));
             Assert.AreEqual(-1, engine.Atoi("-1", 10));
             Assert.AreEqual(1, engine.Atoi("+1", 10));
             Assert.AreEqual(-1, engine.Atoi("ff", 16));

@@ -44,19 +44,11 @@ namespace Neo.SmartContract
             {
                 case 10:
                     {
-                        if (BigInteger.TryParse(value, out var ret))
-                        {
-                            return ret;
-                        }
-                        break;
+                        return BigInteger.Parse(value);
                     }
                 case 16:
                     {
-                        if (BigInteger.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var ret))
-                        {
-                            return ret;
-                        }
-                        break;
+                        return BigInteger.Parse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
                     }
                 default: throw new ArgumentException(nameof(@base));
             }
