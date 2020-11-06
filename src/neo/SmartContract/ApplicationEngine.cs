@@ -18,7 +18,7 @@ namespace Neo.SmartContract
 {
     public partial class ApplicationEngine : ExecutionEngine
     {
-        private enum CheckReturnType : byte
+        private enum ReturnTypeConvention : byte
         {
             None = 0,
             EnsureIsEmpty = 1,
@@ -29,7 +29,7 @@ namespace Neo.SmartContract
         {
             public Type ReturnType;
             public Delegate Callback;
-            public CheckReturnType NeedCheckReturnValue;
+            public ReturnTypeConvention Convention;
         }
 
         /// <summary>
@@ -104,15 +104,15 @@ namespace Neo.SmartContract
             if (!(UncaughtException is null)) return;
             if (invocationStates.Count == 0) return;
             if (!invocationStates.Remove(CurrentContext, out InvocationState state)) return;
-            switch (state.NeedCheckReturnValue)
+            switch (state.Convention)
             {
-                case CheckReturnType.EnsureIsEmpty:
+                case ReturnTypeConvention.EnsureIsEmpty:
                     {
                         if (context.EvaluationStack.Count != 0)
                             throw new InvalidOperationException();
                         break;
                     }
-                case CheckReturnType.EnsureNotEmpty:
+                case ReturnTypeConvention.EnsureNotEmpty:
                     {
                         if (context.EvaluationStack.Count == 0)
                             Push(StackItem.Null);
@@ -165,7 +165,7 @@ namespace Neo.SmartContract
         internal void LoadContext(ExecutionContext context, bool checkReturnValue)
         {
             if (checkReturnValue)
-                GetInvocationState(CurrentContext).NeedCheckReturnValue = CheckReturnType.EnsureNotEmpty;
+                GetInvocationState(CurrentContext).Convention = ReturnTypeConvention.EnsureNotEmpty;
             LoadContext(context);
         }
 
