@@ -9,6 +9,7 @@ namespace Neo.Network.P2P.Payloads
         Forbidden = 0x14,
         ResponseTooLarge = 0x16,
         InsufficientFunds = 0x18,
+        ConsensusUnreachable = 0x1a,
 
         Error = 0xff
     }
