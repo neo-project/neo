@@ -13,13 +13,13 @@ namespace Neo.Ledger
     public class ContractState : ICloneable<ContractState>, ISerializable, IInteroperable
     {
         public int Id;
+        public uint Version;
+        public UInt160 ScriptHash;
         public byte[] Script;
         public ContractManifest Manifest;
-        public uint Version;
 
         public bool HasStorage => Manifest.Features.HasFlag(ContractFeatures.HasStorage);
         public bool Payable => Manifest.Features.HasFlag(ContractFeatures.Payable);
-        public UInt160 ScriptHash { get; set; }
 
         int ISerializable.Size => sizeof(int) + sizeof(uint) + UInt160.Length + Script.GetVarSize() + Manifest.Size;
 
