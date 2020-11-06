@@ -44,7 +44,7 @@ namespace Neo.SmartContract
             {
                 10 => BigInteger.Parse(value),
                 16 => BigInteger.Parse(value, NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture),
-                _ => throw new ArgumentException(nameof(@base))
+                _ => throw new ArgumentOutOfRangeException(nameof(@base))
             };
         }
 
