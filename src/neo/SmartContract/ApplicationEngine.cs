@@ -87,7 +87,7 @@ namespace Neo.SmartContract
             InvocationState state = GetInvocationState(CurrentContext);
             state.ReturnType = typeof(void);
             state.Callback = onComplete;
-            CallContract(hash, method, new VMArray(ReferenceCounter, args));
+            CallContractInternal(hash, method, new VMArray(ReferenceCounter, args), CallFlags.All, ReturnTypeConvention.EnsureIsEmpty);
         }
 
         internal void CallFromNativeContract<T>(Action<T> onComplete, UInt160 hash, string method, params StackItem[] args)
@@ -95,7 +95,7 @@ namespace Neo.SmartContract
             InvocationState state = GetInvocationState(CurrentContext);
             state.ReturnType = typeof(T);
             state.Callback = onComplete;
-            CallContract(hash, method, new VMArray(ReferenceCounter, args));
+            CallContractInternal(hash, method, new VMArray(ReferenceCounter, args), CallFlags.All, ReturnTypeConvention.EnsureNotEmpty);
         }
 
         protected override void ContextUnloaded(ExecutionContext context)
@@ -126,7 +126,6 @@ namespace Neo.SmartContract
                 case null:
                     break;
                 case Action action:
-                    Pop();
                     action();
                     break;
                 default:

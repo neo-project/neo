@@ -120,17 +120,17 @@ namespace Neo.SmartContract
 
         protected internal void CallContract(UInt160 contractHash, string method, Array args)
         {
-            CallContractInternal(contractHash, method, args, CallFlags.All);
+            CallContractEx(contractHash, method, args, CallFlags.All);
         }
 
         protected internal void CallContractEx(UInt160 contractHash, string method, Array args, CallFlags callFlags)
         {
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
-            CallContractInternal(contractHash, method, args, callFlags);
+            CallContractInternal(contractHash, method, args, callFlags, ReturnTypeConvention.EnsureNotEmpty);
         }
 
-        private void CallContractInternal(UInt160 contractHash, string method, Array args, CallFlags flags)
+        private void CallContractInternal(UInt160 contractHash, string method, Array args, CallFlags flags, ReturnTypeConvention convention)
         {
             if (method.StartsWith('_')) throw new ArgumentException($"Invalid Method Name: {method}");
 
@@ -143,7 +143,7 @@ namespace Neo.SmartContract
             if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, method))
                 throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contractHash} From Contract {CurrentScriptHash}");
 
-            CallContractInternal(contract, md, args, flags, ReturnTypeConvention.EnsureNotEmpty);
+            CallContractInternal(contract, md, args, flags, convention);
         }
 
         private void CallContractInternal(ContractState contract, ContractMethodDescriptor method, Array args, CallFlags flags, ReturnTypeConvention convention)
