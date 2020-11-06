@@ -43,7 +43,7 @@ namespace Neo.SmartContract
             return @base switch
             {
                 10 => BigInteger.Parse(value),
-                16 => BigInteger.Parse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture),
+                16 => BigInteger.Parse(value, NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture),
                 _ => throw new ArgumentException(nameof(@base))
             };
         }
