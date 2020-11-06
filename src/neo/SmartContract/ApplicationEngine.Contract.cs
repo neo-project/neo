@@ -79,7 +79,7 @@ namespace Neo.SmartContract
 
             if (nefFile != null)
             {
-                if (nefFile != null && nefFile.Length > NefFile.MaxLength)
+                if (nefFile.Length == 0 || nefFile.Length > NefFile.MaxLength)
                     throw new ArgumentException($"Invalid NefFile Length: {nefFile.Length}");
 
                 NefFile nef = nefFile.AsSerializable<NefFile>();
