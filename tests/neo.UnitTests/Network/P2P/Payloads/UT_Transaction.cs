@@ -1088,13 +1088,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Version = 0,
                 Witnesses = new Witness[0],
             };
-            tx.VerifyStateIndependent().Should().Be(VerifyResult.Invalid);
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            tx.VerifyStateIndependent(snapshot).Should().Be(VerifyResult.Invalid);
             tx.Script = new byte[0];
-            tx.VerifyStateIndependent().Should().Be(VerifyResult.Invalid);
+            tx.VerifyStateIndependent(snapshot).Should().Be(VerifyResult.Invalid);
 
             var walletA = TestUtils.GenerateTestWallet();
             var walletB = TestUtils.GenerateTestWallet();
-            var snapshot = Blockchain.Singleton.GetSnapshot();
 
             using (var unlockA = walletA.Unlock("123"))
             using (var unlockB = walletB.Unlock("123"))
@@ -1141,7 +1142,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.IsTrue(data.Completed);
 
                 tx.Witnesses = data.GetWitnesses();
-                tx.VerifyStateIndependent().Should().Be(VerifyResult.Succeed);
+                tx.VerifyStateIndependent(snapshot).Should().Be(VerifyResult.Succeed);
             }
         }
 

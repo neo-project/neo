@@ -1,13 +1,14 @@
 using Akka.Actor;
 using Akka.Routing;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using System;
 
 namespace Neo.Ledger
 {
     internal class TransactionRouter : UntypedActor
     {
-        public class Task { public Transaction Transaction; public bool Relay; }
+        public class Task { public Transaction Transaction; public bool Relay; public StoreView Snapshot;}
 
         private readonly IActorRef blockchain;
 
@@ -22,7 +23,7 @@ namespace Neo.Ledger
             blockchain.Tell(new Blockchain.PreverifyCompleted
             {
                 Transaction = task.Transaction,
-                Result = task.Transaction.VerifyStateIndependent(),
+                Result = task.Transaction.VerifyStateIndependent(task.Snapshot),
                 Relay = task.Relay
             }, Sender);
         }

@@ -300,18 +300,18 @@ namespace Neo.Network.P2P.Payloads
             return VerifyResult.Succeed;
         }
 
-        public virtual VerifyResult VerifyStateIndependent()
+        public virtual VerifyResult VerifyStateIndependent(StoreView snapshot)
         {
             if (Size > MaxTransactionSize)
                 return VerifyResult.Invalid;
-            if (!this.VerifyWitnesses(null, NetworkFee, WitnessFlag.StateIndependent))
+            if (!this.VerifyWitnesses(snapshot, NetworkFee, WitnessFlag.StateIndependent))
                 return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }
 
         public virtual VerifyResult Verify(StoreView snapshot, TransactionVerificationContext context)
         {
-            VerifyResult result = VerifyStateIndependent();
+            VerifyResult result = VerifyStateIndependent(snapshot);
             if (result != VerifyResult.Succeed) return result;
             result = VerifyStateDependent(snapshot, context);
             return result;
