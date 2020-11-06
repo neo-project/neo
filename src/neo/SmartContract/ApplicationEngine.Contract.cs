@@ -71,8 +71,6 @@ namespace Neo.SmartContract
         protected internal void UpdateContract(byte[] nefFile, byte[] manifest)
         {
             if (nefFile is null && manifest is null) throw new ArgumentException();
-            if (nefFile != null && nefFile.Length > NefFile.MaxLength)
-                throw new ArgumentException($"Invalid NefFile Length: {nefFile.Length}");
 
             AddGas(StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
 
@@ -81,6 +79,9 @@ namespace Neo.SmartContract
 
             if (nefFile != null)
             {
+                if (nefFile != null && nefFile.Length > NefFile.MaxLength)
+                    throw new ArgumentException($"Invalid NefFile Length: {nefFile.Length}");
+
                 NefFile nef = nefFile.AsSerializable<NefFile>();
                 if (nef.Script.Length == 0 || nef.Script.Length > MaxContractLength)
                     throw new ArgumentException($"Invalid Script Length: {nef.Script.Length}");
