@@ -32,8 +32,8 @@ namespace Neo.SmartContract.Native.Tokens
         private const byte Prefix_VoterRewardPerCommittee = 23;
 
         private const byte NeoHolderRewardRatio = 10;
-        private const byte CommitteeRewardRatio = 5;
-        private const byte VoterRewardRatio = 85;
+        private const byte CommitteeRewardRatio = 10;
+        private const byte VoterRewardRatio = 80;
 
         internal NeoToken()
         {
