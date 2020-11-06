@@ -130,11 +130,14 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
-        public static bool TryCreateVerifyEngine(this IVerifiable verifiable, StoreView snapshot, UInt160 hash, Witness witness, long gas, out ApplicationEngine engine)
+        public static bool TryCreateVerifyEngine(this IVerifiable verifiable, StoreView snapshot, UInt160 hash, int witnessIndex, long gas, out ApplicationEngine engine)
         {
-            int offset;
             engine = null;
+            if (witnessIndex < 0 || witnessIndex >= verifiable.Witnesses.Length) return false;
+
+            int offset;
             ContractMethodDescriptor init = null;
+            Witness witness = verifiable.Witnesses[witnessIndex];
             byte[] verification = witness.VerificationScript;
             if (verification.Length == 0)
             {
@@ -195,7 +198,7 @@ namespace Neo.SmartContract
                     continue;
                 }
 
-                if (!TryCreateVerifyEngine(verifiable, snapshot?.Clone(), hashes[i], verifiable.Witnesses[i], gas, out var engine)) return false;
+                if (!TryCreateVerifyEngine(verifiable, snapshot?.Clone(), hashes[i], i, gas, out var engine)) return false;
 
                 using (engine)
                 {
