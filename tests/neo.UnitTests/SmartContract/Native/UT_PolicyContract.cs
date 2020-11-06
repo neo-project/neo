@@ -211,6 +211,52 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void Check_SetBaseExecFee()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            // Fake blockchain
+
+            snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
+            snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
+
+            NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
+
+            // Without signature
+
+            var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(),
+                "setBaseExecFee", new ContractParameter(ContractParameterType.Integer) { Value = 50 });
+            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.GetBoolean().Should().BeFalse();
+
+            ret = NativeContract.Policy.Call(snapshot, "getBaseExecFee");
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetInteger().Should().Be(30);
+
+            // With signature, wrong value
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                    "setBaseExecFee", new ContractParameter(ContractParameterType.Integer) { Value = 100500 });
+            });
+
+            ret = NativeContract.Policy.Call(snapshot, "getBaseExecFee");
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetInteger().Should().Be(30);
+
+            // Proper set
+            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                "setBaseExecFee", new ContractParameter(ContractParameterType.Integer) { Value = 50 });
+            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.GetBoolean().Should().BeTrue();
+
+            ret = NativeContract.Policy.Call(snapshot, "getBaseExecFee");
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetInteger().Should().Be(50);
+        }
+
+        [TestMethod]
         public void Check_BlockAccount()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
