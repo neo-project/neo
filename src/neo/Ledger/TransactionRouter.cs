@@ -8,7 +8,7 @@ namespace Neo.Ledger
 {
     internal class TransactionRouter : UntypedActor
     {
-        public class Task { public Transaction Transaction; public bool Relay; public StoreView Snapshot;}
+        public class Task { public Transaction Transaction; public bool Relay; public StoreView Snapshot; }
 
         private readonly IActorRef blockchain;
 
