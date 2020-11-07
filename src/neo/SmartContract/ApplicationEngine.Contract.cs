@@ -86,13 +86,8 @@ namespace Neo.SmartContract
                 if (nef.Script.Length == 0 || nef.Script.Length > MaxContractLength)
                     throw new ArgumentException($"Invalid Script Length: {nef.Script.Length}");
 
-                UInt160 hash_new = nefFile.ToScriptHash();
-                if (hash_new.Equals(CurrentScriptHash) || Snapshot.Contracts.TryGet(hash_new) != null)
-                    throw new InvalidOperationException($"Adding Contract Hash Already Exist: {hash_new}");
-
-                // Update script and script hash
+                // Update script
                 contract.Script = nef.Script.ToArray();
-                contract.ScriptHash = hash_new;
             }
             if (manifest != null)
             {
