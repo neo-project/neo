@@ -13,7 +13,7 @@ namespace Neo.Ledger
     public class ContractState : ICloneable<ContractState>, ISerializable, IInteroperable
     {
         public int Id;
-        public uint Version;
+        public ushort Version;
         public UInt160 ScriptHash;
         public byte[] Script;
         public ContractManifest Manifest;
@@ -21,7 +21,7 @@ namespace Neo.Ledger
         public bool HasStorage => Manifest.Features.HasFlag(ContractFeatures.HasStorage);
         public bool Payable => Manifest.Features.HasFlag(ContractFeatures.Payable);
 
-        int ISerializable.Size => sizeof(int) + sizeof(uint) + UInt160.Length + Script.GetVarSize() + Manifest.Size;
+        int ISerializable.Size => sizeof(int) + sizeof(ushort) + UInt160.Length + Script.GetVarSize() + Manifest.Size;
 
         ContractState ICloneable<ContractState>.Clone()
         {
@@ -38,7 +38,7 @@ namespace Neo.Ledger
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Id = reader.ReadInt32();
-            Version = reader.ReadUInt32();
+            Version = reader.ReadUInt16();
             ScriptHash = reader.ReadSerializable<UInt160>();
             Script = reader.ReadVarBytes();
             Manifest = reader.ReadSerializable<ContractManifest>();
