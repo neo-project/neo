@@ -193,7 +193,10 @@ namespace Neo.UnitTests.SmartContract
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair key = new KeyPair(privkey);
             ECPoint pubkey = key.PublicKey;
-            byte[] signature = Crypto.Sign(nefFile.ToScriptHash().ToArray(), privkey, pubkey.EncodePoint(false).Skip(1).ToArray());
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var state = TestUtils.GetContract();
+            state.Manifest.Features = ContractFeatures.HasStorage;
+            byte[] signature = Crypto.Sign(state.ScriptHash.ToArray(), privkey, pubkey.EncodePoint(false).Skip(1).ToArray());
             manifest.Groups = new ContractGroup[]
             {
                 new ContractGroup()
@@ -203,9 +206,6 @@ namespace Neo.UnitTests.SmartContract
                 }
             };
             manifest.Features = ContractFeatures.HasStorage;
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            var state = TestUtils.GetContract();
-            state.Manifest.Features = ContractFeatures.HasStorage;
             var storageItem = new StorageItem
             {
                 Value = new byte[] { 0x01 },
@@ -221,6 +221,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Storages.Add(storageKey, storageItem);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(state.Script);
+            manifest.Abi.Hash = state.ScriptHash;
             engine.UpdateContract(nefFile, manifest.ToJson().ToByteArray(false));
             engine.Snapshot.Storages.Find(BitConverter.GetBytes(state.Id)).ToList().Count().Should().Be(1);
         }
