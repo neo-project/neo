@@ -80,7 +80,7 @@ namespace Neo.Ledger
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new StackItem[] { ScriptHash.ToArray(), Script, Version, Manifest.ToString(), HasStorage, Payable });
+            return new Array(referenceCounter, new StackItem[] { Id, Version, ScriptHash.ToArray(), Script, Manifest.ToString(), HasStorage, Payable });
         }
     }
 }
