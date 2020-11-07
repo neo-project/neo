@@ -87,7 +87,7 @@ namespace Neo.SmartContract
                     throw new ArgumentException($"Invalid Script Length: {nef.Script.Length}");
 
                 // Update script
-                contract.Script = nef.Script.ToArray();
+                contract.Script = nef.Script;
             }
             if (manifest != null)
             {
