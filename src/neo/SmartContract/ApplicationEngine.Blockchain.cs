@@ -8,8 +8,6 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public const uint MaxTraceableBlocks = Transaction.MaxValidUntilBlockIncrement;
-
         public static readonly InteropDescriptor System_Blockchain_GetHeight = Register("System.Blockchain.GetHeight", nameof(GetBlockchainHeight), 0_00000400, CallFlags.AllowStates, true);
         public static readonly InteropDescriptor System_Blockchain_GetBlock = Register("System.Blockchain.GetBlock", nameof(GetBlock), 0_02500000, CallFlags.AllowStates, true);
         public static readonly InteropDescriptor System_Blockchain_GetTransaction = Register("System.Blockchain.GetTransaction", nameof(GetTransaction), 0_01000000, CallFlags.AllowStates, true);
@@ -97,7 +95,7 @@ namespace Neo.SmartContract
         private static bool IsTraceableBlock(StoreView snapshot, uint index)
         {
             if (index > snapshot.Height) return false;
-            return index + MaxTraceableBlocks > snapshot.Height;
+            return index + ProtocolSettings.Default.MaxTraceableBlocks > snapshot.Height;
         }
     }
 }
