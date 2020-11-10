@@ -6,11 +6,9 @@ using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
-using Org.BouncyCastle.Crypto.Engines;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Neo.SmartContract
 {
