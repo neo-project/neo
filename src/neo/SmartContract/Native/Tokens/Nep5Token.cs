@@ -82,7 +82,7 @@ namespace Neo.SmartContract.Native.Tokens
 
             // Call onPayment method if exists
 
-            engine.CallContractInternal(to, "onPayment", new Array(engine.ReferenceCounter) { amount }, CallFlags.All, ApplicationEngine.CheckReturnType.DropResult);
+            engine.CallFromNativeContract(() => { }, to, "onPayment", new Array(engine.ReferenceCounter) { amount });
         }
 
         internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)

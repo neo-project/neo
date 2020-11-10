@@ -120,13 +120,6 @@ namespace Neo.SmartContract
                             throw new InvalidOperationException();
                         break;
                     }
-                case CheckReturnType.DropResult:
-                    {
-                        if (context.EvaluationStack.Count == 1)
-                            context.EvaluationStack.Pop();
-                        else throw new InvalidOperationException();
-                        break;
-                    }
             }
             switch (state.Callback)
             {

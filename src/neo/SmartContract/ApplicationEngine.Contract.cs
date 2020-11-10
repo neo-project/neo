@@ -139,7 +139,7 @@ namespace Neo.SmartContract
         {
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
-            CallContractInternal(contractHash, method, args, callFlags, CheckReturnType.EnsureNotEmpty);
+            CallContractInternal(contractHash, method, args, callFlags, ReturnTypeConvention.EnsureNotEmpty);
         }
 
         private void CallContractInternal(UInt160 contractHash, string method, Array args, CallFlags flags, ReturnTypeConvention convention)
