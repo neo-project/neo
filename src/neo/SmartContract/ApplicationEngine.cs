@@ -18,19 +18,18 @@ namespace Neo.SmartContract
 {
     public partial class ApplicationEngine : ExecutionEngine
     {
-        protected internal enum CheckReturnType : byte
+        private enum ReturnTypeConvention : byte
         {
             None = 0,
             EnsureIsEmpty = 1,
-            EnsureNotEmpty = 2,
-            DropResult = 3
+            EnsureNotEmpty = 2
         }
 
         private class InvocationState
         {
             public Type ReturnType;
             public Delegate Callback;
-            public CheckReturnType NeedCheckReturnValue;
+            public ReturnTypeConvention Convention;
         }
 
         /// <summary>
@@ -88,7 +87,7 @@ namespace Neo.SmartContract
             InvocationState state = GetInvocationState(CurrentContext);
             state.ReturnType = typeof(void);
             state.Callback = onComplete;
-            CallContract(hash, method, new VMArray(ReferenceCounter, args));
+            CallContractInternal(hash, method, new VMArray(ReferenceCounter, args), CallFlags.All, ReturnTypeConvention.EnsureIsEmpty);
         }
 
         internal void CallFromNativeContract<T>(Action<T> onComplete, UInt160 hash, string method, params StackItem[] args)
@@ -96,7 +95,7 @@ namespace Neo.SmartContract
             InvocationState state = GetInvocationState(CurrentContext);
             state.ReturnType = typeof(T);
             state.Callback = onComplete;
-            CallContract(hash, method, new VMArray(ReferenceCounter, args));
+            CallContractInternal(hash, method, new VMArray(ReferenceCounter, args), CallFlags.All, ReturnTypeConvention.EnsureNotEmpty);
         }
 
         protected override void ContextUnloaded(ExecutionContext context)
@@ -105,15 +104,15 @@ namespace Neo.SmartContract
             if (!(UncaughtException is null)) return;
             if (invocationStates.Count == 0) return;
             if (!invocationStates.Remove(CurrentContext, out InvocationState state)) return;
-            switch (state.NeedCheckReturnValue)
+            switch (state.Convention)
             {
-                case CheckReturnType.EnsureIsEmpty:
+                case ReturnTypeConvention.EnsureIsEmpty:
                     {
                         if (context.EvaluationStack.Count != 0)
                             throw new InvalidOperationException();
                         break;
                     }
-                case CheckReturnType.EnsureNotEmpty:
+                case ReturnTypeConvention.EnsureNotEmpty:
                     {
                         if (context.EvaluationStack.Count == 0)
                             Push(StackItem.Null);
@@ -172,7 +171,7 @@ namespace Neo.SmartContract
         internal void LoadContext(ExecutionContext context, bool checkReturnValue)
         {
             if (checkReturnValue)
-                GetInvocationState(CurrentContext).NeedCheckReturnValue = CheckReturnType.EnsureNotEmpty;
+                GetInvocationState(CurrentContext).Convention = ReturnTypeConvention.EnsureNotEmpty;
             LoadContext(context);
         }
 
