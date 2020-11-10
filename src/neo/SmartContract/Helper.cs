@@ -178,7 +178,7 @@ namespace Neo.SmartContract
             }
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas))
             {
-                CallFlags callFlags = !witness.IsStandardAccount ? CallFlags.AllowStates : CallFlags.None;
+                CallFlags callFlags = !witness.VerificationScript.IsStandardContract() ? CallFlags.AllowStates : CallFlags.None;
                 ExecutionContext context = engine.LoadScript(verification, callFlags, offset);
                 if (NativeContract.IsNative(hash))
                 {

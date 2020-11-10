@@ -300,18 +300,24 @@ namespace Neo.Network.P2P.Payloads
             if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (!witnesses[i].IsStandardAccount)
+                if (witnesses[i].VerificationScript.IsSignatureContract())
+                {
+                    // TODO fix fee
+                    net_fee -= (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice * 1);
+                }
+                else if (witnesses[i].VerificationScript.IsMultiSigContract(out int m, out int n))
+                {
+                    // TODO fix fee
+                    net_fee -= (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * m + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice * n);                    
+                }
+                else
                 {
                     if (!this.VerifyWitness(null, hashes[i], witnesses[i], net_fee, out long fee))
                         return VerifyResult.Invalid;
                     net_fee -= fee;
                 }
-                else
-                {
-                    // TODO Calculate signature fee
-                    //net_fee -= fee;
-                }
             }
+            if (net_fee < 0) return VerifyResult.InsufficientFunds;
             return VerifyResult.Succeed;
         }
 
@@ -322,7 +328,7 @@ namespace Neo.Network.P2P.Payloads
             UInt160[] hashes = GetScriptHashesForVerifying(null);
             if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
             for (int i = 0; i < hashes.Length; i++)
-                if (witnesses[i].IsStandardAccount)
+                if (witnesses[i].VerificationScript.IsStandardContract())
                     if (!this.VerifyWitness(null, hashes[i], witnesses[i], NetworkFee, out _))
                         return VerifyResult.Invalid;
             return VerifyResult.Succeed;

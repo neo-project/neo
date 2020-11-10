@@ -22,8 +22,6 @@ namespace Neo.Network.P2P.Payloads
         public byte[] InvocationScript;
         public byte[] VerificationScript;
 
-        internal long GasConsumed { get; set; }
-
         private UInt160 _scriptHash;
         public virtual UInt160 ScriptHash
         {
@@ -36,8 +34,6 @@ namespace Neo.Network.P2P.Payloads
                 return _scriptHash;
             }
         }
-
-        public bool IsStandardAccount => VerificationScript.Length != 0 && (VerificationScript.IsStandardContract() || VerificationScript.IsMultiSigContract());
 
         public int Size => InvocationScript.GetVarSize() + VerificationScript.GetVarSize();
 
