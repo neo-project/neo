@@ -295,8 +295,23 @@ namespace Neo.Network.P2P.Payloads
                 if (!attribute.Verify(snapshot, this))
                     return VerifyResult.Invalid;
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
-            if (!this.VerifyWitnesses(snapshot, net_fee, WitnessFlag.StateDependent))
-                return VerifyResult.Invalid;
+
+            UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
+            if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
+            for (int i = 0; i < hashes.Length; i++)
+            {
+                if (!witnesses[i].IsStandardAccount)
+                {
+                    if (!this.VerifyWitness(null, hashes[i], witnesses[i], net_fee, out long fee))
+                        return VerifyResult.Invalid;
+                    net_fee -= fee;
+                }
+                else
+                {
+                    // TODO Calculate signature fee
+                    //net_fee -= fee;
+                }
+            }
             return VerifyResult.Succeed;
         }
 
@@ -304,8 +319,12 @@ namespace Neo.Network.P2P.Payloads
         {
             if (Size > MaxTransactionSize)
                 return VerifyResult.Invalid;
-            if (!this.VerifyWitnesses(null, NetworkFee, WitnessFlag.StateIndependent))
-                return VerifyResult.Invalid;
+            UInt160[] hashes = GetScriptHashesForVerifying(null);
+            if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
+            for (int i = 0; i < hashes.Length; i++)
+                if (witnesses[i].IsStandardAccount)
+                    if (!this.VerifyWitness(null, hashes[i], witnesses[i], NetworkFee, out _))
+                        return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }
 

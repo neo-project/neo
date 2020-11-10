@@ -37,7 +37,7 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        public bool StateDependent => VerificationScript.Length == 0;
+        public bool IsStandardAccount => VerificationScript.Length != 0 && (VerificationScript.IsStandardContract() || VerificationScript.IsMultiSigContract());
 
         public int Size => InvocationScript.GetVarSize() + VerificationScript.GetVarSize();
 
