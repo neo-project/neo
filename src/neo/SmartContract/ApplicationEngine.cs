@@ -73,7 +73,10 @@ namespace Neo.SmartContract
         {
             GasConsumed = checked(GasConsumed + gas);
             if (GasConsumed > gas_amount)
+            {
+                if (Snapshot?.PersistingBlock?.Hash == Blockchain.GenesisBlock.Hash) return;
                 throw new InvalidOperationException("Insufficient GAS.");
+            }
         }
 
         protected override void OnFault(Exception e)

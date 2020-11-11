@@ -169,7 +169,12 @@ namespace Neo.Ledger
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy);
+                sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.Designate.Hash.ToArray());
+                sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.Policy.Hash.ToArray());
+                sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.NEO.Hash.ToArray());
+                sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.GAS.Hash.ToArray());
+                sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.Oracle.Hash.ToArray());
+
                 script = sb.ToArray();
             }
             return new Transaction
