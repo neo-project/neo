@@ -323,7 +323,7 @@ namespace Neo.Network.P2P.Payloads
             if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
             for (int i = 0; i < hashes.Length; i++)
                 if (witnesses[i].VerificationScript.IsStandardContract())
-                    if (!this.VerifyWitness(null, hashes[i], witnesses[i], NetworkFee, out _))
+                    if (!this.VerifyWitness(null, hashes[i], witnesses[i], SmartContract.Helper.MaxVerificationGas, out _))
                         return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }
