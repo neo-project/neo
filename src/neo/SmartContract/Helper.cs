@@ -4,6 +4,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.Buffers.Binary;
@@ -169,6 +170,7 @@ namespace Neo.SmartContract
                 }
                 else
                 {
+                    if (NativeContract.IsNative(hashes[i])) return false;
                     if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
                     offset = 0;
                 }
@@ -176,7 +178,17 @@ namespace Neo.SmartContract
                 {
                     CallFlags callFlags = verifiable.Witnesses[i].StateDependent ? CallFlags.AllowStates : CallFlags.None;
                     ExecutionContext context = engine.LoadScript(verification, callFlags, offset);
-                    if (init != null) engine.LoadContext(context.Clone(init.Offset), false);
+                    if (NativeContract.IsNative(hashes[i]))
+                    {
+                        using ScriptBuilder sb = new ScriptBuilder();
+                        sb.Emit(OpCode.DEPTH, OpCode.PACK);
+                        sb.EmitPush("verify");
+                        engine.LoadScript(sb.ToArray(), CallFlags.None);
+                    }
+                    else if (init != null)
+                    {
+                        engine.LoadContext(context.Clone(init.Offset), false);
+                    }
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) return false;
                     if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;

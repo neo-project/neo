@@ -104,6 +104,8 @@ namespace Neo.SmartContract
 
         protected internal bool CheckWitnessInternal(UInt160 hash)
         {
+            if (hash.Equals(CallingScriptHash)) return true;
+
             if (ScriptContainer is Transaction tx)
             {
                 Signer[] signers;
@@ -159,7 +161,9 @@ namespace Neo.SmartContract
         protected internal int GetInvocationCounter()
         {
             if (!invocationCounter.TryGetValue(CurrentScriptHash, out var counter))
-                throw new InvalidOperationException();
+            {
+                invocationCounter[CurrentScriptHash] = counter = 1;
+            }
             return counter;
         }
 
@@ -191,7 +195,7 @@ namespace Neo.SmartContract
             if (hash != null) // must filter by scriptHash
                 notifications = notifications.Where(p => p.ScriptHash == hash);
             NotifyEventArgs[] array = notifications.ToArray();
-            if (array.Length > MaxStackSize) throw new InvalidOperationException();
+            if (array.Length > Limits.MaxStackSize) throw new InvalidOperationException();
             return array;
         }
     }

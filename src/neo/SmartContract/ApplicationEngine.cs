@@ -18,11 +18,18 @@ namespace Neo.SmartContract
 {
     public partial class ApplicationEngine : ExecutionEngine
     {
+        private enum ReturnTypeConvention : byte
+        {
+            None = 0,
+            EnsureIsEmpty = 1,
+            EnsureNotEmpty = 2
+        }
+
         private class InvocationState
         {
             public Type ReturnType;
             public Delegate Callback;
-            public bool NeedCheckReturnValue;
+            public ReturnTypeConvention Convention;
         }
 
         /// <summary>
@@ -80,7 +87,7 @@ namespace Neo.SmartContract
             InvocationState state = GetInvocationState(CurrentContext);
             state.ReturnType = typeof(void);
             state.Callback = onComplete;
-            CallContract(hash, method, new VMArray(args));
+            CallContractInternal(hash, method, new VMArray(ReferenceCounter, args), CallFlags.All, ReturnTypeConvention.EnsureIsEmpty);
         }
 
         internal void CallFromNativeContract<T>(Action<T> onComplete, UInt160 hash, string method, params StackItem[] args)
@@ -88,7 +95,7 @@ namespace Neo.SmartContract
             InvocationState state = GetInvocationState(CurrentContext);
             state.ReturnType = typeof(T);
             state.Callback = onComplete;
-            CallContract(hash, method, new VMArray(args));
+            CallContractInternal(hash, method, new VMArray(ReferenceCounter, args), CallFlags.All, ReturnTypeConvention.EnsureNotEmpty);
         }
 
         protected override void ContextUnloaded(ExecutionContext context)
@@ -97,11 +104,23 @@ namespace Neo.SmartContract
             if (!(UncaughtException is null)) return;
             if (invocationStates.Count == 0) return;
             if (!invocationStates.Remove(CurrentContext, out InvocationState state)) return;
-            if (state.NeedCheckReturnValue)
-                if (context.EvaluationStack.Count == 0)
-                    Push(StackItem.Null);
-                else if (context.EvaluationStack.Count > 1)
-                    throw new InvalidOperationException();
+            switch (state.Convention)
+            {
+                case ReturnTypeConvention.EnsureIsEmpty:
+                    {
+                        if (context.EvaluationStack.Count != 0)
+                            throw new InvalidOperationException();
+                        break;
+                    }
+                case ReturnTypeConvention.EnsureNotEmpty:
+                    {
+                        if (context.EvaluationStack.Count == 0)
+                            Push(StackItem.Null);
+                        else if (context.EvaluationStack.Count > 1)
+                            throw new InvalidOperationException();
+                        break;
+                    }
+            }
             switch (state.Callback)
             {
                 case null:
@@ -135,14 +154,17 @@ namespace Neo.SmartContract
         {
             // Set default execution context state
 
-            context.GetState<ExecutionContextState>().ScriptHash ??= ((byte[])context.Script).ToScriptHash();
+            var state = context.GetState<ExecutionContextState>();
+            state.ScriptHash ??= ((byte[])context.Script).ToScriptHash();
+            invocationCounter.TryAdd(state.ScriptHash, 1);
+
             base.LoadContext(context);
         }
 
         internal void LoadContext(ExecutionContext context, bool checkReturnValue)
         {
             if (checkReturnValue)
-                GetInvocationState(CurrentContext).NeedCheckReturnValue = true;
+                GetInvocationState(CurrentContext).Convention = ReturnTypeConvention.EnsureNotEmpty;
             LoadContext(context);
         }
 
@@ -194,7 +216,7 @@ namespace Neo.SmartContract
                 else
                 {
                     int count = (int)item.GetInteger();
-                    if (count > MaxStackSize) throw new InvalidOperationException();
+                    if (count > Limits.MaxStackSize) throw new InvalidOperationException();
                     av = Array.CreateInstance(descriptor.Type.GetElementType(), count);
                     for (int i = 0; i < av.Length; i++)
                         av.SetValue(descriptor.Converter(Pop()), i);

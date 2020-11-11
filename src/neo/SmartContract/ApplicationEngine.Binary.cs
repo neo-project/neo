@@ -1,5 +1,8 @@
 using Neo.Cryptography;
 using Neo.VM.Types;
+using System;
+using System.Globalization;
+using System.Numerics;
 using static System.Convert;
 
 namespace Neo.SmartContract
@@ -12,15 +15,37 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Binary_Base64Decode = Register("System.Binary.Base64Decode", nameof(Base64Decode), 0_00100000, CallFlags.None, true);
         public static readonly InteropDescriptor System_Binary_Base58Encode = Register("System.Binary.Base58Encode", nameof(Base58Encode), 0_00100000, CallFlags.None, true);
         public static readonly InteropDescriptor System_Binary_Base58Decode = Register("System.Binary.Base58Decode", nameof(Base58Decode), 0_00100000, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Binary_Itoa = Register("System.Binary.Itoa", nameof(Itoa), 0_00100000, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Binary_Atoi = Register("System.Binary.Atoi", nameof(Atoi), 0_00100000, CallFlags.None, true);
 
         protected internal byte[] BinarySerialize(StackItem item)
         {
-            return BinarySerializer.Serialize(item, MaxItemSize);
+            return BinarySerializer.Serialize(item, Limits.MaxItemSize);
         }
 
         protected internal StackItem BinaryDeserialize(byte[] data)
         {
-            return BinarySerializer.Deserialize(data, MaxStackSize, MaxItemSize, ReferenceCounter);
+            return BinarySerializer.Deserialize(data, Limits.MaxStackSize, Limits.MaxItemSize, ReferenceCounter);
+        }
+
+        protected internal string Itoa(BigInteger value, int @base)
+        {
+            return @base switch
+            {
+                10 => value.ToString(),
+                16 => value.ToString("x"),
+                _ => throw new ArgumentOutOfRangeException(nameof(@base))
+            };
+        }
+
+        protected internal BigInteger Atoi(string value, int @base)
+        {
+            return @base switch
+            {
+                10 => BigInteger.Parse(value),
+                16 => BigInteger.Parse(value, NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture),
+                _ => throw new ArgumentOutOfRangeException(nameof(@base))
+            };
         }
 
         protected internal string Base64Encode(byte[] data)
