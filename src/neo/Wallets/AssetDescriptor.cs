@@ -22,7 +22,7 @@ namespace Neo.Wallets
                 sb.EmitAppCall(asset_id, "name");
                 script = sb.ToArray();
             }
-            StoreView snapshot = Blockchain.Singleton.GetSnapshot();
+            using SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
             using ApplicationEngine engine = ApplicationEngine.Run(script, gas: 100_000 * NativeContract.Policy.GetFeeRatio(snapshot));
             if (engine.State.HasFlag(VMState.FAULT)) throw new ArgumentException();
             this.AssetId = asset_id;
