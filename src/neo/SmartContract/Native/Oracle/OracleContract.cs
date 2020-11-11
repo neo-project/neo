@@ -1,6 +1,5 @@
 #pragma warning disable IDE0051
 
-using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.Ledger;

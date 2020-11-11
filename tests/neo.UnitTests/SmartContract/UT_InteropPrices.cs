@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
-using Neo.SmartContract.Native;
 using Neo.VM;
 
 namespace Neo.UnitTests.SmartContract
