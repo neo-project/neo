@@ -177,7 +177,7 @@ namespace Neo.UnitTests.SmartContract
 
             var fee = ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.OpCodePrices[OpCode.SYSCALL] + ApplicationEngine.ECDsaVerifyPrice;
 
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = Array.Empty<Signer>() , Attributes = Array.Empty<TransactionAttribute>() }, null))
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction{ Signers = Array.Empty<Signer>() , Attributes = Array.Empty<TransactionAttribute>() }, null))
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), CallFlags.None);
                 engine.Execute();
@@ -205,7 +205,7 @@ namespace Neo.UnitTests.SmartContract
 
             long fee = ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (2 + 2) + ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.OpCodePrices[OpCode.SYSCALL] + ApplicationEngine.ECDsaVerifyPrice * 2;
 
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = Array.Empty<Signer>() , Attributes = Array.Empty<TransactionAttribute>() }, null))
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction{ Signers = Array.Empty<Signer>() , Attributes = Array.Empty<TransactionAttribute>() }, null))
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), CallFlags.None);
                 engine.Execute();
