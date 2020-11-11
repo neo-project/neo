@@ -302,13 +302,11 @@ namespace Neo.Network.P2P.Payloads
             {
                 if (witnesses[i].VerificationScript.IsSignatureContract())
                 {
-                    // TODO fix fee
-                    net_fee -= (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice * 1);
+                    net_fee -= (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.OpCodePrices[OpCode.SYSCALL] + ApplicationEngine.ECDsaVerifyPrice);
                 }
                 else if (witnesses[i].VerificationScript.IsMultiSigContract(out int m, out int n))
                 {
-                    // TODO fix fee
-                    net_fee -= (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * m + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice * n);                    
+                    net_fee -= (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n) + ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.OpCodePrices[OpCode.SYSCALL] + ApplicationEngine.ECDsaVerifyPrice * n);                    
                 }
                 else
                 {
