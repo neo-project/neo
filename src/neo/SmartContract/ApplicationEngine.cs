@@ -43,23 +43,20 @@ namespace Neo.SmartContract
 
         private static IApplicationEngineProvider applicationEngineProvider;
         private static Dictionary<uint, InteropDescriptor> services;
-        private readonly long gas_amount_with_ratio;
+        private readonly long gas_amount;
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new Dictionary<UInt160, int>();
         private readonly Dictionary<ExecutionContext, InvocationState> invocationStates = new Dictionary<ExecutionContext, InvocationState>();
+        private readonly uint feeRatio;
 
         public static IReadOnlyDictionary<uint, InteropDescriptor> Services => services;
         private List<IDisposable> Disposables => disposables ??= new List<IDisposable>();
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
-        public long GasConsumedWithRatio = 0;
-        public long GasConsumedWithoutRatio = 0;
-        public long GasConsumed => GasConsumedWithRatio * NativeContract.Policy.GetFeeRatio(Snapshot) + GasConsumedWithoutRatio;
-        public long GasLeft => Snapshot == null
-            ? gas_amount_with_ratio - GasConsumedWithRatio
-            : (gas_amount_with_ratio - GasConsumedWithRatio) * NativeContract.Policy.GetFeeRatio(Snapshot) - GasConsumedWithoutRatio;
+        public long GasConsumed { get; private set; } = 0;
+        public long GasLeft => gas_amount - GasConsumed;
         public Exception FaultException { get; private set; }
         public UInt160 CurrentScriptHash => CurrentContext?.GetScriptHash();
         public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
@@ -71,20 +68,15 @@ namespace Neo.SmartContract
             this.Trigger = trigger;
             this.ScriptContainer = container;
             this.Snapshot = snapshot;
-            this.gas_amount_with_ratio = gas;
+            this.gas_amount = gas;
+            this.feeRatio = snapshot is null ? 1 : NativeContract.Policy.GetFeeRatio(Snapshot);
         }
 
         protected internal void AddGas(long gas, bool withRatio = true)
         {
-            if (withRatio)
-            {
-                GasConsumedWithRatio = checked(GasConsumedWithRatio + gas);
-            }
-            else
-            {
-                GasConsumedWithoutRatio = checked(GasConsumedWithoutRatio + gas);
-            }
-            if (GasLeft < 0)
+            if (withRatio && Snapshot != null) gas *= feeRatio;
+            GasConsumed = checked(GasConsumed + gas);
+            if (GasConsumed > gas_amount)
                 throw new InvalidOperationException("Insufficient GAS.");
         }
 
@@ -146,8 +138,13 @@ namespace Neo.SmartContract
             }
         }
 
-        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas = TestModeGas)
+        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas = -1)
         {
+            if (gas == -1)
+            {
+                if (snapshot != null) gas = TestModeGas * NativeContract.Policy.GetFeeRatio(snapshot);
+                else gas = TestModeGas;
+            }
             return applicationEngineProvider?.Create(trigger, container, snapshot, gas)
                   ?? new ApplicationEngine(trigger, container, snapshot, gas);
         }
@@ -321,7 +318,7 @@ namespace Neo.SmartContract
             Exchange(ref applicationEngineProvider, null);
         }
 
-        public static ApplicationEngine Run(byte[] script, StoreView snapshot = null, IVerifiable container = null, Block persistingBlock = null, int offset = 0, long gas = TestModeGas)
+        public static ApplicationEngine Run(byte[] script, StoreView snapshot = null, IVerifiable container = null, Block persistingBlock = null, int offset = 0, long gas = -1)
         {
             SnapshotView disposable = null;
             if (snapshot is null)
@@ -329,6 +326,7 @@ namespace Neo.SmartContract
                 disposable = Blockchain.Singleton.GetSnapshot();
                 snapshot = disposable;
             }
+            if (gas == -1) gas = TestModeGas * NativeContract.Policy.GetFeeRatio(snapshot);
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? CreateDummyBlock(snapshot);
             ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, gas);
             if (disposable != null) engine.Disposables.Add(disposable);

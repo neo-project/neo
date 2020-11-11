@@ -15,7 +15,7 @@ namespace Neo.SmartContract.Native
         public override string Name => "Policy";
         public override int Id => -3;
 
-        private const uint MaximumRatio = 10000;
+        private const uint MaximumRatio = 1000;
         private const byte Prefix_MaxTransactionsPerBlock = 23;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_BlockedAccount = 15;
@@ -56,7 +56,7 @@ namespace Neo.SmartContract.Native
         public long GetFeePerByte(StoreView snapshot)
         {
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_FeePerByte));
-            if (item is null) return 33;
+            if (item is null) return 1000;
             return (long)(BigInteger)item;
         }
 

@@ -14,7 +14,7 @@ namespace Neo.SmartContract
 {
     public static class Helper
     {
-        private const long MaxVerificationGas = 0_01666667;
+        private const long MaxVerificationGas = 0_50000000;
 
         public static UInt160 GetScriptHash(this ExecutionContext context)
         {
@@ -130,9 +130,9 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
-        internal static long VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas, WitnessFlag filter = WitnessFlag.All, bool withRatio = true)
+        internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas, WitnessFlag filter = WitnessFlag.All, bool withRatio = true)
         {
-            if (gas < 0) return gas;
+            if (gas < 0) return false;
             if (snapshot is null || gas > MaxVerificationGas) gas = MaxVerificationGas;
 
             UInt160[] hashes;
@@ -142,24 +142,17 @@ namespace Neo.SmartContract
             }
             catch (InvalidOperationException)
             {
-                return -1;
+                return false;
             }
-            if (hashes.Length != verifiable.Witnesses.Length) return -1;
+            if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
                 WitnessFlag flag = verifiable.Witnesses[i].StateDependent ? WitnessFlag.StateDependent : WitnessFlag.StateIndependent;
                 if (!filter.HasFlag(flag))
                 {
-                    if (withRatio)
-                    {
-                        gas -= verifiable.Witnesses[i].GasConsumedWithRatio;
-                        if (gas < 0) return gas;
-                    }
-                    else
-                    {
-                        gas -= verifiable.Witnesses[i].GasConsumedWithoutRatio;
-                        if (gas < 0) return gas;
-                    }
+                    if (snapshot == null) gas -= verifiable.Witnesses[i].GasConsumed;
+                    else gas -= verifiable.Witnesses[i].GasConsumed * NativeContract.Policy.GetFeeRatio(snapshot);
+                    if (gas < 0) return false;
                     continue;
                 }
 
@@ -169,17 +162,17 @@ namespace Neo.SmartContract
                 if (verification.Length == 0)
                 {
                     ContractState cs = snapshot.Contracts.TryGet(hashes[i]);
-                    if (cs is null) return -1;
+                    if (cs is null) return false;
                     ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify");
-                    if (md is null) return -1;
+                    if (md is null) return false;
                     verification = cs.Script;
                     offset = md.Offset;
                     init = cs.Manifest.Abi.GetMethod("_initialize");
                 }
                 else
                 {
-                    if (NativeContract.IsNative(hashes[i])) return -1;
-                    if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return -1;
+                    if (NativeContract.IsNative(hashes[i])) return false;
+                    if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
                     offset = 0;
                 }
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas))
@@ -198,14 +191,13 @@ namespace Neo.SmartContract
                         engine.LoadContext(context.Clone(init.Offset), false);
                     }
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
-                    if (engine.Execute() == VMState.FAULT) return -1;
-                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return -1;
-                    gas -= engine.GasConsumedWithRatio;
-                    verifiable.Witnesses[i].GasConsumedWithRatio = engine.GasConsumedWithRatio;
-                    verifiable.Witnesses[i].GasConsumedWithoutRatio = engine.GasConsumedWithoutRatio;
+                    if (engine.Execute() == VMState.FAULT) return false;
+                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
+                    gas -= engine.GasConsumed;
+                    verifiable.Witnesses[i].GasConsumed = engine.GasConsumed;
                 }
             }
-            return gas;
+            return true;
         }
     }
 }

@@ -1,5 +1,6 @@
 #pragma warning disable IDE0051
 
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.Ledger;
@@ -182,7 +183,7 @@ namespace Neo.SmartContract.Native.Oracle
             if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength
                 || (filter != null && Utility.StrictUTF8.GetByteCount(filter) > MaxFilterLength)
                 || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength
-                || gasForResponse < 0_00333333)
+                || gasForResponse < 0_00333333 * Policy.GetFeeRatio(engine.Snapshot))
                 throw new ArgumentException();
 
             //Mint gas for the response

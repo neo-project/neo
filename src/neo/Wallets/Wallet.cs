@@ -145,7 +145,7 @@ namespace Neo.Wallets
                 sb.EmitAppCall(asset_id, "decimals");
                 script = sb.ToArray();
             }
-            using ApplicationEngine engine = ApplicationEngine.Run(script, gas: 666667L * accounts.Length);
+            using ApplicationEngine engine = ApplicationEngine.Run(script, gas: 20000000L * accounts.Length);
             if (engine.State.HasFlag(VMState.FAULT))
                 return new BigDecimal(0, 0);
             byte decimals = (byte)engine.ResultStack.Pop().GetInteger();
@@ -407,33 +407,32 @@ namespace Neo.Wallets
                     if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.ScriptHash} verification fault.");
                     if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.ScriptHash} returns false.");
 
-                    networkFee += engine.GasConsumedWithRatio;
-                    networkFeeWithoutRatio = engine.GasConsumedWithoutRatio;
+                    networkFee += engine.GasConsumed;
                 }
                 else if (witness_script.IsSignatureContract())
                 {
                     size += 67 + witness_script.GetVarSize();
-                    networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice;
+                    networkFeeWithoutRatio += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice;
                 }
                 else if (witness_script.IsMultiSigContract(out int m, out int n))
                 {
                     int size_inv = 66 * m;
                     size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
-                    networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * m;
+                    networkFeeWithoutRatio += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * m;
                     using (ScriptBuilder sb = new ScriptBuilder())
-                        networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
-                    networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * n;
+                        networkFeeWithoutRatio += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
+                    networkFeeWithoutRatio += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * n;
                     using (ScriptBuilder sb = new ScriptBuilder())
-                        networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
-                    networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice * n;
+                        networkFeeWithoutRatio += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
+                    networkFeeWithoutRatio += ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice * n;
                 }
                 else
                 {
                     //We can support more contract types in the future.
                 }
             }
-            networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
-            return networkFee * NativeContract.Policy.GetFeeRatio(snapshot) + networkFeeWithoutRatio;
+            networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot) + networkFeeWithoutRatio * NativeContract.Policy.GetFeeRatio(snapshot);
+            return networkFee;
         }
 
         public bool Sign(ContractParametersContext context)

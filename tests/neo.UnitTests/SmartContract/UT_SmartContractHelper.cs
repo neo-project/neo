@@ -119,7 +119,7 @@ namespace Neo.UnitTests.SmartContract
             UInt256 index1 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             snapshot1.Blocks.Add(index1, new TrimmedBlock());
             snapshot1.Blocks.Delete(index1);
-            Assert.IsTrue(Neo.SmartContract.Helper.VerifyWitnesses(new Header() { PrevHash = index1 }, snapshot1, 3) < 0);
+            Assert.IsFalse(Neo.SmartContract.Helper.VerifyWitnesses(new Header() { PrevHash = index1 }, snapshot1, 3));
 
             var snapshot2 = Blockchain.Singleton.GetSnapshot();
             UInt256 index2 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
@@ -130,7 +130,7 @@ namespace Neo.UnitTests.SmartContract
 
             snapshot2.Contracts.Add(UInt160.Zero, new ContractState());
             snapshot2.Contracts.Delete(UInt160.Zero);
-            Assert.IsTrue(Neo.SmartContract.Helper.VerifyWitnesses(header2, snapshot2, 3) < 0);
+            Assert.IsFalse(Neo.SmartContract.Helper.VerifyWitnesses(header2, snapshot2, 3));
 
             var snapshot3 = Blockchain.Singleton.GetSnapshot();
             UInt256 index3 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
@@ -151,7 +151,7 @@ namespace Neo.UnitTests.SmartContract
                 Script = Array.Empty<byte>(),
                 Manifest = TestUtils.CreateManifest(UInt160.Zero, "verify", ContractParameterType.Boolean, ContractParameterType.Signature),
             });
-            Assert.IsTrue(Neo.SmartContract.Helper.VerifyWitnesses(header3, snapshot3, 3) < 0);
+            Assert.IsFalse(Neo.SmartContract.Helper.VerifyWitnesses(header3, snapshot3, 3));
 
             // Smart contract verification
 
@@ -166,7 +166,7 @@ namespace Neo.UnitTests.SmartContract
                 Witnesses = new Witness[] { new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] } }
             };
 
-            Assert.IsTrue(Neo.SmartContract.Helper.VerifyWitnesses(tx, snapshot3, 1000) >= 0);
+            Assert.IsTrue(Neo.SmartContract.Helper.VerifyWitnesses(tx, snapshot3, 1000));
         }
     }
 }

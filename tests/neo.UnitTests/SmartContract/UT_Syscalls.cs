@@ -279,7 +279,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Execute
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 100_000_000 / NativeContract.Policy.GetFeeRatio(snapshot));
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 100_000_000);
                 engine.LoadScript(script.ToArray());
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
 
@@ -288,7 +288,7 @@ namespace Neo.UnitTests.SmartContract
                 CollectionAssert.AreEqual
                     (
                     engine.ResultStack.Select(u => (int)u.GetInteger()).ToArray(),
-                    new int[] { 99_999_570, 99_999_150, 99_998_670 }
+                    new int[] { 99_999_580, 99_999_160, 99_998_680 }
                     );
             }
 
