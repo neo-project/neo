@@ -73,10 +73,7 @@ namespace Neo.SmartContract
         {
             GasConsumed = checked(GasConsumed + gas);
             if (GasConsumed > gas_amount)
-            {
-                if (Snapshot?.PersistingBlock?.Index == 0) return;
                 throw new InvalidOperationException("Insufficient GAS.");
-            }
         }
 
         protected override void OnFault(Exception e)

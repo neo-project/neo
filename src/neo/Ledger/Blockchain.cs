@@ -439,6 +439,7 @@ namespace Neo.Ledger
                     header_index.Add(block.Hash);
                     snapshot.HeaderHashIndex.GetAndChange().Set(block);
                 }
+                long genesis_fee = 0;
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
@@ -449,6 +450,10 @@ namespace Neo.Ledger
                     ApplicationExecuted application_executed = new ApplicationExecuted(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
+                }
+                else
+                {
+                    genesis_fee = 5 * ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1];
                 }
                 snapshot.Blocks.Add(block.Hash, block.Trim());
                 StoreView clonedSnapshot = snapshot.Clone();
@@ -464,7 +469,7 @@ namespace Neo.Ledger
                     clonedSnapshot.Transactions.Add(tx.Hash, state);
                     clonedSnapshot.Transactions.Commit();
 
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee + genesis_fee))
                     {
                         engine.LoadScript(tx.Script);
                         state.VMState = engine.Execute();
