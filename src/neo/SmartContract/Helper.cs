@@ -133,7 +133,15 @@ namespace Neo.SmartContract
         internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas, WitnessFlag filter = WitnessFlag.All, bool withRatio = true)
         {
             if (gas < 0) return false;
-            if (snapshot is null || gas > MaxVerificationGas) gas = MaxVerificationGas;
+            if (snapshot is null)
+            {
+                gas = MaxVerificationGas;
+            }
+            else
+            {
+                long MaxVerificationGasWithRatio = MaxVerificationGas * NativeContract.Policy.GetFeeRatio(snapshot);
+                if (gas > MaxVerificationGasWithRatio) gas = MaxVerificationGasWithRatio;
+            }
 
             UInt160[] hashes;
             try
