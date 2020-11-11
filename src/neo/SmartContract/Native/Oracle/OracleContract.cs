@@ -164,7 +164,7 @@ namespace Neo.SmartContract.Native.Oracle
                 if (nodes.Length > 0)
                 {
                     int index = (int)(response.Id % (ulong)nodes.Length);
-                    nodes[index].GAS += OracleRequestPrice;
+                    nodes[index].GAS += OracleRequestPrice * Policy.GetFeeRatio(engine.Snapshot);
                 }
             }
             if (nodes != null)
