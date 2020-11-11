@@ -177,7 +177,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
-                Assert.AreEqual(2024280, verificationGas);
+                Assert.AreEqual(2000790, verificationGas);
                 Assert.AreEqual(347000, sizeGas);
                 Assert.AreEqual(2347790, tx.NetworkFee);
             }
