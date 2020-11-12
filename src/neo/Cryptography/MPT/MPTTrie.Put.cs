@@ -76,8 +76,7 @@ namespace Neo.Cryptography.MPT
                         var pathRemain = path[prefix.Length..];
                         var keyRemain = extensionNode.Key.AsSpan(prefix.Length);
                         var child = new BranchNode();
-                        MPTNode grandChild1 = MPTNode.EmptyNode;
-                        MPTNode grandChild2 = MPTNode.EmptyNode;
+                        MPTNode grandChild = MPTNode.EmptyNode;
                         if (keyRemain.Length == 1)
                         {
                             child.Children[keyRemain[0]] = extensionNode.Next;
@@ -94,13 +93,13 @@ namespace Neo.Cryptography.MPT
                         }
                         if (pathRemain.IsEmpty)
                         {
-                            Put(ref grandChild2, pathRemain, val);
-                            child.Children[BranchNode.ChildCount - 1] = grandChild2;
+                            Put(ref grandChild, pathRemain, val);
+                            child.Children[BranchNode.ChildCount - 1] = grandChild;
                         }
                         else
                         {
-                            Put(ref grandChild2, pathRemain[1..], val);
-                            child.Children[pathRemain[0]] = grandChild2;
+                            Put(ref grandChild, pathRemain[1..], val);
+                            child.Children[pathRemain[0]] = grandChild;
                         }
                         PutNode(child);
                         if (prefix.Length > 0)
