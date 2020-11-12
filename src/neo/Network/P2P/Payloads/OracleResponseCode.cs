@@ -4,9 +4,12 @@ namespace Neo.Network.P2P.Payloads
     {
         Success = 0x00,
 
-        NotFound = 0x10,
-        Timeout = 0x12,
-        Forbidden = 0x14,
+        ConsensusUnreachable = 0x10,
+        NotFound = 0x12,
+        Timeout = 0x14,
+        Forbidden = 0x16,
+        ResponseTooLarge = 0x18,
+        InsufficientFunds = 0x1a,
 
         Error = 0xff
     }
