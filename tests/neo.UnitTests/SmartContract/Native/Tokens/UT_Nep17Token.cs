@@ -23,7 +23,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         [TestMethod]
         public void TestName()
         {
-            Assert.AreEqual(test.Name, test.Manifest.Extra["name"].AsString());
+            Assert.AreEqual(test.Name, test.Manifest.Name);
         }
 
         [TestMethod]

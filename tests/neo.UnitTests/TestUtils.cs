@@ -33,6 +33,7 @@ namespace Neo.UnitTests
                 Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<UInt160>.Create(),
                 SafeMethods = WildcardContainer<string>.Create(),
+                Name = "testManifest",
                 Extra = null
             };
         }
