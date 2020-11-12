@@ -205,7 +205,7 @@ namespace Neo.UnitTests.SmartContract
                     Signature = signature
                 }
             };
-            manifest.Features = ContractFeatures.HasStorage;
+
             var storageItem = new StorageItem
             {
                 Value = new byte[] { 0x01 },
@@ -263,7 +263,6 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
-            state.Manifest.Features = ContractFeatures.HasStorage;
 
             var storageItem = new StorageItem
             {

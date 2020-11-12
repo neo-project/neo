@@ -402,7 +402,6 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(false, true);
             var state = TestUtils.GetContract();
-            state.Manifest.Features = ContractFeatures.HasStorage;
             engine.Snapshot.Contracts.Add(state.ScriptHash, state);
             engine.LoadScript(state.Script);
             engine.GetStorageContext().IsReadOnly.Should().BeFalse();
@@ -413,7 +412,6 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(false, true);
             var state = TestUtils.GetContract();
-            state.Manifest.Features = ContractFeatures.HasStorage;
             engine.Snapshot.Contracts.Add(state.ScriptHash, state);
             engine.LoadScript(state.Script);
             engine.GetReadOnlyContext().IsReadOnly.Should().BeTrue();
@@ -424,7 +422,6 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
-            state.Manifest.Features = ContractFeatures.HasStorage;
 
             var storageKey = new StorageKey
             {
@@ -483,7 +480,6 @@ namespace Neo.UnitTests.SmartContract
 
             //storage value is constant
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            state.Manifest.Features = ContractFeatures.HasStorage;
 
             var storageKey = new StorageKey
             {
@@ -517,10 +513,8 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestStorage_PutEx()
         {
-            var engine = GetEngine(false, true);
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
-            state.Manifest.Features = ContractFeatures.HasStorage;
             var storageKey = new StorageKey
             {
                 Id = 0x42000000,
@@ -533,7 +527,7 @@ namespace Neo.UnitTests.SmartContract
             };
             snapshot.Contracts.Add(state.ScriptHash, state);
             snapshot.Storages.Add(storageKey, storageItem);
-            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
             var key = new byte[] { 0x01 };
             var value = new byte[] { 0x02 };
@@ -551,7 +545,6 @@ namespace Neo.UnitTests.SmartContract
             var engine = GetEngine(false, true);
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
-            state.Manifest.Features = ContractFeatures.HasStorage;
             var storageKey = new StorageKey
             {
                 Id = 0x42000000,
@@ -566,7 +559,6 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Storages.Add(storageKey, storageItem);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
-            state.Manifest.Features = ContractFeatures.HasStorage;
             var key = new byte[] { 0x01 };
             var storageContext = new StorageContext
             {
@@ -600,7 +592,6 @@ namespace Neo.UnitTests.SmartContract
             string method = "method";
             var args = new VM.Types.Array { 0, 1 };
             var state = TestUtils.GetContract(method, args.Count);
-            state.Manifest.Features = ContractFeatures.HasStorage;
 
             snapshot.Contracts.Add(state.ScriptHash, state);
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
@@ -627,7 +618,6 @@ namespace Neo.UnitTests.SmartContract
             string method = "method";
             var args = new VM.Types.Array { 0, 1 };
             var state = TestUtils.GetContract(method, args.Count);
-            state.Manifest.Features = ContractFeatures.HasStorage;
             snapshot.Contracts.Add(state.ScriptHash, state);
 
 
@@ -658,7 +648,6 @@ namespace Neo.UnitTests.SmartContract
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
-            state.Manifest.Features = ContractFeatures.HasStorage;
             var scriptHash = UInt160.Parse("0xcb9f3b7c6fb1cf2c13a40637c189bdd066a272b4");
             var storageItem = new StorageItem
             {

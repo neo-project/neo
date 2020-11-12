@@ -18,9 +18,6 @@ namespace Neo.Ledger
         public byte[] Script;
         public ContractManifest Manifest;
 
-        public bool HasStorage => Manifest.Features.HasFlag(ContractFeatures.HasStorage);
-        public bool Payable => Manifest.Features.HasFlag(ContractFeatures.Payable);
-
         int ISerializable.Size => sizeof(int) + sizeof(ushort) + UInt160.Length + Script.GetVarSize() + Manifest.Size;
 
         ContractState ICloneable<ContractState>.Clone()
@@ -80,7 +77,7 @@ namespace Neo.Ledger
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new StackItem[] { Id, (int)Version, ScriptHash.ToArray(), Script, Manifest.ToString(), HasStorage, Payable });
+            return new Array(referenceCounter, new StackItem[] { Id, (int)Version, ScriptHash.ToArray(), Script, Manifest.ToString() });
         }
     }
 }

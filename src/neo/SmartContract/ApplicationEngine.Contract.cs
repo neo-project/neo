@@ -96,8 +96,6 @@ namespace Neo.SmartContract
                 contract.Manifest = ContractManifest.Parse(manifest);
                 if (!contract.Manifest.IsValid(contract.ScriptHash))
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.ScriptHash}");
-                if (!contract.HasStorage && Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)).Any())
-                    throw new InvalidOperationException($"Contract Does Not Support Storage But Uses Storage");
             }
             contract.Version++; // Increase the version
             if (nefFile != null)
@@ -114,9 +112,8 @@ namespace Neo.SmartContract
             ContractState contract = Snapshot.Contracts.TryGet(hash);
             if (contract == null) return;
             Snapshot.Contracts.Delete(hash);
-            if (contract.HasStorage)
-                foreach (var (key, _) in Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)))
-                    Snapshot.Storages.Delete(key);
+            foreach (var (key, _) in Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)))
+                Snapshot.Storages.Delete(key);
         }
 
         protected internal void CallContract(UInt160 contractHash, string method, Array args)

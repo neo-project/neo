@@ -29,18 +29,6 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
-        public void TestGetHasStorage()
-        {
-            contract.HasStorage.Should().BeFalse();
-        }
-
-        [TestMethod]
-        public void TestGetPayable()
-        {
-            contract.Payable.Should().BeFalse();
-        }
-
-        [TestMethod]
         public void TestGetScriptHash()
         {
             // _scriptHash == null
