@@ -40,11 +40,6 @@ namespace Neo.SmartContract.Manifest
         public ContractGroup[] Groups { get; set; }
 
         /// <summary>
-        /// The features field describes what features are available for the contract.
-        /// </summary>
-        public ContractFeatures Features { get; set; }
-
-        /// <summary>
         /// NEP10 - SupportedStandards
         /// </summary>
         public string[] SupportedStandards { get; set; }
@@ -121,11 +116,6 @@ namespace Neo.SmartContract.Manifest
             return new JObject
             {
                 ["groups"] = Groups.Select(u => u.ToJson()).ToArray(),
-                ["features"] = new JObject
-                {
-                    ["storage"] = Features.HasFlag(ContractFeatures.HasStorage),
-                    ["payable"] = Features.HasFlag(ContractFeatures.Payable)
-                },
                 ["supportedstandards"] = SupportedStandards.Select(u => new JString(u)).ToArray(),
                 ["abi"] = Abi.ToJson(),
                 ["permissions"] = Permissions.Select(p => p.ToJson()).ToArray(),
@@ -145,7 +135,6 @@ namespace Neo.SmartContract.Manifest
             return new ContractManifest
             {
                 Groups = Groups.Select(p => p.Clone()).ToArray(),
-                Features = Features,
                 SupportedStandards = SupportedStandards[..],
                 Abi = Abi.Clone(),
                 Permissions = Permissions.Select(p => p.Clone()).ToArray(),
@@ -175,9 +164,6 @@ namespace Neo.SmartContract.Manifest
         private void DeserializeFromJson(JObject json)
         {
             Groups = ((JArray)json["groups"]).Select(u => ContractGroup.FromJson(u)).ToArray();
-            Features = ContractFeatures.NoProperty;
-            if (json["features"]["storage"].AsBoolean()) Features |= ContractFeatures.HasStorage;
-            if (json["features"]["payable"].AsBoolean()) Features |= ContractFeatures.Payable;
             SupportedStandards = ((JArray)json["supportedstandards"]).Select(u => u.AsString()).ToArray();
             Abi = ContractAbi.FromJson(json["abi"]);
             Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u)).ToArray();
