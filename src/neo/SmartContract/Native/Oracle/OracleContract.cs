@@ -34,8 +34,6 @@ namespace Neo.SmartContract.Native.Oracle
 
         internal OracleContract()
         {
-            Manifest.Features = ContractFeatures.HasStorage;
-
             var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
             {
                 new ContractEventDescriptor
