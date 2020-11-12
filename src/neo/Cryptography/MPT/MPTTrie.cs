@@ -70,10 +70,7 @@ namespace Neo.Cryptography.MPT
         private void DeleteNode(UInt256 hash)
         {
             var n = Resolve(hash);
-            if (n is null)
-            {
-                return;
-            }
+            if (n is null) return;
             if (1 < n.Reference)
             {
                 n.Reference--;

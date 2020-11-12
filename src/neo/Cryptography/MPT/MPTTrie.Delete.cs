@@ -87,7 +87,7 @@ namespace Neo.Cryptography.MPT
                         if (lastChild is HashNode hashNode)
                         {
                             lastChild = Resolve(hashNode.Hash);
-                            if (lastChild is null) throw new System.ArgumentNullException("Invalid hash node");
+                            if (lastChild is null) throw new InvalidOperationException("Internal error, can't resolve hash");
                         }
                         if (lastChild is ExtensionNode exNode)
                         {
@@ -113,7 +113,7 @@ namespace Neo.Cryptography.MPT
                             return false;
                         }
                         var newNode = Resolve(hashNode.Hash);
-                        if (newNode is null) throw new KeyNotFoundException("Internal error, can't resolve hash when mpt delete");
+                        if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt delete");
                         node = newNode;
                         return TryDelete(ref node, path);
                     }

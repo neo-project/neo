@@ -161,7 +161,7 @@ namespace Neo.Cryptography.MPT
                             return true;
                         }
                         newNode = Resolve(hashNode.Hash);
-                        if (newNode is null) throw new KeyNotFoundException("Internal error, can't resolve hash when mpt put");
+                        if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt put");
                         node = newNode;
                         return Put(ref node, path, val);
                     }

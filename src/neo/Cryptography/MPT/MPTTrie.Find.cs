@@ -25,7 +25,7 @@ namespace Neo.Cryptography.MPT
                     {
                         if (hashNode.IsEmpty) break;
                         var newNode = Resolve(hashNode.Hash);
-                        if (newNode is null) throw new KeyNotFoundException("Internal error, can't resolve hash when mpt seek");
+                        if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt seek");
                         node = newNode;
                         return Seek(ref node, path, out start);
                     }
@@ -83,7 +83,7 @@ namespace Neo.Cryptography.MPT
                     {
                         if (hashNode.IsEmpty) break;
                         var newNode = Resolve(hashNode.Hash);
-                        if (newNode is null) throw new KeyNotFoundException("Internal error, can't resolve hash when mpt find");
+                        if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt find");
                         node = newNode;
                         foreach (var item in Travers(node, path))
                             yield return item;

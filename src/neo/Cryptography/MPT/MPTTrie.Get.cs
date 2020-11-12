@@ -34,7 +34,7 @@ namespace Neo.Cryptography.MPT
                     {
                         if (hashNode.IsEmpty) break;
                         var newNode = Resolve(hashNode.Hash);
-                        if (newNode is null) throw new KeyNotFoundException("Internal error, can't resolve hash when mpt get");
+                        if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt get");
                         node = newNode;
                         return TryGet(ref node, path, out value);
                     }
