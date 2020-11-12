@@ -28,8 +28,6 @@ namespace Neo.SmartContract.Native.Tokens
 
             Manifest.Features = ContractFeatures.HasStorage;
             Manifest.SupportedStandards = new[] { "NEP-17" };
-            Manifest.Extra = new IO.Json.JObject();
-            Manifest.Extra["name"] = Name;
 
             var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
             {

@@ -72,6 +72,11 @@ namespace Neo.SmartContract.Manifest
         public WildcardContainer<string> SafeMethods { get; set; }
 
         /// <summary>
+        /// Contract name
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
         /// Custom user data
         /// </summary>
         public JObject Extra { get; set; }
@@ -126,6 +131,7 @@ namespace Neo.SmartContract.Manifest
                 ["permissions"] = Permissions.Select(p => p.ToJson()).ToArray(),
                 ["trusts"] = Trusts.ToJson(),
                 ["safemethods"] = SafeMethods.ToJson(),
+                ["name"] = Name,
                 ["extra"] = Extra
             };
         }
@@ -145,6 +151,7 @@ namespace Neo.SmartContract.Manifest
                 Permissions = Permissions.Select(p => p.Clone()).ToArray(),
                 Trusts = Trusts,
                 SafeMethods = SafeMethods,
+                Name = Name,
                 Extra = Extra?.Clone()
             };
         }
@@ -176,6 +183,7 @@ namespace Neo.SmartContract.Manifest
             Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u)).ToArray();
             Trusts = WildcardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString()));
             SafeMethods = WildcardContainer<string>.FromJson(json["safemethods"], u => u.AsString());
+            Name = json["name"].AsString();
             Extra = json["extra"];
         }
 
