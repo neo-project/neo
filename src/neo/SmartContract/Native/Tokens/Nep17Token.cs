@@ -10,7 +10,7 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native.Tokens
 {
-    public abstract class Nep5Token<TState> : NativeContract
+    public abstract class Nep17Token<TState> : NativeContract
         where TState : AccountState, new()
     {
         [ContractMethod(0, CallFlags.None)]
@@ -22,12 +22,14 @@ namespace Neo.SmartContract.Native.Tokens
         protected const byte Prefix_TotalSupply = 11;
         protected const byte Prefix_Account = 20;
 
-        protected Nep5Token()
+        protected Nep17Token()
         {
             this.Factor = BigInteger.Pow(10, Decimals);
 
             Manifest.Features = ContractFeatures.HasStorage;
-            Manifest.SupportedStandards = new[] { "NEP-5" };
+            Manifest.SupportedStandards = new[] { "NEP-17" };
+            Manifest.Extra = new IO.Json.JObject();
+            Manifest.Extra["name"] = Name;
 
             var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
             {
