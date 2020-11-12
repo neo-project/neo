@@ -19,7 +19,7 @@ namespace Neo.SmartContract
                 {
                     Id = contract.Id,
                     Script = contract.Script,
-                    ScriptHash = contract.Hash, // Not NefHash here
+                    ScriptHash = contract.Hash, // Use the native hash
                     Manifest = contract.Manifest
                 });
                 contract.Initialize(this);

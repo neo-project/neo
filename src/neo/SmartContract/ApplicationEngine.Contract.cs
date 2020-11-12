@@ -36,8 +36,8 @@ namespace Neo.SmartContract
             using var script = new ScriptBuilder();
             script.Emit(OpCode.ABORT);
             script.EmitPush(tx.Sender);
-
             script.EmitPush(nef.ScriptHash);
+
             return script.ToArray().ToScriptHash();
         }
 
