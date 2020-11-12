@@ -9,7 +9,7 @@ using System.Numerics;
 namespace Neo.UnitTests.SmartContract.Native.Tokens
 {
     [TestClass]
-    public class UT_Nep17Token : TestKit
+    public class UT_Nep5Token : TestKit
     {
         [TestInitialize]
         public void TestSetup()
@@ -18,13 +18,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
 
         protected const byte Prefix_TotalSupply = 11;
-        private static readonly TestNep17Token test = new TestNep17Token();
-
-        [TestMethod]
-        public void TestName()
-        {
-            Assert.AreEqual(test.Name, test.Manifest.Extra["name"].AsString());
-        }
+        private static readonly TestNep5Token test = new TestNep5Token();
 
         [TestMethod]
         public void TestTotalSupply()
@@ -77,11 +71,11 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
     }
 
-    public class TestNep17Token : Nep17Token<NeoToken.NeoAccountState>
+    public class TestNep5Token : Nep5Token<NeoToken.NeoAccountState>
     {
         public override int Id => 0x10000005;
 
-        public override string Name => "testNep17Token";
+        public override string Name => "testNep5Token";
 
         public override string Symbol => throw new NotImplementedException();
 
