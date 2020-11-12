@@ -337,9 +337,9 @@ namespace Neo.UnitTests.SmartContract
                 contracts.Delete(contractA.ScriptHash);
                 contracts.Delete(contractB.ScriptHash);
                 contracts.Delete(contractC.ScriptHash);
-                contractA.Manifest = TestUtils.CreateManifest(contractA.ScriptHash, "dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
-                contractB.Manifest = TestUtils.CreateManifest(contractA.ScriptHash, "dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
-                contractC.Manifest = TestUtils.CreateManifest(contractA.ScriptHash, "dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
+                contractA.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
+                contractB.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
+                contractC.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
                 contracts.Add(contractA.ScriptHash, contractA);
                 contracts.Add(contractB.ScriptHash, contractB);
                 contracts.Add(contractC.ScriptHash, contractC);

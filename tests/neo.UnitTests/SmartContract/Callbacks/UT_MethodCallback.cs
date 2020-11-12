@@ -43,7 +43,6 @@ namespace Neo.UnitTests.SmartContract.Callbacks
                 Script = new byte[] { 1, 2, 3 },
                 ScriptHash = new byte[] { 1, 2, 3 }.ToScriptHash()
             };
-            contract.Manifest.Abi.Hash = contract.ScriptHash;
             engine.LoadScript(contract.Script);
             snapshot.Contracts.Add(contract.ScriptHash, contract);
 

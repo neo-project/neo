@@ -66,7 +66,6 @@ namespace Neo.SmartContract.Native
                 SupportedStandards = new string[0],
                 Abi = new ContractAbi()
                 {
-                    Hash = Hash,
                     Events = System.Array.Empty<ContractEventDescriptor>(),
                     Methods = descriptors.ToArray()
                 },

@@ -64,14 +64,15 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// Return true if is allowed
         /// </summary>
+        /// <param name="hash">hash</param>
         /// <param name="manifest">The manifest of which contract we are calling</param>
         /// <param name="method">Method</param>
         /// <returns>Return true or false</returns>
-        public bool IsAllowed(ContractManifest manifest, string method)
+        public bool IsAllowed(UInt160 hash, ContractManifest manifest, string method)
         {
             if (Contract.IsHash)
             {
-                if (!Contract.Hash.Equals(manifest.Hash)) return false;
+                if (!Contract.Hash.Equals(hash)) return false;
             }
             else if (Contract.IsGroup)
             {

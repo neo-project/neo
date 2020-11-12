@@ -150,7 +150,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = Array.Empty<byte>(),
                 ScriptHash = Array.Empty<byte>().ToScriptHash(),
-                Manifest = TestUtils.CreateManifest(UInt160.Zero, "verify", ContractParameterType.Boolean, ContractParameterType.Signature),
+                Manifest = TestUtils.CreateManifest("verify", ContractParameterType.Boolean, ContractParameterType.Signature),
             });
             Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header3, snapshot3, 100));
 
@@ -160,7 +160,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = "11".HexToBytes(), // 17 PUSH1
                 ScriptHash = "11".HexToBytes().ToScriptHash(),
-                Manifest = TestUtils.CreateManifest(UInt160.Zero, "verify", ContractParameterType.Boolean, ContractParameterType.Signature), // Offset = 0
+                Manifest = TestUtils.CreateManifest("verify", ContractParameterType.Boolean, ContractParameterType.Signature), // Offset = 0
             };
             snapshot3.Contracts.Add(contract.ScriptHash, contract);
             var tx = new Extensions.Nep5NativeContractExtensions.ManualWitness(contract.ScriptHash)

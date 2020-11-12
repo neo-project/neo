@@ -20,7 +20,7 @@ namespace Neo.SmartContract.Callbacks
             if (method.StartsWith('_')) throw new ArgumentException();
             this.contract = engine.Snapshot.Contracts[hash];
             ContractManifest currentManifest = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash)?.Manifest;
-            if (currentManifest != null && !currentManifest.CanCall(this.contract.Manifest, method))
+            if (currentManifest != null && !currentManifest.CanCall(hash, this.contract.Manifest, method))
                 throw new InvalidOperationException();
             this.method = this.contract.Manifest.Abi.Methods.First(p => p.Name == method);
         }

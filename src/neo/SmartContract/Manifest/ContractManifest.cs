@@ -30,11 +30,6 @@ namespace Neo.SmartContract.Manifest
         }
 
         /// <summary>
-        /// Contract hash
-        /// </summary>
-        public UInt160 Hash => Abi.Hash;
-
-        /// <summary>
         /// A group represents a set of mutually trusted contracts. A contract will trust and allow any contract in the same group to invoke it, and the user interface will not give any warnings.
         /// </summary>
         public ContractGroup[] Groups { get; set; }
@@ -74,12 +69,13 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// Return true if is allowed
         /// </summary>
+        /// <param name="hash">Hash</param>
         /// <param name="manifest">Manifest</param>
         /// <param name="method">Method</param>
         /// <returns>Return true or false</returns>
-        public bool CanCall(ContractManifest manifest, string method)
+        public bool CanCall(UInt160 hash, ContractManifest manifest, string method)
         {
-            return Permissions.Any(u => u.IsAllowed(manifest, method));
+            return Permissions.Any(u => u.IsAllowed(hash, manifest, method));
         }
 
         /// <summary>
@@ -171,7 +167,6 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return true or false</returns>
         public bool IsValid(UInt160 hash)
         {
-            if (!Abi.Hash.Equals(hash)) return false;
             return Groups.All(u => u.IsValid(hash));
         }
     }

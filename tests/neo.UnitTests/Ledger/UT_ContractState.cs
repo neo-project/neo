@@ -19,7 +19,7 @@ namespace Neo.UnitTests.Ledger
         [TestInitialize]
         public void TestSetup()
         {
-            manifest = TestUtils.CreateDefaultManifest(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
+            manifest = TestUtils.CreateDefaultManifest();
             contract = new ContractState
             {
                 Script = script,
@@ -73,7 +73,7 @@ namespace Neo.UnitTests.Ledger
         public void TestGetSize()
         {
             ISerializable newContract = contract;
-            newContract.Size.Should().Be(287);
+            newContract.Size.Should().Be(188);
         }
 
         [TestMethod]

@@ -28,6 +28,19 @@ namespace Neo.SmartContract
         /// </summary>
         public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 0_00010000, CallFlags.None, true);
 
+        private UInt160 ContractHash(NefFile nef)
+        {
+            if (!(ScriptContainer is Transaction tx))
+                throw new InvalidOperationException();
+
+            using var script = new ScriptBuilder();
+            script.Emit(OpCode.ABORT);
+            script.EmitPush(tx.Sender);
+
+            script.EmitPush(nef.ScriptHash);
+            return script.ToArray().ToScriptHash();
+        }
+
         protected internal void CreateContract(byte[] nefFile, byte[] manifest)
         {
             if (nefFile.Length == 0 || nefFile.Length > NefFile.MaxLength)
@@ -41,7 +54,7 @@ namespace Neo.SmartContract
             if (nef.Script.Length == 0 || nef.Script.Length > MaxContractLength)
                 throw new ArgumentException($"Invalid Script Length: {nef.Script.Length}");
 
-            UInt160 hash = nefFile.ToScriptHash();
+            UInt160 hash = ContractHash(nef);
             ContractState contract = Snapshot.Contracts.TryGet(hash);
             if (contract != null) throw new InvalidOperationException($"Contract Already Exists: {hash}");
             contract = new ContractState
@@ -138,7 +151,7 @@ namespace Neo.SmartContract
             if (md is null) throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
 
             ContractManifest currentManifest = Snapshot.Contracts.TryGet(CurrentScriptHash)?.Manifest;
-            if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, method))
+            if (currentManifest != null && !currentManifest.CanCall(contractHash, contract.Manifest, method))
                 throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contractHash} From Contract {CurrentScriptHash}");
 
             CallContractInternal(contract, md, args, flags, convention);
