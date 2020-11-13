@@ -126,7 +126,6 @@ namespace Neo.SmartContract.Native.Tokens
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (!from.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(from))
                 return false;
-            ContractState contract_to = engine.Snapshot.Contracts.TryGet(to);
             StorageKey key_from = CreateStorageKey(Prefix_Account).Add(from);
             StorageItem storage_from = engine.Snapshot.Storages.GetAndChange(key_from);
             if (amount.IsZero)
