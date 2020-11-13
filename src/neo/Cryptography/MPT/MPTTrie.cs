@@ -12,7 +12,6 @@ namespace Neo.Cryptography.MPT
         private const byte Prefix = 0xf0;
         private readonly bool full;
         private readonly ISnapshot store;
-        private readonly DataCache<UInt256, ByteArrayWrapper> cache;
         private MPTNode root;
 
         public MPTNode Root => root;
@@ -20,15 +19,14 @@ namespace Neo.Cryptography.MPT
         public MPTTrie(ISnapshot store, UInt256 root, bool full_state = false)
         {
             this.store = store ?? throw new ArgumentNullException();
-            this.cache = new StoreDataCache<UInt256, ByteArrayWrapper>(store, Prefix);
             this.root = root is null ? MPTNode.EmptyNode : new HashNode(root);
             this.full = full_state;
         }
 
         private MPTNode Resolve(UInt256 hash)
         {
-            var data = cache.TryGet(hash);
-            return MPTNode.Decode(data?.Value);
+            var data = store.TryGet(Prefix, hash.ToArray());
+            return MPTNode.Decode(data);
         }
 
         private static byte[] ToNibbles(ReadOnlySpan<byte> path)
@@ -60,11 +58,12 @@ namespace Neo.Cryptography.MPT
             if (n is null)
             {
                 np.Reference = 1;
-                cache.Add(np.Hash, np.EncodeWithReference());
-                return;
             }
-            n.Reference++;
-            cache.GetAndChange(np.Hash).Value = n.EncodeWithReference();
+            else
+            {
+                n.Reference++;
+            }
+            store.Put(Prefix, np.Hash.ToArray(), np.EncodeWithReference());
         }
 
         private void DeleteNode(UInt256 hash)
@@ -74,15 +73,10 @@ namespace Neo.Cryptography.MPT
             if (1 < n.Reference)
             {
                 n.Reference--;
-                cache.GetAndChange(hash).Value = n.EncodeWithReference();
+                store.Put(Prefix, hash.ToArray(), n.EncodeWithReference());
                 return;
             }
-            cache.Delete(hash);
-        }
-
-        public void Commit()
-        {
-            cache.Commit();
+            store.Delete(Prefix, hash.ToArray());
         }
     }
 }

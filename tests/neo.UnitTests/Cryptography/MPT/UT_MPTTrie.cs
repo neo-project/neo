@@ -130,7 +130,7 @@ namespace Neo.UnitTests.Cryptography.MPT
 
         private void PutToStore(MPTNode node)
         {
-            mptdb.Put(0xf0, node.Hash.ToArray(), new ByteArrayWrapper(node.EncodeWithReference()).ToArray());
+            mptdb.Put(0xf0, node.Hash.ToArray(), node.EncodeWithReference());
         }
 
         [TestInitialize]
@@ -230,7 +230,6 @@ namespace Neo.UnitTests.Cryptography.MPT
             Assert.IsNotNull(mpt["ac02".HexToBytes()]);
             mpt.Delete("ac01".HexToBytes());
             Assert.IsNotNull(mpt["ac02".HexToBytes()]);
-            mpt.Commit();
             snapshot.Commit();
             var mpt0 = new MPTTrie<TestKey, TestValue>(store.GetSnapshot(), mpt.Root.Hash);
             Assert.IsNotNull(mpt0["ac02".HexToBytes()]);
@@ -244,14 +243,11 @@ namespace Neo.UnitTests.Cryptography.MPT
             Assert.IsTrue(mpt.Put("ac11".HexToBytes(), "ac11".HexToBytes()));
             Assert.IsTrue(mpt.Put("ac22".HexToBytes(), "ac22".HexToBytes()));
             Assert.IsTrue(mpt.Put("ac".HexToBytes(), "ac".HexToBytes()));
-            mpt.Commit();
             Assert.AreEqual(7, snapshot.Size);
             Assert.IsTrue(mpt.Delete("ac11".HexToBytes()));
-            mpt.Commit();
             Assert.AreEqual(5, snapshot.Size);
             Assert.IsTrue(mpt.Delete("ac22".HexToBytes()));
             Assert.IsNotNull(mpt["ac".HexToBytes()]);
-            mpt.Commit();
             Assert.AreEqual(2, snapshot.Size);
         }
 
@@ -360,19 +356,6 @@ namespace Neo.UnitTests.Cryptography.MPT
             prefix = new byte[] { 0xac }; // =  FromNibbles(path = { 0x0a, 0x0c });
             results = mpt.Find(prefix).ToArray();
             Assert.AreEqual(3, results.Count());
-        }
-
-        [TestMethod]
-        public void TestCache()
-        {
-            var store = new MemoryStore();
-            var snapshot = store.GetSnapshot();
-            var cache = new StoreDataCache<SerializableWrapper<uint>, ByteArrayWrapper>(snapshot, (byte)0);
-            cache.Add(1, new byte[] { 1 });
-            var r = cache.TryGet(1);
-            Console.WriteLine($"{r?.ToArray().ToHexString()}");
-
-            Assert.IsTrue((SerializableWrapper<uint>)1 == 1u);
         }
     }
 }

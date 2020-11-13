@@ -64,7 +64,7 @@ namespace Neo.Cryptography.MPT
         {
             using var memoryStore = new MemoryStore();
             foreach (byte[] data in proof)
-                memoryStore.Put(Prefix, Crypto.Hash256(data), new ByteArrayWrapper(Concat(data, new byte[] { 1 })).ToArray());
+                memoryStore.Put(Prefix, Crypto.Hash256(data), Concat(data, new byte[] { 1 }));
             using ISnapshot snapshot = memoryStore.GetSnapshot();
             var trie = new MPTTrie<TKey, TValue>(snapshot, root, false);
             return trie[key];
