@@ -6,7 +6,6 @@ using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Persistence;
-using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -22,7 +21,6 @@ namespace Neo.SmartContract.Native.Designate
 
         internal DesignateContract()
         {
-            Manifest.Features = ContractFeatures.HasStorage;
         }
 
         [ContractMethod(0_00033333, CallFlags.AllowStates)]

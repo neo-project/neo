@@ -23,7 +23,6 @@ namespace Neo.SmartContract
         protected internal StorageContext GetStorageContext()
         {
             ContractState contract = Snapshot.Contracts.TryGet(CurrentScriptHash);
-            if (!contract.HasStorage) throw new InvalidOperationException();
             return new StorageContext
             {
                 Id = contract.Id,
@@ -34,7 +33,6 @@ namespace Neo.SmartContract
         protected internal StorageContext GetReadOnlyContext()
         {
             ContractState contract = Snapshot.Contracts.TryGet(CurrentScriptHash);
-            if (!contract.HasStorage) throw new InvalidOperationException();
             return new StorageContext
             {
                 Id = contract.Id,

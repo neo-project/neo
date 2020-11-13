@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.SmartContract;
-using Neo.SmartContract.Manifest;
 using Neo.VM;
 
 namespace Neo.UnitTests.SmartContract
@@ -56,7 +55,6 @@ namespace Neo.UnitTests.SmartContract
             byte[] script = CreatePutScript(key, value);
 
             ContractState contractState = TestUtils.GetContract(script);
-            contractState.Manifest.Features = ContractFeatures.HasStorage;
 
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(new byte[0] { });
@@ -90,7 +88,6 @@ namespace Neo.UnitTests.SmartContract
             byte[] script = CreatePutScript(key, value);
 
             ContractState contractState = TestUtils.GetContract(script);
-            contractState.Manifest.Features = ContractFeatures.HasStorage;
 
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(value);
@@ -126,7 +123,6 @@ namespace Neo.UnitTests.SmartContract
             byte[] script = CreatePutScript(key, value);
 
             ContractState contractState = TestUtils.GetContract(script);
-            contractState.Manifest.Features = ContractFeatures.HasStorage;
 
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);
@@ -163,7 +159,6 @@ namespace Neo.UnitTests.SmartContract
             byte[] script = CreateMultiplePutScript(key, value);
 
             ContractState contractState = TestUtils.GetContract(script);
-            contractState.Manifest.Features = ContractFeatures.HasStorage;
 
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);

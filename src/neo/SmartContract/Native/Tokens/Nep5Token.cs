@@ -26,7 +26,6 @@ namespace Neo.SmartContract.Native.Tokens
         {
             this.Factor = BigInteger.Pow(10, Decimals);
 
-            Manifest.Features = ContractFeatures.HasStorage;
             Manifest.SupportedStandards = new[] { "NEP-5" };
 
             var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
@@ -111,8 +110,6 @@ namespace Neo.SmartContract.Native.Tokens
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (!from.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(from))
                 return false;
-            ContractState contract_to = engine.Snapshot.Contracts.TryGet(to);
-            if (contract_to?.Payable == false) return false;
             StorageKey key_from = CreateStorageKey(Prefix_Account).Add(from);
             StorageItem storage_from = engine.Snapshot.Storages.GetAndChange(key_from);
             if (amount.IsZero)
