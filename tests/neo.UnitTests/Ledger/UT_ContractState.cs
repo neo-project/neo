@@ -28,18 +28,6 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
-        public void TestGetHasStorage()
-        {
-            contract.HasStorage.Should().BeFalse();
-        }
-
-        [TestMethod]
-        public void TestGetPayable()
-        {
-            contract.Payable.Should().BeFalse();
-        }
-
-        [TestMethod]
         public void TestGetScriptHash()
         {
             // _scriptHash == null
@@ -84,7 +72,7 @@ namespace Neo.UnitTests.Ledger
         public void TestGetSize()
         {
             ISerializable newContract = contract;
-            newContract.Size.Should().Be(265);
+            newContract.Size.Should().Be(218);
         }
 
         [TestMethod]
