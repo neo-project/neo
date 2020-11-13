@@ -58,7 +58,7 @@ namespace Neo.SmartContract
             contract = new ContractState
             {
                 Id = Snapshot.ContractId.GetAndChange().NextId++,
-                Version = 0,
+                UpdateCounter = 0,
                 Script = nef.Script,
                 ScriptHash = hash,
                 Manifest = ContractManifest.Parse(manifest)
@@ -108,7 +108,7 @@ namespace Neo.SmartContract
                 if (!contract.Manifest.IsValid(contract.ScriptHash))
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.ScriptHash}");
             }
-            contract.Version++; // Increase the version
+            contract.UpdateCounter++; // Increase update counter
             if (nefFile != null)
             {
                 ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");

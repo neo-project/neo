@@ -13,7 +13,7 @@ namespace Neo.Ledger
     public class ContractState : ICloneable<ContractState>, ISerializable, IInteroperable
     {
         public int Id;
-        public ushort Version;
+        public ushort UpdateCounter;
         public UInt160 ScriptHash;
         public byte[] Script;
         public ContractManifest Manifest;
@@ -25,7 +25,7 @@ namespace Neo.Ledger
             return new ContractState
             {
                 Id = Id,
-                Version = Version,
+                UpdateCounter = UpdateCounter,
                 ScriptHash = ScriptHash,
                 Script = Script,
                 Manifest = Manifest.Clone()
@@ -35,7 +35,7 @@ namespace Neo.Ledger
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Id = reader.ReadInt32();
-            Version = reader.ReadUInt16();
+            UpdateCounter = reader.ReadUInt16();
             ScriptHash = reader.ReadSerializable<UInt160>();
             Script = reader.ReadVarBytes();
             Manifest = reader.ReadSerializable<ContractManifest>();
@@ -44,7 +44,7 @@ namespace Neo.Ledger
         void ICloneable<ContractState>.FromReplica(ContractState replica)
         {
             Id = replica.Id;
-            Version = replica.Version;
+            UpdateCounter = replica.UpdateCounter;
             ScriptHash = replica.ScriptHash;
             Script = replica.Script;
             Manifest = replica.Manifest.Clone();
@@ -58,7 +58,7 @@ namespace Neo.Ledger
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write(Id);
-            writer.Write(Version);
+            writer.Write(UpdateCounter);
             writer.Write(ScriptHash);
             writer.WriteVarBytes(Script);
             writer.Write(Manifest);
@@ -68,7 +68,7 @@ namespace Neo.Ledger
         {
             JObject json = new JObject();
             json["id"] = Id;
-            json["version"] = Version;
+            json["version"] = UpdateCounter;
             json["hash"] = ScriptHash.ToString();
             json["script"] = Convert.ToBase64String(Script);
             json["manifest"] = Manifest.ToJson();
@@ -77,7 +77,7 @@ namespace Neo.Ledger
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new StackItem[] { Id, (int)Version, ScriptHash.ToArray(), Script, Manifest.ToString() });
+            return new Array(referenceCounter, new StackItem[] { Id, (int)UpdateCounter, ScriptHash.ToArray(), Script, Manifest.ToString() });
         }
     }
 }
