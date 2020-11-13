@@ -30,6 +30,7 @@ namespace Neo.SmartContract.Native.Tokens
         private const byte Prefix_Committee = 14;
         private const byte Prefix_GasPerBlock = 29;
         private const byte Prefix_VoterRewardPerCommittee = 23;
+        private const byte Prefix_NextCommittee = 34;
 
         private const byte NeoHolderRewardRatio = 10;
         private const byte CommitteeRewardRatio = 10;
@@ -122,6 +123,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
             var cachedCommittee = new CachedCommittee(Blockchain.StandbyCommittee.Select(p => (p, BigInteger.Zero)));
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Committee), new StorageItem(cachedCommittee));
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_NextCommittee), new StorageItem(new CachedCommittee(cachedCommittee.ToArray())));
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(new byte[0]));
 
             // Initialize economic parameters
@@ -130,26 +132,28 @@ namespace Neo.SmartContract.Native.Tokens
             Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), TotalAmount);
         }
 
-        protected override void OnPersist(ApplicationEngine engine)
-        {
-            base.OnPersist(engine);
-
-            // Set next committee
-            if (ShouldRefreshCommittee(engine.Snapshot.PersistingBlock.Index))
-            {
-                StorageItem storageItem = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Committee));
-                var cachedCommittee = storageItem.GetInteroperable<CachedCommittee>();
-                cachedCommittee.Clear();
-                cachedCommittee.AddRange(ComputeCommitteeMembers(engine.Snapshot));
-            }
-        }
-
         protected override void PostPersist(ApplicationEngine engine)
         {
             base.PostPersist(engine);
 
-            // Distribute GAS for committee
+            // Calculate next-next committee
+            if (ShouldRefreshCommittee(engine.Snapshot.PersistingBlock.Index + 1))
+            {
+                StorageItem storageItem = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextCommittee));
+                var cachedNextCommittee = storageItem.GetInteroperable<CachedCommittee>();
+                cachedNextCommittee.Clear();
+                cachedNextCommittee.AddRange(ComputeCommitteeMembers(engine.Snapshot));
+            }
+            // Set next committee
+            else if (ShouldRefreshCommittee(engine.Snapshot.PersistingBlock.Index))
+            {
+                StorageItem storageItem = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Committee));
+                var cachedCommittee = storageItem.GetInteroperable<CachedCommittee>();
+                cachedCommittee.Clear();
+                cachedCommittee.AddRange(GetNextCommitteeFromCache(engine.Snapshot));
+            }
 
+            // Distribute GAS for committee
             int m = ProtocolSettings.Default.CommitteeMembersCount;
             int n = ProtocolSettings.Default.ValidatorsCount;
             int index = (int)(engine.Snapshot.PersistingBlock.Index % (uint)m);
@@ -160,7 +164,6 @@ namespace Neo.SmartContract.Native.Tokens
             GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100);
 
             // Record the cumulative reward of the voters of committee
-
             if (ShouldRefreshCommittee(engine.Snapshot.PersistingBlock.Index))
             {
                 BigInteger voterRewardOfEachCommittee = gasPerBlock * VoterRewardRatio * 100000000L * m / (m + n) / 100; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
@@ -309,9 +312,9 @@ namespace Neo.SmartContract.Native.Tokens
             return snapshot.Storages[CreateStorageKey(Prefix_Committee)].GetInteroperable<CachedCommittee>();
         }
 
-        internal ECPoint[] ComputeNextBlockValidators(StoreView snapshot)
+        private CachedCommittee GetNextCommitteeFromCache(StoreView snapshot)
         {
-            return ComputeCommitteeMembers(snapshot).Select(p => p.PublicKey).Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray();
+            return snapshot.Storages[CreateStorageKey(Prefix_NextCommittee)].GetInteroperable<CachedCommittee>();
         }
 
         private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> ComputeCommitteeMembers(StoreView snapshot)
@@ -328,6 +331,15 @@ namespace Neo.SmartContract.Native.Tokens
         public ECPoint[] GetNextBlockValidators(StoreView snapshot)
         {
             return GetCommitteeFromCache(snapshot)
+                .Take(ProtocolSettings.Default.ValidatorsCount)
+                .Select(p => p.PublicKey)
+                .OrderBy(p => p)
+                .ToArray();
+        }
+
+        public ECPoint[] GetNextNextBlockValidators(StoreView snapshot)
+        {
+            return GetNextCommitteeFromCache(snapshot)
                 .Take(ProtocolSettings.Default.ValidatorsCount)
                 .Select(p => p.PublicKey)
                 .OrderBy(p => p)

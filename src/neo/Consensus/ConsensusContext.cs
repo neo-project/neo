@@ -377,10 +377,7 @@ namespace Neo.Consensus
                 {
                     PrevHash = Snapshot.CurrentBlockHash,
                     Index = Snapshot.Height + 1,
-                    NextConsensus = Blockchain.GetConsensusAddress(
-                        NativeContract.NEO.ShouldRefreshCommittee(Snapshot.Height + 1) ?
-                        NativeContract.NEO.ComputeNextBlockValidators(Snapshot) :
-                        NativeContract.NEO.GetNextBlockValidators(Snapshot))
+                    NextConsensus = Blockchain.GetConsensusAddress(NativeContract.NEO.GetNextNextBlockValidators(Snapshot))
                 };
                 var pv = Validators;
                 Validators = NativeContract.NEO.GetNextBlockValidators(Snapshot);

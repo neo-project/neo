@@ -31,7 +31,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Index = 0,
             };
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
-            ECPoint[] validators = NativeContract.NEO.ComputeNextBlockValidators(snapshot1);
+            ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(snapshot1);
             var ret = NativeContract.Designate.Call(
                 snapshot1,
                 new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr),

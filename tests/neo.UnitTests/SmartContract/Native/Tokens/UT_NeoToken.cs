@@ -319,16 +319,10 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 var currentCandidates = NativeContract.NEO.GetCandidates(snapshot);
             }
 
-            Script onPersistScript;
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                sb.EmitAppCall(NativeContract.NEO.Hash, "onPersist");
-                sb.Emit(OpCode.DROP);
-                onPersistScript = sb.ToArray();
-            }
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot);
-            engine.LoadScript(onPersistScript);
-            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            snapshot.PersistingBlock = new Block { Index = 20 };
+            Check_PostPersist(snapshot).Should().BeTrue();
+            snapshot.PersistingBlock = new Block { Index = 21 };
+            Check_PostPersist(snapshot).Should().BeTrue();
 
             committeemembers = NativeContract.NEO.GetCommittee(snapshot);
             committeemembers.Length.Should().Be(ProtocolSettings.Default.CommitteeMembersCount);
@@ -589,8 +583,10 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             snapshot.Storages.Find(storageKey.ToArray()).ToArray().Length.Should().Be(1);
 
             // Pre-persist
+            snapshot.PersistingBlock = new Block { Index = 20 };
+            Check_PostPersist(snapshot).Should().BeTrue();
             snapshot.PersistingBlock = new Block { Index = 21 };
-            Check_OnPersist(snapshot);
+            Check_OnPersist(snapshot).Should().BeTrue();
 
             // Clear votes
             storageKey = new KeyBuilder(-1, 33).Add(committee[0]);
@@ -647,7 +643,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public void TestGetValidators()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            var result = NativeContract.NEO.ComputeNextBlockValidators(snapshot);
+            var result = NativeContract.NEO.GetNextBlockValidators(snapshot);
             result[0].ToArray().ToHexString().Should().Be("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70");
             result[1].ToArray().ToHexString().Should().Be("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d");
             result[2].ToArray().ToHexString().Should().Be("02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e");
@@ -733,7 +729,9 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var item = snapshot.Storages.GetAndChange(new KeyBuilder(-1, 1), () => new StorageItem());
             item.Value = ((BigInteger)2100 * 10000L).ToByteArray();
 
-            snapshot.PersistingBlock = new Block { Index = 0 };
+            snapshot.PersistingBlock = new Block { Index = 20 };
+            Check_PostPersist(snapshot).Should().BeTrue();
+            snapshot.PersistingBlock = new Block { Index = 21 };
             Check_PostPersist(snapshot).Should().BeTrue();
 
             var committee = Blockchain.StandbyCommittee.OrderBy(p => p).ToArray();
@@ -741,7 +739,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var accountB = committee[ProtocolSettings.Default.CommitteeMembersCount - 1];
             NativeContract.NEO.BalanceOf(snapshot, Contract.CreateSignatureContract(accountA).ScriptHash).Should().Be(0);
 
-            StorageItem storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(accountA).AddBigEndian(1));
+            StorageItem storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(accountA).AddBigEndian(22));
             new BigInteger(storageItem.Value).Should().Be(30000000000);
 
             snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(accountB).AddBigEndian(uint.MaxValue - 1)).Should().BeNull();
@@ -753,18 +751,18 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
             NativeContract.NEO.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[1]).ScriptHash).Should().Be(0);
 
-            storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(committee[1]).AddBigEndian(1));
+            storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(committee[1]).AddBigEndian(22));
             new BigInteger(storageItem.Value).Should().Be(30000000000);
 
             // Next block
 
-            snapshot.PersistingBlock = new Block { Index = 21 };
+            snapshot.PersistingBlock = new Block { Index = 42 };
             Check_PostPersist(snapshot).Should().BeTrue();
 
             accountA = Blockchain.StandbyCommittee.OrderBy(p => p).ToArray()[2];
             NativeContract.NEO.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[2]).ScriptHash).Should().Be(0);
 
-            storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(committee[2]).AddBigEndian(22));
+            storageItem = snapshot.Storages.TryGet(new KeyBuilder(-1, 23).Add(committee[2]).AddBigEndian(43));
             new BigInteger(storageItem.Value).Should().Be(30000000000 * 2);
 
 
