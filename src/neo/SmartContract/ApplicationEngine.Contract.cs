@@ -13,8 +13,6 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public const int MaxContractLength = 1024 * 1024;
-
         public static readonly InteropDescriptor System_Contract_Create = Register("System.Contract.Create", nameof(CreateContract), 0, CallFlags.AllowModifyStates, false);
         public static readonly InteropDescriptor System_Contract_Update = Register("System.Contract.Update", nameof(UpdateContract), 0, CallFlags.AllowModifyStates, false);
         public static readonly InteropDescriptor System_Contract_Destroy = Register("System.Contract.Destroy", nameof(DestroyContract), 0_01000000, CallFlags.AllowModifyStates, false);
@@ -51,7 +49,7 @@ namespace Neo.SmartContract
             AddGas(StoragePrice * (nefFile.Length + manifest.Length));
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
-            if (nef.Script.Length == 0 || nef.Script.Length > MaxContractLength)
+            if (nef.Script.Length == 0)
                 throw new ArgumentException($"Invalid Script Length: {nef.Script.Length}");
 
             UInt160 hash = ContractHash(nef);
@@ -96,7 +94,7 @@ namespace Neo.SmartContract
                     throw new ArgumentException($"Invalid NefFile Length: {nefFile.Length}");
 
                 NefFile nef = nefFile.AsSerializable<NefFile>();
-                if (nef.Script.Length == 0 || nef.Script.Length > MaxContractLength)
+                if (nef.Script.Length == 0)
                     throw new ArgumentException($"Invalid Script Length: {nef.Script.Length}");
 
                 // Update script

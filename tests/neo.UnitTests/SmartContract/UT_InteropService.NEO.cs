@@ -145,8 +145,8 @@ namespace Neo.UnitTests.SmartContract
 
             var script_exceedMaxLength = new NefFile()
             {
-                Script = new byte[ApplicationEngine.MaxContractLength - 1],
-                ScriptHash = new byte[ApplicationEngine.MaxContractLength - 1].ToScriptHash(),
+                Script = new byte[NefFile.MaxScriptLength - 1],
+                ScriptHash = new byte[NefFile.MaxScriptLength - 1].ToScriptHash(),
                 Compiler = "",
                 Version = new Version(1, 2, 3, 4)
             };

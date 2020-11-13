@@ -51,6 +51,8 @@ namespace Neo.SmartContract
         /// </summary>
         public byte[] Script { get; set; }
 
+        public const int MaxScriptLength = 1024 * 1024;
+
         private const int HeaderSize =
             sizeof(uint) +      // Magic
             32 +                // Compiler
@@ -100,7 +102,7 @@ namespace Neo.SmartContract
                 throw new FormatException("CRC verification fail");
             }
 
-            Script = reader.ReadVarBytes(1024 * 1024);
+            Script = reader.ReadVarBytes(MaxScriptLength);
 
             if (Script.ToScriptHash() != ScriptHash)
             {
