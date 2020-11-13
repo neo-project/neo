@@ -23,7 +23,7 @@ namespace Neo.SmartContract.Native.Designate
         {
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_00033333, CallFlags.AllowStates)]
         public ECPoint[] GetDesignatedByRole(StoreView snapshot, Role role, uint index)
         {
             if (!Enum.IsDefined(typeof(Role), role))

@@ -27,7 +27,7 @@ namespace Neo.SmartContract.Native.Oracle
         private const byte Prefix_Request = 7;
         private const byte Prefix_IdList = 6;
 
-        private const long OracleRequestPrice = 0_50000000;
+        private const long OracleRequestPrice = 0_01666667;
 
         public override int Id => -4;
         public override string Name => "Oracle";
@@ -215,7 +215,7 @@ namespace Neo.SmartContract.Native.Oracle
             engine.SendNotification(Hash, "OracleRequest", new VM.Types.Array { id, engine.CallingScriptHash.ToArray(), url, filter });
         }
 
-        [ContractMethod(0_01000000, CallFlags.None)]
+        [ContractMethod(0_00033333, CallFlags.None)]
         private bool Verify(ApplicationEngine engine)
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
