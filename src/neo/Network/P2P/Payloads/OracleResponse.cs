@@ -14,7 +14,7 @@ namespace Neo.Network.P2P.Payloads
 {
     public class OracleResponse : TransactionAttribute
     {
-        private const int MaxResultSize = 1024;
+        public const int MaxResultSize = ushort.MaxValue;
 
         public static readonly byte[] FixedScript;
 
@@ -71,7 +71,7 @@ namespace Neo.Network.P2P.Payloads
             OracleRequest request = NativeContract.Oracle.GetRequest(snapshot, Id);
             if (request is null) return false;
             if (tx.NetworkFee + tx.SystemFee != request.GasForResponse) return false;
-            UInt160 oracleAccount = Blockchain.GetConsensusAddress(NativeContract.Designate.GetDesignatedByRole(snapshot, Role.Oracle));
+            UInt160 oracleAccount = Blockchain.GetConsensusAddress(NativeContract.Designate.GetDesignatedByRole(snapshot, Role.Oracle, snapshot.Height + 1));
             return tx.Signers.Any(p => p.Account.Equals(oracleAccount));
         }
     }

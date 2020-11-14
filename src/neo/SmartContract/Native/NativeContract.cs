@@ -63,7 +63,6 @@ namespace Neo.SmartContract.Native
             this.Manifest = new ContractManifest
             {
                 Groups = System.Array.Empty<ContractGroup>(),
-                Features = ContractFeatures.NoProperty,
                 SupportedStandards = new string[0],
                 Abi = new ContractAbi()
                 {
@@ -140,14 +139,14 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0, CallFlags.AllowModifyStates)]
         protected virtual void OnPersist(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.System)
+            if (engine.Trigger != TriggerType.OnPersist)
                 throw new InvalidOperationException();
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
         protected virtual void PostPersist(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.System)
+            if (engine.Trigger != TriggerType.PostPersist)
                 throw new InvalidOperationException();
         }
 
