@@ -23,7 +23,6 @@ namespace Neo.UnitTests
             return new ContractManifest()
             {
                 Groups = new ContractGroup[0],
-                Features = ContractFeatures.NoProperty,
                 SupportedStandards = Array.Empty<string>(),
                 Abi = new ContractAbi()
                 {
@@ -82,10 +81,10 @@ namespace Neo.UnitTests
             JObject wallet = new JObject();
             wallet["name"] = "noname";
             wallet["version"] = new Version("3.0").ToString();
-            wallet["scrypt"] = new ScryptParameters(0, 0, 0).ToJson();
+            wallet["scrypt"] = new ScryptParameters(2, 1, 1).ToJson();
             wallet["accounts"] = new JArray();
             wallet["extra"] = null;
-            wallet.ToString().Should().Be("{\"name\":\"noname\",\"version\":\"3.0\",\"scrypt\":{\"n\":0,\"r\":0,\"p\":0},\"accounts\":[],\"extra\":null}");
+            wallet.ToString().Should().Be("{\"name\":\"noname\",\"version\":\"3.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}");
             return new NEP6Wallet(wallet);
         }
 
