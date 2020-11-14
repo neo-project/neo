@@ -132,7 +132,9 @@ namespace Neo.Network.P2P.Payloads
                     return false;
                 Witness.VerificationScript = Contract.CreateSignatureRedeemScript(validators[ValidatorIndex]);
             }
-            return this.VerifyWitnesses(snapshot, 0_02000000);
+            var ret = this.VerifyWitnesses(snapshot, 0_02000000);
+            Witness.VerificationScript = Array.Empty<byte>();
+            return ret;
         }
     }
 }
