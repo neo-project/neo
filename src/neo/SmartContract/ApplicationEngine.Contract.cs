@@ -59,7 +59,7 @@ namespace Neo.SmartContract
 
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");
             if (md != null)
-                CallContractInternal(contract, md, new Array(ReferenceCounter) { false }, CallFlags.All, CheckReturnType.EnsureIsEmpty);
+                CallContractInternal(contract, md, new Array(ReferenceCounter) { false }, CallFlags.All, ReturnTypeConvention.EnsureIsEmpty);
         }
 
         protected internal void UpdateContract(byte[] script, byte[] manifest)
@@ -96,14 +96,12 @@ namespace Neo.SmartContract
                 contract.Manifest = ContractManifest.Parse(manifest);
                 if (!contract.Manifest.IsValid(contract.ScriptHash))
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.ScriptHash}");
-                if (!contract.HasStorage && Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)).Any())
-                    throw new InvalidOperationException($"Contract Does Not Support Storage But Uses Storage");
             }
             if (script != null)
             {
                 ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");
                 if (md != null)
-                    CallContractInternal(contract, md, new Array(ReferenceCounter) { true }, CallFlags.All, CheckReturnType.EnsureIsEmpty);
+                    CallContractInternal(contract, md, new Array(ReferenceCounter) { true }, CallFlags.All, ReturnTypeConvention.EnsureIsEmpty);
             }
         }
 
@@ -113,24 +111,23 @@ namespace Neo.SmartContract
             ContractState contract = Snapshot.Contracts.TryGet(hash);
             if (contract == null) return;
             Snapshot.Contracts.Delete(hash);
-            if (contract.HasStorage)
-                foreach (var (key, _) in Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)))
-                    Snapshot.Storages.Delete(key);
+            foreach (var (key, _) in Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)))
+                Snapshot.Storages.Delete(key);
         }
 
         protected internal void CallContract(UInt160 contractHash, string method, Array args)
         {
-            CallContractInternal(contractHash, method, args, CallFlags.All);
+            CallContractEx(contractHash, method, args, CallFlags.All);
         }
 
         protected internal void CallContractEx(UInt160 contractHash, string method, Array args, CallFlags callFlags)
         {
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
-            CallContractInternal(contractHash, method, args, callFlags);
+            CallContractInternal(contractHash, method, args, callFlags, ReturnTypeConvention.EnsureNotEmpty);
         }
 
-        private void CallContractInternal(UInt160 contractHash, string method, Array args, CallFlags flags)
+        private void CallContractInternal(UInt160 contractHash, string method, Array args, CallFlags flags, ReturnTypeConvention convention)
         {
             if (method.StartsWith('_')) throw new ArgumentException($"Invalid Method Name: {method}");
 
@@ -143,10 +140,10 @@ namespace Neo.SmartContract
             if (currentManifest != null && !currentManifest.CanCall(contract.Manifest, method))
                 throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contractHash} From Contract {CurrentScriptHash}");
 
-            CallContractInternal(contract, md, args, flags, CheckReturnType.EnsureNotEmpty);
+            CallContractInternal(contract, md, args, flags, convention);
         }
 
-        private void CallContractInternal(ContractState contract, ContractMethodDescriptor method, Array args, CallFlags flags, CheckReturnType checkReturnValue)
+        private void CallContractInternal(ContractState contract, ContractMethodDescriptor method, Array args, CallFlags flags, ReturnTypeConvention convention)
         {
             if (invocationCounter.TryGetValue(contract.ScriptHash, out var counter))
             {
@@ -157,7 +154,7 @@ namespace Neo.SmartContract
                 invocationCounter[contract.ScriptHash] = 1;
             }
 
-            GetInvocationState(CurrentContext).NeedCheckReturnValue = checkReturnValue;
+            GetInvocationState(CurrentContext).Convention = convention;
 
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             UInt160 callingScriptHash = state.ScriptHash;

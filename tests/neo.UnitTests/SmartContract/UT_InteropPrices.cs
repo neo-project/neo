@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.SmartContract;
-using Neo.SmartContract.Manifest;
 using Neo.VM;
 
 namespace Neo.UnitTests.SmartContract
@@ -56,7 +55,6 @@ namespace Neo.UnitTests.SmartContract
             byte[] script = CreatePutScript(key, value);
 
             ContractState contractState = TestUtils.GetContract(script);
-            contractState.Manifest.Features = ContractFeatures.HasStorage;
 
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(new byte[0] { });
@@ -74,7 +72,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 var setupPrice = ae.GasConsumed;
                 debugger.Execute();
-                (ae.GasConsumed - setupPrice).Should().Be(ApplicationEngine.StoragePrice * value.Length);
+                (ae.GasConsumed - setupPrice).Should().Be(ApplicationEngine.StoragePrice * (1 + value.Length));
             }
         }
 
@@ -90,7 +88,6 @@ namespace Neo.UnitTests.SmartContract
             byte[] script = CreatePutScript(key, value);
 
             ContractState contractState = TestUtils.GetContract(script);
-            contractState.Manifest.Features = ContractFeatures.HasStorage;
 
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(value);
@@ -126,7 +123,6 @@ namespace Neo.UnitTests.SmartContract
             byte[] script = CreatePutScript(key, value);
 
             ContractState contractState = TestUtils.GetContract(script);
-            contractState.Manifest.Features = ContractFeatures.HasStorage;
 
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);
@@ -145,7 +141,7 @@ namespace Neo.UnitTests.SmartContract
                 var setupPrice = ae.GasConsumed;
                 debugger.StepInto();
                 debugger.StepInto();
-                (ae.GasConsumed - setupPrice).Should().Be(1 * ApplicationEngine.StoragePrice);
+                (ae.GasConsumed - setupPrice).Should().Be((1 + (oldValue.Length / 4) + value.Length - oldValue.Length) * ApplicationEngine.StoragePrice);
             }
         }
 
@@ -163,7 +159,6 @@ namespace Neo.UnitTests.SmartContract
             byte[] script = CreateMultiplePutScript(key, value);
 
             ContractState contractState = TestUtils.GetContract(script);
-            contractState.Manifest.Features = ContractFeatures.HasStorage;
 
             StorageKey skey = TestUtils.GetStorageKey(contractState.Id, key);
             StorageItem sItem = TestUtils.GetStorageItem(oldValue);
@@ -185,7 +180,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto(); //syscall Storage.GetContext
                 var setupPrice = ae.GasConsumed;
                 debugger.StepInto(); //syscall Storage.Put
-                (ae.GasConsumed - setupPrice).Should().Be(1 * ApplicationEngine.StoragePrice); // = PUT basic fee
+                (ae.GasConsumed - setupPrice).Should().Be((sItem.Value.Length / 4 + 1) * ApplicationEngine.StoragePrice); // = PUT basic fee
             }
         }
 

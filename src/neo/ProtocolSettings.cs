@@ -15,6 +15,7 @@ namespace Neo
         public string[] SeedList { get; }
         public uint MillisecondsPerBlock { get; }
         public int MemoryPoolMaxTransactions { get; }
+        public uint MaxTraceableBlocks { get; }
 
         static ProtocolSettings _default;
 
@@ -94,6 +95,7 @@ namespace Neo
                 };
             this.MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", 15000u);
             this.MemoryPoolMaxTransactions = Math.Max(1, section.GetValue("MemoryPoolMaxTransactions", 50_000));
+            this.MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", 2_102_400u);// 365 days
         }
     }
 }
