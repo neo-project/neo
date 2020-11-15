@@ -62,6 +62,7 @@ namespace Neo.SmartContract.Native
             }
             this.Manifest = new ContractManifest
             {
+                Name = Name,
                 Groups = System.Array.Empty<ContractGroup>(),
                 SupportedStandards = new string[0],
                 Abi = new ContractAbi()
@@ -73,7 +74,6 @@ namespace Neo.SmartContract.Native
                 Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<UInt160>.Create(),
                 SafeMethods = WildcardContainer<string>.Create(safeMethods.ToArray()),
-                Name = Name,
                 Extra = null
             };
             contractsList.Add(this);

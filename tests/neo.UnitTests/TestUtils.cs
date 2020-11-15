@@ -22,6 +22,7 @@ namespace Neo.UnitTests
         {
             return new ContractManifest()
             {
+                Name = "testManifest",
                 Groups = new ContractGroup[0],
                 SupportedStandards = Array.Empty<string>(),
                 Abi = new ContractAbi()
@@ -33,7 +34,6 @@ namespace Neo.UnitTests
                 Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<UInt160>.Create(),
                 SafeMethods = WildcardContainer<string>.Create(),
-                Name = "testManifest",
                 Extra = null
             };
         }

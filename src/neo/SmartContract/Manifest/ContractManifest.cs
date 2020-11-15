@@ -35,6 +35,11 @@ namespace Neo.SmartContract.Manifest
         public UInt160 Hash => Abi.Hash;
 
         /// <summary>
+        /// Contract name
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
         /// A group represents a set of mutually trusted contracts. A contract will trust and allow any contract in the same group to invoke it, and the user interface will not give any warnings.
         /// </summary>
         public ContractGroup[] Groups { get; set; }
@@ -65,11 +70,6 @@ namespace Neo.SmartContract.Manifest
         /// If a method is marked as safe, the user interface will not give any warnings when it is called by any other contract.
         /// </summary>
         public WildcardContainer<string> SafeMethods { get; set; }
-
-        /// <summary>
-        /// Contract name
-        /// </summary>
-        public string Name { get; set; }
 
         /// <summary>
         /// Custom user data
@@ -115,13 +115,13 @@ namespace Neo.SmartContract.Manifest
         {
             return new JObject
             {
+                ["name"] = Name,
                 ["groups"] = Groups.Select(u => u.ToJson()).ToArray(),
                 ["supportedstandards"] = SupportedStandards.Select(u => new JString(u)).ToArray(),
                 ["abi"] = Abi.ToJson(),
                 ["permissions"] = Permissions.Select(p => p.ToJson()).ToArray(),
                 ["trusts"] = Trusts.ToJson(),
                 ["safemethods"] = SafeMethods.ToJson(),
-                ["name"] = Name,
                 ["extra"] = Extra
             };
         }
@@ -134,13 +134,13 @@ namespace Neo.SmartContract.Manifest
         {
             return new ContractManifest
             {
+                Name = Name,
                 Groups = Groups.Select(p => p.Clone()).ToArray(),
                 SupportedStandards = SupportedStandards[..],
                 Abi = Abi.Clone(),
                 Permissions = Permissions.Select(p => p.Clone()).ToArray(),
                 Trusts = Trusts,
                 SafeMethods = SafeMethods,
-                Name = Name,
                 Extra = Extra?.Clone()
             };
         }
@@ -163,13 +163,13 @@ namespace Neo.SmartContract.Manifest
 
         private void DeserializeFromJson(JObject json)
         {
+            Name = json["name"].AsString();
             Groups = ((JArray)json["groups"]).Select(u => ContractGroup.FromJson(u)).ToArray();
             SupportedStandards = ((JArray)json["supportedstandards"]).Select(u => u.AsString()).ToArray();
             Abi = ContractAbi.FromJson(json["abi"]);
             Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u)).ToArray();
             Trusts = WildcardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString()));
             SafeMethods = WildcardContainer<string>.FromJson(json["safemethods"], u => u.AsString());
-            Name = json["name"].AsString();
             Extra = json["extra"];
         }
 
