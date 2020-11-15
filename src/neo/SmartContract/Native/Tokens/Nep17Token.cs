@@ -164,7 +164,7 @@ namespace Neo.SmartContract.Native.Tokens
 
             // Call onPayment method if exists (NEP-17)
 
-            engine.CallFromNativeContract(() => { }, to, "onPayment", new Array(engine.ReferenceCounter) { amount });
+            engine.CallFromNativeContract(() => { }, to, "onPayment", amount);
         }
     }
 }
