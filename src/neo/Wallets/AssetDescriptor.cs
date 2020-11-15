@@ -1,3 +1,4 @@
+using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.VM;
@@ -11,10 +12,11 @@ namespace Neo.Wallets
         public string AssetName;
         public byte Decimals;
 
-        public AssetDescriptor(StoreView snapshot, UInt160 asset_id)
+        public AssetDescriptor(UInt160 asset_id)
         {
+            using SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
             var contract = snapshot.Contracts.TryGet(asset_id);
-            if (contract == null) throw new ArgumentException();
+            if (contract is null) throw new ArgumentException();
 
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
