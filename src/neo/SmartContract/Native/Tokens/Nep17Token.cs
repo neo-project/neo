@@ -156,11 +156,11 @@ namespace Neo.SmartContract.Native.Tokens
             // Send notification
 
             engine.SendNotification(Hash, "Transfer",
-                new Array { from == null ? StackItem.Null : from.ToArray(), to == null ? StackItem.Null : to.ToArray(), amount });
+                new Array { from?.ToArray() ?? StackItem.Null, to?.ToArray() ?? StackItem.Null, amount });
 
             // Check if it's a wallet or smart contract
 
-            if (to == null || engine.Snapshot?.Contracts.Contains(to) == false) return;
+            if (to is null || engine.Snapshot.Contracts.TryGet(to) is null) return;
 
             // Call onPayment method if exists (NEP-17)
 
