@@ -67,23 +67,7 @@ namespace Neo.SmartContract.Native.Tokens
             state.Balance += amount;
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem(BigInteger.Zero));
             storage.Add(amount);
-            onPostTransfer(engine, null, account, amount);
-        }
-
-        private void onPostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount)
-        {
-            // Send notification
-
-            engine.SendNotification(Hash, "Transfer",
-                new Array { from == null ? StackItem.Null : from.ToArray(), to == null ? StackItem.Null : to.ToArray(), amount });
-
-            // Check if it's a wallet or smart contract
-
-            if (to == null || engine.Snapshot?.Contracts.Contains(to) == false) return;
-
-            // Call onPayment method if exists (NEP-17)
-
-            engine.CallFromNativeContract(() => { }, to, "onPayment", new Array(engine.ReferenceCounter) { amount });
+            PostTransfer(engine, null, account, amount);
         }
 
         internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
@@ -101,7 +85,7 @@ namespace Neo.SmartContract.Native.Tokens
                 state.Balance -= amount;
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
             storage.Add(-amount);
-            onPostTransfer(engine, account, null, amount);
+            PostTransfer(engine, account, null, amount);
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
@@ -159,12 +143,28 @@ namespace Neo.SmartContract.Native.Tokens
                     state_to.Balance += amount;
                 }
             }
-            onPostTransfer(engine, from, to, amount);
+            PostTransfer(engine, from, to, amount);
             return true;
         }
 
         protected virtual void OnBalanceChanging(ApplicationEngine engine, UInt160 account, TState state, BigInteger amount)
         {
+        }
+
+        private void PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount)
+        {
+            // Send notification
+
+            engine.SendNotification(Hash, "Transfer",
+                new Array { from == null ? StackItem.Null : from.ToArray(), to == null ? StackItem.Null : to.ToArray(), amount });
+
+            // Check if it's a wallet or smart contract
+
+            if (to == null || engine.Snapshot?.Contracts.Contains(to) == false) return;
+
+            // Call onPayment method if exists (NEP-17)
+
+            engine.CallFromNativeContract(() => { }, to, "onPayment", new Array(engine.ReferenceCounter) { amount });
         }
     }
 }
