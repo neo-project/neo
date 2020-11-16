@@ -377,7 +377,7 @@ namespace Neo.Consensus
                 {
                     PrevHash = Snapshot.CurrentBlockHash,
                     Index = Snapshot.Height + 1,
-                    NextConsensus = Blockchain.GetConsensusAddress(NativeContract.NEO.GetNextNextBlockValidators(Snapshot))
+                    NextConsensus = GetNextConsensus(Snapshot)
                 };
                 var pv = Validators;
                 Validators = NativeContract.NEO.GetNextBlockValidators(Snapshot);
@@ -463,6 +463,11 @@ namespace Neo.Consensus
             writer.WriteNullableArray(CommitPayloads);
             writer.WriteNullableArray(ChangeViewPayloads);
             writer.WriteNullableArray(LastChangeViewPayloads);
+        }
+
+        private UInt160 GetNextConsensus(StoreView snapshot)
+        {
+            return Blockchain.GetConsensusAddress(NativeContract.NEO.GetNextNextBlockValidators(snapshot));
         }
     }
 }
