@@ -30,7 +30,7 @@ namespace Neo.SmartContract.Native.Tokens
         private const byte Prefix_Committee = 14;
         private const byte Prefix_GasPerBlock = 29;
         private const byte Prefix_VoterRewardPerCommittee = 23;
-        private const byte Prefix_NextCommittee = 34;
+        private const byte Prefix_NextCommittee = 27;
 
         private const byte NeoHolderRewardRatio = 10;
         private const byte CommitteeRewardRatio = 10;
