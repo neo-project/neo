@@ -28,7 +28,7 @@ namespace Neo.UnitTests.SmartContract
                     }
                 },
                 Script = new byte[] { 1, 2, 3 },
-                ScriptHash = new byte[] { 1, 2, 3 }.ToScriptHash()
+                Hash = new byte[] { 1, 2, 3 }.ToScriptHash()
             });
 
             Assert.AreEqual("0xb2e3fe334830b4741fa5d762f2ab36b90b86c49b", contract.ScriptHash.ToString());

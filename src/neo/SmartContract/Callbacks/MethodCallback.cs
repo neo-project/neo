@@ -29,7 +29,7 @@ namespace Neo.SmartContract.Callbacks
         {
             engine.Push(args);
             engine.Push(method.Name);
-            engine.Push(contract.ScriptHash.ToArray());
+            engine.Push(contract.Hash.ToArray());
         }
     }
 }

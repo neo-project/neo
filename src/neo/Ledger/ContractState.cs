@@ -14,7 +14,7 @@ namespace Neo.Ledger
     {
         public int Id;
         public ushort UpdateCounter;
-        public UInt160 ScriptHash;
+        public UInt160 Hash;
         public byte[] Script;
         public ContractManifest Manifest;
 
@@ -26,7 +26,7 @@ namespace Neo.Ledger
             {
                 Id = Id,
                 UpdateCounter = UpdateCounter,
-                ScriptHash = ScriptHash,
+                Hash = Hash,
                 Script = Script,
                 Manifest = Manifest.Clone()
             };
@@ -36,7 +36,7 @@ namespace Neo.Ledger
         {
             Id = reader.ReadInt32();
             UpdateCounter = reader.ReadUInt16();
-            ScriptHash = reader.ReadSerializable<UInt160>();
+            Hash = reader.ReadSerializable<UInt160>();
             Script = reader.ReadVarBytes();
             Manifest = reader.ReadSerializable<ContractManifest>();
         }
@@ -45,7 +45,7 @@ namespace Neo.Ledger
         {
             Id = replica.Id;
             UpdateCounter = replica.UpdateCounter;
-            ScriptHash = replica.ScriptHash;
+            Hash = replica.Hash;
             Script = replica.Script;
             Manifest = replica.Manifest.Clone();
         }
@@ -59,7 +59,7 @@ namespace Neo.Ledger
         {
             writer.Write(Id);
             writer.Write(UpdateCounter);
-            writer.Write(ScriptHash);
+            writer.Write(Hash);
             writer.WriteVarBytes(Script);
             writer.Write(Manifest);
         }
@@ -69,7 +69,7 @@ namespace Neo.Ledger
             JObject json = new JObject();
             json["id"] = Id;
             json["version"] = UpdateCounter;
-            json["hash"] = ScriptHash.ToString();
+            json["hash"] = Hash.ToString();
             json["script"] = Convert.ToBase64String(Script);
             json["manifest"] = Manifest.ToJson();
             return json;
@@ -77,7 +77,7 @@ namespace Neo.Ledger
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new StackItem[] { Id, (int)UpdateCounter, ScriptHash.ToArray(), Script, Manifest.ToString() });
+            return new Array(referenceCounter, new StackItem[] { Id, (int)UpdateCounter, Hash.ToArray(), Script, Manifest.ToString() });
         }
     }
 }

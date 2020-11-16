@@ -112,7 +112,7 @@ namespace Neo.UnitTests
             {
                 Id = 0x43000000,
                 Script = new byte[] { 0x01, 0x01, 0x01, 0x01 },
-                ScriptHash = new byte[] { 0x01, 0x01, 0x01, 0x01 }.ToScriptHash(),
+                Hash = new byte[] { 0x01, 0x01, 0x01, 0x01 }.ToScriptHash(),
                 Manifest = CreateManifest(method, ContractParameterType.Any, Enumerable.Repeat(ContractParameterType.Any, parametersCount).ToArray())
             };
         }

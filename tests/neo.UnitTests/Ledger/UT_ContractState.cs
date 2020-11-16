@@ -23,7 +23,7 @@ namespace Neo.UnitTests.Ledger
             contract = new ContractState
             {
                 Script = script,
-                ScriptHash = script.ToScriptHash(),
+                Hash = script.ToScriptHash(),
                 Manifest = manifest
             };
         }
@@ -32,9 +32,9 @@ namespace Neo.UnitTests.Ledger
         public void TestGetScriptHash()
         {
             // _scriptHash == null
-            contract.ScriptHash.Should().Be(script.ToScriptHash());
+            contract.Hash.Should().Be(script.ToScriptHash());
             // _scriptHash != null
-            contract.ScriptHash.Should().Be(script.ToScriptHash());
+            contract.Hash.Should().Be(script.ToScriptHash());
         }
 
         [TestMethod]

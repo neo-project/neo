@@ -60,7 +60,7 @@ namespace Neo.SmartContract
                 Id = Snapshot.ContractId.GetAndChange().NextId++,
                 UpdateCounter = 0,
                 Script = nef.Script,
-                ScriptHash = hash,
+                Hash = hash,
                 Manifest = ContractManifest.Parse(manifest)
             };
 
@@ -105,8 +105,8 @@ namespace Neo.SmartContract
                 if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
                     throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
                 contract.Manifest = ContractManifest.Parse(manifest);
-                if (!contract.Manifest.IsValid(contract.ScriptHash))
-                    throw new InvalidOperationException($"Invalid Manifest Hash: {contract.ScriptHash}");
+                if (!contract.Manifest.IsValid(contract.Hash))
+                    throw new InvalidOperationException($"Invalid Manifest Hash: {contract.Hash}");
             }
             contract.UpdateCounter++; // Increase update counter
             if (nefFile != null)
@@ -157,13 +157,13 @@ namespace Neo.SmartContract
 
         private void CallContractInternal(ContractState contract, ContractMethodDescriptor method, Array args, CallFlags flags, ReturnTypeConvention convention)
         {
-            if (invocationCounter.TryGetValue(contract.ScriptHash, out var counter))
+            if (invocationCounter.TryGetValue(contract.Hash, out var counter))
             {
-                invocationCounter[contract.ScriptHash] = counter + 1;
+                invocationCounter[contract.Hash] = counter + 1;
             }
             else
             {
-                invocationCounter[contract.ScriptHash] = 1;
+                invocationCounter[contract.Hash] = 1;
             }
 
             GetInvocationState(CurrentContext).Convention = convention;
@@ -173,11 +173,11 @@ namespace Neo.SmartContract
             CallFlags callingFlags = state.CallFlags;
 
             if (args.Count != method.Parameters.Length) throw new InvalidOperationException($"Method {method.Name} Expects {method.Parameters.Length} Arguments But Receives {args.Count} Arguments");
-            ExecutionContext context_new = LoadScript(contract.Script, flags & callingFlags, contract.ScriptHash, method.Offset);
+            ExecutionContext context_new = LoadScript(contract.Script, flags & callingFlags, contract.Hash, method.Offset);
             state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
 
-            if (NativeContract.IsNative(contract.ScriptHash))
+            if (NativeContract.IsNative(contract.Hash))
             {
                 context_new.EvaluationStack.Push(args);
                 context_new.EvaluationStack.Push(method.Name);

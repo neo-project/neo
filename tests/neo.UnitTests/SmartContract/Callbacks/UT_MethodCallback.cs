@@ -41,17 +41,17 @@ namespace Neo.UnitTests.SmartContract.Callbacks
                     },
                 },
                 Script = new byte[] { 1, 2, 3 },
-                ScriptHash = new byte[] { 1, 2, 3 }.ToScriptHash()
+                Hash = new byte[] { 1, 2, 3 }.ToScriptHash()
             };
             engine.LoadScript(contract.Script);
-            snapshot.Contracts.Add(contract.ScriptHash, contract);
+            snapshot.Contracts.Add(contract.Hash, contract);
 
-            Assert.ThrowsException<InvalidOperationException>(() => new MethodCallback(engine, contract.ScriptHash, "test"));
+            Assert.ThrowsException<InvalidOperationException>(() => new MethodCallback(engine, contract.Hash, "test"));
 
             contract.Manifest.Permissions = new ContractPermission[] {
-                new ContractPermission() { Contract = ContractPermissionDescriptor.Create(contract.ScriptHash),
+                new ContractPermission() { Contract = ContractPermissionDescriptor.Create(contract.Hash),
                 Methods= WildcardContainer<string>.Create("test") } };
-            var data = new MethodCallback(engine, contract.ScriptHash, "test");
+            var data = new MethodCallback(engine, contract.Hash, "test");
 
             Assert.AreEqual(0, engine.CurrentContext.EvaluationStack.Count);
             var array = new VM.Types.Array();

@@ -114,15 +114,15 @@ namespace Neo.UnitTests.SmartContract
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
-            snapshot.Contracts.Add(state.ScriptHash, state);
+            snapshot.Contracts.Add(state.Hash, state);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
-            engine.IsStandardContract(state.ScriptHash).Should().BeFalse();
+            engine.IsStandardContract(state.Hash).Should().BeFalse();
 
             state.Script = Contract.CreateSignatureRedeemScript(Blockchain.StandbyValidators[0]);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
-            engine.IsStandardContract(state.ScriptHash).Should().BeTrue();
+            engine.IsStandardContract(state.Hash).Should().BeTrue();
         }
 
         [TestMethod]
@@ -166,7 +166,7 @@ namespace Neo.UnitTests.SmartContract
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
-            snapshot.Contracts.Add(state.ScriptHash, state);
+            snapshot.Contracts.Add(state.Hash, state);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0);
             engine.LoadScript(new byte[] { 0x01 });
 
@@ -195,7 +195,7 @@ namespace Neo.UnitTests.SmartContract
             ECPoint pubkey = key.PublicKey;
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
-            byte[] signature = Crypto.Sign(state.ScriptHash.ToArray(), privkey, pubkey.EncodePoint(false).Skip(1).ToArray());
+            byte[] signature = Crypto.Sign(state.Hash.ToArray(), privkey, pubkey.EncodePoint(false).Skip(1).ToArray());
             manifest.Groups = new ContractGroup[]
             {
                 new ContractGroup()
@@ -216,7 +216,7 @@ namespace Neo.UnitTests.SmartContract
                 Id = state.Id,
                 Key = new byte[] { 0x01 }
             };
-            snapshot.Contracts.Add(state.ScriptHash, state);
+            snapshot.Contracts.Add(state.Hash, state);
             snapshot.Storages.Add(storageKey, storageItem);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(state.Script);
@@ -272,7 +272,7 @@ namespace Neo.UnitTests.SmartContract
                 Id = state.Id,
                 Key = new byte[] { 0x01 }
             };
-            snapshot.Contracts.Add(state.ScriptHash, state);
+            snapshot.Contracts.Add(state.Hash, state);
             snapshot.Storages.Add(storageKey, storageItem);
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
