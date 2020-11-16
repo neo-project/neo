@@ -117,7 +117,7 @@ namespace Neo.SmartContract.Native.Tokens
             }
         }
 
-        public bool ShouldRefreshCommittee(uint height) => height % ProtocolSettings.Default.CommitteeMembersCount == 0;
+        private bool ShouldRefreshCommittee(uint height) => height % ProtocolSettings.Default.CommitteeMembersCount == 0;
 
         internal override void Initialize(ApplicationEngine engine)
         {
