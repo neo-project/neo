@@ -6,8 +6,8 @@ namespace Neo.Cryptography.MPT
 {
     public class ExtensionNode : MPTNode
     {
-        //max lenght when store StorageKey
-        public const int MaxKeyLength = (ApplicationEngine.MaxStorageValueSize + sizeof(int)) * 2;
+        //max length when store StorageKey
+        public const int MaxKeyLength = (ApplicationEngine.MaxStorageKeySize + sizeof(int)) * 2;
 
         public byte[] Key;
         public MPTNode Next;

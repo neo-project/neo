@@ -29,13 +29,25 @@ namespace Neo.UnitTests.Cryptography.MPT
         }
 
         [TestMethod]
-        public void TestHashNodeDecode()
+        public void TestHashNodeDecode1()
         {
             var data = new byte[] { 2, 0, 0 };
             var h = MPTNode.Decode(data);
             Assert.AreEqual(null, h.Hash);
-            data = new byte[] { 2, 1, 0, 0 };
+        }
+
+        [TestMethod]
+        public void TestHashNodeDecode2()
+        {
+            var data = new byte[] { 2, 1, 0, 0 };
             Assert.ThrowsException<FormatException>(() => MPTNode.Decode(data));
+        }
+
+        [TestMethod]
+        public void TestHashNodeDecode3()
+        {
+            var hn = new HashNode(UInt256.Zero);
+            Assert.AreEqual(UInt256.Zero, MPTNode.Decode(hn.EncodeWithReference()).Hash);
         }
 
         [TestMethod]
