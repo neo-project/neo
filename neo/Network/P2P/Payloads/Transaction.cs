@@ -1,3 +1,4 @@
+using Akka.Util.Internal;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Caching;
@@ -97,7 +98,7 @@ namespace Neo.Network.P2P.Payloads
                         if (tx == null) return null;
                         foreach (var reference in group)
                         {
-                            if (reference.PrevIndex >= Outputs.Length)
+                            if (reference.PrevIndex >= Outputs.Length || dictionary.ContainsKey(reference))
                             {
                                 return null;
                             }
