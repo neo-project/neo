@@ -1,4 +1,3 @@
-using Akka.Util.Internal;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Caching;
