@@ -212,7 +212,7 @@ namespace Neo.SmartContract.Native.Oracle
                 throw new InvalidOperationException("There are too many pending responses for this url");
             list.Add(id);
 
-            engine.SendNotification(Hash, "OracleRequest", new VM.Types.Array { id, engine.CallingScriptHash.ToArray(), url, filter });
+            engine.SendNotification(Hash, "OracleRequest", new VM.Types.Array { id, engine.CallingScriptHash.ToArray(), url, filter ?? StackItem.Null });
         }
 
         [ContractMethod(0_01000000, CallFlags.None)]
