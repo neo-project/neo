@@ -171,7 +171,7 @@ namespace Neo.SmartContract
                         {
                             using ScriptBuilder sb = new ScriptBuilder();
                             sb.Emit(OpCode.DEPTH, OpCode.PACK);
-                            sb.EmitPush("verify");
+                            sb.EmitPush(md.Name);
                             engine.LoadScript(sb.ToArray(), CallFlags.None);
                         }
                         else
