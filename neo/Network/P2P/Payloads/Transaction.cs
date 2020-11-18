@@ -73,16 +73,9 @@ namespace Neo.Network.P2P.Payloads
             {
                 if (_network_fee == -Fixed8.Satoshi)
                 {
-                    if (References == null)
-                    {
-                        _network_fee = Fixed8.Zero;
-                    }
-                    else
-                    {
-                        Fixed8 input = References.Values.Where(p => p.AssetId.Equals(Blockchain.UtilityToken.Hash)).Sum(p => p.Value);
-                        Fixed8 output = Outputs.Where(p => p.AssetId.Equals(Blockchain.UtilityToken.Hash)).Sum(p => p.Value);
-                        _network_fee = input - output - SystemFee;
-                    }
+                    Fixed8 input = References.Values.Where(p => p.AssetId.Equals(Blockchain.UtilityToken.Hash)).Sum(p => p.Value);
+                    Fixed8 output = Outputs.Where(p => p.AssetId.Equals(Blockchain.UtilityToken.Hash)).Sum(p => p.Value);
+                    _network_fee = input - output - SystemFee;
                 }
                 return _network_fee;
             }
@@ -104,7 +97,7 @@ namespace Neo.Network.P2P.Payloads
                         if (tx == null) return null;
                         foreach (var reference in group)
                         {
-                            if (reference.PrevIndex >= Outputs.Length || dictionary.ContainsKey(reference))
+                            if (reference.PrevIndex >= Outputs.Length)
                             {
                                 return null;
                             }
