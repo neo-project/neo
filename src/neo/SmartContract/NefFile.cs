@@ -87,27 +87,19 @@ namespace Neo.SmartContract
 
         public void Deserialize(BinaryReader reader)
         {
-            if (reader.ReadUInt32() != Magic)
-            {
-                throw new FormatException("Wrong magic");
-            }
+            if (reader.ReadUInt32() != Magic) throw new FormatException("Wrong magic");
 
             Compiler = reader.ReadFixedString(32);
             Version = new Version(reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32());
             ScriptHash = reader.ReadSerializable<UInt160>();
             CheckSum = reader.ReadUInt32();
 
-            if (CheckSum != ComputeChecksum(this))
-            {
-                throw new FormatException("CRC verification fail");
-            }
+            if (CheckSum != ComputeChecksum(this)) throw new FormatException("CRC verification fail");
 
             Script = reader.ReadVarBytes(MaxScriptLength);
 
-            if (Script.ToScriptHash() != ScriptHash)
-            {
-                throw new FormatException("ScriptHash is different");
-            }
+            if (Script.Length == 0) throw new ArgumentException($"Script can't be empty");
+            if (Script.ToScriptHash() != ScriptHash) throw new FormatException("ScriptHash is different");
         }
 
         /// <summary>

@@ -68,7 +68,7 @@ namespace Neo.Ledger
         {
             JObject json = new JObject();
             json["id"] = Id;
-            json["version"] = UpdateCounter;
+            json["updateCounter"] = UpdateCounter;
             json["hash"] = Hash.ToString();
             json["script"] = Convert.ToBase64String(Script);
             json["manifest"] = Manifest.ToJson();
