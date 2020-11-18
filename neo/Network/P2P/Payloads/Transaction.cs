@@ -73,9 +73,16 @@ namespace Neo.Network.P2P.Payloads
             {
                 if (_network_fee == -Fixed8.Satoshi)
                 {
-                    Fixed8 input = References.Values.Where(p => p.AssetId.Equals(Blockchain.UtilityToken.Hash)).Sum(p => p.Value);
-                    Fixed8 output = Outputs.Where(p => p.AssetId.Equals(Blockchain.UtilityToken.Hash)).Sum(p => p.Value);
-                    _network_fee = input - output - SystemFee;
+                    if (References == null)
+                    {
+                        _network_fee = Fixed8.Zero;
+                    }
+                    else
+                    {
+                        Fixed8 input = References.Values.Where(p => p.AssetId.Equals(Blockchain.UtilityToken.Hash)).Sum(p => p.Value);
+                        Fixed8 output = Outputs.Where(p => p.AssetId.Equals(Blockchain.UtilityToken.Hash)).Sum(p => p.Value);
+                        _network_fee = input - output - SystemFee;
+                    }
                 }
                 return _network_fee;
             }
