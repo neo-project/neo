@@ -49,9 +49,6 @@ namespace Neo.SmartContract
             AddGas(StoragePrice * (nefFile.Length + manifest.Length));
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
-            if (nef.Script.Length == 0)
-                throw new ArgumentException($"Invalid Script Length: {nef.Script.Length}");
-
             UInt160 hash = ContractHash(nef);
             ContractState contract = Snapshot.Contracts.TryGet(hash);
             if (contract != null) throw new InvalidOperationException($"Contract Already Exists: {hash}");
