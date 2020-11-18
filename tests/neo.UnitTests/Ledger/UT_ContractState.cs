@@ -77,6 +77,14 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
+        public void TestCanCall()
+        {
+            var temp = new ContractState() { Manifest = TestUtils.CreateDefaultManifest() };
+            temp.Manifest.SafeMethods = WildcardContainer<string>.Create(new string[] { "AAA" });
+            Assert.AreEqual(true, temp.CanCall(UInt160.Zero, TestUtils.CreateDefaultManifest(), "AAA"));
+        }
+
+        [TestMethod]
         public void TestToJson()
         {
             JObject json = contract.ToJson();

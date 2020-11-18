@@ -114,14 +114,6 @@ namespace Neo.UnitTests.SmartContract.Manifest
         }
 
         [TestMethod]
-        public void TestCanCall()
-        {
-            var temp = TestUtils.CreateDefaultManifest();
-            temp.SafeMethods = WildcardContainer<string>.Create(new string[] { "AAA" });
-            Assert.AreEqual(true, temp.CanCall(UInt160.Zero, TestUtils.CreateDefaultManifest(), "AAA"));
-        }
-
-        [TestMethod]
         public void TestClone()
         {
             var expected = TestUtils.CreateDefaultManifest();

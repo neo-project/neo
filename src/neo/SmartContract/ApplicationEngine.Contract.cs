@@ -6,7 +6,6 @@ using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
-using System.Linq;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -145,8 +144,8 @@ namespace Neo.SmartContract
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
             if (md is null) throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
 
-            ContractManifest currentManifest = Snapshot.Contracts.TryGet(CurrentScriptHash)?.Manifest;
-            if (currentManifest != null && !currentManifest.CanCall(contractHash, contract.Manifest, method))
+            ContractState currentContract = Snapshot.Contracts.TryGet(CurrentScriptHash);
+            if (currentContract?.CanCall(contractHash, contract.Manifest, method) == false)
                 throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contractHash} From Contract {CurrentScriptHash}");
 
             CallContractInternal(contract, md, args, flags, convention);

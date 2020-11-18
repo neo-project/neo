@@ -67,18 +67,6 @@ namespace Neo.SmartContract.Manifest
         public JObject Extra { get; set; }
 
         /// <summary>
-        /// Return true if is allowed
-        /// </summary>
-        /// <param name="hash">Hash</param>
-        /// <param name="manifest">Manifest</param>
-        /// <param name="method">Method</param>
-        /// <returns>Return true or false</returns>
-        public bool CanCall(UInt160 hash, ContractManifest manifest, string method)
-        {
-            return Permissions.Any(u => u.IsAllowed(hash, manifest, method));
-        }
-
-        /// <summary>
         /// Parse ContractManifest from json
         /// </summary>
         /// <param name="json">Json</param>

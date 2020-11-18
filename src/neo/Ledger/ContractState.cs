@@ -6,6 +6,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
+using System.Linq;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Ledger
@@ -62,6 +63,18 @@ namespace Neo.Ledger
             writer.Write(Hash);
             writer.WriteVarBytes(Script);
             writer.Write(Manifest);
+        }
+
+        /// <summary>
+        /// Return true if is allowed
+        /// </summary>
+        /// <param name="hash">Hash</param>
+        /// <param name="manifest">Manifest</param>
+        /// <param name="method">Method</param>
+        /// <returns>Return true or false</returns>
+        public bool CanCall(UInt160 hash, ContractManifest manifest, string method)
+        {
+            return Manifest.Permissions.Any(u => u.IsAllowed(hash, manifest, method));
         }
 
         public JObject ToJson()
