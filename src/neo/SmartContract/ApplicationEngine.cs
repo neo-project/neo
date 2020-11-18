@@ -3,6 +3,7 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -172,6 +173,25 @@ namespace Neo.SmartContract
         {
             ExecutionContext context = LoadScript(script, initialPosition);
             context.GetState<ExecutionContextState>().CallFlags = callFlags;
+            return context;
+        }
+
+        public ExecutionContext LoadContract(ContractState contract, CallFlags callFlags, string method)
+        {
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
+            if (md is null) throw new ArgumentNullException("Method doesn't exists");
+
+            var context = LoadScript(contract.Script, callFlags, md.Offset);
+
+            // Call initialization
+
+            var init = contract.Manifest.Abi.GetMethod("_initialize");
+
+            if (init != null)
+            {
+                LoadContext(context.Clone(init.Offset), false);
+            }
+
             return context;
         }
 

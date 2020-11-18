@@ -130,49 +130,6 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
-        public static bool TryCreateVerifyEngine(this IVerifiable verifiable, StoreView snapshot, UInt160 hash, int witnessIndex, long gas, out ApplicationEngine engine)
-        {
-            engine = null;
-            if (witnessIndex < 0 || witnessIndex >= verifiable.Witnesses.Length) return false;
-
-            int offset;
-            ContractMethodDescriptor init = null;
-            Witness witness = verifiable.Witnesses[witnessIndex];
-            byte[] verification = witness.VerificationScript;
-            if (verification.Length == 0)
-            {
-                ContractState cs = snapshot.Contracts.TryGet(hash);
-                if (cs is null) return false;
-                ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify");
-                if (md is null) return false;
-                verification = cs.Script;
-                offset = md.Offset;
-                init = cs.Manifest.Abi.GetMethod("_initialize");
-            }
-            else
-            {
-                if (NativeContract.IsNative(witness.ScriptHash)) return false;
-                if (hash != witness.ScriptHash) return false;
-                offset = 0;
-            }
-            engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas);
-            CallFlags callFlags = witness.StateDependent ? CallFlags.AllowStates : CallFlags.None;
-            ExecutionContext context = engine.LoadScript(verification, callFlags, offset);
-            if (NativeContract.IsNative(witness.ScriptHash))
-            {
-                using ScriptBuilder sb = new ScriptBuilder();
-                sb.Emit(OpCode.DEPTH, OpCode.PACK);
-                sb.EmitPush("verify");
-                engine.LoadScript(sb.ToArray(), CallFlags.None);
-            }
-            else if (init != null)
-            {
-                engine.LoadContext(context.Clone(init.Offset), false);
-            }
-            engine.LoadScript(witness.InvocationScript, CallFlags.None);
-            return true;
-        }
-
         internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas, WitnessFlag filter = WitnessFlag.All)
         {
             if (gas < 0) return false;
@@ -198,10 +155,38 @@ namespace Neo.SmartContract
                     continue;
                 }
 
-                if (!TryCreateVerifyEngine(verifiable, snapshot?.Clone(), hashes[i], i, gas, out var engine)) return false;
-
-                using (engine)
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas))
                 {
+                    CallFlags callFlags = verifiable.Witnesses[i].StateDependent ? CallFlags.AllowStates : CallFlags.None;
+                    byte[] verification = verifiable.Witnesses[i].VerificationScript;
+
+                    if (verification.Length == 0)
+                    {
+                        ContractState cs = snapshot.Contracts.TryGet(hashes[i]);
+                        if (cs is null) return false;
+                        ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify");
+                        if (md is null) return false;
+
+                        if (NativeContract.IsNative(hashes[i]))
+                        {
+                            using ScriptBuilder sb = new ScriptBuilder();
+                            sb.Emit(OpCode.DEPTH, OpCode.PACK);
+                            sb.EmitPush("verify");
+                            engine.LoadScript(sb.ToArray(), CallFlags.None);
+                        }
+                        else
+                        {
+                            _ = engine.LoadContract(cs, callFlags, md.Name);
+                        }
+                    }
+                    else
+                    {
+                        if (NativeContract.IsNative(hashes[i])) return false;
+                        if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
+                        _ = engine.LoadScript(verification, callFlags, 0);
+                    }
+
+                    engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) return false;
                     if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
                     gas -= engine.GasConsumed;
