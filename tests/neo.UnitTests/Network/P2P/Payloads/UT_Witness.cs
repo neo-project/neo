@@ -85,11 +85,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Check max size
 
-            witness.Size.Should().Be(1024);
+            witness.Size.Should().Be(1025);
             witness.InvocationScript.GetVarSize().Should().Be(663);
-            witness.VerificationScript.GetVarSize().Should().Be(361);
+            witness.VerificationScript.GetVarSize().Should().Be(362);
 
-            Assert.IsTrue(witness.Size <= 1024);
+            Assert.IsTrue(witness.Size <= 1025);
 
             var copy = witness.ToArray().AsSerializable<Witness>();
 

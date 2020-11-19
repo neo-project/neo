@@ -419,7 +419,7 @@ namespace Neo.Wallets
                     size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
                     networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * m;
                     using (ScriptBuilder sb = new ScriptBuilder())
-                        networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
+                        networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]] * 2;
                     networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * n;
                     using (ScriptBuilder sb = new ScriptBuilder())
                         networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];

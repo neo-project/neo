@@ -134,7 +134,7 @@ namespace Neo.UnitTests.SmartContract
                         key.PublicKey,
                         key2.PublicKey
                     });
-            var multiSender = UInt160.Parse("0x3593816cc1085a6328fea2b899c24d78cd0ba372");
+            var multiSender = UInt160.Parse("0x7584d8f217a5cb4c138dcf30a193a615591157bf");
             tx = TestUtils.GetTransaction(multiSender);
             context = new ContractParametersContext(tx);
             context.AddSignature(multiSignContract, key.PublicKey, new byte[] { 0x01 }).Should().BeTrue();
