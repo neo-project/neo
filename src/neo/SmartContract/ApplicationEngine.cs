@@ -4,6 +4,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -174,7 +175,18 @@ namespace Neo.SmartContract
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
             if (md is null) throw new ArgumentNullException("Method doesn't exists");
 
-            var context = LoadScript(contract.Script, callFlags, md.Offset);
+            ExecutionContext context;
+            if (NativeContract.IsNative(contract.ScriptHash) && md.Name == "verify")
+            {
+                using ScriptBuilder sb = new ScriptBuilder();
+                sb.Emit(OpCode.DEPTH, OpCode.PACK);
+                sb.EmitPush(md.Name);
+                context = LoadScript(sb.ToArray(), CallFlags.None);
+            }
+            else
+            {
+                context = LoadScript(contract.Script, callFlags, md.Offset);
+            }
 
             // Call initialization
 

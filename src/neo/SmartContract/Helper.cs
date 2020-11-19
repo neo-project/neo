@@ -166,18 +166,7 @@ namespace Neo.SmartContract
                         if (cs is null) return false;
                         ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify");
                         if (md is null) return false;
-
-                        if (NativeContract.IsNative(hashes[i]))
-                        {
-                            using ScriptBuilder sb = new ScriptBuilder();
-                            sb.Emit(OpCode.DEPTH, OpCode.PACK);
-                            sb.EmitPush(md.Name);
-                            engine.LoadScript(sb.ToArray(), CallFlags.None);
-                        }
-                        else
-                        {
-                            _ = engine.LoadContract(cs, md.Name, callFlags);
-                        }
+                        _ = engine.LoadContract(cs, md.Name, callFlags);
                     }
                     else
                     {
