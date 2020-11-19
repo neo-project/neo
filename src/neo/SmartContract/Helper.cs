@@ -176,7 +176,7 @@ namespace Neo.SmartContract
                         }
                         else
                         {
-                            _ = engine.LoadContract(cs, callFlags, md.Name);
+                            _ = engine.LoadContract(cs, md.Name, callFlags);
                         }
                     }
                     else

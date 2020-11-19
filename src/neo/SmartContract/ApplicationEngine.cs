@@ -169,14 +169,7 @@ namespace Neo.SmartContract
             LoadContext(context);
         }
 
-        public ExecutionContext LoadScript(Script script, CallFlags callFlags, int initialPosition = 0)
-        {
-            ExecutionContext context = LoadScript(script, initialPosition);
-            context.GetState<ExecutionContextState>().CallFlags = callFlags;
-            return context;
-        }
-
-        public ExecutionContext LoadContract(ContractState contract, CallFlags callFlags, string method)
+        public ExecutionContext LoadContract(ContractState contract, string method, CallFlags callFlags)
         {
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
             if (md is null) throw new ArgumentNullException("Method doesn't exists");
@@ -192,6 +185,13 @@ namespace Neo.SmartContract
                 LoadContext(context.Clone(init.Offset), false);
             }
 
+            return context;
+        }
+
+        public ExecutionContext LoadScript(Script script, CallFlags callFlags, int initialPosition = 0)
+        {
+            ExecutionContext context = LoadScript(script, initialPosition);
+            context.GetState<ExecutionContextState>().CallFlags = callFlags;
             return context;
         }
 
