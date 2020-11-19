@@ -72,21 +72,20 @@ namespace Neo.SmartContract
             switch (script[i])
             {
                 case (byte)OpCode.PUSHINT8:
-                    m = script[++i];
+                    if (script[++i] != m) return false;
                     ++i;
                     break;
                 case (byte)OpCode.PUSHINT16:
-                    m = BinaryPrimitives.ReadUInt16LittleEndian(script.AsSpan(++i));
+                    if (BinaryPrimitives.ReadUInt16LittleEndian(script.AsSpan(++i)) != m) return false;
                     i += 2;
                     break;
                 case byte b when b >= (byte)OpCode.PUSH1 && b <= (byte)OpCode.PUSH16:
-                    m = b - (byte)OpCode.PUSH0;
+                    if (b - (byte)OpCode.PUSH0 != m) return false;
                     ++i;
                     break;
                 default:
                     return false;
             }
-            if (m < 1 || m > 1024) return false;
             while (script[i] == (byte)OpCode.PUSHDATA1)
             {
                 if (script.Length <= i + 35) return false;
