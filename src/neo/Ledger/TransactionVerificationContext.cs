@@ -13,20 +13,12 @@ namespace Neo.Ledger
         /// </summary>
         private readonly Dictionary<UInt160, BigInteger> senderFee = new Dictionary<UInt160, BigInteger>();
 
-        /// <summary>
-        /// Store oracle requests
-        /// </summary>
-        private readonly Dictionary<ulong, UInt256> oracleRequests = new Dictionary<ulong, UInt256>();
-
         public void AddTransaction(Transaction tx)
         {
             if (senderFee.TryGetValue(tx.Sender, out var value))
                 senderFee[tx.Sender] = value + tx.SystemFee + tx.NetworkFee;
             else
                 senderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
-
-            var oracle = tx.GetAttribute<OracleResponse>();
-            if (oracle != null) oracleRequests.TryAdd(oracle.Id, tx.Hash);
         }
 
         public bool CheckTransaction(Transaction tx, StoreView snapshot)
@@ -34,27 +26,12 @@ namespace Neo.Ledger
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
             senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
             BigInteger fee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
-            if (balance < fee) return false;
-
-            var oracle = tx.GetAttribute<OracleResponse>();
-            if (oracle != null &&
-                (!oracleRequests.TryGetValue(oracle.Id, out var hash) || hash != tx.Hash))
-            {
-                return false;
-            }
-
-            return true;
+            return balance >= fee;
         }
 
         public void RemoveTransaction(Transaction tx)
         {
             if ((senderFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee) == 0) senderFee.Remove(tx.Sender);
-
-            var oracle = tx.GetAttribute<OracleResponse>();
-            if (oracle != null && oracleRequests.TryGetValue(oracle.Id, out var hash) && hash == tx.Hash)
-            {
-                oracleRequests.Remove(oracle.Id);
-            }
         }
     }
 }
