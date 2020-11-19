@@ -131,7 +131,6 @@ namespace Neo.UnitTests.SmartContract
             var nef = new NefFile()
             {
                 Script = new byte[0x01],
-                ScriptHash = new byte[0x01].ToScriptHash(),
                 Compiler = "",
                 Version = new Version(1, 2, 3, 4)
             };
@@ -146,7 +145,6 @@ namespace Neo.UnitTests.SmartContract
             var script_exceedMaxLength = new NefFile()
             {
                 Script = new byte[NefFile.MaxScriptLength - 1],
-                ScriptHash = new byte[NefFile.MaxScriptLength - 1].ToScriptHash(),
                 Compiler = "",
                 Version = new Version(1, 2, 3, 4)
             };
@@ -180,7 +178,6 @@ namespace Neo.UnitTests.SmartContract
             var nef = new NefFile()
             {
                 Script = new byte[] { 0x01 },
-                ScriptHash = new byte[] { 0x01 }.ToScriptHash(),
                 Compiler = "",
                 Version = new Version(1, 2, 3, 4)
             };
@@ -230,7 +227,6 @@ namespace Neo.UnitTests.SmartContract
             var nefFile = new NefFile()
             {
                 Script = new byte[] { 0x01 },
-                ScriptHash = new byte[] { 0x01 }.ToScriptHash(),
                 Version = new Version(1, 2, 3, 4),
                 Compiler = ""
             };
@@ -245,7 +241,6 @@ namespace Neo.UnitTests.SmartContract
             nefFile = new NefFile()
             {
                 Script = new byte[0],
-                ScriptHash = new byte[0].ToScriptHash(),
                 Version = new Version(1, 2, 3, 4),
                 Compiler = ""
             };
