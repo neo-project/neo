@@ -79,19 +79,22 @@ namespace Neo.UnitTests.Ledger
         public void TestToJson()
         {
             JObject json = contract.ToJson();
+            json["name"].AsString().Should().Be("testManifest");
             json["hash"].AsString().Should().Be("0x820944cfdc70976602d71b0091445eedbc661bc5");
             json["script"].AsString().Should().Be("AQ==");
             json["manifest"].AsString().Should().Be(manifest.ToJson().AsString());
+            json["isnative"].AsString().Should().Be("false");
         }
 
         [TestMethod]
-        public void TestToJson2()
+        public void TestToJsonNative()
         {
             ContractState neocontract = contract;
             neocontract.Id = -1;
             JObject json = neocontract.ToJson();
             json["id"].AsString().Should().Be("-1");
             json["name"].AsString().Should().Be("NEO");
+            json["isnative"].AsString().Should().Be("true");
         }
     }
 }
