@@ -68,19 +68,20 @@ namespace Neo.SmartContract
             }
         }
 
-        protected internal bool CheckMultisigWithECDsaSecp256r1(StackItem item, byte[][] pubkeys, byte[][] signatures)
+        protected internal bool CheckMultisigWithECDsaSecp256r1(StackItem item, byte[][] pubkeys, byte[][] signatures, int m)
         {
-            return CheckMultiSigWithECDsa(item, pubkeys, signatures, ECCurve.Secp256r1);
+            return CheckMultiSigWithECDsa(item, pubkeys, signatures, ECCurve.Secp256r1, m);
         }
 
-        protected internal bool CheckMultisigWithECDsaSecp256k1(StackItem item, byte[][] pubkeys, byte[][] signatures)
+        protected internal bool CheckMultisigWithECDsaSecp256k1(StackItem item, byte[][] pubkeys, byte[][] signatures, int m)
         {
-            return CheckMultiSigWithECDsa(item, pubkeys, signatures, ECCurve.Secp256k1);
+            return CheckMultiSigWithECDsa(item, pubkeys, signatures, ECCurve.Secp256k1, m);
         }
 
-        private bool CheckMultiSigWithECDsa(StackItem item0, byte[][] pubkeys, byte[][] signatures, ECCurve curve)
+        private bool CheckMultiSigWithECDsa(StackItem item0, byte[][] pubkeys, byte[][] signatures, ECCurve curve, int m)
         {
-            int m = signatures.Length, n = pubkeys.Length;
+            int n = pubkeys.Length;
+            if (signatures.Length < m) return false;
             ReadOnlySpan<byte> message = item0 switch
             {
                 InteropInterface _interface => _interface.GetInterface<IVerifiable>().GetHashData(),

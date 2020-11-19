@@ -64,10 +64,12 @@ namespace Neo.UnitTests.SmartContract
                 signature1,
                 signature2
             };
-            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures).Should().BeTrue();
+            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures, 1).Should().BeTrue();
+            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures, 2).Should().BeTrue();
+            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures, 3).Should().BeFalse();
 
             pubkeys = new byte[0][];
-            Assert.ThrowsException<ArgumentException>(() => engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures));
+            Assert.ThrowsException<ArgumentException>(() => engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures, 2));
 
             pubkeys = new[]
             {
@@ -75,7 +77,7 @@ namespace Neo.UnitTests.SmartContract
                 pubkey2.EncodePoint(false)
             };
             signatures = new byte[0][];
-            Assert.ThrowsException<ArgumentException>(() => engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures));
+            Assert.ThrowsException<ArgumentException>(() => engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures, 0));
 
             pubkeys = new[]
             {
@@ -87,7 +89,7 @@ namespace Neo.UnitTests.SmartContract
                 signature1,
                 new byte[64]
             };
-            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures).Should().BeFalse();
+            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures, 2).Should().BeFalse();
 
             pubkeys = new[]
             {
@@ -99,7 +101,7 @@ namespace Neo.UnitTests.SmartContract
                 signature1,
                 signature2
             };
-            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures).Should().BeFalse();
+            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures, 2).Should().BeFalse();
         }
 
         [TestMethod]
