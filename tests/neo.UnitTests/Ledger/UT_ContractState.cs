@@ -73,7 +73,7 @@ namespace Neo.UnitTests.Ledger
         public void TestGetSize()
         {
             ISerializable newContract = contract;
-            newContract.Size.Should().Be(188);
+            newContract.Size.Should().Be(210);
         }
 
         [TestMethod]

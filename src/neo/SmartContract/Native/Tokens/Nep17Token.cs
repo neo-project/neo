@@ -10,7 +10,7 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native.Tokens
 {
-    public abstract class Nep5Token<TState> : NativeContract
+    public abstract class Nep17Token<TState> : NativeContract
         where TState : AccountState, new()
     {
         [ContractMethod(0, CallFlags.None)]
@@ -22,11 +22,11 @@ namespace Neo.SmartContract.Native.Tokens
         protected const byte Prefix_TotalSupply = 11;
         protected const byte Prefix_Account = 20;
 
-        protected Nep5Token()
+        protected Nep17Token()
         {
             this.Factor = BigInteger.Pow(10, Decimals);
 
-            Manifest.SupportedStandards = new[] { "NEP-5" };
+            Manifest.SupportedStandards = new[] { "NEP-17" };
 
             var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
             {
@@ -67,7 +67,7 @@ namespace Neo.SmartContract.Native.Tokens
             state.Balance += amount;
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem(BigInteger.Zero));
             storage.Add(amount);
-            engine.SendNotification(Hash, "Transfer", new Array { StackItem.Null, account.ToArray(), amount });
+            PostTransfer(engine, null, account, amount);
         }
 
         internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
@@ -85,7 +85,7 @@ namespace Neo.SmartContract.Native.Tokens
                 state.Balance -= amount;
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
             storage.Add(-amount);
-            engine.SendNotification(Hash, "Transfer", new Array { account.ToArray(), StackItem.Null, amount });
+            PostTransfer(engine, account, null, amount);
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
@@ -104,7 +104,7 @@ namespace Neo.SmartContract.Native.Tokens
             return storage.GetInteroperable<TState>().Balance;
         }
 
-        [ContractMethod(0_08000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_09000000, CallFlags.AllowModifyStates)]
         protected virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
@@ -143,12 +143,28 @@ namespace Neo.SmartContract.Native.Tokens
                     state_to.Balance += amount;
                 }
             }
-            engine.SendNotification(Hash, "Transfer", new Array { from.ToArray(), to.ToArray(), amount });
+            PostTransfer(engine, from, to, amount);
             return true;
         }
 
         protected virtual void OnBalanceChanging(ApplicationEngine engine, UInt160 account, TState state, BigInteger amount)
         {
+        }
+
+        private void PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount)
+        {
+            // Send notification
+
+            engine.SendNotification(Hash, "Transfer",
+                new Array { from?.ToArray() ?? StackItem.Null, to?.ToArray() ?? StackItem.Null, amount });
+
+            // Check if it's a wallet or smart contract
+
+            if (to is null || engine.Snapshot.Contracts.TryGet(to) is null) return;
+
+            // Call onPayment method (NEP-17)
+
+            engine.CallFromNativeContract(null, to, "onPayment", from.ToArray(), amount);
         }
     }
 }
