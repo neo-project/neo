@@ -68,17 +68,17 @@ namespace Neo.SmartContract
             }
         }
 
-        protected internal bool CheckMultisigWithECDsaSecp256r1(StackItem item, byte[][] pubkeys, byte[][] signatures, int m)
+        protected internal bool CheckMultisigWithECDsaSecp256r1(StackItem item, byte[][] pubkeys, int m, byte[][] signatures)
         {
-            return CheckMultiSigWithECDsa(item, pubkeys, signatures, ECCurve.Secp256r1, m);
+            return CheckMultiSigWithECDsa(item, pubkeys, m, signatures, ECCurve.Secp256r1);
         }
 
-        protected internal bool CheckMultisigWithECDsaSecp256k1(StackItem item, byte[][] pubkeys, byte[][] signatures, int m)
+        protected internal bool CheckMultisigWithECDsaSecp256k1(StackItem item, byte[][] pubkeys, int m, byte[][] signatures)
         {
-            return CheckMultiSigWithECDsa(item, pubkeys, signatures, ECCurve.Secp256k1, m);
+            return CheckMultiSigWithECDsa(item, pubkeys, m, signatures, ECCurve.Secp256k1);
         }
 
-        private bool CheckMultiSigWithECDsa(StackItem item0, byte[][] pubkeys, byte[][] signatures, ECCurve curve, int m)
+        private bool CheckMultiSigWithECDsa(StackItem item0, byte[][] pubkeys, int m, byte[][] signatures, ECCurve curve)
         {
             int n = pubkeys.Length;
             if (signatures.Length < m) return false;

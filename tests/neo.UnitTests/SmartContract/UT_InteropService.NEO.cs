@@ -64,12 +64,12 @@ namespace Neo.UnitTests.SmartContract
                 signature1,
                 signature2
             };
-            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures, 1).Should().BeTrue();
-            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures, 2).Should().BeTrue();
-            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures, 3).Should().BeFalse();
+            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, 1, signatures).Should().BeTrue();
+            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, 2, signatures).Should().BeTrue();
+            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, 3, signatures).Should().BeFalse();
 
             pubkeys = new byte[0][];
-            Assert.ThrowsException<ArgumentException>(() => engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures, 2));
+            Assert.ThrowsException<ArgumentException>(() => engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, 2, signatures));
 
             pubkeys = new[]
             {
@@ -77,7 +77,7 @@ namespace Neo.UnitTests.SmartContract
                 pubkey2.EncodePoint(false)
             };
             signatures = new byte[0][];
-            Assert.ThrowsException<ArgumentException>(() => engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures, 0));
+            Assert.ThrowsException<ArgumentException>(() => engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, 0, signatures));
 
             pubkeys = new[]
             {
@@ -89,7 +89,7 @@ namespace Neo.UnitTests.SmartContract
                 signature1,
                 new byte[64]
             };
-            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures, 2).Should().BeFalse();
+            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, 2, signatures).Should().BeFalse();
 
             pubkeys = new[]
             {
@@ -101,7 +101,7 @@ namespace Neo.UnitTests.SmartContract
                 signature1,
                 signature2
             };
-            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures, 2).Should().BeFalse();
+            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, 2, signatures).Should().BeFalse();
         }
 
         [TestMethod]
