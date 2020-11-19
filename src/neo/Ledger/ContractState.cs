@@ -88,9 +88,9 @@ namespace Neo.Ledger
             }
             else
             {
-                if (Manifest.Extra != null && Manifest.Extra["name"] != null)
+                if (Manifest.Name != null)
                 {
-                    json["name"] = Manifest.Extra["name"];
+                    json["name"] = Manifest.Name;
                 }
 
                 json["isnative"] = false;
