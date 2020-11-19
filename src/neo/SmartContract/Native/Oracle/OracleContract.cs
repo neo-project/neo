@@ -145,6 +145,9 @@ namespace Neo.SmartContract.Native.Oracle
                 OracleResponse response = tx.GetAttribute<OracleResponse>();
                 if (response is null) continue;
 
+                // Check tx state
+                if (engine.Snapshot.Transactions.TryGet(tx.Hash)?.VMState != VMState.HALT) continue;
+
                 //Remove the request from storage
                 StorageKey key = CreateStorageKey(Prefix_Request).Add(response.Id);
                 OracleRequest request = engine.Snapshot.Storages[key].GetInteroperable<OracleRequest>();
@@ -153,11 +156,11 @@ namespace Neo.SmartContract.Native.Oracle
                 //Remove the id from IdList
                 key = CreateStorageKey(Prefix_IdList).Add(GetUrlHash(request.Url));
                 IdList list = engine.Snapshot.Storages.GetAndChange(key).GetInteroperable<IdList>();
-                if (!list.Remove(response.Id)) throw new InvalidOperationException();
+                if (!list.Remove(response.Id)) continue;
                 if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
 
                 //Mint GAS for oracle nodes
-                nodes ??= NativeContract.Designate.GetDesignatedByRole(engine.Snapshot, Role.Oracle, engine.Snapshot.PersistingBlock.Index).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
+                nodes ??= Designate.GetDesignatedByRole(engine.Snapshot, Role.Oracle, engine.Snapshot.PersistingBlock.Index).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
                 if (nodes.Length > 0)
                 {
                     int index = (int)(response.Id % (ulong)nodes.Length);
