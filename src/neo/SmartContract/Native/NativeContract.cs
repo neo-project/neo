@@ -63,6 +63,7 @@ namespace Neo.SmartContract.Native
             }
             this.Manifest = new ContractManifest
             {
+                Name = Name,
                 Groups = System.Array.Empty<ContractGroup>(),
                 SupportedStandards = new string[0],
                 Abi = new ContractAbi()

@@ -3,9 +3,9 @@ using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.SmartContract.Native.Oracle;
-using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Array = Neo.VM.Types.Array;
 
@@ -29,52 +29,6 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_Notify = Register("System.Runtime.Notify", nameof(RuntimeNotify), 0_01000000, CallFlags.AllowNotify, false);
         public static readonly InteropDescriptor System_Runtime_GetNotifications = Register("System.Runtime.GetNotifications", nameof(GetNotifications), 0_00010000, CallFlags.None, true);
         public static readonly InteropDescriptor System_Runtime_GasLeft = Register("System.Runtime.GasLeft", nameof(GasLeft), 0_00000400, CallFlags.None, true);
-
-        private static bool CheckItemForNotification(StackItem state)
-        {
-            int size = 0;
-            List<StackItem> items_checked = new List<StackItem>();
-            Queue<StackItem> items_unchecked = new Queue<StackItem>();
-            while (true)
-            {
-                switch (state)
-                {
-                    case Struct array:
-                        foreach (StackItem item in array)
-                            items_unchecked.Enqueue(item);
-                        break;
-                    case Array array:
-                        if (items_checked.All(p => !ReferenceEquals(p, array)))
-                        {
-                            items_checked.Add(array);
-                            foreach (StackItem item in array)
-                                items_unchecked.Enqueue(item);
-                        }
-                        break;
-                    case PrimitiveType primitive:
-                        size += primitive.Size;
-                        break;
-                    case Null _:
-                        break;
-                    case InteropInterface _:
-                        return false;
-                    case Map map:
-                        if (items_checked.All(p => !ReferenceEquals(p, map)))
-                        {
-                            items_checked.Add(map);
-                            foreach (var pair in map)
-                            {
-                                size += pair.Key.Size;
-                                items_unchecked.Enqueue(pair.Value);
-                            }
-                        }
-                        break;
-                }
-                if (size > MaxNotificationSize) return false;
-                if (items_unchecked.Count == 0) return true;
-                state = items_unchecked.Dequeue();
-            }
-        }
 
         protected internal string GetPlatform()
         {
@@ -177,7 +131,11 @@ namespace Neo.SmartContract
         protected internal void RuntimeNotify(byte[] eventName, Array state)
         {
             if (eventName.Length > MaxEventName) throw new ArgumentException();
-            if (!CheckItemForNotification(state)) throw new ArgumentException();
+            using (MemoryStream ms = new MemoryStream(MaxNotificationSize))
+            using (BinaryWriter writer = new BinaryWriter(ms))
+            {
+                BinarySerializer.Serialize(writer, state, MaxNotificationSize);
+            }
             SendNotification(CurrentScriptHash, Utility.StrictUTF8.GetString(eventName), state);
         }
 

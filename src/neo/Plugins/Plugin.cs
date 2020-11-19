@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -19,6 +20,7 @@ namespace Neo.Plugins
         internal static readonly List<IP2PPlugin> P2PPlugins = new List<IP2PPlugin>();
         internal static readonly List<IMemoryPoolTxObserverPlugin> TxObserverPlugins = new List<IMemoryPoolTxObserverPlugin>();
 
+        private static ImmutableList<object> services = ImmutableList<object>.Empty;
         public static readonly string PluginsDirectory = Combine(GetDirectoryName(Assembly.GetEntryAssembly().Location), "Plugins");
         private static readonly FileSystemWatcher configWatcher;
         private static int suspend = 0;
@@ -58,6 +60,21 @@ namespace Neo.Plugins
             if (this is IApplicationEngineProvider provider) ApplicationEngine.SetApplicationEngineProvider(provider);
 
             Configure();
+        }
+
+        public static void AddService(object service)
+        {
+            services = services.Add(service);
+        }
+
+        private static bool CheckRequiredServices(Type type)
+        {
+            RequiredServicesAttribute attribute = type.GetCustomAttribute<RequiredServicesAttribute>();
+            if (attribute is null) return true;
+            foreach (Type rt in attribute.RequiredServices)
+                if (services.All(p => !rt.IsAssignableFrom(p.GetType())))
+                    return false;
+            return true;
         }
 
         protected virtual void Configure()
@@ -126,12 +143,18 @@ namespace Neo.Plugins
             return new ConfigurationBuilder().AddJsonFile(ConfigFile, optional: true).Build().GetSection("PluginConfiguration");
         }
 
+        protected static T GetService<T>()
+        {
+            return services.OfType<T>().FirstOrDefault();
+        }
+
         private static void LoadPlugin(Assembly assembly)
         {
             foreach (Type type in assembly.ExportedTypes)
             {
                 if (!type.IsSubclassOf(typeof(Plugin))) continue;
                 if (type.IsAbstract) continue;
+                if (!CheckRequiredServices(type)) continue;
 
                 ConstructorInfo constructor = type.GetConstructor(Type.EmptyTypes);
                 try
