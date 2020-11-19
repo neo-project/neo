@@ -150,7 +150,8 @@ namespace Neo.SmartContract.Native.Oracle
 
                 //Remove the request from storage
                 StorageKey key = CreateStorageKey(Prefix_Request).Add(response.Id);
-                OracleRequest request = engine.Snapshot.Storages[key].GetInteroperable<OracleRequest>();
+                OracleRequest request = engine.Snapshot.Storages.TryGet(key)?.GetInteroperable<OracleRequest>();
+                if (request == null) continue;
                 engine.Snapshot.Storages.Delete(key);
 
                 //Remove the id from IdList
