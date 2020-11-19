@@ -145,9 +145,6 @@ namespace Neo.SmartContract.Native.Oracle
                 OracleResponse response = tx.GetAttribute<OracleResponse>();
                 if (response is null) continue;
 
-                // Check tx state
-                if (engine.Snapshot.Transactions.TryGet(tx.Hash)?.VMState != VMState.HALT) continue;
-
                 //Remove the request from storage
                 StorageKey key = CreateStorageKey(Prefix_Request).Add(response.Id);
                 OracleRequest request = engine.Snapshot.Storages.TryGet(key)?.GetInteroperable<OracleRequest>();
