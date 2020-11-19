@@ -16,103 +16,101 @@ namespace Neo.Cryptography.MPT
 
         private bool TryDelete(ref MPTNode node, ReadOnlySpan<byte> path)
         {
-            switch (node)
+            switch (node.Type)
             {
-                case LeafNode ln:
+                case NodeType.LeafNode:
                     {
                         if (path.IsEmpty)
                         {
-                            node = MPTNode.EmptyNode;
-                            if (!full) DeleteNode(ln.Hash);
+                            if (!full) cache.DeleteNode(node.Hash);
+                            node = new MPTNode();
                             return true;
                         }
                         return false;
                     }
-                case ExtensionNode extensionNode:
+                case NodeType.ExtensionNode:
                     {
-                        if (path.StartsWith(extensionNode.Key))
+                        if (path.StartsWith(node.Key))
                         {
-                            var result = TryDelete(ref extensionNode.Next, path[extensionNode.Key.Length..]);
+                            var oldHash = node.Hash;
+                            var result = TryDelete(ref node.Next, path[node.Key.Length..]);
                             if (!result) return false;
-                            if (!full) DeleteNode(extensionNode.Hash);
-                            if (extensionNode.Next.IsEmpty)
+                            if (!full) cache.DeleteNode(oldHash);
+                            if (node.Next.IsEmpty)
                             {
-                                node = extensionNode.Next;
+                                node = node.Next;
                                 return true;
                             }
-                            if (extensionNode.Next is ExtensionNode sn)
+                            if (node.Next.Type == NodeType.ExtensionNode)
                             {
-                                extensionNode.Key = Concat(extensionNode.Key, sn.Key);
-                                extensionNode.Next = sn.Next;
-                                if (!full) DeleteNode(sn.Hash);
+                                if (!full) cache.DeleteNode(node.Next.Hash);
+                                node.Key = Concat(node.Key, node.Next.Key);
+                                node.Next = node.Next.Next;
                             }
-                            extensionNode.SetDirty();
-                            PutNode(extensionNode);
+                            node.SetDirty();
+                            cache.PutNode(node);
                             return true;
                         }
                         return false;
                     }
-                case BranchNode branchNode:
+                case NodeType.BranchNode:
                     {
                         bool result;
+                        var oldHash = node.Hash;
                         if (path.IsEmpty)
                         {
-                            result = TryDelete(ref branchNode.Children[BranchNode.ChildCount - 1], path);
+                            result = TryDelete(ref node.Children[MPTNode.BranchChildCount - 1], path);
                         }
                         else
                         {
-                            result = TryDelete(ref branchNode.Children[path[0]], path[1..]);
+                            result = TryDelete(ref node.Children[path[0]], path[1..]);
                         }
                         if (!result) return false;
-                        if (!full) DeleteNode(branchNode.Hash);
-                        List<byte> childrenIndexes = new List<byte>(BranchNode.ChildCount);
-                        for (int i = 0; i < BranchNode.ChildCount; i++)
+                        if (!full) cache.DeleteNode(oldHash);
+                        List<byte> childrenIndexes = new List<byte>(MPTNode.BranchChildCount);
+                        for (int i = 0; i < MPTNode.BranchChildCount; i++)
                         {
-                            if (branchNode.Children[i].IsEmpty) continue;
+                            if (node.Children[i].IsEmpty) continue;
                             childrenIndexes.Add((byte)i);
                         }
                         if (childrenIndexes.Count > 1)
                         {
-                            branchNode.SetDirty();
-                            PutNode(branchNode);
+                            node.SetDirty();
+                            cache.PutNode(node);
                             return true;
                         }
                         var lastChildIndex = childrenIndexes[0];
-                        var lastChild = branchNode.Children[lastChildIndex];
-                        if (lastChildIndex == BranchNode.ChildCount - 1)
+                        var lastChild = node.Children[lastChildIndex];
+                        if (lastChildIndex == MPTNode.BranchChildCount - 1)
                         {
                             node = lastChild;
                             return true;
                         }
-                        if (lastChild is HashNode hashNode)
+                        if (lastChild.Type == NodeType.HashNode)
                         {
-                            lastChild = Resolve(hashNode.Hash);
+                            lastChild = cache.Resolve(lastChild.Hash);
                             if (lastChild is null) throw new InvalidOperationException("Internal error, can't resolve hash");
                         }
-                        if (lastChild is ExtensionNode exNode)
+                        if (lastChild.Type == NodeType.ExtensionNode)
                         {
-                            if (!full) DeleteNode(exNode.Hash);
-                            exNode.Key = Concat(childrenIndexes.ToArray(), exNode.Key);
-                            exNode.SetDirty();
-                            PutNode(exNode);
-                            node = exNode;
+                            if (!full) cache.DeleteNode(lastChild.Hash);
+                            lastChild.Key = Concat(childrenIndexes.ToArray(), lastChild.Key);
+                            lastChild.SetDirty();
+                            cache.PutNode(lastChild);
+                            node = lastChild;
                             return true;
                         }
-                        node = new ExtensionNode()
-                        {
-                            Key = childrenIndexes.ToArray(),
-                            Next = lastChild,
-                        };
-                        PutNode(node);
+                        node = MPTNode.NewExtension(childrenIndexes.ToArray(), lastChild);
+                        cache.PutNode(node);
                         return true;
                     }
-                case HashNode hashNode:
+                case NodeType.Empty:
                     {
-                        if (hashNode.IsEmpty)
-                        {
-                            return false;
-                        }
-                        var newNode = Resolve(hashNode.Hash);
+                        return false;
+                    }
+                case NodeType.HashNode:
+                    {
+                        var newNode = cache.Resolve(node.Hash);
                         if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt delete");
                         node = newNode;
                         return TryDelete(ref node, path);

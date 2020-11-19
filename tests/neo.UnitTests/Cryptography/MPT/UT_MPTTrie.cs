@@ -104,7 +104,7 @@ namespace Neo.UnitTests.Cryptography.MPT
             store.Remove(StoreKey(prefix, key));
         }
 
-        public void Commit() { throw new System.NotImplementedException(); }
+        public void Commit() { throw new NotImplementedException(); }
 
         public bool Contains(byte prefix, byte[] key) { throw new System.NotImplementedException(); }
 
@@ -130,26 +130,26 @@ namespace Neo.UnitTests.Cryptography.MPT
 
         private void PutToStore(IStore store, MPTNode node)
         {
-            store.Put(0xf0, node.Hash.ToArray(), node.EncodeWithReference());
+            store.Put(0xf0, node.Hash.ToArray(), node.ToArray());
         }
 
         [TestInitialize]
         public void TestInit()
         {
-            var b = new BranchNode();
-            var r = new ExtensionNode { Key = "0a0c".HexToBytes(), Next = b };
-            var v1 = new LeafNode { Value = "abcd".HexToBytes() };//key=ac01
-            var v2 = new LeafNode { Value = "2222".HexToBytes() };//key=ac
-            var v3 = new LeafNode { Value = Encoding.ASCII.GetBytes("existing") };//key=acae
-            var v4 = new LeafNode { Value = Encoding.ASCII.GetBytes("missing") };
-            var h3 = new HashNode(v3.Hash);
-            var e1 = new ExtensionNode { Key = new byte[] { 0x01 }, Next = v1 };
-            var e3 = new ExtensionNode { Key = new byte[] { 0x0e }, Next = h3 };
-            var e4 = new ExtensionNode { Key = new byte[] { 0x01 }, Next = v4 };
+            var b = MPTNode.NewBranch();
+            var r = MPTNode.NewExtension("0a0c".HexToBytes(), b);
+            var v1 = MPTNode.NewLeaf("abcd".HexToBytes());//key=ac01
+            var v2 = MPTNode.NewLeaf("2222".HexToBytes());//key=ac
+            var v3 = MPTNode.NewLeaf(Encoding.ASCII.GetBytes("existing"));//key=acae
+            var v4 = MPTNode.NewLeaf(Encoding.ASCII.GetBytes("missing"));
+            var h3 = MPTNode.NewHash(v3.Hash);
+            var e1 = MPTNode.NewExtension(new byte[] { 0x01 }, v1);
+            var e3 = MPTNode.NewExtension(new byte[] { 0x0e }, h3);
+            var e4 = MPTNode.NewExtension(new byte[] { 0x01 }, v4);
             b.Children[0] = e1;
             b.Children[10] = e3;
             b.Children[16] = v2;
-            b.Children[15] = new HashNode(e4.Hash);
+            b.Children[15] = MPTNode.NewHash(e4.Hash);
             this.root = r;
             this.mptdb = new MemoryStore();
             PutToStore(mptdb, r);
@@ -195,8 +195,8 @@ namespace Neo.UnitTests.Cryptography.MPT
             Assert.AreEqual(root.Hash.ToString(), mpt.Root.Hash.ToString());
             Assert.IsFalse(mpt.Put(Array.Empty<byte>(), "01".HexToBytes()));
             Assert.IsFalse(mpt.Put("01".HexToBytes(), Array.Empty<byte>()));
-            Assert.IsFalse(mpt.Put(new byte[ExtensionNode.MaxKeyLength / 2 + 1], Array.Empty<byte>()));
-            Assert.IsFalse(mpt.Put("01".HexToBytes(), new byte[LeafNode.MaxValueLength + 1]));
+            Assert.IsFalse(mpt.Put(new byte[MPTNode.MaxKeyLength / 2 + 1], Array.Empty<byte>()));
+            Assert.IsFalse(mpt.Put("01".HexToBytes(), new byte[MPTNode.MaxValueLength + 1]));
             Assert.IsTrue(mpt.Put("ac01".HexToBytes(), "ab".HexToBytes()));
         }
 
@@ -219,7 +219,7 @@ namespace Neo.UnitTests.Cryptography.MPT
             Assert.IsTrue(mpt.Delete("ac".HexToBytes()));
             Assert.IsFalse(mpt.Delete("acae01".HexToBytes()));
             Assert.IsTrue(mpt.Delete("acae".HexToBytes()));
-            Assert.AreEqual("0x1741d4cb65bcf6700062f2acf2d74bb4657514b564ea8de969a267fe4198950e", mpt.Root.Hash.ToString());
+            Assert.AreEqual("0xcb06925428b7c727375c7fdd943a302fe2c818cf2e2eaf63a7932e3fd6cb3408", mpt.Root.Hash.ToString());
         }
 
         [TestMethod]
@@ -230,23 +230,27 @@ namespace Neo.UnitTests.Cryptography.MPT
             var mpt1 = new MPTTrie<TestKey, TestValue>(snapshot, null);
             Assert.IsTrue(mpt1.Put("ac00".HexToBytes(), "abcd".HexToBytes()));
             Assert.IsTrue(mpt1.Put("ac10".HexToBytes(), "abcd".HexToBytes()));
+            mpt1.Commit();
             snapshot.Commit();
-            var mpt2 = new MPTTrie<TestKey, TestValue>(store.GetSnapshot(), mpt1.Root.Hash);
+            var snapshot2 = store.GetSnapshot();
+            var mpt2 = new MPTTrie<TestKey, TestValue>(snapshot2, mpt1.Root.Hash);
             Assert.IsTrue(mpt2.Delete("ac00".HexToBytes()));
+            mpt2.Commit();
+            snapshot2.Commit();
             Assert.IsTrue(mpt2.Delete("ac10".HexToBytes()));
         }
 
         [TestMethod]
         public void TestDeleteRemainCantResolve()
         {
-            var b = new BranchNode();
-            var r = new ExtensionNode { Key = "0a0c".HexToBytes(), Next = b };
-            var v1 = new LeafNode { Value = "abcd".HexToBytes() };//key=ac01
-            var v4 = new LeafNode { Value = Encoding.ASCII.GetBytes("missing") };
-            var e1 = new ExtensionNode { Key = new byte[] { 0x01 }, Next = v1 };
-            var e4 = new ExtensionNode { Key = new byte[] { 0x01 }, Next = v4 };
+            var b = MPTNode.NewBranch();
+            var r = MPTNode.NewExtension("0a0c".HexToBytes(), b);
+            var v1 = MPTNode.NewLeaf("abcd".HexToBytes());//key=ac01
+            var v4 = MPTNode.NewLeaf(Encoding.ASCII.GetBytes("missing"));
+            var e1 = MPTNode.NewExtension(new byte[] { 0x01 }, v1);
+            var e4 = MPTNode.NewExtension(new byte[] { 0x01 }, v4);
             b.Children[0] = e1;
-            b.Children[15] = new HashNode(e4.Hash);
+            b.Children[15] = MPTNode.NewHash(e4.Hash);
             var store = new MemoryStore();
             PutToStore(store, r);
             PutToStore(store, b);
@@ -271,6 +275,7 @@ namespace Neo.UnitTests.Cryptography.MPT
             Assert.IsNotNull(mpt["ac02".HexToBytes()]);
             mpt.Delete("ac01".HexToBytes());
             Assert.IsNotNull(mpt["ac02".HexToBytes()]);
+            mpt.Commit();
             snapshot.Commit();
             var mpt0 = new MPTTrie<TestKey, TestValue>(store.GetSnapshot(), mpt.Root.Hash);
             Assert.IsNotNull(mpt0["ac02".HexToBytes()]);
@@ -284,40 +289,43 @@ namespace Neo.UnitTests.Cryptography.MPT
             Assert.IsTrue(mpt.Put("ac11".HexToBytes(), "ac11".HexToBytes()));
             Assert.IsTrue(mpt.Put("ac22".HexToBytes(), "ac22".HexToBytes()));
             Assert.IsTrue(mpt.Put("ac".HexToBytes(), "ac".HexToBytes()));
+            mpt.Commit();
             Assert.AreEqual(7, snapshot.Size);
             Assert.IsTrue(mpt.Delete("ac11".HexToBytes()));
+            mpt.Commit();
             Assert.AreEqual(5, snapshot.Size);
             Assert.IsTrue(mpt.Delete("ac22".HexToBytes()));
             Assert.IsNotNull(mpt["ac".HexToBytes()]);
+            mpt.Commit();
             Assert.AreEqual(2, snapshot.Size);
         }
 
         [TestMethod]
         public void TestGetProof()
         {
-            var b = new BranchNode();
-            var r = new ExtensionNode { Key = "0a0c".HexToBytes(), Next = b };
-            var v1 = new LeafNode { Value = "abcd".HexToBytes() };//key=ac01
-            var v2 = new LeafNode { Value = "2222".HexToBytes() };//key=ac
-            var v3 = new LeafNode { Value = Encoding.ASCII.GetBytes("existing") };//key=acae
-            var v4 = new LeafNode { Value = Encoding.ASCII.GetBytes("missing") };
-            var h3 = new HashNode(v3.Hash);
-            var e1 = new ExtensionNode { Key = new byte[] { 0x01 }, Next = v1 };
-            var e3 = new ExtensionNode { Key = new byte[] { 0x0e }, Next = h3 };
-            var e4 = new ExtensionNode { Key = new byte[] { 0x01 }, Next = v4 };
+            var b = MPTNode.NewBranch();
+            var r = MPTNode.NewExtension("0a0c".HexToBytes(), b);
+            var v1 = MPTNode.NewLeaf("abcd".HexToBytes());//key=ac01
+            var v2 = MPTNode.NewLeaf("2222".HexToBytes());//key=ac
+            var v3 = MPTNode.NewLeaf(Encoding.ASCII.GetBytes("existing"));//key=acae
+            var v4 = MPTNode.NewLeaf(Encoding.ASCII.GetBytes("missing"));
+            var h3 = MPTNode.NewHash(v3.Hash);
+            var e1 = MPTNode.NewExtension(new byte[] { 0x01 }, v1);
+            var e3 = MPTNode.NewExtension(new byte[] { 0x0e }, h3);
+            var e4 = MPTNode.NewExtension(new byte[] { 0x01 }, v4);
             b.Children[0] = e1;
             b.Children[10] = e3;
             b.Children[16] = v2;
-            b.Children[15] = new HashNode(e4.Hash);
+            b.Children[15] = MPTNode.NewHash(e4.Hash);
 
             var mpt = new MPTTrie<TestKey, TestValue>(mptdb.GetSnapshot(), r.Hash);
             Assert.AreEqual(r.Hash.ToString(), mpt.Root.Hash.ToString());
             HashSet<byte[]> proof = mpt.GetProof("ac01".HexToBytes());
             Assert.AreEqual(4, proof.Count);
-            Assert.IsTrue(proof.Contains(b.Encode()));
-            Assert.IsTrue(proof.Contains(r.Encode()));
-            Assert.IsTrue(proof.Contains(e1.Encode()));
-            Assert.IsTrue(proof.Contains(v1.Encode()));
+            Assert.IsTrue(proof.Contains(b.ToArrayWithoutReference()));
+            Assert.IsTrue(proof.Contains(r.ToArrayWithoutReference()));
+            Assert.IsTrue(proof.Contains(e1.ToArrayWithoutReference()));
+            Assert.IsTrue(proof.Contains(v1.ToArrayWithoutReference()));
 
             proof = mpt.GetProof("ac".HexToBytes());
             Assert.AreEqual(3, proof.Count());
@@ -405,14 +413,14 @@ namespace Neo.UnitTests.Cryptography.MPT
         [TestMethod]
         public void TestFindCantResolve()
         {
-            var b = new BranchNode();
-            var r = new ExtensionNode { Key = "0a0c".HexToBytes(), Next = b };
-            var v1 = new LeafNode { Value = "abcd".HexToBytes() };//key=ac01
-            var v4 = new LeafNode { Value = Encoding.ASCII.GetBytes("missing") };
-            var e1 = new ExtensionNode { Key = new byte[] { 0x01 }, Next = v1 };
-            var e4 = new ExtensionNode { Key = new byte[] { 0x01 }, Next = v4 };
+            var b = MPTNode.NewBranch();
+            var r = MPTNode.NewExtension("0a0c".HexToBytes(), b);
+            var v1 = MPTNode.NewLeaf("abcd".HexToBytes());//key=ac01
+            var v4 = MPTNode.NewLeaf(Encoding.ASCII.GetBytes("missing"));
+            var e1 = MPTNode.NewExtension(new byte[] { 0x01 }, v1);
+            var e4 = MPTNode.NewExtension(new byte[] { 0x01 }, v4);
             b.Children[0] = e1;
-            b.Children[15] = new HashNode(e4.Hash);
+            b.Children[15] = MPTNode.NewHash(e4.Hash);
             var store = new MemoryStore();
             PutToStore(store, r);
             PutToStore(store, b);
@@ -442,11 +450,11 @@ namespace Neo.UnitTests.Cryptography.MPT
         [TestMethod]
         public void TestFromNibblesException()
         {
-            var b = new BranchNode();
-            var r = new ExtensionNode { Key = "0c".HexToBytes(), Next = b };
-            var v1 = new LeafNode { Value = "abcd".HexToBytes() };//key=ac01
-            var v2 = new LeafNode { Value = "2222".HexToBytes() };//key=ac
-            var e1 = new ExtensionNode { Key = new byte[] { 0x01 }, Next = v1 };
+            var b = MPTNode.NewBranch();
+            var r = MPTNode.NewExtension("0c".HexToBytes(), b);
+            var v1 = MPTNode.NewLeaf("abcd".HexToBytes());//key=ac01
+            var v2 = MPTNode.NewLeaf("2222".HexToBytes());//key=ac
+            var e1 = MPTNode.NewExtension(new byte[] { 0x01 }, v1);
             b.Children[0] = e1;
             b.Children[16] = v2;
             var store = new MemoryStore();
@@ -462,7 +470,7 @@ namespace Neo.UnitTests.Cryptography.MPT
         }
 
         [TestMethod]
-        public void TestReference()
+        public void TestReference1()
         {
             var store = new MemoryStore();
             var snapshot = store.GetSnapshot();
@@ -470,15 +478,110 @@ namespace Neo.UnitTests.Cryptography.MPT
             mpt.Put("a101".HexToBytes(), "01".HexToBytes());
             mpt.Put("a201".HexToBytes(), "01".HexToBytes());
             mpt.Put("a301".HexToBytes(), "01".HexToBytes());
+            mpt.Commit();
             snapshot.Commit();
             var snapshot1 = store.GetSnapshot();
             var mpt1 = new MPTTrie<TestKey, TestValue>(snapshot1, mpt.Root.Hash);
             mpt1.Delete("a301".HexToBytes());
+            mpt1.Commit();
             snapshot1.Commit();
             var snapshot2 = store.GetSnapshot();
             var mpt2 = new MPTTrie<TestKey, TestValue>(snapshot2, mpt1.Root.Hash);
             mpt2.Delete("a201".HexToBytes());
             Assert.AreEqual("01", mpt2["a101".HexToBytes()]?.ToArray().ToHexString());
+        }
+
+        [TestMethod]
+        public void TestReference2()
+        {
+            var snapshot = new TestSnapshot();
+            var mpt = new MPTTrie<TestKey, TestValue>(snapshot, null);
+            mpt.Put("a101".HexToBytes(), "01".HexToBytes());
+            mpt.Put("a201".HexToBytes(), "01".HexToBytes());
+            mpt.Put("a301".HexToBytes(), "01".HexToBytes());
+            mpt.Commit();
+            Assert.AreEqual(4, snapshot.Size);
+            mpt.Delete("a301".HexToBytes());
+            mpt.Commit();
+            Assert.AreEqual(4, snapshot.Size);
+            mpt.Delete("a201".HexToBytes());
+            mpt.Commit();
+            Assert.AreEqual(2, snapshot.Size);
+            Assert.AreEqual("01", mpt["a101".HexToBytes()].ToArray().ToHexString());
+        }
+
+
+        [TestMethod]
+        public void TestExtensionDeleteDirty()
+        {
+            var snapshot = new TestSnapshot();
+            var mpt = new MPTTrie<TestKey, TestValue>(snapshot, null);
+            mpt.Put("a1".HexToBytes(), "01".HexToBytes());
+            mpt.Put("a2".HexToBytes(), "02".HexToBytes());
+            mpt.Commit();
+            Assert.AreEqual(4, snapshot.Size);
+            var mpt1 = new MPTTrie<TestKey, TestValue>(snapshot, mpt.Root.Hash);
+            mpt1.Delete("a1".HexToBytes());
+            mpt1.Commit();
+            Assert.AreEqual(2, snapshot.Size);
+            var mpt2 = new MPTTrie<TestKey, TestValue>(snapshot, mpt1.Root.Hash);
+            mpt2.Delete("a2".HexToBytes());
+            mpt2.Commit();
+            Assert.AreEqual(0, snapshot.Size);
+        }
+
+        [TestMethod]
+        public void TestBranchDeleteDirty()
+        {
+            var snapshot = new TestSnapshot();
+            var mpt = new MPTTrie<TestKey, TestValue>(snapshot, null);
+            mpt.Put("10".HexToBytes(), "01".HexToBytes());
+            mpt.Put("20".HexToBytes(), "02".HexToBytes());
+            mpt.Put("30".HexToBytes(), "03".HexToBytes());
+            mpt.Commit();
+            Assert.AreEqual(7, snapshot.Size);
+            var mpt1 = new MPTTrie<TestKey, TestValue>(snapshot, mpt.Root.Hash);
+            mpt1.Delete("10".HexToBytes());
+            mpt1.Commit();
+            Assert.AreEqual(5, snapshot.Size);
+            var mpt2 = new MPTTrie<TestKey, TestValue>(snapshot, mpt1.Root.Hash);
+            mpt2.Delete("20".HexToBytes());
+            mpt2.Commit();
+            Assert.AreEqual(2, snapshot.Size);
+            var mpt3 = new MPTTrie<TestKey, TestValue>(snapshot, mpt2.Root.Hash);
+            mpt3.Delete("30".HexToBytes());
+            mpt3.Commit();
+            Assert.AreEqual(0, snapshot.Size);
+        }
+
+        [TestMethod]
+        public void TestExtensionPutDirty()
+        {
+            var snapshot = new TestSnapshot();
+            var mpt = new MPTTrie<TestKey, TestValue>(snapshot, null);
+            mpt.Put("a1".HexToBytes(), "01".HexToBytes());
+            mpt.Put("a2".HexToBytes(), "02".HexToBytes());
+            mpt.Commit();
+            Assert.AreEqual(4, snapshot.Size);
+            var mpt1 = new MPTTrie<TestKey, TestValue>(snapshot, mpt.Root.Hash);
+            mpt1.Put("a3".HexToBytes(), "03".HexToBytes());
+            mpt1.Commit();
+            Assert.AreEqual(5, snapshot.Size);
+        }
+
+        [TestMethod]
+        public void TestBranchPutDirty()
+        {
+            var snapshot = new TestSnapshot();
+            var mpt = new MPTTrie<TestKey, TestValue>(snapshot, null);
+            mpt.Put("10".HexToBytes(), "01".HexToBytes());
+            mpt.Put("20".HexToBytes(), "02".HexToBytes());
+            mpt.Commit();
+            Assert.AreEqual(5, snapshot.Size);
+            var mpt1 = new MPTTrie<TestKey, TestValue>(snapshot, mpt.Root.Hash);
+            mpt1.Put("30".HexToBytes(), "03".HexToBytes());
+            mpt1.Commit();
+            Assert.AreEqual(7, snapshot.Size);
         }
     }
 }

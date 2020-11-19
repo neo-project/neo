@@ -10,49 +10,50 @@ namespace Neo.Cryptography.MPT
     {
         private ReadOnlySpan<byte> Seek(ref MPTNode node, ReadOnlySpan<byte> path, out MPTNode start)
         {
-            switch (node)
+            switch (node.Type)
             {
-                case LeafNode leafNode:
+                case NodeType.LeafNode:
                     {
                         if (path.IsEmpty)
                         {
-                            start = leafNode;
+                            start = node;
                             return ReadOnlySpan<byte>.Empty;
                         }
                         break;
                     }
-                case HashNode hashNode:
+                case NodeType.Empty:
+                    break;
+                case NodeType.HashNode:
                     {
-                        if (hashNode.IsEmpty) break;
-                        var newNode = Resolve(hashNode.Hash);
+                        var newNode = cache.Resolve(node.Hash);
                         if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt seek");
                         node = newNode;
                         return Seek(ref node, path, out start);
                     }
-                case BranchNode branchNode:
+                case NodeType.BranchNode:
                     {
                         if (path.IsEmpty)
                         {
-                            start = branchNode;
+                            start = node;
                             return ReadOnlySpan<byte>.Empty;
                         }
-                        return Concat(path[..1], Seek(ref branchNode.Children[path[0]], path[1..], out start));
+                        return Concat(path[..1], Seek(ref node.Children[path[0]], path[1..], out start));
                     }
-                case ExtensionNode extensionNode:
+                case NodeType.ExtensionNode:
                     {
                         if (path.IsEmpty)
                         {
-                            start = extensionNode.Next;
-                            return extensionNode.Key;
+                            start = node.Next;
+                            return node.Key;
                         }
-                        if (path.StartsWith(extensionNode.Key))
+                        if (path.StartsWith(node.Key))
                         {
-                            return Concat(extensionNode.Key, Seek(ref extensionNode.Next, path[extensionNode.Key.Length..], out start));
+                            return Concat(node.Key, Seek(ref node.Next, path[node.Key.Length..], out start));
                         }
-                        if (extensionNode.Key.AsSpan().StartsWith(path))
+                        if (node.Key.AsSpan().StartsWith(path))
                         {
-                            start = extensionNode.Next;
-                            return extensionNode.Key;
+                            start = node.Next;
+                            return node.Key;
                         }
                         break;
                     }
@@ -72,35 +73,36 @@ namespace Neo.Cryptography.MPT
         private IEnumerable<(byte[] Key, byte[] Value)> Travers(MPTNode node, byte[] path)
         {
             if (node is null) yield break;
-            switch (node)
+            switch (node.Type)
             {
-                case LeafNode leafNode:
+                case NodeType.LeafNode:
                     {
-                        yield return (path, (byte[])leafNode.Value.Clone());
+                        yield return (path, (byte[])node.Value.Clone());
                         break;
                     }
-                case HashNode hashNode:
+                case NodeType.Empty:
+                    break;
+                case NodeType.HashNode:
                     {
-                        if (hashNode.IsEmpty) break;
-                        var newNode = Resolve(hashNode.Hash);
+                        var newNode = cache.Resolve(node.Hash);
                         if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt find");
                         node = newNode;
                         foreach (var item in Travers(node, path))
                             yield return item;
                         break;
                     }
-                case BranchNode branchNode:
+                case NodeType.BranchNode:
                     {
-                        for (int i = 0; i < BranchNode.ChildCount; i++)
+                        for (int i = 0; i < MPTNode.BranchChildCount; i++)
                         {
-                            foreach (var item in Travers(branchNode.Children[i], i == BranchNode.ChildCount - 1 ? path : Concat(path, new byte[] { (byte)i })))
+                            foreach (var item in Travers(node.Children[i], i == MPTNode.BranchChildCount - 1 ? path : Concat(path, new byte[] { (byte)i })))
                                 yield return item;
                         }
                         break;
                     }
-                case ExtensionNode extensionNode:
+                case NodeType.ExtensionNode:
                     {
-                        foreach (var item in Travers(extensionNode.Next, Concat(path, extensionNode.Key)))
+                        foreach (var item in Travers(node.Next, Concat(path, node.Key)))
                             yield return item;
                         break;
                     }

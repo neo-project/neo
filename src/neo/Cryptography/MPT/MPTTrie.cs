@@ -1,5 +1,4 @@
 using Neo.IO;
-using Neo.IO.Caching;
 using Neo.Persistence;
 using System;
 
@@ -13,20 +12,15 @@ namespace Neo.Cryptography.MPT
         private readonly bool full;
         private readonly ISnapshot store;
         private MPTNode root;
-
+        private readonly MPTCache cache;
         public MPTNode Root => root;
 
         public MPTTrie(ISnapshot store, UInt256 root, bool full_state = false)
         {
             this.store = store ?? throw new ArgumentNullException();
-            this.root = root is null ? MPTNode.EmptyNode : new HashNode(root);
+            this.cache = new MPTCache(store, Prefix);
+            this.root = root is null ? new MPTNode() : MPTNode.NewHash(root);
             this.full = full_state;
-        }
-
-        private MPTNode Resolve(UInt256 hash)
-        {
-            var data = store.TryGet(Prefix, hash.ToArray());
-            return MPTNode.Decode(data);
         }
 
         private static byte[] ToNibbles(ReadOnlySpan<byte> path)
@@ -52,31 +46,9 @@ namespace Neo.Cryptography.MPT
             return key;
         }
 
-        private void PutNode(MPTNode np)
+        public void Commit()
         {
-            var n = Resolve(np.Hash);
-            if (n is null)
-            {
-                np.Reference = 1;
-            }
-            else
-            {
-                n.Reference++;
-            }
-            store.Put(Prefix, np.Hash.ToArray(), np.EncodeWithReference());
-        }
-
-        private void DeleteNode(UInt256 hash)
-        {
-            var n = Resolve(hash);
-            if (n is null) return;
-            if (1 < n.Reference)
-            {
-                n.Reference--;
-                store.Put(Prefix, hash.ToArray(), n.EncodeWithReference());
-                return;
-            }
-            store.Delete(Prefix, hash.ToArray());
+            cache.Commit();
         }
     }
 }

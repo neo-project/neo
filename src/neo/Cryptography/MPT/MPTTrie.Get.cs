@@ -1,6 +1,5 @@
 using Neo.IO;
 using System;
-using System.Collections.Generic;
 
 namespace Neo.Cryptography.MPT
 {
@@ -19,38 +18,39 @@ namespace Neo.Cryptography.MPT
 
         private bool TryGet(ref MPTNode node, ReadOnlySpan<byte> path, out ReadOnlySpan<byte> value)
         {
-            switch (node)
+            switch (node.Type)
             {
-                case LeafNode leafNode:
+                case NodeType.LeafNode:
                     {
                         if (path.IsEmpty)
                         {
-                            value = leafNode.Value;
+                            value = node.Value;
                             return true;
                         }
                         break;
                     }
-                case HashNode hashNode:
+                case NodeType.Empty:
+                    break;
+                case NodeType.HashNode:
                     {
-                        if (hashNode.IsEmpty) break;
-                        var newNode = Resolve(hashNode.Hash);
+                        var newNode = cache.Resolve(node.Hash);
                         if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt get");
                         node = newNode;
                         return TryGet(ref node, path, out value);
                     }
-                case BranchNode branchNode:
+                case NodeType.BranchNode:
                     {
                         if (path.IsEmpty)
                         {
-                            return TryGet(ref branchNode.Children[BranchNode.ChildCount - 1], path, out value);
+                            return TryGet(ref node.Children[MPTNode.BranchChildCount - 1], path, out value);
                         }
-                        return TryGet(ref branchNode.Children[path[0]], path[1..], out value);
+                        return TryGet(ref node.Children[path[0]], path[1..], out value);
                     }
-                case ExtensionNode extensionNode:
+                case NodeType.ExtensionNode:
                     {
-                        if (path.StartsWith(extensionNode.Key))
+                        if (path.StartsWith(node.Key))
                         {
-                            return TryGet(ref extensionNode.Next, path[extensionNode.Key.Length..], out value);
+                            return TryGet(ref node.Next, path[node.Key.Length..], out value);
                         }
                         break;
                     }

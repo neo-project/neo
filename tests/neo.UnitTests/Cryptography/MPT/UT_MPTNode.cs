@@ -1,60 +1,147 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography;
 using Neo.Cryptography.MPT;
-using System;
+using Neo.IO;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Neo.UnitTests.Cryptography.MPT
 {
+
     [TestClass]
     public class UT_MPTNode
     {
-        [TestMethod]
-        public void TestDecode()
+        private byte[] NodeToArrayAsChild(MPTNode n)
         {
-            var n = new LeafNode
+            using var ms = new MemoryStream();
+            using var writer = new BinaryWriter(ms, Utility.StrictUTF8);
+
+            n.SerializeAsChild(writer);
+            writer.Flush();
+            return ms.ToArray();
+        }
+
+        [TestMethod]
+        public void TestHashSerialize()
+        {
+            var n = MPTNode.NewHash(UInt256.Zero);
+            var expect = "030000000000000000000000000000000000000000000000000000000000000000";
+            Assert.AreEqual(expect, n.ToArray().ToHexString());
+            Assert.AreEqual(expect, NodeToArrayAsChild(n).ToHexString());
+        }
+
+        [TestMethod]
+        public void TestEmptySerialize()
+        {
+            var n = new MPTNode();
+            var expect = "04";
+            Assert.AreEqual(expect, n.ToArray().ToHexString());
+            Assert.AreEqual(expect, NodeToArrayAsChild(n).ToHexString());
+        }
+
+        [TestMethod]
+        public void TestLeafSerialize()
+        {
+            var n = MPTNode.NewLeaf(Encoding.ASCII.GetBytes("leaf"));
+            var expect = "02" + "04" + Encoding.ASCII.GetBytes("leaf").ToHexString();
+            Assert.AreEqual(expect, n.ToArrayWithoutReference().ToHexString());
+            expect += "01";
+            Assert.AreEqual(expect, n.ToArray().ToHexString());
+            Assert.AreEqual(7, n.Size);
+        }
+
+        [TestMethod]
+        public void TestLeafSerializeAsChild()
+        {
+            var l = MPTNode.NewLeaf(Encoding.ASCII.GetBytes("leaf"));
+            var expect = "03" + Crypto.Hash256(new byte[] { 0x02, 0x04 }.Concat(Encoding.ASCII.GetBytes("leaf")).ToArray()).ToHexString();
+            Assert.AreEqual(expect, NodeToArrayAsChild(l).ToHexString());
+        }
+
+        [TestMethod]
+        public void TestExtensionSerialize()
+        {
+            var e = MPTNode.NewExtension("010a".HexToBytes(), new MPTNode());
+            var expect = "01" + "02" + "010a" + "04";
+            Assert.AreEqual(expect, e.ToArrayWithoutReference().ToHexString());
+            expect += "01";
+            Assert.AreEqual(expect, e.ToArray().ToHexString());
+            Assert.AreEqual(6, e.Size);
+        }
+
+        [TestMethod]
+        public void TestExtensionSerializeAsChild()
+        {
+            var e = MPTNode.NewExtension("010a".HexToBytes(), new MPTNode());
+            var expect = "03" + Crypto.Hash256(new byte[] { 0x01, 0x02, 0x01, 0x0a, 0x04
+             }).ToHexString();
+            Assert.AreEqual(expect, NodeToArrayAsChild(e).ToHexString());
+        }
+
+        [TestMethod]
+        public void TestBranchSerialize()
+        {
+            var n = MPTNode.NewBranch();
+            n.Children[1] = MPTNode.NewLeaf(Encoding.ASCII.GetBytes("leaf1"));
+            n.Children[10] = MPTNode.NewLeaf(Encoding.ASCII.GetBytes("leafa"));
+            var expect = "00";
+            for (int i = 0; i < MPTNode.BranchChildCount; i++)
             {
-                Value = Encoding.ASCII.GetBytes("hello")
-            };
-            var code = n.EncodeWithReference();
-            var m = MPTNode.Decode(code);
-            Assert.IsInstanceOfType(m, n.GetType());
+                if (i == 1)
+                    expect += "03" + Crypto.Hash256(new byte[] { 0x02, 0x05 }.Concat(Encoding.ASCII.GetBytes("leaf1")).ToArray()).ToHexString();
+                else if (i == 10)
+                    expect += "03" + Crypto.Hash256(new byte[] { 0x02, 0x05 }.Concat(Encoding.ASCII.GetBytes("leafa")).ToArray()).ToHexString();
+                else
+                    expect += "04";
+            }
+            expect += "01";
+            Assert.AreEqual(expect, n.ToArray().ToHexString());
+            Assert.AreEqual(83, n.Size);
         }
 
         [TestMethod]
-        public void TestHashNode()
+        public void TestBranchSerializeAsChild()
         {
-            var hn = new HashNode(null);
-            var data = hn.Encode();
-            Assert.AreEqual("0200", data.ToHexString());
+            var n = MPTNode.NewBranch();
+            var data = new List<byte>();
+            data.Add(0x00);
+            for (int i = 0; i < MPTNode.BranchChildCount; i++)
+            {
+                data.Add(0x04);
+            }
+            var expect = "03" + Crypto.Hash256(data.ToArray()).ToHexString();
+            Assert.AreEqual(expect, NodeToArrayAsChild(n).ToHexString());
         }
 
         [TestMethod]
-        public void TestHashNodeDecode1()
+        public void TestCloneBranch()
         {
-            var data = new byte[] { 2, 0, 0 };
-            var h = MPTNode.Decode(data);
-            Assert.AreEqual(null, h.Hash);
+            var l = MPTNode.NewLeaf(Encoding.ASCII.GetBytes("leaf"));
+            var n = MPTNode.NewBranch();
+            var n1 = n.Clone();
+            n1.Children[0] = l;
+            Assert.IsTrue(n.Children[0].IsEmpty);
         }
 
         [TestMethod]
-        public void TestHashNodeDecode2()
+        public void TestCloneExtension()
         {
-            var data = new byte[] { 2, 1, 0, 0 };
-            Assert.ThrowsException<FormatException>(() => MPTNode.Decode(data));
+            var l = MPTNode.NewLeaf(Encoding.ASCII.GetBytes("leaf"));
+            var n = MPTNode.NewExtension(new byte[] { 0x01 }, new MPTNode());
+            var n1 = n.Clone();
+            n1.Next = l;
+            Assert.IsTrue(n.Next.IsEmpty);
         }
 
         [TestMethod]
-        public void TestHashNodeDecode3()
+        public void TestCloneLeaf()
         {
-            var hn = new HashNode(UInt256.Zero);
-            Assert.AreEqual(UInt256.Zero, MPTNode.Decode(hn.EncodeWithReference()).Hash);
-        }
-
-        [TestMethod]
-        public void TestDecodeException()
-        {
-            var data = new byte[] { 4, 0, 0 };
-            Assert.ThrowsException<InvalidOperationException>(() => MPTNode.Decode(data));
+            var l = MPTNode.NewLeaf(Encoding.ASCII.GetBytes("leaf"));
+            var n = l.Clone();
+            n.Value = Encoding.ASCII.GetBytes("value");
+            Assert.AreEqual("leaf", Encoding.ASCII.GetString(l.Value));
         }
     }
 }

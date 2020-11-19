@@ -1,6 +1,5 @@
 using Neo.IO;
 using System;
-using System.Collections.Generic;
 
 namespace Neo.Cryptography.MPT
 {
@@ -24,92 +23,85 @@ namespace Neo.Cryptography.MPT
         {
             var path = ToNibbles(key.ToArray());
             var val = value.ToArray();
-            if (path.Length == 0 || path.Length > ExtensionNode.MaxKeyLength)
+            if (path.Length == 0 || path.Length > MPTNode.MaxKeyLength)
                 return false;
-            if (val.Length > LeafNode.MaxValueLength)
+            if (val.Length > MPTNode.MaxValueLength)
                 return false;
             if (val.Length == 0)
                 return TryDelete(ref root, path);
-            var n = new LeafNode(val);
+            var n = MPTNode.NewLeaf(val);
             return Put(ref root, path, n);
         }
 
         private bool Put(ref MPTNode node, ReadOnlySpan<byte> path, MPTNode val)
         {
-            switch (node)
+            switch (node.Type)
             {
-                case LeafNode leafNode:
+                case NodeType.LeafNode:
                     {
-                        if (val is LeafNode v)
+                        if (val.Type == NodeType.LeafNode)
                         {
                             if (path.IsEmpty)
                             {
-                                node = v;
-                                PutNode(node);
-                                if (!full) DeleteNode(leafNode.Hash);
+                                if (!full) cache.DeleteNode(node.Hash);
+                                node = val;
+                                cache.PutNode(node);
                                 return true;
                             }
-                            var branch = new BranchNode();
-                            branch.Children[BranchNode.ChildCount - 1] = leafNode;
-                            Put(ref branch.Children[path[0]], path[1..], v);
-                            PutNode(branch);
+                            var branch = MPTNode.NewBranch();
+                            branch.Children[MPTNode.BranchChildCount - 1] = node;
+                            Put(ref branch.Children[path[0]], path[1..], val);
+                            cache.PutNode(branch);
                             node = branch;
                             return true;
                         }
                         return false;
                     }
-                case ExtensionNode extensionNode:
+                case NodeType.ExtensionNode:
                     {
-                        if (path.StartsWith(extensionNode.Key))
+                        if (path.StartsWith(node.Key))
                         {
-                            var result = Put(ref extensionNode.Next, path[extensionNode.Key.Length..], val);
+                            var oldHash = node.Hash;
+                            var result = Put(ref node.Next, path[node.Key.Length..], val);
                             if (result)
                             {
-                                if (!full) DeleteNode(extensionNode.Hash);
-                                extensionNode.SetDirty();
-                                PutNode(extensionNode);
+                                if (!full) cache.DeleteNode(oldHash);
+                                node.SetDirty();
+                                cache.PutNode(node);
                             }
                             return result;
                         }
-                        if (!full) DeleteNode(extensionNode.Hash);
-                        var prefix = CommonPrefix(extensionNode.Key, path);
+                        if (!full) cache.DeleteNode(node.Hash);
+                        var prefix = CommonPrefix(node.Key, path);
                         var pathRemain = path[prefix.Length..];
-                        var keyRemain = extensionNode.Key.AsSpan(prefix.Length);
-                        var child = new BranchNode();
-                        MPTNode grandChild = MPTNode.EmptyNode;
+                        var keyRemain = node.Key.AsSpan(prefix.Length);
+                        var child = MPTNode.NewBranch();
+                        MPTNode grandChild = new MPTNode();
                         if (keyRemain.Length == 1)
                         {
-                            child.Children[keyRemain[0]] = extensionNode.Next;
+                            child.Children[keyRemain[0]] = node.Next;
                         }
                         else
                         {
-                            var exNode = new ExtensionNode
-                            {
-                                Key = keyRemain[1..].ToArray(),
-                                Next = extensionNode.Next,
-                            };
-                            PutNode(exNode);
+                            var exNode = MPTNode.NewExtension(keyRemain[1..].ToArray(), node.Next);
+                            cache.PutNode(exNode);
                             child.Children[keyRemain[0]] = exNode;
                         }
                         if (pathRemain.IsEmpty)
                         {
                             Put(ref grandChild, pathRemain, val);
-                            child.Children[BranchNode.ChildCount - 1] = grandChild;
+                            child.Children[MPTNode.BranchChildCount - 1] = grandChild;
                         }
                         else
                         {
                             Put(ref grandChild, pathRemain[1..], val);
                             child.Children[pathRemain[0]] = grandChild;
                         }
-                        PutNode(child);
+                        cache.PutNode(child);
                         if (prefix.Length > 0)
                         {
-                            var exNode = new ExtensionNode()
-                            {
-                                Key = prefix.ToArray(),
-                                Next = child,
-                            };
-                            PutNode(exNode);
+                            var exNode = MPTNode.NewExtension(prefix.ToArray(), child);
+                            cache.PutNode(exNode);
                             node = exNode;
                         }
                         else
@@ -118,48 +110,45 @@ namespace Neo.Cryptography.MPT
                         }
                         return true;
                     }
-                case BranchNode branchNode:
+                case NodeType.BranchNode:
                     {
                         bool result;
+                        var oldHash = node.Hash;
                         if (path.IsEmpty)
                         {
-                            result = Put(ref branchNode.Children[BranchNode.ChildCount - 1], path, val);
+                            result = Put(ref node.Children[MPTNode.BranchChildCount - 1], path, val);
                         }
                         else
                         {
-                            result = Put(ref branchNode.Children[path[0]], path[1..], val);
+                            result = Put(ref node.Children[path[0]], path[1..], val);
                         }
                         if (result)
                         {
-                            if (!full) DeleteNode(branchNode.Hash);
-                            branchNode.SetDirty();
-                            PutNode(branchNode);
+                            if (!full) cache.DeleteNode(oldHash);
+                            node.SetDirty();
+                            cache.PutNode(node);
                         }
                         return result;
                     }
-                case HashNode hashNode:
+                case NodeType.Empty:
                     {
                         MPTNode newNode;
-                        if (hashNode.IsEmpty)
+                        if (path.IsEmpty)
                         {
-                            if (path.IsEmpty)
-                            {
-                                newNode = val;
-                            }
-                            else
-                            {
-                                newNode = new ExtensionNode()
-                                {
-                                    Key = path.ToArray(),
-                                    Next = val,
-                                };
-                                PutNode(newNode);
-                            }
-                            node = newNode;
-                            if (val is LeafNode) PutNode(val);
-                            return true;
+                            newNode = val;
                         }
-                        newNode = Resolve(hashNode.Hash);
+                        else
+                        {
+                            newNode = MPTNode.NewExtension(path.ToArray(), val);
+                            cache.PutNode(newNode);
+                        }
+                        node = newNode;
+                        if (val.Type == NodeType.LeafNode) cache.PutNode(val);
+                        return true;
+                    }
+                case NodeType.HashNode:
+                    {
+                        MPTNode newNode = cache.Resolve(node.Hash);
                         if (newNode is null) throw new InvalidOperationException("Internal error, can't resolve hash when mpt put");
                         node = newNode;
                         return Put(ref node, path, val);
