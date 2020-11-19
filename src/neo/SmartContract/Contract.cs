@@ -75,13 +75,14 @@ namespace Neo.SmartContract
                 throw new ArgumentException();
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitPush(m);
+                sb.EmitPush(m); // Signatures
+                sb.EmitPush(m); // m
                 foreach (ECPoint publicKey in publicKeys.OrderBy(p => p))
                 {
                     sb.EmitPush(publicKey.EncodePoint(true));
                 }
-                sb.EmitPush(publicKeys.Length);
-                sb.Emit(OpCode.PUSHNULL);
+                sb.EmitPush(publicKeys.Length); // PubKeys
+                sb.Emit(OpCode.PUSHNULL);       // Message
                 sb.EmitSysCall(ApplicationEngine.Neo_Crypto_CheckMultisigWithECDsaSecp256r1);
                 return sb.ToArray();
             }
