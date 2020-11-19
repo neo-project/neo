@@ -6,14 +6,15 @@ namespace Neo.Cryptography.MPT
     public partial class MPTNode : ICloneable<MPTNode>, ISerializable
     {
         public const int BranchChildCount = 17;
-        public readonly MPTNode[] Children = new MPTNode[BranchChildCount];
+        public MPTNode[] Children;
 
         public static MPTNode NewBranch()
         {
             var n = new MPTNode
             {
                 type = NodeType.BranchNode,
-                Reference = 1
+                Reference = 1,
+                Children = new MPTNode[BranchChildCount],
             };
             for (int i = 0; i < BranchChildCount; i++)
             {
@@ -45,6 +46,7 @@ namespace Neo.Cryptography.MPT
 
         private void DeserializeBranch(BinaryReader reader)
         {
+            Children = new MPTNode[BranchChildCount];
             for (int i = 0; i < BranchChildCount; i++)
             {
                 var n = new MPTNode();

@@ -174,6 +174,7 @@ namespace Neo.Cryptography.MPT
                     {
                         type = type,
                         Reference = Reference,
+                        Children = new MPTNode[BranchChildCount],
                     };
                     for (int i = 0; i < BranchChildCount; i++)
                     {
