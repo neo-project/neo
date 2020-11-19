@@ -162,9 +162,9 @@ namespace Neo.SmartContract.Native.Tokens
 
             if (to is null || engine.Snapshot.Contracts.TryGet(to) is null) return;
 
-            // Call onPayment method if exists (NEP-17)
+            // Call onPayment method (NEP-17)
 
-            engine.CallFromNativeContract(() => { }, to, "onPayment", from.ToArray(), amount);
+            engine.CallFromNativeContract(null, to, "onPayment", from.ToArray(), amount);
         }
     }
 }
