@@ -125,9 +125,8 @@ namespace Neo.Network.P2P
         private void OnStateRoot(Message rootMsg)
         {
             StateRoot root = (StateRoot)rootMsg.Payload;
-            if (knownHashes.Contains(root.Hash)) return;
+            if (!knownHashes.Add(root.Hash)) return;
             system.LocalNode.Tell(rootMsg);
-            knownHashes.Add(root.Hash);
         }
 
         private void OnAddrMessageReceived(AddrPayload payload)
