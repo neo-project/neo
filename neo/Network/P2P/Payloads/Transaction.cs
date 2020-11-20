@@ -82,26 +82,24 @@ namespace Neo.Network.P2P.Payloads
         }
 
         private IReadOnlyDictionary<CoinReference, TransactionOutput> _references;
-        private bool hasCalculatedReferences = false;
         public IReadOnlyDictionary<CoinReference, TransactionOutput> References
         {
             get
             {
-                if (!hasCalculatedReferences && _references == null)
+                if (_references == null)
                 {
-                    hasCalculatedReferences = true;
                     Dictionary<CoinReference, TransactionOutput> dictionary = new Dictionary<CoinReference, TransactionOutput>();
                     foreach (var group in Inputs.GroupBy(p => p.PrevHash))
                     {
                         Transaction tx = Blockchain.Singleton.Store.GetTransaction(group.Key);
                         if (tx == null) return null;
-                        foreach (var reference in group)
+                        foreach (var reference in group.Select(p => new
                         {
-                            if (reference.PrevIndex >= Outputs.Length)
-                            {
-                                return null;
-                            }
-                            dictionary.Add(reference, tx.Outputs[reference.PrevIndex]);
+                            Input = p,
+                            Output = tx.Outputs[p.PrevIndex]
+                        }))
+                        {
+                            dictionary.Add(reference.Input, reference.Output);
                         }
                     }
                     _references = dictionary;
