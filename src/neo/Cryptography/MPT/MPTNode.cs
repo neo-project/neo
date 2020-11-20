@@ -17,14 +17,20 @@ namespace Neo.Cryptography.MPT
             get
             {
                 int size = sizeof(NodeType);
-                return type switch
+                switch (type)
                 {
-                    NodeType.BranchNode => size + BranchSize + IO.Helper.GetVarSize(Reference),
-                    NodeType.ExtensionNode => size + ExtensionSize + IO.Helper.GetVarSize(Reference),
-                    NodeType.LeafNode => size + LeafSize + IO.Helper.GetVarSize(Reference),
-                    NodeType.HashNode => size + HashSize,
-                    NodeType.Empty => size,
-                    _ => throw new InvalidOperationException($"{nameof(MPTNode)} Cannt get size, unsupport type")
+                    case NodeType.BranchNode:
+                        return size + BranchSize + IO.Helper.GetVarSize(Reference);
+                    case NodeType.ExtensionNode:
+                        return size + ExtensionSize + IO.Helper.GetVarSize(Reference);
+                    case NodeType.LeafNode:
+                        return size + LeafSize + IO.Helper.GetVarSize(Reference);
+                    case NodeType.HashNode:
+                        return size + HashSize;
+                    case NodeType.Empty:
+                        return size;
+                    default:
+                        throw new InvalidOperationException($"{nameof(MPTNode)} Cannt get size, unsupport type");
                 };
             }
         }

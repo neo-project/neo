@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.MPT;
 using Neo.IO;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -142,6 +143,55 @@ namespace Neo.UnitTests.Cryptography.MPT
             var n = l.Clone();
             n.Value = Encoding.ASCII.GetBytes("value");
             Assert.AreEqual("leaf", Encoding.ASCII.GetString(l.Value));
+        }
+
+        [TestMethod]
+        public void TestNewExtensionException()
+        {
+            Assert.ThrowsException<ArgumentNullException>(() => MPTNode.NewExtension(null, new MPTNode()));
+            Assert.ThrowsException<ArgumentNullException>(() => MPTNode.NewExtension(new byte[] { 0x01 }, null));
+            Assert.ThrowsException<InvalidOperationException>(() => MPTNode.NewExtension(Array.Empty<byte>(), new MPTNode()));
+        }
+
+        [TestMethod]
+        public void TestNewHashException()
+        {
+            Assert.ThrowsException<ArgumentNullException>(() => MPTNode.NewHash(null));
+        }
+
+        [TestMethod]
+        public void TestNewLeafException()
+        {
+            Assert.ThrowsException<ArgumentNullException>(() => MPTNode.NewLeaf(null));
+            Assert.ThrowsException<InvalidOperationException>(() => MPTNode.NewLeaf(Array.Empty<byte>()));
+        }
+
+        [TestMethod]
+        public void TestSize()
+        {
+            var n = new MPTNode();
+            Assert.AreEqual(1, n.Size);
+            n = MPTNode.NewBranch();
+            Assert.AreEqual(19, n.Size);
+            n = MPTNode.NewExtension(new byte[] { 0x00 }, new MPTNode());
+            Assert.AreEqual(5, n.Size);
+            n = MPTNode.NewLeaf(new byte[] { 0x00 });
+            Assert.AreEqual(4, n.Size);
+            n = MPTNode.NewHash(UInt256.Zero);
+            Assert.AreEqual(33, n.Size);
+        }
+
+        [TestMethod]
+        public void TestFromReplica()
+        {
+            var l = MPTNode.NewLeaf(new byte[] { 0x00 });
+            var n = MPTNode.NewBranch();
+            n.Children[1] = l;
+            var r = new MPTNode();
+            r.FromReplica(n);
+            Assert.AreEqual(n.Hash, r.Hash);
+            Assert.AreEqual(NodeType.HashNode, r.Children[1].Type);
+            Assert.AreEqual(l.Hash, r.Children[1].Hash);
         }
     }
 }
