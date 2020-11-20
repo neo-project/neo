@@ -411,7 +411,7 @@ namespace Neo.Ledger
             }
             catch
             {
-                return RelayResultReason.Invalid;
+                return RelayResultReason.Error;
             }
             system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = transaction });
             return RelayResultReason.Succeed;
