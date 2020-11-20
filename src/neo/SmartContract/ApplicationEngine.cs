@@ -35,7 +35,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// This constant can be used for testing scripts.
         /// </summary>
-        private const long TestModeGas = 20_00000000;
+        public const long TestModeGas = 20_00000000;
 
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
