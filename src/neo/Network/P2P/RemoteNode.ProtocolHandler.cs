@@ -107,6 +107,9 @@ namespace Neo.Network.P2P
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                         OnInventoryReceived((Transaction)msg.Payload);
                     break;
+                case MessageCommand.StateRoot:
+                    OnStateRoot(msg);
+                    break;
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
                     throw new ProtocolViolationException();
@@ -117,6 +120,14 @@ namespace Neo.Network.P2P
                 case MessageCommand.Reject:
                 default: break;
             }
+        }
+
+        private void OnStateRoot(Message rootMsg)
+        {
+            StateRoot root = (StateRoot)rootMsg.Payload;
+            if (knownHashes.Contains(root.Hash)) return;
+            system.LocalNode.Tell(rootMsg);
+            knownHashes.Add(root.Hash);
         }
 
         private void OnAddrMessageReceived(AddrPayload payload)
