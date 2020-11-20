@@ -8,6 +8,7 @@
         UnableToVerify,
         Invalid,
         PolicyFail,
-        Unknown
+        Unknown,
+        Error
     }
 }

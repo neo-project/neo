@@ -393,20 +393,26 @@ namespace Neo.Ledger
 
         private RelayResultReason OnNewTransaction(Transaction transaction)
         {
-            if (transaction.Type == TransactionType.MinerTransaction)
-                return RelayResultReason.Invalid;
-            if (ContainsTransaction(transaction.Hash))
-                return RelayResultReason.AlreadyExists;
-            if (!MemPool.CanTransactionFitInPool(transaction))
-                return RelayResultReason.OutOfMemory;
-            if (!transaction.Verify(currentSnapshot, MemPool.GetVerifiedTransactions()))
-                return RelayResultReason.Invalid;
-            if (!Plugin.CheckPolicy(transaction))
-                return RelayResultReason.PolicyFail;
+            try
+            {
+                if (transaction.Type == TransactionType.MinerTransaction)
+                    return RelayResultReason.Invalid;
+                if (ContainsTransaction(transaction.Hash))
+                    return RelayResultReason.AlreadyExists;
+                if (!MemPool.CanTransactionFitInPool(transaction))
+                    return RelayResultReason.OutOfMemory;
+                if (!transaction.Verify(currentSnapshot, MemPool.GetVerifiedTransactions()))
+                    return RelayResultReason.Invalid;
+                if (!Plugin.CheckPolicy(transaction))
+                    return RelayResultReason.PolicyFail;
 
-            if (!MemPool.TryAdd(transaction.Hash, transaction))
-                return RelayResultReason.OutOfMemory;
-
+                if (!MemPool.TryAdd(transaction.Hash, transaction))
+                    return RelayResultReason.OutOfMemory;
+            }
+            catch
+            {
+                return RelayResultReason.Error;
+            }
             system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = transaction });
             return RelayResultReason.Succeed;
         }
