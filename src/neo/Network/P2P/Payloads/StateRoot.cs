@@ -2,6 +2,7 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -113,10 +114,7 @@ namespace Neo.Network.P2P.Payloads
         {
             ECPoint[] validators = NativeContract.Designate.GetDesignatedByRole(snapshot, Role.StateValidator, Index);
             if (validators.Length < 1) throw new InvalidOperationException("No script hash for state root verifying");
-            Contract contract = Contract.CreateMultiSigContract(validators.Length - (validators.Length - 1) / 3, validators);
-            UInt160 script_hash = contract.ScriptHash;
-            if (script_hash is null) throw new InvalidOperationException("No script hash for state root verifying");
-            return new UInt160[] { script_hash };
+            return new UInt160[] { Blockchain.GetConsensusAddress(validators) };
         }
 
         public JObject ToJson()
