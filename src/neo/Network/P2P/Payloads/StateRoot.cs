@@ -13,6 +13,7 @@ namespace Neo.Network.P2P.Payloads
 {
     public class StateRoot : ICloneable<StateRoot>, IVerifiable, ISerializable
     {
+        public byte Version;
         public uint Index;
         public UInt256 RootHash;
         public Witness Witness;
@@ -45,14 +46,17 @@ namespace Neo.Network.P2P.Payloads
         }
 
         public int Size =>
+            sizeof(byte) +      //Version
             sizeof(uint) +      //Index
             UInt256.Length +    //RootHash
+            1 +                 //Witness array count
             Witness.Size;       //Witness
 
         public StateRoot Clone()
         {
             return new StateRoot
             {
+                Version = Version,
                 Index = Index,
                 RootHash = RootHash,
                 Witness = Witness,
@@ -61,6 +65,7 @@ namespace Neo.Network.P2P.Payloads
 
         public void FromReplica(StateRoot replica)
         {
+            Version = replica.Version;
             Index = replica.Index;
             RootHash = replica.RootHash;
             Witness = replica.Witness;
@@ -78,6 +83,7 @@ namespace Neo.Network.P2P.Payloads
 
         public void DeserializeUnsigned(BinaryReader reader)
         {
+            Version = reader.ReadByte();
             Index = reader.ReadUInt32();
             RootHash = reader.ReadSerializable<UInt256>();
         }
@@ -93,6 +99,7 @@ namespace Neo.Network.P2P.Payloads
 
         public void SerializeUnsigned(BinaryWriter writer)
         {
+            writer.Write(Version);
             writer.Write(Index);
             writer.Write(RootHash);
         }
@@ -115,6 +122,7 @@ namespace Neo.Network.P2P.Payloads
         public JObject ToJson()
         {
             var json = new JObject();
+            json["version"] = Version;
             json["index"] = Index;
             json["roothash"] = RootHash.ToString();
             json["witness"] = Witness?.ToJson();
