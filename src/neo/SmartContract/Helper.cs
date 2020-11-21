@@ -164,9 +164,7 @@ namespace Neo.SmartContract
                     {
                         ContractState cs = snapshot.Contracts.TryGet(hashes[i]);
                         if (cs is null) return false;
-                        ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify");
-                        if (md is null) return false;
-                        _ = engine.LoadContract(cs, md.Name, callFlags);
+                        if (engine.LoadContract(cs, "verify", callFlags) is null) return false;
                     }
                     else
                     {

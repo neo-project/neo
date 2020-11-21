@@ -173,7 +173,7 @@ namespace Neo.SmartContract
         public ExecutionContext LoadContract(ContractState contract, string method, CallFlags callFlags)
         {
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
-            if (md is null) throw new ArgumentNullException("Method doesn't exists");
+            if (md is null) return null;
 
             ExecutionContext context;
             if (NativeContract.IsNative(contract.ScriptHash) && md.Name == "verify")
