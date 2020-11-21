@@ -25,21 +25,10 @@ namespace Neo.SmartContract
         /// </summary>
         public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 0_00010000, CallFlags.None, true);
 
-        private UInt160 ContractHash(NefFile nef)
+        protected internal void CreateContract(byte[] nefFile, byte[] manifest)
         {
             if (!(ScriptContainer is Transaction tx))
                 throw new InvalidOperationException();
-
-            using var script = new ScriptBuilder();
-            script.Emit(OpCode.ABORT);
-            script.EmitPush(tx.Sender);
-            script.EmitPush(nef.Script);
-
-            return script.ToArray().ToScriptHash();
-        }
-
-        protected internal void CreateContract(byte[] nefFile, byte[] manifest)
-        {
             if (nefFile.Length == 0)
                 throw new ArgumentException($"Invalid NefFile Length: {nefFile.Length}");
             if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
@@ -48,7 +37,7 @@ namespace Neo.SmartContract
             AddGas(StoragePrice * (nefFile.Length + manifest.Length));
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
-            UInt160 hash = ContractHash(nef);
+            UInt160 hash = Helper.ContractHash(tx.Sender, nef);
             ContractState contract = Snapshot.Contracts.TryGet(hash);
             if (contract != null) throw new InvalidOperationException($"Contract Already Exists: {hash}");
             contract = new ContractState

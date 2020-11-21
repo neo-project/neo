@@ -130,6 +130,16 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
+        public static UInt160 ContractHash(UInt160 sender, NefFile nef)
+        {
+            using var script = new ScriptBuilder();
+            script.Emit(OpCode.ABORT);
+            script.EmitPush(sender);
+            script.EmitPush(nef.Script);
+
+            return script.ToArray().ToScriptHash();
+        }
+
         internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas, WitnessFlag filter = WitnessFlag.All)
         {
             if (gas < 0) return false;

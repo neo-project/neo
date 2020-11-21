@@ -27,5 +27,20 @@ namespace Neo.UnitTests.SmartContract
             };
             Assert.IsFalse(case2.IsMultiSigContract());
         }
+
+        [TestMethod]
+        public void TestContractHash()
+        {
+            var nef = new NefFile()
+            {
+                Compiler = "test",
+                Version = new System.Version(),
+                Script = new byte[] { 1, 2, 3 }
+            };
+            nef.CheckSum = NefFile.ComputeChecksum(nef);
+
+            Assert.AreEqual("0xb4b7417195feca1cdb5a99504ab641d8c220ae99", Neo.SmartContract.Helper.ContractHash(UInt160.Zero, nef).ToString());
+            Assert.AreEqual("0xe56e4ee87f89a70e9138432c387ad49f2ee5b55f", Neo.SmartContract.Helper.ContractHash(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), nef).ToString());
+        }
     }
 }
