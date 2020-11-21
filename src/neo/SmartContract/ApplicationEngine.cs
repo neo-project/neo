@@ -176,7 +176,7 @@ namespace Neo.SmartContract
             if (md is null) return null;
 
             ExecutionContext context;
-            if (NativeContract.IsNative(contract.ScriptHash) && md.Name == "verify")
+            if (NativeContract.IsNative(contract.ScriptHash))
             {
                 using ScriptBuilder sb = new ScriptBuilder();
                 sb.Emit(OpCode.DEPTH, OpCode.PACK);
