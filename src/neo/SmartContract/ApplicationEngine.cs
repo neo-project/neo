@@ -186,15 +186,15 @@ namespace Neo.SmartContract
             else
             {
                 context = LoadScript(contract.Script, callFlags, md.Offset);
-            }
 
-            // Call initialization
+                // Call initialization
 
-            var init = contract.Manifest.Abi.GetMethod("_initialize");
+                var init = contract.Manifest.Abi.GetMethod("_initialize");
 
-            if (init != null)
-            {
-                LoadContext(context.Clone(init.Offset), false);
+                if (init != null)
+                {
+                    LoadContext(context.Clone(init.Offset), false);
+                }
             }
 
             return context;
