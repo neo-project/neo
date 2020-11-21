@@ -1,4 +1,5 @@
 using Neo.IO.Json;
+using Neo.Ledger;
 using System;
 using System.Linq;
 
@@ -64,19 +65,18 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// Return true if is allowed
         /// </summary>
-        /// <param name="hash">hash</param>
-        /// <param name="manifest">The manifest of which contract we are calling</param>
+        /// <param name="state">State</param>
         /// <param name="method">Method</param>
         /// <returns>Return true or false</returns>
-        public bool IsAllowed(UInt160 hash, ContractManifest manifest, string method)
+        public bool IsAllowed(ContractState state, string method)
         {
             if (Contract.IsHash)
             {
-                if (!Contract.Hash.Equals(hash)) return false;
+                if (!Contract.Hash.Equals(state.Hash)) return false;
             }
             else if (Contract.IsGroup)
             {
-                if (manifest.Groups.All(p => !p.PubKey.Equals(Contract.Group))) return false;
+                if (state.Manifest.Groups.All(p => !p.PubKey.Equals(Contract.Group))) return false;
             }
             return Methods.IsWildcard || Methods.Contains(method);
         }

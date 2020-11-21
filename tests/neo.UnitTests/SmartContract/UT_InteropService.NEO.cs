@@ -136,11 +136,12 @@ namespace Neo.UnitTests.SmartContract
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
             var nefFile = nef.ToArray();
-            var engine = GetEngine(false, true);
-            Assert.ThrowsException<ArgumentException>(() => engine.CreateContract(nefFile, new byte[ContractManifest.MaxLength + 1]));
-
             var manifest = TestUtils.CreateDefaultManifest();
+            var engine = GetEngine(false, true);
             Assert.ThrowsException<InvalidOperationException>(() => engine.CreateContract(nefFile, manifest.ToJson().ToByteArray(false)));
+
+            engine = GetEngine(true, true);
+            Assert.ThrowsException<ArgumentException>(() => engine.CreateContract(nefFile, new byte[ContractManifest.MaxLength + 1]));
 
             var script_exceedMaxLength = new NefFile()
             {

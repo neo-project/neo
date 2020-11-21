@@ -69,19 +69,18 @@ namespace Neo.Ledger
         /// Return true if is allowed
         /// </summary>
         /// <param name="state">State</param>
-        /// <param name="manifest">Manifest</param>
         /// <param name="method">Method</param>
         /// <returns>Return true or false</returns>
         public bool CanCall(ContractState state, string method)
         {
-            return Manifest.Permissions.Any(u => u.IsAllowed(state.Hash, state.Manifest, method));
+            return Manifest.Permissions.Any(u => u.IsAllowed(state, method));
         }
 
         public JObject ToJson()
         {
             JObject json = new JObject();
             json["id"] = Id;
-            json["updateCounter"] = UpdateCounter;
+            json["updatecounter"] = UpdateCounter;
             json["hash"] = Hash.ToString();
             json["script"] = Convert.ToBase64String(Script);
             json["manifest"] = Manifest.ToJson();
