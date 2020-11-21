@@ -134,7 +134,7 @@ namespace Neo.SmartContract
             if (md is null) throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
 
             ContractState currentContract = Snapshot.Contracts.TryGet(CurrentScriptHash);
-            if (currentContract?.CanCall(contractHash, contract.Manifest, method) == false)
+            if (currentContract?.CanCall(contract, method) == false)
                 throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contractHash} From Contract {CurrentScriptHash}");
 
             CallContractInternal(contract, md, args, flags, convention);

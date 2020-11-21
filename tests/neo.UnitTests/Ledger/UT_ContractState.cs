@@ -81,7 +81,8 @@ namespace Neo.UnitTests.Ledger
         {
             var temp = new ContractState() { Manifest = TestUtils.CreateDefaultManifest() };
             temp.Manifest.SafeMethods = WildcardContainer<string>.Create(new string[] { "AAA" });
-            Assert.AreEqual(true, temp.CanCall(UInt160.Zero, TestUtils.CreateDefaultManifest(), "AAA"));
+
+            Assert.AreEqual(true, temp.CanCall(new ContractState() { Hash = UInt160.Zero, Manifest = TestUtils.CreateDefaultManifest() }, "AAA"));
         }
 
         [TestMethod]
