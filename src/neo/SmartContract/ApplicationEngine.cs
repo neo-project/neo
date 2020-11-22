@@ -175,17 +175,17 @@ namespace Neo.SmartContract
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
             if (md is null) return null;
 
-            ExecutionContext context;
+            ExecutionContext context = LoadScript(contract.Script, callFlags, md.Offset);
+
             if (NativeContract.IsNative(contract.ScriptHash))
             {
                 using ScriptBuilder sb = new ScriptBuilder();
                 sb.Emit(OpCode.DEPTH, OpCode.PACK);
                 sb.EmitPush(md.Name);
-                context = LoadScript(sb.ToArray(), CallFlags.None);
+                LoadScript(sb.ToArray(), CallFlags.None);
             }
             else
             {
-                context = LoadScript(contract.Script, callFlags, md.Offset);
 
                 // Call initialization
 
