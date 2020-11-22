@@ -3,7 +3,6 @@ using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
@@ -170,7 +169,7 @@ namespace Neo.SmartContract
                     {
                         if (NativeContract.IsNative(hashes[i])) return false;
                         if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
-                        _ = engine.LoadScript(verification, callFlags, 0);
+                        engine.LoadScript(verification, callFlags, 0);
                     }
 
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
