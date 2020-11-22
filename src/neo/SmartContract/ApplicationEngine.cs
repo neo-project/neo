@@ -186,7 +186,6 @@ namespace Neo.SmartContract
             }
             else
             {
-
                 // Call initialization
 
                 var init = contract.Manifest.Abi.GetMethod("_initialize");
