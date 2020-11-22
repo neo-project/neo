@@ -79,8 +79,6 @@ namespace Neo.SmartContract
                     throw new ArgumentException($"Invalid NefFile Length: {nefFile.Length}");
 
                 NefFile nef = nefFile.AsSerializable<NefFile>();
-                if (nef.Script.Length == 0)
-                    throw new ArgumentException($"Invalid Script Length: {nef.Script.Length}");
 
                 // Update script
                 contract.Script = nef.Script;
