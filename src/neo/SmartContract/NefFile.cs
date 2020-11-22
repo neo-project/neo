@@ -1,5 +1,6 @@
 using Neo.Cryptography;
 using Neo.IO;
+using Neo.VM;
 using System;
 using System.IO;
 
@@ -56,6 +57,16 @@ namespace Neo.SmartContract
             HeaderSize +            // Header
             Script.GetVarSize() +   // Script
             sizeof(uint);           // Checksum
+
+        public UInt160 GetHash(UInt160 sender)
+        {
+            using var script = new ScriptBuilder();
+            script.Emit(OpCode.ABORT);
+            script.EmitPush(sender);
+            script.EmitPush(Script);
+
+            return script.ToArray().ToScriptHash();
+        }
 
         public void Serialize(BinaryWriter writer)
         {
