@@ -136,12 +136,12 @@ namespace Neo.SmartContract
         {
             using MemoryStream ms = new MemoryStream();
             using BinaryWriter writer = new BinaryWriter(ms);
-            Serialize(item, writer, maxSize);
+            Serialize(writer, item, maxSize);
             writer.Flush();
             return ms.ToArray();
         }
 
-        public static void Serialize(StackItem item, BinaryWriter writer, uint maxSize)
+        public static void Serialize(BinaryWriter writer, StackItem item, uint maxSize)
         {
             List<CompoundType> serialized = new List<CompoundType>();
             Stack<StackItem> unserialized = new Stack<StackItem>();
@@ -184,6 +184,7 @@ namespace Neo.SmartContract
                     default:
                         throw new NotSupportedException();
                 }
+                writer.Flush();
                 if (writer.BaseStream.Position > maxSize)
                     throw new InvalidOperationException();
             }
