@@ -243,7 +243,7 @@ namespace Neo.Network.P2P
             if (session.AvailableTasks.Count > 0)
             {
                 session.AvailableTasks.Remove(knownHashes);
-                session.AvailableTasks.RemoveWhere(p => Blockchain.Singleton.ContainsBlock(p));
+                session.AvailableTasks.RemoveWhere(p => p is null || Blockchain.Singleton.ContainsBlock(p));
                 HashSet<UInt256> hashes = new HashSet<UInt256>(session.AvailableTasks);
                 if (hashes.Count > 0)
                 {
