@@ -38,7 +38,7 @@ namespace Neo.SmartContract.Native.Designate
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowModifyStates)]
-        private byte[] GetDesignateeInfo(StoreView snapshot, Role role, ECPoint node)
+        private byte[] GetDesignatedInfo(StoreView snapshot, Role role, ECPoint node)
         {
             var nodes = GetDesignatedByRole(snapshot, role, snapshot.HeaderHeight);
             if (!nodes.Contains(node))
@@ -49,7 +49,7 @@ namespace Neo.SmartContract.Native.Designate
         }
 
         [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
-        private void SetDesignateeInfo(ApplicationEngine engine, Role role, ECPoint node, byte[] value)
+        private void SetDesignatedInfo(ApplicationEngine engine, Role role, ECPoint node, byte[] value)
         {
             if (!engine.CheckWitness(node.EncodePoint(true)))
                 throw new InvalidOperationException("Wrong signed by node");
