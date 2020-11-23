@@ -37,6 +37,37 @@ namespace Neo.SmartContract.Native.Designate
                 .FirstOrDefault() ?? System.Array.Empty<ECPoint>();
         }
 
+        [ContractMethod(0_01000000, CallFlags.AllowModifyStates)]
+        private byte[] GetDesignateeInfo(StoreView snapshot, Role role, ECPoint node)
+        {
+            var nodes = GetDesignatedByRole(snapshot, role, snapshot.HeaderHeight);
+            if (!nodes.Contains(node))
+                throw new InvalidOperationException("Node not found");
+
+            var value = snapshot.Storages.TryGet(CreateStorageKey((byte)role).Add(node));
+            return value?.Value ?? System.Array.Empty<byte>();
+        }
+
+        [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
+        private void SetDesignateeInfo(ApplicationEngine engine, Role role, ECPoint node, byte[] value)
+        {
+            if (!engine.CheckWitness(node.EncodePoint(true)))
+                throw new InvalidOperationException("Wrong signed by node");
+
+            var nodes = GetDesignatedByRole(engine.Snapshot, role, engine.Snapshot.HeaderHeight);
+            if (!nodes.Contains(node))
+                throw new InvalidOperationException("Node not found");
+
+            if (value == null || value.Length == 0)
+            {
+                engine.Snapshot.Storages.Delete(CreateStorageKey((byte)role).Add(node));
+            }
+            else
+            {
+                engine.Snapshot.Storages.GetAndChange(CreateStorageKey((byte)role).Add(node), () => new StorageItem(value, false)).Value = value;
+            }
+        }
+
         [ContractMethod(0, CallFlags.AllowModifyStates)]
         private void DesignateAsRole(ApplicationEngine engine, Role role, ECPoint[] nodes)
         {
@@ -52,10 +83,21 @@ namespace Neo.SmartContract.Native.Designate
             var key = CreateStorageKey((byte)role).AddBigEndian(index);
             if (engine.Snapshot.Storages.Contains(key))
                 throw new InvalidOperationException();
+
+            var previous = GetDesignatedByRole(engine.Snapshot, role, engine.Snapshot.HeaderHeight);
+
             NodeList list = new NodeList();
             list.AddRange(nodes);
             list.Sort();
             engine.Snapshot.Storages.Add(key, new StorageItem(list));
+
+            foreach (var prev in previous)
+            {
+                if (!list.Contains(prev))
+                {
+                    engine.Snapshot.Storages.Delete(CreateStorageKey((byte)role).Add(prev));
+                }
+            }
         }
 
         private class NodeList : List<ECPoint>, IInteroperable
