@@ -171,6 +171,7 @@ namespace Neo.SmartContract
             var newState = context.GetState<ExecutionContextState>();
             newState.CallFlags = state.CallFlags;
             newState.ScriptHash = state.ScriptHash;
+            newState.CallingScriptHash = state.CallingScriptHash;
             // Configure CurrentContext and load the cloned one
             if (checkReturnValue)
                 GetInvocationState(CurrentContext).Convention = ReturnTypeConvention.EnsureNotEmpty;
