@@ -135,6 +135,13 @@ namespace Neo.SmartContract.Native.Oracle
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BitConverter.GetBytes(0ul)));
         }
 
+        [ContractMethod(OracleRequestPrice, CallFlags.ReadOnly)]
+        protected void OnPayment(ApplicationEngine engine, UInt160 from, BigInteger amount)
+        {
+            if (engine.CallingScriptHash != Hash)
+                throw new InvalidOperationException();
+        }
+
         protected override void PostPersist(ApplicationEngine engine)
         {
             base.PostPersist(engine);
