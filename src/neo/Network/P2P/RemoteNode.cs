@@ -22,6 +22,7 @@ namespace Neo.Network.P2P
         private readonly NeoSystem system;
         private readonly Queue<Message> message_queue_high = new Queue<Message>();
         private readonly Queue<Message> message_queue_low = new Queue<Message>();
+        private readonly bool[] sentCommands = new bool[1 << sizeof(MessageCommand)];
         private ByteString msg_buffer = ByteString.Empty;
         private bool ack = true;
 
@@ -197,6 +198,7 @@ namespace Neo.Network.P2P
         {
             ack = false;
             SendData(ByteString.FromBytes(message.ToArray()));
+            sentCommands[(byte)message.Command] = true;
         }
 
         private Message TryParseMessage()
