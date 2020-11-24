@@ -154,7 +154,7 @@ namespace Neo.SmartContract.Native.Oracle
                 //Remove the id from IdList
                 key = CreateStorageKey(Prefix_IdList).Add(GetUrlHash(request.Url));
                 IdList list = engine.Snapshot.Storages.GetAndChange(key).GetInteroperable<IdList>();
-                if (!list.Remove(response.Id)) continue;
+                if (!list.Remove(response.Id)) throw new InvalidOperationException();
                 if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
 
                 //Mint GAS for oracle nodes
