@@ -14,9 +14,9 @@ namespace Neo.Ledger
         private readonly Dictionary<UInt160, BigInteger> senderFee = new Dictionary<UInt160, BigInteger>();
 
         /// <summary>
-        /// Store oracle requests
+        /// Store oracle responses
         /// </summary>
-        private readonly Dictionary<ulong, UInt256> oracleRequests = new Dictionary<ulong, UInt256>();
+        private readonly Dictionary<ulong, UInt256> oracleResponses = new Dictionary<ulong, UInt256>();
 
         public void AddTransaction(Transaction tx)
         {
@@ -26,7 +26,7 @@ namespace Neo.Ledger
                 senderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
 
             var oracle = tx.GetAttribute<OracleResponse>();
-            if (oracle != null) oracleRequests.TryAdd(oracle.Id, tx.Hash);
+            if (oracle != null) oracleResponses.TryAdd(oracle.Id, tx.Hash);
         }
 
         public bool CheckTransaction(Transaction tx, StoreView snapshot)
@@ -38,7 +38,7 @@ namespace Neo.Ledger
 
             var oracle = tx.GetAttribute<OracleResponse>();
             if (oracle != null &&
-                (!oracleRequests.TryGetValue(oracle.Id, out var hash) || hash != tx.Hash))
+                (!oracleResponses.TryGetValue(oracle.Id, out var hash) || hash != tx.Hash))
             {
                 return false;
             }
@@ -51,9 +51,9 @@ namespace Neo.Ledger
             if ((senderFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee) == 0) senderFee.Remove(tx.Sender);
 
             var oracle = tx.GetAttribute<OracleResponse>();
-            if (oracle != null && oracleRequests.TryGetValue(oracle.Id, out var hash) && hash == tx.Hash)
+            if (oracle != null && oracleResponses.TryGetValue(oracle.Id, out var hash) && hash == tx.Hash)
             {
-                oracleRequests.Remove(oracle.Id);
+                oracleResponses.Remove(oracle.Id);
             }
         }
     }
