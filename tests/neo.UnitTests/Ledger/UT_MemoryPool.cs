@@ -225,7 +225,7 @@ namespace Neo.UnitTests.Ledger
             SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, long.MaxValue);
-            NativeContract.GAS.Burn(engine, UInt160.Zero, balance,true);
+            NativeContract.GAS.Burn(engine, UInt160.Zero, balance, true);
             NativeContract.GAS.Mint(engine, UInt160.Zero, 70, true);
 
             long txFee = 1;
