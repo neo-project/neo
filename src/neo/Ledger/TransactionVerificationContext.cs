@@ -18,21 +18,39 @@ namespace Neo.Ledger
         /// </summary>
         private readonly Dictionary<ulong, UInt256> oracleResponses = new Dictionary<ulong, UInt256>();
 
+        /// <summary>
+        /// Contains unverified transactions during adding
+        /// </summary>
+        private readonly HashSet<UInt256> unverifiedTx = new HashSet<UInt256>();
+
         public void AddTransaction(Transaction tx)
         {
+            var oracle = tx.GetAttribute<OracleResponse>();
+            if (oracle != null)
+            {
+                if (!oracleResponses.TryAdd(oracle.Id, tx.Hash))
+                {
+                    unverifiedTx.Add(tx.Hash);
+                    return;
+                }
+            }
+
             if (senderFee.TryGetValue(tx.Sender, out var value))
                 senderFee[tx.Sender] = value + tx.SystemFee + tx.NetworkFee;
             else
                 senderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
-
-            var oracle = tx.GetAttribute<OracleResponse>();
-            if (oracle != null) oracleResponses.TryAdd(oracle.Id, tx.Hash);
         }
 
         public bool CheckTransaction(Transaction tx, StoreView snapshot)
         {
+            if (unverifiedTx.Contains(tx.Hash)) return false;
+
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
-            senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
+            if (!senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool))
+            {
+                return false;
+            }
+
             BigInteger fee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
             if (balance < fee) return false;
 
@@ -48,6 +66,7 @@ namespace Neo.Ledger
 
         public void RemoveTransaction(Transaction tx)
         {
+            if (unverifiedTx.Remove(tx.Hash)) return;
             if ((senderFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee) == 0) senderFee.Remove(tx.Sender);
 
             var oracle = tx.GetAttribute<OracleResponse>();
