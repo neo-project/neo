@@ -4,7 +4,6 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Org.BouncyCastle.Crypto.Generators;
@@ -396,12 +395,9 @@ namespace Neo.Wallets
                     size += Array.Empty<byte>().GetVarSize() * 2;
 
                     // Check verify cost
-                    ContractMethodDescriptor verify = contract.Manifest.Abi.GetMethod("verify");
-                    if (verify is null) throw new ArgumentException($"The smart contract {contract.ScriptHash} haven't got verify method");
-                    ContractMethodDescriptor init = contract.Manifest.Abi.GetMethod("_initialize");
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.Clone());
-                    ExecutionContext context = engine.LoadScript(contract.Script, CallFlags.None, verify.Offset);
-                    if (init != null) engine.LoadContext(context.Clone(init.Offset), false);
+                    if (engine.LoadContract(contract, "verify", CallFlags.None, true) is null)
+                        throw new ArgumentException($"The smart contract {contract.ScriptHash} haven't got verify method");
                     engine.LoadScript(Array.Empty<byte>(), CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.ScriptHash} verification fault.");
                     if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.ScriptHash} returns false.");
