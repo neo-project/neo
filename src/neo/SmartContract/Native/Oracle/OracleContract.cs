@@ -168,7 +168,7 @@ namespace Neo.SmartContract.Native.Oracle
             {
                 foreach (var (account, gas) in nodes)
                 {
-                    if (gas.Sign > 0) GAS.Mint(engine, account, gas);
+                    if (gas.Sign > 0) GAS.Mint(engine, account, gas, false);
                 }
             }
         }
@@ -185,7 +185,7 @@ namespace Neo.SmartContract.Native.Oracle
 
             //Mint gas for the response
             engine.AddGas(gasForResponse);
-            GAS.Mint(engine, Hash, gasForResponse);
+            GAS.Mint(engine, Hash, gasForResponse, false);
 
             //Increase the request id
             StorageItem item_id = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_RequestId));

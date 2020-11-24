@@ -18,7 +18,7 @@ namespace Neo.SmartContract.Native.Tokens
         internal override void Initialize(ApplicationEngine engine)
         {
             UInt160 account = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators);
-            Mint(engine, account, 30_000_000 * Factor);
+            Mint(engine, account, 30_000_000 * Factor, false);
         }
 
         protected override void OnPersist(ApplicationEngine engine)
@@ -27,12 +27,12 @@ namespace Neo.SmartContract.Native.Tokens
             long totalNetworkFee = 0;
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
             {
-                Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
+                Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee, false);
                 totalNetworkFee += tx.NetworkFee;
             }
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.Snapshot.PersistingBlock.ConsensusData.PrimaryIndex]).ToScriptHash();
-            Mint(engine, primary, totalNetworkFee);
+            Mint(engine, primary, totalNetworkFee, false);
         }
     }
 }

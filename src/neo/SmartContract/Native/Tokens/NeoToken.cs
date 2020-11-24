@@ -64,7 +64,7 @@ namespace Neo.SmartContract.Native.Tokens
 
             BigInteger gas = CalculateBonus(engine.Snapshot, state.VoteTo, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
             state.BalanceHeight = engine.Snapshot.PersistingBlock.Index;
-            GAS.Mint(engine, account, gas);
+            GAS.Mint(engine, account, gas, false);
         }
 
         private BigInteger CalculateBonus(StoreView snapshot, ECPoint vote, BigInteger value, uint start, uint end)
@@ -127,7 +127,7 @@ namespace Neo.SmartContract.Native.Tokens
             // Initialize economic parameters
 
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u), new StorageItem(5 * GAS.Factor));
-            Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), TotalAmount);
+            Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), TotalAmount, false);
         }
 
         protected override void OnPersist(ApplicationEngine engine)
@@ -157,7 +157,7 @@ namespace Neo.SmartContract.Native.Tokens
             var committee = GetCommitteeFromCache(engine.Snapshot);
             var pubkey = committee.ElementAt(index).PublicKey;
             var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
-            GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100);
+            GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100, false);
 
             // Record the cumulative reward of the voters of committee
 
