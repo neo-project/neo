@@ -117,12 +117,12 @@ namespace Neo.SmartContract.Native.Oracle
             return snapshot.Storages.Find(new KeyBuilder(Id, Prefix_Request).ToArray()).Select(p => (BitConverter.ToUInt64(p.Key.Key, 1), p.Value.GetInteroperable<OracleRequest>()));
         }
 
-        public IEnumerable<OracleRequest> GetRequestsByUrl(StoreView snapshot, string url)
+        public IEnumerable<(ulong, OracleRequest)> GetRequestsByUrl(StoreView snapshot, string url)
         {
             IdList list = snapshot.Storages.TryGet(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)))?.GetInteroperable<IdList>();
             if (list is null) yield break;
             foreach (ulong id in list)
-                yield return snapshot.Storages[CreateStorageKey(Prefix_Request).Add(id)].GetInteroperable<OracleRequest>();
+                yield return (id, snapshot.Storages[CreateStorageKey(Prefix_Request).Add(id)].GetInteroperable<OracleRequest>());
         }
 
         private static byte[] GetUrlHash(string url)
