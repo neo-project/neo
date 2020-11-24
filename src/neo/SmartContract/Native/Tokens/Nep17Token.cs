@@ -57,7 +57,7 @@ namespace Neo.SmartContract.Native.Tokens
             Manifest.Abi.Events = events.ToArray();
         }
 
-        internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, BigInteger amount, StackItem data = null)
+        internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
@@ -67,10 +67,10 @@ namespace Neo.SmartContract.Native.Tokens
             state.Balance += amount;
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem(BigInteger.Zero));
             storage.Add(amount);
-            PostTransfer(engine, null, account, amount, data);
+            PostTransfer(engine, null, account, amount, null);
         }
 
-        internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount, StackItem data = null)
+        internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
@@ -85,7 +85,7 @@ namespace Neo.SmartContract.Native.Tokens
                 state.Balance -= amount;
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
             storage.Add(-amount);
-            PostTransfer(engine, account, null, amount, data);
+            PostTransfer(engine, account, null, amount, null);
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
