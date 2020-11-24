@@ -163,7 +163,8 @@ namespace Neo.SmartContract
                     {
                         ContractState cs = snapshot.Contracts.TryGet(hashes[i]);
                         if (cs is null) return false;
-                        if (engine.LoadContract(cs, "verify", callFlags) is null) return false;
+                        if (engine.LoadContract(cs, "verify", callFlags, true) is null)
+                            return false;
                     }
                     else
                     {

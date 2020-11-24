@@ -4,7 +4,6 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Org.BouncyCastle.Crypto.Generators;
@@ -397,7 +396,8 @@ namespace Neo.Wallets
 
                     // Check verify cost
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.Clone());
-                    if (engine.LoadContract(contract, "verify", CallFlags.None) is null) throw new ArgumentException($"The smart contract {contract.ScriptHash} haven't got verify method");
+                    if (engine.LoadContract(contract, "verify", CallFlags.None, true) is null)
+                        throw new ArgumentException($"The smart contract {contract.ScriptHash} haven't got verify method");
                     engine.LoadScript(Array.Empty<byte>(), CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.ScriptHash} verification fault.");
                     if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.ScriptHash} returns false.");

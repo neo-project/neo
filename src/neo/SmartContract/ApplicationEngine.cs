@@ -170,7 +170,7 @@ namespace Neo.SmartContract
             LoadContext(context);
         }
 
-        public ExecutionContext LoadContract(ContractState contract, string method, CallFlags callFlags)
+        public ExecutionContext LoadContract(ContractState contract, string method, CallFlags callFlags, bool packParameters = false)
         {
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
             if (md is null) return null;
@@ -179,10 +179,13 @@ namespace Neo.SmartContract
 
             if (NativeContract.IsNative(contract.ScriptHash))
             {
-                using ScriptBuilder sb = new ScriptBuilder();
-                sb.Emit(OpCode.DEPTH, OpCode.PACK);
-                sb.EmitPush(md.Name);
-                LoadScript(sb.ToArray(), CallFlags.None);
+                if (packParameters)
+                {
+                    using ScriptBuilder sb = new ScriptBuilder();
+                    sb.Emit(OpCode.DEPTH, OpCode.PACK);
+                    sb.EmitPush(md.Name);
+                    LoadScript(sb.ToArray(), CallFlags.None);
+                }
             }
             else
             {
