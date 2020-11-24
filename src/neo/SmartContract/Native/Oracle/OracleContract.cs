@@ -138,7 +138,7 @@ namespace Neo.SmartContract.Native.Oracle
         [ContractMethod(0_00100000, CallFlags.None)]
         private void OnPayment(ApplicationEngine engine, UInt160 from, BigInteger amount)
         {
-            if (engine.CallingScriptHash != GAS.Hash)
+            if (engine.CallingScriptHash != Hash)
                 throw new InvalidOperationException();
         }
 
@@ -192,7 +192,7 @@ namespace Neo.SmartContract.Native.Oracle
 
             //Mint gas for the response
             engine.AddGas(gasForResponse);
-            engine.CallFromNativeContract(null, GAS.Hash, "mint", Hash.ToArray(), gasForResponse);
+            GAS.Mint(engine, Hash, gasForResponse);
 
             //Increase the request id
             StorageItem item_id = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_RequestId));
