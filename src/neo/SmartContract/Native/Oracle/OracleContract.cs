@@ -135,7 +135,7 @@ namespace Neo.SmartContract.Native.Oracle
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BitConverter.GetBytes(0ul)));
         }
 
-        [ContractMethod(OracleRequestPrice, CallFlags.None)]
+        [ContractMethod(0, CallFlags.None)]
         private void OnPayment(ApplicationEngine engine, UInt160 from, BigInteger amount)
         {
             if (engine.CallingScriptHash != Hash)
