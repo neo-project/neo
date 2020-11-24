@@ -26,13 +26,10 @@ namespace Neo.Ledger
         public void AddTransaction(Transaction tx)
         {
             var oracle = tx.GetAttribute<OracleResponse>();
-            if (oracle != null)
+            if (oracle != null && !oracleResponses.TryAdd(oracle.Id, tx.Hash))
             {
-                if (!oracleResponses.TryAdd(oracle.Id, tx.Hash))
-                {
-                    unverifiedTx.Add(tx.Hash);
-                    return;
-                }
+                unverifiedTx.Add(tx.Hash);
+                return;
             }
 
             if (senderFee.TryGetValue(tx.Sender, out var value))
@@ -43,8 +40,6 @@ namespace Neo.Ledger
 
         public bool CheckTransaction(Transaction tx, StoreView snapshot)
         {
-            if (unverifiedTx.Contains(tx.Hash)) return false;
-
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
             if (!senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool))
             {
@@ -56,7 +51,7 @@ namespace Neo.Ledger
 
             var oracle = tx.GetAttribute<OracleResponse>();
             if (oracle != null &&
-                (!oracleResponses.TryGetValue(oracle.Id, out var hash) || hash != tx.Hash))
+                (!oracleResponses.TryGetValue(oracle.Id, out var hash) || hash != tx.Hash || unverifiedTx.Contains(tx.Hash)))
             {
                 return false;
             }
