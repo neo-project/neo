@@ -138,7 +138,7 @@ namespace Neo.SmartContract.Native.Oracle
         [ContractMethod(0_00100000, CallFlags.None)]
         private void OnPayment(ApplicationEngine engine, UInt160 from, BigInteger amount)
         {
-            if (engine.CallingScriptHash != Hash)
+            if (engine.CallingScriptHash != GAS.Hash)
                 throw new InvalidOperationException();
         }
 
