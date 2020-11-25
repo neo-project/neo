@@ -70,7 +70,7 @@ namespace Neo.SmartContract.Native.Tokens
             PostTransfer(engine, null, account, amount, callOnPayment);
         }
 
-        internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount, bool callOnPayment)
+        internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
@@ -85,7 +85,7 @@ namespace Neo.SmartContract.Native.Tokens
                 state.Balance -= amount;
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
             storage.Add(-amount);
-            PostTransfer(engine, account, null, amount, callOnPayment);
+            PostTransfer(engine, account, null, amount, false);
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
