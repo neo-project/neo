@@ -39,6 +39,12 @@ namespace Neo.Network.P2P
 
         private void OnMessage(Message msg)
         {
+            if (msg.Command == MessageCommand.Plugin)
+            {
+                var payload = (PluginPayload)msg.Payload;
+                if (!knownHashes.Add(payload.Hash)) return;
+                if (!payload.Verify(Blockchain.Singleton.GetSnapshot())) return;
+            }
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
                 if (!plugin.OnP2PMessage(msg))
                     return;
@@ -107,6 +113,9 @@ namespace Neo.Network.P2P
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                         OnInventoryReceived((Transaction)msg.Payload);
                     break;
+                case MessageCommand.Plugin:
+                    OnPluginMessage(msg);
+                    break;
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
                     throw new ProtocolViolationException();
@@ -117,6 +126,11 @@ namespace Neo.Network.P2P
                 case MessageCommand.Reject:
                 default: break;
             }
+        }
+
+        private void OnPluginMessage(Message msg)
+        {
+            system.LocalNode.Tell(msg);
         }
 
         private void OnAddrMessageReceived(AddrPayload payload)
