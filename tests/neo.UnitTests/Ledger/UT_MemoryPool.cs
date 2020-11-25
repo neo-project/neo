@@ -51,9 +51,17 @@ namespace Neo.UnitTests.Ledger
 
             TestBlockchain.InitializeMockNeoSystem();
 
+            // Fake balance
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(senderAccount);
+            var entry = snapshot.Storages.GetAndChange(key, () => new StorageItem(new AccountState()));
+            entry.GetInteroperable<AccountState>().Balance = 1000 * NativeContract.GAS.Factor;
+            snapshot.Commit();
+
             // Create a MemoryPool with capacity of 100
             _unit = new MemoryPool(TestBlockchain.TheNeoSystem, 100);
-            _unit.LoadPolicy(Blockchain.Singleton.GetSnapshot());
+            _unit.InitSnapshot(snapshot);
 
             // Verify capacity equals the amount specified
             _unit.Capacity.Should().Be(100);
@@ -62,6 +70,7 @@ namespace Neo.UnitTests.Ledger
             _unit.UnVerifiedCount.Should().Be(0);
             _unit.Count.Should().Be(0);
             _unit2 = new MemoryPool(TestBlockchain.TheNeoSystem, 0);
+            _unit2.InitSnapshot(snapshot);
             plugin = new TestIMemoryPoolTxObserverPlugin();
         }
 
@@ -85,7 +94,7 @@ namespace Neo.UnitTests.Ledger
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new Mock<Transaction>();
             mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
-            mock.Setup(p => p.VerifyStateDependent(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyStateDependent(It.IsAny<StoreView>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateIndependent()).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
@@ -110,8 +119,6 @@ namespace Neo.UnitTests.Ledger
             Mock<Transaction> mock = new Mock<Transaction>();
             UInt160 sender = senderAccount;
             mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
-            mock.Setup(p => p.VerifyStateDependent(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns((StoreView snapshot, TransactionVerificationContext context) => context.CheckTransaction(mock.Object, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
-            mock.Setup(p => p.VerifyStateIndependent()).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
             mock.Object.Attributes = Array.Empty<TransactionAttribute>();
@@ -136,11 +143,10 @@ namespace Neo.UnitTests.Ledger
 
         private void AddTransactions(int count)
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
             for (int i = 0; i < count; i++)
             {
                 var txToAdd = CreateTransaction();
-                _unit.TryAdd(txToAdd, snapshot);
+                _unit.TryAdd(txToAdd);
             }
 
             Console.WriteLine($"created {count} tx");
@@ -148,8 +154,7 @@ namespace Neo.UnitTests.Ledger
 
         private void AddTransaction(Transaction txToAdd)
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-            _unit.TryAdd(txToAdd, snapshot);
+            _unit.TryAdd(txToAdd);
         }
 
         private void AddTransactionsWithBalanceVerify(int count, long fee, SnapshotView snapshot)
@@ -157,7 +162,7 @@ namespace Neo.UnitTests.Ledger
             for (int i = 0; i < count; i++)
             {
                 var txToAdd = CreateTransactionWithFeeAndBalanceVerify(fee);
-                _unit.TryAdd(txToAdd, snapshot);
+                _unit.TryAdd(txToAdd);
             }
 
             Console.WriteLine($"created {count} tx");
@@ -175,6 +180,15 @@ namespace Neo.UnitTests.Ledger
             _unit.VerifiedCount.Should().Be(100);
             _unit.UnVerifiedCount.Should().Be(0);
             _unit.Count.Should().Be(100);
+        }
+
+        [TestMethod]
+        public void TestAddInsufficientFunds()
+        {
+            var tx1 = CreateTransaction();
+            var tx2 = CreateTransaction(1000 * (long)NativeContract.GAS.Factor);
+            _unit.TryAdd(tx1).Should().Be(VerifyResult.Succeed);
+            _unit.TryAdd(tx2).Should().Be(VerifyResult.InsufficientFunds); ;
         }
 
         [TestMethod]
@@ -377,7 +391,7 @@ namespace Neo.UnitTests.Ledger
             AddTransactions(10);
 
             var txToAdd = CreateTransaction();
-            _unit.TryAdd(txToAdd, snapshot);
+            _unit.TryAdd(txToAdd);
             _unit.ContainsKey(txToAdd.Hash).Should().BeTrue();
             _unit.InvalidateVerifiedTransactions();
             _unit.ContainsKey(txToAdd.Hash).Should().BeTrue();
@@ -413,12 +427,11 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetVerifiedTransactions()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
             var tx1 = CreateTransaction();
             var tx2 = CreateTransaction();
-            _unit.TryAdd(tx1, snapshot);
+            _unit.TryAdd(tx1);
             _unit.InvalidateVerifiedTransactions();
-            _unit.TryAdd(tx2, snapshot);
+            _unit.TryAdd(tx2);
             IEnumerable<Transaction> enumerable = _unit.GetVerifiedTransactions();
             enumerable.Count().Should().Be(1);
             var enumerator = enumerable.GetEnumerator();
@@ -430,7 +443,7 @@ namespace Neo.UnitTests.Ledger
         public void TestReVerifyTopUnverifiedTransactionsIfNeeded()
         {
             _unit = new MemoryPool(TestBlockchain.TheNeoSystem, 600);
-            _unit.LoadPolicy(Blockchain.Singleton.GetSnapshot());
+            _unit.InitSnapshot(Blockchain.Singleton.GetSnapshot());
             AddTransaction(CreateTransaction(100000001));
             AddTransaction(CreateTransaction(100000001));
             AddTransaction(CreateTransaction(100000001));
@@ -465,19 +478,17 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestTryAdd()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
             var tx1 = CreateTransaction();
-            _unit.TryAdd(tx1, snapshot).Should().Be(VerifyResult.Succeed);
-            _unit.TryAdd(tx1, snapshot).Should().NotBe(VerifyResult.Succeed);
-            _unit2.TryAdd(tx1, snapshot).Should().NotBe(VerifyResult.Succeed);
+            _unit.TryAdd(tx1).Should().Be(VerifyResult.Succeed);
+            _unit.TryAdd(tx1).Should().NotBe(VerifyResult.Succeed);
+            _unit2.TryAdd(tx1).Should().NotBe(VerifyResult.Succeed);
         }
 
         [TestMethod]
         public void TestTryGetValue()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
             var tx1 = CreateTransaction();
-            _unit.TryAdd(tx1, snapshot);
+            _unit.TryAdd(tx1);
             _unit.TryGetValue(tx1.Hash, out Transaction tx).Should().BeTrue();
             tx.Should().BeEquivalentTo(tx1);
 
@@ -513,7 +524,7 @@ namespace Neo.UnitTests.Ledger
             var tx1 = CreateTransaction();
             var tx2 = CreateTransaction();
             Transaction[] transactions = { tx1, tx2 };
-            _unit.TryAdd(tx1, snapshot);
+            _unit.TryAdd(tx1);
 
             var block = new Block { Transactions = transactions };
 

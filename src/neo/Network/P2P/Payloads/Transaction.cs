@@ -281,7 +281,7 @@ namespace Neo.Network.P2P.Payloads
             return Verify(snapshot, null) == VerifyResult.Succeed;
         }
 
-        public virtual VerifyResult VerifyStateDependent(StoreView snapshot, TransactionVerificationContext context)
+        public virtual VerifyResult VerifyStateDependent(StoreView snapshot)
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
@@ -290,7 +290,6 @@ namespace Neo.Network.P2P.Payloads
                     return VerifyResult.PolicyFail;
             if (NativeContract.Policy.GetMaxBlockSystemFee(snapshot) < SystemFee)
                 return VerifyResult.PolicyFail;
-            if (!(context?.CheckTransaction(this, snapshot) ?? true)) return VerifyResult.InsufficientFunds;
             foreach (TransactionAttribute attribute in Attributes)
                 if (!attribute.Verify(snapshot, this))
                     return VerifyResult.Invalid;
@@ -313,7 +312,7 @@ namespace Neo.Network.P2P.Payloads
         {
             VerifyResult result = VerifyStateIndependent();
             if (result != VerifyResult.Succeed) return result;
-            result = VerifyStateDependent(snapshot, context);
+            result = VerifyStateDependent(snapshot);
             return result;
         }
 

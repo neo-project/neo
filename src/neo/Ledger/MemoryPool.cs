@@ -36,6 +36,7 @@ namespace Neo.Ledger
         ///       lock for write operations.
         /// </summary>
         private readonly ReaderWriterLockSlim _txRwLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+        private readonly ReaderWriterLockSlim _snapshotLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
 
         /// <summary>
         /// Store all verified unsorted transactions currently in the pool.
@@ -55,6 +56,11 @@ namespace Neo.Ledger
         /// </summary>
         private readonly Dictionary<UInt256, PoolItem> _unverifiedTransactions = new Dictionary<UInt256, PoolItem>();
         private readonly SortedSet<PoolItem> _unverifiedSortedTransactions = new SortedSet<PoolItem>();
+
+        // <summary>
+        // Verified transactions are verified against this snapshot.
+        // </summary>
+        private SnapshotView currentSnapshot;
 
         // Internal methods to aid in unit testing
         internal int SortedTxCount => _sortedTransactions.Count;
@@ -105,10 +111,16 @@ namespace Neo.Ledger
             Capacity = capacity;
         }
 
-        internal bool LoadPolicy(StoreView snapshot)
+        internal void InitSnapshot(SnapshotView snapshot)
         {
-            _maxTxPerBlock = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot);
-            long newFeePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
+            currentSnapshot = snapshot;
+            LoadPolicy();
+        }
+
+        internal bool LoadPolicy()
+        {
+            _maxTxPerBlock = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(currentSnapshot);
+            long newFeePerByte = NativeContract.Policy.GetFeePerByte(currentSnapshot);
             bool policyChanged = newFeePerByte > _feePerByte;
             _feePerByte = newFeePerByte;
             return policyChanged;
@@ -253,48 +265,63 @@ namespace Neo.Ledger
         }
 
         /// <summary>
-        /// Adds an already verified transaction to the memory pool.
-        ///
-        /// Note: This must only be called from a single thread (the Blockchain actor). To add a transaction to the pool
-        ///       tell the Blockchain actor about the transaction.
+        /// Verifies (against currentSnapshot) and adds transaction to the memory pool.
         /// </summary>
         /// <param name="hash"></param>
         /// <param name="tx"></param>
         /// <returns></returns>
-        internal VerifyResult TryAdd(Transaction tx, StoreView snapshot)
+        internal VerifyResult TryAdd(Transaction tx)
         {
             var poolItem = new PoolItem(tx);
-
-            if (_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.AlreadyExists;
-
             List<Transaction> removedTransactions = null;
-            _txRwLock.EnterWriteLock();
+            VerifyResult result = VerifyResult.Succeed;
+
+            _snapshotLock.EnterReadLock();
             try
             {
-                VerifyResult result = tx.VerifyStateDependent(snapshot, VerificationContext);
-                if (result != VerifyResult.Succeed) return result;
+                if (currentSnapshot.ContainsTransaction(tx.Hash))
+                    return VerifyResult.AlreadyExists;
 
-                _unsortedTransactions.Add(tx.Hash, poolItem);
-                VerificationContext.AddTransaction(tx);
-                _sortedTransactions.Add(poolItem);
+                result = tx.Verify(currentSnapshot, null);
+                if (result != VerifyResult.Succeed)
+                    return result;
 
-                if (Count > Capacity)
-                    removedTransactions = RemoveOverCapacity();
+                _txRwLock.EnterWriteLock();
+                try
+                {
+                    if (_unsortedTransactions.ContainsKey(tx.Hash) || _unverifiedTransactions.ContainsKey(tx.Hash))
+                        return VerifyResult.AlreadyExists;
+
+                    if (!VerificationContext.CheckTransaction(tx, currentSnapshot))
+                        return VerifyResult.InsufficientFunds;
+                    _unsortedTransactions.Add(tx.Hash, poolItem);
+                    VerificationContext.AddTransaction(tx);
+                    _sortedTransactions.Add(poolItem);
+
+                    if (Count > Capacity)
+                        removedTransactions = RemoveOverCapacity();
+                    if (!_unsortedTransactions.ContainsKey(tx.Hash))
+                        result = VerifyResult.OutOfMemory;
+                }
+                finally
+                {
+                    _txRwLock.ExitWriteLock();
+                }
             }
             finally
             {
-                _txRwLock.ExitWriteLock();
+                _snapshotLock.ExitReadLock();
             }
 
             foreach (IMemoryPoolTxObserverPlugin plugin in Plugin.TxObserverPlugins)
             {
-                plugin.TransactionAdded(poolItem.Tx);
+                if (result == VerifyResult.Succeed)
+                    plugin.TransactionAdded(poolItem.Tx);
                 if (removedTransactions != null)
                     plugin.TransactionsRemoved(MemoryPoolTxRemovalReason.CapacityExceeded, removedTransactions);
             }
 
-            if (!_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.OutOfMemory;
-            return VerifyResult.Succeed;
+            return result;
         }
 
         private List<Transaction> RemoveOverCapacity()
@@ -354,40 +381,51 @@ namespace Neo.Ledger
         }
 
         // Note: this must only be called from a single thread (the Blockchain actor)
-        internal void UpdatePoolForBlockPersisted(Block block, StoreView snapshot)
+        internal void UpdatePoolForBlockPersisted(Block block, SnapshotView snapshot)
         {
-            bool policyChanged = LoadPolicy(snapshot);
+            bool policyChanged = false;
 
-            _txRwLock.EnterWriteLock();
+            _snapshotLock.EnterWriteLock();
             try
             {
-                // First remove the transactions verified in the block.
-                foreach (Transaction tx in block.Transactions)
+                currentSnapshot = snapshot;
+                policyChanged = LoadPolicy();
+
+                _txRwLock.EnterWriteLock();
+                try
                 {
-                    if (TryRemoveVerified(tx.Hash, out _)) continue;
-                    TryRemoveUnVerified(tx.Hash, out _);
+                    // First remove the transactions verified in the block.
+                    foreach (Transaction tx in block.Transactions)
+                    {
+                        if (TryRemoveVerified(tx.Hash, out _)) continue;
+                        TryRemoveUnVerified(tx.Hash, out _);
+                    }
+
+                    // Add all the previously verified transactions back to the unverified transactions
+                    InvalidateVerifiedTransactions();
+
+                    if (policyChanged)
+                    {
+                        var tx = new List<Transaction>();
+                        foreach (PoolItem item in _unverifiedSortedTransactions.Reverse())
+                            if (item.Tx.FeePerByte >= _feePerByte)
+                                tx.Add(item.Tx);
+
+                        _unverifiedTransactions.Clear();
+                        _unverifiedSortedTransactions.Clear();
+
+                        if (tx.Count > 0)
+                            _system.TransactionRouter.Tell(tx.ToArray(), ActorRefs.NoSender);
+                    }
                 }
-
-                // Add all the previously verified transactions back to the unverified transactions
-                InvalidateVerifiedTransactions();
-
-                if (policyChanged)
+                finally
                 {
-                    var tx = new List<Transaction>();
-                    foreach (PoolItem item in _unverifiedSortedTransactions.Reverse())
-                        if (item.Tx.FeePerByte >= _feePerByte)
-                            tx.Add(item.Tx);
-
-                    _unverifiedTransactions.Clear();
-                    _unverifiedSortedTransactions.Clear();
-
-                    if (tx.Count > 0)
-                        _system.Blockchain.Tell(tx.ToArray(), ActorRefs.NoSender);
+                    _txRwLock.ExitWriteLock();
                 }
             }
             finally
             {
-                _txRwLock.ExitWriteLock();
+                _snapshotLock.ExitWriteLock();
             }
 
             // If we know about headers of future blocks, no point in verifying transactions from the unverified tx pool
@@ -425,7 +463,8 @@ namespace Neo.Ledger
                 // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
                 foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
                 {
-                    if (item.Tx.VerifyStateDependent(snapshot, VerificationContext) == VerifyResult.Succeed)
+                    if (VerificationContext.CheckTransaction(item.Tx, currentSnapshot) &&
+            item.Tx.VerifyStateDependent(snapshot) == VerifyResult.Succeed)
                     {
                         reverifiedItems.Add(item);
                         VerificationContext.AddTransaction(item.Tx);

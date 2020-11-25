@@ -773,7 +773,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
             UInt160[] hashes = txSimple.GetScriptHashesForVerifying(snapshot);
             Assert.AreEqual(1, hashes.Length);
-            Assert.AreNotEqual(VerifyResult.Succeed, txSimple.VerifyStateDependent(snapshot, new TransactionVerificationContext()));
+            Assert.AreNotEqual(VerifyResult.Succeed, txSimple.VerifyStateDependent(snapshot));
         }
 
         [TestMethod]
@@ -1162,9 +1162,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Version = 0,
                 Witnesses = new Witness[0],
             };
-            tx.VerifyStateDependent(snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.Invalid);
-            tx.SystemFee = 10;
-            tx.VerifyStateDependent(snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.InsufficientFunds);
+            tx.VerifyStateDependent(snapshot).Should().Be(VerifyResult.Invalid);
 
             var walletA = TestUtils.GenerateTestWallet();
             var walletB = TestUtils.GenerateTestWallet();
@@ -1214,7 +1212,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.IsTrue(data.Completed);
 
                 tx.Witnesses = data.GetWitnesses();
-                tx.VerifyStateDependent(snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.Succeed);
+                tx.VerifyStateDependent(snapshot).Should().Be(VerifyResult.Succeed);
             }
         }
 

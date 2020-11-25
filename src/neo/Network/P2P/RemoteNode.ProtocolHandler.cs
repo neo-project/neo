@@ -287,9 +287,11 @@ namespace Neo.Network.P2P
         private void OnInventoryReceived(IInventory inventory)
         {
             pendingKnownHashes.Remove(inventory.Hash);
+            bool isTx = false;
             switch (inventory)
             {
                 case Transaction transaction:
+                    isTx = true;
                     system.Consensus?.Tell(transaction);
                     break;
                 case Block block:
@@ -299,7 +301,10 @@ namespace Neo.Network.P2P
             }
             knownHashes.Add(inventory.Hash);
             system.TaskManager.Tell(inventory);
-            system.Blockchain.Tell(inventory);
+            if (isTx)
+                system.TransactionRouter.Tell(inventory);
+            else
+                system.Blockchain.Tell(inventory);
         }
 
         private void OnInvMessageReceived(InvPayload payload)

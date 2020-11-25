@@ -54,7 +54,7 @@ namespace Neo.UnitTests.Ledger
         public void Initialize()
         {
             system = TestBlockchain.TheNeoSystem;
-            Blockchain.Singleton.MemPool.TryAdd(txSample, Blockchain.Singleton.GetSnapshot());
+            Blockchain.Singleton.MemPool.TryAdd(txSample);
         }
 
         [TestMethod]
@@ -122,15 +122,15 @@ namespace Neo.UnitTests.Ledger
             typeof(Blockchain)
                 .GetMethod("UpdateCurrentSnapshot", BindingFlags.Instance | BindingFlags.NonPublic)
                 .Invoke(Blockchain.Singleton, null);
-
+            Blockchain.Singleton.MemPool.InitSnapshot(snapshot); // normally done via UpdatePoolForBlockPersisted
             // Make transaction
 
             var tx = CreateValidTx(walletA, acc.ScriptHash, 0);
 
-            senderProbe.Send(system.Blockchain, tx);
+            senderProbe.Send(system.TransactionRouter, tx);
             senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Succeed);
 
-            senderProbe.Send(system.Blockchain, tx);
+            senderProbe.Send(system.TransactionRouter, tx);
             senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.AlreadyExists);
         }
 
