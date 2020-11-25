@@ -163,16 +163,8 @@ namespace Neo.SmartContract
             base.LoadContext(context);
         }
 
-        internal protected void LoadClonedContext(ExecutionContext context, int initialPosition, bool checkReturnValue)
+        internal void LoadContext(ExecutionContext context, bool checkReturnValue)
         {
-            // Copy script hash
-            var state = context.GetState<ExecutionContextState>();
-            context = context.Clone(initialPosition);
-            var newState = context.GetState<ExecutionContextState>();
-            newState.CallFlags = state.CallFlags;
-            newState.ScriptHash = state.ScriptHash;
-            newState.CallingScriptHash = state.CallingScriptHash;
-            // Configure CurrentContext and load the cloned one
             if (checkReturnValue)
                 GetInvocationState(CurrentContext).Convention = ReturnTypeConvention.EnsureNotEmpty;
             LoadContext(context);
@@ -203,7 +195,7 @@ namespace Neo.SmartContract
 
                 if (init != null)
                 {
-                    LoadClonedContext(context, init.Offset, false);
+                    LoadContext(context.Clone(init.Offset), false);
                 }
             }
 
