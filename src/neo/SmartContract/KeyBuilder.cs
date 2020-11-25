@@ -3,7 +3,7 @@ using Neo.Ledger;
 using System;
 using System.IO;
 
-namespace Neo.SmartContract.Native
+namespace Neo.SmartContract
 {
     public class KeyBuilder
     {
