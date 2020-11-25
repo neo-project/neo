@@ -144,7 +144,7 @@ namespace Neo.SmartContract
                 return false;
             }
             if (hashes.Length != verifiable.Witnesses.Length) return false;
-            for (uint i = 0; i < hashes.Length; i++)
+            for (int i = 0; i < hashes.Length; i++)
             {
                 if (!verifiable.VerifyWitness(snapshot, hashes[i], verifiable.Witnesses[i], gas, out long fee))
                     return false;
