@@ -1,7 +1,9 @@
 using Neo.IO;
+using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Designate;
 using System;
 using System.IO;
 
@@ -12,6 +14,7 @@ namespace Neo.Network.P2P.Payloads
         public string Plugin;
         public byte MessageType;
         public byte[] Data;
+        public Role WitnessRole;
         public Witness Witness;
 
         private UInt256 _hash = null;
@@ -30,6 +33,7 @@ namespace Neo.Network.P2P.Payloads
         public int Size =>
             Plugin.GetVarSize() +   //Plugin
             sizeof(byte) +          //MessageType
+            sizeof(Role) +          //WitnessRole
             Data.GetVarSize() +     //Data
             1 + Witness.Size;       //Witness
 
@@ -58,11 +62,13 @@ namespace Neo.Network.P2P.Payloads
             Plugin = reader.ReadVarString(32);
             MessageType = reader.ReadByte();
             Data = reader.ReadVarBytes(ushort.MaxValue);
+            WitnessRole = (Role)reader.ReadByte();
+            if (!Enum.IsDefined(typeof(Role), WitnessRole)) throw new FormatException();
         }
 
         UInt160[] IVerifiable.GetScriptHashesForVerifying(StoreView snapshot)
         {
-            return new[] { NativeContract.NEO.GetCommitteeAddress(snapshot) };
+            return new[] { Blockchain.GetConsensusAddress(NativeContract.Designate.GetDesignatedByRole(snapshot, WitnessRole, snapshot.Height)) };
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -76,6 +82,7 @@ namespace Neo.Network.P2P.Payloads
             writer.WriteVarString(Plugin);
             writer.Write(MessageType);
             writer.WriteVarBytes(Data);
+            writer.Write((byte)WitnessRole);
         }
 
         public bool Verify(StoreView snapshot)
