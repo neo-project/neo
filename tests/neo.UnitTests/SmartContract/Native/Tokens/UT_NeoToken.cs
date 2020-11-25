@@ -845,7 +845,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 }));
             }
 
-            sb.EmitAppCall(NativeContract.NEO.Hash, "transfer", from, UInt160.Zero, amount);
+            sb.EmitAppCall(NativeContract.NEO.Hash, "transfer", from, UInt160.Zero, amount, null);
             engine.LoadScript(sb.ToArray());
             engine.Execute();
             var result = engine.ResultStack.Peek();
