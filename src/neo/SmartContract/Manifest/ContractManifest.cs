@@ -35,14 +35,14 @@ namespace Neo.SmartContract.Manifest
         public UInt160 Hash => Abi.Hash;
 
         /// <summary>
+        /// Contract name
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
         /// A group represents a set of mutually trusted contracts. A contract will trust and allow any contract in the same group to invoke it, and the user interface will not give any warnings.
         /// </summary>
         public ContractGroup[] Groups { get; set; }
-
-        /// <summary>
-        /// The features field describes what features are available for the contract.
-        /// </summary>
-        public ContractFeatures Features { get; set; }
 
         /// <summary>
         /// NEP10 - SupportedStandards
@@ -115,12 +115,8 @@ namespace Neo.SmartContract.Manifest
         {
             return new JObject
             {
+                ["name"] = Name,
                 ["groups"] = Groups.Select(u => u.ToJson()).ToArray(),
-                ["features"] = new JObject
-                {
-                    ["storage"] = Features.HasFlag(ContractFeatures.HasStorage),
-                    ["payable"] = Features.HasFlag(ContractFeatures.Payable)
-                },
                 ["supportedstandards"] = SupportedStandards.Select(u => new JString(u)).ToArray(),
                 ["abi"] = Abi.ToJson(),
                 ["permissions"] = Permissions.Select(p => p.ToJson()).ToArray(),
@@ -138,8 +134,8 @@ namespace Neo.SmartContract.Manifest
         {
             return new ContractManifest
             {
+                Name = Name,
                 Groups = Groups.Select(p => p.Clone()).ToArray(),
-                Features = Features,
                 SupportedStandards = SupportedStandards[..],
                 Abi = Abi.Clone(),
                 Permissions = Permissions.Select(p => p.Clone()).ToArray(),
@@ -167,10 +163,8 @@ namespace Neo.SmartContract.Manifest
 
         private void DeserializeFromJson(JObject json)
         {
+            Name = json["name"].AsString();
             Groups = ((JArray)json["groups"]).Select(u => ContractGroup.FromJson(u)).ToArray();
-            Features = ContractFeatures.NoProperty;
-            if (json["features"]["storage"].AsBoolean()) Features |= ContractFeatures.HasStorage;
-            if (json["features"]["payable"].AsBoolean()) Features |= ContractFeatures.Payable;
             SupportedStandards = ((JArray)json["supportedstandards"]).Select(u => u.AsString()).ToArray();
             Abi = ContractAbi.FromJson(json["abi"]);
             Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u)).ToArray();

@@ -62,8 +62,8 @@ namespace Neo.SmartContract.Native
             }
             this.Manifest = new ContractManifest
             {
+                Name = Name,
                 Groups = System.Array.Empty<ContractGroup>(),
-                Features = ContractFeatures.NoProperty,
                 SupportedStandards = new string[0],
                 Abi = new ContractAbi()
                 {
@@ -108,10 +108,11 @@ namespace Neo.SmartContract.Native
         {
             if (!engine.CurrentScriptHash.Equals(Hash))
                 throw new InvalidOperationException("It is not allowed to use Neo.Native.Call directly to call native contracts. System.Contract.Call should be used.");
-            string operation = engine.Pop().GetString();
-            Array args = engine.Pop<Array>();
+            ExecutionContext context = engine.CurrentContext;
+            string operation = context.EvaluationStack.Pop().GetString();
+            Array args = context.EvaluationStack.Pop<Array>();
             ContractMethodMetadata method = methods[operation];
-            ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();
+            ExecutionContextState state = context.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
             engine.AddGas(method.Price);
@@ -125,7 +126,7 @@ namespace Neo.SmartContract.Native
             }
             object returnValue = method.Handler.Invoke(this, parameters.ToArray());
             if (method.Handler.ReturnType != typeof(void))
-                engine.Push(engine.Convert(returnValue));
+                context.EvaluationStack.Push(engine.Convert(returnValue));
         }
 
         public static bool IsNative(UInt160 hash)

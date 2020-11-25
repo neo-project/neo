@@ -16,9 +16,6 @@ namespace Neo.Ledger
         public byte[] Script;
         public ContractManifest Manifest;
 
-        public bool HasStorage => Manifest.Features.HasFlag(ContractFeatures.HasStorage);
-        public bool Payable => Manifest.Features.HasFlag(ContractFeatures.Payable);
-
         private UInt160 _scriptHash;
         public UInt160 ScriptHash
         {
@@ -82,7 +79,7 @@ namespace Neo.Ledger
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new StackItem[] { Script, Manifest.ToString(), HasStorage, Payable });
+            return new Array(referenceCounter, new StackItem[] { Script, Manifest.ToString() });
         }
     }
 }

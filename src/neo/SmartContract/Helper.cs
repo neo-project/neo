@@ -3,7 +3,6 @@ using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
@@ -156,41 +155,26 @@ namespace Neo.SmartContract
 
         public static bool VerifyWitness(this IVerifiable verifiable, StoreView snapshot, UInt160 hash, Witness witness, long gas, out long fee)
         {
-            int offset;
             fee = 0;
-            ContractMethodDescriptor init = null;
-            byte[] verification = witness.VerificationScript;
-            if (verification.Length == 0)
-            {
-                ContractState cs = snapshot.Contracts.TryGet(hash);
-                if (cs is null) return false;
-                ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify");
-                if (md is null) return false;
-                verification = cs.Script;
-                offset = md.Offset;
-                init = cs.Manifest.Abi.GetMethod("_initialize");
-            }
-            else
-            {
-                if (NativeContract.IsNative(hash)) return false;
-                if (hash != witness.ScriptHash) return false;
-                offset = 0;
-            }
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas))
             {
                 CallFlags callFlags = !witness.VerificationScript.IsStandardContract() ? CallFlags.AllowStates : CallFlags.None;
-                ExecutionContext context = engine.LoadScript(verification, callFlags, offset);
-                if (NativeContract.IsNative(hash))
+                byte[] verification = witness.VerificationScript;
+
+                if (verification.Length == 0)
                 {
-                    using ScriptBuilder sb = new ScriptBuilder();
-                    sb.Emit(OpCode.DEPTH, OpCode.PACK);
-                    sb.EmitPush("verify");
-                    engine.LoadScript(sb.ToArray(), CallFlags.None);
+                    ContractState cs = snapshot.Contracts.TryGet(hash);
+                    if (cs is null) return false;
+                    if (engine.LoadContract(cs, "verify", callFlags, true) is null)
+                        return false;
                 }
-                else if (init != null)
+                else
                 {
-                    engine.LoadContext(context.Clone(init.Offset), false);
+                    if (NativeContract.IsNative(hash)) return false;
+                    if (hash != witness.ScriptHash) return false;
+                    engine.LoadScript(verification, callFlags, 0);
                 }
+
                 engine.LoadScript(witness.InvocationScript, CallFlags.None);
                 if (engine.Execute() == VMState.FAULT) return false;
                 if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;

@@ -96,8 +96,6 @@ namespace Neo.SmartContract
                 contract.Manifest = ContractManifest.Parse(manifest);
                 if (!contract.Manifest.IsValid(contract.ScriptHash))
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.ScriptHash}");
-                if (!contract.HasStorage && Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)).Any())
-                    throw new InvalidOperationException($"Contract Does Not Support Storage But Uses Storage");
             }
             if (script != null)
             {
@@ -113,9 +111,8 @@ namespace Neo.SmartContract
             ContractState contract = Snapshot.Contracts.TryGet(hash);
             if (contract == null) return;
             Snapshot.Contracts.Delete(hash);
-            if (contract.HasStorage)
-                foreach (var (key, _) in Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)))
-                    Snapshot.Storages.Delete(key);
+            foreach (var (key, _) in Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)))
+                Snapshot.Storages.Delete(key);
         }
 
         protected internal void CallContract(UInt160 contractHash, string method, Array args)
@@ -164,10 +161,9 @@ namespace Neo.SmartContract
             CallFlags callingFlags = state.CallFlags;
 
             if (args.Count != method.Parameters.Length) throw new InvalidOperationException($"Method {method.Name} Expects {method.Parameters.Length} Arguments But Receives {args.Count} Arguments");
-            ExecutionContext context_new = LoadScript(contract.Script, method.Offset);
+            ExecutionContext context_new = LoadContract(contract, method.Name, flags & callingFlags);
             state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
-            state.CallFlags = flags & callingFlags;
 
             if (NativeContract.IsNative(contract.ScriptHash))
             {
@@ -179,9 +175,6 @@ namespace Neo.SmartContract
                 for (int i = args.Count - 1; i >= 0; i--)
                     context_new.EvaluationStack.Push(args[i]);
             }
-
-            method = contract.Manifest.Abi.GetMethod("_initialize");
-            if (method != null) LoadContext(context_new.Clone(method.Offset));
         }
 
         protected internal bool IsStandardContract(UInt160 hash)

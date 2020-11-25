@@ -22,8 +22,8 @@ namespace Neo.UnitTests
         {
             return new ContractManifest()
             {
+                Name = "testManifest",
                 Groups = new ContractGroup[0],
-                Features = ContractFeatures.NoProperty,
                 SupportedStandards = Array.Empty<string>(),
                 Abi = new ContractAbi()
                 {
