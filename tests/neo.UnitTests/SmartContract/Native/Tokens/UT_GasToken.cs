@@ -23,7 +23,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
 
         [TestMethod]
-        public void Check_Name() => NativeContract.GAS.Name().Should().Be("GAS");
+        public void Check_Name() => NativeContract.GAS.Name.Should().Be("GAS");
 
         [TestMethod]
         public void Check_Symbol() => NativeContract.GAS.Symbol().Should().Be("gas");
