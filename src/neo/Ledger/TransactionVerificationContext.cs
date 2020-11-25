@@ -18,17 +18,11 @@ namespace Neo.Ledger
         /// </summary>
         private readonly Dictionary<ulong, UInt256> oracleResponses = new Dictionary<ulong, UInt256>();
 
-        /// <summary>
-        /// Contains unverified transactions during adding
-        /// </summary>
-        private readonly HashSet<UInt256> unverifiedTx = new HashSet<UInt256>();
-
         public void AddTransaction(Transaction tx)
         {
             var oracle = tx.GetAttribute<OracleResponse>();
             if (oracle != null && !oracleResponses.TryAdd(oracle.Id, tx.Hash))
             {
-                unverifiedTx.Add(tx.Hash);
                 return;
             }
 
@@ -41,17 +35,14 @@ namespace Neo.Ledger
         public bool CheckTransaction(Transaction tx, StoreView snapshot)
         {
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
-            if (!senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool))
-            {
-                return false;
-            }
+            senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
 
             BigInteger fee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
             if (balance < fee) return false;
 
             var oracle = tx.GetAttribute<OracleResponse>();
             if (oracle != null &&
-                (!oracleResponses.TryGetValue(oracle.Id, out var hash) || hash != tx.Hash || unverifiedTx.Contains(tx.Hash)))
+                (!oracleResponses.TryGetValue(oracle.Id, out var hash) || hash != tx.Hash))
             {
                 return false;
             }
@@ -61,7 +52,6 @@ namespace Neo.Ledger
 
         public void RemoveTransaction(Transaction tx)
         {
-            if (unverifiedTx.Remove(tx.Hash)) return;
             if ((senderFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee) == 0) senderFee.Remove(tx.Sender);
 
             var oracle = tx.GetAttribute<OracleResponse>();
