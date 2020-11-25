@@ -1,7 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.SmartContract.Native;
+using Neo.SmartContract;
 
-namespace Neo.UnitTests.SmartContract.Native
+namespace Neo.UnitTests.SmartContract
 {
     [TestClass]
     public class UT_KeyBuilder

@@ -67,7 +67,7 @@ namespace Neo.SmartContract.Native.Tokens
             state.Balance += amount;
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem(BigInteger.Zero));
             storage.Add(amount);
-            PostTransfer(engine, null, account, amount);
+            PostTransfer(engine, null, account, amount, StackItem.Null);
         }
 
         internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
@@ -85,7 +85,7 @@ namespace Neo.SmartContract.Native.Tokens
                 state.Balance -= amount;
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
             storage.Add(-amount);
-            PostTransfer(engine, account, null, amount);
+            PostTransfer(engine, account, null, amount, StackItem.Null);
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
@@ -105,7 +105,7 @@ namespace Neo.SmartContract.Native.Tokens
         }
 
         [ContractMethod(0_09000000, CallFlags.AllowModifyStates)]
-        protected virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount)
+        protected virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (!from.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(from))
@@ -143,7 +143,7 @@ namespace Neo.SmartContract.Native.Tokens
                     state_to.Balance += amount;
                 }
             }
-            PostTransfer(engine, from, to, amount);
+            PostTransfer(engine, from, to, amount, data);
             return true;
         }
 
@@ -151,7 +151,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
         }
 
-        private void PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount)
+        private void PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
         {
             // Send notification
 
@@ -164,7 +164,7 @@ namespace Neo.SmartContract.Native.Tokens
 
             // Call onPayment method (NEP-17)
 
-            engine.CallFromNativeContract(null, to, "onPayment", from?.ToArray() ?? StackItem.Null, amount);
+            engine.CallFromNativeContract(null, to, "onPayment", from?.ToArray() ?? StackItem.Null, amount, data);
         }
     }
 }
