@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Consensus;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
@@ -14,7 +13,6 @@ using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.Wallets;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using static Neo.SmartContract.Native.Tokens.NeoToken;
@@ -31,7 +29,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
 
         [TestMethod]
-        public void Check_Name() => NativeContract.NEO.Name().Should().Be("NEO");
+        public void Check_Name() => NativeContract.NEO.Name.Should().Be("NEO");
 
         [TestMethod]
         public void Check_Symbol() => NativeContract.NEO.Symbol().Should().Be("neo");
@@ -847,7 +845,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 }));
             }
 
-            sb.EmitAppCall(NativeContract.NEO.Hash, "transfer", from, UInt160.Zero, amount);
+            sb.EmitAppCall(NativeContract.NEO.Hash, "transfer", from, UInt160.Zero, amount, null);
             engine.LoadScript(sb.ToArray());
             engine.Execute();
             var result = engine.ResultStack.Peek();

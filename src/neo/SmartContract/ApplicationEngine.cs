@@ -3,6 +3,8 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
+using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -35,7 +37,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// This constant can be used for testing scripts.
         /// </summary>
-        private const long TestModeGas = 20_00000000;
+        public const long TestModeGas = 20_00000000;
 
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
@@ -166,6 +168,38 @@ namespace Neo.SmartContract
             if (checkReturnValue)
                 GetInvocationState(CurrentContext).Convention = ReturnTypeConvention.EnsureNotEmpty;
             LoadContext(context);
+        }
+
+        public ExecutionContext LoadContract(ContractState contract, string method, CallFlags callFlags, bool packParameters = false)
+        {
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
+            if (md is null) return null;
+
+            ExecutionContext context = LoadScript(contract.Script, callFlags, md.Offset);
+
+            if (NativeContract.IsNative(contract.ScriptHash))
+            {
+                if (packParameters)
+                {
+                    using ScriptBuilder sb = new ScriptBuilder();
+                    sb.Emit(OpCode.DEPTH, OpCode.PACK);
+                    sb.EmitPush(md.Name);
+                    LoadScript(sb.ToArray(), CallFlags.None);
+                }
+            }
+            else
+            {
+                // Call initialization
+
+                var init = contract.Manifest.Abi.GetMethod("_initialize");
+
+                if (init != null)
+                {
+                    LoadContext(context.Clone(init.Offset), false);
+                }
+            }
+
+            return context;
         }
 
         public ExecutionContext LoadScript(Script script, CallFlags callFlags, int initialPosition = 0)
