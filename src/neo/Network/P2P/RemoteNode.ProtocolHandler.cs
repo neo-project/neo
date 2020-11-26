@@ -132,6 +132,9 @@ namespace Neo.Network.P2P
 
         private void OnAddrMessageReceived(AddrPayload payload)
         {
+            ref bool sent = ref sentCommands[(byte)MessageCommand.GetAddr];
+            if (!sent) return;
+            sent = false;
             system.LocalNode.Tell(new Peer.Peers
             {
                 EndPoints = payload.AddressList.Select(p => p.EndPoint).Where(p => p.Port > 0)
