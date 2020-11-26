@@ -21,10 +21,7 @@ namespace Neo.Ledger
         public void AddTransaction(Transaction tx)
         {
             var oracle = tx.GetAttribute<OracleResponse>();
-            if (oracle != null && !oracleResponses.TryAdd(oracle.Id, tx.Hash))
-            {
-                return;
-            }
+            if (oracle != null) oracleResponses.Add(oracle.Id, tx.Hash);
 
             if (senderFee.TryGetValue(tx.Sender, out var value))
                 senderFee[tx.Sender] = value + tx.SystemFee + tx.NetworkFee;
