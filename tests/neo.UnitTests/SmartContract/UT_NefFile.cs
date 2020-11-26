@@ -76,21 +76,6 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void TestGetHash()
-        {
-            var nef = new NefFile()
-            {
-                Compiler = "test",
-                Version = new System.Version(),
-                Script = new byte[] { 1, 2, 3 }
-            };
-            nef.CheckSum = NefFile.ComputeChecksum(nef);
-
-            Assert.AreEqual("0xb4b7417195feca1cdb5a99504ab641d8c220ae99", nef.GetHash(UInt160.Zero).ToString());
-            Assert.AreEqual("0xe56e4ee87f89a70e9138432c387ad49f2ee5b55f", nef.GetHash(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01")).ToString());
-        }
-
-        [TestMethod]
         public void TestGetSize()
         {
             file.Size.Should().Be(4 + 32 + 16 + 4 + 4);
