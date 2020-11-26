@@ -43,7 +43,7 @@ namespace Neo.SmartContract.Native
                 sb.EmitSysCall(ApplicationEngine.Neo_Native_Call);
                 this.Script = sb.ToArray();
             }
-            this.Hash = Helper.GetContractHash(Blockchain.GenesisBlock.Transactions[0].Sender, Script);
+            this.Hash = Helper.GetContractHash((new[] { (byte)OpCode.PUSH1 }).ToScriptHash(), Script);
             List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
             List<string> safeMethods = new List<string>();
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))

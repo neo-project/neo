@@ -43,10 +43,11 @@ namespace Neo.UnitTests.Extensions
             engine.LoadScript(contract.Script);
 
             var script = new ScriptBuilder();
+            script.Emit(OpCode.PUSHNULL);
             script.EmitPush(amount);
             script.EmitPush(to);
             script.EmitPush(from);
-            script.EmitPush(3);
+            script.EmitPush(4);
             script.Emit(OpCode.PACK);
             script.EmitPush("transfer");
             engine.LoadScript(script.ToArray());
