@@ -49,10 +49,7 @@ namespace Neo.Ledger
             if ((senderFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee) == 0) senderFee.Remove(tx.Sender);
 
             var oracle = tx.GetAttribute<OracleResponse>();
-            if (oracle != null && oracleResponses.TryGetValue(oracle.Id, out var hash) && hash == tx.Hash)
-            {
-                oracleResponses.Remove(oracle.Id);
-            }
+            if (oracle != null) oracleResponses.Remove(oracle.Id);
         }
     }
 }
