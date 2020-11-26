@@ -41,8 +41,7 @@ namespace Neo.Ledger
             if (balance < fee) return false;
 
             var oracle = tx.GetAttribute<OracleResponse>();
-            if (oracle != null &&
-                (!oracleResponses.TryGetValue(oracle.Id, out var hash) || hash != tx.Hash))
+            if (oracle != null && (oracleResponses.ContainsKey(oracle.Id)))
             {
                 return false;
             }
