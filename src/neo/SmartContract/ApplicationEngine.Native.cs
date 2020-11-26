@@ -11,6 +11,7 @@ namespace Neo.SmartContract
 
         protected internal void DeployNativeContract(UInt160 hash)
         {
+            if (Trigger != TriggerType.OnPersist) throw new InvalidOperationException("Invalid trigger");
             NativeContract contract = NativeContract.GetContract(hash);
             if (contract == null) throw new Exception($"Can't find a native contract with the hash: {hash}");
             if (Snapshot.Contracts.Contains(hash)) throw new Exception($"{hash} already deployed");

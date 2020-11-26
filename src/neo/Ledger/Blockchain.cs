@@ -169,7 +169,7 @@ namespace Neo.Ledger
             return new Transaction
             {
                 Version = 0,
-                Script = Array.Empty<byte>(),
+                Script = new byte[] { (byte)OpCode.RET },
                 SystemFee = 0,
                 Signers = new[]
                 {

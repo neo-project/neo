@@ -61,7 +61,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetSize()
         {
-            ((ISerializable)origin).Size.Should().Be(193);
+            ((ISerializable)origin).Size.Should().Be(58);
         }
     }
 }
