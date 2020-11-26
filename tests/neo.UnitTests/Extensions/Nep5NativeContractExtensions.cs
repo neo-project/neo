@@ -142,25 +142,5 @@ namespace Neo.UnitTests.Extensions
 
             return result.GetString();
         }
-
-        public static string Name(this NativeContract contract)
-        {
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
-
-            engine.LoadScript(contract.Script);
-
-            var script = new ScriptBuilder();
-            script.EmitPush(0);
-            script.Emit(OpCode.PACK);
-            script.EmitPush("name");
-            engine.LoadScript(script.ToArray());
-
-            engine.Execute().Should().Be(VMState.HALT);
-
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.ByteString));
-
-            return result.GetString();
-        }
     }
 }
