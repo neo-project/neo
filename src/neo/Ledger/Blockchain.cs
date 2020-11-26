@@ -166,21 +166,10 @@ namespace Neo.Ledger
 
         private static Transaction DeployNativeContracts()
         {
-            byte[] script;
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.Designate.Hash.ToArray());
-                sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.Policy.Hash.ToArray());
-                sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.NEO.Hash.ToArray());
-                sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.GAS.Hash.ToArray());
-                sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.Oracle.Hash.ToArray());
-
-                script = sb.ToArray();
-            }
             return new Transaction
             {
                 Version = 0,
-                Script = script,
+                Script = Array.Empty<byte>(),
                 SystemFee = 0,
                 Signers = new[]
                 {
@@ -439,7 +428,6 @@ namespace Neo.Ledger
                     header_index.Add(block.Hash);
                     snapshot.HeaderHashIndex.GetAndChange().Set(block);
                 }
-                long genesis_fee = 0;
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 snapshot.PersistingBlock = block;
                 if (block.Index > 0)
@@ -453,7 +441,25 @@ namespace Neo.Ledger
                 }
                 else
                 {
-                    genesis_fee = 5 * ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1];
+                    // Deploy genesis native contracts
+
+                    byte[] genesisOnPersistScript;
+                    using (ScriptBuilder sb = new ScriptBuilder())
+                    {
+                        sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.Designate.Hash.ToArray());
+                        sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.Policy.Hash.ToArray());
+                        sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.NEO.Hash.ToArray());
+                        sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.GAS.Hash.ToArray());
+                        sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.Oracle.Hash.ToArray());
+                        genesisOnPersistScript = sb.ToArray();
+                    }
+
+                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot);
+                    engine.LoadScript(genesisOnPersistScript);
+                    if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
+                    ApplicationExecuted application_executed = new ApplicationExecuted(engine);
+                    Context.System.EventStream.Publish(application_executed);
+                    all_application_executed.Add(application_executed);
                 }
                 snapshot.Blocks.Add(block.Hash, block.Trim());
                 StoreView clonedSnapshot = snapshot.Clone();
@@ -469,7 +475,7 @@ namespace Neo.Ledger
                     clonedSnapshot.Transactions.Add(tx.Hash, state);
                     clonedSnapshot.Transactions.Commit();
 
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee + genesis_fee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee))
                     {
                         engine.LoadScript(tx.Script);
                         state.VMState = engine.Execute();
