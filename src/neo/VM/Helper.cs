@@ -63,45 +63,48 @@ namespace Neo.VM
 
         public static ScriptBuilder EmitPush(this ScriptBuilder sb, ContractParameter parameter)
         {
-            switch (parameter.Type)
-            {
-                case ContractParameterType.Signature:
-                case ContractParameterType.ByteArray:
-                    sb.EmitPush((byte[])parameter.Value);
-                    break;
-                case ContractParameterType.Boolean:
-                    sb.EmitPush((bool)parameter.Value);
-                    break;
-                case ContractParameterType.Integer:
-                    if (parameter.Value is BigInteger bi)
-                        sb.EmitPush(bi);
-                    else
-                        sb.EmitPush((BigInteger)typeof(BigInteger).GetConstructor(new[] { parameter.Value.GetType() }).Invoke(new[] { parameter.Value }));
-                    break;
-                case ContractParameterType.Hash160:
-                    sb.EmitPush((UInt160)parameter.Value);
-                    break;
-                case ContractParameterType.Hash256:
-                    sb.EmitPush((UInt256)parameter.Value);
-                    break;
-                case ContractParameterType.PublicKey:
-                    sb.EmitPush((ECPoint)parameter.Value);
-                    break;
-                case ContractParameterType.String:
-                    sb.EmitPush((string)parameter.Value);
-                    break;
-                case ContractParameterType.Array:
-                    {
-                        IList<ContractParameter> parameters = (IList<ContractParameter>)parameter.Value;
-                        for (int i = parameters.Count - 1; i >= 0; i--)
-                            sb.EmitPush(parameters[i]);
-                        sb.EmitPush(parameters.Count);
-                        sb.Emit(OpCode.PACK);
-                    }
-                    break;
-                default:
-                    throw new ArgumentException();
-            }
+            if (parameter.Value is null)
+                sb.Emit(OpCode.PUSHNULL);
+            else
+                switch (parameter.Type)
+                {
+                    case ContractParameterType.Signature:
+                    case ContractParameterType.ByteArray:
+                        sb.EmitPush((byte[])parameter.Value);
+                        break;
+                    case ContractParameterType.Boolean:
+                        sb.EmitPush((bool)parameter.Value);
+                        break;
+                    case ContractParameterType.Integer:
+                        if (parameter.Value is BigInteger bi)
+                            sb.EmitPush(bi);
+                        else
+                            sb.EmitPush((BigInteger)typeof(BigInteger).GetConstructor(new[] { parameter.Value.GetType() }).Invoke(new[] { parameter.Value }));
+                        break;
+                    case ContractParameterType.Hash160:
+                        sb.EmitPush((UInt160)parameter.Value);
+                        break;
+                    case ContractParameterType.Hash256:
+                        sb.EmitPush((UInt256)parameter.Value);
+                        break;
+                    case ContractParameterType.PublicKey:
+                        sb.EmitPush((ECPoint)parameter.Value);
+                        break;
+                    case ContractParameterType.String:
+                        sb.EmitPush((string)parameter.Value);
+                        break;
+                    case ContractParameterType.Array:
+                        {
+                            IList<ContractParameter> parameters = (IList<ContractParameter>)parameter.Value;
+                            for (int i = parameters.Count - 1; i >= 0; i--)
+                                sb.EmitPush(parameters[i]);
+                            sb.EmitPush(parameters.Count);
+                            sb.Emit(OpCode.PACK);
+                        }
+                        break;
+                    default:
+                        throw new ArgumentException();
+                }
             return sb;
         }
 
