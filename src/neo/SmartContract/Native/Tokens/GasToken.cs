@@ -27,7 +27,7 @@ namespace Neo.SmartContract.Native.Tokens
             long totalNetworkFee = 0;
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
             {
-                Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee, false);
+                Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
                 totalNetworkFee += tx.NetworkFee;
             }
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot);

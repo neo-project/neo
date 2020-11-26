@@ -53,7 +53,7 @@ namespace Neo.UnitTests.Ledger
             var snapshot = Blockchain.Singleton.GetSnapshot();
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, long.MaxValue);
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
-            NativeContract.GAS.Burn(engine, UInt160.Zero, balance, true);
+            NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             NativeContract.GAS.Mint(engine, UInt160.Zero, 8, true);
 
             TransactionVerificationContext verificationContext = new TransactionVerificationContext();
