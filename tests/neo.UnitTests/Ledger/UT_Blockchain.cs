@@ -73,13 +73,13 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetCurrentBlockHash()
         {
-            Blockchain.Singleton.CurrentBlockHash.Should().Be(UInt256.Parse("0xb71ffaa6a2f4dd0190739e500b4e943ab889175858cc7f4936e9868f3407d70d"));
+            Blockchain.Singleton.CurrentBlockHash.Should().Be(UInt256.Parse("0x905e6bca0b4c298436539fcaad820614fa58c8e7561721b47b5c11cccfee70a3"));
         }
 
         [TestMethod]
         public void TestGetCurrentHeaderHash()
         {
-            Blockchain.Singleton.CurrentHeaderHash.Should().Be(UInt256.Parse("0xb71ffaa6a2f4dd0190739e500b4e943ab889175858cc7f4936e9868f3407d70d"));
+            Blockchain.Singleton.CurrentHeaderHash.Should().Be(UInt256.Parse("0x905e6bca0b4c298436539fcaad820614fa58c8e7561721b47b5c11cccfee70a3"));
         }
 
         [TestMethod]
@@ -91,7 +91,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetBlockHash()
         {
-            Blockchain.Singleton.GetBlockHash(0).Should().Be(UInt256.Parse("0xb71ffaa6a2f4dd0190739e500b4e943ab889175858cc7f4936e9868f3407d70d"));
+            Blockchain.Singleton.GetBlockHash(0).Should().Be(UInt256.Parse("0x905e6bca0b4c298436539fcaad820614fa58c8e7561721b47b5c11cccfee70a3"));
             Blockchain.Singleton.GetBlockHash(10).Should().BeNull();
         }
 
