@@ -64,7 +64,7 @@ namespace Neo.SmartContract.Native.Tokens
 
             BigInteger gas = CalculateBonus(engine.Snapshot, state.VoteTo, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
             state.BalanceHeight = engine.Snapshot.PersistingBlock.Index;
-            GAS.Mint(engine, account, gas, false);
+            GAS.Mint(engine, account, gas, true);
         }
 
         private BigInteger CalculateBonus(StoreView snapshot, ECPoint vote, BigInteger value, uint start, uint end)
