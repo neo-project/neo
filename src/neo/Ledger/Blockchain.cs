@@ -430,37 +430,35 @@ namespace Neo.Ledger
                 }
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 snapshot.PersistingBlock = block;
-                if (block.Index > 0)
-                {
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot);
-                    engine.LoadScript(onPersistScript);
-                    if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
-                    ApplicationExecuted application_executed = new ApplicationExecuted(engine);
-                    Context.System.EventStream.Publish(application_executed);
-                    all_application_executed.Add(application_executed);
-                }
-                else
-                {
-                    // Deploy genesis native contracts
 
-                    byte[] genesisOnPersistScript;
-                    using (ScriptBuilder sb = new ScriptBuilder())
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot))
+                {
+                    if (block.Index > 0)
                     {
-                        sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.Designate.Hash.ToArray());
-                        sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.Policy.Hash.ToArray());
-                        sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.NEO.Hash.ToArray());
-                        sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.GAS.Hash.ToArray());
-                        sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.Oracle.Hash.ToArray());
-                        genesisOnPersistScript = sb.ToArray();
+                        engine.LoadScript(onPersistScript);
                     }
+                    else
+                    {
+                        // Deploy genesis native contracts
+                        byte[] genesisOnPersistScript;
+                        using (ScriptBuilder sb = new ScriptBuilder())
+                        {
+                            sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.Designate.Hash.ToArray());
+                            sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.Policy.Hash.ToArray());
+                            sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.NEO.Hash.ToArray());
+                            sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.GAS.Hash.ToArray());
+                            sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy, NativeContract.Oracle.Hash.ToArray());
+                            genesisOnPersistScript = sb.ToArray();
+                        }
 
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot);
-                    engine.LoadScript(genesisOnPersistScript);
+                        engine.LoadScript(genesisOnPersistScript);
+                    }
                     if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
                     ApplicationExecuted application_executed = new ApplicationExecuted(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
+
                 snapshot.Blocks.Add(block.Hash, block.Trim());
                 StoreView clonedSnapshot = snapshot.Clone();
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
