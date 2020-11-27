@@ -48,6 +48,29 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
+        public void TestDuplicateOracle()
+        {
+            // Fake balance
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, long.MaxValue);
+            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
+            NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
+            NativeContract.GAS.Mint(engine, UInt160.Zero, 8);
+
+            // Test
+            TransactionVerificationContext verificationContext = new TransactionVerificationContext();
+            var tx = CreateTransactionWithFee(1, 2);
+            tx.Attributes = new TransactionAttribute[] { new OracleResponse() { Code = OracleResponseCode.ConsensusUnreachable, Id = 1, Result = new byte[0] } };
+            verificationContext.CheckTransaction(tx, snapshot).Should().BeTrue();
+            verificationContext.AddTransaction(tx);
+
+            tx = CreateTransactionWithFee(2, 1);
+            tx.Attributes = new TransactionAttribute[] { new OracleResponse() { Code = OracleResponseCode.ConsensusUnreachable, Id = 1, Result = new byte[0] } };
+            verificationContext.CheckTransaction(tx, snapshot).Should().BeFalse();
+        }
+
+        [TestMethod]
         public void TestTransactionSenderFee()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
