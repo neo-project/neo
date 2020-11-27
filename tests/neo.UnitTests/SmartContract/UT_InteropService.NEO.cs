@@ -132,7 +132,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = new byte[0x01],
                 Compiler = "",
-                Version = new Version(1, 2, 3, 4)
+                Version = new Version(1, 2, 3, 4).ToString()
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
             var nefFile = nef.ToArray();
@@ -147,7 +147,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = new byte[NefFile.MaxScriptLength - 1],
                 Compiler = "",
-                Version = new Version(1, 2, 3, 4)
+                Version = new Version(1, 2, 3, 4).ToString()
             };
             script_exceedMaxLength.CheckSum = NefFile.ComputeChecksum(nef);
             Assert.ThrowsException<InvalidOperationException>(() => engine.CreateContract(script_exceedMaxLength.ToArray(), manifest.ToJson().ToByteArray(true)));
@@ -180,7 +180,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = new byte[] { 0x01 },
                 Compiler = "",
-                Version = new Version(1, 2, 3, 4)
+                Version = new Version(1, 2, 3, 4).ToString()
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
             var nefFile = nef.ToArray();
@@ -228,7 +228,7 @@ namespace Neo.UnitTests.SmartContract
             var nefFile = new NefFile()
             {
                 Script = new byte[] { 0x01 },
-                Version = new Version(1, 2, 3, 4),
+                Version = new Version(1, 2, 3, 4).ToString(),
                 Compiler = ""
             };
             nefFile.CheckSum = NefFile.ComputeChecksum(nefFile);
@@ -242,7 +242,7 @@ namespace Neo.UnitTests.SmartContract
             nefFile = new NefFile()
             {
                 Script = new byte[0],
-                Version = new Version(1, 2, 3, 4),
+                Version = new Version(1, 2, 3, 4).ToString(),
                 Compiler = ""
             };
             nefFile.CheckSum = NefFile.ComputeChecksum(nefFile);

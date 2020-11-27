@@ -12,7 +12,7 @@ namespace Neo.UnitTests.SmartContract
             var nef = new NefFile()
             {
                 Compiler = "test",
-                Version = new System.Version(),
+                Version = new System.Version().ToString(),
                 Script = new byte[] { 1, 2, 3 }
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);

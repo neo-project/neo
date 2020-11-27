@@ -13,7 +13,7 @@ namespace Neo.UnitTests.SmartContract
         public NefFile file = new NefFile()
         {
             Compiler = "".PadLeft(32, ' '),
-            Version = new Version(1, 2, 3, 4),
+            Version = new Version(1, 2, 3, 4).ToString(),
             Script = new byte[] { 0x01, 0x02, 0x03 }
         };
 
@@ -87,7 +87,7 @@ namespace Neo.UnitTests.SmartContract
             var file = new NefFile()
             {
                 Compiler = "".PadLeft(32, ' '),
-                Version = new Version(1, 2, 3, 4),
+                Version = new Version(1, 2, 3, 4).ToString(),
                 Script = new byte[] { 0x01, 0x02, 0x03 }
             };
 
@@ -97,7 +97,7 @@ namespace Neo.UnitTests.SmartContract
             file = data.AsSerializable<NefFile>();
 
             Assert.AreEqual("".PadLeft(32, ' '), file.Compiler);
-            Assert.AreEqual(new Version(1, 2, 3, 4), file.Version);
+            Assert.AreEqual(new Version(1, 2, 3, 4).ToString(), file.Version);
             CollectionAssert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }, file.Script);
         }
 
@@ -107,7 +107,7 @@ namespace Neo.UnitTests.SmartContract
             var file = new NefFile()
             {
                 Compiler = "".PadLeft(byte.MaxValue, ' '),
-                Version = new Version(1, 2, 3, 4),
+                Version = new Version(1, 2, 3, 4).ToString(),
                 Script = new byte[1024 * 1024],
                 CheckSum = 0
             };

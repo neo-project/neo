@@ -11,7 +11,7 @@ namespace Neo.SmartContract
     /// +------------+-----------+------------------------------------------------------------+
     /// | Magic      | 4 bytes   | Magic header                                               |
     /// | Compiler   | 32 bytes  | Compiler used                                              |
-    /// | Version    | 16 bytes  | Compiler version (Mayor, Minor, Build, Version)            |
+    /// | Version    | 16 bytes  | Compiler version                                           |
     /// +------------+-----------+------------------------------------------------------------+
     /// | Script     | Var bytes | Var bytes for the payload                                  |
     /// +------------+-----------+------------------------------------------------------------+
@@ -33,7 +33,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// Version
         /// </summary>
-        public Version Version { get; set; }
+        public string Version { get; set; }
 
         /// <summary>
         /// Script
@@ -50,7 +50,7 @@ namespace Neo.SmartContract
         private const int HeaderSize =
             sizeof(uint) +      // Magic
             32 +                // Compiler
-            (sizeof(int) * 4);  // Version
+            16;                 // Version
 
         public int Size =>
             HeaderSize +            // Header
@@ -70,10 +70,7 @@ namespace Neo.SmartContract
             writer.WriteFixedString(Compiler, 32);
 
             // Version
-            writer.Write(Version.Major);
-            writer.Write(Version.Minor);
-            writer.Write(Version.Build);
-            writer.Write(Version.Revision);
+            writer.WriteFixedString(Version, 16);
         }
 
         public void Deserialize(BinaryReader reader)
@@ -81,7 +78,7 @@ namespace Neo.SmartContract
             if (reader.ReadUInt32() != Magic) throw new FormatException("Wrong magic");
 
             Compiler = reader.ReadFixedString(32);
-            Version = new Version(reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32());
+            Version = reader.ReadFixedString(16);
             Script = reader.ReadVarBytes(MaxScriptLength);
             if (Script.Length == 0) throw new ArgumentException($"Script can't be empty");
 
