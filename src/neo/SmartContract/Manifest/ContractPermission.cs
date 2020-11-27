@@ -65,20 +65,20 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// Return true if is allowed
         /// </summary>
-        /// <param name="state">State</param>
-        /// <param name="method">Method</param>
+        /// <param name="targetContract">The contract that we are calling</param>
+        /// <param name="targetMethod">The method that we are calling</param>
         /// <returns>Return true or false</returns>
-        public bool IsAllowed(ContractState state, string method)
+        public bool IsAllowed(ContractState targetContract, string targetMethod)
         {
             if (Contract.IsHash)
             {
-                if (!Contract.Hash.Equals(state.Hash)) return false;
+                if (!Contract.Hash.Equals(targetContract.Hash)) return false;
             }
             else if (Contract.IsGroup)
             {
-                if (state.Manifest.Groups.All(p => !p.PubKey.Equals(Contract.Group))) return false;
+                if (targetContract.Manifest.Groups.All(p => !p.PubKey.Equals(Contract.Group))) return false;
             }
-            return Methods.IsWildcard || Methods.Contains(method);
+            return Methods.IsWildcard || Methods.Contains(targetMethod);
         }
     }
 }
