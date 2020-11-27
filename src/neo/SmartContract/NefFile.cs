@@ -36,14 +36,14 @@ namespace Neo.SmartContract
         public Version Version { get; set; }
 
         /// <summary>
-        /// Checksum
-        /// </summary>
-        public uint CheckSum { get; set; }
-
-        /// <summary>
         /// Script
         /// </summary>
         public byte[] Script { get; set; }
+
+        /// <summary>
+        /// Checksum
+        /// </summary>
+        public uint CheckSum { get; set; }
 
         public const int MaxScriptLength = 1024 * 1024;
 
