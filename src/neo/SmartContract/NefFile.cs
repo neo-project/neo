@@ -94,10 +94,9 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="file">File</param>
         /// <returns>Return checksum</returns>
-        unsafe public static uint ComputeChecksum(NefFile file)
+        public static uint ComputeChecksum(NefFile file)
         {
-            var data = file.ToArray();
-            return BitConverter.ToUInt32(Crypto.Hash256(data.AsSpan().Slice(0, data.Length - sizeof(int))));
+            return BitConverter.ToUInt32(Crypto.Hash256(file.ToArray().AsSpan(..^sizeof(int))));
         }
     }
 }
