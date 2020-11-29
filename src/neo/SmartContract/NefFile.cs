@@ -11,7 +11,7 @@ namespace Neo.SmartContract
     /// +------------+-----------+------------------------------------------------------------+
     /// | Magic      | 4 bytes   | Magic header                                               |
     /// | Compiler   | 32 bytes  | Compiler used                                              |
-    /// | Version    | 16 bytes  | Compiler version                                           |
+    /// | Version    | 32 bytes  | Compiler version                                           |
     /// +------------+-----------+------------------------------------------------------------+
     /// | Script     | Var bytes | Var bytes for the payload                                  |
     /// +------------+-----------+------------------------------------------------------------+
@@ -49,8 +49,7 @@ namespace Neo.SmartContract
 
         private const int HeaderSize =
             sizeof(uint) +      // Magic
-            32 +                // Compiler
-            16;                 // Version
+            (32 * 2);           // Compiler+Version
 
         public int Size =>
             HeaderSize +            // Header
@@ -78,7 +77,7 @@ namespace Neo.SmartContract
             if (reader.ReadUInt32() != Magic) throw new FormatException("Wrong magic");
 
             Compiler = reader.ReadFixedString(32);
-            Version = reader.ReadFixedString(16);
+            Version = reader.ReadFixedString(32);
             Script = reader.ReadVarBytes(MaxScriptLength);
             if (Script.Length == 0) throw new ArgumentException($"Script can't be empty");
 
