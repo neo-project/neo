@@ -57,7 +57,7 @@ namespace Neo.SmartContract.Native.Tokens
             Manifest.Abi.Events = events.ToArray();
         }
 
-        internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, BigInteger amount)
+        internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, BigInteger amount, bool callOnPayment)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
@@ -67,7 +67,7 @@ namespace Neo.SmartContract.Native.Tokens
             state.Balance += amount;
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem(BigInteger.Zero));
             storage.Add(amount);
-            PostTransfer(engine, null, account, amount, StackItem.Null);
+            PostTransfer(engine, null, account, amount, StackItem.Null, callOnPayment);
         }
 
         internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
@@ -85,7 +85,7 @@ namespace Neo.SmartContract.Native.Tokens
                 state.Balance -= amount;
             storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
             storage.Add(-amount);
-            PostTransfer(engine, account, null, amount, StackItem.Null);
+            PostTransfer(engine, account, null, amount, StackItem.Null, false);
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
@@ -143,7 +143,7 @@ namespace Neo.SmartContract.Native.Tokens
                     state_to.Balance += amount;
                 }
             }
-            PostTransfer(engine, from, to, amount, data);
+            PostTransfer(engine, from, to, amount, data, true);
             return true;
         }
 
@@ -151,7 +151,7 @@ namespace Neo.SmartContract.Native.Tokens
         {
         }
 
-        private void PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
+        private void PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data, bool callOnPayment)
         {
             // Send notification
 
@@ -160,7 +160,7 @@ namespace Neo.SmartContract.Native.Tokens
 
             // Check if it's a wallet or smart contract
 
-            if (to is null || engine.Snapshot.Contracts.TryGet(to) is null) return;
+            if (!callOnPayment || to is null || engine.Snapshot.Contracts.TryGet(to) is null) return;
 
             // Call onPayment method (NEP-17)
 
