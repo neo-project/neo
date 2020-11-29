@@ -69,7 +69,7 @@ namespace Neo.SmartContract
             writer.WriteFixedString(Compiler, 32);
 
             // Version
-            writer.WriteFixedString(Version, 16);
+            writer.WriteFixedString(Version, 32);
         }
 
         public void Deserialize(BinaryReader reader)
