@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Neo.IO
 {
-    public class ByteArrayEqualityComparer : IEqualityComparer<byte[]>
+    internal class ByteArrayEqualityComparer : IEqualityComparer<byte[]>
     {
         public static readonly ByteArrayEqualityComparer Default = new ByteArrayEqualityComparer();
 
