@@ -40,13 +40,14 @@ namespace Neo.UnitTests.Extensions
             var engine = ApplicationEngine.Create(TriggerType.Application,
                 new ManualWitness(signFrom ? new UInt160(from) : null), snapshot);
 
-            engine.LoadScript(contract.Script);
+            engine.LoadScript(contract.Script, CallFlags.All, contract.Hash);
 
             var script = new ScriptBuilder();
+            script.Emit(OpCode.PUSHNULL);
             script.EmitPush(amount);
             script.EmitPush(to);
             script.EmitPush(from);
-            script.EmitPush(3);
+            script.EmitPush(4);
             script.Emit(OpCode.PACK);
             script.EmitPush("transfer");
             engine.LoadScript(script.ToArray());
@@ -66,7 +67,7 @@ namespace Neo.UnitTests.Extensions
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
-            engine.LoadScript(contract.Script);
+            engine.LoadScript(contract.Script, CallFlags.All, contract.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush(0);
@@ -86,7 +87,7 @@ namespace Neo.UnitTests.Extensions
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
-            engine.LoadScript(contract.Script);
+            engine.LoadScript(contract.Script, CallFlags.All, contract.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush(account);
@@ -107,7 +108,7 @@ namespace Neo.UnitTests.Extensions
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
 
-            engine.LoadScript(contract.Script);
+            engine.LoadScript(contract.Script, CallFlags.All, contract.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush(0);
@@ -127,7 +128,7 @@ namespace Neo.UnitTests.Extensions
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
 
-            engine.LoadScript(contract.Script);
+            engine.LoadScript(contract.Script, CallFlags.All, contract.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush(0);

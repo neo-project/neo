@@ -175,9 +175,9 @@ namespace Neo.SmartContract
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
             if (md is null) return null;
 
-            ExecutionContext context = LoadScript(contract.Script, callFlags, md.Offset);
+            ExecutionContext context = LoadScript(contract.Script, callFlags, contract.Hash, md.Offset);
 
-            if (NativeContract.IsNative(contract.ScriptHash))
+            if (NativeContract.IsNative(contract.Hash))
             {
                 if (packParameters)
                 {
@@ -202,10 +202,15 @@ namespace Neo.SmartContract
             return context;
         }
 
-        public ExecutionContext LoadScript(Script script, CallFlags callFlags, int initialPosition = 0)
+        public ExecutionContext LoadScript(Script script, CallFlags callFlags, UInt160 scriptHash = null, int initialPosition = 0)
         {
-            ExecutionContext context = LoadScript(script, initialPosition);
-            context.GetState<ExecutionContextState>().CallFlags = callFlags;
+            // Create and configure context
+            ExecutionContext context = CreateContext(script, initialPosition);
+            var state = context.GetState<ExecutionContextState>();
+            state.CallFlags = callFlags;
+            state.ScriptHash = scriptHash ?? ((byte[])script).ToScriptHash();
+            // Load context
+            LoadContext(context);
             return context;
         }
 
