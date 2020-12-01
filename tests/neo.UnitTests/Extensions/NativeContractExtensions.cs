@@ -19,16 +19,13 @@ namespace Neo.UnitTests.Extensions
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot);
 
-            engine.LoadScript(contract.Script);
+            engine.LoadContract(snapshot.Contracts[contract.Hash], method, CallFlags.All, true);
 
             var script = new ScriptBuilder();
 
             for (var i = args.Length - 1; i >= 0; i--)
                 script.EmitPush(args[i]);
 
-            script.EmitPush(args.Length);
-            script.Emit(OpCode.PACK);
-            script.EmitPush(method);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() != VMState.HALT)
