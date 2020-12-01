@@ -12,11 +12,6 @@ namespace Neo.SmartContract.Manifest
         private IReadOnlyDictionary<string, ContractMethodDescriptor> methodDictionary;
 
         /// <summary>
-        /// Hash is the script hash of the contract. It is encoded as a hexadecimal string in big-endian.
-        /// </summary>
-        public UInt160 Hash { get; set; }
-
-        /// <summary>
         /// Methods is an array of Method objects which describe the details of each method in the contract.
         /// </summary>
         public ContractMethodDescriptor[] Methods { get; set; }
@@ -30,7 +25,6 @@ namespace Neo.SmartContract.Manifest
         {
             return new ContractAbi
             {
-                Hash = Hash,
                 Methods = Methods.Select(p => p.Clone()).ToArray(),
                 Events = Events.Select(p => p.Clone()).ToArray()
             };
@@ -45,7 +39,6 @@ namespace Neo.SmartContract.Manifest
         {
             return new ContractAbi
             {
-                Hash = UInt160.Parse(json["hash"].AsString()),
                 Methods = ((JArray)json["methods"]).Select(u => ContractMethodDescriptor.FromJson(u)).ToArray(),
                 Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.FromJson(u)).ToArray()
             };
@@ -61,7 +54,6 @@ namespace Neo.SmartContract.Manifest
         public JObject ToJson()
         {
             var json = new JObject();
-            json["hash"] = Hash.ToString();
             json["methods"] = new JArray(Methods.Select(u => u.ToJson()).ToArray());
             json["events"] = new JArray(Events.Select(u => u.ToJson()).ToArray());
             return json;
