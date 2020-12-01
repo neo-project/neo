@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Neo.Persistence
 {
-    internal class StoreDataCache<TKey, TValue> : DataCache<TKey, TValue>
+    public class StoreDataCache<TKey, TValue> : DataCache<TKey, TValue>
         where TKey : IEquatable<TKey>, ISerializable, new()
         where TValue : class, ICloneable<TValue>, ISerializable, new()
     {
