@@ -122,7 +122,7 @@ namespace Neo.Ledger
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
         private readonly ConcurrentDictionary<UInt256, Block> block_cache = new ConcurrentDictionary<UInt256, Block>();
-        private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
+        private readonly ConcurrentDictionary<uint, LinkedList<Block>> block_cache_unverified = new ConcurrentDictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private Snapshot currentSnapshot;
 
@@ -244,7 +244,7 @@ namespace Neo.Ledger
             if (!block_cache_unverified.TryGetValue(block.Index, out LinkedList<Block> blocks))
             {
                 blocks = new LinkedList<Block>();
-                block_cache_unverified.Add(block.Index, blocks);
+                block_cache_unverified.TryAdd(block.Index, blocks);
             }
 
             blocks.AddLast(block);
@@ -313,7 +313,7 @@ namespace Neo.Ledger
                 int blocksPersisted = 0;
                 foreach (Block blockToPersist in blocksToPersistList)
                 {
-                    block_cache_unverified.Remove(blockToPersist.Index);
+                    block_cache_unverified.TryRemove(blockToPersist.Index, out _);
                     Persist(blockToPersist);
 
                     if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, (15 - SecondsPerBlock)))) continue;
@@ -329,7 +329,7 @@ namespace Neo.Ledger
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
-                    block_cache_unverified.Remove(Height + 1);
+                    block_cache_unverified.TryRemove(Height + 1, out _);
                 }
             }
             else
