@@ -64,7 +64,7 @@ namespace Neo.Ledger
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
         private readonly ConcurrentDictionary<UInt256, Block> block_cache = new ConcurrentDictionary<UInt256, Block>();
-        private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new Dictionary<uint, UnverifiedBlocksList>();
+        private readonly ConcurrentDictionary<uint, UnverifiedBlocksList> block_cache_unverified = new ConcurrentDictionary<uint, UnverifiedBlocksList>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
 
@@ -280,7 +280,7 @@ namespace Neo.Ledger
             {
                 // There are no blocks, a new UnverifiedBlocksList is created and, consequently, the current block is added to the list
                 list = new UnverifiedBlocksList();
-                block_cache_unverified.Add(block.Index, list);
+                block_cache_unverified.TryAdd(block.Index, list);
             }
             else
             {
@@ -349,14 +349,14 @@ namespace Neo.Ledger
                 if (!block.Verify(currentSnapshot))
                     return VerifyResult.Invalid;
                 block_cache.TryAdd(block.Hash, block);
-                block_cache_unverified.Remove(block.Index);
+                block_cache_unverified.TryRemove(block.Index, out _);
                 Persist(block);
                 SaveHeaderHashList();
                 if (block_cache_unverified.TryGetValue(Height + 1, out var unverifiedBlocks))
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks.Blocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
-                    block_cache_unverified.Remove(Height + 1);
+                    block_cache_unverified.TryRemove(Height + 1, out _);
                 }
                 // We can store the new block in block_cache and tell the new height to other nodes after Persist().
                 system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Singleton.Height)));
