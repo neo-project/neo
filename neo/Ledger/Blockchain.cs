@@ -12,6 +12,7 @@ using Neo.SmartContract;
 using Neo.Trie.MPT;
 using Neo.VM;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -120,7 +121,7 @@ namespace Neo.Ledger
         private readonly NeoSystem system;
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
-        private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
+        private readonly ConcurrentDictionary<UInt256, Block> block_cache = new ConcurrentDictionary<UInt256, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private Snapshot currentSnapshot;
@@ -333,7 +334,7 @@ namespace Neo.Ledger
             }
             else
             {
-                block_cache.Add(block.Hash, block);
+                block_cache.TryAdd(block.Hash, block);
                 if (block.Index + 100 >= header_index.Count)
                     system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
                 if (block.Index == header_index.Count)
@@ -419,7 +420,7 @@ namespace Neo.Ledger
 
         private void OnPersistCompleted(Block block)
         {
-            block_cache.Remove(block.Hash);
+            block_cache.TryRemove(block.Hash, out _);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
             CheckRootOnBlockPersistCompleted();
