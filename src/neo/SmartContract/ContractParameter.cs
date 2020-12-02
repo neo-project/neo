@@ -18,41 +18,21 @@ namespace Neo.SmartContract
         public ContractParameter(ContractParameterType type)
         {
             this.Type = type;
-            switch (type)
+            this.Value = type switch
             {
-                case ContractParameterType.Signature:
-                    this.Value = new byte[64];
-                    break;
-                case ContractParameterType.Boolean:
-                    this.Value = false;
-                    break;
-                case ContractParameterType.Integer:
-                    this.Value = 0;
-                    break;
-                case ContractParameterType.Hash160:
-                    this.Value = new UInt160();
-                    break;
-                case ContractParameterType.Hash256:
-                    this.Value = new UInt256();
-                    break;
-                case ContractParameterType.ByteArray:
-                    this.Value = Array.Empty<byte>();
-                    break;
-                case ContractParameterType.PublicKey:
-                    this.Value = ECCurve.Secp256r1.G;
-                    break;
-                case ContractParameterType.String:
-                    this.Value = "";
-                    break;
-                case ContractParameterType.Array:
-                    this.Value = new List<ContractParameter>();
-                    break;
-                case ContractParameterType.Map:
-                    this.Value = new List<KeyValuePair<ContractParameter, ContractParameter>>();
-                    break;
-                default:
-                    throw new ArgumentException();
-            }
+                ContractParameterType.Any => null,
+                ContractParameterType.Signature => new byte[64],
+                ContractParameterType.Boolean => false,
+                ContractParameterType.Integer => 0,
+                ContractParameterType.Hash160 => new UInt160(),
+                ContractParameterType.Hash256 => new UInt256(),
+                ContractParameterType.ByteArray => Array.Empty<byte>(),
+                ContractParameterType.PublicKey => ECCurve.Secp256r1.G,
+                ContractParameterType.String => "",
+                ContractParameterType.Array => new List<ContractParameter>(),
+                ContractParameterType.Map => new List<KeyValuePair<ContractParameter, ContractParameter>>(),
+                _ => throw new ArgumentException(),
+            };
         }
 
         public static ContractParameter FromJson(JObject json)

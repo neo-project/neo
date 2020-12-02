@@ -15,6 +15,16 @@ namespace Neo.SmartContract
     {
         public const long MaxVerificationGas = 0_50000000;
 
+        public static UInt160 GetContractHash(UInt160 sender, byte[] script)
+        {
+            using var sb = new ScriptBuilder();
+            sb.Emit(OpCode.ABORT);
+            sb.EmitPush(sender);
+            sb.EmitPush(script);
+
+            return sb.ToArray().ToScriptHash();
+        }
+
         public static UInt160 GetScriptHash(this ExecutionContext context)
         {
             return context.GetState<ExecutionContextState>().ScriptHash;
@@ -172,7 +182,7 @@ namespace Neo.SmartContract
                 {
                     if (NativeContract.IsNative(hash)) return false;
                     if (hash != witness.ScriptHash) return false;
-                    engine.LoadScript(verification, callFlags, 0);
+                    engine.LoadScript(verification, callFlags, hash, 0);
                 }
 
                 engine.LoadScript(witness.InvocationScript, CallFlags.None);
