@@ -15,7 +15,7 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// Max length for a valid Contract Manifest
         /// </summary>
-        public const int MaxLength = 4096;
+        public const int MaxLength = ushort.MaxValue;
 
         /// <summary>
         /// Serialized size
@@ -28,11 +28,6 @@ namespace Neo.SmartContract.Manifest
                 return IO.Helper.GetVarSize(size) + size;
             }
         }
-
-        /// <summary>
-        /// Contract hash
-        /// </summary>
-        public UInt160 Hash => Abi.Hash;
 
         /// <summary>
         /// Contract name
@@ -75,17 +70,6 @@ namespace Neo.SmartContract.Manifest
         /// Custom user data
         /// </summary>
         public JObject Extra { get; set; }
-
-        /// <summary>
-        /// Return true if is allowed
-        /// </summary>
-        /// <param name="manifest">Manifest</param>
-        /// <param name="method">Method</param>
-        /// <returns>Return true or false</returns>
-        public bool CanCall(ContractManifest manifest, string method)
-        {
-            return Permissions.Any(u => u.IsAllowed(manifest, method));
-        }
 
         /// <summary>
         /// Parse ContractManifest from json
@@ -179,7 +163,6 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return true or false</returns>
         public bool IsValid(UInt160 hash)
         {
-            if (!Abi.Hash.Equals(hash)) return false;
             return Groups.All(u => u.IsValid(hash));
         }
     }
