@@ -300,9 +300,9 @@ namespace Neo.Network.P2P.Payloads
             if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (witnesses[i].VerificationScript != null && witnesses[i].VerificationScript.IsSignatureContract())
+                if (witnesses[i].VerificationScript.IsSignatureContract())
                     net_fee -= (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.OpCodePrices[OpCode.SYSCALL] + ApplicationEngine.ECDsaVerifyPrice);
-                else if (witnesses[i].VerificationScript != null && witnesses[i].VerificationScript.IsMultiSigContract(out int m, out int n))
+                else if (witnesses[i].VerificationScript.IsMultiSigContract(out int m, out int n))
                     net_fee -= (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n) + ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.OpCodePrices[OpCode.SYSCALL] + ApplicationEngine.ECDsaVerifyPrice * n);
                 else
                 {
@@ -322,7 +322,7 @@ namespace Neo.Network.P2P.Payloads
             UInt160[] hashes = GetScriptHashesForVerifying(null);
             if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
             for (int i = 0; i < hashes.Length; i++)
-                if (witnesses[i].VerificationScript != null && witnesses[i].VerificationScript.IsStandardContract())
+                if (witnesses[i].VerificationScript.IsStandardContract())
                     if (!this.VerifyWitness(null, hashes[i], witnesses[i], SmartContract.Helper.MaxVerificationGas, out _))
                         return VerifyResult.Invalid;
             return VerifyResult.Succeed;
