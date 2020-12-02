@@ -14,6 +14,11 @@ namespace Neo.SmartContract
     public static class Helper
     {
         public const long MaxVerificationGas = 0_50000000;
+        public static readonly long SignatureContractCost =
+            ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
+            ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
+            ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
+            ApplicationEngine.ECDsaVerifyPrice;
 
         public static UInt160 GetContractHash(UInt160 sender, byte[] script)
         {
