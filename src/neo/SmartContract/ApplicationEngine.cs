@@ -3,6 +3,8 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
+using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -18,7 +20,7 @@ namespace Neo.SmartContract
 {
     public partial class ApplicationEngine : ExecutionEngine
     {
-        private enum CheckReturnType : byte
+        private enum ReturnTypeConvention : byte
         {
             None = 0,
             EnsureIsEmpty = 1,
@@ -29,13 +31,13 @@ namespace Neo.SmartContract
         {
             public Type ReturnType;
             public Delegate Callback;
-            public CheckReturnType NeedCheckReturnValue;
+            public ReturnTypeConvention Convention;
         }
 
         /// <summary>
         /// This constant can be used for testing scripts.
         /// </summary>
-        private const long TestModeGas = 20_00000000;
+        public const long TestModeGas = 20_00000000;
 
         public static event EventHandler<NotifyEventArgs> Notify;
         public static event EventHandler<LogEventArgs> Log;
@@ -87,7 +89,7 @@ namespace Neo.SmartContract
             InvocationState state = GetInvocationState(CurrentContext);
             state.ReturnType = typeof(void);
             state.Callback = onComplete;
-            CallContract(hash, method, new VMArray(ReferenceCounter, args));
+            CallContractInternal(hash, method, new VMArray(ReferenceCounter, args), CallFlags.All, ReturnTypeConvention.EnsureIsEmpty);
         }
 
         internal void CallFromNativeContract<T>(Action<T> onComplete, UInt160 hash, string method, params StackItem[] args)
@@ -95,7 +97,7 @@ namespace Neo.SmartContract
             InvocationState state = GetInvocationState(CurrentContext);
             state.ReturnType = typeof(T);
             state.Callback = onComplete;
-            CallContract(hash, method, new VMArray(ReferenceCounter, args));
+            CallContractInternal(hash, method, new VMArray(ReferenceCounter, args), CallFlags.All, ReturnTypeConvention.EnsureNotEmpty);
         }
 
         protected override void ContextUnloaded(ExecutionContext context)
@@ -104,15 +106,15 @@ namespace Neo.SmartContract
             if (!(UncaughtException is null)) return;
             if (invocationStates.Count == 0) return;
             if (!invocationStates.Remove(CurrentContext, out InvocationState state)) return;
-            switch (state.NeedCheckReturnValue)
+            switch (state.Convention)
             {
-                case CheckReturnType.EnsureIsEmpty:
+                case ReturnTypeConvention.EnsureIsEmpty:
                     {
                         if (context.EvaluationStack.Count != 0)
                             throw new InvalidOperationException();
                         break;
                     }
-                case CheckReturnType.EnsureNotEmpty:
+                case ReturnTypeConvention.EnsureNotEmpty:
                     {
                         if (context.EvaluationStack.Count == 0)
                             Push(StackItem.Null);
@@ -164,14 +166,51 @@ namespace Neo.SmartContract
         internal void LoadContext(ExecutionContext context, bool checkReturnValue)
         {
             if (checkReturnValue)
-                GetInvocationState(CurrentContext).NeedCheckReturnValue = CheckReturnType.EnsureNotEmpty;
+                GetInvocationState(CurrentContext).Convention = ReturnTypeConvention.EnsureNotEmpty;
             LoadContext(context);
         }
 
-        public ExecutionContext LoadScript(Script script, CallFlags callFlags, int initialPosition = 0)
+        public ExecutionContext LoadContract(ContractState contract, string method, CallFlags callFlags, bool packParameters = false)
         {
-            ExecutionContext context = LoadScript(script, initialPosition);
-            context.GetState<ExecutionContextState>().CallFlags = callFlags;
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
+            if (md is null) return null;
+
+            ExecutionContext context = LoadScript(contract.Script, callFlags, contract.Hash, md.Offset);
+
+            if (NativeContract.IsNative(contract.Hash))
+            {
+                if (packParameters)
+                {
+                    using ScriptBuilder sb = new ScriptBuilder();
+                    sb.Emit(OpCode.DEPTH, OpCode.PACK);
+                    sb.EmitPush(md.Name);
+                    LoadScript(sb.ToArray(), CallFlags.None);
+                }
+            }
+            else
+            {
+                // Call initialization
+
+                var init = contract.Manifest.Abi.GetMethod("_initialize");
+
+                if (init != null)
+                {
+                    LoadContext(context.Clone(init.Offset), false);
+                }
+            }
+
+            return context;
+        }
+
+        public ExecutionContext LoadScript(Script script, CallFlags callFlags, UInt160 scriptHash = null, int initialPosition = 0)
+        {
+            // Create and configure context
+            ExecutionContext context = CreateContext(script, initialPosition);
+            var state = context.GetState<ExecutionContextState>();
+            state.CallFlags = callFlags;
+            state.ScriptHash = scriptHash ?? ((byte[])script).ToScriptHash();
+            // Load context
+            LoadContext(context);
             return context;
         }
 

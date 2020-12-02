@@ -23,7 +23,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
 
         [TestMethod]
-        public void Check_Name() => NativeContract.GAS.Name().Should().Be("GAS");
+        public void Check_Name() => NativeContract.GAS.Name.Should().Be("GAS");
 
         [TestMethod]
         public void Check_Symbol() => NativeContract.GAS.Symbol().Should().Be("gas");
@@ -44,7 +44,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var keyCount = snapshot.Storages.GetChangeSet().Count();
 
             var supply = NativeContract.GAS.TotalSupply(snapshot);
-            supply.Should().Be(3000000025000000); // 3000000000000000 + 25000000 (neo holder reward)
+            supply.Should().Be(3000000050000000); // 3000000000000000 + 50000000 (neo holder reward)
 
             // Check unclaim
 
@@ -68,7 +68,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             unclaim.State.Should().BeTrue();
 
             supply = NativeContract.GAS.TotalSupply(snapshot);
-            supply.Should().Be(3000050025000000);
+            supply.Should().Be(3000050050000000);
 
             snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 3); // Gas
 

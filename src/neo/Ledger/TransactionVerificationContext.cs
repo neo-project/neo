@@ -13,8 +13,16 @@ namespace Neo.Ledger
         /// </summary>
         private readonly Dictionary<UInt160, BigInteger> senderFee = new Dictionary<UInt160, BigInteger>();
 
+        /// <summary>
+        /// Store oracle responses
+        /// </summary>
+        private readonly Dictionary<ulong, UInt256> oracleResponses = new Dictionary<ulong, UInt256>();
+
         public void AddTransaction(Transaction tx)
         {
+            var oracle = tx.GetAttribute<OracleResponse>();
+            if (oracle != null) oracleResponses.Add(oracle.Id, tx.Hash);
+
             if (senderFee.TryGetValue(tx.Sender, out var value))
                 senderFee[tx.Sender] = value + tx.SystemFee + tx.NetworkFee;
             else
@@ -25,13 +33,23 @@ namespace Neo.Ledger
         {
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
             senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
+
             BigInteger fee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
-            return balance >= fee;
+            if (balance < fee) return false;
+
+            var oracle = tx.GetAttribute<OracleResponse>();
+            if (oracle != null && oracleResponses.ContainsKey(oracle.Id))
+                return false;
+
+            return true;
         }
 
         public void RemoveTransaction(Transaction tx)
         {
             if ((senderFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee) == 0) senderFee.Remove(tx.Sender);
+
+            var oracle = tx.GetAttribute<OracleResponse>();
+            if (oracle != null) oracleResponses.Remove(oracle.Id);
         }
     }
 }

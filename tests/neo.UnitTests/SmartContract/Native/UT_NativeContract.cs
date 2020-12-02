@@ -100,7 +100,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, 0);
-            engine.LoadScript(testNativeContract.Script);
+            engine.LoadScript(testNativeContract.Script, CallFlags.All, testNativeContract.Hash);
 
             ByteString method1 = new ByteString(System.Text.Encoding.Default.GetBytes("wrongMethod"));
             VMArray args1 = new VMArray();

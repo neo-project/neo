@@ -3,9 +3,9 @@ using Neo.Ledger;
 using System;
 using System.IO;
 
-namespace Neo.SmartContract.Native
+namespace Neo.SmartContract
 {
-    internal class KeyBuilder
+    public class KeyBuilder
     {
         private readonly int id;
         private readonly MemoryStream stream = new MemoryStream();

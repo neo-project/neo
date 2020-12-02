@@ -71,7 +71,7 @@ namespace Neo.UnitTests.SmartContract
                 // Not traceable block
 
                 var height = snapshot.BlockHashIndex.GetAndChange();
-                height.Index = block.Index + Transaction.MaxValidUntilBlockIncrement;
+                height.Index = block.Index + ProtocolSettings.Default.MaxTraceableBlocks;
 
                 var blocks = snapshot.Blocks;
                 var txs = snapshot.Transactions;
@@ -327,29 +327,32 @@ namespace Neo.UnitTests.SmartContract
                 contractA = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP }.Concat(script.ToArray()).ToArray() };
                 contractB = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() };
                 contractC = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() };
+                contractA.Hash = contractA.Script.ToScriptHash();
+                contractB.Hash = contractB.Script.ToScriptHash();
+                contractC.Hash = contractC.Script.ToScriptHash();
 
                 // Init A,B,C contracts
                 // First two drops is for drop method and arguments
 
-                contracts.Delete(contractA.ScriptHash);
-                contracts.Delete(contractB.ScriptHash);
-                contracts.Delete(contractC.ScriptHash);
-                contractA.Manifest = TestUtils.CreateManifest(contractA.ScriptHash, "dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
-                contractB.Manifest = TestUtils.CreateManifest(contractA.ScriptHash, "dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
-                contractC.Manifest = TestUtils.CreateManifest(contractA.ScriptHash, "dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
-                contracts.Add(contractA.ScriptHash, contractA);
-                contracts.Add(contractB.ScriptHash, contractB);
-                contracts.Add(contractC.ScriptHash, contractC);
+                contracts.Delete(contractA.Hash);
+                contracts.Delete(contractB.Hash);
+                contracts.Delete(contractC.Hash);
+                contractA.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
+                contractB.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
+                contractC.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
+                contracts.Add(contractA.Hash, contractA);
+                contracts.Add(contractB.Hash, contractB);
+                contracts.Add(contractC.Hash, contractC);
             }
 
             // Call A,B,B,C
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitAppCall(contractA.ScriptHash, "dummyMain", 0, 1);
-                script.EmitAppCall(contractB.ScriptHash, "dummyMain", 0, 1);
-                script.EmitAppCall(contractB.ScriptHash, "dummyMain", 0, 1);
-                script.EmitAppCall(contractC.ScriptHash, "dummyMain", 0, 1);
+                script.EmitAppCall(contractA.Hash, "dummyMain", 0, 1);
+                script.EmitAppCall(contractB.Hash, "dummyMain", 0, 1);
+                script.EmitAppCall(contractB.Hash, "dummyMain", 0, 1);
+                script.EmitAppCall(contractC.Hash, "dummyMain", 0, 1);
 
                 // Execute
 

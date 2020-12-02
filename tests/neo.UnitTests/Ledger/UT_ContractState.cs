@@ -19,33 +19,22 @@ namespace Neo.UnitTests.Ledger
         [TestInitialize]
         public void TestSetup()
         {
-            manifest = TestUtils.CreateDefaultManifest(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
+            manifest = TestUtils.CreateDefaultManifest();
             contract = new ContractState
             {
                 Script = script,
+                Hash = script.ToScriptHash(),
                 Manifest = manifest
             };
-        }
-
-        [TestMethod]
-        public void TestGetHasStorage()
-        {
-            contract.HasStorage.Should().BeFalse();
-        }
-
-        [TestMethod]
-        public void TestGetPayable()
-        {
-            contract.Payable.Should().BeFalse();
         }
 
         [TestMethod]
         public void TestGetScriptHash()
         {
             // _scriptHash == null
-            contract.ScriptHash.Should().Be(script.ToScriptHash());
+            contract.Hash.Should().Be(script.ToScriptHash());
             // _scriptHash != null
-            contract.ScriptHash.Should().Be(script.ToScriptHash());
+            contract.Hash.Should().Be(script.ToScriptHash());
         }
 
         [TestMethod]
@@ -84,7 +73,16 @@ namespace Neo.UnitTests.Ledger
         public void TestGetSize()
         {
             ISerializable newContract = contract;
-            newContract.Size.Should().Be(265);
+            newContract.Size.Should().Be(210);
+        }
+
+        [TestMethod]
+        public void TestCanCall()
+        {
+            var temp = new ContractState() { Manifest = TestUtils.CreateDefaultManifest() };
+            temp.Manifest.SafeMethods = WildcardContainer<string>.Create(new string[] { "AAA" });
+
+            Assert.AreEqual(true, temp.CanCall(new ContractState() { Hash = UInt160.Zero, Manifest = TestUtils.CreateDefaultManifest() }, "AAA"));
         }
 
         [TestMethod]
