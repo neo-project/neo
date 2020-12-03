@@ -294,7 +294,7 @@ namespace Neo.Network.P2P
             {
                 case Transaction transaction:
                     system.Consensus?.Tell(transaction);
-                    system.TxRouter.Tell(new TransactionRouter.Task { Transaction = transaction, Relay = relay });
+                    system.TxRouter.Tell(new TransactionRouter.Task { Transaction = transaction, Relay = true });
                     break;
                 case Block block:
                     if (block.Index > Blockchain.Singleton.Height + InvPayload.MaxHashesCount) return;
