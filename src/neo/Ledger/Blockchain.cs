@@ -60,7 +60,6 @@ namespace Neo.Ledger
         private const int MaxTxToReverifyPerIdle = 10;
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
-        private readonly IActorRef txrouter;
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
         private readonly ConcurrentDictionary<UInt256, Block> block_cache = new ConcurrentDictionary<UInt256, Block>();
@@ -113,7 +112,6 @@ namespace Neo.Ledger
         public Blockchain(NeoSystem system, IStore store)
         {
             this.system = system;
-            this.txrouter = Context.ActorOf(TransactionRouter.Props(system));
             this.MemPool = new MemoryPool(system, ProtocolSettings.Default.MemoryPoolMaxTransactions);
             this.Store = store;
             this.View = new ReadOnlyView(store);
@@ -398,12 +396,9 @@ namespace Neo.Ledger
                 case Block block:
                     OnInventory(block, false);
                     break;
-                case Transaction tx:
-                    OnTransaction(tx, true);
-                    break;
                 case Transaction[] transactions:
                     // This message comes from a mempool's revalidation, already relayed
-                    foreach (var tx in transactions) OnTransaction(tx, false);
+                    foreach (var tx in transactions) OnInventory(tx, false);
                     break;
                 case IInventory inventory:
                     OnInventory(inventory);
@@ -416,14 +411,6 @@ namespace Neo.Ledger
                         Self.Tell(Idle.Instance, ActorRefs.NoSender);
                     break;
             }
-        }
-
-        private void OnTransaction(Transaction tx, bool relay)
-        {
-            if (ContainsTransaction(tx.Hash))
-                SendRelayResult(tx, VerifyResult.AlreadyExists);
-            else
-                txrouter.Tell(new TransactionRouter.Task { Transaction = tx, Relay = relay }, Sender);
         }
 
         private void Persist(Block block)
