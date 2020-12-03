@@ -296,7 +296,7 @@ namespace Neo.Wallets
                                         Scopes = WitnessScope.CalledByEntry
                                     });
                                 }
-                                sb.EmitAppCall(output.AssetId, "transfer", account, output.ScriptHash, value, null);
+                                sb.EmitAppCall(output.AssetId, "transfer", account, output.ScriptHash, value, output.Data);
                                 sb.Emit(OpCode.ASSERT);
                             }
                         }
