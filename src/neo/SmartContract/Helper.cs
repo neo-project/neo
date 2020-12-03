@@ -168,7 +168,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        public static bool VerifyWitness(this IVerifiable verifiable, StoreView snapshot, UInt160 hash, Witness witness, long gas, out long fee)
+        internal static bool VerifyWitness(this IVerifiable verifiable, StoreView snapshot, UInt160 hash, Witness witness, long gas, out long fee)
         {
             fee = 0;
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas))
