@@ -52,7 +52,7 @@ namespace Neo.SmartContract.Native.Designate
         private void SetDesignatedInfo(ApplicationEngine engine, Role role, ECPoint node, byte[] value)
         {
             if (!engine.CheckWitness(node.EncodePoint(true)))
-                throw new InvalidOperationException("Wrong signed by node");
+                throw new InvalidOperationException("Wrong signed");
 
             var nodes = GetDesignatedByRole(engine.Snapshot, role, engine.Snapshot.HeaderHeight);
             if (!nodes.Contains(node))
