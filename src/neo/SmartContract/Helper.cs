@@ -166,7 +166,7 @@ namespace Neo.SmartContract
 
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas))
                 {
-                    CallFlags callFlags = verifiable.Witnesses[i].StateDependent ? CallFlags.AllowStates : CallFlags.None;
+                    CallFlags callFlags = verifiable.Witnesses[i].StateDependent ? CallFlags.ReadStates : CallFlags.None;
                     byte[] verification = verifiable.Witnesses[i].VerificationScript;
 
                     if (verification.Length == 0)
