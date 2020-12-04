@@ -51,7 +51,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
-        private ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
+        internal ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             if (!(engine.ScriptContainer is Transaction tx))
                 throw new InvalidOperationException();
@@ -90,7 +90,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
-        private void Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
+        internal void Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             if (nefFile is null && manifest is null) throw new ArgumentException();
 
