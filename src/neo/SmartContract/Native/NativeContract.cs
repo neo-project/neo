@@ -72,7 +72,6 @@ namespace Neo.SmartContract.Native
                 },
                 Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<UInt160>.Create(),
-                SafeMethods = WildcardContainer<string>.Create(safeMethods.ToArray()),
                 Extra = null
             };
             contractsList.Add(this);

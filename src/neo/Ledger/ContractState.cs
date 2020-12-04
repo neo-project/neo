@@ -73,7 +73,6 @@ namespace Neo.Ledger
         /// <returns>Return true or false</returns>
         public bool CanCall(ContractState targetContract, string targetMethod)
         {
-            if (Manifest.SafeMethods.Contains(targetMethod)) return true;
             return Manifest.Permissions.Any(u => u.IsAllowed(targetContract, targetMethod));
         }
 

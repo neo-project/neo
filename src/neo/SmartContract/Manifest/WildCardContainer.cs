@@ -67,11 +67,6 @@ namespace Neo.SmartContract.Manifest
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public bool Contains(T entry)
-        {
-            return _data.Contains(entry);
-        }
-
         public JObject ToJson()
         {
             if (IsWildcard) return "*";

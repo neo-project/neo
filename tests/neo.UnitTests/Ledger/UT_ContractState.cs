@@ -73,14 +73,13 @@ namespace Neo.UnitTests.Ledger
         public void TestGetSize()
         {
             ISerializable newContract = contract;
-            newContract.Size.Should().Be(210);
+            newContract.Size.Should().Be(193);
         }
 
         [TestMethod]
         public void TestCanCall()
         {
             var temp = new ContractState() { Manifest = TestUtils.CreateDefaultManifest() };
-            temp.Manifest.SafeMethods = WildcardContainer<string>.Create(new string[] { "AAA" });
 
             Assert.AreEqual(true, temp.CanCall(new ContractState() { Hash = UInt160.Zero, Manifest = TestUtils.CreateDefaultManifest() }, "AAA"));
         }
