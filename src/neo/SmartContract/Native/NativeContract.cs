@@ -41,7 +41,7 @@ namespace Neo.SmartContract.Native
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 sb.EmitPush(Name);
-                sb.EmitSysCall(ApplicationEngine.Neo_Native_Call);
+                sb.EmitSysCall(ApplicationEngine.System_Contract_CallNative);
                 this.Script = sb.ToArray();
             }
             this.Hash = Helper.GetContractHash(UInt160.Zero, Script);

@@ -91,12 +91,12 @@ namespace Neo.Ledger
 
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitSysCall(ApplicationEngine.Neo_Native_OnPersist);
+                sb.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
                 onPersistScript = sb.ToArray();
             }
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitSysCall(ApplicationEngine.Neo_Native_PostPersist);
+                sb.EmitSysCall(ApplicationEngine.System_Contract_NativePostPersist);
                 postPersistScript = sb.ToArray();
             }
         }
