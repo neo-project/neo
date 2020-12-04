@@ -3,8 +3,10 @@
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using System;
+using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
@@ -13,6 +15,16 @@ namespace Neo.SmartContract.Native
         public override string Name => "Neo Contract Management";
         public override int Id => 0;
         public override uint ActiveBlockIndex => 0;
+
+        private const byte Prefix_NextAvailableId = 15;
+
+        private int GetNextAvailableId(StoreView snapshot)
+        {
+            StorageItem item = snapshot.Storages.GetAndChange(new KeyBuilder(Id, Prefix_NextAvailableId), () => new StorageItem(1));
+            int value = (int)(BigInteger)item;
+            item.Add(1);
+            return value;
+        }
 
         internal override void OnPersist(ApplicationEngine engine)
         {
@@ -49,7 +61,7 @@ namespace Neo.SmartContract.Native
             if (contract != null) throw new InvalidOperationException($"Contract Already Exists: {hash}");
             contract = new ContractState
             {
-                Id = engine.Snapshot.ContractId.GetAndChange().NextId++,
+                Id = GetNextAvailableId(engine.Snapshot),
                 UpdateCounter = 0,
                 Script = nef.Script,
                 Hash = hash,

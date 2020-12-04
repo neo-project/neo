@@ -13,7 +13,6 @@ namespace Neo.Persistence
         public override DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
-        public override MetaDataCache<ContractIdState> ContractId { get; }
 
         public ClonedView(StoreView view)
         {
@@ -25,7 +24,6 @@ namespace Neo.Persistence
             this.HeaderHashList = view.HeaderHashList.CreateSnapshot();
             this.BlockHashIndex = view.BlockHashIndex.CreateSnapshot();
             this.HeaderHashIndex = view.HeaderHashIndex.CreateSnapshot();
-            this.ContractId = view.ContractId.CreateSnapshot();
         }
     }
 }
