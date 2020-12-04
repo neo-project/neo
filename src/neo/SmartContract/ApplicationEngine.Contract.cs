@@ -1,5 +1,4 @@
 using Neo.Cryptography.ECC;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
@@ -40,12 +39,12 @@ namespace Neo.SmartContract
         {
             if (method.StartsWith('_')) throw new ArgumentException($"Invalid Method Name: {method}");
 
-            ContractState contract = Snapshot.Contracts.TryGet(contractHash);
+            ContractState contract = NativeContract.Management.GetContract(Snapshot, contractHash);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
             if (md is null) throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
 
-            ContractState currentContract = Snapshot.Contracts.TryGet(CurrentScriptHash);
+            ContractState currentContract = NativeContract.Management.GetContract(Snapshot, CurrentScriptHash);
             if (currentContract?.CanCall(contract, method) == false)
                 throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contractHash} From Contract {CurrentScriptHash}");
 
@@ -96,7 +95,7 @@ namespace Neo.SmartContract
 
         protected internal bool IsStandardContract(UInt160 hash)
         {
-            ContractState contract = Snapshot.Contracts.TryGet(hash);
+            ContractState contract = NativeContract.Management.GetContract(Snapshot, hash);
 
             // It's a stored contract
 

@@ -1,5 +1,6 @@
 using Neo.Ledger;
 using Neo.SmartContract.Iterators;
+using Neo.SmartContract.Native;
 using System;
 using System.Linq;
 
@@ -22,7 +23,7 @@ namespace Neo.SmartContract
 
         protected internal StorageContext GetStorageContext()
         {
-            ContractState contract = Snapshot.Contracts.TryGet(CurrentScriptHash);
+            ContractState contract = NativeContract.Management.GetContract(Snapshot, CurrentScriptHash);
             return new StorageContext
             {
                 Id = contract.Id,
@@ -32,7 +33,7 @@ namespace Neo.SmartContract
 
         protected internal StorageContext GetReadOnlyContext()
         {
-            ContractState contract = Snapshot.Contracts.TryGet(CurrentScriptHash);
+            ContractState contract = NativeContract.Management.GetContract(Snapshot, CurrentScriptHash);
             return new StorageContext
             {
                 Id = contract.Id,

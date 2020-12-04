@@ -194,7 +194,7 @@ namespace Neo.SmartContract.Native.Oracle
             item_id.Value = BitConverter.GetBytes(id);
 
             //Put the request to storage
-            if (engine.Snapshot.Contracts.TryGet(engine.CallingScriptHash) is null)
+            if (Management.GetContract(engine.Snapshot, engine.CallingScriptHash) is null)
                 throw new InvalidOperationException();
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Request).Add(item_id.Value), new StorageItem(new OracleRequest
             {

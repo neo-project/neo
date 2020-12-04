@@ -5,7 +5,6 @@ namespace Neo.Persistence
         public const byte DATA_Block = 0x01;
         public const byte DATA_Transaction = 0x02;
 
-        public const byte ST_Contract = 0x50;
         public const byte ST_Storage = 0x70;
 
         public const byte IX_HeaderHashList = 0x80;

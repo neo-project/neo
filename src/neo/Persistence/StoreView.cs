@@ -13,7 +13,6 @@ namespace Neo.Persistence
         public Block PersistingBlock { get; internal set; }
         public abstract DataCache<UInt256, TrimmedBlock> Blocks { get; }
         public abstract DataCache<UInt256, TransactionState> Transactions { get; }
-        public abstract DataCache<UInt160, ContractState> Contracts { get; }
         public abstract DataCache<StorageKey, StorageItem> Storages { get; }
         public abstract DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList { get; }
         public abstract MetaDataCache<HashIndexState> BlockHashIndex { get; }
@@ -33,7 +32,6 @@ namespace Neo.Persistence
         {
             Blocks.Commit();
             Transactions.Commit();
-            Contracts.Commit();
             Storages.Commit();
             HeaderHashList.Commit();
             BlockHashIndex.Commit();

@@ -17,10 +17,11 @@ namespace Neo.SmartContract.Native
         public override uint ActiveBlockIndex => 0;
 
         private const byte Prefix_NextAvailableId = 15;
+        private const byte Prefix_Contract = 8;
 
         private int GetNextAvailableId(StoreView snapshot)
         {
-            StorageItem item = snapshot.Storages.GetAndChange(new KeyBuilder(Id, Prefix_NextAvailableId), () => new StorageItem(1));
+            StorageItem item = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextAvailableId), () => new StorageItem(1));
             int value = (int)(BigInteger)item;
             item.Add(1);
             return value;
@@ -32,15 +33,21 @@ namespace Neo.SmartContract.Native
             {
                 if (contract.ActiveBlockIndex != engine.Snapshot.PersistingBlock.Index)
                     continue;
-                engine.Snapshot.Contracts.Add(contract.Hash, new ContractState
+                engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
                 {
                     Id = contract.Id,
                     Script = contract.Script,
                     Hash = contract.Hash,
                     Manifest = contract.Manifest
-                });
+                }));
                 contract.Initialize(engine);
             }
+        }
+
+        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        internal ContractState GetContract(StoreView snapshot, UInt160 hash)
+        {
+            return snapshot.Storages.TryGet(CreateStorageKey(Prefix_Contract).Add(hash))?.GetInteroperable<ContractState>();
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
@@ -57,9 +64,10 @@ namespace Neo.SmartContract.Native
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
             UInt160 hash = Helper.GetContractHash(tx.Sender, nef.Script);
-            ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
-            if (contract != null) throw new InvalidOperationException($"Contract Already Exists: {hash}");
-            contract = new ContractState
+            StorageKey key = CreateStorageKey(Prefix_Contract).Add(hash);
+            if (engine.Snapshot.Storages.Contains(key))
+                throw new InvalidOperationException($"Contract Already Exists: {hash}");
+            ContractState contract = new ContractState
             {
                 Id = GetNextAvailableId(engine.Snapshot),
                 UpdateCounter = 0,
@@ -70,7 +78,7 @@ namespace Neo.SmartContract.Native
 
             if (!contract.Manifest.IsValid(hash)) throw new InvalidOperationException($"Invalid Manifest Hash: {hash}");
 
-            engine.Snapshot.Contracts.Add(hash, contract);
+            engine.Snapshot.Storages.Add(key, new StorageItem(contract));
 
             // Execute _deploy
 
@@ -88,7 +96,7 @@ namespace Neo.SmartContract.Native
 
             engine.AddGas(ApplicationEngine.StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
 
-            var contract = engine.Snapshot.Contracts.GetAndChange(engine.CallingScriptHash);
+            var contract = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Contract).Add(engine.CallingScriptHash))?.GetInteroperable<ContractState>();
             if (contract is null) throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
 
             if (nefFile != null)
@@ -122,9 +130,10 @@ namespace Neo.SmartContract.Native
         private void Destroy(ApplicationEngine engine)
         {
             UInt160 hash = engine.CallingScriptHash;
-            ContractState contract = engine.Snapshot.Contracts.TryGet(hash);
+            StorageKey ckey = CreateStorageKey(Prefix_Contract).Add(hash);
+            ContractState contract = engine.Snapshot.Storages.TryGet(ckey)?.GetInteroperable<ContractState>();
             if (contract is null) return;
-            engine.Snapshot.Contracts.Delete(hash);
+            engine.Snapshot.Storages.Delete(ckey);
             foreach (var (key, _) in engine.Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)))
                 engine.Snapshot.Storages.Delete(key);
         }

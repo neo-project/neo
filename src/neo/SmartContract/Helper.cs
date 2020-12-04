@@ -1,6 +1,5 @@
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
@@ -171,7 +170,7 @@ namespace Neo.SmartContract
 
                     if (verification.Length == 0)
                     {
-                        ContractState cs = snapshot.Contracts.TryGet(hashes[i]);
+                        ContractState cs = NativeContract.Management.GetContract(snapshot, hashes[i]);
                         if (cs is null) return false;
                         if (engine.LoadContract(cs, "verify", callFlags, true) is null)
                             return false;
