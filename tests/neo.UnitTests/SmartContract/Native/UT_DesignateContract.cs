@@ -34,7 +34,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ECPoint[] validators = NativeContract.NEO.ComputeNextBlockValidators(snapshot1);
             var ret = NativeContract.Designate.Call(
                 snapshot1,
-                new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
                 "designateAsRole",
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.StateValidator) },
                 new ContractParameter(ContractParameterType.Array) { Value = validators.Select(p => new ContractParameter(ContractParameterType.ByteArray) { Value = p.ToArray() }).ToList() }

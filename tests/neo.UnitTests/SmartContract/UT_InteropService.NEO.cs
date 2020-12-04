@@ -10,6 +10,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
+using Neo.UnitTests.Extensions;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
@@ -115,7 +116,7 @@ namespace Neo.UnitTests.SmartContract
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
-            snapshot.Contracts.Add(state.Hash, state);
+            snapshot.AddContract(state.Hash, state);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
             engine.IsStandardContract(state.Hash).Should().BeFalse();
@@ -166,7 +167,7 @@ namespace Neo.UnitTests.SmartContract
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
-            snapshot.Contracts.Add(state.Hash, state);
+            snapshot.AddContract(state.Hash, state);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0);
             engine.LoadScript(new byte[] { 0x01 });
 
@@ -215,7 +216,7 @@ namespace Neo.UnitTests.SmartContract
                 Id = state.Id,
                 Key = new byte[] { 0x01 }
             };
-            snapshot.Contracts.Add(state.Hash, state);
+            snapshot.AddContract(state.Hash, state);
             snapshot.Storages.Add(storageKey, storageItem);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(state.Script);
@@ -269,7 +270,7 @@ namespace Neo.UnitTests.SmartContract
                 Id = state.Id,
                 Key = new byte[] { 0x01 }
             };
-            snapshot.Contracts.Add(state.Hash, state);
+            snapshot.AddContract(state.Hash, state);
             snapshot.Storages.Add(storageKey, storageItem);
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });

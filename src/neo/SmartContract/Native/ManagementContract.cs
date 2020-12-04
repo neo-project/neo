@@ -127,7 +127,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowModifyStates)]
-        private void Destroy(ApplicationEngine engine)
+        internal void Destroy(ApplicationEngine engine)
         {
             UInt160 hash = engine.CallingScriptHash;
             StorageKey ckey = CreateStorageKey(Prefix_Contract).Add(hash);

@@ -9,7 +9,7 @@ using System.Numerics;
 
 namespace Neo.UnitTests.Extensions
 {
-    public static class Nep5NativeContractExtensions
+    public static class Nep17NativeContractExtensions
     {
         internal class ManualWitness : IVerifiable
         {

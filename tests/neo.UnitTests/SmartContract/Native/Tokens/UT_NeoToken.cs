@@ -858,7 +858,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ECPoint[] committees = NativeContract.NEO.GetCommittee(snapshot);
             UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
             var engine = ApplicationEngine.Create(TriggerType.OnPersist,
-                new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot);
+                new Nep17NativeContractExtensions.ManualWitness(committeesMultisign), snapshot);
 
             engine.LoadScript(NativeContract.NEO.Script, CallFlags.All, NativeContract.NEO.Hash);
 
@@ -876,7 +876,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             ECPoint[] committees = NativeContract.NEO.GetCommittee(snapshot);
             UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
             var engine = ApplicationEngine.Create(TriggerType.PostPersist,
-                new Nep5NativeContractExtensions.ManualWitness(committeesMultisign), snapshot);
+                new Nep17NativeContractExtensions.ManualWitness(committeesMultisign), snapshot);
 
             engine.LoadScript(NativeContract.NEO.Script, CallFlags.All, NativeContract.NEO.Hash);
 
@@ -915,7 +915,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         internal static (VM.Types.Boolean Value, bool State) Check_SetGasPerBlock(StoreView snapshot, BigInteger gasPerBlock)
         {
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
-            var engine = ApplicationEngine.Create(TriggerType.Application, new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr), snapshot);
+            var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), snapshot);
 
             engine.LoadScript(NativeContract.NEO.Script, CallFlags.All, NativeContract.NEO.Hash);
 
@@ -940,7 +940,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         internal static (bool State, bool Result) Check_Vote(StoreView snapshot, byte[] account, byte[] pubkey, bool signAccount)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep5NativeContractExtensions.ManualWitness(signAccount ? new UInt160(account) : UInt160.Zero), snapshot);
+                new Nep17NativeContractExtensions.ManualWitness(signAccount ? new UInt160(account) : UInt160.Zero), snapshot);
 
             engine.LoadScript(NativeContract.NEO.Script, CallFlags.All, NativeContract.NEO.Hash);
 
@@ -970,7 +970,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         internal static (bool State, bool Result) Check_RegisterValidator(StoreView snapshot, byte[] pubkey)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep5NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot);
+                new Nep17NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot);
 
             engine.LoadScript(NativeContract.NEO.Script, CallFlags.All, NativeContract.NEO.Hash);
 
@@ -1076,7 +1076,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         internal static (bool State, bool Result) Check_UnregisterCandidate(StoreView snapshot, byte[] pubkey)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep5NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot);
+                new Nep17NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot);
 
             engine.LoadScript(NativeContract.NEO.Script, CallFlags.All, NativeContract.NEO.Hash);
 

@@ -10,6 +10,18 @@ namespace Neo.UnitTests.Extensions
 {
     public static class NativeContractExtensions
     {
+        public static void AddContract(this StoreView snapshot, UInt160 hash, ContractState state)
+        {
+            var key = new KeyBuilder(NativeContract.Management.Id, 8).Add(hash);
+            snapshot.Storages.Add(key, new Neo.Ledger.StorageItem(state, false));
+        }
+
+        public static void DeleteContract(this StoreView snapshot, UInt160 hash)
+        {
+            var key = new KeyBuilder(NativeContract.Management.Id, 8).Add(hash);
+            snapshot.Storages.Delete(key);
+        }
+
         public static StackItem Call(this NativeContract contract, StoreView snapshot, string method, params ContractParameter[] args)
         {
             return Call(contract, snapshot, null, method, args);
