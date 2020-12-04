@@ -289,6 +289,7 @@ namespace Neo.Network.P2P
 
         private void OnInventoryReceived(IInventory inventory)
         {
+            knownHashes.Add(inventory.Hash);
             pendingKnownHashes.Remove(inventory.Hash);
             switch (inventory)
             {
@@ -305,7 +306,6 @@ namespace Neo.Network.P2P
                     system.Blockchain.Tell(inventory);
                     break;
             }
-            knownHashes.Add(inventory.Hash);
             system.TaskManager.Tell(inventory);
         }
 
