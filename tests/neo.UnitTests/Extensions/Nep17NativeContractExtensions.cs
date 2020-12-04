@@ -104,9 +104,9 @@ namespace Neo.UnitTests.Extensions
             return result.GetInteger();
         }
 
-        public static BigInteger Decimals(this NativeContract contract)
+        public static BigInteger Decimals(this NativeContract contract, StoreView snapshot)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
             engine.LoadScript(contract.Script, CallFlags.All, contract.Hash);
 
@@ -124,9 +124,9 @@ namespace Neo.UnitTests.Extensions
             return result.GetInteger();
         }
 
-        public static string Symbol(this NativeContract contract)
+        public static string Symbol(this NativeContract contract, StoreView snapshot)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
             engine.LoadScript(contract.Script, CallFlags.All, contract.Hash);
 
