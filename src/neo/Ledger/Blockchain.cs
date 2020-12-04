@@ -10,7 +10,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
-using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.Collections.Concurrent;
@@ -53,7 +52,7 @@ namespace Neo.Ledger
                 PrimaryIndex = 0,
                 Nonce = 2083236893
             },
-            Transactions = new[] { DeployNativeContracts() }
+            Transactions = Array.Empty<Transaction>()
         };
 
         private readonly static Script onPersistScript, postPersistScript;
@@ -92,20 +91,12 @@ namespace Neo.Ledger
 
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                foreach (NativeContract contract in new NativeContract[] { NativeContract.GAS, NativeContract.NEO })
-                {
-                    sb.EmitAppCall(contract.Hash, "onPersist");
-                    sb.Emit(OpCode.DROP);
-                }
+                sb.EmitSysCall(ApplicationEngine.Neo_Native_OnPersist);
                 onPersistScript = sb.ToArray();
             }
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                foreach (NativeContract contract in new NativeContract[] { NativeContract.NEO, NativeContract.Oracle })
-                {
-                    sb.EmitAppCall(contract.Hash, "postPersist");
-                    sb.Emit(OpCode.DROP);
-                }
+                sb.EmitSysCall(ApplicationEngine.Neo_Native_PostPersist);
                 postPersistScript = sb.ToArray();
             }
         }
@@ -163,39 +154,6 @@ namespace Neo.Ledger
         {
             if (MemPool.ContainsKey(hash)) return true;
             return View.ContainsTransaction(hash);
-        }
-
-        private static Transaction DeployNativeContracts()
-        {
-            byte[] script;
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy);
-                script = sb.ToArray();
-            }
-            return new Transaction
-            {
-                Version = 0,
-                Script = script,
-                SystemFee = 0,
-                Signers = new[]
-                {
-                    new Signer
-                    {
-                        Account = (new[] { (byte)OpCode.PUSH1 }).ToScriptHash(),
-                        Scopes = WitnessScope.None
-                    }
-                },
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Witnesses = new[]
-                {
-                    new Witness
-                    {
-                        InvocationScript = Array.Empty<byte>(),
-                        VerificationScript = new[] { (byte)OpCode.PUSH1 }
-                    }
-                }
-            };
         }
 
         public Block GetBlock(uint index)
@@ -437,9 +395,8 @@ namespace Neo.Ledger
                 }
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 snapshot.PersistingBlock = block;
-                if (block.Index > 0)
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot))
                 {
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot);
                     engine.LoadScript(onPersistScript);
                     if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
                     ApplicationExecuted application_executed = new ApplicationExecuted(engine);

@@ -19,6 +19,7 @@ namespace Neo.SmartContract.Native.Tokens
     {
         public override int Id => -1;
         public override string Name => "NEO";
+        public override uint ActiveBlockIndex => 0;
         public override string Symbol => "neo";
         public override byte Decimals => 0;
         public BigInteger TotalAmount { get; }
@@ -130,10 +131,8 @@ namespace Neo.SmartContract.Native.Tokens
             Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), TotalAmount, false);
         }
 
-        protected override void OnPersist(ApplicationEngine engine)
+        internal override void OnPersist(ApplicationEngine engine)
         {
-            base.OnPersist(engine);
-
             // Set next committee
             if (ShouldRefreshCommittee(engine.Snapshot.PersistingBlock.Index))
             {
@@ -144,10 +143,8 @@ namespace Neo.SmartContract.Native.Tokens
             }
         }
 
-        protected override void PostPersist(ApplicationEngine engine)
+        internal override void PostPersist(ApplicationEngine engine)
         {
-            base.PostPersist(engine);
-
             // Distribute GAS for committee
 
             int m = ProtocolSettings.Default.CommitteeMembersCount;

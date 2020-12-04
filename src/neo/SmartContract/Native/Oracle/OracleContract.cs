@@ -31,6 +31,7 @@ namespace Neo.SmartContract.Native.Oracle
 
         public override int Id => -4;
         public override string Name => "Oracle";
+        public override uint ActiveBlockIndex => 0;
 
         internal OracleContract()
         {
@@ -135,9 +136,8 @@ namespace Neo.SmartContract.Native.Oracle
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BitConverter.GetBytes(0ul)));
         }
 
-        protected override void PostPersist(ApplicationEngine engine)
+        internal override void PostPersist(ApplicationEngine engine)
         {
-            base.PostPersist(engine);
             (UInt160 Account, BigInteger GAS)[] nodes = null;
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
             {

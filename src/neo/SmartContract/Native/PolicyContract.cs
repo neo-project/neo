@@ -13,6 +13,7 @@ namespace Neo.SmartContract.Native
     {
         public override string Name => "Policy";
         public override int Id => -3;
+        public override uint ActiveBlockIndex => 0;
 
         private const byte Prefix_MaxTransactionsPerBlock = 23;
         private const byte Prefix_FeePerByte = 10;
