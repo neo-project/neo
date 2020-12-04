@@ -13,7 +13,7 @@ namespace Neo.SmartContract
 {
     public static class Helper
     {
-        public const long MaxVerificationGas = 0_50000000;        
+        public const long MaxVerificationGas = 0_50000000;
 
         public static UInt160 GetContractHash(UInt160 sender, byte[] script)
         {
