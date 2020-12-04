@@ -25,9 +25,6 @@ namespace Neo.UnitTests.SmartContract.Native
             TestBlockchain.InitializeMockNeoSystem();
             _snapshot = Blockchain.Singleton.GetSnapshot();
             _snapshot.PersistingBlock = new Block() { Index = 0 };
-
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, _snapshot.PersistingBlock, _snapshot, 0);
-            NativeContract.Management.OnPersist(engine);
         }
 
         [TestMethod]

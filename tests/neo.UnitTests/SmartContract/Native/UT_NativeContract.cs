@@ -109,7 +109,7 @@ namespace Neo.UnitTests.SmartContract.Native
             engine.CurrentContext.EvaluationStack.Push(method1);
             Assert.ThrowsException<KeyNotFoundException>(() => testNativeContract.Invoke(engine));
 
-            ByteString method2 = new ByteString(System.Text.Encoding.Default.GetBytes("onPersist"));
+            ByteString method2 = new ByteString(System.Text.Encoding.Default.GetBytes("helloWorld"));
             VMArray args2 = new VMArray();
             engine.CurrentContext.EvaluationStack.Push(args2);
             engine.CurrentContext.EvaluationStack.Push(method2);
@@ -141,6 +141,9 @@ namespace Neo.UnitTests.SmartContract.Native
         public override string Name => "test";
         public override int Id => 0x10000006;
         public override uint ActiveBlockIndex => 0;
+
+        [ContractMethod(0, CallFlags.None)]
+        public string HelloWorld => "hello world";
 
         public void TestOnPersist(ApplicationEngine engine)
         {
