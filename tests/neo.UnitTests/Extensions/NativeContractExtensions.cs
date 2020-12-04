@@ -18,8 +18,10 @@ namespace Neo.UnitTests.Extensions
         public static StackItem Call(this NativeContract contract, StoreView snapshot, IVerifiable container, string method, params ContractParameter[] args)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot);
+            var contractState = NativeContract.Management.GetContract(snapshot, contract.Hash);
+            if (contractState == null) throw new InvalidOperationException();
 
-            engine.LoadContract(snapshot.Contracts[contract.Hash], method, CallFlags.All, true);
+            engine.LoadContract(contractState, method, CallFlags.All, true);
 
             var script = new ScriptBuilder();
 
