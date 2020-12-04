@@ -19,6 +19,12 @@ namespace Neo.SmartContract
             ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
             ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
             ApplicationEngine.ECDsaVerifyPrice;
+        internal static long MultiSignatureContractCost(int m, int n) =>
+            ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n) +
+            ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 +
+            ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
+            ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
+            ApplicationEngine.ECDsaVerifyPrice * n;
 
         public static UInt160 GetContractHash(UInt160 sender, byte[] script)
         {

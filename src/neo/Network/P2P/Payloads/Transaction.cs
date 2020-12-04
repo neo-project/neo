@@ -303,7 +303,7 @@ namespace Neo.Network.P2P.Payloads
                 if (witnesses[i].VerificationScript.IsSignatureContract())
                     net_fee -= SmartContract.Helper.SignatureContractCost;
                 else if (witnesses[i].VerificationScript.IsMultiSigContract(out int m, out int n))
-                    net_fee -= (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n) + ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.OpCodePrices[OpCode.SYSCALL] + ApplicationEngine.ECDsaVerifyPrice * n);
+                    net_fee -= SmartContract.Helper.MultiSignatureContractCost(m, n);
                 else
                 {
                     if (!this.VerifyWitness(null, hashes[i], witnesses[i], net_fee, out long fee))
