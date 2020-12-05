@@ -663,7 +663,6 @@ namespace Neo.UnitTests.SmartContract
             snapshot.AddContract(scriptHash, state);
             snapshot.Storages.Add(storageKey, storageItem);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
-            engine.LoadScript(new byte[0]);
             Neo.SmartContract.Native.NativeContract.Management.Destroy(engine);
             engine.Snapshot.Storages.Find(BitConverter.GetBytes(0x43000000)).Any().Should().BeFalse();
 
@@ -672,7 +671,6 @@ namespace Neo.UnitTests.SmartContract
             state = TestUtils.GetContract();
             snapshot.AddContract(scriptHash, state);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
-            engine.LoadScript(new byte[0]);
             Neo.SmartContract.Native.NativeContract.Management.Destroy(engine);
             engine.Snapshot.Storages.Find(BitConverter.GetBytes(0x43000000)).Any().Should().BeFalse();
         }

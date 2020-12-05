@@ -117,15 +117,15 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void TestOnPersistWithArgs()
+        public void TestTrigger()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
 
             ApplicationEngine engine1 = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0);
-            Assert.ThrowsException<InvalidOperationException>(() => testNativeContract.TestOnPersist(engine1));
+            Assert.ThrowsException<InvalidOperationException>(() => testNativeContract.TestTrigger(engine1));
 
             ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, 0);
-            testNativeContract.TestOnPersist(engine2);
+            testNativeContract.TestTrigger(engine2);
         }
 
         [TestMethod]
@@ -145,9 +145,9 @@ namespace Neo.UnitTests.SmartContract.Native
         [ContractMethod(0, CallFlags.None)]
         public string HelloWorld => "hello world";
 
-        public void TestOnPersist(ApplicationEngine engine)
+        public void TestTrigger(ApplicationEngine engine)
         {
-            OnPersist(engine);
+            if (engine.Trigger != TriggerType.OnPersist) throw new InvalidOperationException();
         }
     }
 }
