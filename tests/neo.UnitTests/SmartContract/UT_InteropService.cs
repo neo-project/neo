@@ -643,10 +643,9 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestContract_Destroy()
         {
-            var engine = GetEngine(false, true);
-            Neo.SmartContract.Native.NativeContract.Management.Destroy(engine);
+            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
+            snapshot.PersistingBlock = new Block();
 
-            var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             var scriptHash = UInt160.Parse("0xcb9f3b7c6fb1cf2c13a40637c189bdd066a272b4");
             var storageItem = new StorageItem
@@ -662,17 +661,14 @@ namespace Neo.UnitTests.SmartContract
             };
             snapshot.AddContract(scriptHash, state);
             snapshot.Storages.Add(storageKey, storageItem);
-            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
-            Neo.SmartContract.Native.NativeContract.Management.Destroy(engine);
-            engine.Snapshot.Storages.Find(BitConverter.GetBytes(0x43000000)).Any().Should().BeFalse();
+            snapshot.DestroyContract(scriptHash);
+            snapshot.Storages.Find(BitConverter.GetBytes(0x43000000)).Any().Should().BeFalse();
 
             //storages are removed
-            snapshot = Blockchain.Singleton.GetSnapshot();
             state = TestUtils.GetContract();
             snapshot.AddContract(scriptHash, state);
-            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
-            Neo.SmartContract.Native.NativeContract.Management.Destroy(engine);
-            engine.Snapshot.Storages.Find(BitConverter.GetBytes(0x43000000)).Any().Should().BeFalse();
+            snapshot.DestroyContract(scriptHash);
+            snapshot.Storages.Find(BitConverter.GetBytes(0x43000000)).Any().Should().BeFalse();
         }
 
         [TestMethod]

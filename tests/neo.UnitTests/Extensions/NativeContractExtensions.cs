@@ -35,6 +35,29 @@ namespace Neo.UnitTests.Extensions
             }
         }
 
+        public static void DestroyContract(this StoreView snapshot, UInt160 callingScriptHash)
+        {
+            var script = new ScriptBuilder();
+            script.EmitAppCall(NativeContract.Management.Hash, "destroy");
+
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            engine.LoadScript(script.ToArray());
+
+            // Fake calling script hash
+            if (callingScriptHash != null)
+            {
+                engine.CurrentContext.GetState<ExecutionContextState>().CallingScriptHash = callingScriptHash;
+                engine.CurrentContext.GetState<ExecutionContextState>().ScriptHash = callingScriptHash;
+            }
+
+            if (engine.Execute() != VMState.HALT)
+            {
+                Exception exception = engine.FaultException;
+                while (exception?.InnerException != null) exception = exception.InnerException;
+                throw exception ?? new InvalidOperationException();
+            }
+        }
+
         public static void AddContract(this StoreView snapshot, UInt160 hash, ContractState state)
         {
             var key = new KeyBuilder(NativeContract.Management.Id, 8).Add(hash);
