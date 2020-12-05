@@ -130,20 +130,20 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestContract_Create()
         {
+            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
+            snapshot.PersistingBlock = new Block() { };
             var nef = new NefFile()
             {
-                Script = new byte[0x01],
+                Script = new byte[byte.MaxValue],
                 Compiler = "",
                 Version = new Version(1, 2, 3, 4).ToString()
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
             var nefFile = nef.ToArray();
             var manifest = TestUtils.CreateDefaultManifest();
-            var engine = GetEngine(false, true);
-            Assert.ThrowsException<InvalidOperationException>(() => NativeContract.Management.Deploy(engine, nefFile, manifest.ToJson().ToByteArray(false)));
-
-            engine = GetEngine(true, true);
-            Assert.ThrowsException<ArgumentException>(() => NativeContract.Management.Deploy(engine, nefFile, new byte[ContractManifest.MaxLength + 1]));
+            Assert.ThrowsException<InvalidOperationException>(() => snapshot.DeployContract(null, nefFile, manifest.ToJson().ToByteArray(false)));
+            Assert.ThrowsException<ArgumentException>(() => snapshot.DeployContract(UInt160.Zero, nefFile, new byte[ContractManifest.MaxLength + 1]));
+            Assert.ThrowsException<InvalidOperationException>(() => snapshot.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(true), 10000000));
 
             var script_exceedMaxLength = new NefFile()
             {
@@ -152,26 +152,23 @@ namespace Neo.UnitTests.SmartContract
                 Version = new Version(1, 2, 3, 4).ToString()
             };
             script_exceedMaxLength.CheckSum = NefFile.ComputeChecksum(nef);
-            Assert.ThrowsException<InvalidOperationException>(() => NativeContract.Management.Deploy(engine, script_exceedMaxLength.ToArray(), manifest.ToJson().ToByteArray(true)));
-            engine = GetEngine(true, true, gas: 2000_00000000);
-            Assert.ThrowsException<FormatException>(() => NativeContract.Management.Deploy(engine, script_exceedMaxLength.ToArray(), manifest.ToJson().ToByteArray(true)));
+            Assert.ThrowsException<InvalidOperationException>(() => snapshot.DeployContract(UInt160.Zero, script_exceedMaxLength.ToArray(), manifest.ToJson().ToByteArray(true)));
 
             var script_zeroLength = new byte[] { };
-            Assert.ThrowsException<ArgumentException>(() => NativeContract.Management.Deploy(engine, script_zeroLength, manifest.ToJson().ToByteArray(true)));
+            Assert.ThrowsException<ArgumentException>(() => snapshot.DeployContract(UInt160.Zero, script_zeroLength, manifest.ToJson().ToByteArray(true)));
 
             var manifest_zeroLength = new byte[] { };
-            Assert.ThrowsException<ArgumentException>(() => NativeContract.Management.Deploy(engine, nefFile, manifest_zeroLength));
+            Assert.ThrowsException<ArgumentException>(() => snapshot.DeployContract(UInt160.Zero, nefFile, manifest_zeroLength));
 
             manifest = TestUtils.CreateDefaultManifest();
-            NativeContract.Management.Deploy(engine, nefFile, manifest.ToJson().ToByteArray(false));
+            var ret = snapshot.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false));
+            ret.Hash.ToString().Should().Be("0x5756874a149b9de89c7b5d34f9c37db3762f88a2");
+            Assert.ThrowsException<InvalidOperationException>(() => snapshot.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false)));
 
-            var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             snapshot.AddContract(state.Hash, state);
-            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0);
-            engine.LoadScript(new byte[] { 0x01 });
 
-            Assert.ThrowsException<InvalidOperationException>(() => NativeContract.Management.Deploy(engine, nefFile, manifest.ToJson().ToByteArray(false)));
+            Assert.ThrowsException<InvalidOperationException>(() => snapshot.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false)));
         }
 
         [TestMethod]

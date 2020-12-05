@@ -1,8 +1,6 @@
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
@@ -12,6 +10,27 @@ namespace Neo.UnitTests.Extensions
 {
     public static class NativeContractExtensions
     {
+        public static ContractState DeployContract(this StoreView snapshot, UInt160 sender, byte[] nefFile, byte[] manifest, long gas = ApplicationEngine.TestModeGas)
+        {
+            var script = new ScriptBuilder();
+            script.EmitAppCall(NativeContract.Management.Hash, "deploy", nefFile, manifest);
+
+            var engine = ApplicationEngine.Create(TriggerType.Application,
+                sender != null ? new Transaction() { Signers = new Signer[] { new Signer() { Account = sender } } } : null, snapshot, gas);
+            engine.LoadScript(script.ToArray());
+
+            if (engine.Execute() != VMState.HALT)
+            {
+                Exception exception = engine.FaultException;
+                while (exception?.InnerException != null) exception = exception.InnerException;
+                throw exception ?? new InvalidOperationException();
+            }
+
+            var ret = new ContractState();
+            ((IInteroperable)ret).FromStackItem(engine.ResultStack.Pop());
+            return ret;
+        }
+
         public static void UpdateContract(this StoreView snapshot, UInt160 callingScriptHash, byte[] nefFile, byte[] manifest)
         {
             var script = new ScriptBuilder();

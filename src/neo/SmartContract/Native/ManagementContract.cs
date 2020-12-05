@@ -51,7 +51,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
-        public ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
+        private ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             if (!(engine.ScriptContainer is Transaction tx))
                 throw new InvalidOperationException();
