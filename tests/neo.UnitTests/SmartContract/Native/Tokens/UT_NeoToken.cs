@@ -29,7 +29,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         {
             TestBlockchain.InitializeMockNeoSystem();
             _snapshot = Blockchain.Singleton.GetSnapshot();
-            _snapshot.PersistingBlock = new Block() { Index = 0, Transactions = Array.Empty<Transaction>() };
+            _snapshot.PersistingBlock = new Block() { Index = 0, Transactions = Array.Empty<Transaction>(), ConsensusData = new ConsensusData() };
         }
 
         [TestMethod]
@@ -313,12 +313,16 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
                 committeemembers[i].Should().Be(defaultCommittee[i]);
             }
 
-            //register more candidates,committee member change
-            snapshot.PersistingBlock = new Block { Index = 0, Transactions = Array.Empty<Transaction>() };
+            //register more candidates, committee member change
+            snapshot.PersistingBlock = new Block
+            {
+                Index = (uint)ProtocolSettings.Default.CommitteeMembersCount,
+                Transactions = Array.Empty<Transaction>(),
+                ConsensusData = new ConsensusData()
+            };
             for (int i = 0; i < ProtocolSettings.Default.CommitteeMembersCount - 1; i++)
             {
                 Check_RegisterValidator(snapshot, Blockchain.StandbyCommittee[i].ToArray());
-                var currentCandidates = NativeContract.NEO.GetCandidates(snapshot);
             }
 
             Check_OnPersist(snapshot);
@@ -841,26 +845,19 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
 
         internal static bool Check_OnPersist(StoreView snapshot)
         {
-            ECPoint[] committees = NativeContract.NEO.GetCommittee(snapshot);
-            UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
-            var engine = ApplicationEngine.Create(TriggerType.OnPersist,
-                new Nep17NativeContractExtensions.ManualWitness(committeesMultisign), snapshot);
-
             var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
+            var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot);
+            engine.LoadScript(script.ToArray());
 
             return engine.Execute() == VMState.HALT;
         }
 
         internal static bool Check_PostPersist(StoreView snapshot)
         {
-            ECPoint[] committees = NativeContract.NEO.GetCommittee(snapshot);
-            UInt160 committeesMultisign = Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
-            var engine = ApplicationEngine.Create(TriggerType.PostPersist,
-                new Nep17NativeContractExtensions.ManualWitness(committeesMultisign), snapshot);
-
             var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Contract_NativePostPersist);
+            var engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot);
             engine.LoadScript(script.ToArray());
 
             return engine.Execute() == VMState.HALT;
