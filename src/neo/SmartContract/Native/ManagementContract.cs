@@ -51,7 +51,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
-        internal ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
+        public ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             if (!(engine.ScriptContainer is Transaction tx))
                 throw new InvalidOperationException();
@@ -90,7 +90,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0, CallFlags.AllowModifyStates)]
-        internal void Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
+        private void Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             if (nefFile is null && manifest is null) throw new ArgumentException();
 
@@ -127,7 +127,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowModifyStates)]
-        internal void Destroy(ApplicationEngine engine)
+        public void Destroy(ApplicationEngine engine)
         {
             UInt160 hash = engine.CallingScriptHash;
             StorageKey ckey = CreateStorageKey(Prefix_Contract).Add(hash);
