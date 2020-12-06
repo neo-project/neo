@@ -56,7 +56,7 @@ namespace Neo.SmartContract.Native
                     ReturnType = ToParameterType(metadata.Handler.ReturnType),
                     Parameters = metadata.Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name }).ToArray()
                 });
-                if (!attribute.RequiredCallFlags.HasFlag(~CallFlags.ReadOnly)) safeMethods.Add(metadata.Name);
+                if ((attribute.RequiredCallFlags & ~CallFlags.ReadOnly) == 0) safeMethods.Add(metadata.Name);
                 methods.Add(metadata.Name, metadata);
             }
             this.Manifest = new ContractManifest
