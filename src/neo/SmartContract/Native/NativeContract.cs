@@ -1,4 +1,5 @@
 using Neo.IO;
+using Neo.Ledger;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native.Designate;
 using Neo.SmartContract.Native.Oracle;
@@ -28,7 +29,6 @@ namespace Neo.SmartContract.Native
         public static OracleContract Oracle { get; } = new OracleContract();
         public static DesignateContract Designate { get; } = new DesignateContract();
 
-        [ContractMethod(0, CallFlags.None)]
         public abstract string Name { get; }
         public byte[] Script { get; }
         public UInt160 Hash { get; }
@@ -43,7 +43,7 @@ namespace Neo.SmartContract.Native
                 sb.EmitSysCall(ApplicationEngine.Neo_Native_Call);
                 this.Script = sb.ToArray();
             }
-            this.Hash = Script.ToScriptHash();
+            this.Hash = Helper.GetContractHash((new[] { (byte)OpCode.PUSH1 }).ToScriptHash(), Script);
             List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
             List<string> safeMethods = new List<string>();
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
@@ -62,12 +62,11 @@ namespace Neo.SmartContract.Native
             }
             this.Manifest = new ContractManifest
             {
+                Name = Name,
                 Groups = System.Array.Empty<ContractGroup>(),
-                Features = ContractFeatures.NoProperty,
                 SupportedStandards = new string[0],
                 Abi = new ContractAbi()
                 {
-                    Hash = Hash,
                     Events = System.Array.Empty<ContractEventDescriptor>(),
                     Methods = descriptors.ToArray()
                 },
@@ -108,10 +107,11 @@ namespace Neo.SmartContract.Native
         {
             if (!engine.CurrentScriptHash.Equals(Hash))
                 throw new InvalidOperationException("It is not allowed to use Neo.Native.Call directly to call native contracts. System.Contract.Call should be used.");
-            string operation = engine.Pop().GetString();
-            Array args = engine.Pop<Array>();
+            ExecutionContext context = engine.CurrentContext;
+            string operation = context.EvaluationStack.Pop().GetString();
+            Array args = context.EvaluationStack.Pop<Array>();
             ContractMethodMetadata method = methods[operation];
-            ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();
+            ExecutionContextState state = context.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
             engine.AddGas(method.Price);
@@ -125,7 +125,7 @@ namespace Neo.SmartContract.Native
             }
             object returnValue = method.Handler.Invoke(this, parameters.ToArray());
             if (method.Handler.ReturnType != typeof(void))
-                engine.Push(engine.Convert(returnValue));
+                context.EvaluationStack.Push(engine.Convert(returnValue));
         }
 
         public static bool IsNative(UInt160 hash)

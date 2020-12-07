@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Persistence;
 using Neo.SmartContract.Native;
 using System;
 

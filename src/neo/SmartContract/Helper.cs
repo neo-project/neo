@@ -3,7 +3,6 @@ using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
@@ -14,7 +13,17 @@ namespace Neo.SmartContract
 {
     public static class Helper
     {
-        private const long MaxVerificationGas = 0_50000000;
+        public const long MaxVerificationGas = 0_50000000;
+
+        public static UInt160 GetContractHash(UInt160 sender, byte[] script)
+        {
+            using var sb = new ScriptBuilder();
+            sb.Emit(OpCode.ABORT);
+            sb.EmitPush(sender);
+            sb.EmitPush(script);
+
+            return sb.ToArray().ToScriptHash();
+        }
 
         public static UInt160 GetScriptHash(this ExecutionContext context)
         {
@@ -130,7 +139,7 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
-        internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas, WitnessFlag filter = WitnessFlag.All)
+        internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas)
         {
             if (gas < 0) return false;
             if (gas > MaxVerificationGas) gas = MaxVerificationGas;
@@ -147,54 +156,39 @@ namespace Neo.SmartContract
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
-                WitnessFlag flag = verifiable.Witnesses[i].StateDependent ? WitnessFlag.StateDependent : WitnessFlag.StateIndependent;
-                if (!filter.HasFlag(flag))
-                {
-                    gas -= verifiable.Witnesses[i].GasConsumed;
-                    if (gas < 0) return false;
-                    continue;
-                }
+                if (!verifiable.VerifyWitness(snapshot, hashes[i], verifiable.Witnesses[i], gas, out long fee))
+                    return false;
+                gas -= fee;
+            }
+            return true;
+        }
 
-                int offset;
-                ContractMethodDescriptor init = null;
-                byte[] verification = verifiable.Witnesses[i].VerificationScript;
+        internal static bool VerifyWitness(this IVerifiable verifiable, StoreView snapshot, UInt160 hash, Witness witness, long gas, out long fee)
+        {
+            fee = 0;
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas))
+            {
+                CallFlags callFlags = !witness.VerificationScript.IsStandardContract() ? CallFlags.AllowStates : CallFlags.None;
+                byte[] verification = witness.VerificationScript;
+
                 if (verification.Length == 0)
                 {
-                    ContractState cs = snapshot.Contracts.TryGet(hashes[i]);
+                    ContractState cs = snapshot.Contracts.TryGet(hash);
                     if (cs is null) return false;
-                    ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify");
-                    if (md is null) return false;
-                    verification = cs.Script;
-                    offset = md.Offset;
-                    init = cs.Manifest.Abi.GetMethod("_initialize");
+                    if (engine.LoadContract(cs, "verify", callFlags, true) is null)
+                        return false;
                 }
                 else
                 {
-                    if (NativeContract.IsNative(hashes[i])) return false;
-                    if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
-                    offset = 0;
+                    if (NativeContract.IsNative(hash)) return false;
+                    if (hash != witness.ScriptHash) return false;
+                    engine.LoadScript(verification, callFlags, hash, 0);
                 }
-                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas))
-                {
-                    CallFlags callFlags = verifiable.Witnesses[i].StateDependent ? CallFlags.AllowStates : CallFlags.None;
-                    ExecutionContext context = engine.LoadScript(verification, callFlags, offset);
-                    if (NativeContract.IsNative(hashes[i]))
-                    {
-                        using ScriptBuilder sb = new ScriptBuilder();
-                        sb.Emit(OpCode.DEPTH, OpCode.PACK);
-                        sb.EmitPush("verify");
-                        engine.LoadScript(sb.ToArray(), CallFlags.None);
-                    }
-                    else if (init != null)
-                    {
-                        engine.LoadContext(context.Clone(init.Offset), false);
-                    }
-                    engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
-                    if (engine.Execute() == VMState.FAULT) return false;
-                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
-                    gas -= engine.GasConsumed;
-                    verifiable.Witnesses[i].GasConsumed = engine.GasConsumed;
-                }
+
+                engine.LoadScript(witness.InvocationScript, CallFlags.None);
+                if (engine.Execute() == VMState.FAULT) return false;
+                if (engine.ResultStack.Count != 1 || !engine.ResultStack.Peek().GetBoolean()) return false;
+                fee = engine.GasConsumed;
             }
             return true;
         }

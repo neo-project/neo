@@ -4,7 +4,6 @@ using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.SmartContract.Manifest;
 using System;
 using System.Numerics;
 
@@ -24,9 +23,8 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_MaxBlockSystemFee = 17;
         private const byte Prefix_BaseExecFee = 18;
 
-        public PolicyContract()
+        internal PolicyContract()
         {
-            Manifest.Features = ContractFeatures.HasStorage;
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]

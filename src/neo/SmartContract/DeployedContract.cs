@@ -14,7 +14,7 @@ namespace Neo.SmartContract
             if (contract is null) throw new ArgumentNullException(nameof(contract));
 
             Script = null;
-            ScriptHash = contract.ScriptHash;
+            ScriptHash = contract.Hash;
             ContractMethodDescriptor descriptor = contract.Manifest.Abi.GetMethod("verify");
             if (descriptor is null) throw new NotSupportedException("The smart contract haven't got verify method.");
 
