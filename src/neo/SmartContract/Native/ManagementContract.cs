@@ -45,7 +45,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        internal ContractState GetContract(StoreView snapshot, UInt160 hash)
+        public ContractState GetContract(StoreView snapshot, UInt160 hash)
         {
             return snapshot.Storages.TryGet(CreateStorageKey(Prefix_Contract).Add(hash))?.GetInteroperable<ContractState>();
         }
