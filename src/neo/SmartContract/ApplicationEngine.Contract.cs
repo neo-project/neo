@@ -140,15 +140,6 @@ namespace Neo.SmartContract
 
         private void CallContractInternal(ContractState contract, ContractMethodDescriptor method, Array args, CallFlags flags, ReturnTypeConvention convention)
         {
-            if (invocationCounter.TryGetValue(contract.Hash, out var counter))
-            {
-                invocationCounter[contract.Hash] = counter + 1;
-            }
-            else
-            {
-                invocationCounter[contract.Hash] = 1;
-            }
-
             GetInvocationState(CurrentContext).Convention = convention;
 
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
