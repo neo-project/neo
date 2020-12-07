@@ -35,6 +35,18 @@ namespace Neo.Network.P2P.Payloads
         private byte[] script;
         private Witness[] witnesses;
 
+        private static readonly long SignatureContractCost =
+            ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
+            ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
+            ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
+            ApplicationEngine.ECDsaVerifyPrice;
+        private static long MultiSignatureContractCost(int m, int n) =>
+            ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n) +
+            ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 +
+            ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
+            ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
+            ApplicationEngine.ECDsaVerifyPrice * n;
+
         public const int HeaderSize =
             sizeof(byte) +  //Version
             sizeof(uint) +  //Nonce
@@ -295,8 +307,23 @@ namespace Neo.Network.P2P.Payloads
                 if (!attribute.Verify(snapshot, this))
                     return VerifyResult.Invalid;
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
-            if (!this.VerifyWitnesses(snapshot, net_fee, WitnessFlag.StateDependent))
-                return VerifyResult.Invalid;
+
+            UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
+            if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
+            for (int i = 0; i < hashes.Length; i++)
+            {
+                if (witnesses[i].VerificationScript.IsSignatureContract())
+                    net_fee -= SignatureContractCost;
+                else if (witnesses[i].VerificationScript.IsMultiSigContract(out int m, out int n))
+                    net_fee -= MultiSignatureContractCost(m, n);
+                else
+                {
+                    if (!this.VerifyWitness(null, hashes[i], witnesses[i], net_fee, out long fee))
+                        return VerifyResult.Invalid;
+                    net_fee -= fee;
+                }
+                if (net_fee < 0) return VerifyResult.InsufficientFunds;
+            }
             return VerifyResult.Succeed;
         }
 
@@ -304,8 +331,12 @@ namespace Neo.Network.P2P.Payloads
         {
             if (Size > MaxTransactionSize)
                 return VerifyResult.Invalid;
-            if (!this.VerifyWitnesses(null, NetworkFee, WitnessFlag.StateIndependent))
-                return VerifyResult.Invalid;
+            UInt160[] hashes = GetScriptHashesForVerifying(null);
+            if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
+            for (int i = 0; i < hashes.Length; i++)
+                if (witnesses[i].VerificationScript.IsStandardContract())
+                    if (!this.VerifyWitness(null, hashes[i], witnesses[i], SmartContract.Helper.MaxVerificationGas, out _))
+                        return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }
 
