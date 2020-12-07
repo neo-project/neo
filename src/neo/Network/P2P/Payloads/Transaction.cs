@@ -36,7 +36,7 @@ namespace Neo.Network.P2P.Payloads
         private Witness[] witnesses;
 
         private static long SignatureContractCost(uint baseExecFee) =>
-            (baseExecFee * ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
+            baseExecFee * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
          ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
          ApplicationEngine.OpCodePrices[OpCode.SYSCALL]) +
             ApplicationEngine.ECDsaVerifyPrice;
