@@ -13,7 +13,7 @@ namespace Neo.SmartContract
 {
     public static class Helper
     {
-        private const long MaxVerificationGas = 0_50000000;
+        public const long MaxVerificationGas = 0_50000000;
 
         public static UInt160 GetContractHash(UInt160 sender, byte[] script)
         {
@@ -139,7 +139,7 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
-        internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas, WitnessFlag filter = WitnessFlag.All)
+        internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas)
         {
             if (gas < 0) return false;
             if (gas > MaxVerificationGas) gas = MaxVerificationGas;
@@ -156,39 +156,39 @@ namespace Neo.SmartContract
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
-                WitnessFlag flag = verifiable.Witnesses[i].StateDependent ? WitnessFlag.StateDependent : WitnessFlag.StateIndependent;
-                if (!filter.HasFlag(flag))
+                if (!verifiable.VerifyWitness(snapshot, hashes[i], verifiable.Witnesses[i], gas, out long fee))
+                    return false;
+                gas -= fee;
+            }
+            return true;
+        }
+
+        internal static bool VerifyWitness(this IVerifiable verifiable, StoreView snapshot, UInt160 hash, Witness witness, long gas, out long fee)
+        {
+            fee = 0;
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas))
+            {
+                CallFlags callFlags = !witness.VerificationScript.IsStandardContract() ? CallFlags.ReadStates : CallFlags.None;
+                byte[] verification = witness.VerificationScript;
+
+                if (verification.Length == 0)
                 {
-                    gas -= verifiable.Witnesses[i].GasConsumed;
-                    if (gas < 0) return false;
-                    continue;
+                    ContractState cs = snapshot.Contracts.TryGet(hash);
+                    if (cs is null) return false;
+                    if (engine.LoadContract(cs, "verify", callFlags, true) is null)
+                        return false;
+                }
+                else
+                {
+                    if (NativeContract.IsNative(hash)) return false;
+                    if (hash != witness.ScriptHash) return false;
+                    engine.LoadScript(verification, callFlags, hash, 0);
                 }
 
-                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas))
-                {
-                    CallFlags callFlags = verifiable.Witnesses[i].StateDependent ? CallFlags.ReadStates : CallFlags.None;
-                    byte[] verification = verifiable.Witnesses[i].VerificationScript;
-
-                    if (verification.Length == 0)
-                    {
-                        ContractState cs = snapshot.Contracts.TryGet(hashes[i]);
-                        if (cs is null) return false;
-                        if (engine.LoadContract(cs, "verify", callFlags, true) is null)
-                            return false;
-                    }
-                    else
-                    {
-                        if (NativeContract.IsNative(hashes[i])) return false;
-                        if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
-                        engine.LoadScript(verification, callFlags, hashes[i], 0);
-                    }
-
-                    engine.LoadScript(verifiable.Witnesses[i].InvocationScript, CallFlags.None);
-                    if (engine.Execute() == VMState.FAULT) return false;
-                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
-                    gas -= engine.GasConsumed;
-                    verifiable.Witnesses[i].GasConsumed = engine.GasConsumed;
-                }
+                engine.LoadScript(witness.InvocationScript, CallFlags.None);
+                if (engine.Execute() == VMState.FAULT) return false;
+                if (engine.ResultStack.Count != 1 || !engine.ResultStack.Peek().GetBoolean()) return false;
+                fee = engine.GasConsumed;
             }
             return true;
         }
