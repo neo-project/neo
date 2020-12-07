@@ -158,14 +158,6 @@ namespace Neo.SmartContract
 
             var state = context.GetState<ExecutionContextState>();
             state.ScriptHash ??= ((byte[])context.Script).ToScriptHash();
-            if (invocationCounter.TryGetValue(state.ScriptHash, out var counter))
-            {
-                invocationCounter[state.ScriptHash] = counter + 1;
-            }
-            else
-            {
-                invocationCounter[state.ScriptHash] = 1;
-            }
 
             base.LoadContext(context);
         }
