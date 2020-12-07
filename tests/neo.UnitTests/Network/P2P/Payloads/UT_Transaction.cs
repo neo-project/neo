@@ -256,6 +256,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         verificationGas += engine.GasConsumed;
                     }
                 }
+                Assert.AreEqual(verificationGas, 1000390);
 
                 // ------------------
                 // check tx_size cost
@@ -1088,14 +1089,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Version = 0,
                 Witnesses = new Witness[0],
             };
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-
             tx.VerifyStateIndependent().Should().Be(VerifyResult.Invalid);
             tx.Script = new byte[0];
             tx.VerifyStateIndependent().Should().Be(VerifyResult.Invalid);
 
             var walletA = TestUtils.GenerateTestWallet();
             var walletB = TestUtils.GenerateTestWallet();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
 
             using (var unlockA = walletA.Unlock("123"))
             using (var unlockB = walletB.Unlock("123"))

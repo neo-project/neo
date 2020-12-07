@@ -1,7 +1,6 @@
 using Akka.Actor;
 using Akka.Routing;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using System;
 
 namespace Neo.Ledger
