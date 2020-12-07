@@ -35,13 +35,13 @@ namespace Neo.Network.P2P.Payloads
         private byte[] script;
         private Witness[] witnesses;
 
-        private static long SignatureContractCost() =>
-            (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
+        private static long SignatureContractCost(uint baseExecFee) =>
+            (baseExecFee * ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
          ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
          ApplicationEngine.OpCodePrices[OpCode.SYSCALL]) +
             ApplicationEngine.ECDsaVerifyPrice;
-        private static long MultiSignatureContractCost(int m, int n) =>
-            (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n) +
+        private static long MultiSignatureContractCost(uint baseExecFee, int m, int n) =>
+            baseExecFee * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n) +
          ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 +
          ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
          ApplicationEngine.OpCodePrices[OpCode.SYSCALL]) +
@@ -315,9 +315,9 @@ namespace Neo.Network.P2P.Payloads
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (witnesses[i].VerificationScript.IsSignatureContract())
-                    net_fee -= baseExecFee * SignatureContractCost();
+                    net_fee -= SignatureContractCost(baseExecFee);
                 else if (witnesses[i].VerificationScript.IsMultiSigContract(out int m, out int n))
-                    net_fee -= baseExecFee * MultiSignatureContractCost(m, n);
+                    net_fee -= MultiSignatureContractCost(baseExecFee, m, n);
                 else
                 {
                     if (!this.VerifyWitness(null, hashes[i], witnesses[i], net_fee, out long fee))
