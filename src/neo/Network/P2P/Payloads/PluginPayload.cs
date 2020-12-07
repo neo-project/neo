@@ -14,7 +14,7 @@ namespace Neo.Network.P2P.Payloads
         public string Plugin;
         public byte MessageType;
         public byte[] Data;
-        public Role WitnessRole;
+        public PluginPayloadRole WitnessRole;
         public Witness Witness;
 
         private UInt256 _hash = null;
@@ -33,7 +33,7 @@ namespace Neo.Network.P2P.Payloads
         public int Size =>
             Plugin.GetVarSize() +   //Plugin
             sizeof(byte) +          //MessageType
-            sizeof(Role) +          //WitnessRole
+            sizeof(PluginPayloadRole) +          //WitnessRole
             Data.GetVarSize() +     //Data
             1 + Witness.Size;       //Witness
 
@@ -62,13 +62,30 @@ namespace Neo.Network.P2P.Payloads
             Plugin = reader.ReadVarString(32);
             MessageType = reader.ReadByte();
             Data = reader.ReadVarBytes(ushort.MaxValue);
-            WitnessRole = (Role)reader.ReadByte();
-            if (!Enum.IsDefined(typeof(Role), WitnessRole)) throw new FormatException();
+            WitnessRole = (PluginPayloadRole)reader.ReadByte();
+            if (!Enum.IsDefined(typeof(PluginPayloadRole), WitnessRole)) throw new FormatException();
         }
 
         UInt160[] IVerifiable.GetScriptHashesForVerifying(StoreView snapshot)
         {
-            return new[] { Blockchain.GetConsensusAddress(NativeContract.Designate.GetDesignatedByRole(snapshot, WitnessRole, snapshot.Height)) };
+            switch (WitnessRole)
+            {
+                case PluginPayloadRole.Committee:
+                    {
+                        return new[] { NativeContract.NEO.GetCommitteeAddress(snapshot) };
+                    }
+                case PluginPayloadRole.Validators:
+                    {
+                        return new[] { Blockchain.GetConsensusAddress(NativeContract.NEO.GetNextBlockValidators(snapshot)) };
+                    }
+                case PluginPayloadRole.StateValidator:
+                case PluginPayloadRole.Oracle:
+                    {
+                        return new[] { Blockchain.GetConsensusAddress(NativeContract.Designate.GetDesignatedByRole(snapshot, (Role)WitnessRole, snapshot.Height)) };
+                    }
+            }
+
+            throw new ArgumentException();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
