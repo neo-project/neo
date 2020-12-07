@@ -86,7 +86,7 @@ namespace Neo.UnitTests.Ledger
             Mock<Transaction> mock = new Mock<Transaction>();
             mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateDependent(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
-            mock.Setup(p => p.VerifyStateIndependent(It.IsAny<StoreView>())).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyStateIndependent()).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
             mock.Object.Attributes = Array.Empty<TransactionAttribute>();
@@ -111,7 +111,7 @@ namespace Neo.UnitTests.Ledger
             UInt160 sender = senderAccount;
             mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateDependent(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns((StoreView snapshot, TransactionVerificationContext context) => context.CheckTransaction(mock.Object, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
-            mock.Setup(p => p.VerifyStateIndependent(It.IsAny<StoreView>())).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyStateIndependent()).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
             mock.Object.Attributes = Array.Empty<TransactionAttribute>();

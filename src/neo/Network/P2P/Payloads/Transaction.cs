@@ -35,16 +35,18 @@ namespace Neo.Network.P2P.Payloads
         private byte[] script;
         private Witness[] witnesses;
 
-        private static readonly long SignatureContractCost =
-            ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
-            ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
-            ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
+        private static long SignatureContractCost(StoreView snapshot) =>
+        NativeContract.Policy.GetBaseExecFee(snapshot) *
+            (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
+         ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
+         ApplicationEngine.OpCodePrices[OpCode.SYSCALL]) +
             ApplicationEngine.ECDsaVerifyPrice;
-        private static long MultiSignatureContractCost(int m, int n) =>
-            ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n) +
-            ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 +
-            ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
-            ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
+        private static long MultiSignatureContractCost(StoreView snapshot, int m, int n) =>
+        NativeContract.Policy.GetBaseExecFee(snapshot) *
+            (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n) +
+         ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 +
+         ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
+         ApplicationEngine.OpCodePrices[OpCode.SYSCALL]) +
             ApplicationEngine.ECDsaVerifyPrice * n;
 
         public const int HeaderSize =
@@ -313,9 +315,9 @@ namespace Neo.Network.P2P.Payloads
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (witnesses[i].VerificationScript.IsSignatureContract())
-                    net_fee -= SignatureContractCost;
+                    net_fee -= SignatureContractCost(snapshot);
                 else if (witnesses[i].VerificationScript.IsMultiSigContract(out int m, out int n))
-                    net_fee -= MultiSignatureContractCost(m, n);
+                    net_fee -= MultiSignatureContractCost(snapshot, m, n);
                 else
                 {
                     if (!this.VerifyWitness(null, hashes[i], witnesses[i], net_fee, out long fee))
@@ -327,7 +329,7 @@ namespace Neo.Network.P2P.Payloads
             return VerifyResult.Succeed;
         }
 
-        public virtual VerifyResult VerifyStateIndependent(StoreView snapshot)
+        public virtual VerifyResult VerifyStateIndependent()
         {
             if (Size > MaxTransactionSize)
                 return VerifyResult.Invalid;
@@ -335,14 +337,14 @@ namespace Neo.Network.P2P.Payloads
             if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
             for (int i = 0; i < hashes.Length; i++)
                 if (witnesses[i].VerificationScript.IsStandardContract())
-                    if (!this.VerifyWitness(snapshot, hashes[i], witnesses[i], SmartContract.Helper.MaxVerificationGas, out _))
+                    if (!this.VerifyWitness(null, hashes[i], witnesses[i], SmartContract.Helper.MaxVerificationGas, out _))
                         return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }
 
         public virtual VerifyResult Verify(StoreView snapshot, TransactionVerificationContext context)
         {
-            VerifyResult result = VerifyStateIndependent(snapshot);
+            VerifyResult result = VerifyStateIndependent();
             if (result != VerifyResult.Succeed) return result;
             result = VerifyStateDependent(snapshot, context);
             return result;

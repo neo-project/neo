@@ -423,7 +423,7 @@ namespace Neo.Ledger
             if (ContainsTransaction(tx.Hash))
                 SendRelayResult(tx, VerifyResult.AlreadyExists);
             else
-                txrouter.Tell(new TransactionRouter.Task { Transaction = tx, Relay = relay, Snapshot = currentSnapshot }, Sender);
+                txrouter.Tell(new TransactionRouter.Task { Transaction = tx, Relay = relay }, Sender);
         }
 
         private void Persist(Block block)

@@ -8,7 +8,7 @@ namespace Neo.Ledger
 {
     internal class TransactionRouter : UntypedActor
     {
-        public class Task { public Transaction Transaction; public bool Relay; public StoreView Snapshot; }
+        public class Task { public Transaction Transaction; public bool Relay; }
 
         private readonly IActorRef blockchain;
 
@@ -23,7 +23,7 @@ namespace Neo.Ledger
             blockchain.Tell(new Blockchain.PreverifyCompleted
             {
                 Transaction = task.Transaction,
-                Result = task.Transaction.VerifyStateIndependent(task.Snapshot),
+                Result = task.Transaction.VerifyStateIndependent(),
                 Relay = task.Relay
             }, Sender);
         }
