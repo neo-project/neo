@@ -11,7 +11,7 @@ namespace Neo.SmartContract
     {
         public string Name { get; }
         public uint Hash { get; }
-        internal MethodInfo Handler { get; }
+        public MethodInfo Handler { get; }
         public IReadOnlyList<InteropParameterDescriptor> Parameters { get; }
         public long FixedPrice { get; }
         public CallFlags RequiredCallFlags { get; }
