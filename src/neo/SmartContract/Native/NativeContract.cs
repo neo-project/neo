@@ -28,7 +28,6 @@ namespace Neo.SmartContract.Native
         public static OracleContract Oracle { get; } = new OracleContract();
         public static DesignateContract Designate { get; } = new DesignateContract();
 
-        [ContractMethod(0, CallFlags.None)]
         public abstract string Name { get; }
         public byte[] Script { get; }
         public UInt160 Hash { get; }
@@ -43,7 +42,7 @@ namespace Neo.SmartContract.Native
                 sb.EmitSysCall(ApplicationEngine.Neo_Native_Call);
                 this.Script = sb.ToArray();
             }
-            this.Hash = Script.ToScriptHash();
+            this.Hash = Helper.GetContractHash((new[] { (byte)OpCode.PUSH1 }).ToScriptHash(), Script);
             List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
             List<string> safeMethods = new List<string>();
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
@@ -57,7 +56,7 @@ namespace Neo.SmartContract.Native
                     ReturnType = ToParameterType(metadata.Handler.ReturnType),
                     Parameters = metadata.Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name }).ToArray()
                 });
-                if (!attribute.RequiredCallFlags.HasFlag(CallFlags.AllowModifyStates)) safeMethods.Add(metadata.Name);
+                if ((attribute.RequiredCallFlags & ~CallFlags.ReadOnly) == 0) safeMethods.Add(metadata.Name);
                 methods.Add(metadata.Name, metadata);
             }
             this.Manifest = new ContractManifest
@@ -67,7 +66,6 @@ namespace Neo.SmartContract.Native
                 SupportedStandards = new string[0],
                 Abi = new ContractAbi()
                 {
-                    Hash = Hash,
                     Events = System.Array.Empty<ContractEventDescriptor>(),
                     Methods = descriptors.ToArray()
                 },
@@ -138,14 +136,14 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        [ContractMethod(0, CallFlags.AllowModifyStates)]
+        [ContractMethod(0, CallFlags.WriteStates)]
         protected virtual void OnPersist(ApplicationEngine engine)
         {
             if (engine.Trigger != TriggerType.OnPersist)
                 throw new InvalidOperationException();
         }
 
-        [ContractMethod(0, CallFlags.AllowModifyStates)]
+        [ContractMethod(0, CallFlags.WriteStates)]
         protected virtual void PostPersist(ApplicationEngine engine)
         {
             if (engine.Trigger != TriggerType.PostPersist)

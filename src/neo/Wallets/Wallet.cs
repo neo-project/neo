@@ -296,7 +296,7 @@ namespace Neo.Wallets
                                         Scopes = WitnessScope.CalledByEntry
                                     });
                                 }
-                                sb.EmitAppCall(output.AssetId, "transfer", account, output.ScriptHash, value);
+                                sb.EmitAppCall(output.AssetId, "transfer", account, output.ScriptHash, value, output.Data);
                                 sb.Emit(OpCode.ASSERT);
                             }
                         }
@@ -397,10 +397,9 @@ namespace Neo.Wallets
                     // Check verify cost
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.Clone());
                     if (engine.LoadContract(contract, "verify", CallFlags.None, true) is null)
-                        throw new ArgumentException($"The smart contract {contract.ScriptHash} haven't got verify method");
-                    engine.LoadScript(Array.Empty<byte>(), CallFlags.None);
-                    if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.ScriptHash} verification fault.");
-                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.ScriptHash} returns false.");
+                        throw new ArgumentException($"The smart contract {contract.Hash} haven't got verify method");
+                    if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
+                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.Hash} returns false.");
 
                     networkFee += engine.GasConsumed;
                 }

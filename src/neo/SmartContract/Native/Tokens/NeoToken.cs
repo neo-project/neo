@@ -64,7 +64,7 @@ namespace Neo.SmartContract.Native.Tokens
 
             BigInteger gas = CalculateBonus(engine.Snapshot, state.VoteTo, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
             state.BalanceHeight = engine.Snapshot.PersistingBlock.Index;
-            GAS.Mint(engine, account, gas);
+            GAS.Mint(engine, account, gas, true);
         }
 
         private BigInteger CalculateBonus(StoreView snapshot, ECPoint vote, BigInteger value, uint start, uint end)
@@ -127,7 +127,7 @@ namespace Neo.SmartContract.Native.Tokens
             // Initialize economic parameters
 
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u), new StorageItem(5 * GAS.Factor));
-            Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), TotalAmount);
+            Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), TotalAmount, false);
         }
 
         protected override void OnPersist(ApplicationEngine engine)
@@ -157,7 +157,7 @@ namespace Neo.SmartContract.Native.Tokens
             var committee = GetCommitteeFromCache(engine.Snapshot);
             var pubkey = committee.ElementAt(index).PublicKey;
             var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
-            GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100);
+            GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100, false);
 
             // Record the cumulative reward of the voters of committee
 
@@ -181,7 +181,7 @@ namespace Neo.SmartContract.Native.Tokens
             }
         }
 
-        [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_05000000, CallFlags.WriteStates)]
         private bool SetGasPerBlock(ApplicationEngine engine, BigInteger gasPerBlock)
         {
             if (gasPerBlock < 0 || gasPerBlock > 10 * GAS.Factor)
@@ -194,7 +194,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public BigInteger GetGasPerBlock(StoreView snapshot)
         {
             return GetSortedGasRecords(snapshot, snapshot.PersistingBlock.Index).First().GasPerBlock;
@@ -208,7 +208,7 @@ namespace Neo.SmartContract.Native.Tokens
                 .Select(u => (BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.AsSpan(^sizeof(uint))), (BigInteger)u.Value));
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowStates)]
+        [ContractMethod(0_03000000, CallFlags.ReadStates)]
         public BigInteger UnclaimedGas(StoreView snapshot, UInt160 account, uint end)
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Account).Add(account));
@@ -217,7 +217,7 @@ namespace Neo.SmartContract.Native.Tokens
             return CalculateBonus(snapshot, state.VoteTo, state.Balance, state.BalanceHeight, end);
         }
 
-        [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_05000000, CallFlags.WriteStates)]
         private bool RegisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
@@ -229,7 +229,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_05000000, CallFlags.WriteStates)]
         private bool UnregisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
@@ -243,7 +243,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(0_05000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_05000000, CallFlags.WriteStates)]
         private bool Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
         {
             if (!engine.CheckWitnessInternal(account)) return false;
@@ -281,7 +281,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(1_00000000, CallFlags.AllowStates)]
+        [ContractMethod(1_00000000, CallFlags.ReadStates)]
         public (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(StoreView snapshot)
         {
             byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
@@ -292,7 +292,7 @@ namespace Neo.SmartContract.Native.Tokens
             )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes)).ToArray();
         }
 
-        [ContractMethod(1_00000000, CallFlags.AllowStates)]
+        [ContractMethod(1_00000000, CallFlags.ReadStates)]
         public ECPoint[] GetCommittee(StoreView snapshot)
         {
             return GetCommitteeFromCache(snapshot).Select(p => p.PublicKey).OrderBy(p => p).ToArray();
@@ -324,7 +324,7 @@ namespace Neo.SmartContract.Native.Tokens
             return candidates.OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Take(ProtocolSettings.Default.CommitteeMembersCount);
         }
 
-        [ContractMethod(1_00000000, CallFlags.AllowStates)]
+        [ContractMethod(1_00000000, CallFlags.ReadStates)]
         public ECPoint[] GetNextBlockValidators(StoreView snapshot)
         {
             return GetCommitteeFromCache(snapshot)
