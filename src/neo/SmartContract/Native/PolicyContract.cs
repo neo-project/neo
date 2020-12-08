@@ -24,7 +24,7 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public uint GetMaxTransactionsPerBlock(StoreView snapshot)
         {
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxTransactionsPerBlock));
@@ -32,7 +32,7 @@ namespace Neo.SmartContract.Native
             return (uint)(BigInteger)item;
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public uint GetMaxBlockSize(StoreView snapshot)
         {
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxBlockSize));
@@ -40,7 +40,7 @@ namespace Neo.SmartContract.Native
             return (uint)(BigInteger)item;
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public long GetMaxBlockSystemFee(StoreView snapshot)
         {
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxBlockSystemFee));
@@ -48,7 +48,7 @@ namespace Neo.SmartContract.Native
             return (long)(BigInteger)item;
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public long GetFeePerByte(StoreView snapshot)
         {
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_FeePerByte));
@@ -56,13 +56,13 @@ namespace Neo.SmartContract.Native
             return (long)(BigInteger)item;
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public bool IsBlocked(StoreView snapshot, UInt160 account)
         {
             return snapshot.Storages.Contains(CreateStorageKey(Prefix_BlockedAccount).Add(account));
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_03000000, CallFlags.WriteStates)]
         private bool SetMaxBlockSize(ApplicationEngine engine, uint value)
         {
             if (value > Message.PayloadMaxSize) throw new ArgumentOutOfRangeException(nameof(value));
@@ -72,7 +72,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_03000000, CallFlags.WriteStates)]
         private bool SetMaxTransactionsPerBlock(ApplicationEngine engine, uint value)
         {
             if (value > Block.MaxTransactionsPerBlock) throw new ArgumentOutOfRangeException(nameof(value));
@@ -82,7 +82,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_03000000, CallFlags.WriteStates)]
         private bool SetMaxBlockSystemFee(ApplicationEngine engine, long value)
         {
             if (value <= 4007600) throw new ArgumentOutOfRangeException(nameof(value));
@@ -92,7 +92,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_03000000, CallFlags.WriteStates)]
         private bool SetFeePerByte(ApplicationEngine engine, long value)
         {
             if (value < 0 || value > 1_00000000) throw new ArgumentOutOfRangeException(nameof(value));
@@ -102,7 +102,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_03000000, CallFlags.WriteStates)]
         private bool BlockAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine)) return false;
@@ -114,7 +114,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_03000000, CallFlags.WriteStates)]
         private bool UnblockAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine)) return false;

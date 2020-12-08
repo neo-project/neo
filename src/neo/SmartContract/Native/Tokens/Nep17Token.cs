@@ -88,7 +88,7 @@ namespace Neo.SmartContract.Native.Tokens
             PostTransfer(engine, account, null, amount, StackItem.Null, false);
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public virtual BigInteger TotalSupply(StoreView snapshot)
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_TotalSupply));
@@ -96,7 +96,7 @@ namespace Neo.SmartContract.Native.Tokens
             return storage;
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public virtual BigInteger BalanceOf(StoreView snapshot, UInt160 account)
         {
             StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Account).Add(account));
@@ -104,7 +104,7 @@ namespace Neo.SmartContract.Native.Tokens
             return storage.GetInteroperable<TState>().Balance;
         }
 
-        [ContractMethod(0_09000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_09000000, CallFlags.WriteStates | CallFlags.AllowCall | CallFlags.AllowNotify)]
         protected virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
