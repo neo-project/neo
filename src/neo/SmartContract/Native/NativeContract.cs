@@ -1,5 +1,4 @@
 using Neo.IO;
-using Neo.Ledger;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native.Designate;
 using Neo.SmartContract.Native.Oracle;
@@ -55,7 +54,7 @@ namespace Neo.SmartContract.Native
                     Name = metadata.Name,
                     ReturnType = ToParameterType(metadata.Handler.ReturnType),
                     Parameters = metadata.Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name }).ToArray(),
-                    Safe = !attribute.RequiredCallFlags.HasFlag(CallFlags.AllowModifyStates)
+                    Safe = (attribute.RequiredCallFlags & ~CallFlags.ReadOnly) == 0
                 });
                 methods.Add(metadata.Name, metadata);
             }
@@ -135,14 +134,14 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        [ContractMethod(0, CallFlags.AllowModifyStates)]
+        [ContractMethod(0, CallFlags.WriteStates)]
         protected virtual void OnPersist(ApplicationEngine engine)
         {
             if (engine.Trigger != TriggerType.OnPersist)
                 throw new InvalidOperationException();
         }
 
-        [ContractMethod(0, CallFlags.AllowModifyStates)]
+        [ContractMethod(0, CallFlags.WriteStates)]
         protected virtual void PostPersist(ApplicationEngine engine)
         {
             if (engine.Trigger != TriggerType.PostPersist)
