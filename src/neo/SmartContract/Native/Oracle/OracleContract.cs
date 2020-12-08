@@ -85,7 +85,7 @@ namespace Neo.SmartContract.Native.Oracle
             Manifest.Abi.Events = events.ToArray();
         }
 
-        [ContractMethod(0, CallFlags.AllowModifyStates)]
+        [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowCall | CallFlags.AllowNotify)]
         private void Finish(ApplicationEngine engine)
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
@@ -174,7 +174,7 @@ namespace Neo.SmartContract.Native.Oracle
             }
         }
 
-        [ContractMethod(OracleRequestPrice, CallFlags.AllowModifyStates)]
+        [ContractMethod(OracleRequestPrice, CallFlags.WriteStates | CallFlags.AllowNotify)]
         private void Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForResponse)
         {
             //Check the arguments
