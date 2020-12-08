@@ -6,8 +6,8 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static readonly InteropDescriptor Neo_Native_Deploy = Register("Neo.Native.Deploy", nameof(DeployNativeContracts), 0, CallFlags.WriteStates, false);
-        public static readonly InteropDescriptor Neo_Native_Call = Register("Neo.Native.Call", nameof(CallNativeContract), 0, CallFlags.AllowCall, false);
+        public static readonly InteropDescriptor Neo_Native_Deploy = Register("Neo.Native.Deploy", nameof(DeployNativeContracts), 0, 0, CallFlags.WriteStates, false);
+        public static readonly InteropDescriptor Neo_Native_Call = Register("Neo.Native.Call", nameof(CallNativeContract), 0, 0, CallFlags.AllowCall, false);
 
         protected internal void DeployNativeContracts()
         {

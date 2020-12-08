@@ -407,7 +407,7 @@ namespace Neo.Wallets
                 else if (witness_script.IsSignatureContract())
                 {
                     size += 67 + witness_script.GetVarSize();
-                    networkFee += base_exec_fee * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL]) + ApplicationEngine.ECDsaVerifyPrice;
+                    networkFee += base_exec_fee * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice);
                 }
                 else if (witness_script.IsMultiSigContract(out int m, out int n))
                 {
@@ -419,7 +419,7 @@ namespace Neo.Wallets
                     networkFee += base_exec_fee * ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * n;
                     using (ScriptBuilder sb = new ScriptBuilder())
                         networkFee += base_exec_fee * ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
-                    networkFee += base_exec_fee * ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice * n;
+                    networkFee += base_exec_fee * (ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice * n);
                 }
                 else
                 {

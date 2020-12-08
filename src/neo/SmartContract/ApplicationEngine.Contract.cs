@@ -12,18 +12,18 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static readonly InteropDescriptor System_Contract_Create = Register("System.Contract.Create", nameof(CreateContract), 0, CallFlags.WriteStates, false);
-        public static readonly InteropDescriptor System_Contract_Update = Register("System.Contract.Update", nameof(UpdateContract), 0, CallFlags.WriteStates, false);
-        public static readonly InteropDescriptor System_Contract_Destroy = Register("System.Contract.Destroy", nameof(DestroyContract), 0_01000000, CallFlags.WriteStates, false);
-        public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 0_01000000, CallFlags.AllowCall, false);
-        public static readonly InteropDescriptor System_Contract_CallEx = Register("System.Contract.CallEx", nameof(CallContractEx), 0_01000000, CallFlags.AllowCall, false);
-        public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 0_00030000, CallFlags.ReadStates, true);
-        public static readonly InteropDescriptor System_Contract_GetCallFlags = Register("System.Contract.GetCallFlags", nameof(GetCallFlags), 0_00030000, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Contract_Create = Register("System.Contract.Create", nameof(CreateContract), 0, 0, CallFlags.WriteStates, false);
+        public static readonly InteropDescriptor System_Contract_Update = Register("System.Contract.Update", nameof(UpdateContract), 0, 0, CallFlags.WriteStates, false);
+        public static readonly InteropDescriptor System_Contract_Destroy = Register("System.Contract.Destroy", nameof(DestroyContract), 0_00033333, 0, CallFlags.WriteStates, false);
+        public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 0_00033333, 0, CallFlags.AllowCall, false);
+        public static readonly InteropDescriptor System_Contract_CallEx = Register("System.Contract.CallEx", nameof(CallContractEx), 0_00033333, 0, CallFlags.AllowCall, false);
+        public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 0_00001000, 0, CallFlags.ReadStates, true);
+        public static readonly InteropDescriptor System_Contract_GetCallFlags = Register("System.Contract.GetCallFlags", nameof(GetCallFlags), 0_00001000, 0, CallFlags.None, false);
         /// <summary>
         /// Calculate corresponding account scripthash for given public key
         /// Warning: check first that input public key is valid, before creating the script.
         /// </summary>
-        public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 0_00010000, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 0_00000333, 0, CallFlags.None, true);
 
         protected internal void CreateContract(byte[] nefFile, byte[] manifest)
         {
@@ -34,7 +34,7 @@ namespace Neo.SmartContract
             if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
                 throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
 
-            AddGas(StoragePrice * (nefFile.Length + manifest.Length));
+            AddGas(StoragePerByteRatio * NativeContract.Policy.GetFeePerByte(Snapshot) * (nefFile.Length + manifest.Length));
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
             UInt160 hash = Helper.GetContractHash(tx.Sender, nef.Script);
@@ -68,7 +68,7 @@ namespace Neo.SmartContract
         {
             if (nefFile is null && manifest is null) throw new ArgumentException();
 
-            AddGas(StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
+            AddGas(StoragePerByteRatio * NativeContract.Policy.GetFeePerByte(Snapshot) * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
 
             var contract = Snapshot.Contracts.GetAndChange(CurrentScriptHash);
             if (contract is null) throw new InvalidOperationException($"Updating Contract Does Not Exist: {CurrentScriptHash}");
