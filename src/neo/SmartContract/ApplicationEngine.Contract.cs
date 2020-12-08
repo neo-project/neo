@@ -133,7 +133,7 @@ namespace Neo.SmartContract
 
             if (md.Safe)
             {
-                flags &= ~CallFlags.AllowModifyStates;
+                flags &= ~CallFlags.WriteStates;
             }
             else
             {
