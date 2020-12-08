@@ -167,7 +167,7 @@ namespace Neo.SmartContract
             fee = 0;
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas))
             {
-                CallFlags callFlags = !witness.VerificationScript.IsStandardContract() ? CallFlags.AllowStates : CallFlags.None;
+                CallFlags callFlags = !witness.VerificationScript.IsStandardContract() ? CallFlags.ReadStates : CallFlags.None;
                 byte[] verification = witness.VerificationScript;
 
                 if (verification.Length == 0)

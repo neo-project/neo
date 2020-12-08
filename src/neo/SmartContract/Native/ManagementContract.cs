@@ -44,13 +44,13 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public ContractState GetContract(StoreView snapshot, UInt160 hash)
         {
             return snapshot.Storages.TryGet(CreateStorageKey(Prefix_Contract).Add(hash))?.GetInteroperable<ContractState>();
         }
 
-        [ContractMethod(0, CallFlags.AllowModifyStates)]
+        [ContractMethod(0, CallFlags.WriteStates)]
         private ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             if (!(engine.ScriptContainer is Transaction tx))
@@ -89,7 +89,7 @@ namespace Neo.SmartContract.Native
             return contract;
         }
 
-        [ContractMethod(0, CallFlags.AllowModifyStates)]
+        [ContractMethod(0, CallFlags.WriteStates)]
         private void Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             if (nefFile is null && manifest is null) throw new ArgumentException();
@@ -126,7 +126,7 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_01000000, CallFlags.WriteStates)]
         private void Destroy(ApplicationEngine engine)
         {
             UInt160 hash = engine.CallingScriptHash;
