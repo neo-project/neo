@@ -297,7 +297,7 @@ namespace Neo.SmartContract
         {
             InteropDescriptor descriptor = services[method];
             ValidateCallFlags(descriptor);
-            AddGas(descriptor.FixedPrice * NativeContract.Policy.GetBaseExecFee(Snapshot));
+            AddGas(descriptor.FixedPrice * base_exec_fee);
             List<object> parameters = descriptor.Parameters.Count > 0
                 ? new List<object>()
                 : null;
