@@ -51,6 +51,7 @@ namespace Neo.SmartContract
         private readonly Dictionary<ExecutionContext, InvocationState> invocationStates = new Dictionary<ExecutionContext, InvocationState>();
         private readonly uint base_exec_fee;
 
+        public readonly uint StoragePrice;
         public static IReadOnlyDictionary<uint, InteropDescriptor> Services => services;
         private List<IDisposable> Disposables => disposables ??= new List<IDisposable>();
         public TriggerType Trigger { get; }
@@ -71,6 +72,7 @@ namespace Neo.SmartContract
             this.Snapshot = snapshot;
             this.gas_amount = gas;
             this.base_exec_fee = snapshot is null ? PolicyContract.DefaultBaseExecFee : NativeContract.Policy.GetBaseExecFee(Snapshot);
+            this.StoragePrice = snapshot is null ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(Snapshot);
         }
 
         protected internal void AddGas(long gas)

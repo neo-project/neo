@@ -8,7 +8,6 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public const long StoragePerByteRatio = 100;
         public const int MaxStorageKeySize = 64;
         public const int MaxStorageValueSize = ushort.MaxValue;
 
@@ -106,7 +105,7 @@ namespace Neo.SmartContract
                 else
                     newDataSize = (item.Value.Length - 1) / 4 + 1 + value.Length - item.Value.Length;
             }
-            AddGas(newDataSize * StoragePerByteRatio * NativeContract.Policy.GetFeePerByte(Snapshot));
+            AddGas(newDataSize * StoragePrice);
 
             item.Value = value;
             item.IsConstant = flags.HasFlag(StorageFlags.Constant);
@@ -115,7 +114,7 @@ namespace Neo.SmartContract
         protected internal void Delete(StorageContext context, byte[] key)
         {
             if (context.IsReadOnly) throw new ArgumentException();
-            AddGas(StoragePerByteRatio * NativeContract.Policy.GetFeePerByte(Snapshot));
+            AddGas(StoragePrice);
             StorageKey skey = new StorageKey
             {
                 Id = context.Id,
