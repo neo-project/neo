@@ -8,11 +8,11 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static readonly InteropDescriptor System_Iterator_Create = Register("System.Iterator.Create", nameof(CreateIterator), 0_00000013, 0, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Iterator_Key = Register("System.Iterator.Key", nameof(IteratorKey), 0_00000013, 0, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Iterator_Keys = Register("System.Iterator.Keys", nameof(IteratorKeys), 0_00000013, 0, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Iterator_Values = Register("System.Iterator.Values", nameof(IteratorValues), 0_00000013, 0, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Iterator_Concat = Register("System.Iterator.Concat", nameof(ConcatIterators), 0_00000013, 0, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Iterator_Create = Register("System.Iterator.Create", nameof(CreateIterator), 0_00000013, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Iterator_Key = Register("System.Iterator.Key", nameof(IteratorKey), 0_00000013, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Iterator_Keys = Register("System.Iterator.Keys", nameof(IteratorKeys), 0_00000013, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Iterator_Values = Register("System.Iterator.Values", nameof(IteratorValues), 0_00000013, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Iterator_Concat = Register("System.Iterator.Concat", nameof(ConcatIterators), 0_00000013, CallFlags.None, false);
 
         protected internal IIterator CreateIterator(StackItem item)
         {

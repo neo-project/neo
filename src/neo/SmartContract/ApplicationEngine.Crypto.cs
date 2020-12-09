@@ -12,12 +12,12 @@ namespace Neo.SmartContract
     {
         public const long ECDsaVerifyPrice = 0_00033333;
 
-        public static readonly InteropDescriptor Neo_Crypto_RIPEMD160 = Register("Neo.Crypto.RIPEMD160", nameof(RIPEMD160), 0_00033333, 0, CallFlags.None, true);
-        public static readonly InteropDescriptor Neo_Crypto_SHA256 = Register("Neo.Crypto.SHA256", nameof(Sha256), 0_00033333, 0, CallFlags.None, true);
-        public static readonly InteropDescriptor Neo_Crypto_VerifyWithECDsaSecp256r1 = Register("Neo.Crypto.VerifyWithECDsaSecp256r1", nameof(VerifyWithECDsaSecp256r1), ECDsaVerifyPrice, 0, CallFlags.None, true);
-        public static readonly InteropDescriptor Neo_Crypto_VerifyWithECDsaSecp256k1 = Register("Neo.Crypto.VerifyWithECDsaSecp256k1", nameof(VerifyWithECDsaSecp256k1), ECDsaVerifyPrice, 0, CallFlags.None, true);
-        public static readonly InteropDescriptor Neo_Crypto_CheckMultisigWithECDsaSecp256r1 = Register("Neo.Crypto.CheckMultisigWithECDsaSecp256r1", nameof(CheckMultisigWithECDsaSecp256r1), 0, 0, CallFlags.None, true);
-        public static readonly InteropDescriptor Neo_Crypto_CheckMultisigWithECDsaSecp256k1 = Register("Neo.Crypto.CheckMultisigWithECDsaSecp256k1", nameof(CheckMultisigWithECDsaSecp256k1), 0, 0, CallFlags.None, true);
+        public static readonly InteropDescriptor Neo_Crypto_RIPEMD160 = Register("Neo.Crypto.RIPEMD160", nameof(RIPEMD160), 0_00033333, CallFlags.None, true);
+        public static readonly InteropDescriptor Neo_Crypto_SHA256 = Register("Neo.Crypto.SHA256", nameof(Sha256), 0_00033333, CallFlags.None, true);
+        public static readonly InteropDescriptor Neo_Crypto_VerifyWithECDsaSecp256r1 = Register("Neo.Crypto.VerifyWithECDsaSecp256r1", nameof(VerifyWithECDsaSecp256r1), ECDsaVerifyPrice, CallFlags.None, true);
+        public static readonly InteropDescriptor Neo_Crypto_VerifyWithECDsaSecp256k1 = Register("Neo.Crypto.VerifyWithECDsaSecp256k1", nameof(VerifyWithECDsaSecp256k1), ECDsaVerifyPrice, CallFlags.None, true);
+        public static readonly InteropDescriptor Neo_Crypto_CheckMultisigWithECDsaSecp256r1 = Register("Neo.Crypto.CheckMultisigWithECDsaSecp256r1", nameof(CheckMultisigWithECDsaSecp256r1), 0, CallFlags.None, true);
+        public static readonly InteropDescriptor Neo_Crypto_CheckMultisigWithECDsaSecp256k1 = Register("Neo.Crypto.CheckMultisigWithECDsaSecp256k1", nameof(CheckMultisigWithECDsaSecp256k1), 0, CallFlags.None, true);
 
         protected internal byte[] RIPEMD160(StackItem item)
         {
