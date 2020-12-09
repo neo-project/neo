@@ -8,6 +8,7 @@ namespace Neo.SmartContract.Native.Tokens
     {
         public override int Id => -2;
         public override string Name => "GAS";
+        public override uint ActiveBlockIndex => 0;
         public override string Symbol => "gas";
         public override byte Decimals => 8;
 
@@ -21,9 +22,8 @@ namespace Neo.SmartContract.Native.Tokens
             Mint(engine, account, 30_000_000 * Factor, false);
         }
 
-        protected override void OnPersist(ApplicationEngine engine)
+        internal override void OnPersist(ApplicationEngine engine)
         {
-            base.OnPersist(engine);
             long totalNetworkFee = 0;
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
             {

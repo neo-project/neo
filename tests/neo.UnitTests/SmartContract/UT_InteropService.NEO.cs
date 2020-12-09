@@ -9,6 +9,8 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
+using Neo.UnitTests.Extensions;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
@@ -114,7 +116,7 @@ namespace Neo.UnitTests.SmartContract
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
-            snapshot.Contracts.Add(state.Hash, state);
+            snapshot.AddContract(state.Hash, state);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
             engine.IsStandardContract(state.Hash).Should().BeFalse();
@@ -128,20 +130,20 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestContract_Create()
         {
+            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
+            snapshot.PersistingBlock = new Block() { };
             var nef = new NefFile()
             {
-                Script = new byte[0x01],
+                Script = new byte[byte.MaxValue],
                 Compiler = "",
                 Version = new Version(1, 2, 3, 4).ToString()
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
             var nefFile = nef.ToArray();
             var manifest = TestUtils.CreateDefaultManifest();
-            var engine = GetEngine(false, true);
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CreateContract(nefFile, manifest.ToJson().ToByteArray(false)));
-
-            engine = GetEngine(true, true);
-            Assert.ThrowsException<ArgumentException>(() => engine.CreateContract(nefFile, new byte[ContractManifest.MaxLength + 1]));
+            Assert.ThrowsException<InvalidOperationException>(() => snapshot.DeployContract(null, nefFile, manifest.ToJson().ToByteArray(false)));
+            Assert.ThrowsException<ArgumentException>(() => snapshot.DeployContract(UInt160.Zero, nefFile, new byte[ContractManifest.MaxLength + 1]));
+            Assert.ThrowsException<InvalidOperationException>(() => snapshot.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(true), 10000000));
 
             var script_exceedMaxLength = new NefFile()
             {
@@ -150,32 +152,31 @@ namespace Neo.UnitTests.SmartContract
                 Version = new Version(1, 2, 3, 4).ToString()
             };
             script_exceedMaxLength.CheckSum = NefFile.ComputeChecksum(nef);
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CreateContract(script_exceedMaxLength.ToArray(), manifest.ToJson().ToByteArray(true)));
-            engine = GetEngine(true, true, gas: 2000_00000000);
-            Assert.ThrowsException<FormatException>(() => engine.CreateContract(script_exceedMaxLength.ToArray(), manifest.ToJson().ToByteArray(true)));
+            Assert.ThrowsException<InvalidOperationException>(() => snapshot.DeployContract(UInt160.Zero, script_exceedMaxLength.ToArray(), manifest.ToJson().ToByteArray(true)));
 
             var script_zeroLength = new byte[] { };
-            Assert.ThrowsException<ArgumentException>(() => engine.CreateContract(script_zeroLength, manifest.ToJson().ToByteArray(true)));
+            Assert.ThrowsException<ArgumentException>(() => snapshot.DeployContract(UInt160.Zero, script_zeroLength, manifest.ToJson().ToByteArray(true)));
 
             var manifest_zeroLength = new byte[] { };
-            Assert.ThrowsException<ArgumentException>(() => engine.CreateContract(nefFile, manifest_zeroLength));
+            Assert.ThrowsException<ArgumentException>(() => snapshot.DeployContract(UInt160.Zero, nefFile, manifest_zeroLength));
 
             manifest = TestUtils.CreateDefaultManifest();
-            engine.CreateContract(nefFile, manifest.ToJson().ToByteArray(false));
+            var ret = snapshot.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false));
+            ret.Hash.ToString().Should().Be("0x5756874a149b9de89c7b5d34f9c37db3762f88a2");
+            Assert.ThrowsException<InvalidOperationException>(() => snapshot.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false)));
 
-            var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
-            snapshot.Contracts.Add(state.Hash, state);
-            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0);
-            engine.LoadScript(new byte[] { 0x01 });
+            snapshot.AddContract(state.Hash, state);
 
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CreateContract(nefFile, manifest.ToJson().ToByteArray(false)));
+            Assert.ThrowsException<InvalidOperationException>(() => snapshot.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false)));
         }
 
         [TestMethod]
         public void TestContract_Update()
         {
-            var engine = GetEngine(false, true);
+            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
+            snapshot.PersistingBlock = new Block() { };
+
             var nef = new NefFile()
             {
                 Script = new byte[] { 0x01 },
@@ -183,15 +184,13 @@ namespace Neo.UnitTests.SmartContract
                 Version = new Version(1, 2, 3, 4).ToString()
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
-            var nefFile = nef.ToArray();
-            Assert.ThrowsException<InvalidOperationException>(() => engine.UpdateContract(nefFile, new byte[0]));
+            Assert.ThrowsException<InvalidOperationException>(() => snapshot.UpdateContract(null, nef.ToArray(), new byte[0]));
 
             var manifest = TestUtils.CreateDefaultManifest();
             byte[] privkey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair key = new KeyPair(privkey);
             ECPoint pubkey = key.PublicKey;
-            var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             byte[] signature = Crypto.Sign(state.Hash.ToArray(), privkey, pubkey.EncodePoint(false).Skip(1).ToArray());
             manifest.Groups = new ContractGroup[]
@@ -214,12 +213,16 @@ namespace Neo.UnitTests.SmartContract
                 Id = state.Id,
                 Key = new byte[] { 0x01 }
             };
-            snapshot.Contracts.Add(state.Hash, state);
+            snapshot.AddContract(state.Hash, state);
             snapshot.Storages.Add(storageKey, storageItem);
-            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
-            engine.LoadScript(state.Script);
-            engine.UpdateContract(nefFile, manifest.ToJson().ToByteArray(false));
-            engine.Snapshot.Storages.Find(BitConverter.GetBytes(state.Id)).ToList().Count().Should().Be(1);
+            state.UpdateCounter.Should().Be(0);
+            snapshot.UpdateContract(state.Hash, nef.ToArray(), manifest.ToJson().ToByteArray(false));
+            var ret = NativeContract.Management.GetContract(snapshot, state.Hash);
+            snapshot.Storages.Find(BitConverter.GetBytes(state.Id)).ToList().Count().Should().Be(1);
+            ret.UpdateCounter.Should().Be(1);
+            ret.Id.Should().Be(state.Id);
+            ret.Manifest.ToJson().ToString().Should().Be(manifest.ToJson().ToString());
+            ret.Script.ToHexString().Should().Be(nef.Script.ToHexString().ToString());
         }
 
         [TestMethod]
@@ -232,12 +235,13 @@ namespace Neo.UnitTests.SmartContract
                 Compiler = ""
             };
             nefFile.CheckSum = NefFile.ComputeChecksum(nefFile);
-            var nef = nefFile.ToArray();
 
-            var engine = GetEngine(false, true);
-            Assert.ThrowsException<InvalidOperationException>(() => engine.UpdateContract(null, new byte[] { 0x01 }));
-            Assert.ThrowsException<InvalidOperationException>(() => engine.UpdateContract(nef, null));
-            Assert.ThrowsException<ArgumentException>(() => engine.UpdateContract(null, null));
+            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
+            snapshot.PersistingBlock = new Block();
+
+            Assert.ThrowsException<InvalidOperationException>(() => snapshot.UpdateContract(null, null, new byte[] { 0x01 }));
+            Assert.ThrowsException<InvalidOperationException>(() => snapshot.UpdateContract(null, nefFile.ToArray(), null));
+            Assert.ThrowsException<ArgumentException>(() => snapshot.UpdateContract(null, null, null));
 
             nefFile = new NefFile()
             {
@@ -246,10 +250,9 @@ namespace Neo.UnitTests.SmartContract
                 Compiler = ""
             };
             nefFile.CheckSum = NefFile.ComputeChecksum(nefFile);
-            nef = nefFile.ToArray();
 
-            Assert.ThrowsException<InvalidOperationException>(() => engine.UpdateContract(nef, new byte[] { 0x01 }));
-            Assert.ThrowsException<InvalidOperationException>(() => engine.UpdateContract(nef, new byte[0]));
+            Assert.ThrowsException<InvalidOperationException>(() => snapshot.UpdateContract(null, nefFile.ToArray(), new byte[] { 0x01 }));
+            Assert.ThrowsException<InvalidOperationException>(() => snapshot.UpdateContract(null, nefFile.ToArray(), new byte[0]));
         }
 
         [TestMethod]
@@ -268,7 +271,7 @@ namespace Neo.UnitTests.SmartContract
                 Id = state.Id,
                 Key = new byte[] { 0x01 }
             };
-            snapshot.Contracts.Add(state.Hash, state);
+            snapshot.AddContract(state.Hash, state);
             snapshot.Storages.Add(storageKey, storageItem);
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });

@@ -3,6 +3,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
 using System.Linq;
@@ -316,7 +317,6 @@ namespace Neo.UnitTests.SmartContract
         {
             ContractState contractA, contractB, contractC;
             var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
-            var contracts = snapshot.Contracts;
 
             // Create dummy contracts
 
@@ -334,15 +334,15 @@ namespace Neo.UnitTests.SmartContract
                 // Init A,B,C contracts
                 // First two drops is for drop method and arguments
 
-                contracts.Delete(contractA.Hash);
-                contracts.Delete(contractB.Hash);
-                contracts.Delete(contractC.Hash);
+                snapshot.DeleteContract(contractA.Hash);
+                snapshot.DeleteContract(contractB.Hash);
+                snapshot.DeleteContract(contractC.Hash);
                 contractA.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
                 contractB.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
                 contractC.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
-                contracts.Add(contractA.Hash, contractA);
-                contracts.Add(contractB.Hash, contractB);
-                contracts.Add(contractC.Hash, contractC);
+                snapshot.AddContract(contractA.Hash, contractA);
+                snapshot.AddContract(contractB.Hash, contractB);
+                snapshot.AddContract(contractC.Hash, contractC);
             }
 
             // Call A,B,B,C
