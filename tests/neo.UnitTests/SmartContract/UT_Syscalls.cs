@@ -288,7 +288,7 @@ namespace Neo.UnitTests.SmartContract
                 CollectionAssert.AreEqual
                     (
                     engine.ResultStack.Select(u => (int)u.GetInteger()).ToArray(),
-                    new int[] { 99_999_570, 99_999_140, 99_998_650 }
+                    new int[] { 99_999_570, 99_999_060, 99_998_490 }
                     );
             }
 
