@@ -35,17 +35,17 @@ namespace Neo.Network.P2P.Payloads
         private byte[] script;
         private Witness[] witnesses;
 
-        private static long SignatureContractCost(uint baseExecFee) =>
-            baseExecFee * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
-         ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
-         ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
-			   ApplicationEngine.ECDsaVerifyPrice);
-        private static long MultiSignatureContractCost(uint baseExecFee, int m, int n) =>
-            baseExecFee * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n) +
-         ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 +
-         ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
-         ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
-			   ApplicationEngine.ECDsaVerifyPrice * n);
+        private static long SignatureContractCost(uint baseExecFee) => baseExecFee * (
+            ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
+            ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
+            ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
+            ApplicationEngine.ECDsaVerifyPrice);
+        private static long MultiSignatureContractCost(uint baseExecFee, int m, int n) => baseExecFee * (
+            ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n) +
+            ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 +
+            ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
+            ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
+            ApplicationEngine.ECDsaVerifyPrice * n);
 
         public const int HeaderSize =
             sizeof(byte) +  //Version
