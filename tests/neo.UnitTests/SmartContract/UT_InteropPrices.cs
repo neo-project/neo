@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.SmartContract;
-using Neo.SmartContract.Native;
 using Neo.VM;
 
 namespace Neo.UnitTests.SmartContract
@@ -62,7 +61,7 @@ namespace Neo.UnitTests.SmartContract
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             snapshot.Storages.Add(skey, sItem);
-            snapshot.Contracts.Add(script.ToScriptHash(), contractState);
+            snapshot.AddContract(script.ToScriptHash(), contractState);
 
             using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot))
             {
@@ -95,7 +94,7 @@ namespace Neo.UnitTests.SmartContract
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             snapshot.Storages.Add(skey, sItem);
-            snapshot.Contracts.Add(script.ToScriptHash(), contractState);
+            snapshot.AddContract(script.ToScriptHash(), contractState);
 
             using (ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshot))
             {
@@ -130,7 +129,7 @@ namespace Neo.UnitTests.SmartContract
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             snapshot.Storages.Add(skey, sItem);
-            snapshot.Contracts.Add(script.ToScriptHash(), contractState);
+            snapshot.AddContract(script.ToScriptHash(), contractState);
 
             using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot))
             {
@@ -166,7 +165,7 @@ namespace Neo.UnitTests.SmartContract
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             snapshot.Storages.Add(skey, sItem);
-            snapshot.Contracts.Add(script.ToScriptHash(), contractState);
+            snapshot.AddContract(script.ToScriptHash(), contractState);
 
             using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, snapshot))
             {

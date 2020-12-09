@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.UnitTests.Extensions;
 using Neo.Wallets;
 using System;
 using System.Linq;
@@ -128,8 +129,8 @@ namespace Neo.UnitTests.SmartContract
             snapshot2.Blocks.Add(index2, block2);
             Header header2 = new Header() { PrevHash = index2, Witness = new Witness { VerificationScript = new byte[0] } };
 
-            snapshot2.Contracts.Add(UInt160.Zero, new ContractState());
-            snapshot2.Contracts.Delete(UInt160.Zero);
+            snapshot2.AddContract(UInt160.Zero, new ContractState());
+            snapshot2.DeleteContract(UInt160.Zero);
             Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header2, snapshot2, 100));
 
             var snapshot3 = Blockchain.Singleton.GetSnapshot();
@@ -146,7 +147,7 @@ namespace Neo.UnitTests.SmartContract
                     VerificationScript = Array.Empty<byte>()
                 }
             };
-            snapshot3.Contracts.Add(UInt160.Zero, new ContractState()
+            snapshot3.AddContract(UInt160.Zero, new ContractState()
             {
                 Script = Array.Empty<byte>(),
                 Hash = Array.Empty<byte>().ToScriptHash(),
@@ -162,8 +163,8 @@ namespace Neo.UnitTests.SmartContract
                 Hash = "11".HexToBytes().ToScriptHash(),
                 Manifest = TestUtils.CreateManifest("verify", ContractParameterType.Boolean, ContractParameterType.Signature), // Offset = 0
             };
-            snapshot3.Contracts.Add(contract.Hash, contract);
-            var tx = new Extensions.Nep5NativeContractExtensions.ManualWitness(contract.Hash)
+            snapshot3.AddContract(contract.Hash, contract);
+            var tx = new Extensions.Nep17NativeContractExtensions.ManualWitness(contract.Hash)
             {
                 Witnesses = new Witness[] { new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] } }
             };

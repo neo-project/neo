@@ -13,8 +13,9 @@ namespace Neo.SmartContract.Native
     {
         public override string Name => "Policy";
         public override int Id => -3;
-        public const uint DefaultBaseExecFee = 30;
+        public override uint ActiveBlockIndex => 0;
 
+        public const uint DefaultBaseExecFee = 30;
         private const uint MaxBaseExecFee = 1000;
         private const byte Prefix_MaxTransactionsPerBlock = 23;
         private const byte Prefix_FeePerByte = 10;
