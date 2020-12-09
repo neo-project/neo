@@ -621,7 +621,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Contracts.Add(state.Hash, state);
 
 
-            foreach (var flags in new CallFlags[] { CallFlags.None, CallFlags.AllowCall, CallFlags.AllowModifyStates, CallFlags.All })
+            foreach (var flags in new CallFlags[] { CallFlags.None, CallFlags.AllowCall, CallFlags.WriteStates, CallFlags.All })
             {
                 var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
                 engine.LoadScript(new byte[] { 0x01 });
