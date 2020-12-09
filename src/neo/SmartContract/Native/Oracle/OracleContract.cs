@@ -31,6 +31,7 @@ namespace Neo.SmartContract.Native.Oracle
 
         public override int Id => -4;
         public override string Name => "Oracle";
+        public override uint ActiveBlockIndex => 0;
 
         internal OracleContract()
         {
@@ -85,7 +86,7 @@ namespace Neo.SmartContract.Native.Oracle
             Manifest.Abi.Events = events.ToArray();
         }
 
-        [ContractMethod(0, CallFlags.AllowModifyStates)]
+        [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowCall | CallFlags.AllowNotify)]
         private void Finish(ApplicationEngine engine)
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
@@ -135,9 +136,8 @@ namespace Neo.SmartContract.Native.Oracle
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BitConverter.GetBytes(0ul)));
         }
 
-        protected override void PostPersist(ApplicationEngine engine)
+        internal override void PostPersist(ApplicationEngine engine)
         {
-            base.PostPersist(engine);
             (UInt160 Account, BigInteger GAS)[] nodes = null;
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
             {
@@ -174,7 +174,7 @@ namespace Neo.SmartContract.Native.Oracle
             }
         }
 
-        [ContractMethod(OracleRequestPrice, CallFlags.AllowModifyStates)]
+        [ContractMethod(OracleRequestPrice, CallFlags.WriteStates | CallFlags.AllowNotify)]
         private void Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForResponse)
         {
             //Check the arguments
@@ -194,7 +194,7 @@ namespace Neo.SmartContract.Native.Oracle
             item_id.Value = BitConverter.GetBytes(id);
 
             //Put the request to storage
-            if (engine.Snapshot.Contracts.TryGet(engine.CallingScriptHash) is null)
+            if (Management.GetContract(engine.Snapshot, engine.CallingScriptHash) is null)
                 throw new InvalidOperationException();
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Request).Add(item_id.Value), new StorageItem(new OracleRequest
             {

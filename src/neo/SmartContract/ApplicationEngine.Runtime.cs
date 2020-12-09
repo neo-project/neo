@@ -18,7 +18,7 @@ namespace Neo.SmartContract
 
         public static readonly InteropDescriptor System_Runtime_Platform = Register("System.Runtime.Platform", nameof(GetPlatform), 0_00000250, CallFlags.None, true);
         public static readonly InteropDescriptor System_Runtime_GetTrigger = Register("System.Runtime.GetTrigger", nameof(Trigger), 0_00000250, CallFlags.None, true);
-        public static readonly InteropDescriptor System_Runtime_GetTime = Register("System.Runtime.GetTime", nameof(GetTime), 0_00000250, CallFlags.AllowStates, true);
+        public static readonly InteropDescriptor System_Runtime_GetTime = Register("System.Runtime.GetTime", nameof(GetTime), 0_00000250, CallFlags.None, true);
         public static readonly InteropDescriptor System_Runtime_GetScriptContainer = Register("System.Runtime.GetScriptContainer", nameof(GetScriptContainer), 0_00000250, CallFlags.None, true);
         public static readonly InteropDescriptor System_Runtime_GetExecutingScriptHash = Register("System.Runtime.GetExecutingScriptHash", nameof(CurrentScriptHash), 0_00000400, CallFlags.None, true);
         public static readonly InteropDescriptor System_Runtime_GetCallingScriptHash = Register("System.Runtime.GetCallingScriptHash", nameof(CallingScriptHash), 0_00000400, CallFlags.None, true);
@@ -90,10 +90,10 @@ namespace Neo.SmartContract
                 {
                     // Check allow state callflag
 
-                    if (!CurrentContext.GetState<ExecutionContextState>().CallFlags.HasFlag(CallFlags.AllowStates))
+                    if (!CurrentContext.GetState<ExecutionContextState>().CallFlags.HasFlag(CallFlags.ReadStates))
                         throw new InvalidOperationException($"Cannot call this SYSCALL without the flag AllowStates.");
 
-                    var contract = Snapshot.Contracts[CallingScriptHash];
+                    var contract = NativeContract.Management.GetContract(Snapshot, CallingScriptHash);
                     // check if current group is the required one
                     if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(signer.AllowedGroups).Any())
                         return true;
@@ -103,7 +103,7 @@ namespace Neo.SmartContract
 
             // Check allow state callflag
 
-            if (!CurrentContext.GetState<ExecutionContextState>().CallFlags.HasFlag(CallFlags.AllowStates))
+            if (!CurrentContext.GetState<ExecutionContextState>().CallFlags.HasFlag(CallFlags.ReadStates))
                 throw new InvalidOperationException($"Cannot call this SYSCALL without the flag AllowStates.");
 
             // only for non-Transaction types (Block, etc)
