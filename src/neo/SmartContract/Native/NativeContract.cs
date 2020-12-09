@@ -46,7 +46,6 @@ namespace Neo.SmartContract.Native
             }
             this.Hash = Helper.GetContractHash(UInt160.Zero, Script);
             List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
-            List<string> safeMethods = new List<string>();
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
             {
                 ContractMethodAttribute attribute = member.GetCustomAttribute<ContractMethodAttribute>();
@@ -56,9 +55,9 @@ namespace Neo.SmartContract.Native
                 {
                     Name = metadata.Name,
                     ReturnType = ToParameterType(metadata.Handler.ReturnType),
-                    Parameters = metadata.Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name }).ToArray()
+                    Parameters = metadata.Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name }).ToArray(),
+                    Safe = (attribute.RequiredCallFlags & ~CallFlags.ReadOnly) == 0
                 });
-                if ((attribute.RequiredCallFlags & ~CallFlags.ReadOnly) == 0) safeMethods.Add(metadata.Name);
                 methods.Add(metadata.Name, metadata);
             }
             this.Manifest = new ContractManifest
@@ -73,7 +72,6 @@ namespace Neo.SmartContract.Native
                 },
                 Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<UInt160>.Create(),
-                SafeMethods = WildcardContainer<string>.Create(safeMethods.ToArray()),
                 Extra = null
             };
             contractsList.Add(this);
