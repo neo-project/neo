@@ -224,7 +224,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Without signature
 
-            var ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(),
+            var ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(),
                 "setBaseExecFee", new ContractParameter(ContractParameterType.Integer) { Value = 50 });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeFalse();
@@ -237,7 +237,7 @@ namespace Neo.UnitTests.SmartContract.Native
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
             Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
             {
-                NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
                     "setBaseExecFee", new ContractParameter(ContractParameterType.Integer) { Value = 100500 });
             });
 
@@ -246,7 +246,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.GetInteger().Should().Be(30);
 
             // Proper set
-            ret = NativeContract.Policy.Call(snapshot, new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+            ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
                 "setBaseExecFee", new ContractParameter(ContractParameterType.Integer) { Value = 50 });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeTrue();
