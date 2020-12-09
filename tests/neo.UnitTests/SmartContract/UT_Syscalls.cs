@@ -288,7 +288,7 @@ namespace Neo.UnitTests.SmartContract
                 CollectionAssert.AreEqual
                     (
                     engine.ResultStack.Select(u => (int)u.GetInteger()).ToArray(),
-                    new int[] { 99_999_570, 99_999_060, 99_998_490 }
+                    new int[] { 99_999_490, 99_998_980, 99_998_410 }
                     );
             }
 
@@ -308,7 +308,7 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(Integer));
-                Assert.AreEqual(1999999600, engine.ResultStack.Pop().GetInteger());
+                Assert.AreEqual(1999999520, engine.ResultStack.Pop().GetInteger());
             }
         }
 
