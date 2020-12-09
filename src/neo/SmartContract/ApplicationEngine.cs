@@ -92,10 +92,7 @@ namespace Neo.SmartContract
 
         internal T CallFromNativeContract<T>(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
         {
-            CallContractInternal(hash, method, new VMArray(ReferenceCounter, args), CallFlags.All, ReturnTypeConvention.EnsureNotEmpty);
-            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
-            state.CallingScriptHash = callingScriptHash;
-            StepOut();
+            CallFromNativeContract(callingScriptHash, hash, method, args);
             return (T)Convert(Pop(), new InteropParameterDescriptor(typeof(T)));
         }
 
