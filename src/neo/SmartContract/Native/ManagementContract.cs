@@ -84,7 +84,7 @@ namespace Neo.SmartContract.Native
 
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");
             if (md != null)
-                engine.CallFromNativeContract(hash, md.Name, false);
+                engine.CallFromNativeContract(Hash, hash, md.Name, false);
 
             return contract;
         }
@@ -122,7 +122,7 @@ namespace Neo.SmartContract.Native
             {
                 ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy");
                 if (md != null)
-                    engine.CallFromNativeContract(contract.Hash, md.Name, true);
+                    engine.CallFromNativeContract(Hash, contract.Hash, md.Name, true);
             }
         }
 

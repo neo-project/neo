@@ -82,15 +82,19 @@ namespace Neo.SmartContract
             base.OnFault(e);
         }
 
-        internal void CallFromNativeContract(UInt160 hash, string method, params StackItem[] args)
+        internal void CallFromNativeContract(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
         {
             CallContractInternal(hash, method, new VMArray(ReferenceCounter, args), CallFlags.All, ReturnTypeConvention.EnsureIsEmpty);
+            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
+            state.CallingScriptHash = callingScriptHash;
             StepOut();
         }
 
-        internal T CallFromNativeContract<T>(UInt160 hash, string method, params StackItem[] args)
+        internal T CallFromNativeContract<T>(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
         {
             CallContractInternal(hash, method, new VMArray(ReferenceCounter, args), CallFlags.All, ReturnTypeConvention.EnsureNotEmpty);
+            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
+            state.CallingScriptHash = callingScriptHash;
             StepOut();
             return (T)Convert(Pop(), new InteropParameterDescriptor(typeof(T)));
         }
