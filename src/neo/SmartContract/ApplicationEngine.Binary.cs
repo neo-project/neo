@@ -15,8 +15,8 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Binary_Base64Decode = Register("System.Binary.Base64Decode", nameof(Base64Decode), 0_00002048, CallFlags.None, true);
         public static readonly InteropDescriptor System_Binary_Base58Encode = Register("System.Binary.Base58Encode", nameof(Base58Encode), 0_00002048, CallFlags.None, true);
         public static readonly InteropDescriptor System_Binary_Base58Decode = Register("System.Binary.Base58Decode", nameof(Base58Decode), 0_00002048, CallFlags.None, true);
-        public static readonly InteropDescriptor System_Binary_Itoa = Register("System.Binary.Itoa", nameof(Itoa), 0_00002048, CallFlags.None, true);
-        public static readonly InteropDescriptor System_Binary_Atoi = Register("System.Binary.Atoi", nameof(Atoi), 0_00002048, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Binary_Itoa = Register("System.Binary.Itoa", nameof(Itoa), 0_00000512, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Binary_Atoi = Register("System.Binary.Atoi", nameof(Atoi), 0_00000512, CallFlags.None, true);
 
         protected internal byte[] BinarySerialize(StackItem item)
         {
