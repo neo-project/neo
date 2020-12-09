@@ -388,7 +388,7 @@ namespace Neo.Wallets
 
                 if (witness_script is null)
                 {
-                    var contract = snapshot.Contracts.TryGet(hash);
+                    var contract = NativeContract.Management.GetContract(snapshot, hash);
                     if (contract is null) continue;
 
                     // Empty invocation and verification scripts
@@ -470,7 +470,7 @@ namespace Neo.Wallets
                 // Try Smart contract verification
 
                 using var snapshot = Blockchain.Singleton.GetSnapshot();
-                var contract = snapshot.Contracts.TryGet(scriptHash);
+                var contract = NativeContract.Management.GetContract(snapshot, scriptHash);
 
                 if (contract != null)
                 {

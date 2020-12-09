@@ -45,7 +45,7 @@ namespace Neo.SmartContract
         /// </summary>
         public uint CheckSum { get; set; }
 
-        public const int MaxScriptLength = 1024 * 1024;
+        public const int MaxScriptLength = 512 * 1024;
 
         private const int HeaderSize =
             sizeof(uint) +      // Magic
