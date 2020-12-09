@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
@@ -16,25 +17,30 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
     [TestClass]
     public class UT_GasToken
     {
+        private StoreView _snapshot;
+
         [TestInitialize]
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
+
+            _snapshot = Blockchain.Singleton.GetSnapshot();
+            _snapshot.PersistingBlock = new Block() { Index = 0 };
         }
 
         [TestMethod]
         public void Check_Name() => NativeContract.GAS.Name.Should().Be("GAS");
 
         [TestMethod]
-        public void Check_Symbol() => NativeContract.GAS.Symbol().Should().Be("gas");
+        public void Check_Symbol() => NativeContract.GAS.Symbol(_snapshot).Should().Be("gas");
 
         [TestMethod]
-        public void Check_Decimals() => NativeContract.GAS.Decimals().Should().Be(8);
+        public void Check_Decimals() => NativeContract.GAS.Decimals(_snapshot).Should().Be(8);
 
         [TestMethod]
         public void Check_BalanceOfTransferAndBurn()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = _snapshot.Clone();
             snapshot.PersistingBlock = new Block() { Index = 1000 };
 
             byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
