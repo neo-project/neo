@@ -2,7 +2,6 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
-using Neo.SmartContract.Native;
 using Neo.VM.Types;
 using System;
 
@@ -89,7 +88,7 @@ namespace Neo.SmartContract
                 _ => item0.GetSpan()
             };
             if (n == 0 || m == 0 || m > n) throw new ArgumentException();
-            AddGas(ECDsaVerifyPrice * n * NativeContract.Policy.GetBaseExecFee(Snapshot));
+            AddGas(ECDsaVerifyPrice * n * base_exec_fee);
             try
             {
                 for (int i = 0, j = 0; i < m && j < n;)
