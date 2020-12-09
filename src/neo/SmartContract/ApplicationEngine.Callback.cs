@@ -7,10 +7,10 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static readonly InteropDescriptor System_Callback_Create = Register("System.Callback.Create", nameof(CreateCallback), 0_00000013, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Callback_CreateFromMethod = Register("System.Callback.CreateFromMethod", nameof(CreateCallbackFromMethod), 0_00033333, CallFlags.ReadStates, false);
-        public static readonly InteropDescriptor System_Callback_CreateFromSyscall = Register("System.Callback.CreateFromSyscall", nameof(CreateCallbackFromSyscall), 0_00000013, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Callback_Invoke = Register("System.Callback.Invoke", nameof(InvokeCallback), 0_00033333, CallFlags.AllowCall, false);
+        public static readonly InteropDescriptor System_Callback_Create = Register("System.Callback.Create", nameof(CreateCallback), 0_00000016, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Callback_CreateFromMethod = Register("System.Callback.CreateFromMethod", nameof(CreateCallbackFromMethod), 0_00032768, CallFlags.ReadStates, false);
+        public static readonly InteropDescriptor System_Callback_CreateFromSyscall = Register("System.Callback.CreateFromSyscall", nameof(CreateCallbackFromSyscall), 0_00000016, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Callback_Invoke = Register("System.Callback.Invoke", nameof(InvokeCallback), 0_00032768, CallFlags.AllowCall, false);
 
         protected internal void InvokeCallback(CallbackBase callback, Array args)
         {
