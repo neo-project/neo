@@ -110,10 +110,10 @@ namespace Neo.Ledger
         {
             _maxTxPerBlock = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot);
             long newFeePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
-            uint newBaseExecFee = NativeContract.Policy.GetExecFeeFactor(snapshot);
-            bool policyChanged = newFeePerByte > _feePerByte || newBaseExecFee > _execFeeFactor;
+            uint newExecFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
+            bool policyChanged = newFeePerByte > _feePerByte || newExecFeeFactor > _execFeeFactor;
             _feePerByte = newFeePerByte;
-            _execFeeFactor = newBaseExecFee;
+            _execFeeFactor = newExecFeeFactor;
             return policyChanged;
         }
 
