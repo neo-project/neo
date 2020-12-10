@@ -179,7 +179,7 @@ namespace Neo.SmartContract
             [OpCode.NEWSTRUCT] = 1 << 9,
             [OpCode.NEWMAP] = 1 << 3,
             [OpCode.SIZE] = 1 << 2,
-            [OpCode.HASKEY] = 1 << 13,
+            [OpCode.HASKEY] = 1 << 6,
             [OpCode.KEYS] = 1 << 4,
             [OpCode.VALUES] = 1 << 13,
             [OpCode.PICKITEM] = 1 << 13,
