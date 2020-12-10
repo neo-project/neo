@@ -47,6 +47,8 @@ namespace Neo.SmartContract
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new Dictionary<UInt160, int>();
         private readonly Dictionary<ExecutionContext, InvocationState> invocationStates = new Dictionary<ExecutionContext, InvocationState>();
+        private readonly uint exec_fee_factor;
+        internal readonly uint StoragePrice;
 
         public static IReadOnlyDictionary<uint, InteropDescriptor> Services => services;
         private List<IDisposable> Disposables => disposables ??= new List<IDisposable>();
@@ -67,6 +69,8 @@ namespace Neo.SmartContract
             this.ScriptContainer = container;
             this.Snapshot = snapshot;
             this.gas_amount = gas;
+            this.exec_fee_factor = snapshot is null ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(Snapshot);
+            this.StoragePrice = snapshot is null ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(Snapshot);
         }
 
         protected internal void AddGas(long gas)
@@ -280,7 +284,7 @@ namespace Neo.SmartContract
         {
             InteropDescriptor descriptor = services[method];
             ValidateCallFlags(descriptor);
-            AddGas(descriptor.FixedPrice);
+            AddGas(descriptor.FixedPrice * exec_fee_factor);
             List<object> parameters = descriptor.Parameters.Count > 0
                 ? new List<object>()
                 : null;
@@ -294,7 +298,7 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction()
         {
             if (CurrentContext.InstructionPointer < CurrentContext.Script.Length)
-                AddGas(OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
+                AddGas(exec_fee_factor * OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
         }
 
         private void StepOut()

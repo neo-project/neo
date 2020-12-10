@@ -176,9 +176,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
 
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
-                Assert.AreEqual(2000810, verificationGas);
+                Assert.AreEqual(1967130, verificationGas);
                 Assert.AreEqual(348000, sizeGas);
-                Assert.AreEqual(2348810, tx.NetworkFee);
+                Assert.AreEqual(2315130, tx.NetworkFee);
             }
         }
 
@@ -219,7 +219,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.IsNull(tx.Witnesses);
 
                 // check pre-computed network fee (already guessing signature sizes)
-                tx.NetworkFee.Should().Be(1245390L);
+                tx.NetworkFee.Should().Be(1228550L);
 
                 // ----
                 // Sign
@@ -256,7 +256,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                         verificationGas += engine.GasConsumed;
                     }
                 }
-                Assert.AreEqual(verificationGas, 1000390);
 
                 // ------------------
                 // check tx_size cost
@@ -285,7 +284,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // final check: verification_cost and tx_size
                 Assert.AreEqual(245000, sizeGas);
-                Assert.AreEqual(1000390, verificationGas);
+                Assert.AreEqual(983550, verificationGas);
 
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
@@ -372,7 +371,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1245390, verificationGas + sizeGas);
+                Assert.AreEqual(1228550, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -459,7 +458,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1266390, verificationGas + sizeGas);
+                Assert.AreEqual(1249550, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -549,7 +548,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1266390, verificationGas + sizeGas);
+                Assert.AreEqual(1249550, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -691,7 +690,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1286390, verificationGas + sizeGas);
+                Assert.AreEqual(1269550, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
@@ -1041,7 +1040,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 // get sizeGas
                 var sizeGas = tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
                 // final check on sum: verification_cost + tx_size
-                Assert.AreEqual(1245390, verificationGas + sizeGas);
+                Assert.AreEqual(1228550, verificationGas + sizeGas);
                 // final assert
                 Assert.AreEqual(tx.NetworkFee, verificationGas + sizeGas);
             }
