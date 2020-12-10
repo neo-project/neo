@@ -6,6 +6,8 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -42,6 +44,13 @@ namespace Neo.SmartContract.Native
                 }));
                 contract.Initialize(engine);
             }
+        }
+
+        static Lazy<byte[]> listContractsPrefix = new Lazy<byte[]>(() => new KeyBuilder(NativeContract.Management.Id, 8).ToArray());
+
+        public IEnumerable<ContractState> ListContracts(StoreView snapshot)
+        {
+            return snapshot.Storages.Find(listContractsPrefix.Value).Select(kvp => kvp.Value.GetInteroperable<ContractState>());
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
