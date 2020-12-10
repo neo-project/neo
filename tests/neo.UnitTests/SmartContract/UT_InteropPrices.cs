@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 
@@ -24,7 +25,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemRuntimeCheckWitnessHash);
-                ApplicationEngine.System_Runtime_CheckWitness.FixedPrice.Should().Be(0_00030000L);
+                ApplicationEngine.System_Runtime_CheckWitness.FixedPrice.Should().Be(0_00001024L);
             }
 
             // System.Storage.GetContext: 9bf667ce (price is 1)
@@ -32,7 +33,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetContextHash);
-                ApplicationEngine.System_Storage_GetContext.FixedPrice.Should().Be(0_00000400L);
+                ApplicationEngine.System_Storage_GetContext.FixedPrice.Should().Be(0_00000016L);
             }
 
             // System.Storage.Get: 925de831 (price is 100)
@@ -40,7 +41,7 @@ namespace Neo.UnitTests.SmartContract
             using (ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, null, 0))
             {
                 ae.LoadScript(SyscallSystemStorageGetHash);
-                ApplicationEngine.System_Storage_Get.FixedPrice.Should().Be(0_01000000L);
+                ApplicationEngine.System_Storage_Get.FixedPrice.Should().Be(32768L);
             }
         }
 
@@ -73,7 +74,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 var setupPrice = ae.GasConsumed;
                 debugger.Execute();
-                (ae.GasConsumed - setupPrice).Should().Be(ApplicationEngine.StoragePrice * (1 + value.Length));
+                (ae.GasConsumed - setupPrice).Should().Be(ae.StoragePrice * (1 + value.Length));
             }
         }
 
@@ -106,7 +107,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto();
                 var setupPrice = applicationEngine.GasConsumed;
                 debugger.Execute();
-                (applicationEngine.GasConsumed - setupPrice).Should().Be(1 * ApplicationEngine.StoragePrice);
+                (applicationEngine.GasConsumed - setupPrice).Should().Be(1 * applicationEngine.StoragePrice);
             }
         }
 
@@ -142,7 +143,7 @@ namespace Neo.UnitTests.SmartContract
                 var setupPrice = ae.GasConsumed;
                 debugger.StepInto();
                 debugger.StepInto();
-                (ae.GasConsumed - setupPrice).Should().Be((1 + (oldValue.Length / 4) + value.Length - oldValue.Length) * ApplicationEngine.StoragePrice);
+                (ae.GasConsumed - setupPrice).Should().Be((1 + (oldValue.Length / 4) + value.Length - oldValue.Length) * ae.StoragePrice);
             }
         }
 
@@ -181,7 +182,7 @@ namespace Neo.UnitTests.SmartContract
                 debugger.StepInto(); //syscall Storage.GetContext
                 var setupPrice = ae.GasConsumed;
                 debugger.StepInto(); //syscall Storage.Put
-                (ae.GasConsumed - setupPrice).Should().Be((sItem.Value.Length / 4 + 1) * ApplicationEngine.StoragePrice); // = PUT basic fee
+                (ae.GasConsumed - setupPrice).Should().Be((sItem.Value.Length / 4 + 1) * ae.StoragePrice); // = PUT basic fee
             }
         }
 
