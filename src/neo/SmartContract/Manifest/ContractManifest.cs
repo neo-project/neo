@@ -61,12 +61,6 @@ namespace Neo.SmartContract.Manifest
         public WildcardContainer<UInt160> Trusts { get; set; }
 
         /// <summary>
-        /// The safemethods field is an array containing a set of method names. It can also be assigned with a wildcard *. If it is a wildcard *, then it means that all methods of the contract are safe.
-        /// If a method is marked as safe, the user interface will not give any warnings when it is called by any other contract.
-        /// </summary>
-        public WildcardContainer<string> SafeMethods { get; set; }
-
-        /// <summary>
         /// Custom user data
         /// </summary>
         public JObject Extra { get; set; }
@@ -105,7 +99,6 @@ namespace Neo.SmartContract.Manifest
                 ["abi"] = Abi.ToJson(),
                 ["permissions"] = Permissions.Select(p => p.ToJson()).ToArray(),
                 ["trusts"] = Trusts.ToJson(),
-                ["safemethods"] = SafeMethods.ToJson(),
                 ["extra"] = Extra
             };
         }
@@ -124,7 +117,6 @@ namespace Neo.SmartContract.Manifest
                 Abi = Abi.Clone(),
                 Permissions = Permissions.Select(p => p.Clone()).ToArray(),
                 Trusts = Trusts,
-                SafeMethods = SafeMethods,
                 Extra = Extra?.Clone()
             };
         }
@@ -153,7 +145,6 @@ namespace Neo.SmartContract.Manifest
             Abi = ContractAbi.FromJson(json["abi"]);
             Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u)).ToArray();
             Trusts = WildcardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString()));
-            SafeMethods = WildcardContainer<string>.FromJson(json["safemethods"], u => u.AsString());
             Extra = json["extra"];
         }
 

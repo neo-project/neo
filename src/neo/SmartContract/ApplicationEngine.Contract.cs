@@ -44,9 +44,16 @@ namespace Neo.SmartContract
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
             if (md is null) throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
 
-            ContractState currentContract = NativeContract.Management.GetContract(Snapshot, CurrentScriptHash);
-            if (currentContract?.CanCall(contract, method) == false)
-                throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contractHash} From Contract {CurrentScriptHash}");
+            if (md.Safe)
+            {
+                flags &= ~CallFlags.WriteStates;
+            }
+            else
+            {
+                ContractState currentContract = NativeContract.Management.GetContract(Snapshot, CurrentScriptHash);
+                if (currentContract?.CanCall(contract, method) == false)
+                    throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contractHash} From Contract {CurrentScriptHash}");
+            }
 
             CallContractInternal(contract, md, args, flags, convention);
         }
