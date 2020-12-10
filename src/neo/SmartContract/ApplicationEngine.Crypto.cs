@@ -88,7 +88,7 @@ namespace Neo.SmartContract
                 _ => item0.GetSpan()
             };
             if (n == 0 || m == 0 || m > n) throw new ArgumentException();
-            AddGas(ECDsaVerifyPrice * n * base_exec_fee);
+            AddGas(ECDsaVerifyPrice * n * exec_fee_factor);
             try
             {
                 for (int i = 0, j = 0; i < m && j < n;)

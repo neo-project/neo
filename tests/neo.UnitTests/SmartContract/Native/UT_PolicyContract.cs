@@ -225,11 +225,11 @@ namespace Neo.UnitTests.SmartContract.Native
             // Without signature
 
             var ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(),
-                "setBaseExecFee", new ContractParameter(ContractParameterType.Integer) { Value = 50 });
+                "setExecFeeFactor", new ContractParameter(ContractParameterType.Integer) { Value = 50 });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeFalse();
 
-            ret = NativeContract.Policy.Call(snapshot, "getBaseExecFee");
+            ret = NativeContract.Policy.Call(snapshot, "getExecFeeFactor");
             ret.Should().BeOfType<VM.Types.Integer>();
             ret.GetInteger().Should().Be(30);
 
@@ -238,20 +238,20 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
             {
                 NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
-                    "setBaseExecFee", new ContractParameter(ContractParameterType.Integer) { Value = 100500 });
+                    "setExecFeeFactor", new ContractParameter(ContractParameterType.Integer) { Value = 100500 });
             });
 
-            ret = NativeContract.Policy.Call(snapshot, "getBaseExecFee");
+            ret = NativeContract.Policy.Call(snapshot, "getExecFeeFactor");
             ret.Should().BeOfType<VM.Types.Integer>();
             ret.GetInteger().Should().Be(30);
 
             // Proper set
             ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
-                "setBaseExecFee", new ContractParameter(ContractParameterType.Integer) { Value = 50 });
+                "setExecFeeFactor", new ContractParameter(ContractParameterType.Integer) { Value = 50 });
             ret.Should().BeOfType<VM.Types.Boolean>();
             ret.GetBoolean().Should().BeTrue();
 
-            ret = NativeContract.Policy.Call(snapshot, "getBaseExecFee");
+            ret = NativeContract.Policy.Call(snapshot, "getExecFeeFactor");
             ret.Should().BeOfType<VM.Types.Integer>();
             ret.GetInteger().Should().Be(50);
         }

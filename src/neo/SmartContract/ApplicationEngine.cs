@@ -49,7 +49,7 @@ namespace Neo.SmartContract
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new Dictionary<UInt160, int>();
         private readonly Dictionary<ExecutionContext, InvocationState> invocationStates = new Dictionary<ExecutionContext, InvocationState>();
-        private readonly uint base_exec_fee;
+        private readonly uint exec_fee_factor;
         internal readonly uint StoragePrice;
 
         public static IReadOnlyDictionary<uint, InteropDescriptor> Services => services;
@@ -71,7 +71,7 @@ namespace Neo.SmartContract
             this.ScriptContainer = container;
             this.Snapshot = snapshot;
             this.gas_amount = gas;
-            this.base_exec_fee = snapshot is null ? PolicyContract.DefaultBaseExecFee : NativeContract.Policy.GetBaseExecFee(Snapshot);
+            this.exec_fee_factor = snapshot is null ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(Snapshot);
             this.StoragePrice = snapshot is null ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(Snapshot);
         }
 
@@ -299,7 +299,7 @@ namespace Neo.SmartContract
         {
             InteropDescriptor descriptor = services[method];
             ValidateCallFlags(descriptor);
-            AddGas(descriptor.FixedPrice * base_exec_fee);
+            AddGas(descriptor.FixedPrice * exec_fee_factor);
             List<object> parameters = descriptor.Parameters.Count > 0
                 ? new List<object>()
                 : null;
@@ -313,7 +313,7 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction()
         {
             if (CurrentContext.InstructionPointer < CurrentContext.Script.Length)
-                AddGas(base_exec_fee * OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
+                AddGas(exec_fee_factor * OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
         }
 
         private static Block CreateDummyBlock(StoreView snapshot)

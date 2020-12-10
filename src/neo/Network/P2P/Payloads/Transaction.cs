@@ -311,7 +311,7 @@ namespace Neo.Network.P2P.Payloads
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
             if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
 
-            uint baseExecFee = NativeContract.Policy.GetBaseExecFee(snapshot);
+            uint baseExecFee = NativeContract.Policy.GetExecFeeFactor(snapshot);
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (witnesses[i].VerificationScript.IsSignatureContract())
