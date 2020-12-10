@@ -19,6 +19,7 @@ namespace Neo.SmartContract.Native
         public const uint DefaultStoragePrice = 100000;
         private const uint MaxBaseExecFee = 1000;
         private const uint MaxStoragePrice = 10000000;
+
         private const byte Prefix_MaxTransactionsPerBlock = 23;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_BlockedAccount = 15;
