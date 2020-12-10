@@ -50,8 +50,8 @@ namespace Neo.SmartContract
         private readonly Dictionary<UInt160, int> invocationCounter = new Dictionary<UInt160, int>();
         private readonly Dictionary<ExecutionContext, InvocationState> invocationStates = new Dictionary<ExecutionContext, InvocationState>();
         private readonly uint base_exec_fee;
+        internal readonly uint StoragePrice;
 
-        public readonly uint StoragePrice;
         public static IReadOnlyDictionary<uint, InteropDescriptor> Services => services;
         private List<IDisposable> Disposables => disposables ??= new List<IDisposable>();
         public TriggerType Trigger { get; }
