@@ -12,7 +12,7 @@ namespace Neo.SmartContract.Native
 {
     public sealed class ManagementContract : NativeContract
     {
-        public override string Name => "Neo Contract Management";
+        public override string Name => "ContractManagement";
         public override int Id => 0;
         public override uint ActiveBlockIndex => 0;
 
