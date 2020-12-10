@@ -133,7 +133,7 @@ namespace Neo.SmartContract
             [OpCode.STARG5] = 1 << 1,
             [OpCode.STARG6] = 1 << 1,
             [OpCode.STARG] = 1 << 1,
-            [OpCode.NEWBUFFER] = 1 << 11,
+            [OpCode.NEWBUFFER] = 1 << 8,
             [OpCode.MEMCPY] = 1 << 11,
             [OpCode.CAT] = 1 << 11,
             [OpCode.SUBSTR] = 1 << 11,
