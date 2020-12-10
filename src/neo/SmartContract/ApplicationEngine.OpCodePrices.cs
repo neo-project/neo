@@ -182,7 +182,7 @@ namespace Neo.SmartContract
             [OpCode.HASKEY] = 1 << 6,
             [OpCode.KEYS] = 1 << 4,
             [OpCode.VALUES] = 1 << 13,
-            [OpCode.PICKITEM] = 1 << 4,
+            [OpCode.PICKITEM] = 1 << 6,
             [OpCode.APPEND] = 1 << 13,
             [OpCode.SETITEM] = 1 << 13,
             [OpCode.REVERSEITEMS] = 1 << 13,
