@@ -36,7 +36,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_Name() => NativeContract.NEO.Name.Should().Be("NEO");
 
         [TestMethod]
-        public void Check_Symbol() => NativeContract.NEO.Symbol(_snapshot).Should().Be("neo");
+        public void Check_Symbol() => NativeContract.NEO.Symbol(_snapshot).Should().Be("NEO");
 
         [TestMethod]
         public void Check_Decimals() => NativeContract.NEO.Decimals(_snapshot).Should().Be(0);
