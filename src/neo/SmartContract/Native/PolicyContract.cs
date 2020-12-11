@@ -11,7 +11,6 @@ namespace Neo.SmartContract.Native
 {
     public sealed class PolicyContract : NativeContract
     {
-        public override string Name => "Policy";
         public override int Id => -3;
         public override uint ActiveBlockIndex => 0;
 
