@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Wallets;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 
 namespace Neo.UnitTests
@@ -63,6 +64,26 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
+        public void Initialize_ProtocolSettings_NativeBlockIndex()
+        {
+            var tempFile = Path.GetTempFileName();
+            File.WriteAllText(tempFile, @"
+{
+ ""ProtocolConfiguration"":
+    {
+    ""NativeActivations"":{ ""test"":123 }
+    }
+}
+");
+            var config = new ConfigurationBuilder().AddJsonFile(tempFile).Build();
+            File.Delete(tempFile);
+
+            ProtocolSettings.Initialize(config).Should().BeTrue();
+            ProtocolSettings.Default.NativeActivations.Count.Should().Be(1);
+            ProtocolSettings.Default.NativeActivations["test"].Should().Be(123);
+        }
+
+        [TestMethod]
         public void Cant_initialize_ProtocolSettings_after_default_settings_used()
         {
             var mainNetMagic = 0x4F454Eu;
@@ -117,6 +138,12 @@ namespace Neo.UnitTests
         public void TestGetSeedList()
         {
             ProtocolSettings.Default.SeedList.Should().BeEquivalentTo(new string[] { "seed1.neo.org:10333", "seed2.neo.org:10333", "seed3.neo.org:10333", "seed4.neo.org:10333", "seed5.neo.org:10333", });
+        }
+
+        [TestMethod]
+        public void TestNativeActivations()
+        {
+            ProtocolSettings.Default.NativeActivations.Count.Should().Be(0);
         }
     }
 }

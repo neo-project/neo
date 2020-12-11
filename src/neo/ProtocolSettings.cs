@@ -99,8 +99,8 @@ namespace Neo
             this.MemoryPoolMaxTransactions = Math.Max(1, section.GetValue("MemoryPoolMaxTransactions", 50_000));
             this.MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", 2_102_400u);// 365 days
             IConfigurationSection section_na = section.GetSection("NativeActivations");
-            if (section_na.Exists()) // TODO: Improve this
-                this.NativeActivations = section_sl.GetChildren().Select(p => p.Get<string[]>()).ToDictionary((a) => a[0], b => uint.Parse(b[1]));
+            if (section_na.Exists())
+                this.NativeActivations = section_na.GetChildren().ToDictionary((a) => a.Key, b => uint.Parse(b.Value));
             else
                 this.NativeActivations = new Dictionary<string, uint>();
 
