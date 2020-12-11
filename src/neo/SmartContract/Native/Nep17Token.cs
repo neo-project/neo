@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
-namespace Neo.SmartContract.Native.Tokens
+namespace Neo.SmartContract.Native
 {
     public abstract class Nep17Token<TState> : NativeContract
         where TState : AccountState, new()

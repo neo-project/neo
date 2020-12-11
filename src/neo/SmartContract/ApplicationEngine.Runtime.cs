@@ -2,7 +2,6 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
-using Neo.SmartContract.Native.Oracle;
 using System;
 using System.Collections.Generic;
 using System.IO;
