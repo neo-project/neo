@@ -12,14 +12,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Neo.SmartContract.Native.Designate
+namespace Neo.SmartContract.Native
 {
-    public sealed class DesignateContract : NativeContract
+    public sealed class DesignationContract : NativeContract
     {
         public override string Name => "Designation";
         public override int Id => -5;
 
-        internal DesignateContract()
+        internal DesignationContract()
         {
         }
 
