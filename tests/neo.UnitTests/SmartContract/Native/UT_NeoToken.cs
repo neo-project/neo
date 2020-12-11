@@ -33,7 +33,7 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void Check_Name() => NativeContract.NEO.Name.Should().Be("NEO");
+        public void Check_Name() => NativeContract.NEO.Name.Should().Be(nameof(NeoToken));
 
         [TestMethod]
         public void Check_Symbol() => NativeContract.NEO.Symbol(_snapshot).Should().Be("NEO");
