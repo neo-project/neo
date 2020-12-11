@@ -34,7 +34,6 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             public override string Name => "Dummy";
             public override int Id => 1;
-            public override uint ActiveBlockIndex => 0;
 
             [ContractMethod(0, CallFlags.None)]
             public void NetTypes(
@@ -140,7 +139,6 @@ namespace Neo.UnitTests.SmartContract.Native
     {
         public override string Name => "test";
         public override int Id => 0x10000006;
-        public override uint ActiveBlockIndex => 0;
 
         [ContractMethod(0, CallFlags.None)]
         public string HelloWorld => "hello world";

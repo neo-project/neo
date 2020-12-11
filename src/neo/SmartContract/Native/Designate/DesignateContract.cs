@@ -18,7 +18,6 @@ namespace Neo.SmartContract.Native.Designate
     {
         public override string Name => "Designation";
         public override int Id => -5;
-        public override uint ActiveBlockIndex => 0;
 
         internal DesignateContract()
         {

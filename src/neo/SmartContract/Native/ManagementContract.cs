@@ -14,7 +14,6 @@ namespace Neo.SmartContract.Native
     {
         public override string Name => "Neo Contract Management";
         public override int Id => 0;
-        public override uint ActiveBlockIndex => 0;
 
         private const byte Prefix_NextAvailableId = 15;
         private const byte Prefix_Contract = 8;
@@ -29,10 +28,10 @@ namespace Neo.SmartContract.Native
 
         internal override void OnPersist(ApplicationEngine engine)
         {
-            foreach (NativeContract contract in Contracts)
+            if (!ActiveBlockIndexes.TryGetValue(engine.Snapshot.PersistingBlock.Index, out var activations)) return;
+            
+            foreach (NativeContract contract in activations)
             {
-                if (contract.ActiveBlockIndex != engine.Snapshot.PersistingBlock.Index)
-                    continue;
                 engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
                 {
                     Id = contract.Id,

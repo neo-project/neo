@@ -83,6 +83,5 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         public override string Name => "testNep17Token";
         public override string Symbol => throw new NotImplementedException();
         public override byte Decimals => 8;
-        public override uint ActiveBlockIndex => 0;
     }
 }

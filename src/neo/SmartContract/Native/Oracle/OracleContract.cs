@@ -31,7 +31,6 @@ namespace Neo.SmartContract.Native.Oracle
 
         public override int Id => -4;
         public override string Name => "Oracle";
-        public override uint ActiveBlockIndex => 0;
 
         internal OracleContract()
         {

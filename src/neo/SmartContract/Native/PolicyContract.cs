@@ -13,7 +13,6 @@ namespace Neo.SmartContract.Native
     {
         public override string Name => "Policy";
         public override int Id => -3;
-        public override uint ActiveBlockIndex => 0;
 
         public const uint DefaultExecFeeFactor = 30;
         public const uint DefaultStoragePrice = 100000;
