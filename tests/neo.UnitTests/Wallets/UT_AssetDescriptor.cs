@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract.Native;
-using Neo.SmartContract.Native.Tokens;
 using System;
 
 namespace Neo.UnitTests.Wallets

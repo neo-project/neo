@@ -2,11 +2,11 @@ using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
-using Neo.SmartContract.Native.Tokens;
+using Neo.SmartContract.Native;
 using System;
 using System.Numerics;
 
-namespace Neo.UnitTests.SmartContract.Native.Tokens
+namespace Neo.UnitTests.SmartContract.Native
 {
     [TestClass]
     public class UT_Nep17Token : TestKit
