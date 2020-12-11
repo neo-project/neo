@@ -6,7 +6,6 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
-using Neo.SmartContract.Native.Designate;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -14,7 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
-namespace Neo.SmartContract.Native.Oracle
+namespace Neo.SmartContract.Native
 {
     public sealed class OracleContract : NativeContract
     {
@@ -158,7 +157,7 @@ namespace Neo.SmartContract.Native.Oracle
                 if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
 
                 //Mint GAS for oracle nodes
-                nodes ??= Designate.GetDesignatedByRole(engine.Snapshot, Role.Oracle, engine.Snapshot.PersistingBlock.Index).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
+                nodes ??= Designation.GetDesignatedByRole(engine.Snapshot, Role.Oracle, engine.Snapshot.PersistingBlock.Index).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
                 if (nodes.Length > 0)
                 {
                     int index = (int)(response.Id % (ulong)nodes.Length);

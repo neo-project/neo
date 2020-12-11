@@ -15,9 +15,9 @@ using Neo.Wallets;
 using System;
 using System.Linq;
 using System.Numerics;
-using static Neo.SmartContract.Native.Tokens.NeoToken;
+using static Neo.SmartContract.Native.NeoToken;
 
-namespace Neo.UnitTests.SmartContract.Native.Tokens
+namespace Neo.UnitTests.SmartContract.Native
 {
     [TestClass]
     public class UT_NeoToken
