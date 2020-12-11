@@ -48,7 +48,7 @@ namespace Neo.SmartContract.Native
 
         public IEnumerable<ContractState> ListContracts(StoreView snapshot)
         {
-            byte[] listContractsPrefix = new KeyBuilder(NativeContract.Management.Id, Prefix_Contract).ToArray();
+            byte[] listContractsPrefix = CreateStorageKey(Prefix_Contract).ToArray();
             return snapshot.Storages.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>());
         }
 
