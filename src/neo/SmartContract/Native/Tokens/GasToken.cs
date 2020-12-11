@@ -8,7 +8,7 @@ namespace Neo.SmartContract.Native.Tokens
     {
         public override int Id => -2;
         public override uint ActiveBlockIndex => 0;
-        public override string Symbol => "gas";
+        public override string Symbol => "GAS";
         public override byte Decimals => 8;
 
         internal GasToken()

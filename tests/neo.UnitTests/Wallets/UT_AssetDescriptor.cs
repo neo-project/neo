@@ -32,6 +32,7 @@ namespace Neo.UnitTests.Wallets
             descriptor.AssetId.Should().Be(NativeContract.GAS.Hash);
             descriptor.AssetName.Should().Be(nameof(GasToken));
             descriptor.ToString().Should().Be(nameof(GasToken));
+            descriptor.Symbol.Should().Be("GAS");
             descriptor.Decimals.Should().Be(8);
         }
 
@@ -42,6 +43,7 @@ namespace Neo.UnitTests.Wallets
             descriptor.AssetId.Should().Be(NativeContract.NEO.Hash);
             descriptor.AssetName.Should().Be(nameof(NeoToken));
             descriptor.ToString().Should().Be(nameof(NeoToken));
+            descriptor.Symbol.Should().Be("NEO");
             descriptor.Decimals.Should().Be(0);
         }
     }

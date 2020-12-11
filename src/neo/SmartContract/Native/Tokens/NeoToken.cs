@@ -19,7 +19,7 @@ namespace Neo.SmartContract.Native.Tokens
     {
         public override int Id => -1;
         public override uint ActiveBlockIndex => 0;
-        public override string Symbol => "neo";
+        public override string Symbol => "NEO";
         public override byte Decimals => 0;
         public BigInteger TotalAmount { get; }
 
