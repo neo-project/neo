@@ -20,7 +20,7 @@ using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using System.Security.Cryptography;
-using static Neo.SmartContract.Native.Tokens.NeoToken;
+using static Neo.SmartContract.Native.NeoToken;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.UnitTests.Consensus

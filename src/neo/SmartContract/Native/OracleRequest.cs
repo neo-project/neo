@@ -3,7 +3,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using Array = Neo.VM.Types.Array;
 
-namespace Neo.SmartContract.Native.Oracle
+namespace Neo.SmartContract.Native
 {
     public class OracleRequest : IInteroperable
     {
