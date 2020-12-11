@@ -9,6 +9,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Tokens;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.Wallets;
@@ -33,7 +34,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
 
         [TestMethod]
-        public void Check_Name() => NativeContract.NEO.Name.Should().Be("NEO");
+        public void Check_Name() => NativeContract.NEO.Name.Should().Be(nameof(NeoToken));
 
         [TestMethod]
         public void Check_Symbol() => NativeContract.NEO.Symbol(_snapshot).Should().Be("neo");

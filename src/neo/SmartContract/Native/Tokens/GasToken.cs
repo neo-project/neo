@@ -7,7 +7,6 @@ namespace Neo.SmartContract.Native.Tokens
     public sealed class GasToken : Nep17Token<AccountState>
     {
         public override int Id => -2;
-        public override string Name => "GAS";
         public override uint ActiveBlockIndex => 0;
         public override string Symbol => "gas";
         public override byte Decimals => 8;

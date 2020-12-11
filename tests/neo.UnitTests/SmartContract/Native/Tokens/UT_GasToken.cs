@@ -6,6 +6,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.SmartContract.Native.Tokens;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using System;
@@ -29,7 +30,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
 
         [TestMethod]
-        public void Check_Name() => NativeContract.GAS.Name.Should().Be("GAS");
+        public void Check_Name() => NativeContract.GAS.Name.Should().Be(nameof(GasToken));
 
         [TestMethod]
         public void Check_Symbol() => NativeContract.GAS.Symbol(_snapshot).Should().Be("gas");
