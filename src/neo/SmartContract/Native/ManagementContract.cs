@@ -20,7 +20,6 @@ namespace Neo.SmartContract.Native
 
         private const byte Prefix_NextAvailableId = 15;
         private const byte Prefix_Contract = 8;
-        private Lazy<byte[]> listContractsPrefix = new Lazy<byte[]>(() => new KeyBuilder(NativeContract.Management.Id, Prefix_Contract).ToArray());
 
         private int GetNextAvailableId(StoreView snapshot)
         {
@@ -49,7 +48,8 @@ namespace Neo.SmartContract.Native
 
         public IEnumerable<ContractState> ListContracts(StoreView snapshot)
         {
-            return snapshot.Storages.Find(listContractsPrefix.Value).Select(kvp => kvp.Value.GetInteroperable<ContractState>());
+            byte[] listContractsPrefix = new KeyBuilder(NativeContract.Management.Id, Prefix_Contract).ToArray();
+            return snapshot.Storages.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>());
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
