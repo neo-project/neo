@@ -45,16 +45,16 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        public IEnumerable<ContractState> ListContracts(StoreView snapshot)
-        {
-            byte[] listContractsPrefix = CreateStorageKey(Prefix_Contract).ToArray();
-            return snapshot.Storages.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>());
-        }
-
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public ContractState GetContract(StoreView snapshot, UInt160 hash)
         {
             return snapshot.Storages.TryGet(CreateStorageKey(Prefix_Contract).Add(hash))?.GetInteroperable<ContractState>();
+        }
+
+        public IEnumerable<ContractState> ListContracts(StoreView snapshot)
+        {
+            byte[] listContractsPrefix = CreateStorageKey(Prefix_Contract).ToArray();
+            return snapshot.Storages.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>());
         }
 
         [ContractMethod(0, CallFlags.WriteStates)]
