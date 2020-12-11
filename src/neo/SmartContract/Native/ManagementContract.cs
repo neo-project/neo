@@ -20,7 +20,7 @@ namespace Neo.SmartContract.Native
 
         private const byte Prefix_NextAvailableId = 15;
         private const byte Prefix_Contract = 8;
-        private Lazy<byte[]> listContractsPrefix = new Lazy<byte[]>(() => new KeyBuilder(NativeContract.Management.Id, 8).ToArray());
+        private Lazy<byte[]> listContractsPrefix = new Lazy<byte[]>(() => new KeyBuilder(NativeContract.Management.Id, Prefix_Contract).ToArray());
 
         private int GetNextAvailableId(StoreView snapshot)
         {
