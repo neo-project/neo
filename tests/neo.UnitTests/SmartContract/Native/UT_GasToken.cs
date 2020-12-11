@@ -12,7 +12,7 @@ using System;
 using System.Linq;
 using System.Numerics;
 
-namespace Neo.UnitTests.SmartContract.Native.Tokens
+namespace Neo.UnitTests.SmartContract.Native
 {
     [TestClass]
     public class UT_GasToken

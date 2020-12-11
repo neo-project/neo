@@ -13,7 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
-namespace Neo.SmartContract.Native.Tokens
+namespace Neo.SmartContract.Native
 {
     public sealed class NeoToken : Nep17Token<NeoToken.NeoAccountState>
     {
