@@ -34,7 +34,7 @@ namespace Neo.VM
                     sb.Emit(OpCode.DUP);
                     sb.EmitPush(p.Key);
                     sb.EmitPush(p.Value);
-                    sb.Emit(OpCode.APPEND);
+                    sb.Emit(OpCode.SETITEM);
                 }
             return sb;
         }
