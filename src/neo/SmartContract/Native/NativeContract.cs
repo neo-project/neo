@@ -29,7 +29,7 @@ namespace Neo.SmartContract.Native
 
         static NativeContract()
         {
-            foreach (var contract in contractsList)
+            foreach (var contract in new NativeContract[] { Management, NEO, GAS, Policy, Oracle, Designation })
             {
                 if (ProtocolSettings.Default.NativeActivations.TryGetValue(contract.Name, out uint activationIndex))
                 {
