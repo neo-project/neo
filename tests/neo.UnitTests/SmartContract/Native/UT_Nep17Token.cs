@@ -80,7 +80,6 @@ namespace Neo.UnitTests.SmartContract.Native
     public class TestNep17Token : Nep17Token<NeoToken.NeoAccountState>
     {
         public override int Id => 0x10000005;
-        public override string Name => "testNep17Token";
         public override string Symbol => throw new NotImplementedException();
         public override byte Decimals => 8;
     }

@@ -29,7 +29,6 @@ namespace Neo.SmartContract.Native
         private const long OracleRequestPrice = 0_50000000;
 
         public override int Id => -4;
-        public override string Name => "Oracle";
 
         internal OracleContract()
         {
