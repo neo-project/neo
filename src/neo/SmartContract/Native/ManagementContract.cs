@@ -16,6 +16,7 @@ namespace Neo.SmartContract.Native
     {
         public override int Id => 0;
 
+        private const byte Prefix_MinimumDeploymentFee = 20;
         private const byte Prefix_NextAvailableId = 15;
         private const byte Prefix_Contract = 8;
 
@@ -25,6 +26,11 @@ namespace Neo.SmartContract.Native
             int value = (int)(BigInteger)item;
             item.Add(1);
             return value;
+        }
+
+        internal override void Initialize(ApplicationEngine engine)
+        {
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MinimumDeploymentFee), new StorageItem(100_00000000));
         }
 
         internal override void OnPersist(ApplicationEngine engine)
@@ -41,6 +47,20 @@ namespace Neo.SmartContract.Native
                 }));
                 contract.Initialize(engine);
             }
+        }
+
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        private long GetMinimumDeploymentFee(StoreView snapshot)
+        {
+            return (long)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_MinimumDeploymentFee)];
+        }
+
+        [ContractMethod(0_03000000, CallFlags.WriteStates)]
+        private void SetMinimumDeploymentFee(ApplicationEngine engine, BigInteger value)
+        {
+            if (value < 0) throw new ArgumentOutOfRangeException(nameof(value));
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MinimumDeploymentFee)).Set(value);
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
@@ -65,7 +85,10 @@ namespace Neo.SmartContract.Native
             if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
                 throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
 
-            engine.AddGas(engine.StoragePrice * (nefFile.Length + manifest.Length));
+            engine.AddGas(Math.Max(
+                engine.StoragePrice * (nefFile.Length + manifest.Length),
+                GetMinimumDeploymentFee(engine.Snapshot)
+                ));
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
             UInt160 hash = Helper.GetContractHash(tx.Sender, nef.Script);
