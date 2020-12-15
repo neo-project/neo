@@ -69,6 +69,48 @@ namespace Neo.UnitTests.VMT
         }
 
         [TestMethod]
+        public void TestEmitArray()
+        {
+            var expected = new BigInteger[] { 1, 2, 3 };
+            var sb = new ScriptBuilder();
+            sb.CreateArray(expected);
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            engine.LoadScript(sb.ToArray());
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+
+            CollectionAssert.AreEqual(expected, engine.ResultStack.Pop<VM.Types.Array>().Select(u => u.GetInteger()).ToArray());
+
+            expected = new BigInteger[] { };
+            sb = new ScriptBuilder();
+            sb.CreateArray(expected);
+
+            using var engine2 = ApplicationEngine.Create(TriggerType.Application, null, null);
+            engine2.LoadScript(sb.ToArray());
+            Assert.AreEqual(VMState.HALT, engine2.Execute());
+
+            Assert.AreEqual(0, engine2.ResultStack.Pop<VM.Types.Array>().Count);
+        }
+
+        [TestMethod]
+        public void TestEmitMap()
+        {
+            var expected = new Dictionary<BigInteger, BigInteger>() { { 1, 2 }, { 3, 4 } };
+            var sb = new ScriptBuilder();
+            sb.CreateMap(expected);
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            engine.LoadScript(sb.ToArray());
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+
+            var map = engine.ResultStack.Pop<VM.Types.Map>();
+            var dic = map.ToDictionary(u => u.Key, u => u.Value);
+
+            CollectionAssert.AreEqual(expected.Keys, dic.Keys.Select(u => u.GetInteger()).ToArray());
+            CollectionAssert.AreEqual(expected.Values, dic.Values.Select(u => u.GetInteger()).ToArray());
+        }
+
+        [TestMethod]
         public void TestEmitAppCall2()
         {
             //format:(ContractParameter[])ContractParameter+(byte)OpCode.PACK+(string)operation+(Uint160)scriptHash+(uint)InteropService.System_Contract_Call

@@ -6,6 +6,8 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -67,6 +69,12 @@ namespace Neo.SmartContract.Native
         public ContractState GetContract(StoreView snapshot, UInt160 hash)
         {
             return snapshot.Storages.TryGet(CreateStorageKey(Prefix_Contract).Add(hash))?.GetInteroperable<ContractState>();
+        }
+
+        public IEnumerable<ContractState> ListContracts(StoreView snapshot)
+        {
+            byte[] listContractsPrefix = CreateStorageKey(Prefix_Contract).ToArray();
+            return snapshot.Storages.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>());
         }
 
         [ContractMethod(0, CallFlags.WriteStates)]
