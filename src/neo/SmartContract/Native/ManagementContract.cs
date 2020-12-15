@@ -30,7 +30,6 @@ namespace Neo.SmartContract.Native
         internal override void OnPersist(ApplicationEngine engine)
         {
             if (!ActiveBlockIndexes.TryGetValue(engine.Snapshot.PersistingBlock.Index, out var activations)) return;
-            
             foreach (NativeContract contract in activations)
             {
                 engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
