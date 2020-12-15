@@ -359,10 +359,6 @@ namespace Neo.Ledger
                 case Transaction tx:
                     OnTransaction(tx, true);
                     break;
-                case Transaction[] transactions:
-                    // This message comes from a mempool's revalidation, already relayed
-                    foreach (var tx in transactions) OnNewTransaction(tx);
-                    break;
                 case IInventory inventory:
                     OnInventory(inventory);
                     break;
