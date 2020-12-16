@@ -9,7 +9,7 @@ namespace Neo.Network.P2P.Payloads
     public class Witness : ISerializable
     {
         /// <summary>
-        /// This is designed to allow a MultiSig 21/11 (committee)
+        /// This is designed to allow a MultiSig 21/11 (council)
         /// Invocation = 11 * (64 + 2) = 726
         /// </summary>
         private const int MaxInvocationScript = 1024;

@@ -20,8 +20,8 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Verify(StoreView snapshot, Transaction tx)
         {
-            UInt160 committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
-            return tx.Signers.Any(p => p.Account.Equals(committee));
+            UInt160 council = NativeContract.NEO.GetCouncilAddress(snapshot);
+            return tx.Signers.Any(p => p.Account.Equals(council));
         }
     }
 }

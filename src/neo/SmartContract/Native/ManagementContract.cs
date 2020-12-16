@@ -61,7 +61,7 @@ namespace Neo.SmartContract.Native
         private void SetMinimumDeploymentFee(ApplicationEngine engine, BigInteger value)
         {
             if (value < 0) throw new ArgumentOutOfRangeException(nameof(value));
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            if (!CheckCouncil(engine)) throw new InvalidOperationException();
             engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MinimumDeploymentFee)).Set(value);
         }
 

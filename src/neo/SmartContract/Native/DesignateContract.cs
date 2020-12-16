@@ -44,7 +44,7 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentException();
             if (!Enum.IsDefined(typeof(Role), role))
                 throw new ArgumentOutOfRangeException(nameof(role));
-            if (!CheckCommittee(engine))
+            if (!CheckCouncil(engine))
                 throw new InvalidOperationException(nameof(DesignateAsRole));
             if (engine.Snapshot.PersistingBlock is null)
                 throw new InvalidOperationException(nameof(DesignateAsRole));

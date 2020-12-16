@@ -33,8 +33,8 @@ namespace Neo.Ledger
 
         public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromMilliseconds(MillisecondsPerBlock);
-        public static readonly ECPoint[] StandbyCommittee = ProtocolSettings.Default.StandbyCommittee.Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
-        public static readonly ECPoint[] StandbyValidators = StandbyCommittee[0..ProtocolSettings.Default.ValidatorsCount];
+        public static readonly ECPoint[] StandbyCouncil = ProtocolSettings.Default.StandbyCouncil.Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
+        public static readonly ECPoint[] StandbyValidators = StandbyCouncil[0..ProtocolSettings.Default.ValidatorsCount];
 
         public static readonly Block GenesisBlock = new Block
         {

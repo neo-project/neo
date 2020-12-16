@@ -89,7 +89,7 @@ namespace Neo.SmartContract.Native
         private bool SetMaxBlockSize(ApplicationEngine engine, uint value)
         {
             if (value > Message.PayloadMaxSize) throw new ArgumentOutOfRangeException(nameof(value));
-            if (!CheckCommittee(engine)) return false;
+            if (!CheckCouncil(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSize), () => new StorageItem());
             storage.Set(value);
             return true;
@@ -99,7 +99,7 @@ namespace Neo.SmartContract.Native
         private bool SetMaxTransactionsPerBlock(ApplicationEngine engine, uint value)
         {
             if (value > Block.MaxTransactionsPerBlock) throw new ArgumentOutOfRangeException(nameof(value));
-            if (!CheckCommittee(engine)) return false;
+            if (!CheckCouncil(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxTransactionsPerBlock), () => new StorageItem());
             storage.Set(value);
             return true;
@@ -109,7 +109,7 @@ namespace Neo.SmartContract.Native
         private bool SetMaxBlockSystemFee(ApplicationEngine engine, long value)
         {
             if (value <= 4007600) throw new ArgumentOutOfRangeException(nameof(value));
-            if (!CheckCommittee(engine)) return false;
+            if (!CheckCouncil(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSystemFee), () => new StorageItem());
             storage.Set(value);
             return true;
@@ -119,7 +119,7 @@ namespace Neo.SmartContract.Native
         private bool SetFeePerByte(ApplicationEngine engine, long value)
         {
             if (value < 0 || value > 1_00000000) throw new ArgumentOutOfRangeException(nameof(value));
-            if (!CheckCommittee(engine)) return false;
+            if (!CheckCouncil(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeePerByte), () => new StorageItem());
             storage.Set(value);
             return true;
@@ -129,7 +129,7 @@ namespace Neo.SmartContract.Native
         private bool SetExecFeeFactor(ApplicationEngine engine, uint value)
         {
             if (value == 0 || value > MaxExecFeeFactor) throw new ArgumentOutOfRangeException(nameof(value));
-            if (!CheckCommittee(engine)) return false;
+            if (!CheckCouncil(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_ExecFeeFactor), () => new StorageItem());
             storage.Set(value);
             return true;
@@ -139,7 +139,7 @@ namespace Neo.SmartContract.Native
         private bool SetStoragePrice(ApplicationEngine engine, uint value)
         {
             if (value == 0 || value > MaxStoragePrice) throw new ArgumentOutOfRangeException(nameof(value));
-            if (!CheckCommittee(engine)) return false;
+            if (!CheckCouncil(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_StoragePrice), () => new StorageItem());
             storage.Set(value);
             return true;
@@ -148,7 +148,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_03000000, CallFlags.WriteStates)]
         private bool BlockAccount(ApplicationEngine engine, UInt160 account)
         {
-            if (!CheckCommittee(engine)) return false;
+            if (!CheckCouncil(engine)) return false;
 
             var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
             if (engine.Snapshot.Storages.Contains(key)) return false;
@@ -160,7 +160,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_03000000, CallFlags.WriteStates)]
         private bool UnblockAccount(ApplicationEngine engine, UInt160 account)
         {
-            if (!CheckCommittee(engine)) return false;
+            if (!CheckCouncil(engine)) return false;
 
             var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
             if (!engine.Snapshot.Storages.Contains(key)) return false;

@@ -34,11 +34,11 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 Index = 0,
             };
-            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
+            UInt160 councilMultiSigAddr = NativeContract.NEO.GetCouncilAddress(snapshot1);
             ECPoint[] validators = NativeContract.NEO.ComputeNextBlockValidators(snapshot1);
             var ret = NativeContract.Designation.Call(
                 snapshot1,
-                new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                new Nep17NativeContractExtensions.ManualWitness(councilMultiSigAddr),
                 "designateAsRole",
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.StateValidator) },
                 new ContractParameter(ContractParameterType.Array) { Value = validators.Select(p => new ContractParameter(ContractParameterType.ByteArray) { Value = p.ToArray() }).ToList() }

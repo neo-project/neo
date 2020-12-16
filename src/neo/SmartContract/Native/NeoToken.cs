@@ -27,12 +27,12 @@ namespace Neo.SmartContract.Native
 
         private const byte Prefix_VotersCount = 1;
         private const byte Prefix_Candidate = 33;
-        private const byte Prefix_Committee = 14;
+        private const byte Prefix_Council = 14;
         private const byte Prefix_GasPerBlock = 29;
-        private const byte Prefix_VoterRewardPerCommittee = 23;
+        private const byte Prefix_VoterRewardPerCouncil = 23;
 
         private const byte NeoHolderRewardRatio = 10;
-        private const byte CommitteeRewardRatio = 10;
+        private const byte CouncilRewardRatio = 10;
         private const byte VoterRewardRatio = 80;
 
         internal NeoToken()
@@ -75,12 +75,12 @@ namespace Neo.SmartContract.Native
             BigInteger neoHolderReward = CalculateNeoHolderReward(snapshot, value, start, end);
             if (vote is null) return neoHolderReward;
 
-            byte[] border = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).ToArray();
-            byte[] keyStart = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(start).ToArray();
+            byte[] border = CreateStorageKey(Prefix_VoterRewardPerCouncil).Add(vote).ToArray();
+            byte[] keyStart = CreateStorageKey(Prefix_VoterRewardPerCouncil).Add(vote).AddBigEndian(start).ToArray();
             (_, var item) = snapshot.Storages.FindRange(keyStart, border, SeekDirection.Backward).FirstOrDefault();
             BigInteger startRewardPerNeo = item ?? BigInteger.Zero;
 
-            byte[] keyEnd = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(end).ToArray();
+            byte[] keyEnd = CreateStorageKey(Prefix_VoterRewardPerCouncil).Add(vote).AddBigEndian(end).ToArray();
             (_, item) = snapshot.Storages.FindRange(keyEnd, border, SeekDirection.Backward).FirstOrDefault();
             BigInteger endRewardPerNeo = item ?? BigInteger.Zero;
 
@@ -110,18 +110,18 @@ namespace Neo.SmartContract.Native
         {
             if (!candidate.Registered && candidate.Votes.IsZero)
             {
-                foreach (var (rewardKey, _) in snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(pubkey).ToArray()).ToArray())
+                foreach (var (rewardKey, _) in snapshot.Storages.Find(CreateStorageKey(Prefix_VoterRewardPerCouncil).Add(pubkey).ToArray()).ToArray())
                     snapshot.Storages.Delete(rewardKey);
                 snapshot.Storages.Delete(CreateStorageKey(Prefix_Candidate).Add(pubkey));
             }
         }
 
-        public bool ShouldRefreshCommittee(uint height) => height % ProtocolSettings.Default.CommitteeMembersCount == 0;
+        public bool ShouldRefreshCouncil(uint height) => height % ProtocolSettings.Default.CouncilMembersCount == 0;
 
         internal override void Initialize(ApplicationEngine engine)
         {
-            var cachedCommittee = new CachedCommittee(Blockchain.StandbyCommittee.Select(p => (p, BigInteger.Zero)));
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Committee), new StorageItem(cachedCommittee));
+            var cachedCouncil = new CachedCouncil(Blockchain.StandbyCouncil.Select(p => (p, BigInteger.Zero)));
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Council), new StorageItem(cachedCouncil));
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(new byte[0]));
 
             // Initialize economic parameters
@@ -132,43 +132,43 @@ namespace Neo.SmartContract.Native
 
         internal override void OnPersist(ApplicationEngine engine)
         {
-            // Set next committee
-            if (ShouldRefreshCommittee(engine.Snapshot.PersistingBlock.Index))
+            // Set next council
+            if (ShouldRefreshCouncil(engine.Snapshot.PersistingBlock.Index))
             {
-                StorageItem storageItem = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Committee));
-                var cachedCommittee = storageItem.GetInteroperable<CachedCommittee>();
-                cachedCommittee.Clear();
-                cachedCommittee.AddRange(ComputeCommitteeMembers(engine.Snapshot));
+                StorageItem storageItem = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Council));
+                var cachedCouncil = storageItem.GetInteroperable<CachedCouncil>();
+                cachedCouncil.Clear();
+                cachedCouncil.AddRange(ComputeCouncilMembers(engine.Snapshot));
             }
         }
 
         internal override void PostPersist(ApplicationEngine engine)
         {
-            // Distribute GAS for committee
+            // Distribute GAS for council
 
-            int m = ProtocolSettings.Default.CommitteeMembersCount;
+            int m = ProtocolSettings.Default.CouncilMembersCount;
             int n = ProtocolSettings.Default.ValidatorsCount;
             int index = (int)(engine.Snapshot.PersistingBlock.Index % (uint)m);
             var gasPerBlock = GetGasPerBlock(engine.Snapshot);
-            var committee = GetCommitteeFromCache(engine.Snapshot);
-            var pubkey = committee.ElementAt(index).PublicKey;
+            var council = GetCouncilFromCache(engine.Snapshot);
+            var pubkey = council.ElementAt(index).PublicKey;
             var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
-            GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100, false);
+            GAS.Mint(engine, account, gasPerBlock * CouncilRewardRatio / 100, false);
 
-            // Record the cumulative reward of the voters of committee
+            // Record the cumulative reward of the voters of council
 
-            if (ShouldRefreshCommittee(engine.Snapshot.PersistingBlock.Index))
+            if (ShouldRefreshCouncil(engine.Snapshot.PersistingBlock.Index))
             {
-                BigInteger voterRewardOfEachCommittee = gasPerBlock * VoterRewardRatio * 100000000L * m / (m + n) / 100; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
-                for (index = 0; index < committee.Count; index++)
+                BigInteger voterRewardOfEachCouncil = gasPerBlock * VoterRewardRatio * 100000000L * m / (m + n) / 100; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
+                for (index = 0; index < council.Count; index++)
                 {
-                    var member = committee.ElementAt(index);
-                    var factor = index < n ? 2 : 1; // The `voter` rewards of validator will double than other committee's
+                    var member = council.ElementAt(index);
+                    var factor = index < n ? 2 : 1; // The `voter` rewards of validator will double than other council's
                     if (member.Votes > 0)
                     {
-                        BigInteger voterSumRewardPerNEO = factor * voterRewardOfEachCommittee / member.Votes;
-                        StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(member.PublicKey).AddBigEndian(engine.Snapshot.PersistingBlock.Index + 1);
-                        byte[] border = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(member.PublicKey).ToArray();
+                        BigInteger voterSumRewardPerNEO = factor * voterRewardOfEachCouncil / member.Votes;
+                        StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCouncil).Add(member.PublicKey).AddBigEndian(engine.Snapshot.PersistingBlock.Index + 1);
+                        byte[] border = CreateStorageKey(Prefix_VoterRewardPerCouncil).Add(member.PublicKey).ToArray();
                         (_, var item) = engine.Snapshot.Storages.FindRange(voterRewardKey.ToArray(), border, SeekDirection.Backward).FirstOrDefault();
                         voterSumRewardPerNEO += (item ?? BigInteger.Zero);
                         engine.Snapshot.Storages.Add(voterRewardKey, new StorageItem(voterSumRewardPerNEO));
@@ -182,7 +182,7 @@ namespace Neo.SmartContract.Native
         {
             if (gasPerBlock < 0 || gasPerBlock > 10 * GAS.Factor)
                 throw new ArgumentOutOfRangeException(nameof(gasPerBlock));
-            if (!CheckCommittee(engine)) return false;
+            if (!CheckCouncil(engine)) return false;
 
             uint index = engine.Snapshot.PersistingBlock.Index + 1;
             StorageItem entry = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(index), () => new StorageItem(gasPerBlock));
@@ -289,41 +289,41 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(1_00000000, CallFlags.ReadStates)]
-        public ECPoint[] GetCommittee(StoreView snapshot)
+        public ECPoint[] GetCouncil(StoreView snapshot)
         {
-            return GetCommitteeFromCache(snapshot).Select(p => p.PublicKey).OrderBy(p => p).ToArray();
+            return GetCouncilFromCache(snapshot).Select(p => p.PublicKey).OrderBy(p => p).ToArray();
         }
 
-        public UInt160 GetCommitteeAddress(StoreView snapshot)
+        public UInt160 GetCouncilAddress(StoreView snapshot)
         {
-            ECPoint[] committees = GetCommittee(snapshot);
-            return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
+            ECPoint[] councils = GetCouncil(snapshot);
+            return Contract.CreateMultiSigRedeemScript(councils.Length - (councils.Length - 1) / 2, councils).ToScriptHash();
         }
 
-        private CachedCommittee GetCommitteeFromCache(StoreView snapshot)
+        private CachedCouncil GetCouncilFromCache(StoreView snapshot)
         {
-            return snapshot.Storages[CreateStorageKey(Prefix_Committee)].GetInteroperable<CachedCommittee>();
+            return snapshot.Storages[CreateStorageKey(Prefix_Council)].GetInteroperable<CachedCouncil>();
         }
 
         internal ECPoint[] ComputeNextBlockValidators(StoreView snapshot)
         {
-            return ComputeCommitteeMembers(snapshot).Select(p => p.PublicKey).Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray();
+            return ComputeCouncilMembers(snapshot).Select(p => p.PublicKey).Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray();
         }
 
-        private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> ComputeCommitteeMembers(StoreView snapshot)
+        private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> ComputeCouncilMembers(StoreView snapshot)
         {
             decimal votersCount = (decimal)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_VotersCount)];
             decimal voterTurnout = votersCount / (decimal)TotalAmount;
             var candidates = GetCandidates(snapshot);
-            if (voterTurnout < EffectiveVoterTurnout || candidates.Length < ProtocolSettings.Default.CommitteeMembersCount)
-                return Blockchain.StandbyCommittee.Select(p => (p, candidates.FirstOrDefault(k => k.PublicKey.Equals(p)).Votes));
-            return candidates.OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Take(ProtocolSettings.Default.CommitteeMembersCount);
+            if (voterTurnout < EffectiveVoterTurnout || candidates.Length < ProtocolSettings.Default.CouncilMembersCount)
+                return Blockchain.StandbyCouncil.Select(p => (p, candidates.FirstOrDefault(k => k.PublicKey.Equals(p)).Votes));
+            return candidates.OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Take(ProtocolSettings.Default.CouncilMembersCount);
         }
 
         [ContractMethod(1_00000000, CallFlags.ReadStates)]
         public ECPoint[] GetNextBlockValidators(StoreView snapshot)
         {
-            return GetCommitteeFromCache(snapshot)
+            return GetCouncilFromCache(snapshot)
                 .Take(ProtocolSettings.Default.ValidatorsCount)
                 .Select(p => p.PublicKey)
                 .OrderBy(p => p)
@@ -370,13 +370,13 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        public class CachedCommittee : List<(ECPoint PublicKey, BigInteger Votes)>, IInteroperable
+        public class CachedCouncil : List<(ECPoint PublicKey, BigInteger Votes)>, IInteroperable
         {
-            public CachedCommittee()
+            public CachedCouncil()
             {
             }
 
-            public CachedCommittee(IEnumerable<(ECPoint PublicKey, BigInteger Votes)> collection) : base(collection)
+            public CachedCouncil(IEnumerable<(ECPoint PublicKey, BigInteger Votes)> collection) : base(collection)
             {
             }
 

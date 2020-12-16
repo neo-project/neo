@@ -279,11 +279,11 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"\nContract updated: {updatedContract.ScriptHash}");
 
             // ===============================================================
-            CachedCommittee cachedCommittee = new CachedCommittee(mockContext.Object.Validators.Select(p => (p, BigInteger.Zero)));
+            CachedCouncil cachedCouncil = new CachedCouncil(mockContext.Object.Validators.Select(p => (p, BigInteger.Zero)));
             mockContext.Object.Snapshot.Storages.Delete(CreateStorageKeyForNativeNeo(14));
             mockContext.Object.Snapshot.Storages.Add(CreateStorageKeyForNativeNeo(14), new StorageItem()
             {
-                Value = BinarySerializer.Serialize(cachedCommittee.ToStackItem(null), 4096)
+                Value = BinarySerializer.Serialize(cachedCouncil.ToStackItem(null), 4096)
             });
             mockContext.Object.Snapshot.Commit();
             // ===============================================================
@@ -419,10 +419,10 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine("mockContext Reset for returning Blockchain.Singleton snapshot to original state.");
             mockContext.Object.Reset(0);
             mockContext.Object.Snapshot.Storages.Delete(CreateStorageKeyForNativeNeo(14));
-            cachedCommittee = new CachedCommittee(Blockchain.StandbyCommittee.Select(p => (p, BigInteger.Zero)));
+            cachedCouncil = new CachedCouncil(Blockchain.StandbyCouncil.Select(p => (p, BigInteger.Zero)));
             mockContext.Object.Snapshot.Storages.Add(CreateStorageKeyForNativeNeo(14), new StorageItem
             {
-                Value = BinarySerializer.Serialize(cachedCommittee.ToStackItem(null), 4096)
+                Value = BinarySerializer.Serialize(cachedCouncil.ToStackItem(null), 4096)
             });
             mockContext.Object.Snapshot.Commit();
 
