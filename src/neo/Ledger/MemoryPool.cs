@@ -62,6 +62,7 @@ namespace Neo.Ledger
 
         private int _maxTxPerBlock;
         private long _feePerByte;
+        private uint _execFeeFactor;
 
         /// <summary>
         /// Total maximum capacity of transactions the pool can hold.
@@ -109,8 +110,10 @@ namespace Neo.Ledger
         {
             _maxTxPerBlock = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot);
             long newFeePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
-            bool policyChanged = newFeePerByte > _feePerByte;
+            uint newExecFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
+            bool policyChanged = newFeePerByte > _feePerByte || newExecFeeFactor > _execFeeFactor;
             _feePerByte = newFeePerByte;
+            _execFeeFactor = newExecFeeFactor;
             return policyChanged;
         }
 

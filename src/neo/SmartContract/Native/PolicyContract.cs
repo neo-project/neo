@@ -11,14 +11,21 @@ namespace Neo.SmartContract.Native
 {
     public sealed class PolicyContract : NativeContract
     {
-        public override string Name => "Policy";
         public override int Id => -3;
+        public override uint ActiveBlockIndex => 0;
+
+        public const uint DefaultExecFeeFactor = 30;
+        public const uint DefaultStoragePrice = 100000;
+        private const uint MaxExecFeeFactor = 1000;
+        private const uint MaxStoragePrice = 10000000;
 
         private const byte Prefix_MaxTransactionsPerBlock = 23;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_MaxBlockSize = 12;
         private const byte Prefix_MaxBlockSystemFee = 17;
+        private const byte Prefix_ExecFeeFactor = 18;
+        private const byte Prefix_StoragePrice = 19;
 
         internal PolicyContract()
         {
@@ -54,6 +61,22 @@ namespace Neo.SmartContract.Native
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_FeePerByte));
             if (item is null) return 1000;
             return (long)(BigInteger)item;
+        }
+
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        public uint GetExecFeeFactor(StoreView snapshot)
+        {
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_ExecFeeFactor));
+            if (item is null) return DefaultExecFeeFactor;
+            return (uint)(BigInteger)item;
+        }
+
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        public uint GetStoragePrice(StoreView snapshot)
+        {
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_StoragePrice));
+            if (item is null) return DefaultStoragePrice;
+            return (uint)(BigInteger)item;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
@@ -98,6 +121,26 @@ namespace Neo.SmartContract.Native
             if (value < 0 || value > 1_00000000) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeePerByte), () => new StorageItem());
+            storage.Set(value);
+            return true;
+        }
+
+        [ContractMethod(0_03000000, CallFlags.WriteStates)]
+        private bool SetExecFeeFactor(ApplicationEngine engine, uint value)
+        {
+            if (value == 0 || value > MaxExecFeeFactor) throw new ArgumentOutOfRangeException(nameof(value));
+            if (!CheckCommittee(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_ExecFeeFactor), () => new StorageItem());
+            storage.Set(value);
+            return true;
+        }
+
+        [ContractMethod(0_03000000, CallFlags.WriteStates)]
+        private bool SetStoragePrice(ApplicationEngine engine, uint value)
+        {
+            if (value == 0 || value > MaxStoragePrice) throw new ArgumentOutOfRangeException(nameof(value));
+            if (!CheckCommittee(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_StoragePrice), () => new StorageItem());
             storage.Set(value);
             return true;
         }

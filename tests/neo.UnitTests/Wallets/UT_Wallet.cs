@@ -5,7 +5,6 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.SmartContract.Native.Tokens;
 using Neo.UnitTests.Cryptography;
 using Neo.Wallets;
 using System;

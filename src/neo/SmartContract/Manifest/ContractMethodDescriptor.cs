@@ -20,6 +20,12 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public ContractParameterType ReturnType { get; set; }
 
+        /// <summary>
+        /// Determine if it's safe to call this method
+        /// If a method is marked as safe, the user interface will not give any warnings when it is called by any other contract.
+        /// </summary>
+        public bool Safe { get; set; }
+
         public new ContractMethodDescriptor Clone()
         {
             return new ContractMethodDescriptor
@@ -27,7 +33,8 @@ namespace Neo.SmartContract.Manifest
                 Name = Name,
                 Parameters = Parameters.Select(p => p.Clone()).ToArray(),
                 Offset = Offset,
-                ReturnType = ReturnType
+                ReturnType = ReturnType,
+                Safe = Safe
             };
         }
 
@@ -44,6 +51,7 @@ namespace Neo.SmartContract.Manifest
                 Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson(u)).ToArray(),
                 Offset = (int)json["offset"].AsNumber(),
                 ReturnType = (ContractParameterType)Enum.Parse(typeof(ContractParameterType), json["returntype"].AsString()),
+                Safe = json["safe"].AsBoolean(),
             };
         }
 
@@ -52,6 +60,7 @@ namespace Neo.SmartContract.Manifest
             var json = base.ToJson();
             json["offset"] = Offset;
             json["returntype"] = ReturnType.ToString();
+            json["safe"] = Safe;
             return json;
         }
     }

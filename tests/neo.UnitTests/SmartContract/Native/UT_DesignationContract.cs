@@ -4,9 +4,9 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.SmartContract.Native.Designate;
 using Neo.UnitTests.Extensions;
 using System.Linq;
 using System.Numerics;
@@ -14,34 +14,38 @@ using System.Numerics;
 namespace Neo.UnitTests.SmartContract.Native
 {
     [TestClass]
-    public class UT_DesignateContract
+    public class UT_DesignationContract
     {
+        private StoreView _snapshot;
+
         [TestInitialize]
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
+            _snapshot = Blockchain.Singleton.GetSnapshot();
+            _snapshot.PersistingBlock = new Block() { Index = 0 };
         }
 
         [TestMethod]
         public void TestSetAndGet()
         {
-            using var snapshot1 = Blockchain.Singleton.GetSnapshot();
+            var snapshot1 = _snapshot.Clone();
             snapshot1.PersistingBlock = new Block
             {
                 Index = 0,
             };
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
             ECPoint[] validators = NativeContract.NEO.ComputeNextBlockValidators(snapshot1);
-            var ret = NativeContract.Designate.Call(
+            var ret = NativeContract.Designation.Call(
                 snapshot1,
-                new Nep5NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
                 "designateAsRole",
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.StateValidator) },
                 new ContractParameter(ContractParameterType.Array) { Value = validators.Select(p => new ContractParameter(ContractParameterType.ByteArray) { Value = p.ToArray() }).ToList() }
             );
             snapshot1.Commit();
-            using var snapshot2 = Blockchain.Singleton.GetSnapshot();
-            ret = NativeContract.Designate.Call(
+            var snapshot2 = _snapshot.Clone();
+            ret = NativeContract.Designation.Call(
                 snapshot2,
                 "getDesignatedByRole",
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.StateValidator) },
@@ -57,7 +61,7 @@ namespace Neo.UnitTests.SmartContract.Native
             (ret as VM.Types.Array)[5].GetSpan().ToHexString().Should().Be(validators[5].ToArray().ToHexString());
             (ret as VM.Types.Array)[6].GetSpan().ToHexString().Should().Be(validators[6].ToArray().ToHexString());
 
-            ret = NativeContract.Designate.Call(
+            ret = NativeContract.Designation.Call(
                 snapshot2,
                 "getDesignatedByRole",
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.StateValidator) },

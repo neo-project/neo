@@ -2,13 +2,13 @@ using Neo.Cryptography.ECC;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 
-namespace Neo.SmartContract.Native.Tokens
+namespace Neo.SmartContract.Native
 {
     public sealed class GasToken : Nep17Token<AccountState>
     {
         public override int Id => -2;
-        public override string Name => "GAS";
-        public override string Symbol => "gas";
+        public override uint ActiveBlockIndex => 0;
+        public override string Symbol => "GAS";
         public override byte Decimals => 8;
 
         internal GasToken()
@@ -21,9 +21,8 @@ namespace Neo.SmartContract.Native.Tokens
             Mint(engine, account, 30_000_000 * Factor, false);
         }
 
-        protected override void OnPersist(ApplicationEngine engine)
+        internal override void OnPersist(ApplicationEngine engine)
         {
-            base.OnPersist(engine);
             long totalNetworkFee = 0;
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
             {
