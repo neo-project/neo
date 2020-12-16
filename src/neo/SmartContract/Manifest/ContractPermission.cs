@@ -1,5 +1,4 @@
 using Neo.IO.Json;
-using Neo.Ledger;
 using System;
 using System.Linq;
 
