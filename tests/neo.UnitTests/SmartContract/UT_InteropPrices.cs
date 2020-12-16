@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.SmartContract;
-using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 
