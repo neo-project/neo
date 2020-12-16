@@ -303,9 +303,9 @@ namespace Neo.Network.P2P.Payloads
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (witnesses[i].VerificationScript.IsSignatureContract())
-                    net_fee -= SmartContract.Helper.SignatureContractCost(execFeeFactor);
+                    net_fee -= execFeeFactor * SmartContract.Helper.SignatureContractCost();
                 else if (witnesses[i].VerificationScript.IsMultiSigContract(out int m, out int n))
-                    net_fee -= SmartContract.Helper.MultiSignatureContractCost(execFeeFactor, m, n);
+                    net_fee -= execFeeFactor * SmartContract.Helper.MultiSignatureContractCost(m, n);
                 else
                 {
                     if (!this.VerifyWitness(null, hashes[i], witnesses[i], net_fee, out long fee))

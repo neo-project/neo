@@ -14,22 +14,18 @@ namespace Neo.SmartContract
     {
         public const long MaxVerificationGas = 0_50000000;
 
-        public static long SignatureContractCost(uint execFeeFactor)
-        {
-            return execFeeFactor * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
-                ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
-                ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
-                ApplicationEngine.ECDsaVerifyPrice);
-        }
+        public static long SignatureContractCost() =>
+            ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
+            ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
+            ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
+            ApplicationEngine.ECDsaVerifyPrice;
 
-        public static long MultiSignatureContractCost(uint execFeeFactor, int m, int n)
-        {
-            return execFeeFactor * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n) +
-                ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 +
-                ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
-                ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
-                ApplicationEngine.ECDsaVerifyPrice * n);
-        }
+        public static long MultiSignatureContractCost(int m, int n) =>
+            ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n) +
+            ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 +
+            ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
+            ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
+            ApplicationEngine.ECDsaVerifyPrice * n;
 
         public static UInt160 GetContractHash(UInt160 sender, byte[] script)
         {
