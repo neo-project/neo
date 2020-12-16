@@ -7,8 +7,6 @@ namespace Neo.Ledger
 {
     internal class TransactionRouter : UntypedActor
     {
-        public class Task { public Transaction Transaction; public bool Relay; }
-
         private readonly IActorRef blockchain;
 
         public TransactionRouter(NeoSystem system)
@@ -18,12 +16,12 @@ namespace Neo.Ledger
 
         protected override void OnReceive(object message)
         {
-            if (!(message is Task task)) return;
+            if (!(message is Transaction tx)) return;
             blockchain.Tell(new Blockchain.PreverifyCompleted
             {
-                Transaction = task.Transaction,
-                Result = task.Transaction.VerifyStateIndependent(),
-                Relay = task.Relay
+                Transaction = tx,
+                Result = tx.VerifyStateIndependent(),
+                Relay = true
             }, Sender);
         }
 

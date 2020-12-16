@@ -357,7 +357,7 @@ namespace Neo.Ledger
                     OnInventory(block, false);
                     break;
                 case Transaction tx:
-                    OnTransaction(tx, true);
+                    OnTransaction(tx);
                     break;
                 case IInventory inventory:
                     OnInventory(inventory);
@@ -372,12 +372,12 @@ namespace Neo.Ledger
             }
         }
 
-        private void OnTransaction(Transaction tx, bool relay)
+        private void OnTransaction(Transaction tx)
         {
             if (ContainsTransaction(tx.Hash))
                 SendRelayResult(tx, VerifyResult.AlreadyExists);
             else
-                txrouter.Tell(new TransactionRouter.Task { Transaction = tx, Relay = relay }, Sender);
+                txrouter.Tell(tx, Sender);
         }
 
         private void Persist(Block block)
