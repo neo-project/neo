@@ -42,7 +42,11 @@ namespace Neo.Persistence
         public override void Commit()
         {
             base.Commit();
-            base.ContractSet = ContractSet;
+            if (contractSet != null)
+            {
+                base.ContractSet = contractSet;
+                contractSet = null;
+            }
         }
     }
 }
