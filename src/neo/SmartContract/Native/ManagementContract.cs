@@ -32,7 +32,7 @@ namespace Neo.SmartContract.Native
                     {
                         new ContractParameterDefinition()
                         {
-                            Name = "Contract",
+                            Name = "Hash",
                             Type = ContractParameterType.Hash160
                         }
                     }
@@ -44,13 +44,8 @@ namespace Neo.SmartContract.Native
                     {
                         new ContractParameterDefinition()
                         {
-                            Name = "Contract",
+                            Name = "Hash",
                             Type = ContractParameterType.Hash160
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "UpdateCounter",
-                            Type = ContractParameterType.Integer
                         }
                     }
                 },
@@ -61,7 +56,7 @@ namespace Neo.SmartContract.Native
                     {
                         new ContractParameterDefinition()
                         {
-                            Name = "Contract",
+                            Name = "Hash",
                             Type = ContractParameterType.Hash160
                         }
                     }
@@ -127,7 +122,7 @@ namespace Neo.SmartContract.Native
             return snapshot.Storages.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>());
         }
 
-        [ContractMethod(0, CallFlags.WriteStates)]
+        [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowNotify)]
         private ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             if (!(engine.ScriptContainer is Transaction tx))
@@ -171,7 +166,7 @@ namespace Neo.SmartContract.Native
             return contract;
         }
 
-        [ContractMethod(0, CallFlags.WriteStates)]
+        [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowNotify)]
         private void Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             if (nefFile is null && manifest is null) throw new ArgumentException();
@@ -206,10 +201,10 @@ namespace Neo.SmartContract.Native
                 if (md != null)
                     engine.CallFromNativeContract(Hash, contract.Hash, md.Name, true);
             }
-            engine.SendNotification(Hash, "Update", new VM.Types.Array { contract.Hash.ToArray(), (int)contract.UpdateCounter });
+            engine.SendNotification(Hash, "Update", new VM.Types.Array { contract.Hash.ToArray() });
         }
 
-        [ContractMethod(0_01000000, CallFlags.WriteStates)]
+        [ContractMethod(0_01000000, CallFlags.WriteStates | CallFlags.AllowNotify)]
         private void Destroy(ApplicationEngine engine)
         {
             UInt160 hash = engine.CallingScriptHash;
