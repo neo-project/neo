@@ -21,7 +21,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_NextAvailableId = 15;
         private const byte Prefix_Contract = 8;
 
-        internal ManagementContract()
+        internal ContractManagement()
         {
             var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
             {
