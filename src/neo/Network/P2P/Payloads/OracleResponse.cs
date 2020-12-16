@@ -69,7 +69,7 @@ namespace Neo.Network.P2P.Payloads
             OracleRequest request = NativeContract.Oracle.GetRequest(snapshot, Id);
             if (request is null) return false;
             if (tx.NetworkFee + tx.SystemFee != request.GasForResponse) return false;
-            UInt160 oracleAccount = Blockchain.GetConsensusAddress(NativeContract.Designation.GetDesignatedByRole(snapshot, Role.Oracle, snapshot.Height + 1));
+            UInt160 oracleAccount = Blockchain.GetConsensusAddress(NativeContract.RoleDesignation.GetDesignatedByRole(snapshot, Role.Oracle, snapshot.Height + 1));
             return tx.Signers.Any(p => p.Account.Equals(oracleAccount));
         }
     }

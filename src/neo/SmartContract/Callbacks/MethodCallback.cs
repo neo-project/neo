@@ -18,8 +18,8 @@ namespace Neo.SmartContract.Callbacks
             : base(ApplicationEngine.System_Contract_Call, false)
         {
             if (method.StartsWith('_')) throw new ArgumentException();
-            this.contract = NativeContract.Management.GetContract(engine.Snapshot, hash);
-            ContractState currentContract = NativeContract.Management.GetContract(engine.Snapshot, engine.CurrentScriptHash);
+            this.contract = NativeContract.ContractManagement.GetContract(engine.Snapshot, hash);
+            ContractState currentContract = NativeContract.ContractManagement.GetContract(engine.Snapshot, engine.CurrentScriptHash);
             if (currentContract?.CanCall(this.contract, method) == false)
                 throw new InvalidOperationException();
             this.method = this.contract.Manifest.Abi.Methods.First(p => p.Name == method);

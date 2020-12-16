@@ -12,7 +12,7 @@ using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
-    public sealed class ManagementContract : NativeContract
+    public sealed class ContractManagement : NativeContract
     {
         public override int Id => 0;
         public override uint ActiveBlockIndex => 0;
