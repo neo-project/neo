@@ -1,6 +1,8 @@
 using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Ledger;
+using Neo.SmartContract;
+using System.Collections.Generic;
 
 namespace Neo.Persistence
 {
@@ -13,6 +15,19 @@ namespace Neo.Persistence
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
 
+        private Dictionary<UInt160, ContractState> contractSet = null;
+        public override Dictionary<UInt160, ContractState> ContractSet
+        {
+            get
+            {
+                if (contractSet == null)
+                {
+                    contractSet = new Dictionary<UInt160, ContractState>(base.ContractSet);
+                }
+                return contractSet;
+            }
+        }
+
         public ClonedView(StoreView view)
         {
             this.PersistingBlock = view.PersistingBlock;
@@ -22,6 +37,12 @@ namespace Neo.Persistence
             this.HeaderHashList = view.HeaderHashList.CreateSnapshot();
             this.BlockHashIndex = view.BlockHashIndex.CreateSnapshot();
             this.HeaderHashIndex = view.HeaderHashIndex.CreateSnapshot();
+        }
+
+        public override void Commit()
+        {
+            base.Commit();
+            base.ContractSet = ContractSet;
         }
     }
 }

@@ -129,7 +129,10 @@ namespace Neo.UnitTests.SmartContract
             snapshot2.Blocks.Add(index2, block2);
             Header header2 = new Header() { PrevHash = index2, Witness = new Witness { VerificationScript = new byte[0] } };
 
-            snapshot2.AddContract(UInt160.Zero, new ContractState());
+            snapshot2.AddContract(UInt160.Zero, new ContractState()
+            {
+                Hash = UInt160.Zero
+            });
             snapshot2.DeleteContract(UInt160.Zero);
             Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header2, snapshot2, 100));
 

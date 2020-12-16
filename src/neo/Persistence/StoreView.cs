@@ -2,6 +2,9 @@ using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract;
+using Neo.SmartContract.Native;
+using System.Collections.Generic;
 
 namespace Neo.Persistence
 {
@@ -22,6 +25,23 @@ namespace Neo.Persistence
         public uint HeaderHeight => HeaderHashIndex.Get().Index;
         public UInt256 CurrentBlockHash => BlockHashIndex.Get().Hash;
         public UInt256 CurrentHeaderHash => HeaderHashIndex.Get().Hash;
+
+        private Dictionary<UInt160, ContractState> contractSet = null;
+        public virtual Dictionary<UInt160, ContractState> ContractSet
+        {
+            get
+            {
+                if (contractSet == null)
+                {
+                    contractSet = NativeContract.Management.GetInitialContractSet(this);
+                }
+                return contractSet;
+            }
+            protected set
+            {
+                contractSet = value;
+            }
+        }
 
         public StoreView Clone()
         {

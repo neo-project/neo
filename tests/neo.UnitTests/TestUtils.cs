@@ -123,7 +123,8 @@ namespace Neo.UnitTests
             {
                 Id = 1,
                 Script = script,
-                Manifest = CreateDefaultManifest()
+                Manifest = CreateDefaultManifest(),
+                Hash = UInt160.Zero
             };
         }
 
