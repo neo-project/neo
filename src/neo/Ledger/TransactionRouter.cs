@@ -20,8 +20,7 @@ namespace Neo.Ledger
             blockchain.Tell(new Blockchain.PreverifyCompleted
             {
                 Transaction = tx,
-                Result = tx.VerifyStateIndependent(),
-                Relay = true
+                Result = tx.VerifyStateIndependent()
             }, Sender);
         }
 

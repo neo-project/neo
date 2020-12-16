@@ -27,7 +27,7 @@ namespace Neo.Ledger
         public class ImportCompleted { }
         public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
         public class FillCompleted { }
-        internal class PreverifyCompleted { public Transaction Transaction; public VerifyResult Result; public bool Relay; }
+        internal class PreverifyCompleted { public Transaction Transaction; public VerifyResult Result; }
         public class RelayResult { public IInventory Inventory; public VerifyResult Result; }
         private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new LinkedList<Block>(); public HashSet<IActorRef> Nodes = new HashSet<IActorRef>(); }
 
@@ -338,7 +338,7 @@ namespace Neo.Ledger
         private void OnPreverifyCompleted(PreverifyCompleted task)
         {
             if (task.Result == VerifyResult.Succeed)
-                OnInventory(task.Transaction, task.Relay);
+                OnInventory(task.Transaction, true);
             else
                 SendRelayResult(task.Transaction, task.Result);
         }
