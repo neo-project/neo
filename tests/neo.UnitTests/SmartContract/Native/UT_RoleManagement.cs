@@ -14,7 +14,7 @@ using System.Numerics;
 namespace Neo.UnitTests.SmartContract.Native
 {
     [TestClass]
-    public class UT_RoleDesignation
+    public class UT_RoleManagement
     {
         private StoreView _snapshot;
 
@@ -36,7 +36,7 @@ namespace Neo.UnitTests.SmartContract.Native
             };
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
             ECPoint[] validators = NativeContract.NEO.ComputeNextBlockValidators(snapshot1);
-            var ret = NativeContract.RoleDesignation.Call(
+            var ret = NativeContract.RoleManagement.Call(
                 snapshot1,
                 new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
                 "designateAsRole",
@@ -45,7 +45,7 @@ namespace Neo.UnitTests.SmartContract.Native
             );
             snapshot1.Commit();
             var snapshot2 = _snapshot.Clone();
-            ret = NativeContract.RoleDesignation.Call(
+            ret = NativeContract.RoleManagement.Call(
                 snapshot2,
                 "getDesignatedByRole",
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.StateValidator) },
@@ -61,7 +61,7 @@ namespace Neo.UnitTests.SmartContract.Native
             (ret as VM.Types.Array)[5].GetSpan().ToHexString().Should().Be(validators[5].ToArray().ToHexString());
             (ret as VM.Types.Array)[6].GetSpan().ToHexString().Should().Be(validators[6].ToArray().ToHexString());
 
-            ret = NativeContract.RoleDesignation.Call(
+            ret = NativeContract.RoleManagement.Call(
                 snapshot2,
                 "getDesignatedByRole",
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.StateValidator) },

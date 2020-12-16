@@ -24,7 +24,7 @@ namespace Neo.SmartContract.Native
         public static GasToken GAS { get; } = new GasToken();
         public static PolicyContract Policy { get; } = new PolicyContract();
         public static OracleContract Oracle { get; } = new OracleContract();
-        public static RoleDesignation RoleDesignation { get; } = new RoleDesignation();
+        public static RoleManagement RoleManagement { get; } = new RoleManagement();
 
         public string Name => GetType().Name;
         public byte[] Script { get; }
