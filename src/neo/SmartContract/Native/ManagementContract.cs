@@ -14,33 +14,11 @@ namespace Neo.SmartContract.Native
 {
     public sealed class ManagementContract : NativeContract
     {
-        public static readonly Dictionary<uint, List<NativeContract>> ActiveBlockIndexes = new Dictionary<uint, List<NativeContract>>();
-
         public override int Id => 0;
 
         private const byte Prefix_MinimumDeploymentFee = 20;
         private const byte Prefix_NextAvailableId = 15;
         private const byte Prefix_Contract = 8;
-
-        static ManagementContract()
-        {
-            foreach (var contract in new NativeContract[] { Management, NEO, GAS, Policy, Oracle, Designation })
-            {
-                if (ProtocolSettings.Default.NativeActivations.TryGetValue(contract.Name, out uint activationIndex))
-                {
-                    contract.ActiveBlockIndex = activationIndex;
-                }
-
-                if (ActiveBlockIndexes.TryGetValue(contract.ActiveBlockIndex, out var list))
-                {
-                    list.Add(contract);
-                }
-                else
-                {
-                    ActiveBlockIndexes.Add(contract.ActiveBlockIndex, new List<NativeContract>() { contract });
-                }
-            }
-        }
 
         internal ManagementContract()
         {
@@ -102,9 +80,10 @@ namespace Neo.SmartContract.Native
 
         internal override void OnPersist(ApplicationEngine engine)
         {
-            if (!ActiveBlockIndexes.TryGetValue(engine.Snapshot.PersistingBlock.Index, out var activations)) return;
-            foreach (NativeContract contract in activations)
+            foreach (NativeContract contract in Contracts)
             {
+                if (contract.ActiveBlockIndex != engine.Snapshot.PersistingBlock.Index)
+                    continue;
                 engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
                 {
                     Id = contract.Id,

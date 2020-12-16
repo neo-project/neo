@@ -31,7 +31,7 @@ namespace Neo.SmartContract.Native
         public UInt160 Hash { get; }
         public abstract int Id { get; }
         public ContractManifest Manifest { get; }
-        public uint ActiveBlockIndex { get; internal set; }
+        public uint ActiveBlockIndex { get; }
 
         protected NativeContract()
         {
@@ -71,6 +71,8 @@ namespace Neo.SmartContract.Native
                 Trusts = WildcardContainer<UInt160>.Create(),
                 Extra = null
             };
+            if (ProtocolSettings.Default.NativeActivations.TryGetValue(Name, out uint activationIndex))
+                this.ActiveBlockIndex = activationIndex;
             contractsList.Add(this);
             contractsNameDictionary.Add(Name, this);
             contractsHashDictionary.Add(Hash, this);
