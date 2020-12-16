@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract.Enumerators;
 using Neo.SmartContract.Iterators;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
