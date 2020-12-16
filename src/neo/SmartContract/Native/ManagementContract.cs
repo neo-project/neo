@@ -15,7 +15,6 @@ namespace Neo.SmartContract.Native
     public sealed class ManagementContract : NativeContract
     {
         public override int Id => 0;
-        public override uint ActiveBlockIndex => 0;
 
         private const byte Prefix_MinimumDeploymentFee = 20;
         private const byte Prefix_NextAvailableId = 15;
