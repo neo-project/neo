@@ -1,4 +1,3 @@
-using Neo.Ledger;
 using Neo.SmartContract.Manifest;
 using System;
 using System.Linq;
