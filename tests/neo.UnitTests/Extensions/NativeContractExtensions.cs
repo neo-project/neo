@@ -10,7 +10,7 @@ namespace Neo.UnitTests.Extensions
 {
     public static class NativeContractExtensions
     {
-        public static ContractState DeployContract(this StoreView snapshot, UInt160 sender, byte[] nefFile, byte[] manifest, long gas = ApplicationEngine.TestModeGas)
+        public static ContractState DeployContract(this StoreView snapshot, UInt160 sender, byte[] nefFile, byte[] manifest, long gas = 200_00000000)
         {
             var script = new ScriptBuilder();
             script.EmitAppCall(NativeContract.Management.Hash, "deploy", nefFile, manifest);
