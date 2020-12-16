@@ -21,6 +21,51 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_NextAvailableId = 15;
         private const byte Prefix_Contract = 8;
 
+        internal ManagementContract()
+        {
+            var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
+            {
+                new ContractEventDescriptor
+                {
+                    Name = "Deploy",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "Hash",
+                            Type = ContractParameterType.Hash160
+                        }
+                    }
+                },
+                new ContractEventDescriptor
+                {
+                    Name = "Update",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "Hash",
+                            Type = ContractParameterType.Hash160
+                        }
+                    }
+                },
+                new ContractEventDescriptor
+                {
+                    Name = "Destory",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "Hash",
+                            Type = ContractParameterType.Hash160
+                        }
+                    }
+                }
+            };
+
+            Manifest.Abi.Events = events.ToArray();
+        }
+
         private int GetNextAvailableId(StoreView snapshot)
         {
             StorageItem item = snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_NextAvailableId), () => new StorageItem(1));
@@ -85,7 +130,7 @@ namespace Neo.SmartContract.Native
             return snapshot.Storages.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>()).ToDictionary(p => p.Hash);
         }
 
-        [ContractMethod(0, CallFlags.WriteStates)]
+        [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowNotify)]
         private ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             if (!(engine.ScriptContainer is Transaction tx))
@@ -125,10 +170,12 @@ namespace Neo.SmartContract.Native
             if (md != null)
                 engine.CallFromNativeContract(Hash, hash, md.Name, false);
 
+            engine.SendNotification(Hash, "Deploy", new VM.Types.Array { contract.Hash.ToArray() });
+
             return contract;
         }
 
-        [ContractMethod(0, CallFlags.WriteStates)]
+        [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowNotify)]
         private void Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             if (nefFile is null && manifest is null) throw new ArgumentException();
@@ -164,9 +211,10 @@ namespace Neo.SmartContract.Native
                     engine.CallFromNativeContract(Hash, contract.Hash, md.Name, true);
             }
             engine.Snapshot.ContractSet[contract.Hash] = contract;
+            engine.SendNotification(Hash, "Update", new VM.Types.Array { contract.Hash.ToArray() });
         }
 
-        [ContractMethod(0_01000000, CallFlags.WriteStates)]
+        [ContractMethod(0_01000000, CallFlags.WriteStates | CallFlags.AllowNotify)]
         private void Destroy(ApplicationEngine engine)
         {
             UInt160 hash = engine.CallingScriptHash;
@@ -177,6 +225,7 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.Storages.Delete(ckey);
             foreach (var (key, _) in engine.Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)))
                 engine.Snapshot.Storages.Delete(key);
+            engine.SendNotification(Hash, "Destory", new VM.Types.Array { hash.ToArray() });
         }
     }
 }
