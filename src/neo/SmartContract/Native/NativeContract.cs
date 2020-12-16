@@ -17,7 +17,6 @@ namespace Neo.SmartContract.Native
         private static readonly Dictionary<string, NativeContract> contractsNameDictionary = new Dictionary<string, NativeContract>();
         private static readonly Dictionary<UInt160, NativeContract> contractsHashDictionary = new Dictionary<UInt160, NativeContract>();
         private readonly Dictionary<string, ContractMethodMetadata> methods = new Dictionary<string, ContractMethodMetadata>();
-        public static readonly Dictionary<uint, List<NativeContract>> ActiveBlockIndexes = new Dictionary<uint, List<NativeContract>>();
 
         public static IReadOnlyCollection<NativeContract> Contracts { get; } = contractsList;
         public static ManagementContract Management { get; } = new ManagementContract();
@@ -27,32 +26,12 @@ namespace Neo.SmartContract.Native
         public static OracleContract Oracle { get; } = new OracleContract();
         public static DesignationContract Designation { get; } = new DesignationContract();
 
-        static NativeContract()
-        {
-            foreach (var contract in new NativeContract[] { Management, NEO, GAS, Policy, Oracle, Designation })
-            {
-                if (ProtocolSettings.Default.NativeActivations.TryGetValue(contract.Name, out uint activationIndex))
-                {
-                    contract.ActiveBlockIndex = activationIndex;
-                }
-
-                if (ActiveBlockIndexes.TryGetValue(contract.ActiveBlockIndex, out var list))
-                {
-                    list.Add(contract);
-                }
-                else
-                {
-                    ActiveBlockIndexes.Add(contract.ActiveBlockIndex, new List<NativeContract>() { contract });
-                }
-            }
-        }
-
         public string Name => GetType().Name;
         public byte[] Script { get; }
         public UInt160 Hash { get; }
         public abstract int Id { get; }
         public ContractManifest Manifest { get; }
-        public uint ActiveBlockIndex { get; private set; }
+        public uint ActiveBlockIndex { get; internal set; }
 
         protected NativeContract()
         {
