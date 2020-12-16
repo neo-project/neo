@@ -2,7 +2,6 @@ using Neo.IO.Caching;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Text.Json;
 
 namespace Neo.IO.Json

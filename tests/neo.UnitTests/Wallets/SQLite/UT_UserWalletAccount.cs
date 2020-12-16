@@ -1,6 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Wallets.SQLite;
-using System.Text;
 
 namespace Neo.UnitTests
 {
