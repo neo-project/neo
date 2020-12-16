@@ -17,7 +17,7 @@ namespace Neo
         public uint MillisecondsPerBlock { get; }
         public int MemoryPoolMaxTransactions { get; }
         public uint MaxTraceableBlocks { get; }
-        public Dictionary<string, uint> NativeActivations { get; }
+        public IReadOnlyDictionary<string, uint> NativeActivations { get; }
 
         static ProtocolSettings _default;
 
