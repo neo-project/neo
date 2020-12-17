@@ -1,7 +1,6 @@
 using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Ledger;
-using Neo.SmartContract;
 using System.Collections.Generic;
 
 namespace Neo.Persistence
