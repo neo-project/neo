@@ -13,6 +13,8 @@ namespace Neo.SmartContract
     /// | Compiler   | 32 bytes  | Compiler used                                              |
     /// | Version    | 32 bytes  | Compiler version                                           |
     /// +------------+-----------+------------------------------------------------------------+
+    /// | Reserve    | 4 bytes   | 4 bytes are reserved for future extensions. Must be 0.     |
+    /// +------------+-----------+------------------------------------------------------------+
     /// | Script     | Var bytes | Var bytes for the payload                                  |
     /// +------------+-----------+------------------------------------------------------------+
     /// | Checksum   | 4 bytes   | First four bytes of double SHA256 hash                     |
@@ -53,12 +55,14 @@ namespace Neo.SmartContract
 
         public int Size =>
             HeaderSize +            // Header
+            4 +                     // Reserve
             Script.GetVarSize() +   // Script
             sizeof(uint);           // Checksum
 
         public void Serialize(BinaryWriter writer)
         {
             SerializeHeader(writer);
+            writer.Write(0); //Reserve
             writer.WriteVarBytes(Script ?? Array.Empty<byte>());
             writer.Write(CheckSum);
         }
@@ -78,6 +82,7 @@ namespace Neo.SmartContract
 
             Compiler = reader.ReadFixedString(32);
             Version = reader.ReadFixedString(32);
+            if (reader.ReadInt32() != 0) throw new FormatException("Reserve should be 0");
             Script = reader.ReadVarBytes(MaxScriptLength);
             if (Script.Length == 0) throw new ArgumentException($"Script can't be empty");
 
