@@ -91,7 +91,7 @@ namespace Neo.SmartContract.Native
                     Hash = contract.Hash,
                     Manifest = contract.Manifest
                 };
-                engine.Snapshot.ContractSet.TryAdd(contract.Hash, state);
+                GetContractSet(engine.Snapshot).TryAdd(contract.Hash, state);
                 engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(state));
                 contract.Initialize(engine);
             }
@@ -114,19 +114,13 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public ContractState GetContract(StoreView snapshot, UInt160 hash)
         {
-            snapshot.ContractSet.TryGetValue(hash, out ContractState state);
+            GetContractSet(snapshot).TryGetValue(hash, out ContractState state);
             return state;
         }
 
         public IEnumerable<ContractState> ListContracts(StoreView snapshot)
         {
-            return snapshot.ContractSet.Values;
-        }
-
-        public Dictionary<UInt160, ContractState> GetInitialContractSet(StoreView snapshot)
-        {
-            byte[] listContractsPrefix = CreateStorageKey(Prefix_Contract).ToArray();
-            return snapshot.Storages.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>()).ToDictionary(p => p.Hash);
+            return GetContractSet(snapshot).Values;
         }
 
         [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowNotify)]
@@ -160,7 +154,7 @@ namespace Neo.SmartContract.Native
 
             if (!contract.Manifest.IsValid(hash)) throw new InvalidOperationException($"Invalid Manifest Hash: {hash}");
 
-            engine.Snapshot.ContractSet.TryAdd(hash, contract);
+            GetContractSet(engine.Snapshot).TryAdd(hash, contract);
             engine.Snapshot.Storages.Add(key, new StorageItem(contract));
 
             // Execute _deploy
@@ -209,7 +203,7 @@ namespace Neo.SmartContract.Native
                 if (md != null)
                     engine.CallFromNativeContract(Hash, contract.Hash, md.Name, true);
             }
-            engine.Snapshot.ContractSet[contract.Hash] = contract;
+            GetContractSet(engine.Snapshot)[contract.Hash] = contract;
             engine.SendNotification(Hash, "Update", new VM.Types.Array { contract.Hash.ToArray() });
         }
 
@@ -220,11 +214,21 @@ namespace Neo.SmartContract.Native
             StorageKey ckey = CreateStorageKey(Prefix_Contract).Add(hash);
             ContractState contract = engine.Snapshot.Storages.TryGet(ckey)?.GetInteroperable<ContractState>();
             if (contract is null) return;
-            engine.Snapshot.ContractSet.Remove(hash);
+            GetContractSet(engine.Snapshot).Remove(hash);
             engine.Snapshot.Storages.Delete(ckey);
             foreach (var (key, _) in engine.Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)))
                 engine.Snapshot.Storages.Delete(key);
             engine.SendNotification(Hash, "Destory", new VM.Types.Array { hash.ToArray() });
+        }
+
+        public Dictionary<UInt160, ContractState> GetContractSet (StoreView snapshot)
+        {
+            if (snapshot.ContractSet == null)
+            {
+                byte[] listContractsPrefix = CreateStorageKey(Prefix_Contract).ToArray();
+                snapshot.ContractSet = snapshot.Storages.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>()).ToDictionary(p => p.Hash);
+            }
+            return snapshot.ContractSet;
         }
     }
 }

@@ -15,19 +15,6 @@ namespace Neo.Persistence
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
 
-        private Dictionary<UInt160, ContractState> contractSet = null;
-        public override Dictionary<UInt160, ContractState> ContractSet
-        {
-            get
-            {
-                if (contractSet == null)
-                {
-                    contractSet = new Dictionary<UInt160, ContractState>(base.ContractSet);
-                }
-                return contractSet;
-            }
-        }
-
         public ClonedView(StoreView view)
         {
             this.PersistingBlock = view.PersistingBlock;
@@ -42,11 +29,6 @@ namespace Neo.Persistence
         public override void Commit()
         {
             base.Commit();
-            if (contractSet != null)
-            {
-                base.ContractSet = contractSet;
-                contractSet = null;
-            }
         }
     }
 }
