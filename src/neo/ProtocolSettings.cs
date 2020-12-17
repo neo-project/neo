@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
@@ -16,6 +17,7 @@ namespace Neo
         public uint MillisecondsPerBlock { get; }
         public int MemoryPoolMaxTransactions { get; }
         public uint MaxTraceableBlocks { get; }
+        public IReadOnlyDictionary<string, uint> NativeActivations { get; }
 
         static ProtocolSettings _default;
 
@@ -96,6 +98,12 @@ namespace Neo
             this.MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", 15000u);
             this.MemoryPoolMaxTransactions = Math.Max(1, section.GetValue("MemoryPoolMaxTransactions", 50_000));
             this.MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", 2_102_400u);// 365 days
+            IConfigurationSection section_na = section.GetSection("NativeActivations");
+            if (section_na.Exists())
+                this.NativeActivations = section_na.GetChildren().ToDictionary((a) => a.Key, b => uint.Parse(b.Value));
+            else
+                this.NativeActivations = new Dictionary<string, uint>();
+
         }
     }
 }

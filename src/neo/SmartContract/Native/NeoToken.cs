@@ -18,7 +18,6 @@ namespace Neo.SmartContract.Native
     public sealed class NeoToken : Nep17Token<NeoToken.NeoAccountState>
     {
         public override int Id => -1;
-        public override uint ActiveBlockIndex => 0;
         public override string Symbol => "NEO";
         public override byte Decimals => 0;
         public BigInteger TotalAmount { get; }

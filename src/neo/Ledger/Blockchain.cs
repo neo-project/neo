@@ -27,7 +27,7 @@ namespace Neo.Ledger
         public class ImportCompleted { }
         public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
         public class FillCompleted { }
-        internal class PreverifyCompleted { public Transaction Transaction; public VerifyResult Result; public bool Relay; }
+        internal class PreverifyCompleted { public Transaction Transaction; public VerifyResult Result; }
         public class RelayResult { public IInventory Inventory; public VerifyResult Result; }
         private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new LinkedList<Block>(); public HashSet<IActorRef> Nodes = new HashSet<IActorRef>(); }
 
@@ -338,7 +338,7 @@ namespace Neo.Ledger
         private void OnPreverifyCompleted(PreverifyCompleted task)
         {
             if (task.Result == VerifyResult.Succeed)
-                OnInventory(task.Transaction, task.Relay);
+                OnInventory(task.Transaction, true);
             else
                 SendRelayResult(task.Transaction, task.Result);
         }
@@ -357,11 +357,7 @@ namespace Neo.Ledger
                     OnInventory(block, false);
                     break;
                 case Transaction tx:
-                    OnTransaction(tx, true);
-                    break;
-                case Transaction[] transactions:
-                    // This message comes from a mempool's revalidation, already relayed
-                    foreach (var tx in transactions) OnTransaction(tx, false);
+                    OnTransaction(tx);
                     break;
                 case IInventory inventory:
                     OnInventory(inventory);
@@ -376,12 +372,12 @@ namespace Neo.Ledger
             }
         }
 
-        private void OnTransaction(Transaction tx, bool relay)
+        private void OnTransaction(Transaction tx)
         {
             if (ContainsTransaction(tx.Hash))
                 SendRelayResult(tx, VerifyResult.AlreadyExists);
             else
-                txrouter.Tell(new TransactionRouter.Task { Transaction = tx, Relay = relay }, Sender);
+                txrouter.Tell(tx, Sender);
         }
 
         private void Persist(Block block)
