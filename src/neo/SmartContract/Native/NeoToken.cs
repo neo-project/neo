@@ -13,13 +13,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
-namespace Neo.SmartContract.Native.Tokens
+namespace Neo.SmartContract.Native
 {
     public sealed class NeoToken : Nep17Token<NeoToken.NeoAccountState>
     {
         public override int Id => -1;
-        public override string Name => "NEO";
-        public override string Symbol => "neo";
+        public override string Symbol => "NEO";
         public override byte Decimals => 0;
         public BigInteger TotalAmount { get; }
 
@@ -130,10 +129,8 @@ namespace Neo.SmartContract.Native.Tokens
             Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), TotalAmount, false);
         }
 
-        protected override void OnPersist(ApplicationEngine engine)
+        internal override void OnPersist(ApplicationEngine engine)
         {
-            base.OnPersist(engine);
-
             // Set next committee
             if (ShouldRefreshCommittee(engine.Snapshot.PersistingBlock.Index))
             {
@@ -144,10 +141,8 @@ namespace Neo.SmartContract.Native.Tokens
             }
         }
 
-        protected override void PostPersist(ApplicationEngine engine)
+        internal override void PostPersist(ApplicationEngine engine)
         {
-            base.PostPersist(engine);
-
             // Distribute GAS for committee
 
             int m = ProtocolSettings.Default.CommitteeMembersCount;

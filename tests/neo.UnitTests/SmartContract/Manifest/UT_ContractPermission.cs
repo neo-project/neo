@@ -1,6 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
-using Neo.Ledger;
+using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using System;
 

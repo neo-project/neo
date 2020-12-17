@@ -23,7 +23,7 @@ namespace Neo.Ledger
                 return value ??= cache switch
                 {
                     BigInteger bi => bi.ToByteArrayStandard(),
-                    IInteroperable interoperable => BinarySerializer.Serialize(interoperable.ToStackItem(null), 4096),
+                    IInteroperable interoperable => BinarySerializer.Serialize(interoperable.ToStackItem(null), 1024 * 1024),
                     IReadOnlyCollection<ISerializable> list => list.ToByteArray(),
                     null => null,
                     _ => throw new InvalidCastException()

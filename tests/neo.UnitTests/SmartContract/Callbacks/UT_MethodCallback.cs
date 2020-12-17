@@ -3,6 +3,7 @@ using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.SmartContract.Callbacks;
 using Neo.SmartContract.Manifest;
+using Neo.UnitTests.Extensions;
 using System;
 
 namespace Neo.UnitTests.SmartContract.Callbacks
@@ -44,7 +45,7 @@ namespace Neo.UnitTests.SmartContract.Callbacks
                 Hash = new byte[] { 1, 2, 3 }.ToScriptHash()
             };
             engine.LoadScript(contract.Script);
-            snapshot.Contracts.Add(contract.Hash, contract);
+            engine.Snapshot.AddContract(contract.Hash, contract);
 
             Assert.ThrowsException<InvalidOperationException>(() => new MethodCallback(engine, contract.Hash, "test"));
 

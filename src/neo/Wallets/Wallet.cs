@@ -367,6 +367,7 @@ namespace Neo.Wallets
 
             // base size for transaction: includes const_header + signers + attributes + script + hashes
             int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + tx.Script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
+            uint exec_fee_factor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             long networkFee = 0;
             foreach (UInt160 hash in hashes)
             {
@@ -388,7 +389,7 @@ namespace Neo.Wallets
 
                 if (witness_script is null)
                 {
-                    var contract = snapshot.Contracts.TryGet(hash);
+                    var contract = NativeContract.Management.GetContract(snapshot, hash);
                     if (contract is null) continue;
 
                     // Empty invocation and verification scripts
@@ -406,19 +407,19 @@ namespace Neo.Wallets
                 else if (witness_script.IsSignatureContract())
                 {
                     size += 67 + witness_script.GetVarSize();
-                    networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice;
+                    networkFee += exec_fee_factor * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice);
                 }
                 else if (witness_script.IsMultiSigContract(out int m, out int n))
                 {
                     int size_inv = 66 * m;
                     size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
-                    networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * m;
+                    networkFee += exec_fee_factor * ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * m;
                     using (ScriptBuilder sb = new ScriptBuilder())
-                        networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
-                    networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * n;
+                        networkFee += exec_fee_factor * ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
+                    networkFee += exec_fee_factor * ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * n;
                     using (ScriptBuilder sb = new ScriptBuilder())
-                        networkFee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
-                    networkFee += ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice * n;
+                        networkFee += exec_fee_factor * ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
+                    networkFee += exec_fee_factor * (ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice * n);
                 }
                 else
                 {
@@ -470,7 +471,7 @@ namespace Neo.Wallets
                 // Try Smart contract verification
 
                 using var snapshot = Blockchain.Singleton.GetSnapshot();
-                var contract = snapshot.Contracts.TryGet(scriptHash);
+                var contract = NativeContract.Management.GetContract(snapshot, scriptHash);
 
                 if (contract != null)
                 {

@@ -1,6 +1,5 @@
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
@@ -14,6 +13,19 @@ namespace Neo.SmartContract
     public static class Helper
     {
         public const long MaxVerificationGas = 0_50000000;
+
+        public static long SignatureContractCost() =>
+            ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
+            ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
+            ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
+            ApplicationEngine.ECDsaVerifyPrice;
+
+        public static long MultiSignatureContractCost(int m, int n) =>
+            ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n) +
+            ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 +
+            ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
+            ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
+            ApplicationEngine.ECDsaVerifyPrice * n;
 
         public static UInt160 GetContractHash(UInt160 sender, byte[] script)
         {
@@ -139,7 +151,7 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
-        internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas)
+        public static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas)
         {
             if (gas < 0) return false;
             if (gas > MaxVerificationGas) gas = MaxVerificationGas;
@@ -173,7 +185,7 @@ namespace Neo.SmartContract
 
                 if (verification.Length == 0)
                 {
-                    ContractState cs = snapshot.Contracts.TryGet(hash);
+                    ContractState cs = NativeContract.Management.GetContract(snapshot, hash);
                     if (cs is null) return false;
                     if (engine.LoadContract(cs, "verify", callFlags, true) is null)
                         return false;
