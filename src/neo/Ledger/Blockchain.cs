@@ -66,6 +66,7 @@ namespace Neo.Ledger
         private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new Dictionary<uint, UnverifiedBlocksList>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
+        private Dictionary<UInt160, ContractState> currentContractSet;
 
         public IStore Store { get; }
         public ReadOnlyView View { get; }
@@ -204,9 +205,9 @@ namespace Neo.Ledger
             return GetBlockHash(header.Index + 1);
         }
 
-        public SnapshotView GetSnapshot()
+        public SnapshotView GetSnapshot(Dictionary<UInt160, ContractState> contractSet = null)
         {
-            return new SnapshotView(Store);
+            return new SnapshotView(Store, contractSet);
         }
 
         public Transaction GetTransaction(UInt256 hash)
@@ -442,6 +443,7 @@ namespace Neo.Ledger
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(snapshot, all_application_executed);
                 snapshot.Commit();
+                currentContractSet = snapshot.ContractSet;
                 List<Exception> commitExceptions = null;
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                 {

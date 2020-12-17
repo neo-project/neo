@@ -14,6 +14,7 @@ namespace Neo.Persistence
         public override DataCache<SerializableWrapper<uint>, HeaderHashList> HeaderHashList { get; }
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
+        private StoreView originalView;
 
         public ClonedView(StoreView view)
         {
@@ -24,11 +25,14 @@ namespace Neo.Persistence
             this.HeaderHashList = view.HeaderHashList.CreateSnapshot();
             this.BlockHashIndex = view.BlockHashIndex.CreateSnapshot();
             this.HeaderHashIndex = view.HeaderHashIndex.CreateSnapshot();
+            this.originalView = view;
+            if (view.ContractSet != null) this.ContractSet = new Dictionary<UInt160, ContractState>(view.ContractSet);
         }
 
         public override void Commit()
         {
             base.Commit();
+            originalView.ContractSet = this.ContractSet;
         }
     }
 }

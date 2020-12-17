@@ -1,7 +1,9 @@
 using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Ledger;
+using Neo.SmartContract;
 using System;
+using System.Collections.Generic;
 
 namespace Neo.Persistence
 {
@@ -19,7 +21,7 @@ namespace Neo.Persistence
         public override MetaDataCache<HashIndexState> BlockHashIndex { get; }
         public override MetaDataCache<HashIndexState> HeaderHashIndex { get; }
 
-        public SnapshotView(IStore store)
+        public SnapshotView(IStore store, Dictionary<UInt160, ContractState> contractSet = null)
         {
             this.snapshot = store.GetSnapshot();
             Blocks = new StoreDataCache<UInt256, TrimmedBlock>(snapshot, Prefixes.DATA_Block);
@@ -28,6 +30,7 @@ namespace Neo.Persistence
             HeaderHashList = new StoreDataCache<SerializableWrapper<uint>, HeaderHashList>(snapshot, Prefixes.IX_HeaderHashList);
             BlockHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentBlock);
             HeaderHashIndex = new StoreMetaDataCache<HashIndexState>(snapshot, Prefixes.IX_CurrentHeader);
+            this.ContractSet = contractSet;
         }
 
         public override void Commit()
