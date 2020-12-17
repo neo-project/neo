@@ -3,6 +3,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
 using System.Linq;
@@ -287,7 +288,7 @@ namespace Neo.UnitTests.SmartContract
                 CollectionAssert.AreEqual
                     (
                     engine.ResultStack.Select(u => (int)u.GetInteger()).ToArray(),
-                    new int[] { 99_999_570, 99_999_140, 99_998_650 }
+                    new int[] { 99_999_490, 99_998_980, 99_998_410 }
                     );
             }
 
@@ -307,7 +308,7 @@ namespace Neo.UnitTests.SmartContract
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
                 Assert.AreEqual(1, engine.ResultStack.Count);
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(Integer));
-                Assert.AreEqual(1999999600, engine.ResultStack.Pop().GetInteger());
+                Assert.AreEqual(1999999520, engine.ResultStack.Pop().GetInteger());
             }
         }
 
@@ -316,7 +317,6 @@ namespace Neo.UnitTests.SmartContract
         {
             ContractState contractA, contractB, contractC;
             var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
-            var contracts = snapshot.Contracts;
 
             // Create dummy contracts
 
@@ -334,15 +334,15 @@ namespace Neo.UnitTests.SmartContract
                 // Init A,B,C contracts
                 // First two drops is for drop method and arguments
 
-                contracts.Delete(contractA.Hash);
-                contracts.Delete(contractB.Hash);
-                contracts.Delete(contractC.Hash);
+                snapshot.DeleteContract(contractA.Hash);
+                snapshot.DeleteContract(contractB.Hash);
+                snapshot.DeleteContract(contractC.Hash);
                 contractA.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
                 contractB.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
                 contractC.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
-                contracts.Add(contractA.Hash, contractA);
-                contracts.Add(contractB.Hash, contractB);
-                contracts.Add(contractC.Hash, contractC);
+                snapshot.AddContract(contractA.Hash, contractA);
+                snapshot.AddContract(contractB.Hash, contractB);
+                snapshot.AddContract(contractC.Hash, contractC);
             }
 
             // Call A,B,B,C

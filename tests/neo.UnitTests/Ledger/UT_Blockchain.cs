@@ -1,4 +1,3 @@
-using Akka.Actor;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -8,7 +7,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
@@ -48,12 +46,19 @@ namespace Neo.UnitTests.Ledger
     public class UT_Blockchain : TestKit
     {
         private NeoSystem system;
-        Transaction txSample = Blockchain.GenesisBlock.Transactions[0];
+        private Transaction txSample;
 
         [TestInitialize]
         public void Initialize()
         {
             system = TestBlockchain.TheNeoSystem;
+            txSample = new Transaction()
+            {
+                Attributes = Array.Empty<TransactionAttribute>(),
+                Script = Array.Empty<byte>(),
+                Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
+                Witnesses = Array.Empty<Witness>()
+            };
             Blockchain.Singleton.MemPool.TryAdd(txSample, Blockchain.Singleton.GetSnapshot());
         }
 
@@ -67,19 +72,19 @@ namespace Neo.UnitTests.Ledger
         public void TestContainsTransaction()
         {
             Blockchain.Singleton.ContainsTransaction(UInt256.Zero).Should().BeFalse();
-            Blockchain.Singleton.ContainsTransaction(txSample.Hash).Should().BeTrue();
+            Blockchain.Singleton.ContainsTransaction(txSample.Hash).Should().BeFalse();
         }
 
         [TestMethod]
         public void TestGetCurrentBlockHash()
         {
-            Blockchain.Singleton.CurrentBlockHash.Should().Be(UInt256.Parse("0xecaee33262f1bc7c7c28f2b25b54a5d61d50670871f45c0c6fe755a40cbde4a8"));
+            Blockchain.Singleton.CurrentBlockHash.Should().Be(UInt256.Parse("0x00c6803707b564153d444bfcdf3a13325fc96dda55cc8a740bbd543a1d752fda"));
         }
 
         [TestMethod]
         public void TestGetCurrentHeaderHash()
         {
-            Blockchain.Singleton.CurrentHeaderHash.Should().Be(UInt256.Parse("0xecaee33262f1bc7c7c28f2b25b54a5d61d50670871f45c0c6fe755a40cbde4a8"));
+            Blockchain.Singleton.CurrentHeaderHash.Should().Be(UInt256.Parse("0x00c6803707b564153d444bfcdf3a13325fc96dda55cc8a740bbd543a1d752fda"));
         }
 
         [TestMethod]
@@ -91,7 +96,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetBlockHash()
         {
-            Blockchain.Singleton.GetBlockHash(0).Should().Be(UInt256.Parse("0xecaee33262f1bc7c7c28f2b25b54a5d61d50670871f45c0c6fe755a40cbde4a8"));
+            Blockchain.Singleton.GetBlockHash(0).Should().Be(UInt256.Parse("0x00c6803707b564153d444bfcdf3a13325fc96dda55cc8a740bbd543a1d752fda"));
             Blockchain.Singleton.GetBlockHash(10).Should().BeNull();
         }
 
@@ -99,7 +104,7 @@ namespace Neo.UnitTests.Ledger
         public void TestGetTransaction()
         {
             Blockchain.Singleton.GetTransaction(UInt256.Zero).Should().BeNull();
-            Blockchain.Singleton.GetTransaction(txSample.Hash).Should().NotBeNull();
+            Blockchain.Singleton.GetTransaction(txSample.Hash).Should().BeNull();
         }
 
         [TestMethod]

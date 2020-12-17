@@ -10,7 +10,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
-using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.Collections.Concurrent;
@@ -28,7 +27,7 @@ namespace Neo.Ledger
         public class ImportCompleted { }
         public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
         public class FillCompleted { }
-        internal class PreverifyCompleted { public Transaction Transaction; public VerifyResult Result; public bool Relay; }
+        internal class PreverifyCompleted { public Transaction Transaction; public VerifyResult Result; }
         public class RelayResult { public IInventory Inventory; public VerifyResult Result; }
         private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new LinkedList<Block>(); public HashSet<IActorRef> Nodes = new HashSet<IActorRef>(); }
 
@@ -53,7 +52,7 @@ namespace Neo.Ledger
                 PrimaryIndex = 0,
                 Nonce = 2083236893
             },
-            Transactions = new[] { DeployNativeContracts() }
+            Transactions = Array.Empty<Transaction>()
         };
 
         private readonly static Script onPersistScript, postPersistScript;
@@ -92,20 +91,12 @@ namespace Neo.Ledger
 
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                foreach (NativeContract contract in new NativeContract[] { NativeContract.GAS, NativeContract.NEO })
-                {
-                    sb.EmitAppCall(contract.Hash, "onPersist");
-                    sb.Emit(OpCode.DROP);
-                }
+                sb.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
                 onPersistScript = sb.ToArray();
             }
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                foreach (NativeContract contract in new NativeContract[] { NativeContract.NEO, NativeContract.Oracle })
-                {
-                    sb.EmitAppCall(contract.Hash, "postPersist");
-                    sb.Emit(OpCode.DROP);
-                }
+                sb.EmitSysCall(ApplicationEngine.System_Contract_NativePostPersist);
                 postPersistScript = sb.ToArray();
             }
         }
@@ -163,39 +154,6 @@ namespace Neo.Ledger
         {
             if (MemPool.ContainsKey(hash)) return true;
             return View.ContainsTransaction(hash);
-        }
-
-        private static Transaction DeployNativeContracts()
-        {
-            byte[] script;
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                sb.EmitSysCall(ApplicationEngine.Neo_Native_Deploy);
-                script = sb.ToArray();
-            }
-            return new Transaction
-            {
-                Version = 0,
-                Script = script,
-                SystemFee = 0,
-                Signers = new[]
-                {
-                    new Signer
-                    {
-                        Account = (new[] { (byte)OpCode.PUSH1 }).ToScriptHash(),
-                        Scopes = WitnessScope.None
-                    }
-                },
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Witnesses = new[]
-                {
-                    new Witness
-                    {
-                        InvocationScript = Array.Empty<byte>(),
-                        VerificationScript = new[] { (byte)OpCode.PUSH1 }
-                    }
-                }
-            };
         }
 
         public Block GetBlock(uint index)
@@ -380,7 +338,7 @@ namespace Neo.Ledger
         private void OnPreverifyCompleted(PreverifyCompleted task)
         {
             if (task.Result == VerifyResult.Succeed)
-                OnInventory(task.Transaction, task.Relay);
+                OnInventory(task.Transaction, true);
             else
                 SendRelayResult(task.Transaction, task.Result);
         }
@@ -399,11 +357,7 @@ namespace Neo.Ledger
                     OnInventory(block, false);
                     break;
                 case Transaction tx:
-                    OnTransaction(tx, true);
-                    break;
-                case Transaction[] transactions:
-                    // This message comes from a mempool's revalidation, already relayed
-                    foreach (var tx in transactions) OnTransaction(tx, false);
+                    OnTransaction(tx);
                     break;
                 case IInventory inventory:
                     OnInventory(inventory);
@@ -418,12 +372,12 @@ namespace Neo.Ledger
             }
         }
 
-        private void OnTransaction(Transaction tx, bool relay)
+        private void OnTransaction(Transaction tx)
         {
             if (ContainsTransaction(tx.Hash))
                 SendRelayResult(tx, VerifyResult.AlreadyExists);
             else
-                txrouter.Tell(new TransactionRouter.Task { Transaction = tx, Relay = relay }, Sender);
+                txrouter.Tell(tx, Sender);
         }
 
         private void Persist(Block block)
@@ -437,9 +391,8 @@ namespace Neo.Ledger
                 }
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 snapshot.PersistingBlock = block;
-                if (block.Index > 0)
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot))
                 {
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot);
                     engine.LoadScript(onPersistScript);
                     if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
                     ApplicationExecuted application_executed = new ApplicationExecuted(engine);

@@ -9,7 +9,6 @@ using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.SmartContract.Native.Tokens;
 using System;
 using System.Collections;
 using System.Collections.Generic;

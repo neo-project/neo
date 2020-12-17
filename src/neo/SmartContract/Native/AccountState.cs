@@ -2,7 +2,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System.Numerics;
 
-namespace Neo.SmartContract.Native.Tokens
+namespace Neo.SmartContract.Native
 {
     public class AccountState : IInteroperable
     {
