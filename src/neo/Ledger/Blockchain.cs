@@ -383,7 +383,7 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
-            using (SnapshotView snapshot = GetSnapshot())
+            using (SnapshotView snapshot = GetSnapshot(currentContractSet))
             {
                 if (block.Index == header_index.Count)
                 {
