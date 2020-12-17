@@ -221,7 +221,7 @@ namespace Neo.SmartContract.Native
             engine.SendNotification(Hash, "Destory", new VM.Types.Array { hash.ToArray() });
         }
 
-        public Dictionary<UInt160, ContractState> GetContractSet (StoreView snapshot)
+        public Dictionary<UInt160, ContractState> GetContractSet(StoreView snapshot)
         {
             if (snapshot.ContractSet == null)
             {
