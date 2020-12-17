@@ -26,13 +26,13 @@ namespace Neo.Persistence
             this.BlockHashIndex = view.BlockHashIndex.CreateSnapshot();
             this.HeaderHashIndex = view.HeaderHashIndex.CreateSnapshot();
             this.originalView = view;
-            if (view.ContractSet != null) this.ContractSet = new Dictionary<UInt160, ContractState>(view.ContractSet);
+            if (view.ContractHashSet != null) this.ContractHashSet = new HashSet<UInt160>(view.ContractHashSet);
         }
 
         public override void Commit()
         {
             base.Commit();
-            originalView.ContractSet = this.ContractSet;
+            originalView.ContractHashSet = this.ContractHashSet;
         }
     }
 }

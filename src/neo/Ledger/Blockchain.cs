@@ -204,9 +204,9 @@ namespace Neo.Ledger
             return GetBlockHash(header.Index + 1);
         }
 
-        public SnapshotView GetSnapshot(Dictionary<UInt160, ContractState> contractSet = null)
+        public SnapshotView GetSnapshot(HashSet<UInt160> contractHashSet = null)
         {
-            return new SnapshotView(Store, contractSet);
+            return new SnapshotView(Store, contractHashSet);
         }
 
         public Transaction GetTransaction(UInt256 hash)
@@ -382,7 +382,7 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
-            using (SnapshotView snapshot = GetSnapshot(currentSnapshot?.ContractSet))
+            using (SnapshotView snapshot = GetSnapshot(currentSnapshot?.ContractHashSet))
             {
                 if (block.Index == header_index.Count)
                 {
@@ -461,7 +461,7 @@ namespace Neo.Ledger
                     }
                 }
                 if (commitExceptions != null) throw new AggregateException(commitExceptions);
-                UpdateCurrentSnapshot(snapshot.ContractSet);
+                UpdateCurrentSnapshot(snapshot.ContractHashSet);
             }
             block_cache.TryRemove(block.PrevHash, out _);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
@@ -514,9 +514,9 @@ namespace Neo.Ledger
             Context.System.EventStream.Publish(rr);
         }
 
-        private void UpdateCurrentSnapshot(Dictionary<UInt160, ContractState> contractSet = null)
+        private void UpdateCurrentSnapshot(HashSet<UInt160> contractHashSet = null)
         {
-            Interlocked.Exchange(ref currentSnapshot, GetSnapshot(contractSet))?.Dispose();
+            Interlocked.Exchange(ref currentSnapshot, GetSnapshot(contractHashSet))?.Dispose();
         }
     }
 

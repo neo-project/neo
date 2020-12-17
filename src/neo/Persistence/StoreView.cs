@@ -25,7 +25,7 @@ namespace Neo.Persistence
         public uint HeaderHeight => HeaderHashIndex.Get().Index;
         public UInt256 CurrentBlockHash => BlockHashIndex.Get().Hash;
         public UInt256 CurrentHeaderHash => HeaderHashIndex.Get().Hash;
-        public Dictionary<UInt160, ContractState> ContractSet;
+        public HashSet<UInt160> ContractHashSet;
 
         public StoreView Clone()
         {
