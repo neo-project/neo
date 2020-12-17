@@ -225,7 +225,7 @@ namespace Neo.VM
             switch (item)
             {
                 case Array array:
-                    context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Default);
+                    context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
                     if (!context.Add(array)) throw new InvalidOperationException();
                     json["value"] = new JArray(array.Select(p => ToJson(p, context)));
                     break;
@@ -240,7 +240,7 @@ namespace Neo.VM
                     json["value"] = integer.GetInteger().ToString();
                     break;
                 case Map map:
-                    context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Default);
+                    context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
                     if (!context.Add(map)) throw new InvalidOperationException();
                     json["value"] = new JArray(map.Select(p =>
                     {
