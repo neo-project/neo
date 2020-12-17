@@ -177,7 +177,7 @@ namespace Neo.SmartContract.Native
             //Check the arguments
             if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength
                 || (filter != null && Utility.StrictUTF8.GetByteCount(filter) > MaxFilterLength)
-                || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength
+                || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength || callback.StartsWith('_')
                 || gasForResponse < 0_10000000)
                 throw new ArgumentException();
 
