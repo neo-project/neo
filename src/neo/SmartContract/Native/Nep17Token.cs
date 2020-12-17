@@ -160,7 +160,7 @@ namespace Neo.SmartContract.Native
 
             // Check if it's a wallet or smart contract
 
-            if (!callOnPayment || to is null || Management.GetContract(engine.Snapshot, to) is null) return;
+            if (!callOnPayment || to is null || ContractManagement.GetContract(engine.Snapshot, to) is null) return;
 
             // Call onPayment method (NEP-17)
 

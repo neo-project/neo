@@ -155,7 +155,7 @@ namespace Neo.SmartContract.Native
                 if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
 
                 //Mint GAS for oracle nodes
-                nodes ??= Designation.GetDesignatedByRole(engine.Snapshot, Role.Oracle, engine.Snapshot.PersistingBlock.Index).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
+                nodes ??= RoleManagement.GetDesignatedByRole(engine.Snapshot, Role.Oracle, engine.Snapshot.PersistingBlock.Index).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
                 if (nodes.Length > 0)
                 {
                     int index = (int)(response.Id % (ulong)nodes.Length);
@@ -191,7 +191,7 @@ namespace Neo.SmartContract.Native
             item_id.Value = BitConverter.GetBytes(id);
 
             //Put the request to storage
-            if (Management.GetContract(engine.Snapshot, engine.CallingScriptHash) is null)
+            if (ContractManagement.GetContract(engine.Snapshot, engine.CallingScriptHash) is null)
                 throw new InvalidOperationException();
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Request).Add(item_id.Value), new StorageItem(new OracleRequest
             {
