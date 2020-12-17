@@ -30,6 +30,7 @@ namespace Neo.SmartContract
 
         protected internal void CallContractEx(UInt160 contractHash, string method, Array args, CallFlags callFlags)
         {
+            if (method.StartsWith('_')) throw new ArgumentException($"Invalid Method Name: {method}");
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
             CallContractInternal(contractHash, method, args, callFlags, ReturnTypeConvention.EnsureNotEmpty);
@@ -37,8 +38,6 @@ namespace Neo.SmartContract
 
         private void CallContractInternal(UInt160 contractHash, string method, Array args, CallFlags flags, ReturnTypeConvention convention)
         {
-            if (method.StartsWith('_')) throw new ArgumentException($"Invalid Method Name: {method}");
-
             ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
