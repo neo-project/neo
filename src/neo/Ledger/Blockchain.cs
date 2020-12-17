@@ -66,7 +66,6 @@ namespace Neo.Ledger
         private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new Dictionary<uint, UnverifiedBlocksList>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
-        private Dictionary<UInt160, ContractState> currentContractSet;
 
         public IStore Store { get; }
         public ReadOnlyView View { get; }
@@ -383,7 +382,7 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
-            using (SnapshotView snapshot = GetSnapshot(currentContractSet))
+            using (SnapshotView snapshot = GetSnapshot(currentSnapshot?.ContractSet))
             {
                 if (block.Index == header_index.Count)
                 {
@@ -443,7 +442,6 @@ namespace Neo.Ledger
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(snapshot, all_application_executed);
                 snapshot.Commit();
-                currentContractSet = snapshot.ContractSet;
                 List<Exception> commitExceptions = null;
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                 {
@@ -463,8 +461,8 @@ namespace Neo.Ledger
                     }
                 }
                 if (commitExceptions != null) throw new AggregateException(commitExceptions);
+                UpdateCurrentSnapshot(snapshot.ContractSet);
             }
-            UpdateCurrentSnapshot();
             block_cache.TryRemove(block.PrevHash, out _);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
@@ -516,9 +514,9 @@ namespace Neo.Ledger
             Context.System.EventStream.Publish(rr);
         }
 
-        private void UpdateCurrentSnapshot()
+        private void UpdateCurrentSnapshot(Dictionary<UInt160, ContractState> contractSet = null)
         {
-            Interlocked.Exchange(ref currentSnapshot, GetSnapshot())?.Dispose();
+            Interlocked.Exchange(ref currentSnapshot, GetSnapshot(contractSet))?.Dispose();
         }
     }
 

@@ -126,7 +126,7 @@ namespace Neo.UnitTests.Ledger
 
             typeof(Blockchain)
                 .GetMethod("UpdateCurrentSnapshot", BindingFlags.Instance | BindingFlags.NonPublic)
-                .Invoke(Blockchain.Singleton, null);
+                .Invoke(Blockchain.Singleton, new object[] { null });
 
             // Make transaction
 
