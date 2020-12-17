@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
-using Neo.SmartContract.Manifest;
 using System;
 
 namespace Neo.UnitTests.IO.Json

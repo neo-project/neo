@@ -17,7 +17,6 @@ namespace Neo.SmartContract.Native
     public sealed class DesignationContract : NativeContract
     {
         public override int Id => -5;
-        public override uint ActiveBlockIndex => 0;
 
         internal DesignationContract()
         {
