@@ -217,7 +217,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Storages.Add(storageKey, storageItem);
             state.UpdateCounter.Should().Be(0);
             snapshot.UpdateContract(state.Hash, nef.ToArray(), manifest.ToJson().ToByteArray(false));
-            var ret = NativeContract.Management.GetContract(snapshot, state.Hash);
+            var ret = NativeContract.ContractManagement.GetContract(snapshot, state.Hash);
             snapshot.Storages.Find(BitConverter.GetBytes(state.Id)).ToList().Count().Should().Be(1);
             ret.UpdateCounter.Should().Be(1);
             ret.Id.Should().Be(state.Id);
