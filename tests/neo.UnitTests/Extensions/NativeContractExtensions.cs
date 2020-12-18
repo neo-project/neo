@@ -13,7 +13,7 @@ namespace Neo.UnitTests.Extensions
         public static ContractState DeployContract(this StoreView snapshot, UInt160 sender, byte[] nefFile, byte[] manifest, long gas = 200_00000000)
         {
             var script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.Management.Hash, "deploy", nefFile, manifest);
+            script.EmitAppCall(NativeContract.ContractManagement.Hash, "deploy", nefFile, manifest);
 
             var engine = ApplicationEngine.Create(TriggerType.Application,
                 sender != null ? new Transaction() { Signers = new Signer[] { new Signer() { Account = sender } } } : null, snapshot, gas);
@@ -34,7 +34,7 @@ namespace Neo.UnitTests.Extensions
         public static void UpdateContract(this StoreView snapshot, UInt160 callingScriptHash, byte[] nefFile, byte[] manifest)
         {
             var script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.Management.Hash, "update", nefFile, manifest);
+            script.EmitAppCall(NativeContract.ContractManagement.Hash, "update", nefFile, manifest);
 
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(script.ToArray());
@@ -57,7 +57,7 @@ namespace Neo.UnitTests.Extensions
         public static void DestroyContract(this StoreView snapshot, UInt160 callingScriptHash)
         {
             var script = new ScriptBuilder();
-            script.EmitAppCall(NativeContract.Management.Hash, "destroy");
+            script.EmitAppCall(NativeContract.ContractManagement.Hash, "destroy");
 
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(script.ToArray());
@@ -79,15 +79,15 @@ namespace Neo.UnitTests.Extensions
 
         public static void AddContract(this StoreView snapshot, UInt160 hash, ContractState state)
         {
-            var key = new KeyBuilder(NativeContract.Management.Id, 8).Add(hash);
-            NativeContract.Management.GetContractHashSet(snapshot).Add(hash);
+            var key = new KeyBuilder(NativeContract.ContractManagement.Id, 8).Add(hash);
+            NativeContract.ContractManagement.GetContractHashSet(snapshot).Add(hash);
             snapshot.Storages.Add(key, new Neo.Ledger.StorageItem(state, false));
         }
 
         public static void DeleteContract(this StoreView snapshot, UInt160 hash)
         {
-            var key = new KeyBuilder(NativeContract.Management.Id, 8).Add(hash);
-            NativeContract.Management.GetContractHashSet(snapshot).Remove(hash);
+            var key = new KeyBuilder(NativeContract.ContractManagement.Id, 8).Add(hash);
+            NativeContract.ContractManagement.GetContractHashSet(snapshot).Remove(hash);
             snapshot.Storages.Delete(key);
         }
 
@@ -99,7 +99,7 @@ namespace Neo.UnitTests.Extensions
         public static StackItem Call(this NativeContract contract, StoreView snapshot, IVerifiable container, string method, params ContractParameter[] args)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot);
-            var contractState = NativeContract.Management.GetContract(snapshot, contract.Hash);
+            var contractState = NativeContract.ContractManagement.GetContract(snapshot, contract.Hash);
             if (contractState == null) throw new InvalidOperationException();
 
             engine.LoadContract(contractState, method, CallFlags.All, true);

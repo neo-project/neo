@@ -46,7 +46,7 @@ namespace Neo.Cryptography.ECC
                     {
                         do
                         {
-                            k = rng.NextBigInteger(curve.N.GetBitLength());
+                            k = rng.NextBigInteger((int)curve.N.GetBitLength());
                         }
                         while (k.Sign == 0 || k.CompareTo(curve.N) >= 0);
                         ECPoint p = ECPoint.Multiply(curve.G, k);
@@ -67,7 +67,7 @@ namespace Neo.Cryptography.ECC
 
         private static ECPoint SumOfTwoMultiplies(ECPoint P, BigInteger k, ECPoint Q, BigInteger l)
         {
-            int m = Math.Max(k.GetBitLength(), l.GetBitLength());
+            int m = (int)Math.Max(k.GetBitLength(), l.GetBitLength());
             ECPoint Z = P + Q;
             ECPoint R = P.Curve.Infinity;
             for (int i = m - 1; i >= 0; --i)

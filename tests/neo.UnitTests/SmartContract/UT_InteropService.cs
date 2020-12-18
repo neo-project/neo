@@ -388,14 +388,14 @@ namespace Neo.UnitTests.SmartContract
                                         0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01 };
-            Neo.SmartContract.Native.NativeContract.Management.GetContract(engine.Snapshot, new UInt160(data1)).Should().BeNull();
+            Neo.SmartContract.Native.NativeContract.ContractManagement.GetContract(engine.Snapshot, new UInt160(data1)).Should().BeNull();
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             snapshot.AddContract(state.Hash, state);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
-            Neo.SmartContract.Native.NativeContract.Management.GetContract(engine.Snapshot, state.Hash).Should().BeSameAs(state);
+            Neo.SmartContract.Native.NativeContract.ContractManagement.GetContract(engine.Snapshot, state.Hash).Should().BeSameAs(state);
         }
 
         [TestMethod]
