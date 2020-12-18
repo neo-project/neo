@@ -153,7 +153,6 @@ namespace Neo.SmartContract.Native
             };
 
             if (!contract.Manifest.IsValid(hash)) throw new InvalidOperationException($"Invalid Manifest Hash: {hash}");
-
             GetContractHashSet(engine.Snapshot).Add(hash);
             engine.Snapshot.Storages.Add(key, new StorageItem(contract));
 
@@ -174,7 +173,6 @@ namespace Neo.SmartContract.Native
             if (nefFile is null && manifest is null) throw new ArgumentException();
 
             engine.AddGas(engine.StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
-
             if (!GetContractHashSet(engine.Snapshot).Contains(engine.CallingScriptHash)) throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
             var contract = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Contract).Add(engine.CallingScriptHash))?.GetInteroperable<ContractState>();
 
