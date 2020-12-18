@@ -15,6 +15,30 @@ namespace Neo.VM
 {
     public static class Helper
     {
+        public static ScriptBuilder CreateArray<T>(this ScriptBuilder sb, IReadOnlyList<T> list = null)
+        {
+            if (list is null || list.Count == 0)
+                return sb.Emit(OpCode.NEWARRAY0);
+            for (int i = list.Count - 1; i >= 0; i--)
+                sb.EmitPush(list[i]);
+            sb.EmitPush(list.Count);
+            return sb.Emit(OpCode.PACK);
+        }
+
+        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder sb, IReadOnlyDictionary<TKey, TValue> map = null)
+        {
+            sb.Emit(OpCode.NEWMAP);
+            if (map != null)
+                foreach (var p in map)
+                {
+                    sb.Emit(OpCode.DUP);
+                    sb.EmitPush(p.Key);
+                    sb.EmitPush(p.Value);
+                    sb.Emit(OpCode.SETITEM);
+                }
+            return sb;
+        }
+
         public static ScriptBuilder Emit(this ScriptBuilder sb, params OpCode[] ops)
         {
             foreach (OpCode op in ops)
@@ -201,7 +225,7 @@ namespace Neo.VM
             switch (item)
             {
                 case Array array:
-                    context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Default);
+                    context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
                     if (!context.Add(array)) throw new InvalidOperationException();
                     json["value"] = new JArray(array.Select(p => ToJson(p, context)));
                     break;
@@ -216,7 +240,7 @@ namespace Neo.VM
                     json["value"] = integer.GetInteger().ToString();
                     break;
                 case Map map:
-                    context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Default);
+                    context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
                     if (!context.Add(map)) throw new InvalidOperationException();
                     json["value"] = new JArray(map.Select(p =>
                     {

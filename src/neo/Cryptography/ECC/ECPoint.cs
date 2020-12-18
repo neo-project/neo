@@ -203,7 +203,7 @@ namespace Neo.Cryptography.ECC
         internal static ECPoint Multiply(ECPoint p, BigInteger k)
         {
             // floor(log2(k))
-            int m = k.GetBitLength();
+            int m = (int)k.GetBitLength();
 
             // width of the Window NAF
             sbyte width;

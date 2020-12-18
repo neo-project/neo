@@ -35,18 +35,6 @@ namespace Neo.Network.P2P.Payloads
         private byte[] script;
         private Witness[] witnesses;
 
-        private static readonly long SignatureContractCost =
-            ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
-            ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
-            ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
-            ApplicationEngine.ECDsaVerifyPrice;
-        private static long MultiSignatureContractCost(int m, int n) =>
-            ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n) +
-            ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 +
-            ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
-            ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
-            ApplicationEngine.ECDsaVerifyPrice * n;
-
         public const int HeaderSize =
             sizeof(byte) +  //Version
             sizeof(uint) +  //Nonce
@@ -310,12 +298,14 @@ namespace Neo.Network.P2P.Payloads
 
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
             if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
+
+            uint execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (witnesses[i].VerificationScript.IsSignatureContract())
-                    net_fee -= SignatureContractCost;
+                    net_fee -= execFeeFactor * SmartContract.Helper.SignatureContractCost();
                 else if (witnesses[i].VerificationScript.IsMultiSigContract(out int m, out int n))
-                    net_fee -= MultiSignatureContractCost(m, n);
+                    net_fee -= execFeeFactor * SmartContract.Helper.MultiSignatureContractCost(m, n);
                 else
                 {
                     if (!this.VerifyWitness(null, hashes[i], witnesses[i], net_fee, out long fee))

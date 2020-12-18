@@ -25,7 +25,7 @@ namespace Neo.UnitTests.SmartContract.Native
             _snapshot.PersistingBlock = new Block() { Index = 0 };
 
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, _snapshot.PersistingBlock, _snapshot, 0);
-            NativeContract.Management.OnPersist(engine);
+            NativeContract.ContractManagement.OnPersist(engine);
         }
 
         [TestMethod]
@@ -208,6 +208,98 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
             ret.Should().BeOfType<VM.Types.Integer>();
             ret.GetInteger().Should().Be(1);
+        }
+
+        [TestMethod]
+        public void Check_SetBaseExecFee()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            // Fake blockchain
+
+            snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
+            snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
+
+            NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
+
+            // Without signature
+
+            var ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(),
+                "setExecFeeFactor", new ContractParameter(ContractParameterType.Integer) { Value = 50 });
+            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.GetBoolean().Should().BeFalse();
+
+            ret = NativeContract.Policy.Call(snapshot, "getExecFeeFactor");
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetInteger().Should().Be(30);
+
+            // With signature, wrong value
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                    "setExecFeeFactor", new ContractParameter(ContractParameterType.Integer) { Value = 100500 });
+            });
+
+            ret = NativeContract.Policy.Call(snapshot, "getExecFeeFactor");
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetInteger().Should().Be(30);
+
+            // Proper set
+            ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                "setExecFeeFactor", new ContractParameter(ContractParameterType.Integer) { Value = 50 });
+            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.GetBoolean().Should().BeTrue();
+
+            ret = NativeContract.Policy.Call(snapshot, "getExecFeeFactor");
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetInteger().Should().Be(50);
+        }
+
+        [TestMethod]
+        public void Check_SetStoragePrice()
+        {
+            var snapshot = Blockchain.Singleton.GetSnapshot();
+
+            // Fake blockchain
+
+            snapshot.PersistingBlock = new Block() { Index = 1000, PrevHash = UInt256.Zero };
+            snapshot.Blocks.Add(UInt256.Zero, new Neo.Ledger.TrimmedBlock() { NextConsensus = UInt160.Zero });
+
+            NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0));
+
+            // Without signature
+
+            var ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(),
+                "setStoragePrice", new ContractParameter(ContractParameterType.Integer) { Value = 100500 });
+            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.GetBoolean().Should().BeFalse();
+
+            ret = NativeContract.Policy.Call(snapshot, "getStoragePrice");
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetInteger().Should().Be(100000);
+
+            // With signature, wrong value
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                    "setStoragePrice", new ContractParameter(ContractParameterType.Integer) { Value = 100000000 });
+            });
+
+            ret = NativeContract.Policy.Call(snapshot, "getStoragePrice");
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetInteger().Should().Be(100000);
+
+            // Proper set
+            ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                "setStoragePrice", new ContractParameter(ContractParameterType.Integer) { Value = 300300 });
+            ret.Should().BeOfType<VM.Types.Boolean>();
+            ret.GetBoolean().Should().BeTrue();
+
+            ret = NativeContract.Policy.Call(snapshot, "getStoragePrice");
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetInteger().Should().Be(300300);
         }
 
         [TestMethod]

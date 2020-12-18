@@ -1,5 +1,3 @@
-#pragma warning disable IDE0051
-
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
@@ -12,15 +10,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Neo.SmartContract.Native.Designate
+namespace Neo.SmartContract.Native
 {
-    public sealed class DesignateContract : NativeContract
+    public sealed class RoleManagement : NativeContract
     {
-        public override string Name => "Designation";
         public override int Id => -5;
-        public override uint ActiveBlockIndex => 0;
 
-        internal DesignateContract()
+        internal RoleManagement()
         {
         }
 

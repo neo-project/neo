@@ -2,11 +2,11 @@ using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
-using Neo.SmartContract.Native.Tokens;
+using Neo.SmartContract.Native;
 using System;
 using System.Numerics;
 
-namespace Neo.UnitTests.SmartContract.Native.Tokens
+namespace Neo.UnitTests.SmartContract.Native
 {
     [TestClass]
     public class UT_Nep17Token : TestKit
@@ -80,9 +80,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
     public class TestNep17Token : Nep17Token<NeoToken.NeoAccountState>
     {
         public override int Id => 0x10000005;
-        public override string Name => "testNep17Token";
         public override string Symbol => throw new NotImplementedException();
         public override byte Decimals => 8;
-        public override uint ActiveBlockIndex => 0;
     }
 }

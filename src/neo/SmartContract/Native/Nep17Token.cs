@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
-namespace Neo.SmartContract.Native.Tokens
+namespace Neo.SmartContract.Native
 {
     public abstract class Nep17Token<TState> : NativeContract
         where TState : AccountState, new()
@@ -160,11 +160,11 @@ namespace Neo.SmartContract.Native.Tokens
 
             // Check if it's a wallet or smart contract
 
-            if (!callOnPayment || to is null || Management.GetContract(engine.Snapshot, to) is null) return;
+            if (!callOnPayment || to is null || ContractManagement.GetContract(engine.Snapshot, to) is null) return;
 
             // Call onPayment method (NEP-17)
 
-            engine.CallFromNativeContract(null, to, "onPayment", from?.ToArray() ?? StackItem.Null, amount, data);
+            engine.CallFromNativeContract(Hash, to, "onPayment", from?.ToArray() ?? StackItem.Null, amount, data);
         }
     }
 }

@@ -12,7 +12,7 @@ using System;
 using System.Linq;
 using System.Numerics;
 
-namespace Neo.UnitTests.SmartContract.Native.Tokens
+namespace Neo.UnitTests.SmartContract.Native
 {
     [TestClass]
     public class UT_GasToken
@@ -29,10 +29,10 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
         }
 
         [TestMethod]
-        public void Check_Name() => NativeContract.GAS.Name.Should().Be("GAS");
+        public void Check_Name() => NativeContract.GAS.Name.Should().Be(nameof(GasToken));
 
         [TestMethod]
-        public void Check_Symbol() => NativeContract.GAS.Symbol(_snapshot).Should().Be("gas");
+        public void Check_Symbol() => NativeContract.GAS.Symbol(_snapshot).Should().Be("GAS");
 
         [TestMethod]
         public void Check_Decimals() => NativeContract.GAS.Decimals(_snapshot).Should().Be(8);

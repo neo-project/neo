@@ -1,14 +1,10 @@
-using Akka.TestKit;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using Moq;
+using Neo.Consensus;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.Network.P2P;
-using Akka.Configuration;
-using Neo.Consensus;
+using System;
 
 namespace Neo.UnitTests.Consensus
 {

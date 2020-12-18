@@ -1,8 +1,5 @@
 using Neo.IO;
 using Neo.SmartContract.Manifest;
-using Neo.SmartContract.Native.Designate;
-using Neo.SmartContract.Native.Oracle;
-using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -22,19 +19,19 @@ namespace Neo.SmartContract.Native
         private readonly Dictionary<string, ContractMethodMetadata> methods = new Dictionary<string, ContractMethodMetadata>();
 
         public static IReadOnlyCollection<NativeContract> Contracts { get; } = contractsList;
-        public static ManagementContract Management { get; } = new ManagementContract();
+        public static ContractManagement ContractManagement { get; } = new ContractManagement();
         public static NeoToken NEO { get; } = new NeoToken();
         public static GasToken GAS { get; } = new GasToken();
         public static PolicyContract Policy { get; } = new PolicyContract();
         public static OracleContract Oracle { get; } = new OracleContract();
-        public static DesignateContract Designate { get; } = new DesignateContract();
+        public static RoleManagement RoleManagement { get; } = new RoleManagement();
 
-        public abstract string Name { get; }
+        public string Name => GetType().Name;
         public byte[] Script { get; }
         public UInt160 Hash { get; }
         public abstract int Id { get; }
         public ContractManifest Manifest { get; }
-        public abstract uint ActiveBlockIndex { get; }
+        public uint ActiveBlockIndex { get; }
 
         protected NativeContract()
         {
@@ -46,7 +43,6 @@ namespace Neo.SmartContract.Native
             }
             this.Hash = Helper.GetContractHash(UInt160.Zero, Script);
             List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
-            List<string> safeMethods = new List<string>();
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
             {
                 ContractMethodAttribute attribute = member.GetCustomAttribute<ContractMethodAttribute>();
@@ -56,9 +52,9 @@ namespace Neo.SmartContract.Native
                 {
                     Name = metadata.Name,
                     ReturnType = ToParameterType(metadata.Handler.ReturnType),
-                    Parameters = metadata.Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name }).ToArray()
+                    Parameters = metadata.Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name }).ToArray(),
+                    Safe = (attribute.RequiredCallFlags & ~CallFlags.ReadOnly) == 0
                 });
-                if ((attribute.RequiredCallFlags & ~CallFlags.ReadOnly) == 0) safeMethods.Add(metadata.Name);
                 methods.Add(metadata.Name, metadata);
             }
             this.Manifest = new ContractManifest
@@ -73,9 +69,10 @@ namespace Neo.SmartContract.Native
                 },
                 Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<UInt160>.Create(),
-                SafeMethods = WildcardContainer<string>.Create(safeMethods.ToArray()),
                 Extra = null
             };
+            if (ProtocolSettings.Default.NativeActivations.TryGetValue(Name, out uint activationIndex))
+                this.ActiveBlockIndex = activationIndex;
             contractsList.Add(this);
             contractsNameDictionary.Add(Name, this);
             contractsHashDictionary.Add(Hash, this);

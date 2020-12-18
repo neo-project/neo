@@ -6,7 +6,6 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
-using Neo.SmartContract.Native.Designate;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -14,7 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
-namespace Neo.SmartContract.Native.Oracle
+namespace Neo.SmartContract.Native
 {
     public sealed class OracleContract : NativeContract
     {
@@ -30,8 +29,6 @@ namespace Neo.SmartContract.Native.Oracle
         private const long OracleRequestPrice = 0_50000000;
 
         public override int Id => -4;
-        public override string Name => "Oracle";
-        public override uint ActiveBlockIndex => 0;
 
         internal OracleContract()
         {
@@ -96,7 +93,7 @@ namespace Neo.SmartContract.Native.Oracle
             if (request == null) throw new ArgumentException("Oracle request was not found");
             engine.SendNotification(Hash, "OracleResponse", new VM.Types.Array { response.Id, request.OriginalTxid.ToArray() });
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.Limits.MaxStackSize, engine.Limits.MaxItemSize, engine.ReferenceCounter);
-            engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, userData, (int)response.Code, response.Result);
+            engine.CallFromNativeContract(Hash, request.CallbackContract, request.CallbackMethod, request.Url, userData, (int)response.Code, response.Result);
         }
 
         private UInt256 GetOriginalTxid(ApplicationEngine engine)
@@ -158,7 +155,7 @@ namespace Neo.SmartContract.Native.Oracle
                 if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
 
                 //Mint GAS for oracle nodes
-                nodes ??= Designate.GetDesignatedByRole(engine.Snapshot, Role.Oracle, engine.Snapshot.PersistingBlock.Index).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
+                nodes ??= RoleManagement.GetDesignatedByRole(engine.Snapshot, Role.Oracle, engine.Snapshot.PersistingBlock.Index).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
                 if (nodes.Length > 0)
                 {
                     int index = (int)(response.Id % (ulong)nodes.Length);
@@ -180,7 +177,7 @@ namespace Neo.SmartContract.Native.Oracle
             //Check the arguments
             if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength
                 || (filter != null && Utility.StrictUTF8.GetByteCount(filter) > MaxFilterLength)
-                || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength
+                || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength || callback.StartsWith('_')
                 || gasForResponse < 0_10000000)
                 throw new ArgumentException();
 
@@ -194,7 +191,7 @@ namespace Neo.SmartContract.Native.Oracle
             item_id.Value = BitConverter.GetBytes(id);
 
             //Put the request to storage
-            if (Management.GetContract(engine.Snapshot, engine.CallingScriptHash) is null)
+            if (ContractManagement.GetContract(engine.Snapshot, engine.CallingScriptHash) is null)
                 throw new InvalidOperationException();
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Request).Add(item_id.Value), new StorageItem(new OracleRequest
             {
