@@ -38,7 +38,7 @@ namespace Neo.SmartContract
 
         private void CallContractInternal(UInt160 contractHash, string method, Array args, CallFlags flags, ReturnTypeConvention convention)
         {
-            ContractState contract = NativeContract.Management.GetContract(Snapshot, contractHash);
+            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
             if (md is null) throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
@@ -49,7 +49,7 @@ namespace Neo.SmartContract
             }
             else
             {
-                ContractState currentContract = NativeContract.Management.GetContract(Snapshot, CurrentScriptHash);
+                ContractState currentContract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
                 if (currentContract?.CanCall(contract, method) == false)
                     throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contractHash} From Contract {CurrentScriptHash}");
             }
@@ -101,7 +101,7 @@ namespace Neo.SmartContract
 
         protected internal bool IsStandardContract(UInt160 hash)
         {
-            ContractState contract = NativeContract.Management.GetContract(Snapshot, hash);
+            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, hash);
 
             // It's a stored contract
 

@@ -151,7 +151,7 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
-        internal static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas)
+        public static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas)
         {
             if (gas < 0) return false;
             if (gas > MaxVerificationGas) gas = MaxVerificationGas;
@@ -185,7 +185,7 @@ namespace Neo.SmartContract
 
                 if (verification.Length == 0)
                 {
-                    ContractState cs = NativeContract.Management.GetContract(snapshot, hash);
+                    ContractState cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (cs is null) return false;
                     if (engine.LoadContract(cs, "verify", callFlags, true) is null)
                         return false;
