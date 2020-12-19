@@ -17,10 +17,13 @@ namespace Neo.SmartContract.Callbacks
             this.ParametersCount = parametersCount;
         }
 
-        public override void LoadContext(ApplicationEngine engine, Array args)
+        public override void LoadContext(ApplicationEngine engine)
         {
-            engine.LoadContext(context.Clone(pointer), true);
-            for (int i = args.Count - 1; i >= 0; i--)
+            StackItem[] args = new StackItem[ParametersCount];
+            for (int i = 0; i < args.Length; i++)
+                args[i] = engine.Pop();
+            engine.LoadClonedContext(context.Clone(pointer));
+            for (int i = args.Length - 1; i >= 0; i--)
                 engine.Push(args[i]);
         }
     }

@@ -99,7 +99,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, 0);
-            engine.LoadScript(testNativeContract.Script, CallFlags.All, testNativeContract.Hash);
+            engine.LoadScript(testNativeContract.Script, callFlags: CallFlags.All, scriptHash: testNativeContract.Hash);
 
             ByteString method1 = new ByteString(System.Text.Encoding.Default.GetBytes("wrongMethod"));
             VMArray args1 = new VMArray();
@@ -129,7 +129,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestTestCall()
         {
-            ApplicationEngine engine = testNativeContract.TestCall("System.Blockchain.GetHeight", 0);
+            ApplicationEngine engine = testNativeContract.TestCall("System.Blockchain.GetHeight", false, 0);
             engine.ResultStack.Should().BeEmpty();
         }
     }

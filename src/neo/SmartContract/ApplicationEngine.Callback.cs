@@ -1,7 +1,5 @@
 using Neo.SmartContract.Callbacks;
 using Neo.VM.Types;
-using System;
-using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
 {
@@ -12,11 +10,9 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Callback_CreateFromSyscall = Register("System.Callback.CreateFromSyscall", nameof(CreateCallbackFromSyscall), 1 << 4, CallFlags.None, false);
         public static readonly InteropDescriptor System_Callback_Invoke = Register("System.Callback.Invoke", nameof(InvokeCallback), 1 << 15, CallFlags.AllowCall, false);
 
-        protected internal void InvokeCallback(CallbackBase callback, Array args)
+        protected internal void InvokeCallback(CallbackBase callback)
         {
-            if (args.Count != callback.ParametersCount)
-                throw new InvalidOperationException();
-            callback.LoadContext(this, args);
+            callback.LoadContext(this);
             if (callback is SyscallCallback syscallCallback)
                 OnSysCall(syscallCallback.Method);
         }

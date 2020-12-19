@@ -55,14 +55,12 @@ namespace Neo.UnitTests.SmartContract.Callbacks
             var data = new MethodCallback(engine, contract.Hash, "test");
 
             Assert.AreEqual(0, engine.CurrentContext.EvaluationStack.Count);
-            var array = new VM.Types.Array();
 
-            data.LoadContext(engine, array);
+            data.LoadContext(engine);
 
             Assert.AreEqual(4, engine.CurrentContext.EvaluationStack.Count);
             Assert.AreEqual("9bc4860bb936abf262d7a51f74b4304833fee3b2", engine.Pop<VM.Types.ByteString>().GetSpan().ToHexString());
             Assert.AreEqual("test", engine.Pop<VM.Types.ByteString>().GetString());
-            Assert.IsTrue(engine.Pop() == array);
         }
     }
 }

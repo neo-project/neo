@@ -3,7 +3,6 @@ using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using System;
 using System.Linq;
-using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Callbacks
 {
@@ -15,7 +14,7 @@ namespace Neo.SmartContract.Callbacks
         public override int ParametersCount => method.Parameters.Length;
 
         public MethodCallback(ApplicationEngine engine, UInt160 hash, string method)
-            : base(ApplicationEngine.System_Contract_CallEx, false)
+            : base(ApplicationEngine.System_Contract_Call, false)
         {
             if (method.StartsWith('_')) throw new ArgumentException();
             this.contract = NativeContract.ContractManagement.GetContract(engine.Snapshot, hash);
@@ -25,10 +24,11 @@ namespace Neo.SmartContract.Callbacks
             this.method = this.contract.Manifest.Abi.Methods.First(p => p.Name == method);
         }
 
-        public override void LoadContext(ApplicationEngine engine, Array args)
+        public override void LoadContext(ApplicationEngine engine)
         {
+            engine.Push(ParametersCount);
+            engine.Push(method.ReturnType == ContractParameterType.Void ? 0 : 1);
             engine.Push((byte)CallFlags.All);
-            engine.Push(args);
             engine.Push(method.Name);
             engine.Push(contract.Hash.ToArray());
         }

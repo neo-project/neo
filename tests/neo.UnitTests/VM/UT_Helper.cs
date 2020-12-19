@@ -52,7 +52,7 @@ namespace Neo.UnitTests.VMT
         {
             //format:(byte)0x10+(byte)OpCode.NEWARRAY+(string)operation+(Uint160)scriptHash+(uint)InteropService.System_Contract_Call
             ScriptBuilder sb = new ScriptBuilder();
-            sb.EmitAppCall(UInt160.Zero, "AAAAA");
+            sb.EmitDynamicCall(UInt160.Zero, "AAAAA", false);
             byte[] tempArray = new byte[37];
             tempArray[0] = (byte)OpCode.PUSH15;
             tempArray[1] = (byte)OpCode.PUSH0;
@@ -63,7 +63,7 @@ namespace Neo.UnitTests.VMT
             tempArray[10] = (byte)OpCode.PUSHDATA1;
             tempArray[11] = 0x14;//scriptHash.Length
             Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 12, 20);//operation.data
-            uint api = ApplicationEngine.System_Contract_CallEx;
+            uint api = ApplicationEngine.System_Contract_Call;
             tempArray[32] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 33, 4);//api.data
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -116,7 +116,7 @@ namespace Neo.UnitTests.VMT
         {
             //format:(ContractParameter[])ContractParameter+(byte)OpCode.PACK+(string)operation+(Uint160)scriptHash+(uint)InteropService.System_Contract_Call
             ScriptBuilder sb = new ScriptBuilder();
-            sb.EmitAppCall(UInt160.Zero, "AAAAA", new ContractParameter[] { new ContractParameter(ContractParameterType.Integer) });
+            sb.EmitDynamicCall(UInt160.Zero, "AAAAA", false, new ContractParameter[] { new ContractParameter(ContractParameterType.Integer) });
             byte[] tempArray = new byte[38];
             tempArray[0] = (byte)OpCode.PUSH15;
             tempArray[1] = (byte)OpCode.PUSH0;
@@ -128,7 +128,7 @@ namespace Neo.UnitTests.VMT
             tempArray[11] = (byte)OpCode.PUSHDATA1;
             tempArray[12] = 0x14;//scriptHash.Length
             Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 13, 20);//operation.data
-            uint api = ApplicationEngine.System_Contract_CallEx;
+            uint api = ApplicationEngine.System_Contract_Call;
             tempArray[33] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 34, 4);//api.data
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -139,7 +139,7 @@ namespace Neo.UnitTests.VMT
         {
             //format:(object[])args+(byte)OpCode.PACK+(string)operation+(Uint160)scriptHash+(uint)InteropService.System_Contract_Call
             ScriptBuilder sb = new ScriptBuilder();
-            sb.EmitAppCall(UInt160.Zero, "AAAAA", true);
+            sb.EmitDynamicCall(UInt160.Zero, "AAAAA", false, true);
             byte[] tempArray = new byte[38];
             tempArray[0] = (byte)OpCode.PUSH15;
             tempArray[1] = (byte)OpCode.PUSH1;//arg
@@ -151,7 +151,7 @@ namespace Neo.UnitTests.VMT
             tempArray[11] = (byte)OpCode.PUSHDATA1;
             tempArray[12] = 0x14;//scriptHash.Length
             Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 13, 20);//operation.data
-            uint api = ApplicationEngine.System_Contract_CallEx;
+            uint api = ApplicationEngine.System_Contract_Call;
             tempArray[33] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 34, 4);//api.data
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
@@ -160,7 +160,7 @@ namespace Neo.UnitTests.VMT
         [TestMethod]
         public void TestMakeScript()
         {
-            byte[] testScript = NativeContract.GAS.Hash.MakeScript("balanceOf", UInt160.Zero);
+            byte[] testScript = NativeContract.GAS.Hash.MakeScript("balanceOf", true, UInt160.Zero);
 
             Assert.AreEqual("1f0c14000000000000000000000000000000000000000011c00c0962616c616e63654f660c14fbedfe2ed2226592b648c4da97b9c9cd5dc1a6a641eef40cdb",
                             testScript.ToHexString());

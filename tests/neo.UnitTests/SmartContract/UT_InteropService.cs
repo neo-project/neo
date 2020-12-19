@@ -89,7 +89,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Call script
 
-                script.EmitAppCall(scriptHash2, "test", "testEvent2", 1);
+                script.EmitDynamicCall(scriptHash2, "test", true, "testEvent2", 1);
 
                 // Drop return
 
@@ -141,7 +141,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Call script
 
-                script.EmitAppCall(scriptHash2, "test", "testEvent2", 1);
+                script.EmitDynamicCall(scriptHash2, "test", true, "testEvent2", 1);
 
                 // Drop return
 
@@ -224,7 +224,7 @@ namespace Neo.UnitTests.SmartContract
             engine.Snapshot.AddContract(contract.Hash, contract);
 
             using ScriptBuilder scriptB = new ScriptBuilder();
-            scriptB.EmitAppCall(contract.Hash, "test", 0, 1);
+            scriptB.EmitDynamicCall(contract.Hash, "test", true, 0, 1);
             engine.LoadScript(scriptB.ToArray());
 
             Assert.AreEqual(VMState.HALT, engine.Execute());

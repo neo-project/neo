@@ -1,5 +1,4 @@
 using System;
-using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Callbacks
 {
@@ -15,10 +14,8 @@ namespace Neo.SmartContract.Callbacks
                 throw new InvalidOperationException("This SYSCALL is not allowed for creating callback.");
         }
 
-        public override void LoadContext(ApplicationEngine engine, Array args)
+        public override void LoadContext(ApplicationEngine engine)
         {
-            for (int i = args.Count - 1; i >= 0; i--)
-                engine.Push(args[i]);
         }
     }
 }
