@@ -65,7 +65,7 @@ namespace Neo.SmartContract
         protected internal IIterator Find(StorageContext context, byte[] prefix)
         {
             byte[] prefix_key = StorageKey.CreateSearchPrefix(context.Id, prefix);
-            StorageIterator iterator = new StorageIterator(Snapshot.Storages.Find(prefix_key).Where(p => p.Key.Key.AsSpan().StartsWith(prefix)).GetEnumerator());
+            StorageIterator iterator = new StorageIterator(Snapshot.Storages.Find(prefix_key).GetEnumerator());
             Disposables.Add(iterator);
             return iterator;
         }
@@ -73,7 +73,7 @@ namespace Neo.SmartContract
         protected internal IEnumerator FindKeys(StorageContext context, byte[] prefix, byte removePrefix)
         {
             byte[] prefix_key = StorageKey.CreateSearchPrefix(context.Id, prefix);
-            StorageKeyEnumerator enumerator = new StorageKeyEnumerator(Snapshot.Storages.Find(prefix_key).Select(p => p.Key).Where(p => p.Key.AsSpan().StartsWith(prefix)).GetEnumerator(), removePrefix);
+            StorageKeyEnumerator enumerator = new StorageKeyEnumerator(Snapshot.Storages.Find(prefix_key).Select(p => p.Key).GetEnumerator(), removePrefix);
             Disposables.Add(enumerator);
             return enumerator;
         }
