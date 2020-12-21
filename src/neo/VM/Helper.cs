@@ -48,35 +48,38 @@ namespace Neo.VM
 
         public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation)
         {
+            sb.EmitPush(CallFlags.All);
             sb.EmitPush(0);
             sb.Emit(OpCode.NEWARRAY);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            sb.EmitSysCall(ApplicationEngine.System_Contract_CallEx);
             return sb;
         }
 
         public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params ContractParameter[] args)
         {
+            sb.EmitPush(CallFlags.All);
             for (int i = args.Length - 1; i >= 0; i--)
                 sb.EmitPush(args[i]);
             sb.EmitPush(args.Length);
             sb.Emit(OpCode.PACK);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            sb.EmitSysCall(ApplicationEngine.System_Contract_CallEx);
             return sb;
         }
 
         public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params object[] args)
         {
+            sb.EmitPush(CallFlags.All);
             for (int i = args.Length - 1; i >= 0; i--)
                 sb.EmitPush(args[i]);
             sb.EmitPush(args.Length);
             sb.Emit(OpCode.PACK);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            sb.EmitSysCall(ApplicationEngine.System_Contract_CallEx);
             return sb;
         }
 

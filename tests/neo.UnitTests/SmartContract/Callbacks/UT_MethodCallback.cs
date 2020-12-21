@@ -59,7 +59,7 @@ namespace Neo.UnitTests.SmartContract.Callbacks
 
             data.LoadContext(engine, array);
 
-            Assert.AreEqual(3, engine.CurrentContext.EvaluationStack.Count);
+            Assert.AreEqual(4, engine.CurrentContext.EvaluationStack.Count);
             Assert.AreEqual("9bc4860bb936abf262d7a51f74b4304833fee3b2", engine.Pop<VM.Types.ByteString>().GetSpan().ToHexString());
             Assert.AreEqual("test", engine.Pop<VM.Types.ByteString>().GetString());
             Assert.IsTrue(engine.Pop() == array);
