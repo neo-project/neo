@@ -43,6 +43,7 @@ namespace Neo.Network.P2P
             {
                 var payload = (PluginPayload)msg.Payload;
                 if (!knownHashes.Add(payload.Hash)) return;
+                if (!Blockchain.Singleton.IsWhiteListed(payload.Witness.ScriptHash)) return;
                 if (!payload.Verify(Blockchain.Singleton.GetSnapshot())) return;
             }
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
