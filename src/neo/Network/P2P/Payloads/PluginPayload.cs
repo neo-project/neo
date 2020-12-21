@@ -1,9 +1,6 @@
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.SmartContract.Native;
-using Neo.SmartContract.Native.Designate;
 using System;
 using System.IO;
 
@@ -14,7 +11,6 @@ namespace Neo.Network.P2P.Payloads
         public string Plugin;
         public byte MessageType;
         public byte[] Data;
-        public PluginPayloadRole WitnessRole;
         public Witness Witness;
 
         private UInt256 _hash = null;
@@ -33,7 +29,6 @@ namespace Neo.Network.P2P.Payloads
         public int Size =>
             Plugin.GetVarSize() +   //Plugin
             sizeof(byte) +          //MessageType
-            sizeof(PluginPayloadRole) +          //WitnessRole
             Data.GetVarSize() +     //Data
             1 + Witness.Size;       //Witness
 
@@ -62,30 +57,11 @@ namespace Neo.Network.P2P.Payloads
             Plugin = reader.ReadVarString(32);
             MessageType = reader.ReadByte();
             Data = reader.ReadVarBytes(ushort.MaxValue);
-            WitnessRole = (PluginPayloadRole)reader.ReadByte();
-            if (!Enum.IsDefined(typeof(PluginPayloadRole), WitnessRole)) throw new FormatException();
         }
 
         UInt160[] IVerifiable.GetScriptHashesForVerifying(StoreView snapshot)
         {
-            switch (WitnessRole)
-            {
-                case PluginPayloadRole.Committee:
-                    {
-                        return new[] { NativeContract.NEO.GetCommitteeAddress(snapshot) };
-                    }
-                case PluginPayloadRole.Validators:
-                    {
-                        return new[] { Blockchain.GetConsensusAddress(NativeContract.NEO.GetNextBlockValidators(snapshot)) };
-                    }
-                case PluginPayloadRole.StateValidator:
-                case PluginPayloadRole.Oracle:
-                    {
-                        return new[] { Blockchain.GetConsensusAddress(NativeContract.Designate.GetDesignatedByRole(snapshot, (Role)WitnessRole, snapshot.Height)) };
-                    }
-            }
-
-            throw new ArgumentException();
+            return new[] { Witness.ScriptHash }; // This address should be checked by consumer
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -99,7 +75,6 @@ namespace Neo.Network.P2P.Payloads
             writer.WriteVarString(Plugin);
             writer.Write(MessageType);
             writer.WriteVarBytes(Data);
-            writer.Write((byte)WitnessRole);
         }
 
         public bool Verify(StoreView snapshot)
