@@ -1,4 +1,5 @@
 using Neo.IO;
+using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using System;
@@ -79,6 +80,7 @@ namespace Neo.Network.P2P.Payloads
 
         public bool Verify(StoreView snapshot)
         {
+            if (!Blockchain.Singleton.IsWhiteListed(Witness.ScriptHash)) return false;
             return this.VerifyWitnesses(snapshot, 0_02000000);
         }
     }
