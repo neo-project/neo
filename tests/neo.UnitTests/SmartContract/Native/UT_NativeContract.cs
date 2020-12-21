@@ -32,7 +32,6 @@ namespace Neo.UnitTests.SmartContract.Native
 
         private class DummyNative : NativeContract
         {
-            public override string Name => "Dummy";
             public override int Id => 1;
 
             [ContractMethod(0, CallFlags.None)]
@@ -100,7 +99,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, 0);
-            engine.LoadScript(testNativeContract.Script);
+            engine.LoadScript(testNativeContract.Script, CallFlags.All, testNativeContract.Hash);
 
             ByteString method1 = new ByteString(System.Text.Encoding.Default.GetBytes("wrongMethod"));
             VMArray args1 = new VMArray();
@@ -108,7 +107,7 @@ namespace Neo.UnitTests.SmartContract.Native
             engine.CurrentContext.EvaluationStack.Push(method1);
             Assert.ThrowsException<KeyNotFoundException>(() => testNativeContract.Invoke(engine));
 
-            ByteString method2 = new ByteString(System.Text.Encoding.Default.GetBytes("onPersist"));
+            ByteString method2 = new ByteString(System.Text.Encoding.Default.GetBytes("helloWorld"));
             VMArray args2 = new VMArray();
             engine.CurrentContext.EvaluationStack.Push(args2);
             engine.CurrentContext.EvaluationStack.Push(method2);
@@ -116,15 +115,15 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void TestOnPersistWithArgs()
+        public void TestTrigger()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
 
             ApplicationEngine engine1 = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0);
-            Assert.ThrowsException<InvalidOperationException>(() => testNativeContract.TestOnPersist(engine1));
+            Assert.ThrowsException<InvalidOperationException>(() => testNativeContract.TestTrigger(engine1));
 
             ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, 0);
-            testNativeContract.TestOnPersist(engine2);
+            testNativeContract.TestTrigger(engine2);
         }
 
         [TestMethod]
@@ -137,13 +136,14 @@ namespace Neo.UnitTests.SmartContract.Native
 
     public class TestNativeContract : NativeContract
     {
-        public override string Name => "test";
-
         public override int Id => 0x10000006;
 
-        public void TestOnPersist(ApplicationEngine engine)
+        [ContractMethod(0, CallFlags.None)]
+        public string HelloWorld => "hello world";
+
+        public void TestTrigger(ApplicationEngine engine)
         {
-            OnPersist(engine);
+            if (engine.Trigger != TriggerType.OnPersist) throw new InvalidOperationException();
         }
     }
 }

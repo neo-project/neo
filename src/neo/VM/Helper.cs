@@ -15,6 +15,30 @@ namespace Neo.VM
 {
     public static class Helper
     {
+        public static ScriptBuilder CreateArray<T>(this ScriptBuilder sb, IReadOnlyList<T> list = null)
+        {
+            if (list is null || list.Count == 0)
+                return sb.Emit(OpCode.NEWARRAY0);
+            for (int i = list.Count - 1; i >= 0; i--)
+                sb.EmitPush(list[i]);
+            sb.EmitPush(list.Count);
+            return sb.Emit(OpCode.PACK);
+        }
+
+        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder sb, IReadOnlyDictionary<TKey, TValue> map = null)
+        {
+            sb.Emit(OpCode.NEWMAP);
+            if (map != null)
+                foreach (var p in map)
+                {
+                    sb.Emit(OpCode.DUP);
+                    sb.EmitPush(p.Key);
+                    sb.EmitPush(p.Value);
+                    sb.Emit(OpCode.SETITEM);
+                }
+            return sb;
+        }
+
         public static ScriptBuilder Emit(this ScriptBuilder sb, params OpCode[] ops)
         {
             foreach (OpCode op in ops)
@@ -24,35 +48,38 @@ namespace Neo.VM
 
         public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation)
         {
+            sb.EmitPush(CallFlags.All);
             sb.EmitPush(0);
             sb.Emit(OpCode.NEWARRAY);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            sb.EmitSysCall(ApplicationEngine.System_Contract_CallEx);
             return sb;
         }
 
         public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params ContractParameter[] args)
         {
+            sb.EmitPush(CallFlags.All);
             for (int i = args.Length - 1; i >= 0; i--)
                 sb.EmitPush(args[i]);
             sb.EmitPush(args.Length);
             sb.Emit(OpCode.PACK);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            sb.EmitSysCall(ApplicationEngine.System_Contract_CallEx);
             return sb;
         }
 
         public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params object[] args)
         {
+            sb.EmitPush(CallFlags.All);
             for (int i = args.Length - 1; i >= 0; i--)
                 sb.EmitPush(args[i]);
             sb.EmitPush(args.Length);
             sb.Emit(OpCode.PACK);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            sb.EmitSysCall(ApplicationEngine.System_Contract_CallEx);
             return sb;
         }
 
@@ -63,45 +90,48 @@ namespace Neo.VM
 
         public static ScriptBuilder EmitPush(this ScriptBuilder sb, ContractParameter parameter)
         {
-            switch (parameter.Type)
-            {
-                case ContractParameterType.Signature:
-                case ContractParameterType.ByteArray:
-                    sb.EmitPush((byte[])parameter.Value);
-                    break;
-                case ContractParameterType.Boolean:
-                    sb.EmitPush((bool)parameter.Value);
-                    break;
-                case ContractParameterType.Integer:
-                    if (parameter.Value is BigInteger bi)
-                        sb.EmitPush(bi);
-                    else
-                        sb.EmitPush((BigInteger)typeof(BigInteger).GetConstructor(new[] { parameter.Value.GetType() }).Invoke(new[] { parameter.Value }));
-                    break;
-                case ContractParameterType.Hash160:
-                    sb.EmitPush((UInt160)parameter.Value);
-                    break;
-                case ContractParameterType.Hash256:
-                    sb.EmitPush((UInt256)parameter.Value);
-                    break;
-                case ContractParameterType.PublicKey:
-                    sb.EmitPush((ECPoint)parameter.Value);
-                    break;
-                case ContractParameterType.String:
-                    sb.EmitPush((string)parameter.Value);
-                    break;
-                case ContractParameterType.Array:
-                    {
-                        IList<ContractParameter> parameters = (IList<ContractParameter>)parameter.Value;
-                        for (int i = parameters.Count - 1; i >= 0; i--)
-                            sb.EmitPush(parameters[i]);
-                        sb.EmitPush(parameters.Count);
-                        sb.Emit(OpCode.PACK);
-                    }
-                    break;
-                default:
-                    throw new ArgumentException();
-            }
+            if (parameter.Value is null)
+                sb.Emit(OpCode.PUSHNULL);
+            else
+                switch (parameter.Type)
+                {
+                    case ContractParameterType.Signature:
+                    case ContractParameterType.ByteArray:
+                        sb.EmitPush((byte[])parameter.Value);
+                        break;
+                    case ContractParameterType.Boolean:
+                        sb.EmitPush((bool)parameter.Value);
+                        break;
+                    case ContractParameterType.Integer:
+                        if (parameter.Value is BigInteger bi)
+                            sb.EmitPush(bi);
+                        else
+                            sb.EmitPush((BigInteger)typeof(BigInteger).GetConstructor(new[] { parameter.Value.GetType() }).Invoke(new[] { parameter.Value }));
+                        break;
+                    case ContractParameterType.Hash160:
+                        sb.EmitPush((UInt160)parameter.Value);
+                        break;
+                    case ContractParameterType.Hash256:
+                        sb.EmitPush((UInt256)parameter.Value);
+                        break;
+                    case ContractParameterType.PublicKey:
+                        sb.EmitPush((ECPoint)parameter.Value);
+                        break;
+                    case ContractParameterType.String:
+                        sb.EmitPush((string)parameter.Value);
+                        break;
+                    case ContractParameterType.Array:
+                        {
+                            IList<ContractParameter> parameters = (IList<ContractParameter>)parameter.Value;
+                            for (int i = parameters.Count - 1; i >= 0; i--)
+                                sb.EmitPush(parameters[i]);
+                            sb.EmitPush(parameters.Count);
+                            sb.Emit(OpCode.PACK);
+                        }
+                        break;
+                    default:
+                        throw new ArgumentException();
+                }
             return sb;
         }
 
@@ -198,7 +228,7 @@ namespace Neo.VM
             switch (item)
             {
                 case Array array:
-                    context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Default);
+                    context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
                     if (!context.Add(array)) throw new InvalidOperationException();
                     json["value"] = new JArray(array.Select(p => ToJson(p, context)));
                     break;
@@ -213,7 +243,7 @@ namespace Neo.VM
                     json["value"] = integer.GetInteger().ToString();
                     break;
                 case Map map:
-                    context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Default);
+                    context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
                     if (!context.Add(map)) throw new InvalidOperationException();
                     json["value"] = new JArray(map.Select(p =>
                     {

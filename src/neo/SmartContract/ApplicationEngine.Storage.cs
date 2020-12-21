@@ -1,5 +1,6 @@
 using Neo.Ledger;
 using Neo.SmartContract.Iterators;
+using Neo.SmartContract.Native;
 using System;
 using System.Linq;
 
@@ -7,23 +8,21 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public const long StoragePrice = 100000;
         public const int MaxStorageKeySize = 64;
         public const int MaxStorageValueSize = ushort.MaxValue;
 
-        public static readonly InteropDescriptor System_Storage_GetContext = Register("System.Storage.GetContext", nameof(GetStorageContext), 0_00000400, CallFlags.AllowStates, false);
-        public static readonly InteropDescriptor System_Storage_GetReadOnlyContext = Register("System.Storage.GetReadOnlyContext", nameof(GetReadOnlyContext), 0_00000400, CallFlags.AllowStates, false);
-        public static readonly InteropDescriptor System_Storage_AsReadOnly = Register("System.Storage.AsReadOnly", nameof(AsReadOnly), 0_00000400, CallFlags.AllowStates, false);
-        public static readonly InteropDescriptor System_Storage_Get = Register("System.Storage.Get", nameof(Get), 0_01000000, CallFlags.AllowStates, false);
-        public static readonly InteropDescriptor System_Storage_Find = Register("System.Storage.Find", nameof(Find), 0_01000000, CallFlags.AllowStates, false);
-        public static readonly InteropDescriptor System_Storage_Put = Register("System.Storage.Put", nameof(Put), 0, CallFlags.AllowModifyStates, false);
-        public static readonly InteropDescriptor System_Storage_PutEx = Register("System.Storage.PutEx", nameof(PutEx), 0, CallFlags.AllowModifyStates, false);
-        public static readonly InteropDescriptor System_Storage_Delete = Register("System.Storage.Delete", nameof(Delete), 1 * StoragePrice, CallFlags.AllowModifyStates, false);
+        public static readonly InteropDescriptor System_Storage_GetContext = Register("System.Storage.GetContext", nameof(GetStorageContext), 1 << 4, CallFlags.ReadStates, false);
+        public static readonly InteropDescriptor System_Storage_GetReadOnlyContext = Register("System.Storage.GetReadOnlyContext", nameof(GetReadOnlyContext), 1 << 4, CallFlags.ReadStates, false);
+        public static readonly InteropDescriptor System_Storage_AsReadOnly = Register("System.Storage.AsReadOnly", nameof(AsReadOnly), 1 << 4, CallFlags.ReadStates, false);
+        public static readonly InteropDescriptor System_Storage_Get = Register("System.Storage.Get", nameof(Get), 1 << 15, CallFlags.ReadStates, false);
+        public static readonly InteropDescriptor System_Storage_Find = Register("System.Storage.Find", nameof(Find), 1 << 15, CallFlags.ReadStates, false);
+        public static readonly InteropDescriptor System_Storage_Put = Register("System.Storage.Put", nameof(Put), 0, CallFlags.WriteStates, false);
+        public static readonly InteropDescriptor System_Storage_PutEx = Register("System.Storage.PutEx", nameof(PutEx), 0, CallFlags.WriteStates, false);
+        public static readonly InteropDescriptor System_Storage_Delete = Register("System.Storage.Delete", nameof(Delete), 0, CallFlags.WriteStates, false);
 
         protected internal StorageContext GetStorageContext()
         {
-            ContractState contract = Snapshot.Contracts.TryGet(CurrentScriptHash);
-            if (!contract.HasStorage) throw new InvalidOperationException();
+            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
             return new StorageContext
             {
                 Id = contract.Id,
@@ -33,8 +32,7 @@ namespace Neo.SmartContract
 
         protected internal StorageContext GetReadOnlyContext()
         {
-            ContractState contract = Snapshot.Contracts.TryGet(CurrentScriptHash);
-            if (!contract.HasStorage) throw new InvalidOperationException();
+            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
             return new StorageContext
             {
                 Id = contract.Id,
@@ -116,6 +114,7 @@ namespace Neo.SmartContract
         protected internal void Delete(StorageContext context, byte[] key)
         {
             if (context.IsReadOnly) throw new ArgumentException();
+            AddGas(StoragePrice);
             StorageKey skey = new StorageKey
             {
                 Id = context.Id,

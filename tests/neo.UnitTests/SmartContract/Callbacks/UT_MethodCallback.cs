@@ -3,6 +3,7 @@ using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.SmartContract.Callbacks;
 using Neo.SmartContract.Manifest;
+using Neo.UnitTests.Extensions;
 using System;
 
 namespace Neo.UnitTests.SmartContract.Callbacks
@@ -41,24 +42,24 @@ namespace Neo.UnitTests.SmartContract.Callbacks
                     },
                 },
                 Script = new byte[] { 1, 2, 3 },
+                Hash = new byte[] { 1, 2, 3 }.ToScriptHash()
             };
-            contract.Manifest.Abi.Hash = contract.ScriptHash;
             engine.LoadScript(contract.Script);
-            snapshot.Contracts.Add(contract.ScriptHash, contract);
+            engine.Snapshot.AddContract(contract.Hash, contract);
 
-            Assert.ThrowsException<InvalidOperationException>(() => new MethodCallback(engine, contract.ScriptHash, "test"));
+            Assert.ThrowsException<InvalidOperationException>(() => new MethodCallback(engine, contract.Hash, "test"));
 
             contract.Manifest.Permissions = new ContractPermission[] {
-                new ContractPermission() { Contract = ContractPermissionDescriptor.Create(contract.ScriptHash),
+                new ContractPermission() { Contract = ContractPermissionDescriptor.Create(contract.Hash),
                 Methods= WildcardContainer<string>.Create("test") } };
-            var data = new MethodCallback(engine, contract.ScriptHash, "test");
+            var data = new MethodCallback(engine, contract.Hash, "test");
 
             Assert.AreEqual(0, engine.CurrentContext.EvaluationStack.Count);
             var array = new VM.Types.Array();
 
             data.LoadContext(engine, array);
 
-            Assert.AreEqual(3, engine.CurrentContext.EvaluationStack.Count);
+            Assert.AreEqual(4, engine.CurrentContext.EvaluationStack.Count);
             Assert.AreEqual("9bc4860bb936abf262d7a51f74b4304833fee3b2", engine.Pop<VM.Types.ByteString>().GetSpan().ToHexString());
             Assert.AreEqual("test", engine.Pop<VM.Types.ByteString>().GetString());
             Assert.IsTrue(engine.Pop() == array);

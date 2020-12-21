@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
@@ -11,30 +12,35 @@ using System;
 using System.Linq;
 using System.Numerics;
 
-namespace Neo.UnitTests.SmartContract.Native.Tokens
+namespace Neo.UnitTests.SmartContract.Native
 {
     [TestClass]
     public class UT_GasToken
     {
+        private StoreView _snapshot;
+
         [TestInitialize]
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
+
+            _snapshot = Blockchain.Singleton.GetSnapshot();
+            _snapshot.PersistingBlock = new Block() { Index = 0 };
         }
 
         [TestMethod]
-        public void Check_Name() => NativeContract.GAS.Name().Should().Be("GAS");
+        public void Check_Name() => NativeContract.GAS.Name.Should().Be(nameof(GasToken));
 
         [TestMethod]
-        public void Check_Symbol() => NativeContract.GAS.Symbol().Should().Be("gas");
+        public void Check_Symbol() => NativeContract.GAS.Symbol(_snapshot).Should().Be("GAS");
 
         [TestMethod]
-        public void Check_Decimals() => NativeContract.GAS.Decimals().Should().Be(8);
+        public void Check_Decimals() => NativeContract.GAS.Decimals(_snapshot).Should().Be(8);
 
         [TestMethod]
         public void Check_BalanceOfTransferAndBurn()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = _snapshot.Clone();
             snapshot.PersistingBlock = new Block() { Index = 1000 };
 
             byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
@@ -44,7 +50,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             var keyCount = snapshot.Storages.GetChangeSet().Count();
 
             var supply = NativeContract.GAS.TotalSupply(snapshot);
-            supply.Should().Be(3000000025000000); // 3000000000000000 + 25000000 (neo holder reward)
+            supply.Should().Be(3000000050000000); // 3000000000000000 + 50000000 (neo holder reward)
 
             // Check unclaim
 
@@ -68,7 +74,7 @@ namespace Neo.UnitTests.SmartContract.Native.Tokens
             unclaim.State.Should().BeTrue();
 
             supply = NativeContract.GAS.TotalSupply(snapshot);
-            supply.Should().Be(3000050025000000);
+            supply.Should().Be(3000050050000000);
 
             snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 3); // Gas
 

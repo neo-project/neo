@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
 using System;
@@ -162,6 +164,54 @@ namespace Neo.UnitTests.SmartContract
             expectedArray[36] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_VerifyWithECDsaSecp256r1), 0, expectedArray, 37, 4);
             CollectionAssert.AreEqual(expectedArray, script);
+        }
+
+        [TestMethod]
+        public void TestSignatureRedeemScriptFee()
+        {
+            byte[] privateKey = new byte[32];
+            RandomNumberGenerator rng = RandomNumberGenerator.Create();
+            rng.GetBytes(privateKey);
+            KeyPair key = new KeyPair(privateKey);
+            byte[] verification = Contract.CreateSignatureRedeemScript(key.PublicKey);
+            byte[] invocation = new ScriptBuilder().EmitPush(UInt160.Zero).ToArray();
+
+            var fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.OpCodePrices[OpCode.SYSCALL] + ApplicationEngine.ECDsaVerifyPrice);
+
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, null))
+            {
+                engine.LoadScript(invocation.Concat(verification).ToArray(), CallFlags.None);
+                engine.Execute();
+                engine.GasConsumed.Should().Be(fee);
+            }
+        }
+
+        [TestMethod]
+        public void TestCreateMultiSigRedeemScriptFee()
+        {
+            byte[] privateKey1 = new byte[32];
+            RandomNumberGenerator rng1 = RandomNumberGenerator.Create();
+            rng1.GetBytes(privateKey1);
+            KeyPair key1 = new KeyPair(privateKey1);
+            byte[] privateKey2 = new byte[32];
+            RandomNumberGenerator rng2 = RandomNumberGenerator.Create();
+            rng2.GetBytes(privateKey2);
+            KeyPair key2 = new KeyPair(privateKey2);
+            Neo.Cryptography.ECC.ECPoint[] publicKeys = new Neo.Cryptography.ECC.ECPoint[2];
+            publicKeys[0] = key1.PublicKey;
+            publicKeys[1] = key2.PublicKey;
+            publicKeys = publicKeys.OrderBy(p => p).ToArray();
+            byte[] verification = Contract.CreateMultiSigRedeemScript(2, publicKeys);
+            byte[] invocation = new ScriptBuilder().EmitPush(UInt160.Zero).EmitPush(UInt160.Zero).ToArray();
+
+            long fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (2 + 2) + ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.OpCodePrices[OpCode.SYSCALL] + ApplicationEngine.ECDsaVerifyPrice * 2);
+
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, null))
+            {
+                engine.LoadScript(invocation.Concat(verification).ToArray(), CallFlags.None);
+                engine.Execute();
+                engine.GasConsumed.Should().Be(fee);
+            }
         }
     }
 }

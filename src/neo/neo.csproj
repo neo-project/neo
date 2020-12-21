@@ -4,9 +4,9 @@
     <Copyright>2015-2020 The Neo Project</Copyright>
     <AssemblyTitle>Neo</AssemblyTitle>
     <VersionPrefix>3.0.0</VersionPrefix>
-    <VersionSuffix>preview3</VersionSuffix>
+    <VersionSuffix>preview4</VersionSuffix>
     <Authors>The Neo Project</Authors>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>Neo</AssemblyName>
     <PackageId>Neo</PackageId>
@@ -21,14 +21,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka" Version="1.4.5" />
+    <PackageReference Include="Akka" Version="1.4.12" />
     <PackageReference Include="BouncyCastle.NetCore" Version="1.8.8" />
-    <PackageReference Include="K4os.Compression.LZ4" Version="1.1.11" />
+    <PackageReference Include="K4os.Compression.LZ4" Version="1.2.6" />
     <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.WebSockets" Version="2.2.1" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.1.3" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.3" />
-    <PackageReference Include="Neo.VM" Version="3.0.0-CI00251" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="5.0.0" />
+    <PackageReference Include="Neo.VM" Version="3.0.0-CI00256" />
   </ItemGroup>
 
 </Project>

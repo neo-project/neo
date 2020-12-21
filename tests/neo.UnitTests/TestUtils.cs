@@ -18,29 +18,27 @@ namespace Neo.UnitTests
     {
         public static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
 
-        public static ContractManifest CreateDefaultManifest(UInt160 hash)
+        public static ContractManifest CreateDefaultManifest()
         {
             return new ContractManifest()
             {
+                Name = "testManifest",
                 Groups = new ContractGroup[0],
-                Features = ContractFeatures.NoProperty,
                 SupportedStandards = Array.Empty<string>(),
                 Abi = new ContractAbi()
                 {
-                    Hash = hash,
                     Events = new ContractEventDescriptor[0],
                     Methods = new ContractMethodDescriptor[0]
                 },
                 Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<UInt160>.Create(),
-                SafeMethods = WildcardContainer<string>.Create(),
                 Extra = null
             };
         }
 
-        public static ContractManifest CreateManifest(UInt160 hash, string method, ContractParameterType returnType, params ContractParameterType[] parameterTypes)
+        public static ContractManifest CreateManifest(string method, ContractParameterType returnType, params ContractParameterType[] parameterTypes)
         {
-            ContractManifest manifest = CreateDefaultManifest(hash);
+            ContractManifest manifest = CreateDefaultManifest();
             manifest.Abi.Methods = new ContractMethodDescriptor[]
             {
                 new ContractMethodDescriptor()
@@ -114,7 +112,8 @@ namespace Neo.UnitTests
             {
                 Id = 0x43000000,
                 Script = new byte[] { 0x01, 0x01, 0x01, 0x01 },
-                Manifest = CreateManifest(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), method, ContractParameterType.Any, Enumerable.Repeat(ContractParameterType.Any, parametersCount).ToArray())
+                Hash = new byte[] { 0x01, 0x01, 0x01, 0x01 }.ToScriptHash(),
+                Manifest = CreateManifest(method, ContractParameterType.Any, Enumerable.Repeat(ContractParameterType.Any, parametersCount).ToArray())
             };
         }
 
@@ -124,7 +123,7 @@ namespace Neo.UnitTests
             {
                 Id = 1,
                 Script = script,
-                Manifest = CreateDefaultManifest(script.ToScriptHash())
+                Manifest = CreateDefaultManifest()
             };
         }
 

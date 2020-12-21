@@ -1,11 +1,11 @@
 #pragma warning disable IDE0051
 
 using Neo.Cryptography;
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
-using Neo.SmartContract.Native.Designate;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -13,7 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
-namespace Neo.SmartContract.Native.Oracle
+namespace Neo.SmartContract.Native
 {
     public sealed class OracleContract : NativeContract
     {
@@ -29,14 +29,61 @@ namespace Neo.SmartContract.Native.Oracle
         private const long OracleRequestPrice = 0_50000000;
 
         public override int Id => -4;
-        public override string Name => "Oracle";
 
         internal OracleContract()
         {
-            Manifest.Features = ContractFeatures.HasStorage;
+            var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
+            {
+                new ContractEventDescriptor
+                {
+                    Name = "OracleRequest",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "Id",
+                            Type = ContractParameterType.Integer
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "RequestContract",
+                            Type = ContractParameterType.Hash160
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "Url",
+                            Type = ContractParameterType.String
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "Filter",
+                            Type = ContractParameterType.String
+                        }
+                    }
+                },
+                new ContractEventDescriptor
+                {
+                    Name = "OracleResponse",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "Id",
+                            Type = ContractParameterType.Integer
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "OriginalTx",
+                            Type = ContractParameterType.Hash256
+                        }
+                    }
+                }
+            };
+
+            Manifest.Abi.Events = events.ToArray();
         }
 
-        [ContractMethod(0, CallFlags.AllowModifyStates)]
+        [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowCall | CallFlags.AllowNotify)]
         private void Finish(ApplicationEngine engine)
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
@@ -44,8 +91,9 @@ namespace Neo.SmartContract.Native.Oracle
             if (response == null) throw new ArgumentException("Oracle response was not found");
             OracleRequest request = GetRequest(engine.Snapshot, response.Id);
             if (request == null) throw new ArgumentException("Oracle request was not found");
+            engine.SendNotification(Hash, "OracleResponse", new VM.Types.Array { response.Id, request.OriginalTxid.ToArray() });
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.Limits.MaxStackSize, engine.Limits.MaxItemSize, engine.ReferenceCounter);
-            engine.CallFromNativeContract(null, request.CallbackContract, request.CallbackMethod, request.Url, userData, (int)response.Code, response.Result);
+            engine.CallFromNativeContract(Hash, request.CallbackContract, request.CallbackMethod, request.Url, userData, (int)response.Code, response.Result);
         }
 
         private UInt256 GetOriginalTxid(ApplicationEngine engine)
@@ -67,12 +115,12 @@ namespace Neo.SmartContract.Native.Oracle
             return snapshot.Storages.Find(new KeyBuilder(Id, Prefix_Request).ToArray()).Select(p => (BitConverter.ToUInt64(p.Key.Key, 1), p.Value.GetInteroperable<OracleRequest>()));
         }
 
-        public IEnumerable<OracleRequest> GetRequestsByUrl(StoreView snapshot, string url)
+        public IEnumerable<(ulong, OracleRequest)> GetRequestsByUrl(StoreView snapshot, string url)
         {
             IdList list = snapshot.Storages.TryGet(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)))?.GetInteroperable<IdList>();
             if (list is null) yield break;
             foreach (ulong id in list)
-                yield return snapshot.Storages[CreateStorageKey(Prefix_Request).Add(id)].GetInteroperable<OracleRequest>();
+                yield return (id, snapshot.Storages[CreateStorageKey(Prefix_Request).Add(id)].GetInteroperable<OracleRequest>());
         }
 
         private static byte[] GetUrlHash(string url)
@@ -85,9 +133,8 @@ namespace Neo.SmartContract.Native.Oracle
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BitConverter.GetBytes(0ul)));
         }
 
-        protected override void PostPersist(ApplicationEngine engine)
+        internal override void PostPersist(ApplicationEngine engine)
         {
-            base.PostPersist(engine);
             (UInt160 Account, BigInteger GAS)[] nodes = null;
             foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
             {
@@ -97,7 +144,8 @@ namespace Neo.SmartContract.Native.Oracle
 
                 //Remove the request from storage
                 StorageKey key = CreateStorageKey(Prefix_Request).Add(response.Id);
-                OracleRequest request = engine.Snapshot.Storages[key].GetInteroperable<OracleRequest>();
+                OracleRequest request = engine.Snapshot.Storages.TryGet(key)?.GetInteroperable<OracleRequest>();
+                if (request == null) continue;
                 engine.Snapshot.Storages.Delete(key);
 
                 //Remove the id from IdList
@@ -107,7 +155,7 @@ namespace Neo.SmartContract.Native.Oracle
                 if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
 
                 //Mint GAS for oracle nodes
-                nodes ??= NativeContract.Designate.GetDesignatedByRole(engine.Snapshot, Role.Oracle).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
+                nodes ??= RoleManagement.GetDesignatedByRole(engine.Snapshot, Role.Oracle, engine.Snapshot.PersistingBlock.Index).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
                 if (nodes.Length > 0)
                 {
                     int index = (int)(response.Id % (ulong)nodes.Length);
@@ -118,24 +166,24 @@ namespace Neo.SmartContract.Native.Oracle
             {
                 foreach (var (account, gas) in nodes)
                 {
-                    if (gas.Sign > 0) GAS.Mint(engine, account, gas);
+                    if (gas.Sign > 0) GAS.Mint(engine, account, gas, false);
                 }
             }
         }
 
-        [ContractMethod(OracleRequestPrice, CallFlags.AllowModifyStates)]
+        [ContractMethod(OracleRequestPrice, CallFlags.WriteStates | CallFlags.AllowNotify)]
         private void Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForResponse)
         {
             //Check the arguments
             if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength
                 || (filter != null && Utility.StrictUTF8.GetByteCount(filter) > MaxFilterLength)
-                || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength
+                || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength || callback.StartsWith('_')
                 || gasForResponse < 0_10000000)
                 throw new ArgumentException();
 
             //Mint gas for the response
             engine.AddGas(gasForResponse);
-            GAS.Mint(engine, Hash, gasForResponse);
+            GAS.Mint(engine, Hash, gasForResponse, false);
 
             //Increase the request id
             StorageItem item_id = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_RequestId));
@@ -143,7 +191,7 @@ namespace Neo.SmartContract.Native.Oracle
             item_id.Value = BitConverter.GetBytes(id);
 
             //Put the request to storage
-            if (engine.Snapshot.Contracts.TryGet(engine.CallingScriptHash) is null)
+            if (ContractManagement.GetContract(engine.Snapshot, engine.CallingScriptHash) is null)
                 throw new InvalidOperationException();
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Request).Add(item_id.Value), new StorageItem(new OracleRequest
             {
@@ -161,6 +209,8 @@ namespace Neo.SmartContract.Native.Oracle
             if (list.Count >= 256)
                 throw new InvalidOperationException("There are too many pending responses for this url");
             list.Add(id);
+
+            engine.SendNotification(Hash, "OracleRequest", new VM.Types.Array { id, engine.CallingScriptHash.ToArray(), url, filter ?? StackItem.Null });
         }
 
         [ContractMethod(0_01000000, CallFlags.None)]

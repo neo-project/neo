@@ -1,6 +1,6 @@
 using Neo.IO;
-using Neo.Ledger;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using System;
 using System.Linq;
 using Array = Neo.VM.Types.Array;
@@ -15,21 +15,22 @@ namespace Neo.SmartContract.Callbacks
         public override int ParametersCount => method.Parameters.Length;
 
         public MethodCallback(ApplicationEngine engine, UInt160 hash, string method)
-            : base(ApplicationEngine.System_Contract_Call, false)
+            : base(ApplicationEngine.System_Contract_CallEx, false)
         {
             if (method.StartsWith('_')) throw new ArgumentException();
-            this.contract = engine.Snapshot.Contracts[hash];
-            ContractManifest currentManifest = engine.Snapshot.Contracts.TryGet(engine.CurrentScriptHash)?.Manifest;
-            if (currentManifest != null && !currentManifest.CanCall(this.contract.Manifest, method))
+            this.contract = NativeContract.ContractManagement.GetContract(engine.Snapshot, hash);
+            ContractState currentContract = NativeContract.ContractManagement.GetContract(engine.Snapshot, engine.CurrentScriptHash);
+            if (currentContract?.CanCall(this.contract, method) == false)
                 throw new InvalidOperationException();
             this.method = this.contract.Manifest.Abi.Methods.First(p => p.Name == method);
         }
 
         public override void LoadContext(ApplicationEngine engine, Array args)
         {
+            engine.Push((byte)CallFlags.All);
             engine.Push(args);
             engine.Push(method.Name);
-            engine.Push(contract.ScriptHash.ToArray());
+            engine.Push(contract.Hash.ToArray());
         }
     }
 }
