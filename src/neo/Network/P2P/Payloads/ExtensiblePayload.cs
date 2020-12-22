@@ -7,9 +7,9 @@ using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class PluginPayload : IVerifiable
+    public class ExtensiblePayload : IVerifiable
     {
-        public string Plugin;
+        public string Receiver;
         public byte MessageType;
         public byte[] Data;
         public Witness Witness;
@@ -28,7 +28,7 @@ namespace Neo.Network.P2P.Payloads
         }
 
         public int Size =>
-            Plugin.GetVarSize() +   //Plugin
+            Receiver.GetVarSize() + //Receiver
             sizeof(byte) +          //MessageType
             Data.GetVarSize() +     //Data
             1 + Witness.Size;       //Witness
@@ -55,7 +55,7 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.DeserializeUnsigned(BinaryReader reader)
         {
-            Plugin = reader.ReadVarString(32);
+            Receiver = reader.ReadVarString(32);
             MessageType = reader.ReadByte();
             Data = reader.ReadVarBytes(ushort.MaxValue);
         }
@@ -73,7 +73,7 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
         {
-            writer.WriteVarString(Plugin);
+            writer.WriteVarString(Receiver);
             writer.Write(MessageType);
             writer.WriteVarBytes(Data);
         }

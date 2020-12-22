@@ -39,9 +39,9 @@ namespace Neo.Network.P2P
 
         private void OnMessage(Message msg)
         {
-            if (msg.Command == MessageCommand.Plugin)
+            if (msg.Command == MessageCommand.Extensible)
             {
-                var payload = (PluginPayload)msg.Payload;
+                var payload = (ExtensiblePayload)msg.Payload;
                 if (!knownHashes.Add(payload.Hash)) return;
                 if (!payload.Verify(Blockchain.Singleton.GetSnapshot())) return;
             }
@@ -113,7 +113,7 @@ namespace Neo.Network.P2P
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                         OnInventoryReceived((Transaction)msg.Payload);
                     break;
-                case MessageCommand.Plugin:
+                case MessageCommand.Extensible:
                     OnPluginMessage(msg);
                     break;
                 case MessageCommand.Verack:
