@@ -19,19 +19,19 @@ namespace Neo.SmartContract.Native
         private readonly Dictionary<string, ContractMethodMetadata> methods = new Dictionary<string, ContractMethodMetadata>();
 
         public static IReadOnlyCollection<NativeContract> Contracts { get; } = contractsList;
-        public static ManagementContract Management { get; } = new ManagementContract();
+        public static ContractManagement ContractManagement { get; } = new ContractManagement();
         public static NeoToken NEO { get; } = new NeoToken();
         public static GasToken GAS { get; } = new GasToken();
         public static PolicyContract Policy { get; } = new PolicyContract();
         public static OracleContract Oracle { get; } = new OracleContract();
-        public static DesignationContract Designation { get; } = new DesignationContract();
+        public static RoleManagement RoleManagement { get; } = new RoleManagement();
 
         public string Name => GetType().Name;
         public byte[] Script { get; }
         public UInt160 Hash { get; }
         public abstract int Id { get; }
         public ContractManifest Manifest { get; }
-        public abstract uint ActiveBlockIndex { get; }
+        public uint ActiveBlockIndex { get; }
 
         protected NativeContract()
         {
@@ -71,6 +71,8 @@ namespace Neo.SmartContract.Native
                 Trusts = WildcardContainer<UInt160>.Create(),
                 Extra = null
             };
+            if (ProtocolSettings.Default.NativeActivations.TryGetValue(Name, out uint activationIndex))
+                this.ActiveBlockIndex = activationIndex;
             contractsList.Add(this);
             contractsNameDictionary.Add(Name, this);
             contractsHashDictionary.Add(Hash, this);

@@ -12,14 +12,58 @@ using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
-    public sealed class ManagementContract : NativeContract
+    public sealed class ContractManagement : NativeContract
     {
         public override int Id => 0;
-        public override uint ActiveBlockIndex => 0;
 
         private const byte Prefix_MinimumDeploymentFee = 20;
         private const byte Prefix_NextAvailableId = 15;
         private const byte Prefix_Contract = 8;
+
+        internal ContractManagement()
+        {
+            var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
+            {
+                new ContractEventDescriptor
+                {
+                    Name = "Deploy",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "Hash",
+                            Type = ContractParameterType.Hash160
+                        }
+                    }
+                },
+                new ContractEventDescriptor
+                {
+                    Name = "Update",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "Hash",
+                            Type = ContractParameterType.Hash160
+                        }
+                    }
+                },
+                new ContractEventDescriptor
+                {
+                    Name = "Destory",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "Hash",
+                            Type = ContractParameterType.Hash160
+                        }
+                    }
+                }
+            };
+
+            Manifest.Abi.Events = events.ToArray();
+        }
 
         private int GetNextAvailableId(StoreView snapshot)
         {
@@ -31,7 +75,7 @@ namespace Neo.SmartContract.Native
 
         internal override void Initialize(ApplicationEngine engine)
         {
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MinimumDeploymentFee), new StorageItem(100_00000000));
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_MinimumDeploymentFee), new StorageItem(10_00000000));
         }
 
         internal override void OnPersist(ApplicationEngine engine)
@@ -77,7 +121,7 @@ namespace Neo.SmartContract.Native
             return snapshot.Storages.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>());
         }
 
-        [ContractMethod(0, CallFlags.WriteStates)]
+        [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowNotify)]
         private ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             if (!(engine.ScriptContainer is Transaction tx))
@@ -116,10 +160,12 @@ namespace Neo.SmartContract.Native
             if (md != null)
                 engine.CallFromNativeContract(Hash, hash, md.Name, false);
 
+            engine.SendNotification(Hash, "Deploy", new VM.Types.Array { contract.Hash.ToArray() });
+
             return contract;
         }
 
-        [ContractMethod(0, CallFlags.WriteStates)]
+        [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowNotify)]
         private void Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             if (nefFile is null && manifest is null) throw new ArgumentException();
@@ -154,9 +200,10 @@ namespace Neo.SmartContract.Native
                 if (md != null)
                     engine.CallFromNativeContract(Hash, contract.Hash, md.Name, true);
             }
+            engine.SendNotification(Hash, "Update", new VM.Types.Array { contract.Hash.ToArray() });
         }
 
-        [ContractMethod(0_01000000, CallFlags.WriteStates)]
+        [ContractMethod(0_01000000, CallFlags.WriteStates | CallFlags.AllowNotify)]
         private void Destroy(ApplicationEngine engine)
         {
             UInt160 hash = engine.CallingScriptHash;
@@ -166,6 +213,7 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.Storages.Delete(ckey);
             foreach (var (key, _) in engine.Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)))
                 engine.Snapshot.Storages.Delete(key);
+            engine.SendNotification(Hash, "Destory", new VM.Types.Array { hash.ToArray() });
         }
     }
 }

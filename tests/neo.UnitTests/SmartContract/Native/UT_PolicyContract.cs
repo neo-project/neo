@@ -25,7 +25,7 @@ namespace Neo.UnitTests.SmartContract.Native
             _snapshot.PersistingBlock = new Block() { Index = 0 };
 
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, _snapshot.PersistingBlock, _snapshot, 0);
-            NativeContract.Management.OnPersist(engine);
+            NativeContract.ContractManagement.OnPersist(engine);
         }
 
         [TestMethod]

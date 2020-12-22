@@ -217,7 +217,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Storages.Add(storageKey, storageItem);
             state.UpdateCounter.Should().Be(0);
             snapshot.UpdateContract(state.Hash, nef.ToArray(), manifest.ToJson().ToByteArray(false));
-            var ret = NativeContract.Management.GetContract(snapshot, state.Hash);
+            var ret = NativeContract.ContractManagement.GetContract(snapshot, state.Hash);
             snapshot.Storages.Find(BitConverter.GetBytes(state.Id)).ToList().Count().Should().Be(1);
             ret.UpdateCounter.Should().Be(1);
             ret.Id.Should().Be(state.Id);
@@ -324,25 +324,6 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void TestEnumerator_Concat()
-        {
-            var engine = GetEngine();
-            var arr1 = new VMArray {
-                new byte[]{ 0x01 },
-                new byte[]{ 0x02 }
-            };
-            var arr2 = new VMArray {
-                new byte[]{ 0x03 },
-                new byte[]{ 0x04 }
-            };
-            var wrapper1 = new ArrayWrapper(arr1);
-            var wrapper2 = new ArrayWrapper(arr2);
-            var ret = engine.ConcatEnumerators(wrapper1, wrapper2);
-            ret.Next().Should().BeTrue();
-            ret.Value().GetSpan().ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
-        }
-
-        [TestMethod]
         public void TestIterator_Create()
         {
             var engine = GetEngine();
@@ -406,25 +387,6 @@ namespace Neo.UnitTests.SmartContract
             var wrapper = new ArrayWrapper(arr);
             var ret = engine.IteratorValues(wrapper);
             ret.Next();
-            ret.Value().GetSpan().ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
-        }
-
-        [TestMethod]
-        public void TestIterator_Concat()
-        {
-            var engine = GetEngine();
-            var arr1 = new VMArray {
-                new byte[]{ 0x01 },
-                new byte[]{ 0x02 }
-            };
-            var arr2 = new VMArray {
-                new byte[]{ 0x03 },
-                new byte[]{ 0x04 }
-            };
-            var wrapper1 = new ArrayWrapper(arr1);
-            var wrapper2 = new ArrayWrapper(arr2);
-            var ret = engine.ConcatIterators(wrapper1, wrapper2);
-            ret.Next().Should().BeTrue();
             ret.Value().GetSpan().ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
         }
 

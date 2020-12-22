@@ -10,7 +10,6 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 1 << 15, CallFlags.AllowCall, false);
         public static readonly InteropDescriptor System_Contract_CallEx = Register("System.Contract.CallEx", nameof(CallContractEx), 1 << 15, CallFlags.AllowCall, false);
         public static readonly InteropDescriptor System_Contract_CallNative = Register("System.Contract.CallNative", nameof(CallNativeContract), 0, CallFlags.None, false);
         public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 1 << 10, CallFlags.ReadStates, true);
@@ -23,13 +22,9 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Contract_NativeOnPersist = Register("System.Contract.NativeOnPersist", nameof(NativeOnPersist), 0, CallFlags.WriteStates, false);
         public static readonly InteropDescriptor System_Contract_NativePostPersist = Register("System.Contract.NativePostPersist", nameof(NativePostPersist), 0, CallFlags.WriteStates, false);
 
-        protected internal void CallContract(UInt160 contractHash, string method, Array args)
-        {
-            CallContractEx(contractHash, method, args, CallFlags.All);
-        }
-
         protected internal void CallContractEx(UInt160 contractHash, string method, Array args, CallFlags callFlags)
         {
+            if (method.StartsWith('_')) throw new ArgumentException($"Invalid Method Name: {method}");
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
             CallContractInternal(contractHash, method, args, callFlags, ReturnTypeConvention.EnsureNotEmpty);
@@ -37,9 +32,7 @@ namespace Neo.SmartContract
 
         private void CallContractInternal(UInt160 contractHash, string method, Array args, CallFlags flags, ReturnTypeConvention convention)
         {
-            if (method.StartsWith('_')) throw new ArgumentException($"Invalid Method Name: {method}");
-
-            ContractState contract = NativeContract.Management.GetContract(Snapshot, contractHash);
+            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
             if (md is null) throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
@@ -50,7 +43,7 @@ namespace Neo.SmartContract
             }
             else
             {
-                ContractState currentContract = NativeContract.Management.GetContract(Snapshot, CurrentScriptHash);
+                ContractState currentContract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
                 if (currentContract?.CanCall(contract, method) == false)
                     throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contractHash} From Contract {CurrentScriptHash}");
             }
@@ -102,7 +95,7 @@ namespace Neo.SmartContract
 
         protected internal bool IsStandardContract(UInt160 hash)
         {
-            ContractState contract = NativeContract.Management.GetContract(Snapshot, hash);
+            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, hash);
 
             // It's a stored contract
 
