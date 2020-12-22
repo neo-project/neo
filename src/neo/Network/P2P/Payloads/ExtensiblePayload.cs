@@ -80,7 +80,7 @@ namespace Neo.Network.P2P.Payloads
 
         public bool Verify(StoreView snapshot)
         {
-            if (!Blockchain.Singleton.IsWhiteListed(Witness.ScriptHash)) return false;
+            if (!Blockchain.Singleton.IsExtensibleWitnessWhiteListed(Witness.ScriptHash)) return false;
             return this.VerifyWitnesses(snapshot, 0_02000000);
         }
     }

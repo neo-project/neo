@@ -15,6 +15,7 @@ using Neo.VM;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 
@@ -67,7 +68,7 @@ namespace Neo.Ledger
         private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new Dictionary<uint, UnverifiedBlocksList>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
-        private HashSet<UInt160> addressWhiteList = new HashSet<UInt160>();
+        private ImmutableHashSet<UInt160> extensibleWitnessWhiteList;
 
         public IStore Store { get; }
         public ReadOnlyView View { get; }
@@ -474,7 +475,6 @@ namespace Neo.Ledger
         {
             base.PostStop();
             currentSnapshot?.Dispose();
-            addressWhiteList.Clear();
         }
 
         public static Props Props(NeoSystem system, IStore store)
@@ -520,19 +520,17 @@ namespace Neo.Ledger
         private void UpdateCurrentSnapshot()
         {
             Interlocked.Exchange(ref currentSnapshot, GetSnapshot())?.Dispose();
-            HashSet<UInt160> whiteList = new HashSet<UInt160>
-            {
+            extensibleWitnessWhiteList = ImmutableHashSet.Create(
                 NativeContract.NEO.GetCommitteeAddress(currentSnapshot),
                 GetConsensusAddress(NativeContract.NEO.GetNextBlockValidators(currentSnapshot)),
                 GetConsensusAddress(NativeContract.RoleManagement.GetDesignatedByRole(currentSnapshot, Role.Oracle, currentSnapshot.Height)),
                 GetConsensusAddress(NativeContract.RoleManagement.GetDesignatedByRole(currentSnapshot, Role.StateValidator, currentSnapshot.Height))
-            };
-            Interlocked.Exchange(ref addressWhiteList, whiteList)?.Clear();
+            );
         }
 
-        internal bool IsWhiteListed(UInt160 address)
+        internal bool IsExtensibleWitnessWhiteListed(UInt160 address)
         {
-            return addressWhiteList.Contains(address);
+            return extensibleWitnessWhiteList.Contains(address);
         }
     }
 
