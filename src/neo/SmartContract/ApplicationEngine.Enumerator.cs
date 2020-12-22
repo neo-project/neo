@@ -11,7 +11,6 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Enumerator_Create = Register("System.Enumerator.Create", nameof(CreateEnumerator), 1 << 4, CallFlags.None, false);
         public static readonly InteropDescriptor System_Enumerator_Next = Register("System.Enumerator.Next", nameof(EnumeratorNext), 1 << 15, CallFlags.None, false);
         public static readonly InteropDescriptor System_Enumerator_Value = Register("System.Enumerator.Value", nameof(EnumeratorValue), 1 << 4, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Enumerator_Concat = Register("System.Enumerator.Concat", nameof(ConcatEnumerators), 1 << 4, CallFlags.None, false);
 
         protected internal IEnumerator CreateEnumerator(StackItem item)
         {
@@ -32,11 +31,6 @@ namespace Neo.SmartContract
         protected internal StackItem EnumeratorValue(IEnumerator enumerator)
         {
             return enumerator.Value();
-        }
-
-        protected internal IEnumerator ConcatEnumerators(IEnumerator first, IEnumerator second)
-        {
-            return new ConcatenatedEnumerator(first, second);
         }
     }
 }
