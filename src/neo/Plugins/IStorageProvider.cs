@@ -4,6 +4,6 @@ namespace Neo.Plugins
 {
     public interface IStorageProvider
     {
-        IStore GetStore();
+        IStore GetStore(string path);
     }
 }

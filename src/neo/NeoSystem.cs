@@ -22,6 +22,7 @@ namespace Neo
         internal IActorRef TaskManager { get; }
         public IActorRef Consensus { get; private set; }
 
+        private readonly string storage_engine;
         private readonly IStore store;
         private ChannelsConfig start_message = null;
         private bool suspend = false;
@@ -32,12 +33,11 @@ namespace Neo
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         }
 
-        public NeoSystem(string storageEngine = null)
+        public NeoSystem(string storageEngine = null, string storagePath = null)
         {
             Plugin.LoadPlugins(this);
-            this.store = string.IsNullOrEmpty(storageEngine) || storageEngine == nameof(MemoryStore)
-                ? new MemoryStore()
-                : Plugin.Storages[storageEngine].GetStore();
+            this.storage_engine = storageEngine;
+            this.store = LoadStore(storagePath);
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
@@ -67,6 +67,13 @@ namespace Neo
             inbox.Watch(actor);
             ActorSystem.Stop(actor);
             inbox.Receive(TimeSpan.FromMinutes(5));
+        }
+
+        public IStore LoadStore(string path)
+        {
+            return string.IsNullOrEmpty(storage_engine) || storage_engine == nameof(MemoryStore)
+                ? new MemoryStore()
+                : Plugin.Storages[storage_engine].GetStore(path);
         }
 
         internal void ResumeNodeStartup()
