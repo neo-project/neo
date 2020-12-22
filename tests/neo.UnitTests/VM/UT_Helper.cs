@@ -162,7 +162,7 @@ namespace Neo.UnitTests.VMT
         {
             byte[] testScript = NativeContract.GAS.Hash.MakeScript("balanceOf", UInt160.Zero);
 
-            Assert.AreEqual("1f0c14000000000000000000000000000000000000000011c00c0962616c616e63654f660c14fbedfe2ed2226592b648c4da97b9c9cd5dc1a6a641eef40cdb",
+            Assert.AreEqual("1f0c14000000000000000000000000000000000000000011c00c0962616c616e63654f660c141717ddafdd757eec365865b963473beb617f9a1441eef40cdb",
                             testScript.ToHexString());
         }
 

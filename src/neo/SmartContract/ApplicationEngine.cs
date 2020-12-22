@@ -194,7 +194,7 @@ namespace Neo.SmartContract
         public ExecutionContext LoadScript(Script script, CallFlags callFlags, UInt160 scriptHash = null, int initialPosition = 0)
         {
             // Create and configure context
-            ExecutionContext context = CreateContext(script, initialPosition);
+            ExecutionContext context = CreateContext(script, 0, -1, initialPosition);
             var state = context.GetState<ExecutionContextState>();
             state.CallFlags = callFlags;
             state.ScriptHash = scriptHash ?? ((byte[])script).ToScriptHash();
@@ -357,7 +357,7 @@ namespace Neo.SmartContract
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? CreateDummyBlock(snapshot);
             ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, gas);
             if (disposable != null) engine.Disposables.Add(disposable);
-            engine.LoadScript(script, offset);
+            engine.LoadScript(script, 0, -1, offset);
             engine.Execute();
             return engine;
         }
