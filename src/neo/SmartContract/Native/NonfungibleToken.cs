@@ -72,6 +72,21 @@ namespace Neo.SmartContract.Native
             PostTransfer(engine, null, token.Owner, token.Id);
         }
 
+        protected void Burn(ApplicationEngine engine, byte[] tokenId)
+        {
+            StorageKey key_token = CreateStorageKey(Prefix_Token).Add(tokenId);
+            TokenState token = engine.Snapshot.Storages.TryGet(key_token)?.GetInteroperable<TokenState>();
+            if (token is null) throw new InvalidOperationException();
+            engine.Snapshot.Storages.Delete(key_token);
+            StorageKey key_account = CreateStorageKey(Prefix_Account).Add(token.Owner);
+            NFTAccountState account = engine.Snapshot.Storages.GetAndChange(key_account).GetInteroperable<NFTAccountState>();
+            account.Remove(tokenId);
+            if (account.Balance.IsZero)
+                engine.Snapshot.Storages.Delete(key_account);
+            engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply)).Add(-1);
+            PostTransfer(engine, token.Owner, null, tokenId);
+        }
+
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public BigInteger TotalSupply(StoreView snapshot)
         {
