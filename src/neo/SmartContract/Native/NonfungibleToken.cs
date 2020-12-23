@@ -109,20 +109,30 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public BigInteger BalanceOf(StoreView snapshot, UInt160 owner)
         {
+            if (owner is null) throw new ArgumentNullException(nameof(owner));
             return snapshot.Storages.TryGet(CreateStorageKey(Prefix_Account).Add(owner))?.GetInteroperable<NFTAccountState>().Balance ?? BigInteger.Zero;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public IEnumerator TokensOf(StoreView snapshot, UInt160 owner)
         {
-            NFTAccountState account = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Account).Add(owner))?.GetInteroperable<NFTAccountState>();
-            IReadOnlyList<byte[]> tokens = account?.Tokens ?? (IReadOnlyList<byte[]>)System.Array.Empty<byte[]>();
-            return new ArrayWrapper(tokens.Select(p => (StackItem)p).ToArray());
+            if (owner is null)
+            {
+                var keys = snapshot.Storages.Find(new[] { Prefix_Token }).Select(p => p.Key);
+                return new StorageKeyEnumerator(keys.GetEnumerator(), 1);
+            }
+            else
+            {
+                NFTAccountState account = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Account).Add(owner))?.GetInteroperable<NFTAccountState>();
+                IReadOnlyList<byte[]> tokens = account?.Tokens ?? (IReadOnlyList<byte[]>)System.Array.Empty<byte[]>();
+                return new ArrayWrapper(tokens.Select(p => (StackItem)p).ToArray());
+            }
         }
 
         [ContractMethod(0_09000000, CallFlags.WriteStates | CallFlags.AllowNotify)]
         protected bool Transfer(ApplicationEngine engine, UInt160 to, byte[] tokenId)
         {
+            if (to is null) throw new ArgumentNullException(nameof(to));
             TokenState token = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Token).Add(tokenId))?.GetInteroperable<TokenState>();
             if (token is null) throw new ArgumentException();
             UInt160 from = token.Owner;
