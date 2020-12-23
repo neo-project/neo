@@ -95,7 +95,7 @@ namespace Neo.Network.P2P
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
             // Do not accept payload of type InventoryType.TX if not synced on best known HeaderHeight
-            if (payload.Type == InventoryType.TX && Blockchain.Singleton.Height < sessions.Values.Max(p => p.LastBlockIndex))
+            if (payload.Type == InventoryType.TX && sessions.Values.Where(p => p.LastBlockIndex > Blockchain.Singleton.Height).Count() > sessions.Count / 2)
                 return;
             HashSet<UInt256> hashes = new HashSet<UInt256>(payload.Hashes);
             // Remove all previously processed knownHashes from the list that is being requested
