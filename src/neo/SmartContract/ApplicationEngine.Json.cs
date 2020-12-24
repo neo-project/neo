@@ -5,8 +5,8 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static readonly InteropDescriptor System_Json_Serialize = Register("System.Json.Serialize", nameof(JsonSerialize), 1 << 12, CallFlags.None, true);
-        public static readonly InteropDescriptor System_Json_Deserialize = Register("System.Json.Deserialize", nameof(JsonDeserialize), 1 << 14, CallFlags.None, true);
+        public static readonly InteropDescriptor System_Json_Serialize = Register("System.Json.Serialize", nameof(JsonSerialize), 1 << 12, CallFlags.None);
+        public static readonly InteropDescriptor System_Json_Deserialize = Register("System.Json.Deserialize", nameof(JsonDeserialize), 1 << 14, CallFlags.None);
 
         protected internal byte[] JsonSerialize(StackItem item)
         {

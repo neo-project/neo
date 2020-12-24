@@ -8,11 +8,11 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static readonly InteropDescriptor System_Blockchain_GetHeight = Register("System.Blockchain.GetHeight", nameof(GetBlockchainHeight), 1 << 4, CallFlags.ReadStates, true);
-        public static readonly InteropDescriptor System_Blockchain_GetBlock = Register("System.Blockchain.GetBlock", nameof(GetBlock), 1 << 16, CallFlags.ReadStates, true);
-        public static readonly InteropDescriptor System_Blockchain_GetTransaction = Register("System.Blockchain.GetTransaction", nameof(GetTransaction), 1 << 15, CallFlags.ReadStates, true);
-        public static readonly InteropDescriptor System_Blockchain_GetTransactionHeight = Register("System.Blockchain.GetTransactionHeight", nameof(GetTransactionHeight), 1 << 15, CallFlags.ReadStates, true);
-        public static readonly InteropDescriptor System_Blockchain_GetTransactionFromBlock = Register("System.Blockchain.GetTransactionFromBlock", nameof(GetTransactionFromBlock), 1 << 15, CallFlags.ReadStates, true);
+        public static readonly InteropDescriptor System_Blockchain_GetHeight = Register("System.Blockchain.GetHeight", nameof(GetBlockchainHeight), 1 << 4, CallFlags.ReadStates);
+        public static readonly InteropDescriptor System_Blockchain_GetBlock = Register("System.Blockchain.GetBlock", nameof(GetBlock), 1 << 16, CallFlags.ReadStates);
+        public static readonly InteropDescriptor System_Blockchain_GetTransaction = Register("System.Blockchain.GetTransaction", nameof(GetTransaction), 1 << 15, CallFlags.ReadStates);
+        public static readonly InteropDescriptor System_Blockchain_GetTransactionHeight = Register("System.Blockchain.GetTransactionHeight", nameof(GetTransactionHeight), 1 << 15, CallFlags.ReadStates);
+        public static readonly InteropDescriptor System_Blockchain_GetTransactionFromBlock = Register("System.Blockchain.GetTransactionFromBlock", nameof(GetTransactionFromBlock), 1 << 15, CallFlags.ReadStates);
 
         protected internal uint GetBlockchainHeight()
         {

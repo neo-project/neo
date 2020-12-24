@@ -107,11 +107,6 @@ namespace Neo.SmartContract
             base.LoadContext(context);
         }
 
-        internal void LoadClonedContext(ExecutionContext context)
-        {
-            LoadContext(context);
-        }
-
         public ExecutionContext LoadContract(ContractState contract, string method, CallFlags callFlags, bool hasReturnValue, ushort pcount)
         {
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
@@ -274,11 +269,11 @@ namespace Neo.SmartContract
             };
         }
 
-        private static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags, bool allowCallback)
+        private static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags)
         {
             MethodInfo method = typeof(ApplicationEngine).GetMethod(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                 ?? typeof(ApplicationEngine).GetProperty(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).GetMethod;
-            InteropDescriptor descriptor = new InteropDescriptor(name, method, fixedPrice, requiredCallFlags, allowCallback);
+            InteropDescriptor descriptor = new InteropDescriptor(name, method, fixedPrice, requiredCallFlags);
             services ??= new Dictionary<uint, InteropDescriptor>();
             services.Add(descriptor.Hash, descriptor);
             return descriptor;
