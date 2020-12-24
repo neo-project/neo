@@ -73,6 +73,9 @@ namespace Neo.Network.P2P
                 case MessageCommand.Consensus:
                     OnInventoryReceived((ConsensusPayload)msg.Payload);
                     break;
+                case MessageCommand.Extensible:
+                    OnInventoryReceived((ExtensiblePayload)msg.Payload);
+                    break;
                 case MessageCommand.FilterAdd:
                     OnFilterAddMessageReceived((FilterAddPayload)msg.Payload);
                     break;
@@ -113,9 +116,6 @@ namespace Neo.Network.P2P
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                         OnInventoryReceived((Transaction)msg.Payload);
                     break;
-                case MessageCommand.Extensible:
-                    OnPluginMessage(msg);
-                    break;
                 case MessageCommand.Verack:
                 case MessageCommand.Version:
                     throw new ProtocolViolationException();
@@ -126,11 +126,6 @@ namespace Neo.Network.P2P
                 case MessageCommand.Reject:
                 default: break;
             }
-        }
-
-        private void OnPluginMessage(Message msg)
-        {
-            system.LocalNode.Tell(msg);
         }
 
         private void OnAddrMessageReceived(AddrPayload payload)

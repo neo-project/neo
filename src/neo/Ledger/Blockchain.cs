@@ -524,12 +524,9 @@ namespace Neo.Ledger
             var oracles = NativeContract.RoleManagement.GetDesignatedByRole(currentSnapshot, Role.Oracle, currentSnapshot.Height);
             var stateValidators = NativeContract.RoleManagement.GetDesignatedByRole(currentSnapshot, Role.StateValidator, currentSnapshot.Height);
             extensibleWitnessWhiteList = ImmutableHashSet.Create(
-                new UInt160[] {
-                    NativeContract.NEO.GetCommitteeAddress(currentSnapshot),
-                    GetConsensusAddress(validators),
-                    GetConsensusAddress(oracles),
-                    GetConsensusAddress(stateValidators)
-                }
+                new UInt160[] { NativeContract.NEO.GetCommitteeAddress(currentSnapshot), GetConsensusAddress(validators) }
+                .Concat(oracles.Length == 0 ? Array.Empty<UInt160>() : new UInt160[] { GetConsensusAddress(oracles) })
+                .Concat(stateValidators.Length == 0 ? Array.Empty<UInt160>() : new UInt160[] { GetConsensusAddress(stateValidators) })
                 .Concat(validators.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()))
                 .Concat(oracles.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()))
                 .Concat(stateValidators.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()))

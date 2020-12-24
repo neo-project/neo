@@ -7,7 +7,7 @@ using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class ExtensiblePayload : IVerifiable
+    public class ExtensiblePayload : IInventory
     {
         public string Receiver;
         public byte MessageType;
@@ -26,6 +26,8 @@ namespace Neo.Network.P2P.Payloads
                 return _hash;
             }
         }
+
+        InventoryType IInventory.InventoryType => InventoryType.Extensible;
 
         public int Size =>
             Receiver.GetVarSize() + //Receiver
