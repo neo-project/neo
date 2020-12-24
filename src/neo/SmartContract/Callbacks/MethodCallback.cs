@@ -15,11 +15,11 @@ namespace Neo.SmartContract.Callbacks
         public override int ParametersCount => method.Parameters.Length;
 
         public MethodCallback(ApplicationEngine engine, UInt160 hash, string method)
-            : base(ApplicationEngine.System_Contract_Call, false)
+            : base(ApplicationEngine.System_Contract_CallEx, false)
         {
             if (method.StartsWith('_')) throw new ArgumentException();
-            this.contract = NativeContract.Management.GetContract(engine.Snapshot, hash);
-            ContractState currentContract = NativeContract.Management.GetContract(engine.Snapshot, engine.CurrentScriptHash);
+            this.contract = NativeContract.ContractManagement.GetContract(engine.Snapshot, hash);
+            ContractState currentContract = NativeContract.ContractManagement.GetContract(engine.Snapshot, engine.CurrentScriptHash);
             if (currentContract?.CanCall(this.contract, method) == false)
                 throw new InvalidOperationException();
             this.method = this.contract.Manifest.Abi.Methods.First(p => p.Name == method);
@@ -27,6 +27,7 @@ namespace Neo.SmartContract.Callbacks
 
         public override void LoadContext(ApplicationEngine engine, Array args)
         {
+            engine.Push((byte)CallFlags.All);
             engine.Push(args);
             engine.Push(method.Name);
             engine.Push(contract.Hash.ToArray());

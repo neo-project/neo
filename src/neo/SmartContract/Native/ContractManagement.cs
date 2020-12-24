@@ -12,7 +12,7 @@ using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
-    public sealed class ManagementContract : NativeContract
+    public sealed class ContractManagement : NativeContract
     {
         public override int Id => 0;
 
@@ -20,7 +20,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_NextAvailableId = 15;
         private const byte Prefix_Contract = 8;
 
-        internal ManagementContract()
+        internal ContractManagement()
         {
             var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
             {

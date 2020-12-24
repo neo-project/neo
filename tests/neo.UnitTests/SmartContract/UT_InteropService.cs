@@ -388,14 +388,14 @@ namespace Neo.UnitTests.SmartContract
                                         0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01 };
-            Neo.SmartContract.Native.NativeContract.Management.GetContract(engine.Snapshot, new UInt160(data1)).Should().BeNull();
+            Neo.SmartContract.Native.NativeContract.ContractManagement.GetContract(engine.Snapshot, new UInt160(data1)).Should().BeNull();
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             snapshot.AddContract(state.Hash, state);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
-            Neo.SmartContract.Native.NativeContract.Management.GetContract(engine.Snapshot, state.Hash).Should().BeSameAs(state);
+            Neo.SmartContract.Native.NativeContract.ContractManagement.GetContract(engine.Snapshot, state.Hash).Should().BeSameAs(state);
         }
 
         [TestMethod]
@@ -598,17 +598,17 @@ namespace Neo.UnitTests.SmartContract
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
 
-            engine.CallContract(state.Hash, method, args);
+            engine.CallContractEx(state.Hash, method, args, CallFlags.All);
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.Create("a");
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(state.Hash, method, args));
+            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContractEx(state.Hash, method, args, CallFlags.All));
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.CreateWildcard();
-            engine.CallContract(state.Hash, method, args);
+            engine.CallContractEx(state.Hash, method, args, CallFlags.All);
 
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(UInt160.Zero, method, args));
+            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContractEx(UInt160.Zero, method, args, CallFlags.All));
         }
 
         [TestMethod]

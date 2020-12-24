@@ -58,13 +58,6 @@ namespace Neo
             return buffer;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int GetBitLength(this BigInteger i)
-        {
-            byte[] b = i.ToByteArray();
-            return (b.Length - 1) * 8 + BitLen(i.Sign > 0 ? b[b.Length - 1] : 255 - b[b.Length - 1]);
-        }
-
         internal static int GetLowestSetBit(this BigInteger i)
         {
             if (i.Sign == 0)
