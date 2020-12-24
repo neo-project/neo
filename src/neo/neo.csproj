@@ -28,7 +28,6 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="5.0.0" />
     <PackageReference Include="Neo.VM" Version="3.0.0-CI00256" />
-  
   </ItemGroup>
 
 </Project>
