@@ -18,6 +18,7 @@ namespace Neo.SmartContract.Native
         {
             return new JObject
             {
+                ["owner"] = Owner.ToString(),
                 ["name"] = Name,
                 ["description"] = Description
             };
