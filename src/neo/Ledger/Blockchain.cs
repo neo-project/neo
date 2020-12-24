@@ -532,6 +532,7 @@ namespace Neo.Ledger
                 }
                 .Concat(validators.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()))
                 .Concat(oracles.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()))
+                .Concat(stateValidators.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()))
                 .ToArray()
             );
         }
