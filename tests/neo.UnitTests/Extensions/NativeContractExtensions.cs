@@ -100,13 +100,12 @@ namespace Neo.UnitTests.Extensions
             var contractState = NativeContract.ContractManagement.GetContract(snapshot, contract.Hash);
             if (contractState == null) throw new InvalidOperationException();
 
-            engine.LoadContract(contractState, method, CallFlags.All, true, (ushort)args.Length);
-
             var script = new ScriptBuilder();
 
             for (var i = args.Length - 1; i >= 0; i--)
                 script.EmitPush(args[i]);
 
+            engine.LoadContract(contractState, method, CallFlags.All, contract.Manifest.Abi.GetMethod(method).ReturnType != ContractParameterType.Void, (ushort)args.Length);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() != VMState.HALT)

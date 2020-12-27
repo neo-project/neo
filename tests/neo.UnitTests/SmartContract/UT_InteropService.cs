@@ -598,53 +598,21 @@ namespace Neo.UnitTests.SmartContract
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
 
-            foreach (var i in args) engine.Push(i);
+            engine.Push(args[1]); engine.Push(args[0]);
             engine.CallContract(state.Hash, method, CallFlags.All, false, (ushort)args.Count);
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.Create("a");
-            foreach (var i in args) engine.Push(i);
+            engine.Push(args[1]); engine.Push(args[0]);
             Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(state.Hash, method, CallFlags.All, false, (ushort)args.Count));
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.CreateWildcard();
-            foreach (var i in args) engine.Push(i);
+            engine.Push(args[1]); engine.Push(args[0]);
             engine.CallContract(state.Hash, method, CallFlags.All, false, (ushort)args.Count);
 
-            foreach (var i in args) engine.Push(i);
+            engine.Push(args[1]); engine.Push(args[0]);
             Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(UInt160.Zero, method, CallFlags.All, false, (ushort)args.Count));
-        }
-
-        [TestMethod]
-        public void TestContract_CallEx()
-        {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-
-            string method = "method";
-            var args = new VM.Types.Array { 0, 1 };
-            var state = TestUtils.GetContract(method, args.Count);
-            snapshot.AddContract(state.Hash, state);
-
-            foreach (var flags in new CallFlags[] { CallFlags.None, CallFlags.AllowCall, CallFlags.WriteStates, CallFlags.All })
-            {
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
-                engine.LoadScript(new byte[] { 0x01 });
-
-                foreach (var i in args) engine.Push(i);
-                engine.CallContract(state.Hash, method, CallFlags.All, false, (ushort)args.Count);
-                engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
-                engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
-
-                // Contract doesn't exists
-                foreach (var i in args) engine.Push(i);
-                Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(UInt160.Zero, method, CallFlags.All, false, (ushort)args.Count));
-
-                // Call with rights
-                foreach (var i in args) engine.Push(i);
-                engine.CallContract(state.Hash, method, flags, false, (ushort)args.Count);
-                engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
-                engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
-            }
         }
 
         [TestMethod]
