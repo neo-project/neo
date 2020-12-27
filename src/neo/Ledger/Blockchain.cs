@@ -520,18 +520,24 @@ namespace Neo.Ledger
         private void UpdateCurrentSnapshot()
         {
             Interlocked.Exchange(ref currentSnapshot, GetSnapshot())?.Dispose();
+            var builder = ImmutableHashSet.CreateBuilder<UInt160>();
+            builder.Add(NativeContract.NEO.GetCommitteeAddress(currentSnapshot));
             var validators = NativeContract.NEO.GetNextBlockValidators(currentSnapshot);
+            builder.Add(GetConsensusAddress(validators));
+            builder.UnionWith(validators.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()));
             var oracles = NativeContract.RoleManagement.GetDesignatedByRole(currentSnapshot, Role.Oracle, currentSnapshot.Height);
+            if (oracles.Length > 0)
+            {
+                builder.Add(GetConsensusAddress(oracles));
+                builder.UnionWith(oracles.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()));
+            }
             var stateValidators = NativeContract.RoleManagement.GetDesignatedByRole(currentSnapshot, Role.StateValidator, currentSnapshot.Height);
-            extensibleWitnessWhiteList = ImmutableHashSet.Create(
-                new UInt160[] { NativeContract.NEO.GetCommitteeAddress(currentSnapshot), GetConsensusAddress(validators) }
-                .Concat(oracles.Length == 0 ? Array.Empty<UInt160>() : new UInt160[] { GetConsensusAddress(oracles) })
-                .Concat(stateValidators.Length == 0 ? Array.Empty<UInt160>() : new UInt160[] { GetConsensusAddress(stateValidators) })
-                .Concat(validators.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()))
-                .Concat(oracles.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()))
-                .Concat(stateValidators.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()))
-                .ToArray()
-            );
+            if (stateValidators.Length > 0)
+            {
+                builder.Add(GetConsensusAddress(stateValidators));
+                builder.UnionWith(stateValidators.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()));
+            }
+            extensibleWitnessWhiteList = builder.ToImmutable();
         }
 
         internal bool IsExtensibleWitnessWhiteListed(UInt160 address)
