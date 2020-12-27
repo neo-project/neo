@@ -112,20 +112,7 @@ namespace Neo.SmartContract
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
             if (md is null) return null;
 
-            byte[] script;
-            if (NativeContract.IsNative(contract.Hash))
-            {
-                using ScriptBuilder sb = new ScriptBuilder();
-                sb.EmitPush(md.Name);
-                sb.EmitRaw(contract.Script);
-                script = sb.ToArray();
-            }
-            else
-            {
-                script = contract.Script;
-            }
-
-            ExecutionContext context = LoadScript(script,
+            ExecutionContext context = LoadScript(contract.Script,
                 pcount: pcount,
                 rvcount: hasReturnValue ? 1 : 0,
                 initialPosition: md.Offset,

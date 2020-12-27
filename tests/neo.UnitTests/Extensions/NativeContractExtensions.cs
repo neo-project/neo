@@ -105,6 +105,7 @@ namespace Neo.UnitTests.Extensions
             for (var i = args.Length - 1; i >= 0; i--)
                 script.EmitPush(args[i]);
 
+            script.EmitPush(method);
             engine.LoadContract(contractState, method, CallFlags.All, contract.Manifest.Abi.GetMethod(method).ReturnType != ContractParameterType.Void, (ushort)args.Length);
             engine.LoadScript(script.ToArray());
 
