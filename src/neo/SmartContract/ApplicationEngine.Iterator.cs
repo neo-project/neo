@@ -8,10 +8,10 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static readonly InteropDescriptor System_Iterator_Create = Register("System.Iterator.Create", nameof(CreateIterator), 1 << 4, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Iterator_Key = Register("System.Iterator.Key", nameof(IteratorKey), 1 << 4, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Iterator_Keys = Register("System.Iterator.Keys", nameof(IteratorKeys), 1 << 4, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Iterator_Values = Register("System.Iterator.Values", nameof(IteratorValues), 1 << 4, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Iterator_Create = Register("System.Iterator.Create", nameof(CreateIterator), 1 << 4, CallFlags.None);
+        public static readonly InteropDescriptor System_Iterator_Key = Register("System.Iterator.Key", nameof(IteratorKey), 1 << 4, CallFlags.None);
+        public static readonly InteropDescriptor System_Iterator_Keys = Register("System.Iterator.Keys", nameof(IteratorKeys), 1 << 4, CallFlags.None);
+        public static readonly InteropDescriptor System_Iterator_Values = Register("System.Iterator.Values", nameof(IteratorValues), 1 << 4, CallFlags.None);
 
         protected internal IIterator CreateIterator(StackItem item)
         {
