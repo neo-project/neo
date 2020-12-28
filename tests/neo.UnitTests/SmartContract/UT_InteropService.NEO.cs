@@ -136,7 +136,8 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = new byte[byte.MaxValue],
                 Compiler = "",
-                Version = new Version(1, 2, 3, 4).ToString()
+                Version = new Version(1, 2, 3, 4).ToString(),
+                Tokens = System.Array.Empty<MethodToken>()
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
             var nefFile = nef.ToArray();
@@ -149,20 +150,21 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = new byte[NefFile.MaxScriptLength - 1],
                 Compiler = "",
-                Version = new Version(1, 2, 3, 4).ToString()
+                Version = new Version(1, 2, 3, 4).ToString(),
+                Tokens = System.Array.Empty<MethodToken>()
             };
             script_exceedMaxLength.CheckSum = NefFile.ComputeChecksum(nef);
             Assert.ThrowsException<InvalidOperationException>(() => snapshot.DeployContract(UInt160.Zero, script_exceedMaxLength.ToArray(), manifest.ToJson().ToByteArray(true)));
 
-            var script_zeroLength = new byte[] { };
+            var script_zeroLength = System.Array.Empty<byte>();
             Assert.ThrowsException<ArgumentException>(() => snapshot.DeployContract(UInt160.Zero, script_zeroLength, manifest.ToJson().ToByteArray(true)));
 
-            var manifest_zeroLength = new byte[] { };
+            var manifest_zeroLength = System.Array.Empty<byte>();
             Assert.ThrowsException<ArgumentException>(() => snapshot.DeployContract(UInt160.Zero, nefFile, manifest_zeroLength));
 
             manifest = TestUtils.CreateDefaultManifest();
             var ret = snapshot.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false));
-            ret.Hash.ToString().Should().Be("0x5756874a149b9de89c7b5d34f9c37db3762f88a2");
+            ret.Hash.ToString().Should().Be("0x6410935f6b153eeb85f5d95d926c075b1ef51620");
             Assert.ThrowsException<InvalidOperationException>(() => snapshot.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false)));
 
             var state = TestUtils.GetContract();
@@ -181,7 +183,8 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = new byte[] { 0x01 },
                 Compiler = "",
-                Version = new Version(1, 2, 3, 4).ToString()
+                Version = new Version(1, 2, 3, 4).ToString(),
+                Tokens = System.Array.Empty<MethodToken>()
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
             Assert.ThrowsException<InvalidOperationException>(() => snapshot.UpdateContract(null, nef.ToArray(), new byte[0]));
@@ -232,7 +235,8 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = new byte[] { 0x01 },
                 Version = new Version(1, 2, 3, 4).ToString(),
-                Compiler = ""
+                Compiler = "",
+                Tokens = System.Array.Empty<MethodToken>()
             };
             nefFile.CheckSum = NefFile.ComputeChecksum(nefFile);
 
@@ -247,7 +251,8 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = new byte[0],
                 Version = new Version(1, 2, 3, 4).ToString(),
-                Compiler = ""
+                Compiler = "",
+                Tokens = System.Array.Empty<MethodToken>()
             };
             nefFile.CheckSum = NefFile.ComputeChecksum(nefFile);
 
