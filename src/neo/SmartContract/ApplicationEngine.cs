@@ -1,4 +1,5 @@
 using Neo.IO;
+using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -159,6 +160,7 @@ namespace Neo.SmartContract
                 byte[] data => data,
                 string s => s,
                 BigInteger i => i,
+                JObject o => o.ToByteArray(false),
                 IInteroperable interoperable => interoperable.ToStackItem(ReferenceCounter),
                 ISerializable i => i.ToArray(),
                 StackItem item => item,
