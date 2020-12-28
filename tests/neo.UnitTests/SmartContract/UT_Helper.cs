@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
+using System;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -13,6 +14,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 Compiler = "test",
                 Version = new System.Version().ToString(),
+                Tokens = Array.Empty<MethodToken>(),
                 Script = new byte[] { 1, 2, 3 }
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);

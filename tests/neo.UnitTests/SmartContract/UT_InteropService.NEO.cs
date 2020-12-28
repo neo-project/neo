@@ -136,7 +136,8 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = new byte[byte.MaxValue],
                 Compiler = "",
-                Version = new Version(1, 2, 3, 4).ToString()
+                Version = new Version(1, 2, 3, 4).ToString(),
+                Tokens = System.Array.Empty<MethodToken>()
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
             var nefFile = nef.ToArray();
@@ -149,7 +150,8 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = new byte[NefFile.MaxScriptLength - 1],
                 Compiler = "",
-                Version = new Version(1, 2, 3, 4).ToString()
+                Version = new Version(1, 2, 3, 4).ToString(),
+                Tokens = System.Array.Empty<MethodToken>()
             };
             script_exceedMaxLength.CheckSum = NefFile.ComputeChecksum(nef);
             Assert.ThrowsException<InvalidOperationException>(() => snapshot.DeployContract(UInt160.Zero, script_exceedMaxLength.ToArray(), manifest.ToJson().ToByteArray(true)));
@@ -181,7 +183,8 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = new byte[] { 0x01 },
                 Compiler = "",
-                Version = new Version(1, 2, 3, 4).ToString()
+                Version = new Version(1, 2, 3, 4).ToString(),
+                Tokens = System.Array.Empty<MethodToken>()
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
             Assert.ThrowsException<InvalidOperationException>(() => snapshot.UpdateContract(null, nef.ToArray(), new byte[0]));
@@ -232,7 +235,8 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = new byte[] { 0x01 },
                 Version = new Version(1, 2, 3, 4).ToString(),
-                Compiler = ""
+                Compiler = "",
+                Tokens = System.Array.Empty<MethodToken>()
             };
             nefFile.CheckSum = NefFile.ComputeChecksum(nefFile);
 
@@ -247,7 +251,8 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = new byte[0],
                 Version = new Version(1, 2, 3, 4).ToString(),
-                Compiler = ""
+                Compiler = "",
+                Tokens = System.Array.Empty<MethodToken>()
             };
             nefFile.CheckSum = NefFile.ComputeChecksum(nefFile);
 

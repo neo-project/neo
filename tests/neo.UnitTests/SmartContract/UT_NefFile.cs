@@ -14,6 +14,7 @@ namespace Neo.UnitTests.SmartContract
         {
             Compiler = "".PadLeft(32, ' '),
             Version = new Version(1, 2, 3, 4).ToString(),
+            Tokens = Array.Empty<MethodToken>(),
             Script = new byte[] { 0x01, 0x02, 0x03 }
         };
 
@@ -78,7 +79,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestGetSize()
         {
-            file.Size.Should().Be(4 + 32 + 32 + 4 + 4);
+            file.Size.Should().Be(4 + 32 + 32 + 2 + 1 + 2 + 4 + 4);
         }
 
         [TestMethod]
@@ -88,6 +89,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 Compiler = "".PadLeft(32, ' '),
                 Version = new Version(1, 2, 3, 4).ToString(),
+                Tokens = Array.Empty<MethodToken>(),
                 Script = new byte[] { 0x01, 0x02, 0x03 }
             };
 
@@ -108,6 +110,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 Compiler = "".PadLeft(byte.MaxValue, ' '),
                 Version = new Version(1, 2, 3, 4).ToString(),
+                Tokens = Array.Empty<MethodToken>(),
                 Script = new byte[1024 * 1024],
                 CheckSum = 0
             };
