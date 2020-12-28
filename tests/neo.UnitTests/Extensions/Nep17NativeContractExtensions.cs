@@ -40,15 +40,13 @@ namespace Neo.UnitTests.Extensions
             var engine = ApplicationEngine.Create(TriggerType.Application,
                 new ManualWitness(signFrom ? new UInt160(from) : null), snapshot);
 
-            engine.LoadScript(contract.Script, CallFlags.All, contract.Hash);
+            engine.LoadScript(contract.Script, pcount: 4, callFlags: CallFlags.All, scriptHash: contract.Hash);
 
             var script = new ScriptBuilder();
             script.Emit(OpCode.PUSHNULL);
             script.EmitPush(amount);
             script.EmitPush(to);
             script.EmitPush(from);
-            script.EmitPush(4);
-            script.Emit(OpCode.PACK);
             script.EmitPush("transfer");
             engine.LoadScript(script.ToArray());
 
@@ -67,11 +65,9 @@ namespace Neo.UnitTests.Extensions
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
-            engine.LoadScript(contract.Script, CallFlags.All, contract.Hash);
+            engine.LoadScript(contract.Script, pcount: 0, callFlags: CallFlags.All, scriptHash: contract.Hash);
 
             var script = new ScriptBuilder();
-            script.EmitPush(0);
-            script.Emit(OpCode.PACK);
             script.EmitPush("totalSupply");
             engine.LoadScript(script.ToArray());
 
@@ -87,12 +83,10 @@ namespace Neo.UnitTests.Extensions
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
-            engine.LoadScript(contract.Script, CallFlags.All, contract.Hash);
+            engine.LoadScript(contract.Script, pcount: 1, callFlags: CallFlags.All, scriptHash: contract.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush(account);
-            script.EmitPush(1);
-            script.Emit(OpCode.PACK);
             script.EmitPush("balanceOf");
             engine.LoadScript(script.ToArray());
 
@@ -108,11 +102,9 @@ namespace Neo.UnitTests.Extensions
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
-            engine.LoadScript(contract.Script, CallFlags.All, contract.Hash);
+            engine.LoadScript(contract.Script, pcount: 0, callFlags: CallFlags.All, scriptHash: contract.Hash);
 
             var script = new ScriptBuilder();
-            script.EmitPush(0);
-            script.Emit(OpCode.PACK);
             script.EmitPush("decimals");
             engine.LoadScript(script.ToArray());
 
@@ -128,11 +120,9 @@ namespace Neo.UnitTests.Extensions
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
-            engine.LoadScript(contract.Script, CallFlags.All, contract.Hash);
+            engine.LoadScript(contract.Script, pcount: 0, callFlags: CallFlags.All, scriptHash: contract.Hash);
 
             var script = new ScriptBuilder();
-            script.EmitPush(0);
-            script.Emit(OpCode.PACK);
             script.EmitPush("symbol");
             engine.LoadScript(script.ToArray());
 
