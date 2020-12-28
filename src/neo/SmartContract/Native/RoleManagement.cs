@@ -14,7 +14,7 @@ namespace Neo.SmartContract.Native
 {
     public sealed class RoleManagement : NativeContract
     {
-        public override int Id => -5;
+        public override int Id => -4;
 
         internal RoleManagement()
         {
