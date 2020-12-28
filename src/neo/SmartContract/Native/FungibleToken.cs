@@ -10,7 +10,7 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
 {
-    public abstract class Nep17Token<TState> : NativeContract
+    public abstract class FungibleToken<TState> : NativeContract
         where TState : AccountState, new()
     {
         [ContractMethod(0, CallFlags.None)]
@@ -22,7 +22,7 @@ namespace Neo.SmartContract.Native
         protected const byte Prefix_TotalSupply = 11;
         protected const byte Prefix_Account = 20;
 
-        protected Nep17Token()
+        protected FungibleToken()
         {
             this.Factor = BigInteger.Pow(10, Decimals);
 
