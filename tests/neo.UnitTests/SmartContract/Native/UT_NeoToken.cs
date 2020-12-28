@@ -867,7 +867,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
-            engine.LoadScript(NativeContract.NEO.Script, pcount: 0, callFlags: CallFlags.All, scriptHash: NativeContract.NEO.Hash);
+            engine.LoadScript(NativeContract.NEO.Script, pcount: 0, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush("getGasPerBlock");
@@ -889,7 +889,7 @@ namespace Neo.UnitTests.SmartContract.Native
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
             var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), snapshot);
 
-            engine.LoadScript(NativeContract.NEO.Script, pcount: 1, callFlags: CallFlags.All, scriptHash: NativeContract.NEO.Hash);
+            engine.LoadScript(NativeContract.NEO.Script, pcount: 1, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush(gasPerBlock);
@@ -912,7 +912,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(signAccount ? new UInt160(account) : UInt160.Zero), snapshot);
 
-            engine.LoadScript(NativeContract.NEO.Script, pcount: 2, callFlags: CallFlags.All, scriptHash: NativeContract.NEO.Hash);
+            engine.LoadScript(NativeContract.NEO.Script, pcount: 2, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
 
             var script = new ScriptBuilder();
 
@@ -940,7 +940,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot);
 
-            engine.LoadScript(NativeContract.NEO.Script, pcount: 1, callFlags: CallFlags.All, scriptHash: NativeContract.NEO.Hash);
+            engine.LoadScript(NativeContract.NEO.Script, pcount: 1, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush(pubkey);
@@ -962,7 +962,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
-            engine.LoadScript(NativeContract.NEO.Script, pcount: 0, callFlags: CallFlags.All, scriptHash: NativeContract.NEO.Hash);
+            engine.LoadScript(NativeContract.NEO.Script, pcount: 0, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush("getCommittee");
@@ -980,7 +980,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
-            engine.LoadScript(NativeContract.NEO.Script, pcount: 2, callFlags: CallFlags.All, scriptHash: NativeContract.NEO.Hash);
+            engine.LoadScript(NativeContract.NEO.Script, pcount: 2, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush(snapshot.PersistingBlock.Index);
@@ -1040,7 +1040,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot);
 
-            engine.LoadScript(NativeContract.NEO.Script, pcount: 1, callFlags: CallFlags.All, scriptHash: NativeContract.NEO.Hash);
+            engine.LoadScript(NativeContract.NEO.Script, pcount: 1, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush(pubkey);
