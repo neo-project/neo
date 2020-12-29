@@ -1,5 +1,4 @@
 using Neo.Ledger;
-using Neo.SmartContract.Enumerators;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Native;
 using System;
@@ -17,7 +16,6 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Storage_AsReadOnly = Register("System.Storage.AsReadOnly", nameof(AsReadOnly), 1 << 4, CallFlags.ReadStates);
         public static readonly InteropDescriptor System_Storage_Get = Register("System.Storage.Get", nameof(Get), 1 << 15, CallFlags.ReadStates);
         public static readonly InteropDescriptor System_Storage_Find = Register("System.Storage.Find", nameof(Find), 1 << 15, CallFlags.ReadStates);
-        public static readonly InteropDescriptor System_Storage_FindKeys = Register("System.Storage.FindKeys", nameof(FindKeys), 1 << 15, CallFlags.ReadStates);
         public static readonly InteropDescriptor System_Storage_Put = Register("System.Storage.Put", nameof(Put), 0, CallFlags.WriteStates);
         public static readonly InteropDescriptor System_Storage_PutEx = Register("System.Storage.PutEx", nameof(PutEx), 0, CallFlags.WriteStates);
         public static readonly InteropDescriptor System_Storage_Delete = Register("System.Storage.Delete", nameof(Delete), 0, CallFlags.WriteStates);
@@ -62,20 +60,18 @@ namespace Neo.SmartContract
             })?.Value;
         }
 
-        protected internal IIterator Find(StorageContext context, byte[] prefix)
+        protected internal IIterator Find(StorageContext context, byte[] prefix, FindOptions options)
         {
+            if (options.HasFlag(FindOptions.KeysOnly) && options.HasFlag(FindOptions.ValuesOnly))
+                throw new ArgumentException();
+            if (options.HasFlag(FindOptions.PickField0) && options.HasFlag(FindOptions.PickField1))
+                throw new ArgumentException();
+            if ((options.HasFlag(FindOptions.PickField0) || options.HasFlag(FindOptions.PickField1)) && !options.HasFlag(FindOptions.DeserializeValues))
+                throw new ArgumentException();
             byte[] prefix_key = StorageKey.CreateSearchPrefix(context.Id, prefix);
-            StorageIterator iterator = new StorageIterator(Snapshot.Storages.Find(prefix_key).GetEnumerator());
+            StorageIterator iterator = new StorageIterator(Snapshot.Storages.Find(prefix_key).GetEnumerator(), options, ReferenceCounter);
             Disposables.Add(iterator);
             return iterator;
-        }
-
-        protected internal IEnumerator FindKeys(StorageContext context, byte[] prefix, byte removePrefix)
-        {
-            byte[] prefix_key = StorageKey.CreateSearchPrefix(context.Id, prefix);
-            StorageKeyEnumerator enumerator = new StorageKeyEnumerator(Snapshot.Storages.Find(prefix_key).Select(p => p.Key).GetEnumerator(), removePrefix);
-            Disposables.Add(enumerator);
-            return enumerator;
         }
 
         protected internal void Put(StorageContext context, byte[] key, byte[] value)
