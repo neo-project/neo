@@ -23,8 +23,8 @@ namespace Neo.SmartContract.Native
         public static NeoToken NEO { get; } = new NeoToken();
         public static GasToken GAS { get; } = new GasToken();
         public static PolicyContract Policy { get; } = new PolicyContract();
-        public static OracleContract Oracle { get; } = new OracleContract();
         public static RoleManagement RoleManagement { get; } = new RoleManagement();
+        public static OracleContract Oracle { get; } = new OracleContract();
 
         public string Name => GetType().Name;
         public byte[] Script { get; }
@@ -107,7 +107,6 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException("It is not allowed to use Neo.Native.Call directly to call native contracts. System.Contract.Call should be used.");
             ExecutionContext context = engine.CurrentContext;
             string operation = context.EvaluationStack.Pop().GetString();
-            Array args = context.EvaluationStack.Pop<Array>();
             ContractMethodMetadata method = methods[operation];
             ExecutionContextState state = context.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
@@ -117,10 +116,7 @@ namespace Neo.SmartContract.Native
             if (method.NeedApplicationEngine) parameters.Add(engine);
             if (method.NeedSnapshot) parameters.Add(engine.Snapshot);
             for (int i = 0; i < method.Parameters.Length; i++)
-            {
-                StackItem item = i < args.Count ? args[i] : StackItem.Null;
-                parameters.Add(engine.Convert(item, method.Parameters[i]));
-            }
+                parameters.Add(engine.Convert(context.EvaluationStack.Pop(), method.Parameters[i]));
             object returnValue = method.Handler.Invoke(this, parameters.ToArray());
             if (method.Handler.ReturnType != typeof(void))
                 context.EvaluationStack.Push(engine.Convert(returnValue));
@@ -143,11 +139,11 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        public ApplicationEngine TestCall(string operation, params object[] args)
+        public ApplicationEngine TestCall(string operation, bool hasReturnValue, params object[] args)
         {
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitAppCall(Hash, operation, args);
+                sb.EmitDynamicCall(Hash, operation, hasReturnValue, args);
                 return ApplicationEngine.Run(sb.ToArray());
             }
         }

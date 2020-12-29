@@ -89,7 +89,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Call script
 
-                script.EmitAppCall(scriptHash2, "test", "testEvent2", 1);
+                script.EmitDynamicCall(scriptHash2, "test", true, "testEvent2", 1);
 
                 // Drop return
 
@@ -141,7 +141,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Call script
 
-                script.EmitAppCall(scriptHash2, "test", "testEvent2", 1);
+                script.EmitDynamicCall(scriptHash2, "test", true, "testEvent2", 1);
 
                 // Drop return
 
@@ -224,7 +224,7 @@ namespace Neo.UnitTests.SmartContract
             engine.Snapshot.AddContract(contract.Hash, contract);
 
             using ScriptBuilder scriptB = new ScriptBuilder();
-            scriptB.EmitAppCall(contract.Hash, "test", 0, 1);
+            scriptB.EmitDynamicCall(contract.Hash, "test", true, 0, 1);
             engine.LoadScript(scriptB.ToArray());
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -598,46 +598,21 @@ namespace Neo.UnitTests.SmartContract
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
 
-            engine.CallContractEx(state.Hash, method, args, CallFlags.All);
+            engine.Push(args[1]); engine.Push(args[0]);
+            engine.CallContract(state.Hash, method, CallFlags.All, false, (ushort)args.Count);
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.Create("a");
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContractEx(state.Hash, method, args, CallFlags.All));
+            engine.Push(args[1]); engine.Push(args[0]);
+            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(state.Hash, method, CallFlags.All, false, (ushort)args.Count));
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.CreateWildcard();
-            engine.CallContractEx(state.Hash, method, args, CallFlags.All);
+            engine.Push(args[1]); engine.Push(args[0]);
+            engine.CallContract(state.Hash, method, CallFlags.All, false, (ushort)args.Count);
 
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContractEx(UInt160.Zero, method, args, CallFlags.All));
-        }
-
-        [TestMethod]
-        public void TestContract_CallEx()
-        {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
-
-            string method = "method";
-            var args = new VM.Types.Array { 0, 1 };
-            var state = TestUtils.GetContract(method, args.Count);
-            snapshot.AddContract(state.Hash, state);
-
-            foreach (var flags in new CallFlags[] { CallFlags.None, CallFlags.AllowCall, CallFlags.WriteStates, CallFlags.All })
-            {
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
-                engine.LoadScript(new byte[] { 0x01 });
-
-                engine.CallContractEx(state.Hash, method, args, CallFlags.All);
-                engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
-                engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
-
-                // Contract doesn't exists
-                Assert.ThrowsException<InvalidOperationException>(() => engine.CallContractEx(UInt160.Zero, method, args, CallFlags.All));
-
-                // Call with rights
-                engine.CallContractEx(state.Hash, method, args, flags);
-                engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
-                engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
-            }
+            engine.Push(args[1]); engine.Push(args[0]);
+            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(UInt160.Zero, method, CallFlags.All, false, (ushort)args.Count));
         }
 
         [TestMethod]
