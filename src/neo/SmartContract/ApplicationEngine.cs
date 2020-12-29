@@ -144,6 +144,7 @@ namespace Neo.SmartContract
 
         protected internal StackItem Convert(object value)
         {
+            if (value is IDisposable disposable) Disposables.Add(disposable);
             return value switch
             {
                 null => StackItem.Null,
