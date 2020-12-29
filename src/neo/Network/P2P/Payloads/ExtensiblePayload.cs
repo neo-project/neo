@@ -11,6 +11,8 @@ namespace Neo.Network.P2P.Payloads
     {
         public string Receiver;
         public byte MessageType;
+        public uint ValidBlockStart;
+        public uint ValidBlockEnd;
         public byte[] Data;
         public Witness Witness;
 
@@ -32,6 +34,8 @@ namespace Neo.Network.P2P.Payloads
         public int Size =>
             Receiver.GetVarSize() + //Receiver
             sizeof(byte) +          //MessageType
+            sizeof(uint) +          //ValidBlockStart
+            sizeof(uint) +          //ValidBlockEnd
             Data.GetVarSize() +     //Data
             1 + Witness.Size;       //Witness
 
@@ -59,6 +63,8 @@ namespace Neo.Network.P2P.Payloads
         {
             Receiver = reader.ReadVarString(32);
             MessageType = reader.ReadByte();
+            ValidBlockStart = reader.ReadUInt32();
+            ValidBlockEnd = reader.ReadUInt32();
             Data = reader.ReadVarBytes(ushort.MaxValue);
         }
 
@@ -77,11 +83,14 @@ namespace Neo.Network.P2P.Payloads
         {
             writer.WriteVarString(Receiver);
             writer.Write(MessageType);
+            writer.Write(ValidBlockStart);
+            writer.Write(ValidBlockEnd);
             writer.WriteVarBytes(Data);
         }
 
         public bool Verify(StoreView snapshot)
         {
+            if (snapshot.PersistingBlock.Index < ValidBlockStart || snapshot.PersistingBlock.Index > ValidBlockEnd) return false;
             if (!Blockchain.Singleton.IsExtensibleWitnessWhiteListed(Witness.ScriptHash)) return false;
             return this.VerifyWitnesses(snapshot, 0_02000000);
         }
