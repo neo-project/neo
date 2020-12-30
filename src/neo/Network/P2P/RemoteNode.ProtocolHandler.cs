@@ -39,12 +39,6 @@ namespace Neo.Network.P2P
 
         private void OnMessage(Message msg)
         {
-            if (msg.Command == MessageCommand.Extensible)
-            {
-                var payload = (ExtensiblePayload)msg.Payload;
-                if (!knownHashes.Add(payload.Hash)) return;
-                if (!payload.Verify(Blockchain.Singleton.GetSnapshot())) return;
-            }
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
                 if (!plugin.OnP2PMessage(msg))
                     return;
