@@ -17,7 +17,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Data = new byte[] { 1, 2, 3 },
                 Witness = new Witness() { InvocationScript = new byte[] { 3, 5, 6 }, VerificationScript = new byte[0] }
             };
-            test.Size.Should().Be(23);
+            test.Size.Should().Be(22);
         }
 
         [TestMethod]
