@@ -4,7 +4,7 @@ using Neo.Network.P2P.Payloads;
 
 namespace Neo.SmartContract.Native
 {
-    public sealed class GasToken : Nep17Token<AccountState>
+    public sealed class GasToken : FungibleToken<AccountState>
     {
         public override int Id => -2;
         public override string Symbol => "GAS";
