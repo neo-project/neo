@@ -68,13 +68,9 @@ namespace Neo.Network.P2P
                     OnAddrMessageReceived((AddrPayload)msg.Payload);
                     break;
                 case MessageCommand.Block:
-                    OnInventoryReceived((Block)msg.Payload);
-                    break;
                 case MessageCommand.Consensus:
-                    OnInventoryReceived((ConsensusPayload)msg.Payload);
-                    break;
                 case MessageCommand.Extensible:
-                    OnInventoryReceived((ExtensiblePayload)msg.Payload);
+                    OnInventoryReceived((IInventory)msg.Payload);
                     break;
                 case MessageCommand.FilterAdd:
                     OnFilterAddMessageReceived((FilterAddPayload)msg.Payload);
