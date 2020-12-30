@@ -1,6 +1,6 @@
 namespace Neo.SmartContract
 {
-    internal class ExecutionContextState
+    public class ExecutionContextState
     {
         /// <summary>
         /// Script hash
