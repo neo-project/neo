@@ -3,34 +3,39 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Types;
 using System;
-using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static readonly InteropDescriptor System_Contract_CallEx = Register("System.Contract.CallEx", nameof(CallContractEx), 1 << 15, CallFlags.AllowCall, false);
-        public static readonly InteropDescriptor System_Contract_CallNative = Register("System.Contract.CallNative", nameof(CallNativeContract), 0, CallFlags.None, false);
-        public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 1 << 10, CallFlags.ReadStates, true);
-        public static readonly InteropDescriptor System_Contract_GetCallFlags = Register("System.Contract.GetCallFlags", nameof(GetCallFlags), 1 << 10, CallFlags.None, false);
+        public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 1 << 15, CallFlags.AllowCall);
+        public static readonly InteropDescriptor System_Contract_CallNative = Register("System.Contract.CallNative", nameof(CallNativeContract), 0, CallFlags.None);
+        public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 1 << 10, CallFlags.ReadStates);
+        public static readonly InteropDescriptor System_Contract_GetCallFlags = Register("System.Contract.GetCallFlags", nameof(GetCallFlags), 1 << 10, CallFlags.None);
         /// <summary>
         /// Calculate corresponding account scripthash for given public key
         /// Warning: check first that input public key is valid, before creating the script.
         /// </summary>
-        public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 1 << 8, CallFlags.None, true);
-        public static readonly InteropDescriptor System_Contract_NativeOnPersist = Register("System.Contract.NativeOnPersist", nameof(NativeOnPersist), 0, CallFlags.WriteStates, false);
-        public static readonly InteropDescriptor System_Contract_NativePostPersist = Register("System.Contract.NativePostPersist", nameof(NativePostPersist), 0, CallFlags.WriteStates, false);
+        public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 1 << 8, CallFlags.None);
+        public static readonly InteropDescriptor System_Contract_NativeOnPersist = Register("System.Contract.NativeOnPersist", nameof(NativeOnPersist), 0, CallFlags.WriteStates);
+        public static readonly InteropDescriptor System_Contract_NativePostPersist = Register("System.Contract.NativePostPersist", nameof(NativePostPersist), 0, CallFlags.WriteStates);
 
-        protected internal void CallContractEx(UInt160 contractHash, string method, Array args, CallFlags callFlags)
+        protected internal void CallContract(UInt160 contractHash, string method, CallFlags callFlags, bool hasReturnValue, ushort pcount)
         {
             if (method.StartsWith('_')) throw new ArgumentException($"Invalid Method Name: {method}");
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
-            CallContractInternal(contractHash, method, args, callFlags, ReturnTypeConvention.EnsureNotEmpty);
+            if (pcount > CurrentContext.EvaluationStack.Count)
+                throw new InvalidOperationException();
+            StackItem[] args = new StackItem[pcount];
+            for (int i = 0; i < pcount; i++)
+                args[i] = Pop();
+            CallContractInternal(contractHash, method, callFlags, hasReturnValue, args);
         }
 
-        private void CallContractInternal(UInt160 contractHash, string method, Array args, CallFlags flags, ReturnTypeConvention convention)
+        private void CallContractInternal(UInt160 contractHash, string method, CallFlags flags, bool hasReturnValue, StackItem[] args)
         {
             ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
@@ -48,10 +53,10 @@ namespace Neo.SmartContract
                     throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contractHash} From Contract {CurrentScriptHash}");
             }
 
-            CallContractInternal(contract, md, args, flags, convention);
+            CallContractInternal(contract, md, flags, hasReturnValue, args);
         }
 
-        private void CallContractInternal(ContractState contract, ContractMethodDescriptor method, Array args, CallFlags flags, ReturnTypeConvention convention)
+        private void CallContractInternal(ContractState contract, ContractMethodDescriptor method, CallFlags flags, bool hasReturnValue, StackItem[] args)
         {
             if (invocationCounter.TryGetValue(contract.Hash, out var counter))
             {
@@ -62,27 +67,19 @@ namespace Neo.SmartContract
                 invocationCounter[contract.Hash] = 1;
             }
 
-            GetInvocationState(CurrentContext).Convention = convention;
-
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             UInt160 callingScriptHash = state.ScriptHash;
             CallFlags callingFlags = state.CallFlags;
 
-            if (args.Count != method.Parameters.Length) throw new InvalidOperationException($"Method {method.Name} Expects {method.Parameters.Length} Arguments But Receives {args.Count} Arguments");
-            ExecutionContext context_new = LoadContract(contract, method.Name, flags & callingFlags, false);
+            if (args.Length != method.Parameters.Length) throw new InvalidOperationException($"Method {method.Name} Expects {method.Parameters.Length} Arguments But Receives {args.Length} Arguments");
+            ExecutionContext context_new = LoadContract(contract, method.Name, flags & callingFlags, hasReturnValue, (ushort)args.Length);
             state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
 
+            for (int i = args.Length - 1; i >= 0; i--)
+                context_new.EvaluationStack.Push(args[i]);
             if (NativeContract.IsNative(contract.Hash))
-            {
-                context_new.EvaluationStack.Push(args);
                 context_new.EvaluationStack.Push(method.Name);
-            }
-            else
-            {
-                for (int i = args.Count - 1; i >= 0; i--)
-                    context_new.EvaluationStack.Push(args[i]);
-            }
         }
 
         protected internal void CallNativeContract(string name)

@@ -6,17 +6,22 @@ using System.IO;
 namespace Neo.SmartContract
 {
     /// <summary>
-    /// +------------+-----------+------------------------------------------------------------+
-    /// |   Field    |  Length   |                          Comment                           |
-    /// +------------+-----------+------------------------------------------------------------+
-    /// | Magic      | 4 bytes   | Magic header                                               |
-    /// | Compiler   | 32 bytes  | Compiler used                                              |
-    /// | Version    | 32 bytes  | Compiler version                                           |
-    /// +------------+-----------+------------------------------------------------------------+
-    /// | Script     | Var bytes | Var bytes for the payload                                  |
-    /// +------------+-----------+------------------------------------------------------------+
-    /// | Checksum   | 4 bytes   | First four bytes of double SHA256 hash                     |
-    /// +------------+-----------+------------------------------------------------------------+
+    /// ┌───────────────────────────────────────────────────────────────────────┐
+    /// │                    NEO Executable Format 3 (NEF3)                     │
+    /// ├──────────┬───────────────┬────────────────────────────────────────────┤
+    /// │  Field   │     Type      │                  Comment                   │
+    /// ├──────────┼───────────────┼────────────────────────────────────────────┤
+    /// │ Magic    │ uint32        │ Magic header                               │
+    /// │ Compiler │ byte[32]      │ Compiler used                              │
+    /// │ Version  │ byte[32]      │ Compiler version                           │
+    /// ├──────────┼───────────────┼────────────────────────────────────────────┤
+    /// │ Reserve  │ byte[2]       │ Reserved for future extensions. Must be 0. │
+    /// │ Tokens   │ MethodToken[] │ Method tokens.                             │
+    /// │ Reserve  │ byte[2]       │ Reserved for future extensions. Must be 0. │
+    /// │ Script   │ byte[]        │ Var bytes for the payload                  │
+    /// ├──────────┼───────────────┼────────────────────────────────────────────┤
+    /// │ Checksum │ uint32        │ First four bytes of double SHA256 hash     │
+    /// └──────────┴───────────────┴────────────────────────────────────────────┘
     /// </summary>
     public class NefFile : ISerializable
     {
@@ -36,6 +41,11 @@ namespace Neo.SmartContract
         public string Version { get; set; }
 
         /// <summary>
+        /// Method tokens
+        /// </summary>
+        public MethodToken[] Tokens { get; set; }
+
+        /// <summary>
         /// Script
         /// </summary>
         public byte[] Script { get; set; }
@@ -53,12 +63,18 @@ namespace Neo.SmartContract
 
         public int Size =>
             HeaderSize +            // Header
+            2 +                     // Reserve
+            Tokens.GetVarSize() +   // Tokens
+            2 +                     // Reserve
             Script.GetVarSize() +   // Script
             sizeof(uint);           // Checksum
 
         public void Serialize(BinaryWriter writer)
         {
             SerializeHeader(writer);
+            writer.Write((short)0);
+            writer.Write(Tokens);
+            writer.Write((short)0);
             writer.WriteVarBytes(Script ?? Array.Empty<byte>());
             writer.Write(CheckSum);
         }
@@ -78,6 +94,13 @@ namespace Neo.SmartContract
 
             Compiler = reader.ReadFixedString(32);
             Version = reader.ReadFixedString(32);
+
+            if (reader.ReadUInt16() != 0) throw new FormatException("Reserved bytes must be 0");
+
+            Tokens = reader.ReadSerializableArray<MethodToken>(128);
+
+            if (reader.ReadUInt16() != 0) throw new FormatException("Reserved bytes must be 0");
+
             Script = reader.ReadVarBytes(MaxScriptLength);
             if (Script.Length == 0) throw new ArgumentException($"Script can't be empty");
 

@@ -12,15 +12,15 @@ namespace Neo.SmartContract
         public const int MaxStorageKeySize = 64;
         public const int MaxStorageValueSize = ushort.MaxValue;
 
-        public static readonly InteropDescriptor System_Storage_GetContext = Register("System.Storage.GetContext", nameof(GetStorageContext), 1 << 4, CallFlags.ReadStates, false);
-        public static readonly InteropDescriptor System_Storage_GetReadOnlyContext = Register("System.Storage.GetReadOnlyContext", nameof(GetReadOnlyContext), 1 << 4, CallFlags.ReadStates, false);
-        public static readonly InteropDescriptor System_Storage_AsReadOnly = Register("System.Storage.AsReadOnly", nameof(AsReadOnly), 1 << 4, CallFlags.ReadStates, false);
-        public static readonly InteropDescriptor System_Storage_Get = Register("System.Storage.Get", nameof(Get), 1 << 15, CallFlags.ReadStates, false);
-        public static readonly InteropDescriptor System_Storage_Find = Register("System.Storage.Find", nameof(Find), 1 << 15, CallFlags.ReadStates, false);
-        public static readonly InteropDescriptor System_Storage_FindKeys = Register("System.Storage.FindKeys", nameof(FindKeys), 1 << 15, CallFlags.ReadStates, false);
-        public static readonly InteropDescriptor System_Storage_Put = Register("System.Storage.Put", nameof(Put), 0, CallFlags.WriteStates, false);
-        public static readonly InteropDescriptor System_Storage_PutEx = Register("System.Storage.PutEx", nameof(PutEx), 0, CallFlags.WriteStates, false);
-        public static readonly InteropDescriptor System_Storage_Delete = Register("System.Storage.Delete", nameof(Delete), 0, CallFlags.WriteStates, false);
+        public static readonly InteropDescriptor System_Storage_GetContext = Register("System.Storage.GetContext", nameof(GetStorageContext), 1 << 4, CallFlags.ReadStates);
+        public static readonly InteropDescriptor System_Storage_GetReadOnlyContext = Register("System.Storage.GetReadOnlyContext", nameof(GetReadOnlyContext), 1 << 4, CallFlags.ReadStates);
+        public static readonly InteropDescriptor System_Storage_AsReadOnly = Register("System.Storage.AsReadOnly", nameof(AsReadOnly), 1 << 4, CallFlags.ReadStates);
+        public static readonly InteropDescriptor System_Storage_Get = Register("System.Storage.Get", nameof(Get), 1 << 15, CallFlags.ReadStates);
+        public static readonly InteropDescriptor System_Storage_Find = Register("System.Storage.Find", nameof(Find), 1 << 15, CallFlags.ReadStates);
+        public static readonly InteropDescriptor System_Storage_FindKeys = Register("System.Storage.FindKeys", nameof(FindKeys), 1 << 15, CallFlags.ReadStates);
+        public static readonly InteropDescriptor System_Storage_Put = Register("System.Storage.Put", nameof(Put), 0, CallFlags.WriteStates);
+        public static readonly InteropDescriptor System_Storage_PutEx = Register("System.Storage.PutEx", nameof(PutEx), 0, CallFlags.WriteStates);
+        public static readonly InteropDescriptor System_Storage_Delete = Register("System.Storage.Delete", nameof(Delete), 0, CallFlags.WriteStates);
 
         protected internal StorageContext GetStorageContext()
         {
@@ -65,17 +65,13 @@ namespace Neo.SmartContract
         protected internal IIterator Find(StorageContext context, byte[] prefix)
         {
             byte[] prefix_key = StorageKey.CreateSearchPrefix(context.Id, prefix);
-            StorageIterator iterator = new StorageIterator(Snapshot.Storages.Find(prefix_key).GetEnumerator());
-            Disposables.Add(iterator);
-            return iterator;
+            return new StorageIterator(Snapshot.Storages.Find(prefix_key).GetEnumerator());
         }
 
         protected internal IEnumerator FindKeys(StorageContext context, byte[] prefix, byte removePrefix)
         {
             byte[] prefix_key = StorageKey.CreateSearchPrefix(context.Id, prefix);
-            StorageKeyEnumerator enumerator = new StorageKeyEnumerator(Snapshot.Storages.Find(prefix_key).Select(p => p.Key).GetEnumerator(), removePrefix);
-            Disposables.Add(enumerator);
-            return enumerator;
+            return new StorageKeyEnumerator(Snapshot.Storages.Find(prefix_key).Select(p => p.Key).GetEnumerator(), removePrefix);
         }
 
         protected internal void Put(StorageContext context, byte[] key, byte[] value)

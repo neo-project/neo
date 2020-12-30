@@ -15,7 +15,7 @@ using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
-    public sealed class NeoToken : Nep17Token<NeoToken.NeoAccountState>
+    public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
     {
         public override int Id => -1;
         public override string Symbol => "NEO";
