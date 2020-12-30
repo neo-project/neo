@@ -117,8 +117,11 @@ namespace Neo.SmartContract
                 pcount: pcount,
                 rvcount: hasReturnValue ? 1 : 0,
                 initialPosition: md.Offset,
-                callFlags: callFlags,
-                scriptHash: contract.Hash);
+                configureState: p =>
+                {
+                    p.CallFlags = callFlags;
+                    p.ScriptHash = contract.Hash;
+                });
 
             // Call initialization
             var init = contract.Manifest.Abi.GetMethod("_initialize");
@@ -130,13 +133,11 @@ namespace Neo.SmartContract
             return context;
         }
 
-        public ExecutionContext LoadScript(Script script, ushort pcount = 0, int rvcount = -1, int initialPosition = 0, CallFlags callFlags = CallFlags.All, UInt160 scriptHash = null)
+        public ExecutionContext LoadScript(Script script, ushort pcount = 0, int rvcount = -1, int initialPosition = 0, Action<ExecutionContextState> configureState = null)
         {
             // Create and configure context
             ExecutionContext context = CreateContext(script, pcount, rvcount, initialPosition);
-            var state = context.GetState<ExecutionContextState>();
-            state.CallFlags = callFlags;
-            state.ScriptHash = scriptHash ?? ((byte[])script).ToScriptHash();
+            configureState?.Invoke(context.GetState<ExecutionContextState>());
             // Load context
             LoadContext(context);
             return context;

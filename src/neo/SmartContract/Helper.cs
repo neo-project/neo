@@ -194,10 +194,14 @@ namespace Neo.SmartContract
                 {
                     if (NativeContract.IsNative(hash)) return false;
                     if (hash != witness.ScriptHash) return false;
-                    engine.LoadScript(verification, callFlags: callFlags, scriptHash: hash, initialPosition: 0);
+                    engine.LoadScript(verification, initialPosition: 0, configureState: p =>
+                    {
+                        p.CallFlags = callFlags;
+                        p.ScriptHash = hash;
+                    });
                 }
 
-                engine.LoadScript(witness.InvocationScript, callFlags: CallFlags.None);
+                engine.LoadScript(witness.InvocationScript, configureState: p => p.CallFlags = CallFlags.None);
 
                 if (NativeContract.IsNative(hash))
                 {
