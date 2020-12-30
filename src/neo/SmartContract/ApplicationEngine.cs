@@ -287,7 +287,7 @@ namespace Neo.SmartContract
             Exchange(ref applicationEngineProvider, null);
         }
 
-        public static ApplicationEngine Run(byte[] script, StoreView snapshot = null, IVerifiable container = null, Block persistingBlock = null, int offset = 0, long gas = TestModeGas)
+        public static ApplicationEngine Run(byte[] script, StoreView snapshot = null, IVerifiable container = null, Block persistingBlock = null, int offset = 0, long gas = TestModeGas, TriggerType type = TriggerType.Application)
         {
             SnapshotView disposable = null;
             if (snapshot is null)
@@ -296,7 +296,7 @@ namespace Neo.SmartContract
                 snapshot = disposable;
             }
             snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? CreateDummyBlock(snapshot);
-            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, gas);
+            ApplicationEngine engine = Create(type, container, snapshot, gas);
             if (disposable != null) engine.Disposables.Add(disposable);
             engine.LoadScript(script, initialPosition: offset);
             engine.Execute();
