@@ -26,7 +26,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var test = new ExtensiblePayload()
             {
                 Receiver = "123",
-                MessageType = 123,
                 ValidBlockEnd = 456,
                 ValidBlockStart = 789,
                 Data = new byte[] { 1, 2, 3 },
@@ -38,7 +37,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(test.ValidBlockStart, clone.ValidBlockStart);
             Assert.AreEqual(test.ValidBlockEnd, clone.ValidBlockEnd);
             Assert.AreEqual(test.Receiver, clone.Receiver);
-            Assert.AreEqual(test.MessageType, clone.MessageType);
         }
     }
 }
