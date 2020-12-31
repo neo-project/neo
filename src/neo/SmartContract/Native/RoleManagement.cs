@@ -55,7 +55,7 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.Storages.Add(key, new StorageItem(list));
         }
 
-        private class NodeList : List<ECPoint>, IInteroperable
+        public class NodeList : List<ECPoint>, IInteroperable
         {
             public void FromStackItem(StackItem stackItem)
             {
