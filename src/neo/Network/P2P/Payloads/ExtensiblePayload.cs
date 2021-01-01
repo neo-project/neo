@@ -9,7 +9,7 @@ namespace Neo.Network.P2P.Payloads
 {
     public class ExtensiblePayload : IInventory
     {
-        public string Receiver;
+        public string Category;
         public uint ValidBlockStart;
         public uint ValidBlockEnd;
         public byte[] Data;
@@ -31,7 +31,7 @@ namespace Neo.Network.P2P.Payloads
         InventoryType IInventory.InventoryType => InventoryType.Extensible;
 
         public int Size =>
-            Receiver.GetVarSize() + //Receiver
+            Category.GetVarSize() + //Receiver
             sizeof(uint) +          //ValidBlockStart
             sizeof(uint) +          //ValidBlockEnd
             Data.GetVarSize() +     //Data
@@ -59,7 +59,7 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.DeserializeUnsigned(BinaryReader reader)
         {
-            Receiver = reader.ReadVarString(32);
+            Category = reader.ReadVarString(32);
             ValidBlockStart = reader.ReadUInt32();
             ValidBlockEnd = reader.ReadUInt32();
             Data = reader.ReadVarBytes(ushort.MaxValue);
@@ -78,7 +78,7 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
         {
-            writer.WriteVarString(Receiver);
+            writer.WriteVarString(Category);
             writer.Write(ValidBlockStart);
             writer.Write(ValidBlockEnd);
             writer.WriteVarBytes(Data);
