@@ -2,7 +2,6 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Persistence;
-using Neo.SmartContract.Enumerators;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
@@ -114,12 +113,12 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        public IEnumerator TokensOf(StoreView snapshot, UInt160 owner)
+        public IIterator TokensOf(StoreView snapshot, UInt160 owner)
         {
             if (owner is null)
             {
-                var keys = snapshot.Storages.Find(new[] { Prefix_Token }).Select(p => p.Key);
-                return new StorageKeyEnumerator(keys.GetEnumerator(), 1);
+                var results = snapshot.Storages.Find(new[] { Prefix_Token }).GetEnumerator();
+                return new StorageIterator(results, FindOptions.ValuesOnly | FindOptions.DeserializeValues | FindOptions.PickField1, null);
             }
             else
             {

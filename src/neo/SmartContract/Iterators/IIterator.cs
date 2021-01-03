@@ -1,10 +1,11 @@
-using Neo.SmartContract.Enumerators;
 using Neo.VM.Types;
+using System;
 
 namespace Neo.SmartContract.Iterators
 {
-    public interface IIterator : IEnumerator
+    public interface IIterator : IDisposable
     {
-        PrimitiveType Key();
+        bool Next();
+        StackItem Value();
     }
 }
