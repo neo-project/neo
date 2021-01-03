@@ -50,7 +50,7 @@ namespace Neo.SmartContract.Native
                 },
                 new ContractEventDescriptor
                 {
-                    Name = "Destory",
+                    Name = "Destroy",
                     Parameters = new ContractParameterDefinition[]
                     {
                         new ContractParameterDefinition()
