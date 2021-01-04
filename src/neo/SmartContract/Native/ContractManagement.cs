@@ -50,7 +50,7 @@ namespace Neo.SmartContract.Native
                 },
                 new ContractEventDescriptor
                 {
-                    Name = "Destory",
+                    Name = "Destroy",
                     Parameters = new ContractParameterDefinition[]
                     {
                         new ContractParameterDefinition()
@@ -211,7 +211,7 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.Storages.Delete(ckey);
             foreach (var (key, _) in engine.Snapshot.Storages.Find(BitConverter.GetBytes(contract.Id)))
                 engine.Snapshot.Storages.Delete(key);
-            engine.SendNotification(Hash, "Destory", new VM.Types.Array { hash.ToArray() });
+            engine.SendNotification(Hash, "Destroy", new VM.Types.Array { hash.ToArray() });
         }
     }
 }
