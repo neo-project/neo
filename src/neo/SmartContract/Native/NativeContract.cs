@@ -46,7 +46,7 @@ namespace Neo.SmartContract.Native
             this.Nef = new NefFile
             {
                 Compiler = nameof(ScriptBuilder),
-                Version = typeof(ScriptBuilder).Assembly.GetVersion(),
+                Version = "3.0",
                 Tokens = System.Array.Empty<MethodToken>(),
                 Script = script
             };
