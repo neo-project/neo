@@ -74,20 +74,68 @@ namespace Neo.SmartContract
             base.OnFault(e);
         }
 
+        private ExecutionContext CallContractInternal(UInt160 contractHash, string method, CallFlags flags, bool hasReturnValue, StackItem[] args)
+        {
+            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
+            if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
+            if (md is null) throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
+
+            if (md.Safe)
+            {
+                flags &= ~CallFlags.WriteStates;
+            }
+            else
+            {
+                ContractState currentContract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
+                if (currentContract?.CanCall(contract, method) == false)
+                    throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contractHash} From Contract {CurrentScriptHash}");
+            }
+
+            if (invocationCounter.TryGetValue(contract.Hash, out var counter))
+            {
+                invocationCounter[contract.Hash] = counter + 1;
+            }
+            else
+            {
+                invocationCounter[contract.Hash] = 1;
+            }
+
+            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
+            UInt160 callingScriptHash = state.ScriptHash;
+            CallFlags callingFlags = state.CallFlags;
+
+            if (args.Length != md.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {md.Parameters.Length} Arguments But Receives {args.Length} Arguments");
+            ExecutionContext context_new = LoadContract(contract, method, flags & callingFlags, hasReturnValue, (ushort)args.Length);
+            state = context_new.GetState<ExecutionContextState>();
+            state.CallingScriptHash = callingScriptHash;
+
+            for (int i = args.Length - 1; i >= 0; i--)
+                context_new.EvaluationStack.Push(args[i]);
+            if (NativeContract.IsNative(contract.Hash))
+                context_new.EvaluationStack.Push(method);
+
+            return context_new;
+        }
+
         internal void CallFromNativeContract(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
         {
-            CallContractInternal(hash, method, CallFlags.All, false, args);
-            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
+            ExecutionContext context_current = CurrentContext;
+            ExecutionContext context_new = CallContractInternal(hash, method, CallFlags.All, false, args);
+            ExecutionContextState state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
-            StepOut();
+            while (CurrentContext != context_current)
+                StepOut();
         }
 
         internal T CallFromNativeContract<T>(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
         {
-            CallContractInternal(hash, method, CallFlags.All, true, args);
-            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
+            ExecutionContext context_current = CurrentContext;
+            ExecutionContext context_new = CallContractInternal(hash, method, CallFlags.All, true, args);
+            ExecutionContextState state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
-            StepOut();
+            while (CurrentContext != context_current)
+                StepOut();
             return (T)Convert(Pop(), new InteropParameterDescriptor(typeof(T)));
         }
 
@@ -121,6 +169,7 @@ namespace Neo.SmartContract
                 {
                     p.CallFlags = callFlags;
                     p.ScriptHash = contract.Hash;
+                    p.Contract = contract;
                 });
 
             // Call initialization
@@ -141,6 +190,20 @@ namespace Neo.SmartContract
             // Load context
             LoadContext(context);
             return context;
+        }
+
+        protected override ExecutionContext LoadToken(ushort tokenId)
+        {
+            ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
+            if (contract is null || tokenId >= contract.Nef.Tokens.Length)
+                throw new InvalidOperationException();
+            MethodToken token = contract.Nef.Tokens[tokenId];
+            if (token.ParametersCount > CurrentContext.EvaluationStack.Count)
+                throw new InvalidOperationException();
+            StackItem[] args = new StackItem[token.ParametersCount];
+            for (int i = 0; i < token.ParametersCount; i++)
+                args[i] = Pop();
+            return CallContractInternal(token.Hash, token.Method, token.CallFlags, token.HasReturnValue, args);
         }
 
         protected internal StackItem Convert(object value)
