@@ -121,7 +121,7 @@ namespace Neo.UnitTests.SmartContract
             engine.LoadScript(new byte[] { 0x01 });
             engine.IsStandardContract(state.Hash).Should().BeFalse();
 
-            state.Script = Contract.CreateSignatureRedeemScript(Blockchain.StandbyValidators[0]);
+            state.Nef.Script = Contract.CreateSignatureRedeemScript(Blockchain.StandbyValidators[0]);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
             engine.IsStandardContract(state.Hash).Should().BeTrue();
