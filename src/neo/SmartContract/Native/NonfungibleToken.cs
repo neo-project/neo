@@ -62,9 +62,11 @@ namespace Neo.SmartContract.Native
             Manifest.Abi.Events = events.ToArray();
         }
 
+        protected virtual byte[] GetKey(byte[] tokenId) => tokenId;
+
         protected void Mint(ApplicationEngine engine, TokenState token)
         {
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Token).Add(token.Id), new StorageItem(token));
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Token).Add(GetKey(token.Id)), new StorageItem(token));
             NFTAccountState account = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Account).Add(token.Owner), () => new StorageItem(new NFTAccountState())).GetInteroperable<NFTAccountState>();
             account.Add(token.Id);
             engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem(BigInteger.Zero)).Add(1);
@@ -73,7 +75,7 @@ namespace Neo.SmartContract.Native
 
         protected void Burn(ApplicationEngine engine, byte[] tokenId)
         {
-            StorageKey key_token = CreateStorageKey(Prefix_Token).Add(tokenId);
+            StorageKey key_token = CreateStorageKey(Prefix_Token).Add(GetKey(tokenId));
             TokenState token = engine.Snapshot.Storages.TryGet(key_token)?.GetInteroperable<TokenState>();
             if (token is null) throw new InvalidOperationException();
             engine.Snapshot.Storages.Delete(key_token);
@@ -96,13 +98,13 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public UInt160 OwnerOf(StoreView snapshot, byte[] tokenId)
         {
-            return snapshot.Storages[CreateStorageKey(Prefix_Token).Add(tokenId)].GetInteroperable<TokenState>().Owner;
+            return snapshot.Storages[CreateStorageKey(Prefix_Token).Add(GetKey(tokenId))].GetInteroperable<TokenState>().Owner;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public JObject Properties(StoreView snapshot, byte[] tokenId)
         {
-            return snapshot.Storages[CreateStorageKey(Prefix_Token).Add(tokenId)].GetInteroperable<TokenState>().ToJson();
+            return snapshot.Storages[CreateStorageKey(Prefix_Token).Add(GetKey(tokenId))].GetInteroperable<TokenState>().ToJson();
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
@@ -132,7 +134,7 @@ namespace Neo.SmartContract.Native
         protected bool Transfer(ApplicationEngine engine, UInt160 to, byte[] tokenId)
         {
             if (to is null) throw new ArgumentNullException(nameof(to));
-            TokenState token = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Token).Add(tokenId))?.GetInteroperable<TokenState>();
+            TokenState token = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Token).Add(GetKey(tokenId)))?.GetInteroperable<TokenState>();
             if (token is null) throw new ArgumentException();
             UInt160 from = token.Owner;
             if (!from.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(from))
