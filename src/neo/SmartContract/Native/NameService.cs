@@ -1,6 +1,7 @@
 #pragma warning disable IDE0051
 
 using Neo.Cryptography;
+using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Persistence;
@@ -122,9 +123,22 @@ namespace Neo.SmartContract.Native
             return state.Expiration;
         }
 
+        [ContractMethod(0_03000000, CallFlags.WriteStates)]
+        private void SetAdmin(ApplicationEngine engine, string name, UInt160 admin)
+        {
+            if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
+            string[] names = name.Split('.');
+            if (names.Length != 2) throw new ArgumentException(null, nameof(name));
+            if (!engine.CheckWitnessInternal(admin)) throw new InvalidOperationException();
+            NameState state = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Token).Add(GetKey(Utility.StrictUTF8.GetBytes(name)))).GetInteroperable<NameState>();
+            if (!engine.CheckWitnessInternal(state.Owner)) throw new InvalidOperationException();
+            state.Admin = admin;
+        }
+
         public class NameState : NFTState
         {
             public uint Expiration;
+            public UInt160 Admin;
 
             public override byte[] Id => Utility.StrictUTF8.GetBytes(Name);
 
@@ -140,12 +154,14 @@ namespace Neo.SmartContract.Native
                 base.FromStackItem(stackItem);
                 Struct @struct = (Struct)stackItem;
                 Expiration = (uint)@struct[3].GetInteger();
+                Admin = @struct[4].IsNull ? null : new UInt160(@struct[4].GetSpan());
             }
 
             public override StackItem ToStackItem(ReferenceCounter referenceCounter)
             {
                 Struct @struct = (Struct)base.ToStackItem(referenceCounter);
                 @struct.Add(Expiration);
+                @struct.Add(Admin?.ToArray() ?? StackItem.Null);
                 return @struct;
             }
         }
