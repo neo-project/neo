@@ -187,19 +187,34 @@ namespace Neo.SmartContract
                 {
                     ContractState cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (cs is null) return false;
-                    if (engine.LoadContract(cs, "verify", callFlags, true) is null)
+                    if (engine.LoadContract(cs, "verify", callFlags, true, 0) is null)
                         return false;
                 }
                 else
                 {
                     if (NativeContract.IsNative(hash)) return false;
                     if (hash != witness.ScriptHash) return false;
-                    engine.LoadScript(verification, callFlags, hash, 0);
+                    engine.LoadScript(verification, initialPosition: 0, configureState: p =>
+                    {
+                        p.CallFlags = callFlags;
+                        p.ScriptHash = hash;
+                    });
                 }
 
-                engine.LoadScript(witness.InvocationScript, CallFlags.None);
+                engine.LoadScript(witness.InvocationScript, configureState: p => p.CallFlags = CallFlags.None);
+
+                if (NativeContract.IsNative(hash))
+                {
+                    try
+                    {
+                        engine.StepOut();
+                        engine.Push("verify");
+                    }
+                    catch { }
+                }
+
                 if (engine.Execute() == VMState.FAULT) return false;
-                if (engine.ResultStack.Count != 1 || !engine.ResultStack.Peek().GetBoolean()) return false;
+                if (!engine.ResultStack.Peek().GetBoolean()) return false;
                 fee = engine.GasConsumed;
             }
             return true;

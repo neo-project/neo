@@ -22,15 +22,11 @@ namespace Neo.UnitTests.SmartContract.Iterators
         public void TestKeyAndValue()
         {
             ByteArrayWrapper arrayWrapper = new ByteArrayWrapper(new byte[] { 0x01, 0x02 });
-            Action action1 = () => arrayWrapper.Key();
-            action1.Should().Throw<InvalidOperationException>();
             Action action2 = () => arrayWrapper.Value();
             action2.Should().Throw<InvalidOperationException>();
             arrayWrapper.Next();
-            Assert.AreEqual(0x00, arrayWrapper.Key().GetInteger());
             Assert.AreEqual(0x01, arrayWrapper.Value());
             arrayWrapper.Next();
-            Assert.AreEqual(0x01, arrayWrapper.Key().GetInteger());
             Assert.AreEqual(0x02, arrayWrapper.Value());
         }
 

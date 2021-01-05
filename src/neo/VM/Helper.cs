@@ -46,40 +46,40 @@ namespace Neo.VM
             return sb;
         }
 
-        public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation)
+        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, bool hasReturnValue)
         {
-            sb.EmitPush(CallFlags.All);
             sb.EmitPush(0);
-            sb.Emit(OpCode.NEWARRAY);
+            sb.EmitPush(hasReturnValue ? 1 : 0);
+            sb.EmitPush(CallFlags.All);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(ApplicationEngine.System_Contract_CallEx);
+            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
             return sb;
         }
 
-        public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params ContractParameter[] args)
+        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, bool hasReturnValue, params ContractParameter[] args)
         {
-            sb.EmitPush(CallFlags.All);
             for (int i = args.Length - 1; i >= 0; i--)
                 sb.EmitPush(args[i]);
             sb.EmitPush(args.Length);
-            sb.Emit(OpCode.PACK);
+            sb.EmitPush(hasReturnValue ? 1 : 0);
+            sb.EmitPush(CallFlags.All);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(ApplicationEngine.System_Contract_CallEx);
+            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
             return sb;
         }
 
-        public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params object[] args)
+        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, bool hasReturnValue, params object[] args)
         {
-            sb.EmitPush(CallFlags.All);
             for (int i = args.Length - 1; i >= 0; i--)
                 sb.EmitPush(args[i]);
             sb.EmitPush(args.Length);
-            sb.Emit(OpCode.PACK);
+            sb.EmitPush(hasReturnValue ? 1 : 0);
+            sb.EmitPush(CallFlags.All);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(ApplicationEngine.System_Contract_CallEx);
+            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
             return sb;
         }
 
@@ -204,16 +204,11 @@ namespace Neo.VM
         /// <param name="operation">contract operation</param>
         /// <param name="args">operation arguments</param>
         /// <returns></returns>
-        public static byte[] MakeScript(this UInt160 scriptHash, string operation, params object[] args)
+        public static byte[] MakeScript(this UInt160 scriptHash, string operation, bool hasReturnValue, params object[] args)
         {
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                if (args.Length > 0)
-                    sb.EmitAppCall(scriptHash, operation, args);
-                else
-                    sb.EmitAppCall(scriptHash, operation);
-                return sb.ToArray();
-            }
+            using ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitDynamicCall(scriptHash, operation, hasReturnValue, args);
+            return sb.ToArray();
         }
 
         public static JObject ToJson(this StackItem item)
