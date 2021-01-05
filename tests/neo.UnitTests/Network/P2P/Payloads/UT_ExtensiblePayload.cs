@@ -2,6 +2,8 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract;
+using System;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -13,11 +15,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var test = new ExtensiblePayload()
             {
+                Sender = Array.Empty<byte>().ToScriptHash(),
                 Category = "123",
                 Data = new byte[] { 1, 2, 3 },
-                Witness = new Witness() { InvocationScript = new byte[] { 3, 5, 6 }, VerificationScript = new byte[0] }
+                Witness = new Witness() { InvocationScript = new byte[] { 3, 5, 6 }, VerificationScript = Array.Empty<byte>() }
             };
-            test.Size.Should().Be(22);
+            test.Size.Should().Be(42);
         }
 
         [TestMethod]
@@ -25,18 +28,26 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var test = new ExtensiblePayload()
             {
+                Sender = Array.Empty<byte>().ToScriptHash(),
                 Category = "123",
                 ValidBlockEnd = 456,
                 ValidBlockStart = 789,
                 Data = new byte[] { 1, 2, 3 },
-                Witness = new Witness() { InvocationScript = new byte[] { 3, 5, 6 }, VerificationScript = new byte[0] }
+                Witness = new Witness() { InvocationScript = new byte[] { 3, 5, 6 }, VerificationScript = Array.Empty<byte>() }
             };
             var clone = test.ToArray().AsSerializable<ExtensiblePayload>();
 
+            Assert.AreEqual(test.Sender, clone.Witness.ScriptHash);
             Assert.AreEqual(test.Hash, clone.Hash);
             Assert.AreEqual(test.ValidBlockStart, clone.ValidBlockStart);
             Assert.AreEqual(test.ValidBlockEnd, clone.ValidBlockEnd);
             Assert.AreEqual(test.Category, clone.Category);
+
+            // Check error
+
+            test.Sender = UInt160.Zero;
+
+            Assert.ThrowsException<FormatException>(() => test.ToArray().AsSerializable<ExtensiblePayload>());
         }
     }
 }

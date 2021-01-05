@@ -28,10 +28,13 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
+        public UInt160 Sender { get; set; }
+
         InventoryType IInventory.InventoryType => InventoryType.Extensible;
 
         public int Size =>
-            Category.GetVarSize() + //Receiver
+            UInt160.Length +        //Sender
+            Category.GetVarSize() + //Category
             sizeof(uint) +          //ValidBlockStart
             sizeof(uint) +          //ValidBlockEnd
             Data.GetVarSize() +     //Data
@@ -55,10 +58,12 @@ namespace Neo.Network.P2P.Payloads
             ((IVerifiable)this).DeserializeUnsigned(reader);
             if (reader.ReadByte() != 1) throw new FormatException();
             Witness = reader.ReadSerializable<Witness>();
+            if (Witness.ScriptHash != Sender) throw new FormatException();
         }
 
         void IVerifiable.DeserializeUnsigned(BinaryReader reader)
         {
+            Sender = reader.ReadSerializable<UInt160>();
             Category = reader.ReadVarString(32);
             ValidBlockStart = reader.ReadUInt32();
             ValidBlockEnd = reader.ReadUInt32();
@@ -78,6 +83,7 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
         {
+            writer.Write(Sender);
             writer.WriteVarString(Category);
             writer.Write(ValidBlockStart);
             writer.Write(ValidBlockEnd);
