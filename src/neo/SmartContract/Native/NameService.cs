@@ -10,6 +10,8 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Numerics;
 using System.Text.RegularExpressions;
 
@@ -23,6 +25,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_Roots = 10;
         private const byte Prefix_DomainPrice = 22;
         private const byte Prefix_Expiration = 20;
+        private const byte Prefix_Record = 12;
 
         private const uint OneYear = 365 * 24 * 3600;
         private static readonly Regex rootRegex = new Regex("^[a-z][a-z0-9]{0,15}$");
@@ -135,6 +138,67 @@ namespace Neo.SmartContract.Native
             state.Admin = admin;
         }
 
+        [ContractMethod(0_30000000, CallFlags.WriteStates)]
+        private void SetRecord(ApplicationEngine engine, string name, RecordType type, string data)
+        {
+            if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
+            switch (type)
+            {
+                case RecordType.A:
+                    if (!IPAddress.TryParse(data, out IPAddress address)) throw new FormatException();
+                    if (address.AddressFamily != AddressFamily.InterNetwork) throw new FormatException();
+                    break;
+                case RecordType.CNAME:
+                    if (!nameRegex.IsMatch(data)) throw new FormatException();
+                    break;
+                case RecordType.TXT:
+                    if (Utility.StrictUTF8.GetByteCount(data) > 255) throw new FormatException();
+                    break;
+                case RecordType.AAAA:
+                    if (!IPAddress.TryParse(data, out address)) throw new FormatException();
+                    if (address.AddressFamily != AddressFamily.InterNetworkV6) throw new FormatException();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type));
+            }
+            string domain = string.Join('.', name.Split('.')[^2..]);
+            NameState state = engine.Snapshot.Storages[CreateStorageKey(Prefix_Token).Add(GetKey(Utility.StrictUTF8.GetBytes(domain)))].GetInteroperable<NameState>();
+            if (!engine.CheckWitnessInternal(state.Owner) && !engine.CheckWitnessInternal(state.Admin)) throw new InvalidOperationException();
+            StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Record).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).Add(type), () => new StorageItem());
+            item.Value = Utility.StrictUTF8.GetBytes(data);
+        }
+
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        public string GetRecord(StoreView snapshot, string name, RecordType type)
+        {
+            if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Record).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).Add(type));
+            if (item is null) return null;
+            return Utility.StrictUTF8.GetString(item.Value);
+        }
+
+        public IEnumerable<(RecordType Type, string Data)> GetRecords(StoreView snapshot, string name)
+        {
+            if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
+            foreach (var (key, value) in snapshot.Storages.Find(CreateStorageKey(Prefix_Record).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).ToArray()))
+                yield return ((RecordType)key.Key[^1], Utility.StrictUTF8.GetString(value.Value));
+        }
+
+        [ContractMethod(0_03000000, CallFlags.ReadStates)]
+        public string Resolve(StoreView snapshot, string name, RecordType type)
+        {
+            return Resolve(snapshot, name, type, 2);
+        }
+
+        private string Resolve(StoreView snapshot, string name, RecordType type, int redirect)
+        {
+            if (redirect < 0) throw new InvalidOperationException();
+            var dictionary = GetRecords(snapshot, name).ToDictionary(p => p.Type, p => p.Data);
+            if (dictionary.TryGetValue(type, out string data)) return data;
+            if (!dictionary.TryGetValue(RecordType.CNAME, out data)) return null;
+            return Resolve(snapshot, data, type, redirect - 1);
+        }
+
         public class NameState : NFTState
         {
             public uint Expiration;
@@ -168,13 +232,13 @@ namespace Neo.SmartContract.Native
 
         private class StringList : List<string>, IInteroperable
         {
-            public void FromStackItem(StackItem stackItem)
+            void IInteroperable.FromStackItem(StackItem stackItem)
             {
                 foreach (StackItem item in (VM.Types.Array)stackItem)
                     Add(item.GetString());
             }
 
-            public StackItem ToStackItem(ReferenceCounter referenceCounter)
+            StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
             {
                 return new VM.Types.Array(referenceCounter, this.Select(p => (ByteString)p));
             }
