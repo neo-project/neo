@@ -3,7 +3,6 @@ using Neo.IO.Json;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
 using System.Linq;
 using Array = Neo.VM.Types.Array;
 
@@ -14,8 +13,10 @@ namespace Neo.SmartContract
         public int Id;
         public ushort UpdateCounter;
         public UInt160 Hash;
-        public byte[] Script;
+        public NefFile Nef;
         public ContractManifest Manifest;
+
+        public byte[] Script => Nef.Script;
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
@@ -23,7 +24,7 @@ namespace Neo.SmartContract
             Id = (int)array[0].GetInteger();
             UpdateCounter = (ushort)array[1].GetInteger();
             Hash = new UInt160(array[2].GetSpan());
-            Script = array[3].GetSpan().ToArray();
+            Nef = array[3].GetSpan().AsSerializable<NefFile>();
             Manifest = ContractManifest.Parse(array[4].GetSpan());
         }
 
@@ -40,18 +41,19 @@ namespace Neo.SmartContract
 
         public JObject ToJson()
         {
-            JObject json = new JObject();
-            json["id"] = Id;
-            json["updatecounter"] = UpdateCounter;
-            json["hash"] = Hash.ToString();
-            json["script"] = Convert.ToBase64String(Script);
-            json["manifest"] = Manifest.ToJson();
-            return json;
+            return new JObject
+            {
+                ["id"] = Id,
+                ["updatecounter"] = UpdateCounter,
+                ["hash"] = Hash.ToString(),
+                ["nef"] = Nef.ToJson(),
+                ["manifest"] = Manifest.ToJson()
+            };
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new StackItem[] { Id, (int)UpdateCounter, Hash.ToArray(), Script, Manifest.ToString() });
+            return new Array(referenceCounter, new StackItem[] { Id, (int)UpdateCounter, Hash.ToArray(), Nef.ToArray(), Manifest.ToString() });
         }
     }
 }

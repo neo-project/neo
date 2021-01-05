@@ -111,7 +111,7 @@ namespace Neo.UnitTests
             return new ContractState
             {
                 Id = 0x43000000,
-                Script = new byte[] { 0x01, 0x01, 0x01, 0x01 },
+                Nef = new NefFile { Script = new byte[] { 0x01, 0x01, 0x01, 0x01 } },
                 Hash = new byte[] { 0x01, 0x01, 0x01, 0x01 }.ToScriptHash(),
                 Manifest = CreateManifest(method, ContractParameterType.Any, Enumerable.Repeat(ContractParameterType.Any, parametersCount).ToArray())
             };
@@ -122,7 +122,7 @@ namespace Neo.UnitTests
             return new ContractState
             {
                 Id = 1,
-                Script = script,
+                Nef = new NefFile { Script = script },
                 Manifest = CreateDefaultManifest()
             };
         }

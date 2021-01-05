@@ -17,7 +17,7 @@ namespace Neo.UnitTests.SmartContract
                 Hash = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
                 Method = "myMethod",
                 ParametersCount = 123,
-                RVCount = 456
+                HasReturnValue = true
             };
 
             var copy = result.ToArray().AsSerializable<MethodToken>();
@@ -26,7 +26,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01", copy.Hash.ToString());
             Assert.AreEqual("myMethod", copy.Method);
             Assert.AreEqual(123, copy.ParametersCount);
-            Assert.AreEqual(456, copy.RVCount);
+            Assert.AreEqual(true, copy.HasReturnValue);
         }
 
         [TestMethod]
@@ -38,7 +38,7 @@ namespace Neo.UnitTests.SmartContract
                 Hash = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
                 Method = "myLongMethod",
                 ParametersCount = 123,
-                RVCount = 456
+                HasReturnValue = true
             };
 
             Assert.ThrowsException<FormatException>(() => result.ToArray().AsSerializable<MethodToken>());
