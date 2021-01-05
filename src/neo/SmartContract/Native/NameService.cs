@@ -48,6 +48,8 @@ namespace Neo.SmartContract.Native
             foreach (var (key, _) in engine.Snapshot.Storages.FindRange(start, end))
             {
                 engine.Snapshot.Storages.Delete(key);
+                foreach (var (key2, _) in engine.Snapshot.Storages.Find(CreateStorageKey(Prefix_Record).Add(key.Key.AsSpan(5)).ToArray()))
+                    engine.Snapshot.Storages.Delete(key2);
                 Burn(engine, CreateStorageKey(Prefix_Token).Add(key.Key.AsSpan(5)));
             }
         }
@@ -162,9 +164,10 @@ namespace Neo.SmartContract.Native
                     throw new ArgumentOutOfRangeException(nameof(type));
             }
             string domain = string.Join('.', name.Split('.')[^2..]);
-            NameState state = engine.Snapshot.Storages[CreateStorageKey(Prefix_Token).Add(GetKey(Utility.StrictUTF8.GetBytes(domain)))].GetInteroperable<NameState>();
+            byte[] hash_domain = GetKey(Utility.StrictUTF8.GetBytes(domain));
+            NameState state = engine.Snapshot.Storages[CreateStorageKey(Prefix_Token).Add(hash_domain)].GetInteroperable<NameState>();
             if (!engine.CheckWitnessInternal(state.Owner) && !engine.CheckWitnessInternal(state.Admin)) throw new InvalidOperationException();
-            StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Record).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).Add(type), () => new StorageItem());
+            StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Record).Add(hash_domain).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).Add(type), () => new StorageItem());
             item.Value = Utility.StrictUTF8.GetBytes(data);
         }
 
@@ -172,7 +175,9 @@ namespace Neo.SmartContract.Native
         public string GetRecord(StoreView snapshot, string name, RecordType type)
         {
             if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
-            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Record).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).Add(type));
+            string domain = string.Join('.', name.Split('.')[^2..]);
+            byte[] hash_domain = GetKey(Utility.StrictUTF8.GetBytes(domain));
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Record).Add(hash_domain).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).Add(type));
             if (item is null) return null;
             return Utility.StrictUTF8.GetString(item.Value);
         }
@@ -180,8 +185,21 @@ namespace Neo.SmartContract.Native
         public IEnumerable<(RecordType Type, string Data)> GetRecords(StoreView snapshot, string name)
         {
             if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
-            foreach (var (key, value) in snapshot.Storages.Find(CreateStorageKey(Prefix_Record).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).ToArray()))
+            string domain = string.Join('.', name.Split('.')[^2..]);
+            byte[] hash_domain = GetKey(Utility.StrictUTF8.GetBytes(domain));
+            foreach (var (key, value) in snapshot.Storages.Find(CreateStorageKey(Prefix_Record).Add(hash_domain).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).ToArray()))
                 yield return ((RecordType)key.Key[^1], Utility.StrictUTF8.GetString(value.Value));
+        }
+
+        [ContractMethod(0_01000000, CallFlags.WriteStates)]
+        private void DeleteRecord(ApplicationEngine engine, string name, RecordType type)
+        {
+            if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
+            string domain = string.Join('.', name.Split('.')[^2..]);
+            byte[] hash_domain = GetKey(Utility.StrictUTF8.GetBytes(domain));
+            NameState state = engine.Snapshot.Storages[CreateStorageKey(Prefix_Token).Add(hash_domain)].GetInteroperable<NameState>();
+            if (!engine.CheckWitnessInternal(state.Owner) && !engine.CheckWitnessInternal(state.Admin)) throw new InvalidOperationException();
+            engine.Snapshot.Storages.Delete(CreateStorageKey(Prefix_Record).Add(hash_domain).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).Add(type));
         }
 
         [ContractMethod(0_03000000, CallFlags.ReadStates)]
