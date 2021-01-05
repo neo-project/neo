@@ -8,6 +8,7 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text.RegularExpressions;
 
 namespace Neo.SmartContract.Native
@@ -18,11 +19,17 @@ namespace Neo.SmartContract.Native
         public override string Symbol => "NNS";
 
         private const byte Prefix_Roots = 5;
+        private const byte Prefix_DomainPrice = 11;
 
         private static readonly Regex rootRegex = new Regex("^[a-z][a-z0-9]{0,15}$");
 
         internal NameService()
         {
+        }
+
+        internal override void Initialize(ApplicationEngine engine)
+        {
+            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_DomainPrice), new StorageItem(10_00000000));
         }
 
         protected override byte[] GetKey(byte[] tokenId)
@@ -44,6 +51,20 @@ namespace Neo.SmartContract.Native
         public IEnumerable<string> GetRoots(StoreView snapshot)
         {
             return snapshot.Storages.TryGet(CreateStorageKey(Prefix_Roots))?.GetInteroperable<StringList>() ?? Enumerable.Empty<string>();
+        }
+
+        [ContractMethod(0_03000000, CallFlags.WriteStates)]
+        private void SetPrice(ApplicationEngine engine, long price)
+        {
+            if (price <= 0 || price > 10000_00000000) throw new ArgumentOutOfRangeException(nameof(price));
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_DomainPrice)).Set(price);
+        }
+
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        public long GetPrice(StoreView snapshot)
+        {
+            return (long)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_DomainPrice)];
         }
 
         public class NameState : NFTState
