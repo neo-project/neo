@@ -3,6 +3,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.VM;
+using System;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -19,10 +21,17 @@ namespace Neo.UnitTests.SmartContract
             manifest = TestUtils.CreateDefaultManifest();
             contract = new ContractState
             {
-                Script = script,
+                Nef = new NefFile
+                {
+                    Compiler = nameof(ScriptBuilder),
+                    Version = typeof(ScriptBuilder).Assembly.GetVersion(),
+                    Tokens = Array.Empty<MethodToken>(),
+                    Script = script
+                },
                 Hash = script.ToScriptHash(),
                 Manifest = manifest
             };
+            contract.Nef.CheckSum = NefFile.ComputeChecksum(contract.Nef);
         }
 
         [TestMethod]
@@ -56,7 +65,7 @@ namespace Neo.UnitTests.SmartContract
         {
             JObject json = contract.ToJson();
             json["hash"].AsString().Should().Be("0x820944cfdc70976602d71b0091445eedbc661bc5");
-            json["script"].AsString().Should().Be("AQ==");
+            json["nef"]["script"].AsString().Should().Be("AQ==");
             json["manifest"].AsString().Should().Be(manifest.ToJson().AsString());
         }
     }
