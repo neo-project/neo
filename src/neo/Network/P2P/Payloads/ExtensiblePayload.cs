@@ -12,6 +12,7 @@ namespace Neo.Network.P2P.Payloads
         public string Category;
         public uint ValidBlockStart;
         public uint ValidBlockEnd;
+        public UInt160 Sender;
         public byte[] Data;
         public Witness Witness;
 
@@ -28,15 +29,13 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        public UInt160 Sender { get; set; }
-
         InventoryType IInventory.InventoryType => InventoryType.Extensible;
 
         public int Size =>
-            UInt160.Length +        //Sender
             Category.GetVarSize() + //Category
             sizeof(uint) +          //ValidBlockStart
             sizeof(uint) +          //ValidBlockEnd
+            UInt160.Length +        //Sender
             Data.GetVarSize() +     //Data
             1 + Witness.Size;       //Witness
 
@@ -63,16 +62,16 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.DeserializeUnsigned(BinaryReader reader)
         {
-            Sender = reader.ReadSerializable<UInt160>();
             Category = reader.ReadVarString(32);
             ValidBlockStart = reader.ReadUInt32();
             ValidBlockEnd = reader.ReadUInt32();
+            Sender = reader.ReadSerializable<UInt160>();
             Data = reader.ReadVarBytes(ushort.MaxValue);
         }
 
         UInt160[] IVerifiable.GetScriptHashesForVerifying(StoreView snapshot)
         {
-            return new[] { Witness.ScriptHash }; // This address should be checked by consumer
+            return new[] { Sender }; // This address should be checked by consumer
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
@@ -83,17 +82,17 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
         {
-            writer.Write(Sender);
             writer.WriteVarString(Category);
             writer.Write(ValidBlockStart);
             writer.Write(ValidBlockEnd);
+            writer.Write(Sender);
             writer.WriteVarBytes(Data);
         }
 
         public bool Verify(StoreView snapshot)
         {
             if (snapshot.PersistingBlock.Index < ValidBlockStart || snapshot.PersistingBlock.Index > ValidBlockEnd) return false;
-            if (!Blockchain.Singleton.IsExtensibleWitnessWhiteListed(Witness.ScriptHash)) return false;
+            if (!Blockchain.Singleton.IsExtensibleWitnessWhiteListed(Sender)) return false;
             return this.VerifyWitnesses(snapshot, 0_02000000);
         }
     }
