@@ -4,6 +4,7 @@ namespace Neo.Network.P2P.Payloads
     {
         TX = MessageCommand.Transaction,
         Block = MessageCommand.Block,
+        Extensible = MessageCommand.Extensible,
         Consensus = MessageCommand.Consensus
     }
 }

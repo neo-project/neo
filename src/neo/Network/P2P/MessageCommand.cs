@@ -40,6 +40,8 @@ namespace Neo.Network.P2P
         Block = 0x2c,
         [ReflectionCache(typeof(ConsensusPayload))]
         Consensus = 0x2d,
+        [ReflectionCache(typeof(ExtensiblePayload))]
+        Extensible = 0x2e,
         Reject = 0x2f,
 
         //SPV protocol

@@ -87,6 +87,7 @@ namespace Neo.Network.P2P
             {
                 case MessageCommand.Alert:
                 case MessageCommand.Consensus:
+                case MessageCommand.Extensible:
                 case MessageCommand.FilterAdd:
                 case MessageCommand.FilterClear:
                 case MessageCommand.FilterLoad:
@@ -223,6 +224,7 @@ namespace Neo.Network.P2P
                     switch (msg.Command)
                     {
                         case MessageCommand.Consensus:
+                        case MessageCommand.Extensible:
                         case MessageCommand.FilterAdd:
                         case MessageCommand.FilterClear:
                         case MessageCommand.FilterLoad:
