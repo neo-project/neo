@@ -52,6 +52,7 @@ namespace Neo.UnitTests.Consensus
             Shutdown();
         }
 
+        /*
         [TestMethod]
         public void TestMaxBlockSize_Good()
         {
@@ -70,8 +71,9 @@ namespace Neo.UnitTests.Consensus
 
             _context.EnsureMaxBlockLimitation(txs);
             EnsureContext(_context, txs);
-        }
+        }*/
 
+        /*
         [TestMethod]
         public void TestMaxBlockSize_Exceed()
         {
@@ -91,8 +93,9 @@ namespace Neo.UnitTests.Consensus
 
             _context.EnsureMaxBlockLimitation(txs);
             EnsureContext(_context, txs.Take(max).ToArray());
-        }
+        }*/
 
+        /*
         [TestMethod]
         public void TestMaxBlockSytemFee()
         {
@@ -116,7 +119,7 @@ namespace Neo.UnitTests.Consensus
 
             _context.EnsureMaxBlockLimitation(new Transaction[] { tx1, tx2, tx3 });
             EnsureContext(_context, new Transaction[] { tx1, tx2 });
-        }
+        }*/
 
         private Transaction CreateTransactionWithSize(int v)
         {
