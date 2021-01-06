@@ -62,7 +62,6 @@ namespace Neo.Network.P2P
                     OnAddrMessageReceived((AddrPayload)msg.Payload);
                     break;
                 case MessageCommand.Block:
-                case MessageCommand.Consensus:
                 case MessageCommand.Extensible:
                     OnInventoryReceived((IInventory)msg.Payload);
                     break;

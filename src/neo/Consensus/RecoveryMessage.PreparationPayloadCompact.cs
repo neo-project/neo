@@ -1,5 +1,4 @@
 using Neo.IO;
-using Neo.Network.P2P.Payloads;
 using System;
 using System.IO;
 
@@ -22,15 +21,6 @@ namespace Neo.Consensus
                 if (ValidatorIndex >= ProtocolSettings.Default.ValidatorsCount)
                     throw new FormatException();
                 InvocationScript = reader.ReadVarBytes(1024);
-            }
-
-            public static PreparationPayloadCompact FromPayload(ConsensusPayload payload)
-            {
-                return new PreparationPayloadCompact
-                {
-                    ValidatorIndex = payload.ValidatorIndex,
-                    InvocationScript = payload.Witness.InvocationScript
-                };
             }
 
             void ISerializable.Serialize(BinaryWriter writer)

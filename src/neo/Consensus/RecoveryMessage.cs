@@ -1,6 +1,6 @@
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
-using Neo.SmartContract;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -45,89 +45,47 @@ namespace Neo.Consensus
             CommitMessages = reader.ReadSerializableArray<CommitPayloadCompact>(ProtocolSettings.Default.ValidatorsCount).ToDictionary(p => (int)p.ValidatorIndex);
         }
 
-        internal ConsensusPayload[] GetChangeViewPayloads(ConsensusContext context, ConsensusPayload payload)
+        internal ExtensiblePayload[] GetChangeViewPayloads(ConsensusContext context)
         {
-            return ChangeViewMessages.Values.Select(p => new ConsensusPayload
+            return ChangeViewMessages.Values.Select(p => context.CreatePayload(new ChangeView
             {
-                Version = payload.Version,
-                PrevHash = payload.PrevHash,
-                BlockIndex = payload.BlockIndex,
+                BlockIndex = BlockIndex,
                 ValidatorIndex = p.ValidatorIndex,
-                ConsensusMessage = new ChangeView
-                {
-                    ViewNumber = p.OriginalViewNumber,
-                    Timestamp = p.Timestamp
-                },
-                Witness = new Witness
-                {
-                    InvocationScript = p.InvocationScript,
-                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[p.ValidatorIndex])
-                }
-            }).ToArray();
+                ViewNumber = p.OriginalViewNumber,
+                Timestamp = p.Timestamp
+            }, p.InvocationScript)).ToArray();
         }
 
-        internal ConsensusPayload[] GetCommitPayloadsFromRecoveryMessage(ConsensusContext context, ConsensusPayload payload)
+        internal ExtensiblePayload[] GetCommitPayloadsFromRecoveryMessage(ConsensusContext context)
         {
-            return CommitMessages.Values.Select(p => new ConsensusPayload
+            return CommitMessages.Values.Select(p => context.CreatePayload(new Commit
             {
-                Version = payload.Version,
-                PrevHash = payload.PrevHash,
-                BlockIndex = payload.BlockIndex,
+                BlockIndex = BlockIndex,
                 ValidatorIndex = p.ValidatorIndex,
-                ConsensusMessage = new Commit
-                {
-                    ViewNumber = p.ViewNumber,
-                    Signature = p.Signature
-                },
-                Witness = new Witness
-                {
-                    InvocationScript = p.InvocationScript,
-                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[p.ValidatorIndex])
-                }
-            }).ToArray();
+                ViewNumber = p.ViewNumber,
+                Signature = p.Signature
+            }, p.InvocationScript)).ToArray();
         }
 
-        internal ConsensusPayload GetPrepareRequestPayload(ConsensusContext context, ConsensusPayload payload)
+        internal ExtensiblePayload GetPrepareRequestPayload(ConsensusContext context)
         {
             if (PrepareRequestMessage == null) return null;
             if (!PreparationMessages.TryGetValue(context.Block.ConsensusData.PrimaryIndex, out PreparationPayloadCompact compact))
                 return null;
-            return new ConsensusPayload
-            {
-                Version = payload.Version,
-                PrevHash = payload.PrevHash,
-                BlockIndex = payload.BlockIndex,
-                ValidatorIndex = context.Block.ConsensusData.PrimaryIndex,
-                ConsensusMessage = PrepareRequestMessage,
-                Witness = new Witness
-                {
-                    InvocationScript = compact.InvocationScript,
-                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[context.Block.ConsensusData.PrimaryIndex])
-                }
-            };
+            return context.CreatePayload(PrepareRequestMessage, compact.InvocationScript);
         }
 
-        internal ConsensusPayload[] GetPrepareResponsePayloads(ConsensusContext context, ConsensusPayload payload)
+        internal ExtensiblePayload[] GetPrepareResponsePayloads(ConsensusContext context)
         {
             UInt256 preparationHash = PreparationHash ?? context.PreparationPayloads[context.Block.ConsensusData.PrimaryIndex]?.Hash;
-            if (preparationHash is null) return new ConsensusPayload[0];
-            return PreparationMessages.Values.Where(p => p.ValidatorIndex != context.Block.ConsensusData.PrimaryIndex).Select(p => new ConsensusPayload
+            if (preparationHash is null) return Array.Empty<ExtensiblePayload>();
+            return PreparationMessages.Values.Where(p => p.ValidatorIndex != context.Block.ConsensusData.PrimaryIndex).Select(p => context.CreatePayload(new PrepareResponse
             {
-                Version = payload.Version,
-                PrevHash = payload.PrevHash,
-                BlockIndex = payload.BlockIndex,
+                BlockIndex = BlockIndex,
                 ValidatorIndex = p.ValidatorIndex,
-                ConsensusMessage = new PrepareResponse
-                {
-                    ViewNumber = ViewNumber,
-                    PreparationHash = preparationHash
-                },
-                Witness = new Witness
-                {
-                    InvocationScript = p.InvocationScript,
-                    VerificationScript = Contract.CreateSignatureRedeemScript(context.Validators[p.ValidatorIndex])
-                }
-            }).ToArray();
+                ViewNumber = ViewNumber,
+                PreparationHash = preparationHash
+            }, p.InvocationScript)).ToArray();
         }
 
         public override void Serialize(BinaryWriter writer)

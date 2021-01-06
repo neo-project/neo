@@ -1,5 +1,4 @@
 using Neo.IO;
-using Neo.Network.P2P.Payloads;
 using System;
 using System.IO;
 
@@ -28,18 +27,6 @@ namespace Neo.Consensus
                     throw new FormatException();
                 Signature = reader.ReadFixedBytes(64);
                 InvocationScript = reader.ReadVarBytes(1024);
-            }
-
-            public static CommitPayloadCompact FromPayload(ConsensusPayload payload)
-            {
-                Commit message = payload.GetDeserializedMessage<Commit>();
-                return new CommitPayloadCompact
-                {
-                    ViewNumber = message.ViewNumber,
-                    ValidatorIndex = payload.ValidatorIndex,
-                    Signature = message.Signature,
-                    InvocationScript = payload.Witness.InvocationScript
-                };
             }
 
             void ISerializable.Serialize(BinaryWriter writer)

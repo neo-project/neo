@@ -142,15 +142,15 @@ namespace Neo.UnitTests.Consensus
                 mockContext.Object.LastSeenMessage[validator] = 0;
             }
             // Ensuring cast of type ConsensusPayload from the received message from subscriber
-            ConsensusPayload initialRecoveryPayload = (ConsensusPayload)askingForInitialRecovery.Inventory;
+            ExtensiblePayload initialRecoveryPayload = (ExtensiblePayload)askingForInitialRecovery.Inventory;
             // Ensuring casting of type RecoveryRequest
-            RecoveryRequest rrm = (RecoveryRequest)initialRecoveryPayload.ConsensusMessage;
+            RecoveryRequest rrm = initialRecoveryPayload.Data.AsSerializable<RecoveryRequest>();
             rrm.Timestamp.Should().Be(defaultTimestamp);
 
             Console.WriteLine("Waiting for backup ChangeView... ");
             var backupOnAskingChangeView = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            var changeViewPayload = (ConsensusPayload)backupOnAskingChangeView.Inventory;
-            ChangeView cvm = (ChangeView)changeViewPayload.ConsensusMessage;
+            var changeViewPayload = (ExtensiblePayload)backupOnAskingChangeView.Inventory;
+            ChangeView cvm = changeViewPayload.Data.AsSerializable<ChangeView>();
             cvm.Timestamp.Should().Be(defaultTimestamp);
             cvm.ViewNumber.Should().Be(0);
             cvm.Reason.Should().Be(ChangeViewReason.Timeout);
@@ -175,42 +175,60 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.CountFailed.Should().Be(7);
             Console.WriteLine("\nWaiting for recovery due to failed nodes... ");
             var backupOnRecoveryDueToFailedNodes = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            var recoveryPayload = (ConsensusPayload)backupOnRecoveryDueToFailedNodes.Inventory;
-            rrm = (RecoveryRequest)recoveryPayload.ConsensusMessage;
+            var recoveryPayload = (ExtensiblePayload)backupOnRecoveryDueToFailedNodes.Inventory;
+            rrm = recoveryPayload.Data.AsSerializable<RecoveryRequest>();
             rrm.Timestamp.Should().Be(defaultTimestamp);
 
             Console.WriteLine("will create template MakePrepareRequest...");
             mockContext.Object.PrevHeader.Timestamp = defaultTimestamp;
             mockContext.Object.PrevHeader.NextConsensus.Should().Be(UInt160.Parse("0xe239c7228fa6b46cc0cf43623b2f934301d0b4f7"));
             var prepReq = mockContext.Object.MakePrepareRequest();
-            var ppToSend = (PrepareRequest)prepReq.ConsensusMessage;
+            var ppToSend = prepReq.Data.AsSerializable<PrepareRequest>();
             // Forcing hashes to 0 because mempool is currently shared
             ppToSend.TransactionHashes = new UInt256[0];
             ppToSend.TransactionHashes.Length.Should().Be(0);
             Console.WriteLine($"\nAsserting PreparationPayloads is 1 (After MakePrepareRequest)...");
             mockContext.Object.PreparationPayloads.Count(p => p != null).Should().Be(1);
-            mockContext.Object.PreparationPayloads[prepReq.ValidatorIndex] = null;
+            mockContext.Object.PreparationPayloads[ppToSend.ValidatorIndex] = null;
 
             Console.WriteLine("will tell prepare request!");
+            prepReq = new ExtensiblePayload
+            {
+                Category = "Consensus",
+                ValidBlockStart = 0,
+                ValidBlockEnd = ppToSend.BlockIndex,
+                Sender = prepReq.Sender,
+                Data = ppToSend.ToArray(),
+                Witness = prepReq.Witness
+            };
             TellConsensusPayload(actorConsensus, prepReq);
             Console.WriteLine("Waiting for something related to the PrepRequest...\nNothing happens...Recovery will come due to failed nodes");
             var backupOnRecoveryDueToFailedNodesII = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            var recoveryPayloadII = (ConsensusPayload)backupOnRecoveryDueToFailedNodesII.Inventory;
-            rrm = (RecoveryRequest)recoveryPayloadII.ConsensusMessage;
+            var recoveryPayloadII = (ExtensiblePayload)backupOnRecoveryDueToFailedNodesII.Inventory;
+            rrm = recoveryPayloadII.Data.AsSerializable<RecoveryRequest>();
             Console.WriteLine($"\nAsserting PreparationPayloads is 0...");
             mockContext.Object.PreparationPayloads.Count(p => p != null).Should().Be(0);
             Console.WriteLine($"\nAsserting CountFailed is 6...");
             mockContext.Object.CountFailed.Should().Be(6);
 
             Console.WriteLine("\nFailed because it is not primary and it created the prereq...Time to adjust");
-            prepReq.ValidatorIndex = 1; //simulating primary as prepreq creator (signature is skip, no problem)
+            ppToSend.ValidatorIndex = 1; //simulating primary as prepreq creator (signature is skip, no problem)
             // cleaning old try with Self ValidatorIndex
             mockContext.Object.PreparationPayloads[mockContext.Object.MyIndex] = null;
 
+            prepReq = new ExtensiblePayload
+            {
+                Category = "Consensus",
+                ValidBlockStart = 0,
+                ValidBlockEnd = ppToSend.BlockIndex,
+                Sender = mockContext.Object.GetSender(ppToSend.ValidatorIndex),
+                Data = ppToSend.ToArray(),
+                Witness = prepReq.Witness
+            };
             TellConsensusPayload(actorConsensus, prepReq);
             var OnPrepResponse = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            var prepResponsePayload = (ConsensusPayload)OnPrepResponse.Inventory;
-            PrepareResponse prm = (PrepareResponse)prepResponsePayload.ConsensusMessage;
+            var prepResponsePayload = (ExtensiblePayload)OnPrepResponse.Inventory;
+            PrepareResponse prm = prepResponsePayload.Data.AsSerializable<PrepareResponse>();
             prm.PreparationHash.Should().Be(prepReq.Hash);
             Console.WriteLine("\nAsserting PreparationPayloads count is 2...");
             mockContext.Object.PreparationPayloads.Count(p => p != null).Should().Be(2);
@@ -218,11 +236,11 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.CountFailed.Should().Be(5);
 
             // Simulating CN 3
-            TellConsensusPayload(actorConsensus, GetPayloadAndModifyValidator(prepResponsePayload, 2));
+            TellConsensusPayload(actorConsensus, GetPayloadAndModifyValidator(mockContext.Object, prepResponsePayload, 2));
             //Waiting for RecoveryRequest for a more deterministic UT
             backupOnRecoveryDueToFailedNodes = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            recoveryPayload = (ConsensusPayload)backupOnRecoveryDueToFailedNodes.Inventory;
-            rrm = (RecoveryRequest)recoveryPayload.ConsensusMessage;
+            recoveryPayload = (ExtensiblePayload)backupOnRecoveryDueToFailedNodes.Inventory;
+            rrm = recoveryPayload.Data.AsSerializable<RecoveryRequest>();
             rrm.Timestamp.Should().Be(defaultTimestamp);
             //Asserts
             Console.WriteLine("\nAsserting PreparationPayloads count is 3...");
@@ -231,11 +249,11 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.CountFailed.Should().Be(4);
 
             // Simulating CN 5
-            TellConsensusPayload(actorConsensus, GetPayloadAndModifyValidator(prepResponsePayload, 4));
+            TellConsensusPayload(actorConsensus, GetPayloadAndModifyValidator(mockContext.Object, prepResponsePayload, 4));
             //Waiting for RecoveryRequest for a more deterministic UT
             backupOnRecoveryDueToFailedNodes = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            recoveryPayload = (ConsensusPayload)backupOnRecoveryDueToFailedNodes.Inventory;
-            rrm = (RecoveryRequest)recoveryPayload.ConsensusMessage;
+            recoveryPayload = (ExtensiblePayload)backupOnRecoveryDueToFailedNodes.Inventory;
+            rrm = recoveryPayload.Data.AsSerializable<RecoveryRequest>();
             rrm.Timestamp.Should().Be(defaultTimestamp);
             //Asserts            
             Console.WriteLine("\nAsserting PreparationPayloads count is 4...");
@@ -244,10 +262,10 @@ namespace Neo.UnitTests.Consensus
             mockContext.Object.CountFailed.Should().Be(3);
 
             // Simulating CN 4
-            TellConsensusPayload(actorConsensus, GetPayloadAndModifyValidator(prepResponsePayload, 3));
+            TellConsensusPayload(actorConsensus, GetPayloadAndModifyValidator(mockContext.Object, prepResponsePayload, 3));
             var onCommitPayload = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            var commitPayload = (ConsensusPayload)onCommitPayload.Inventory;
-            Commit cm = (Commit)commitPayload.ConsensusMessage;
+            var commitPayload = (ExtensiblePayload)onCommitPayload.Inventory;
+            Commit cm = commitPayload.Data.AsSerializable<Commit>();
             Console.WriteLine("\nAsserting PreparationPayloads count is 5...");
             mockContext.Object.PreparationPayloads.Count(p => p != null).Should().Be(5);
             Console.WriteLine("\nAsserting CountCommitted is 1...");
@@ -303,36 +321,36 @@ namespace Neo.UnitTests.Consensus
             // Basic tests for understanding signatures and ensuring signatures of commits are correct on tests
 
 
-            var cmPayloadTemp = GetCommitPayloadModifiedAndSignedCopy(commitPayload, 6, kp_array[6], updatedBlockHashData);
+            var cmPayloadTemp = GetCommitPayloadModifiedAndSignedCopy(mockContext.Object, commitPayload, 6, kp_array[6], updatedBlockHashData);
             Crypto.VerifySignature(originalBlockHashData, cm.Signature, mockContext.Object.Validators[0]).Should().BeFalse();
             Crypto.VerifySignature(updatedBlockHashData, cm.Signature, mockContext.Object.Validators[0]).Should().BeFalse();
-            Crypto.VerifySignature(originalBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).Signature, mockContext.Object.Validators[6]).Should().BeFalse();
-            Crypto.VerifySignature(updatedBlockHashData, ((Commit)cmPayloadTemp.ConsensusMessage).Signature, mockContext.Object.Validators[6]).Should().BeTrue();
+            Crypto.VerifySignature(originalBlockHashData, cmPayloadTemp.Data.AsSerializable<Commit>().Signature, mockContext.Object.Validators[6]).Should().BeFalse();
+            Crypto.VerifySignature(updatedBlockHashData, cmPayloadTemp.Data.AsSerializable<Commit>().Signature, mockContext.Object.Validators[6]).Should().BeTrue();
             Console.WriteLine("\n==========================");
 
             Console.WriteLine("\n==========================");
             Console.WriteLine("\nCN7 simulation time");
             TellConsensusPayload(actorConsensus, cmPayloadTemp);
             var tempPayloadToBlockAndWait = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            var rmPayload = (ConsensusPayload)tempPayloadToBlockAndWait.Inventory;
-            RecoveryMessage rmm = (RecoveryMessage)rmPayload.ConsensusMessage;
+            var rmPayload = (ExtensiblePayload)tempPayloadToBlockAndWait.Inventory;
+            RecoveryMessage rmm = rmPayload.Data.AsSerializable<RecoveryMessage>();
             Console.WriteLine("\nAsserting CountCommitted is 2...");
             mockContext.Object.CountCommitted.Should().Be(2);
             Console.WriteLine($"\nAsserting CountFailed is 1...");
             mockContext.Object.CountFailed.Should().Be(6);
 
             Console.WriteLine("\nCN6 simulation time");
-            TellConsensusPayload(actorConsensus, GetCommitPayloadModifiedAndSignedCopy(commitPayload, 5, kp_array[5], updatedBlockHashData));
+            TellConsensusPayload(actorConsensus, GetCommitPayloadModifiedAndSignedCopy(mockContext.Object, commitPayload, 5, kp_array[5], updatedBlockHashData));
             tempPayloadToBlockAndWait = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            rmPayload = (ConsensusPayload)tempPayloadToBlockAndWait.Inventory;
-            rmm = (RecoveryMessage)rmPayload.ConsensusMessage;
+            rmPayload = (ExtensiblePayload)tempPayloadToBlockAndWait.Inventory;
+            rmm = rmPayload.Data.AsSerializable<RecoveryMessage>();
             Console.WriteLine("\nAsserting CountCommitted is 3...");
             mockContext.Object.CountCommitted.Should().Be(3);
             Console.WriteLine($"\nAsserting CountFailed is 0...");
             mockContext.Object.CountFailed.Should().Be(5);
 
             Console.WriteLine("\nCN5 simulation time");
-            TellConsensusPayload(actorConsensus, GetCommitPayloadModifiedAndSignedCopy(commitPayload, 4, kp_array[4], updatedBlockHashData));
+            TellConsensusPayload(actorConsensus, GetCommitPayloadModifiedAndSignedCopy(mockContext.Object, commitPayload, 4, kp_array[4], updatedBlockHashData));
             tempPayloadToBlockAndWait = subscriber.ExpectMsg<LocalNode.SendDirectly>();
             Console.WriteLine("\nAsserting CountCommitted is 4...");
             mockContext.Object.CountCommitted.Should().Be(4);
@@ -341,11 +359,11 @@ namespace Neo.UnitTests.Consensus
             // Testing commit with wrong signature not valid
             // It will be invalid signature because we did not change ECPoint
             Console.WriteLine("\nCN4 simulation time. Wrong signature, KeyPair is not known");
-            TellConsensusPayload(actorConsensus, GetPayloadAndModifyValidator(commitPayload, 3));
+            TellConsensusPayload(actorConsensus, GetPayloadAndModifyValidator(mockContext.Object, commitPayload, 3));
             Console.WriteLine("\nWaiting for recovery due to failed nodes... ");
             var backupOnRecoveryMessageAfterCommit = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            rmPayload = (ConsensusPayload)backupOnRecoveryMessageAfterCommit.Inventory;
-            rmm = (RecoveryMessage)rmPayload.ConsensusMessage;
+            rmPayload = (ExtensiblePayload)backupOnRecoveryMessageAfterCommit.Inventory;
+            rmm = rmPayload.Data.AsSerializable<RecoveryMessage>();
             Console.WriteLine("\nAsserting CountCommitted is 4 (Again)...");
             mockContext.Object.CountCommitted.Should().Be(4);
             Console.WriteLine("\nAsserting recovery message Preparation is 5...");
@@ -360,7 +378,6 @@ namespace Neo.UnitTests.Consensus
             var oldPrevHash = mockContext.Object.Block.PrevHash;
             mockContext.Object.Block.PrevHash = UInt256.Zero;
             //Payload should also be forced, otherwise OnConsensus will not pass
-            commitPayload.PrevHash = UInt256.Zero;
             Console.WriteLine($"\nNew Hash is {mockContext.Object.Block.GetHashData().ToScriptHash()}");
             Console.WriteLine($"\nForcing block VerificationScript to {updatedContract.Script.ToScriptHash()}");
             // The default behavior for BlockBase, when PrevHash = UInt256.Zero, is to use its own Witness
@@ -370,7 +387,7 @@ namespace Neo.UnitTests.Consensus
             Console.WriteLine($"\nNew Hash is {mockContext.Object.Block.GetHashData().ToScriptHash()}");
 
             Console.WriteLine("\nCN4 simulation time - Final needed signatures");
-            TellConsensusPayload(actorConsensus, GetCommitPayloadModifiedAndSignedCopy(commitPayload, 3, kp_array[3], mockContext.Object.Block.GetHashData()));
+            TellConsensusPayload(actorConsensus, GetCommitPayloadModifiedAndSignedCopy(mockContext.Object, commitPayload, 3, kp_array[3], mockContext.Object.Block.GetHashData()));
 
             Console.WriteLine("\nWait for subscriber Block");
             var utBlock = subscriber.ExpectMsg<Block>();
@@ -383,7 +400,7 @@ namespace Neo.UnitTests.Consensus
 
             // =============================================
             Console.WriteLine("\nRecovery simulation...");
-            mockContext.Object.CommitPayloads = new ConsensusPayload[mockContext.Object.Validators.Length];
+            mockContext.Object.CommitPayloads = new ExtensiblePayload[mockContext.Object.Validators.Length];
             // avoiding the BlockSent flag
             mockContext.Object.Block.Transactions = null;
             // ensuring same hash as snapshot
@@ -402,8 +419,8 @@ namespace Neo.UnitTests.Consensus
 
             Console.WriteLine("\nWaiting for RecoveryRequest before final asserts...");
             var onRecoveryRequestAfterRecovery = subscriber.ExpectMsg<LocalNode.SendDirectly>();
-            var rrPayload = (ConsensusPayload)onRecoveryRequestAfterRecovery.Inventory;
-            var rrMessage = (RecoveryRequest)rrPayload.ConsensusMessage;
+            var rrPayload = (ExtensiblePayload)onRecoveryRequestAfterRecovery.Inventory;
+            var rrMessage = rrPayload.Data.AsSerializable<RecoveryRequest>();
 
             // It should be 3 because the commit generated by the default wallet is still invalid
             Console.WriteLine("\nAsserting CountCommitted is 3 (after recovery)...");
@@ -443,16 +460,18 @@ namespace Neo.UnitTests.Consensus
         /// <param name="vI">new ValidatorIndex for the cpToCopy
         /// <param name="kp">KeyPair that will be used for signing the Commit message used for creating blocks
         /// <param name="blockHashToSign">HashCode of the Block that is being produced and current being signed
-        public ConsensusPayload GetCommitPayloadModifiedAndSignedCopy(ConsensusPayload cpToCopy, byte vI, KeyPair kp, byte[] blockHashToSign)
+        public ExtensiblePayload GetCommitPayloadModifiedAndSignedCopy(ConsensusContext context, ExtensiblePayload cpToCopy, byte vI, KeyPair kp, byte[] blockHashToSign)
         {
-            var cpCommitTemp = cpToCopy.ToArray().AsSerializable<ConsensusPayload>();
-            cpCommitTemp.ValidatorIndex = vI;
-            var oldViewNumber = ((Commit)cpCommitTemp.ConsensusMessage).ViewNumber;
-            cpCommitTemp.ConsensusMessage = new Commit
+            var cpCommitTemp = cpToCopy.ToArray().AsSerializable<ExtensiblePayload>();
+            cpCommitTemp.Sender = context.GetSender(vI);
+            var oldMessage = cpCommitTemp.Data.AsSerializable<Commit>();
+            cpCommitTemp.Data = new Commit
             {
-                ViewNumber = oldViewNumber,
+                BlockIndex = oldMessage.BlockIndex,
+                ValidatorIndex = vI,
+                ViewNumber = oldMessage.ViewNumber,
                 Signature = Crypto.Sign(blockHashToSign, kp.PrivateKey, kp.PublicKey.EncodePoint(false).Skip(1).ToArray())
-            };
+            }.ToArray();
             SignPayload(cpCommitTemp, kp);
             return cpCommitTemp;
         }
@@ -462,14 +481,17 @@ namespace Neo.UnitTests.Consensus
         /// </summary>
         /// <param name="cpToCopy">ConsensusPayload that will be modified
         /// <param name="vI">new ValidatorIndex for the cpToCopy
-        public ConsensusPayload GetPayloadAndModifyValidator(ConsensusPayload cpToCopy, byte vI)
+        public ExtensiblePayload GetPayloadAndModifyValidator(ConsensusContext context, ExtensiblePayload cpToCopy, byte vI)
         {
-            var cpTemp = cpToCopy.ToArray().AsSerializable<ConsensusPayload>();
-            cpTemp.ValidatorIndex = vI;
+            var cpTemp = cpToCopy.ToArray().AsSerializable<ExtensiblePayload>();
+            var message = ConsensusMessage.DeserializeFrom(cpTemp.Data);
+            message.ValidatorIndex = vI;
+            cpTemp.Data = message.ToArray();
+            cpTemp.Sender = context.GetSender(vI);
             return cpTemp;
         }
 
-        private void SignPayload(ConsensusPayload payload, KeyPair kp)
+        private void SignPayload(ExtensiblePayload payload, KeyPair kp)
         {
             ContractParametersContext sc;
             try
@@ -529,9 +551,10 @@ namespace Neo.UnitTests.Consensus
             // consensusContext.TransactionHashes = new UInt256[2] {testTx1.Hash, testTx2.Hash};
             consensusContext.Transactions = txs.ToDictionary(p => p.Hash);
 
-            consensusContext.PreparationPayloads = new ConsensusPayload[consensusContext.Validators.Length];
+            consensusContext.PreparationPayloads = new ExtensiblePayload[consensusContext.Validators.Length];
             var prepareRequestMessage = new PrepareRequest
             {
+                PrevHash = consensusContext.Block.PrevHash,
                 TransactionHashes = consensusContext.TransactionHashes,
                 Timestamp = 23
             };
@@ -543,7 +566,7 @@ namespace Neo.UnitTests.Consensus
             consensusContext.PreparationPayloads[4] = null;
             consensusContext.PreparationPayloads[5] = null;
 
-            consensusContext.CommitPayloads = new ConsensusPayload[consensusContext.Validators.Length];
+            consensusContext.CommitPayloads = new ExtensiblePayload[consensusContext.Validators.Length];
             using (SHA256 sha256 = SHA256.Create())
             {
                 consensusContext.CommitPayloads[3] = MakeSignedPayload(consensusContext, new Commit { Signature = sha256.ComputeHash(testTx1.Hash.ToArray()).Concat(sha256.ComputeHash(testTx1.Hash.ToArray())).ToArray() }, 3, new[] { (byte)'3', (byte)'4' });
@@ -552,7 +575,7 @@ namespace Neo.UnitTests.Consensus
 
             consensusContext.Block.Timestamp = TimeProvider.Current.UtcNow.ToTimestampMS();
 
-            consensusContext.ChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
+            consensusContext.ChangeViewPayloads = new ExtensiblePayload[consensusContext.Validators.Length];
             consensusContext.ChangeViewPayloads[0] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, Timestamp = 6 }, 0, new[] { (byte)'A' });
             consensusContext.ChangeViewPayloads[1] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, Timestamp = 5 }, 1, new[] { (byte)'B' });
             consensusContext.ChangeViewPayloads[2] = null;
@@ -561,7 +584,7 @@ namespace Neo.UnitTests.Consensus
             consensusContext.ChangeViewPayloads[5] = null;
             consensusContext.ChangeViewPayloads[6] = MakeSignedPayload(consensusContext, new ChangeView { ViewNumber = 1, Timestamp = 1 }, 6, new[] { (byte)'D' });
 
-            consensusContext.LastChangeViewPayloads = new ConsensusPayload[consensusContext.Validators.Length];
+            consensusContext.LastChangeViewPayloads = new ExtensiblePayload[consensusContext.Validators.Length];
 
             var copiedContext = TestUtils.CopyMsgBySerialization(consensusContext, new ConsensusContext(null, null));
 
@@ -727,6 +750,7 @@ namespace Neo.UnitTests.Consensus
                 },
                 PrepareRequestMessage = new PrepareRequest
                 {
+                    PrevHash = UInt256.Zero,
                     TransactionHashes = txs.Select(p => p.Hash).ToArray()
                 },
                 PreparationHash = new UInt256(Crypto.Hash256(new[] { (byte)'a' })),
@@ -780,6 +804,7 @@ namespace Neo.UnitTests.Consensus
                 ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>(),
                 PrepareRequestMessage = new PrepareRequest
                 {
+                    PrevHash = UInt256.Zero,
                     TransactionHashes = txs.Select(p => p.Hash).ToArray()
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
@@ -840,6 +865,7 @@ namespace Neo.UnitTests.Consensus
                 ChangeViewMessages = new Dictionary<int, RecoveryMessage.ChangeViewPayloadCompact>(),
                 PrepareRequestMessage = new PrepareRequest
                 {
+                    PrevHash = UInt256.Zero,
                     TransactionHashes = txs.Select(p => p.Hash).ToArray()
                 },
                 PreparationMessages = new Dictionary<int, RecoveryMessage.PreparationPayloadCompact>()
@@ -909,15 +935,17 @@ namespace Neo.UnitTests.Consensus
             copiedMsg.CommitMessages.Should().BeEquivalentTo(msg.CommitMessages);
         }
 
-        private static ConsensusPayload MakeSignedPayload(ConsensusContext context, ConsensusMessage message, byte validatorIndex, byte[] witnessInvocationScript)
+        private static ExtensiblePayload MakeSignedPayload(ConsensusContext context, ConsensusMessage message, byte validatorIndex, byte[] witnessInvocationScript)
         {
-            return new ConsensusPayload
+            message.BlockIndex = context.Block.Index;
+            message.ValidatorIndex = validatorIndex;
+            return new ExtensiblePayload
             {
-                Version = context.Block.Version,
-                PrevHash = context.Block.PrevHash,
-                BlockIndex = context.Block.Index,
-                ValidatorIndex = validatorIndex,
-                ConsensusMessage = message,
+                Category = "Consensus",
+                ValidBlockStart = 0,
+                ValidBlockEnd = message.BlockIndex,
+                Sender = context.GetSender(validatorIndex),
+                Data = message.ToArray(),
                 Witness = new Witness
                 {
                     InvocationScript = witnessInvocationScript,
@@ -937,7 +965,7 @@ namespace Neo.UnitTests.Consensus
             return storageKey;
         }
 
-        private void TellConsensusPayload(IActorRef actor, ConsensusPayload payload)
+        private void TellConsensusPayload(IActorRef actor, ExtensiblePayload payload)
         {
             actor.Tell(new Blockchain.RelayResult
             {
