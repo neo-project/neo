@@ -57,7 +57,6 @@ namespace Neo.Network.P2P.Payloads
             ((IVerifiable)this).DeserializeUnsigned(reader);
             if (reader.ReadByte() != 1) throw new FormatException();
             Witness = reader.ReadSerializable<Witness>();
-            if (Witness.ScriptHash != Sender) throw new FormatException();
         }
 
         void IVerifiable.DeserializeUnsigned(BinaryReader reader)
@@ -65,6 +64,7 @@ namespace Neo.Network.P2P.Payloads
             Category = reader.ReadVarString(32);
             ValidBlockStart = reader.ReadUInt32();
             ValidBlockEnd = reader.ReadUInt32();
+            if (ValidBlockStart > ValidBlockEnd) throw new FormatException();
             Sender = reader.ReadSerializable<UInt160>();
             Data = reader.ReadVarBytes(ushort.MaxValue);
         }
