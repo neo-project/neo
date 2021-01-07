@@ -107,7 +107,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsFalse(result);
 
             // regex
-            result = Check_Register(snapshot, "neo.org\n", UInt160.Zero);
+            result = Check_Register(snapshot, "neo.com\n", UInt160.Zero);
             Assert.IsFalse(result);
 
             // good register
@@ -121,6 +121,72 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(31536000u * 2, (uint)resultInt);
             Assert.AreEqual(31536000u * 2, (uint)NativeContract.NameService.Properties(snapshot, Encoding.UTF8.GetBytes("neo.com"))["expiration"].AsNumber());
             Assert.IsFalse(NativeContract.NameService.IsAvailable(snapshot, "neo.com"));
+        }
+
+        [TestMethod]
+        public void TestSetRecord()
+        {
+            var snapshot = _snapshot.Clone();
+            snapshot.PersistingBlock = new Block() { Index = 1000, Timestamp = 0 };
+
+            var from = NativeContract.NEO.GetCommitteeAddress(snapshot);
+
+            // add root
+            var result = Check_AddRoot(snapshot, from, "com");
+            Assert.IsTrue(result);
+
+            // good register
+            Assert.IsTrue(NativeContract.NameService.IsAvailable(snapshot, "neo.com"));
+            result = Check_Register(snapshot, "neo.com", UInt160.Zero);
+            Assert.IsTrue(result);
+            result = Check_SetRecord(snapshot, "neo.com", RecordType.A, "8.8.8.8", UInt160.Zero);
+            Assert.IsTrue(result);
+            Assert.AreEqual("8.8.8.8", NativeContract.NameService.GetRecord(snapshot, "neo.com", RecordType.A));
+            CollectionAssert.AreEqual(new string[] { $"{RecordType.A}=8.8.8.8" }, NativeContract.NameService.GetRecords(snapshot, "neo.com").Select(u => u.Type.ToString() + "=" + u.Data).ToArray());
+
+            // delete register
+            result = Check_DeleteRecord(snapshot, "neo.com", RecordType.A, UInt160.Zero);
+            Assert.AreEqual(null, NativeContract.NameService.GetRecord(snapshot, "neo.com", RecordType.A));
+            CollectionAssert.AreEqual(System.Array.Empty<string>(), NativeContract.NameService.GetRecords(snapshot, "neo.com").Select(u => u.Type.ToString() + "=" + u.Data).ToArray());
+        }
+
+        internal static bool Check_DeleteRecord(StoreView snapshot, string name, RecordType type, UInt160 signedBy)
+        {
+            var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot);
+
+            var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "deleteRecord", false, new ContractParameter[] {
+                new ContractParameter(ContractParameterType.String) { Value = name },
+                new ContractParameter(ContractParameterType.Integer) { Value = (int)type }
+            });
+            engine.LoadScript(script.ToArray(), 0, -1, 0);
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        internal static bool Check_SetRecord(StoreView snapshot, string name, RecordType type, string data, UInt160 signedBy)
+        {
+            var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot);
+
+            var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "setRecord", false, new ContractParameter[] {
+                new ContractParameter(ContractParameterType.String) { Value = name },
+                new ContractParameter(ContractParameterType.Integer) { Value = (int)type },
+                new ContractParameter(ContractParameterType.String) { Value = data }
+            });
+            engine.LoadScript(script.ToArray(), 0, -1, 0);
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         internal static BigInteger Check_Renew(StoreView snapshot, string name, UInt160 signedBy)
