@@ -1,5 +1,4 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Ledger;
 using Neo.SmartContract;
 using System;
 
@@ -27,7 +26,8 @@ namespace Neo.UnitTests.SmartContract
                          }
                     }
                 },
-                Script = new byte[] { 1, 2, 3 }
+                Nef = new NefFile { Script = new byte[] { 1, 2, 3 } },
+                Hash = new byte[] { 1, 2, 3 }.ToScriptHash()
             });
 
             Assert.AreEqual("0xb2e3fe334830b4741fa5d762f2ab36b90b86c49b", contract.ScriptHash.ToString());
@@ -54,7 +54,7 @@ namespace Neo.UnitTests.SmartContract
                          }
                     }
                 },
-                Script = new byte[] { 1, 2, 3 }
+                Nef = new NefFile { Script = new byte[] { 1, 2, 3 } }
             }));
         }
     }

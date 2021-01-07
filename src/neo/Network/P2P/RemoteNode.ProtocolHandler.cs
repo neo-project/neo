@@ -62,10 +62,9 @@ namespace Neo.Network.P2P
                     OnAddrMessageReceived((AddrPayload)msg.Payload);
                     break;
                 case MessageCommand.Block:
-                    OnInventoryReceived((Block)msg.Payload);
-                    break;
                 case MessageCommand.Consensus:
-                    OnInventoryReceived((ConsensusPayload)msg.Payload);
+                case MessageCommand.Extensible:
+                    OnInventoryReceived((IInventory)msg.Payload);
                     break;
                 case MessageCommand.FilterAdd:
                     OnFilterAddMessageReceived((FilterAddPayload)msg.Payload);
@@ -121,6 +120,9 @@ namespace Neo.Network.P2P
 
         private void OnAddrMessageReceived(AddrPayload payload)
         {
+            ref bool sent = ref sentCommands[(byte)MessageCommand.GetAddr];
+            if (!sent) return;
+            sent = false;
             system.LocalNode.Tell(new Peer.Peers
             {
                 EndPoints = payload.AddressList.Select(p => p.EndPoint).Where(p => p.Port > 0)

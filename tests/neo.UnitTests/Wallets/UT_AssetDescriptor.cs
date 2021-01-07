@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Persistence;
 using Neo.SmartContract.Native;
 using System;
 
@@ -30,8 +29,9 @@ namespace Neo.UnitTests.Wallets
         {
             var descriptor = new Neo.Wallets.AssetDescriptor(NativeContract.GAS.Hash);
             descriptor.AssetId.Should().Be(NativeContract.GAS.Hash);
-            descriptor.AssetName.Should().Be("GAS");
-            descriptor.ToString().Should().Be("GAS");
+            descriptor.AssetName.Should().Be(nameof(GasToken));
+            descriptor.ToString().Should().Be(nameof(GasToken));
+            descriptor.Symbol.Should().Be("GAS");
             descriptor.Decimals.Should().Be(8);
         }
 
@@ -40,8 +40,9 @@ namespace Neo.UnitTests.Wallets
         {
             var descriptor = new Neo.Wallets.AssetDescriptor(NativeContract.NEO.Hash);
             descriptor.AssetId.Should().Be(NativeContract.NEO.Hash);
-            descriptor.AssetName.Should().Be("NEO");
-            descriptor.ToString().Should().Be("NEO");
+            descriptor.AssetName.Should().Be(nameof(NeoToken));
+            descriptor.ToString().Should().Be(nameof(NeoToken));
+            descriptor.Symbol.Should().Be("NEO");
             descriptor.Decimals.Should().Be(0);
         }
     }

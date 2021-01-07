@@ -57,21 +57,6 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestGetBitLength()
-        {
-            new BigInteger(100).GetBitLength().Should().Be(7);
-            new BigInteger(-100).GetBitLength().Should().Be(7);
-            new BigInteger(0).GetBitLength().Should().Be(8);
-            new BigInteger(512).GetBitLength().Should().Be(10);
-            new BigInteger(short.MinValue).GetBitLength().Should().Be(15);
-            new BigInteger(short.MaxValue).GetBitLength().Should().Be(15);
-            new BigInteger(int.MinValue).GetBitLength().Should().Be(31);
-            new BigInteger(int.MaxValue).GetBitLength().Should().Be(31);
-            new BigInteger(long.MinValue).GetBitLength().Should().Be(63);
-            new BigInteger(long.MaxValue).GetBitLength().Should().Be(63);
-        }
-
-        [TestMethod]
         public void TestHexToBytes()
         {
             string nullStr = null;
@@ -187,7 +172,7 @@ namespace Neo.UnitTests
         public void TestGetVersion()
         {
             string version = typeof(TestMethodAttribute).Assembly.GetVersion();
-            version.Should().Be("14.0.4701.02");
+            version.Should().Be("14.0.4908.02");
 
             // assembly without version
 

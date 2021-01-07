@@ -5,7 +5,6 @@ using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.SmartContract.Native.Tokens;
 using Neo.UnitTests.Cryptography;
 using Neo.Wallets;
 using System;
@@ -295,7 +294,8 @@ namespace Neo.UnitTests.Wallets
                 {
                      AssetId = NativeContract.GAS.Hash,
                      ScriptHash = account.ScriptHash,
-                     Value = new BigDecimal(1,8)
+                     Value = new BigDecimal(1,8),
+                     Data = "Dec 12th"
                 }
             }, UInt160.Zero);
             action.Should().Throw<InvalidOperationException>();
@@ -306,7 +306,8 @@ namespace Neo.UnitTests.Wallets
                 {
                      AssetId = NativeContract.GAS.Hash,
                      ScriptHash = account.ScriptHash,
-                     Value = new BigDecimal(1,8)
+                     Value = new BigDecimal(1,8),
+                     Data = "Dec 12th"
                 }
             }, account.ScriptHash);
             action.Should().Throw<InvalidOperationException>();
@@ -317,7 +318,8 @@ namespace Neo.UnitTests.Wallets
                 {
                      AssetId = UInt160.Zero,
                      ScriptHash = account.ScriptHash,
-                     Value = new BigDecimal(1,8)
+                     Value = new BigDecimal(1,8),
+                     Data = "Dec 12th"
                 }
             }, account.ScriptHash);
             action.Should().Throw<InvalidOperationException>();
@@ -351,7 +353,8 @@ namespace Neo.UnitTests.Wallets
                 {
                      AssetId = NativeContract.NEO.Hash,
                      ScriptHash = account.ScriptHash,
-                     Value = new BigDecimal(1,8)
+                     Value = new BigDecimal(1,8),
+                     Data = "Dec 12th"
                 }
             });
             tx.Should().NotBeNull();

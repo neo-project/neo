@@ -7,5 +7,6 @@ namespace Neo.Plugins
     {
         bool OnP2PMessage(Message message) => true;
         bool OnConsensusMessage(ConsensusPayload payload) => true;
+        void OnVerifiedInventory(IInventory inventory);
     }
 }

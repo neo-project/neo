@@ -295,8 +295,25 @@ namespace Neo.Network.P2P.Payloads
                 if (!attribute.Verify(snapshot, this))
                     return VerifyResult.Invalid;
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
-            if (!this.VerifyWitnesses(snapshot, net_fee, WitnessFlag.StateDependent))
-                return VerifyResult.Invalid;
+
+            UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
+            if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
+
+            uint execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
+            for (int i = 0; i < hashes.Length; i++)
+            {
+                if (witnesses[i].VerificationScript.IsSignatureContract())
+                    net_fee -= execFeeFactor * SmartContract.Helper.SignatureContractCost();
+                else if (witnesses[i].VerificationScript.IsMultiSigContract(out int m, out int n))
+                    net_fee -= execFeeFactor * SmartContract.Helper.MultiSignatureContractCost(m, n);
+                else
+                {
+                    if (!this.VerifyWitness(snapshot, hashes[i], witnesses[i], net_fee, out long fee))
+                        return VerifyResult.Invalid;
+                    net_fee -= fee;
+                }
+                if (net_fee < 0) return VerifyResult.InsufficientFunds;
+            }
             return VerifyResult.Succeed;
         }
 
@@ -304,8 +321,12 @@ namespace Neo.Network.P2P.Payloads
         {
             if (Size > MaxTransactionSize)
                 return VerifyResult.Invalid;
-            if (!this.VerifyWitnesses(null, NetworkFee, WitnessFlag.StateIndependent))
-                return VerifyResult.Invalid;
+            UInt160[] hashes = GetScriptHashesForVerifying(null);
+            if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
+            for (int i = 0; i < hashes.Length; i++)
+                if (witnesses[i].VerificationScript.IsStandardContract())
+                    if (!this.VerifyWitness(null, hashes[i], witnesses[i], SmartContract.Helper.MaxVerificationGas, out _))
+                        return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }
 

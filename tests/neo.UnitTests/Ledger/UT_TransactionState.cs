@@ -2,6 +2,8 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
+using System;
 using System.IO;
 
 namespace Neo.UnitTests.Ledger
@@ -18,7 +20,16 @@ namespace Neo.UnitTests.Ledger
             {
                 BlockIndex = 1,
                 VMState = VM.VMState.NONE,
-                Transaction = Blockchain.GenesisBlock.Transactions[0]
+                Transaction = new Neo.Network.P2P.Payloads.Transaction()
+                {
+                    Attributes = Array.Empty<TransactionAttribute>(),
+                    Script = new byte[] { 0x01 },
+                    Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
+                    Witnesses = new Witness[] { new Witness() {
+                        InvocationScript=Array.Empty<byte>(),
+                        VerificationScript=Array.Empty<byte>()
+                    } }
+                }
             };
         }
 
@@ -54,14 +65,14 @@ namespace Neo.UnitTests.Ledger
                 ((ISerializable)dest).Deserialize(reader);
                 dest.BlockIndex.Should().Be(origin.BlockIndex);
                 dest.VMState.Should().Be(origin.VMState);
-                dest.Transaction.Should().Be(origin.Transaction);
+                dest.Transaction.Hash.Should().Be(origin.Transaction.Hash);
             }
         }
 
         [TestMethod]
         public void TestGetSize()
         {
-            ((ISerializable)origin).Size.Should().Be(63);
+            ((ISerializable)origin).Size.Should().Be(58);
         }
     }
 }
