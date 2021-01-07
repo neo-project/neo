@@ -126,18 +126,6 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0, CallFlags.ReadStates)]
-        public uint ExpireOn(StoreView snapshot, string name)
-        {
-            if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
-            string[] names = name.Split('.');
-            if (names.Length != 2) throw new ArgumentException(null, nameof(name));
-            byte[] hash = GetKey(Utility.StrictUTF8.GetBytes(name));
-            NameState state = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Token).Add(hash))?.GetInteroperable<NameState>();
-            if (state == null) throw new InvalidOperationException();
-            return state.Expiration;
-        }
-
         [ContractMethod(0, CallFlags.WriteStates)]
         private uint Renew(ApplicationEngine engine, string name)
         {

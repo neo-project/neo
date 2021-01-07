@@ -1,7 +1,6 @@
 using Akka.TestKit.Xunit2;
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography.ECC;
+using Neo.Cryptography;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -11,6 +10,7 @@ using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using System.Linq;
+using System.Text;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -113,7 +113,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(NativeContract.NameService.IsAvailable(snapshot, "neo.com"));
             result = Check_Register(snapshot, "neo.com", UInt160.Zero);
             Assert.IsTrue(result);
-            Assert.AreEqual(31536000u, NativeContract.NameService.ExpireOn(snapshot, "neo.com"));
+            Assert.AreEqual(31536000u, (uint)NativeContract.NameService.Properties(snapshot, Encoding.UTF8.GetBytes("neo.com"))["expiration"].AsNumber());
             Assert.IsFalse(NativeContract.NameService.IsAvailable(snapshot, "neo.com"));
         }
 
