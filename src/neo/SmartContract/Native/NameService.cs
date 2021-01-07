@@ -89,6 +89,19 @@ namespace Neo.SmartContract.Native
             return (long)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_DomainPrice)];
         }
 
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        private bool IsAvailable(ApplicationEngine engine, string name)
+        {
+            if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
+            string[] names = name.Split('.');
+            if (names.Length != 2) throw new ArgumentException(null, nameof(name));
+            byte[] hash = GetKey(Utility.StrictUTF8.GetBytes(name));
+            if (engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Token).Add(hash)) is not null) return false;
+            StringList roots = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Roots))?.GetInteroperable<StringList>();
+            if (roots is null || roots.BinarySearch(names[1]) < 0) throw new InvalidOperationException();
+            return true;
+        }
+
         [ContractMethod(0_01000000, CallFlags.WriteStates)]
         private bool Register(ApplicationEngine engine, string name, UInt160 owner)
         {
