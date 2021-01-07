@@ -39,6 +39,7 @@ namespace Neo.Network.P2P
             bool tryCompression =
                 command == MessageCommand.Block ||
                 command == MessageCommand.Consensus ||
+                command == MessageCommand.Extensible ||
                 command == MessageCommand.Transaction ||
                 command == MessageCommand.Headers ||
                 command == MessageCommand.Addr ||

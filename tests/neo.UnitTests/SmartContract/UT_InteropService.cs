@@ -52,7 +52,7 @@ namespace Neo.UnitTests.SmartContract
                 snapshot.DeleteContract(scriptHash2);
                 snapshot.AddContract(scriptHash2, new ContractState()
                 {
-                    Script = script.ToArray(),
+                    Nef = new NefFile { Script = script.ToArray() },
                     Hash = script.ToArray().ToScriptHash(),
                     Manifest = TestUtils.CreateManifest("test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer),
                 });
@@ -217,7 +217,7 @@ namespace Neo.UnitTests.SmartContract
             var contract = new ContractState()
             {
                 Manifest = TestUtils.CreateManifest("test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer),
-                Script = scriptA.ToArray(),
+                Nef = new NefFile { Script = scriptA.ToArray() },
                 Hash = scriptA.ToArray().ToScriptHash()
             };
             engine = GetEngine(true, true, false);

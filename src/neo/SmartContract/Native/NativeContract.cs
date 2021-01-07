@@ -27,7 +27,8 @@ namespace Neo.SmartContract.Native
         public static OracleContract Oracle { get; } = new OracleContract();
 
         public string Name => GetType().Name;
-        public byte[] Script { get; }
+        public NefFile Nef { get; }
+        public byte[] Script => Nef.Script;
         public UInt160 Hash { get; }
         public abstract int Id { get; }
         public ContractManifest Manifest { get; }
@@ -35,13 +36,22 @@ namespace Neo.SmartContract.Native
 
         protected NativeContract()
         {
+            byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 sb.EmitPush(Name);
                 sb.EmitSysCall(ApplicationEngine.System_Contract_CallNative);
-                this.Script = sb.ToArray();
+                script = sb.ToArray();
             }
-            this.Hash = Helper.GetContractHash(UInt160.Zero, Script);
+            this.Nef = new NefFile
+            {
+                Compiler = nameof(ScriptBuilder),
+                Version = "3.0",
+                Tokens = System.Array.Empty<MethodToken>(),
+                Script = script
+            };
+            this.Nef.CheckSum = NefFile.ComputeChecksum(Nef);
+            this.Hash = Helper.GetContractHash(UInt160.Zero, script);
             List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
             {
