@@ -90,14 +90,14 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        private bool IsAvailable(ApplicationEngine engine, string name)
+        public bool IsAvailable(StoreView snapshot, string name)
         {
             if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
             string[] names = name.Split('.');
             if (names.Length != 2) throw new ArgumentException(null, nameof(name));
             byte[] hash = GetKey(Utility.StrictUTF8.GetBytes(name));
-            if (engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Token).Add(hash)) is not null) return false;
-            StringList roots = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Roots))?.GetInteroperable<StringList>();
+            if (snapshot.Storages.TryGet(CreateStorageKey(Prefix_Token).Add(hash)) is not null) return false;
+            StringList roots = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Roots))?.GetInteroperable<StringList>();
             if (roots is null || roots.BinarySearch(names[1]) < 0) throw new InvalidOperationException();
             return true;
         }
@@ -124,6 +124,18 @@ namespace Neo.SmartContract.Native
             Mint(engine, state);
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Expiration).AddBigEndian(state.Expiration).Add(hash), new StorageItem(new byte[] { 0 }));
             return true;
+        }
+
+        [ContractMethod(0, CallFlags.ReadStates)]
+        public uint ExpireOn(StoreView snapshot, string name)
+        {
+            if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
+            string[] names = name.Split('.');
+            if (names.Length != 2) throw new ArgumentException(null, nameof(name));
+            byte[] hash = GetKey(Utility.StrictUTF8.GetBytes(name));
+            NameState state = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Token).Add(hash))?.GetInteroperable<NameState>();
+            if (state == null) throw new InvalidOperationException();
+            return state.Expiration;
         }
 
         [ContractMethod(0, CallFlags.WriteStates)]
