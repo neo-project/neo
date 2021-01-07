@@ -10,6 +10,7 @@ using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -115,6 +116,32 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(result);
             Assert.AreEqual(31536000u, (uint)NativeContract.NameService.Properties(snapshot, Encoding.UTF8.GetBytes("neo.com"))["expiration"].AsNumber());
             Assert.IsFalse(NativeContract.NameService.IsAvailable(snapshot, "neo.com"));
+
+            var resultInt = Check_Renew(snapshot, "neo.com", UInt160.Zero);
+            Assert.AreEqual(31536000u * 2, (uint)resultInt);
+            Assert.AreEqual(31536000u * 2, (uint)NativeContract.NameService.Properties(snapshot, Encoding.UTF8.GetBytes("neo.com"))["expiration"].AsNumber());
+            Assert.IsFalse(NativeContract.NameService.IsAvailable(snapshot, "neo.com"));
+        }
+
+        internal static BigInteger Check_Renew(StoreView snapshot, string name, UInt160 signedBy)
+        {
+            var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot);
+
+            var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "renew", true, new ContractParameter[] {
+                new ContractParameter(ContractParameterType.String) { Value = name }
+            });
+            engine.LoadScript(script.ToArray(), 0, -1, 0);
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                return -1;
+            }
+
+            var result = engine.ResultStack.Pop();
+            Assert.IsInstanceOfType(result, typeof(VM.Types.Integer));
+
+            return result.GetInteger();
         }
 
         internal static bool Check_Register(StoreView snapshot, string name, UInt160 owner)

@@ -117,6 +117,7 @@ namespace Neo.SmartContract.Native
             NameState state = new NameState
             {
                 Owner = owner,
+                Admin = owner,
                 Name = name,
                 Description = "",
                 Expiration = (uint)(engine.Snapshot.PersistingBlock.Timestamp / 1000) + OneYear
@@ -135,6 +136,7 @@ namespace Neo.SmartContract.Native
             engine.AddGas(GetPrice(engine.Snapshot));
             byte[] hash = GetKey(Utility.StrictUTF8.GetBytes(name));
             NameState state = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Token).Add(hash)).GetInteroperable<NameState>();
+            if (!engine.CheckWitnessInternal(state.Owner) || !engine.CheckWitnessInternal(state.Admin)) throw new InvalidOperationException();
             engine.Snapshot.Storages.Delete(CreateStorageKey(Prefix_Expiration).AddBigEndian(state.Expiration).Add(hash));
             state.Expiration += OneYear;
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Expiration).AddBigEndian(state.Expiration).Add(hash), new StorageItem(new byte[] { 0 }));
@@ -179,7 +181,7 @@ namespace Neo.SmartContract.Native
             string domain = string.Join('.', name.Split('.')[^2..]);
             byte[] hash_domain = GetKey(Utility.StrictUTF8.GetBytes(domain));
             NameState state = engine.Snapshot.Storages[CreateStorageKey(Prefix_Token).Add(hash_domain)].GetInteroperable<NameState>();
-            if (!engine.CheckWitnessInternal(state.Owner) && !engine.CheckWitnessInternal(state.Admin)) throw new InvalidOperationException();
+            if (!engine.CheckWitnessInternal(state.Owner) || !engine.CheckWitnessInternal(state.Admin)) throw new InvalidOperationException();
             StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Record).Add(hash_domain).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).Add(type), () => new StorageItem());
             item.Value = Utility.StrictUTF8.GetBytes(data);
         }
@@ -211,7 +213,7 @@ namespace Neo.SmartContract.Native
             string domain = string.Join('.', name.Split('.')[^2..]);
             byte[] hash_domain = GetKey(Utility.StrictUTF8.GetBytes(domain));
             NameState state = engine.Snapshot.Storages[CreateStorageKey(Prefix_Token).Add(hash_domain)].GetInteroperable<NameState>();
-            if (!engine.CheckWitnessInternal(state.Owner) && !engine.CheckWitnessInternal(state.Admin)) throw new InvalidOperationException();
+            if (!engine.CheckWitnessInternal(state.Owner) || !engine.CheckWitnessInternal(state.Admin)) throw new InvalidOperationException();
             engine.Snapshot.Storages.Delete(CreateStorageKey(Prefix_Record).Add(hash_domain).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).Add(type));
         }
 
