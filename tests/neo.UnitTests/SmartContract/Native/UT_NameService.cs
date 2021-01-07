@@ -107,8 +107,8 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsFalse(result);
 
             // regex
-            result = Check_Register(snapshot, "neo.com\n", UInt160.Zero);
-            Assert.IsFalse(result);
+            Assert.IsFalse(Check_Register(snapshot, "\nneo.com", UInt160.Zero));
+            Assert.IsFalse(Check_Register(snapshot, "neo.com\n", UInt160.Zero));
 
             // good register
             Assert.IsTrue(NativeContract.NameService.IsAvailable(snapshot, "neo.com"));
