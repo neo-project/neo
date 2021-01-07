@@ -137,15 +137,24 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // good register
             Assert.IsTrue(NativeContract.NameService.IsAvailable(snapshot, "neo.com"));
-            result = Check_Register(snapshot, "neo.com", UInt160.Zero);
+            result = Check_Register(snapshot, "neo.com", UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
             Assert.IsTrue(result);
-            result = Check_SetRecord(snapshot, "neo.com", RecordType.A, "8.8.8.8", UInt160.Zero);
+            result = Check_SetRecord(snapshot, "neo.com", RecordType.A, "8.8.8.8", UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
             Assert.IsTrue(result);
             Assert.AreEqual("8.8.8.8", NativeContract.NameService.GetRecord(snapshot, "neo.com", RecordType.A));
             CollectionAssert.AreEqual(new string[] { $"{RecordType.A}=8.8.8.8" }, NativeContract.NameService.GetRecords(snapshot, "neo.com").Select(u => u.Type.ToString() + "=" + u.Data).ToArray());
 
+            // wrong signed delete register
+            result = Check_DeleteRecord(snapshot, "neo.com", RecordType.A, UInt160.Zero);
+            Assert.IsFalse(result);
+
+            // set admin
+            result = Check_SetAdmin(snapshot, "neo.com", UInt160.Zero, UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
+            Assert.IsTrue(result);
+
             // delete register
             result = Check_DeleteRecord(snapshot, "neo.com", RecordType.A, UInt160.Zero);
+            Assert.IsTrue(result);
             Assert.AreEqual(null, NativeContract.NameService.GetRecord(snapshot, "neo.com", RecordType.A));
             CollectionAssert.AreEqual(System.Array.Empty<string>(), NativeContract.NameService.GetRecords(snapshot, "neo.com").Select(u => u.Type.ToString() + "=" + u.Data).ToArray());
         }
@@ -208,6 +217,25 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsInstanceOfType(result, typeof(VM.Types.Integer));
 
             return result.GetInteger();
+        }
+
+        internal static bool Check_SetAdmin(StoreView snapshot, string name, UInt160 admin, UInt160 signedBy)
+        {
+            var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(admin, signedBy), snapshot);
+
+            var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "setAdmin", false, new ContractParameter[] {
+                new ContractParameter(ContractParameterType.String) { Value = name },
+                new ContractParameter(ContractParameterType.Hash160) { Value = admin }
+            });
+            engine.LoadScript(script.ToArray(), 0, -1, 0);
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         internal static bool Check_Register(StoreView snapshot, string name, UInt160 owner)
