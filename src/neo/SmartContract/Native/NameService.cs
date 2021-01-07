@@ -28,8 +28,8 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_Record = 12;
 
         private const uint OneYear = 365 * 24 * 3600;
-        private static readonly Regex rootRegex = new Regex("^[a-z][a-z0-9]{0,15}$");
-        private static readonly Regex nameRegex = new Regex("^(?=.{3,255}$)([a-z0-9]{1,62}\\.)+[a-z][a-z0-9]{0,15}$");
+        private static readonly Regex rootRegex = new Regex("^[a-z][a-z0-9]{0,15}$", RegexOptions.Singleline);
+        private static readonly Regex nameRegex = new Regex("^(?=.{3,255}$)([a-z0-9]{1,62}\\.)+[a-z][a-z0-9]{0,15}$", RegexOptions.Singleline);
 
         internal NameService()
         {
