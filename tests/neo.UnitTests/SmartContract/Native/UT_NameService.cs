@@ -86,15 +86,19 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void TestRegisterRenew()
+        public void TestRegister()
         {
             var snapshot = _snapshot.Clone();
             snapshot.PersistingBlock = new Block() { Index = 1000 };
 
             var from = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
+            // add root
+            var result = Check_AddRoot(snapshot, from, "com");
+            Assert.IsTrue(result);
+
             // no-roots
-            var result = Check_Register(snapshot, "neo.org", UInt160.Zero);
+            result = Check_Register(snapshot, "neo.org", UInt160.Zero);
             Assert.IsFalse(result);
 
             // more than 2 dots
@@ -104,6 +108,35 @@ namespace Neo.UnitTests.SmartContract.Native
             // regex
             result = Check_Register(snapshot, "neo.org\n", UInt160.Zero);
             Assert.IsFalse(result);
+
+            // good register
+            result = Check_IsAvailable(snapshot, "neo.com");
+            Assert.IsTrue(result);
+            result = Check_Register(snapshot, "neo.com", UInt160.Zero);
+            Assert.IsTrue(result);
+            result = Check_IsAvailable(snapshot, "neo.com");
+            Assert.IsFalse(result);
+        }
+
+        internal static bool Check_IsAvailable(StoreView snapshot, string name)
+        {
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+
+            var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "isAvailable", true, new ContractParameter[] {
+                new ContractParameter(ContractParameterType.String) { Value = name }
+            });
+            engine.LoadScript(script.ToArray(), 0, -1, 0);
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                return false;
+            }
+
+            var result = engine.ResultStack.Pop();
+            Assert.IsInstanceOfType(result, typeof(VM.Types.Boolean));
+
+            return result.GetBoolean();
         }
 
         internal static bool Check_Register(StoreView snapshot, string name, UInt160 owner)
@@ -111,7 +144,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(owner), snapshot);
 
             var script = new ScriptBuilder();
-            script.EmitDynamicCall(NativeContract.NameService.Hash, "register", false, new ContractParameter[] {
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "register", true, new ContractParameter[] {
                 new ContractParameter(ContractParameterType.String) { Value = name },
                 new ContractParameter(ContractParameterType.Hash160) { Value = owner }
             });
