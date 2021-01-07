@@ -129,6 +129,13 @@ namespace Neo.VM
                             sb.Emit(OpCode.PACK);
                         }
                         break;
+                    case ContractParameterType.Map:
+                        {
+                            var pairs = (IList<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value;
+                            var map = new Dictionary<ContractParameter, ContractParameter>(pairs);
+                            sb.CreateMap(map);
+                        }
+                        break;
                     default:
                         throw new ArgumentException();
                 }
@@ -180,6 +187,9 @@ namespace Neo.VM
                     break;
                 case Enum data:
                     sb.EmitPush(BigInteger.Parse(data.ToString("d")));
+                    break;
+                case ContractParameter data:
+                    sb.EmitPush(data);
                     break;
                 case null:
                     sb.Emit(OpCode.PUSHNULL);
