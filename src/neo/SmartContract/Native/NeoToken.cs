@@ -301,6 +301,12 @@ namespace Neo.SmartContract.Native
 
         private CachedCommittee GetCommitteeFromCache(StoreView snapshot)
         {
+            if (snapshot.GetHeader(snapshot.CurrentBlockHash).Timestamp < TimeProvider.Current.UtcNow.AddDays(-2).ToTimestampMS())
+            {
+                // Restore original committee if there are no blocks in 2 days
+                var candidates = GetCandidates(snapshot);
+                return new CachedCommittee(Blockchain.StandbyCommittee.Select(p => (p, candidates.FirstOrDefault(k => k.PublicKey.Equals(p)).Votes)));
+            }
             return snapshot.Storages[CreateStorageKey(Prefix_Committee)].GetInteroperable<CachedCommittee>();
         }
 
