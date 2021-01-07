@@ -136,7 +136,6 @@ namespace Neo.SmartContract.Native
             engine.AddGas(GetPrice(engine.Snapshot));
             byte[] hash = GetKey(Utility.StrictUTF8.GetBytes(name));
             NameState state = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Token).Add(hash)).GetInteroperable<NameState>();
-            if (!engine.CheckWitnessInternal(state.Owner) || !engine.CheckWitnessInternal(state.Admin)) throw new InvalidOperationException();
             engine.Snapshot.Storages.Delete(CreateStorageKey(Prefix_Expiration).AddBigEndian(state.Expiration).Add(hash));
             state.Expiration += OneYear;
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Expiration).AddBigEndian(state.Expiration).Add(hash), new StorageItem(new byte[] { 0 }));
