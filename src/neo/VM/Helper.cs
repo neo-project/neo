@@ -25,7 +25,7 @@ namespace Neo.VM
             return sb.Emit(OpCode.PACK);
         }
 
-        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder sb, IReadOnlyDictionary<TKey, TValue> map = null)
+        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder sb, IEnumerable<KeyValuePair<TKey, TValue>> map = null)
         {
             sb.Emit(OpCode.NEWMAP);
             if (map != null)
@@ -132,8 +132,7 @@ namespace Neo.VM
                     case ContractParameterType.Map:
                         {
                             var pairs = (IList<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value;
-                            var map = new Dictionary<ContractParameter, ContractParameter>(pairs);
-                            sb.CreateMap(map);
+                            sb.CreateMap(pairs);
                         }
                         break;
                     default:
