@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Network.P2P.Payloads;
 using Neo.Plugins;
 using System;
 
@@ -10,7 +11,10 @@ namespace Neo.UnitTests.Plugins
     {
         private static readonly object locker = new object();
 
-        private class DummyP2PPlugin : IP2PPlugin { }
+        private class DummyP2PPlugin : IP2PPlugin
+        {
+            public void OnVerifiedInventory(IInventory inventory) { }
+        }
         private class dummyPersistencePlugin : IPersistencePlugin { }
 
         [TestMethod]
