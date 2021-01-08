@@ -250,10 +250,14 @@ namespace Neo.UnitTests.VMT
             TestEmitPush2PublicKey();
             TestEmitPush2String();
             TestEmitPush2Array();
+            TestEmitPush2Map();
+        }
 
+        private void TestEmitPush2Map()
+        {
             ScriptBuilder sb = new ScriptBuilder();
-            Action action = () => sb.EmitPush(new ContractParameter(ContractParameterType.Map));
-            action.Should().Throw<ArgumentException>();
+            sb.EmitPush(new ContractParameter(ContractParameterType.Map));
+            CollectionAssert.AreEqual(new[] { (byte)OpCode.NEWMAP }, sb.ToArray());
         }
 
         private void TestEmitPush2Array()
