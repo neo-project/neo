@@ -15,9 +15,11 @@ using Neo.SmartContract.Native;
 using Neo.UnitTests.Cryptography;
 using Neo.Wallets;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using System.Security.Cryptography;
 using static Neo.SmartContract.Native.NeoToken;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
@@ -505,7 +507,6 @@ namespace Neo.UnitTests.Consensus
             payload.Witness = sc.GetWitnesses()[0];
         }
 
-        /*
         [TestMethod]
         public void TestSerializeAndDeserializeConsensusContext()
         {
@@ -601,9 +602,8 @@ namespace Neo.UnitTests.Consensus
             copiedContext.PreparationPayloads.Should().BeEquivalentTo(consensusContext.PreparationPayloads);
             copiedContext.CommitPayloads.Should().BeEquivalentTo(consensusContext.CommitPayloads);
             copiedContext.ChangeViewPayloads.Should().BeEquivalentTo(consensusContext.ChangeViewPayloads);
-        }*/
+        }
 
-        /*
         [TestMethod]
         public void TestSerializeAndDeserializeRecoveryMessageWithChangeViewsAndNoPrepareRequest()
         {
@@ -695,9 +695,8 @@ namespace Neo.UnitTests.Consensus
             copiedMsg.PreparationHash.Should().Be(msg.PreparationHash);
             copiedMsg.PreparationMessages.Should().BeEquivalentTo(msg.PreparationMessages);
             copiedMsg.CommitMessages.Count.Should().Be(0);
-        }*/
+        }
 
-        /*
         [TestMethod]
         public void TestSerializeAndDeserializeRecoveryMessageWithChangeViewsAndPrepareRequest()
         {
@@ -792,9 +791,8 @@ namespace Neo.UnitTests.Consensus
             copiedMsg.PreparationHash.Should().Be(null);
             copiedMsg.PreparationMessages.Should().BeEquivalentTo(msg.PreparationMessages);
             copiedMsg.CommitMessages.Count.Should().Be(0);
-        }*/
+        }
 
-        /*
         [TestMethod]
         public void TestSerializeAndDeserializeRecoveryMessageWithoutChangeViewsWithoutCommits()
         {
@@ -854,9 +852,8 @@ namespace Neo.UnitTests.Consensus
             copiedMsg.PreparationHash.Should().Be(null);
             copiedMsg.PreparationMessages.Should().BeEquivalentTo(msg.PreparationMessages);
             copiedMsg.CommitMessages.Count.Should().Be(0);
-        }*/
+        }
 
-        /*
         [TestMethod]
         public void TestSerializeAndDeserializeRecoveryMessageWithoutChangeViewsWithCommits()
         {
@@ -936,7 +933,7 @@ namespace Neo.UnitTests.Consensus
             copiedMsg.PreparationHash.Should().Be(null);
             copiedMsg.PreparationMessages.Should().BeEquivalentTo(msg.PreparationMessages);
             copiedMsg.CommitMessages.Should().BeEquivalentTo(msg.CommitMessages);
-        }*/
+        }
 
         private static ExtensiblePayload MakeSignedPayload(ConsensusContext context, ConsensusMessage message, byte validatorIndex, byte[] witnessInvocationScript)
         {
