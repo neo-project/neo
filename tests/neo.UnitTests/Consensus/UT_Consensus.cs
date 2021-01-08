@@ -15,11 +15,9 @@ using Neo.SmartContract.Native;
 using Neo.UnitTests.Cryptography;
 using Neo.Wallets;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
-using System.Security.Cryptography;
 using static Neo.SmartContract.Native.NeoToken;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
@@ -67,7 +65,7 @@ namespace Neo.UnitTests.Consensus
               new DateTime(1980, 06, 01, 0, 0, 15, 001, DateTimeKind.Utc), // unused
             };
             for (int i = 0; i < timeValues.Length; i++)
-                Console.WriteLine($"time {i}: {timeValues[i].ToString()} ");
+                Console.WriteLine($"time {i}: {timeValues[i]} ");
             ulong defaultTimestamp = 328665601001;   // GMT: Sunday, June 1, 1980 12:00:01.001 AM
                                                      // check basic ConsensusContext
                                                      // mockConsensusContext.Object.block_received_time.ToTimestamp().Should().Be(4244941697); //1968-06-01 00:00:01
