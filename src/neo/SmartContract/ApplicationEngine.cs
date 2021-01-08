@@ -106,7 +106,7 @@ namespace Neo.SmartContract
             CallFlags callingFlags = state.CallFlags;
 
             if (args.Length != md.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {md.Parameters.Length} Arguments But Receives {args.Length} Arguments");
-            if (hasReturnValue ^ (md.ReturnType != ContractParameterType.Void)) throw new InvalidOperationException();
+            if (hasReturnValue ^ (md.ReturnType != ContractParameterType.Void)) throw new InvalidOperationException("The return value type does not match.");
             ExecutionContext context_new = LoadContract(contract, method, flags & callingFlags, hasReturnValue, (ushort)args.Length);
             state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
