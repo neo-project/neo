@@ -25,7 +25,7 @@ namespace Neo.VM
             return sb.Emit(OpCode.PACK);
         }
 
-        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder sb, IReadOnlyDictionary<TKey, TValue> map = null)
+        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder sb, IEnumerable<KeyValuePair<TKey, TValue>> map = null)
         {
             sb.Emit(OpCode.NEWMAP);
             if (map != null)
@@ -129,6 +129,12 @@ namespace Neo.VM
                             sb.Emit(OpCode.PACK);
                         }
                         break;
+                    case ContractParameterType.Map:
+                        {
+                            var pairs = (IList<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value;
+                            sb.CreateMap(pairs);
+                        }
+                        break;
                     default:
                         throw new ArgumentException();
                 }
@@ -180,6 +186,9 @@ namespace Neo.VM
                     break;
                 case Enum data:
                     sb.EmitPush(BigInteger.Parse(data.ToString("d")));
+                    break;
+                case ContractParameter data:
+                    sb.EmitPush(data);
                     break;
                 case null:
                     sb.Emit(OpCode.PUSHNULL);
