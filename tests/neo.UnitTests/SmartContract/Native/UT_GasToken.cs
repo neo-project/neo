@@ -18,6 +18,7 @@ namespace Neo.UnitTests.SmartContract.Native
     public class UT_GasToken
     {
         private StoreView _snapshot;
+        private Block _persistingBlock;
 
         [TestInitialize]
         public void TestSetup()
@@ -25,7 +26,7 @@ namespace Neo.UnitTests.SmartContract.Native
             TestBlockchain.InitializeMockNeoSystem();
 
             _snapshot = Blockchain.Singleton.GetSnapshot();
-            _snapshot.PersistingBlock = new Block() { Index = 0 };
+            _persistingBlock = new Block() { Index = 0 };
         }
 
         [TestMethod]
@@ -41,7 +42,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_BalanceOfTransferAndBurn()
         {
             var snapshot = _snapshot.Clone();
-            snapshot.PersistingBlock = new Block() { Index = 1000 };
+            var persistingBlock = new Block() { Index = 1000 };
 
             byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
 
@@ -54,7 +55,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Check unclaim
 
-            var unclaim = UT_NeoToken.Check_UnclaimedGas(snapshot, from);
+            var unclaim = UT_NeoToken.Check_UnclaimedGas(snapshot, from, persistingBlock);
             unclaim.Value.Should().Be(new BigInteger(0.5 * 1000 * 100000000L));
             unclaim.State.Should().BeTrue();
 
@@ -69,7 +70,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Check unclaim
 
-            unclaim = UT_NeoToken.Check_UnclaimedGas(snapshot, from);
+            unclaim = UT_NeoToken.Check_UnclaimedGas(snapshot, from, persistingBlock);
             unclaim.Value.Should().Be(new BigInteger(0));
             unclaim.State.Should().BeTrue();
 
@@ -95,7 +96,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Burn
 
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, 0);
             keyCount = snapshot.Storages.GetChangeSet().Count();
 
             Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
@@ -130,7 +131,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_BadScript()
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, Blockchain.Singleton.GetSnapshot(), 0);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, Blockchain.Singleton.GetSnapshot(), _persistingBlock, 0);
 
             var script = new ScriptBuilder();
             script.Emit(OpCode.NOP);
