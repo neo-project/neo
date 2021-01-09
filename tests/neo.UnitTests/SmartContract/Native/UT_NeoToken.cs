@@ -358,8 +358,8 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Transfer
 
-            NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.One, false).Should().BeFalse(); // Not signed
-            NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.One, true).Should().BeTrue();
+            NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.One, false, persistingBlock).Should().BeFalse(); // Not signed
+            NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.One, true, persistingBlock).Should().BeTrue();
             NativeContract.NEO.BalanceOf(snapshot, from).Should().Be(99999999);
             NativeContract.NEO.BalanceOf(snapshot, to).Should().Be(1);
 
@@ -375,19 +375,19 @@ namespace Neo.UnitTests.SmartContract.Native
 
             keyCount = snapshot.Storages.GetChangeSet().Count();
 
-            NativeContract.NEO.Transfer(snapshot, to, from, BigInteger.One, true).Should().BeTrue();
+            NativeContract.NEO.Transfer(snapshot, to, from, BigInteger.One, true, persistingBlock).Should().BeTrue();
             NativeContract.NEO.BalanceOf(snapshot, to).Should().Be(0);
             snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount - 1);  // Remove neo balance from address two
 
             // Bad inputs
 
-            NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.MinusOne, true).Should().BeFalse();
-            NativeContract.NEO.Transfer(snapshot, new byte[19], to, BigInteger.One, false).Should().BeFalse();
-            NativeContract.NEO.Transfer(snapshot, from, new byte[19], BigInteger.One, false).Should().BeFalse();
+            NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.MinusOne, true, persistingBlock).Should().BeFalse();
+            NativeContract.NEO.Transfer(snapshot, new byte[19], to, BigInteger.One, false, persistingBlock).Should().BeFalse();
+            NativeContract.NEO.Transfer(snapshot, from, new byte[19], BigInteger.One, false, persistingBlock).Should().BeFalse();
 
             // More than balance
 
-            NativeContract.NEO.Transfer(snapshot, to, from, new BigInteger(2), true).Should().BeFalse();
+            NativeContract.NEO.Transfer(snapshot, to, from, new BigInteger(2), true, persistingBlock).Should().BeFalse();
         }
 
         [TestMethod]

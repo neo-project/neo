@@ -281,7 +281,6 @@ namespace Neo.UnitTests.SmartContract
         public void TestRuntime_GetTime()
         {
             Block block = new Block();
-            TestUtils.SetupBlockWithValues(block, UInt256.Zero, out _, out _, out _, out _, out _, out _, 0);
             var engine = GetEngine(true, true, hasBlock: true);
             engine.GetTime().Should().Be(block.Timestamp);
         }
