@@ -220,7 +220,7 @@ namespace Neo.UnitTests.SmartContract
                 Nef = new NefFile { Script = scriptA.ToArray() },
                 Hash = scriptA.ToArray().ToScriptHash()
             };
-            engine = GetEngine(true, true, false);
+            engine = GetEngine(true, true, addScript: false);
             engine.Snapshot.AddContract(contract.Hash, contract);
 
             using ScriptBuilder scriptB = new ScriptBuilder();
@@ -282,8 +282,7 @@ namespace Neo.UnitTests.SmartContract
         {
             Block block = new Block();
             TestUtils.SetupBlockWithValues(block, UInt256.Zero, out _, out _, out _, out _, out _, out _, 0);
-            var engine = GetEngine(true, true);
-            engine.Snapshot.PersistingBlock = block;
+            var engine = GetEngine(true, true, hasBlock: true);
             engine.GetTime().Should().Be(block.Timestamp);
         }
 
@@ -619,8 +618,6 @@ namespace Neo.UnitTests.SmartContract
         public void TestContract_Destroy()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
-            snapshot.PersistingBlock = new Block();
-
             var state = TestUtils.GetContract();
             var scriptHash = UInt160.Parse("0xcb9f3b7c6fb1cf2c13a40637c189bdd066a272b4");
             var storageItem = new StorageItem
@@ -660,31 +657,13 @@ namespace Neo.UnitTests.SmartContract
             tx.Script = new byte[] { 0x01, 0x02, 0x03 };
         }
 
-        private static ApplicationEngine GetEngine(bool hasContainer = false, bool hasSnapshot = false, bool addScript = true, long gas = 20_00000000)
+        private static ApplicationEngine GetEngine(bool hasContainer = false, bool hasSnapshot = false, bool hasBlock = false, bool addScript = true, long gas = 20_00000000)
         {
-            var tx = TestUtils.GetTransaction(UInt160.Zero);
-            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
-            ApplicationEngine engine;
-            if (hasContainer && hasSnapshot)
-            {
-                engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, gas);
-            }
-            else if (hasContainer && !hasSnapshot)
-            {
-                engine = ApplicationEngine.Create(TriggerType.Application, tx, null, gas);
-            }
-            else if (!hasContainer && hasSnapshot)
-            {
-                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas);
-            }
-            else
-            {
-                engine = ApplicationEngine.Create(TriggerType.Application, null, null, gas);
-            }
-            if (addScript)
-            {
-                engine.LoadScript(new byte[] { 0x01 });
-            }
+            var tx = hasContainer ? TestUtils.GetTransaction(UInt160.Zero) : null;
+            var snapshot = hasSnapshot ? Blockchain.Singleton.GetSnapshot().Clone() : null;
+            var block = hasBlock ? new Block() : null;
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, gas);
+            if (addScript) engine.LoadScript(new byte[] { 0x01 });
             return engine;
         }
     }

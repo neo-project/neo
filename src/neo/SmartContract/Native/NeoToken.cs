@@ -59,10 +59,10 @@ namespace Neo.SmartContract.Native
         private void DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
         {
             // PersistingBlock is null when running under the debugger
-            if (engine.Snapshot.PersistingBlock == null) return;
+            if (engine.PersistingBlock is null) return;
 
-            BigInteger gas = CalculateBonus(engine.Snapshot, state.VoteTo, state.Balance, state.BalanceHeight, engine.Snapshot.PersistingBlock.Index);
-            state.BalanceHeight = engine.Snapshot.PersistingBlock.Index;
+            BigInteger gas = CalculateBonus(engine.Snapshot, state.VoteTo, state.Balance, state.BalanceHeight, engine.PersistingBlock.Index);
+            state.BalanceHeight = engine.PersistingBlock.Index;
             GAS.Mint(engine, account, gas, true);
         }
 
@@ -132,7 +132,7 @@ namespace Neo.SmartContract.Native
         internal override void OnPersist(ApplicationEngine engine)
         {
             // Set next committee
-            if (ShouldRefreshCommittee(engine.Snapshot.PersistingBlock.Index))
+            if (ShouldRefreshCommittee(engine.PersistingBlock.Index))
             {
                 StorageItem storageItem = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Committee));
                 var cachedCommittee = storageItem.GetInteroperable<CachedCommittee>();
@@ -147,7 +147,7 @@ namespace Neo.SmartContract.Native
 
             int m = ProtocolSettings.Default.CommitteeMembersCount;
             int n = ProtocolSettings.Default.ValidatorsCount;
-            int index = (int)(engine.Snapshot.PersistingBlock.Index % (uint)m);
+            int index = (int)(engine.PersistingBlock.Index % (uint)m);
             var gasPerBlock = GetGasPerBlock(engine.Snapshot);
             var committee = GetCommitteeFromCache(engine.Snapshot);
             var pubkey = committee.ElementAt(index).PublicKey;
@@ -156,7 +156,7 @@ namespace Neo.SmartContract.Native
 
             // Record the cumulative reward of the voters of committee
 
-            if (ShouldRefreshCommittee(engine.Snapshot.PersistingBlock.Index))
+            if (ShouldRefreshCommittee(engine.PersistingBlock.Index))
             {
                 BigInteger voterRewardOfEachCommittee = gasPerBlock * VoterRewardRatio * 100000000L * m / (m + n) / 100; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
                 for (index = 0; index < committee.Count; index++)
@@ -166,7 +166,7 @@ namespace Neo.SmartContract.Native
                     if (member.Votes > 0)
                     {
                         BigInteger voterSumRewardPerNEO = factor * voterRewardOfEachCommittee / member.Votes;
-                        StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(member.PublicKey).AddBigEndian(engine.Snapshot.PersistingBlock.Index + 1);
+                        StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(member.PublicKey).AddBigEndian(engine.PersistingBlock.Index + 1);
                         byte[] border = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(member.PublicKey).ToArray();
                         (_, var item) = engine.Snapshot.Storages.FindRange(voterRewardKey.ToArray(), border, SeekDirection.Backward).FirstOrDefault();
                         voterSumRewardPerNEO += (item ?? BigInteger.Zero);
@@ -183,7 +183,7 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentOutOfRangeException(nameof(gasPerBlock));
             if (!CheckCommittee(engine)) return false;
 
-            uint index = engine.Snapshot.PersistingBlock.Index + 1;
+            uint index = engine.PersistingBlock.Index + 1;
             StorageItem entry = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(index), () => new StorageItem(gasPerBlock));
             entry.Set(gasPerBlock);
             return true;
@@ -192,7 +192,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public BigInteger GetGasPerBlock(StoreView snapshot)
         {
-            return GetSortedGasRecords(snapshot, snapshot.PersistingBlock.Index).First().GasPerBlock;
+            return GetSortedGasRecords(snapshot, snapshot.Height + 1).First().GasPerBlock;
         }
 
         private IEnumerable<(uint Index, BigInteger GasPerBlock)> GetSortedGasRecords(StoreView snapshot, uint end)
