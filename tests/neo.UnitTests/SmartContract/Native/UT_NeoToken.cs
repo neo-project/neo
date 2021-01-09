@@ -686,7 +686,7 @@ namespace Neo.UnitTests.SmartContract.Native
             result1.Item2.Should().BeTrue();
             result1.Item1.GetBoolean().Should().BeTrue();
 
-            persistingBlock.Index++;
+            snapshot.BlockHashIndex.GetAndChange().Index = persistingBlock.Index + 1;
             result = Check_GetGasPerBlock(snapshot, persistingBlock);
             result.Item2.Should().BeTrue();
             result.Item1.Should().Be(10 * NativeContract.GAS.Factor);
@@ -696,7 +696,8 @@ namespace Neo.UnitTests.SmartContract.Native
             NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
             state.Balance = 1000;
             state.BalanceHeight = 0;
-            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, persistingBlock.Index + 1).Should().Be(6500);
+            snapshot.BlockHashIndex.GetAndChange().Index = 0; // Fake Height=0
+            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, persistingBlock.Index + 2).Should().Be(6500);
         }
 
         [TestMethod]
