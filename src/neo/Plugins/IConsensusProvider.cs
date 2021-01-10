@@ -1,7 +1,9 @@
+using Neo.Wallets;
+
 namespace Neo.Plugins
 {
     public interface IConsensusProvider
     {
-        void Start();
+        void Start(Wallet wallet);
     }
 }
