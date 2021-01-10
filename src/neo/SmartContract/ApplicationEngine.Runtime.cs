@@ -36,7 +36,7 @@ namespace Neo.SmartContract
 
         protected internal ulong GetTime()
         {
-            return Snapshot.PersistingBlock.Timestamp;
+            return PersistingBlock.Timestamp;
         }
 
         protected internal IInteroperable GetScriptContainer()

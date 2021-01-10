@@ -23,22 +23,18 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             TestBlockchain.InitializeMockNeoSystem();
             _snapshot = Blockchain.Singleton.GetSnapshot();
-            _snapshot.PersistingBlock = new Block() { Index = 0 };
         }
 
         [TestMethod]
         public void TestSetAndGet()
         {
             var snapshot1 = _snapshot.Clone();
-            snapshot1.PersistingBlock = new Block
-            {
-                Index = 0,
-            };
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
             ECPoint[] validators = NativeContract.NEO.ComputeNextBlockValidators(snapshot1);
             var ret = NativeContract.RoleManagement.Call(
                 snapshot1,
                 new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                new Block(),
                 "designateAsRole",
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.StateValidator) },
                 new ContractParameter(ContractParameterType.Array) { Value = validators.Select(p => new ContractParameter(ContractParameterType.ByteArray) { Value = p.ToArray() }).ToList() }

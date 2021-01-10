@@ -35,10 +35,10 @@ namespace Neo.UnitTests.Extensions
             public void SerializeUnsigned(BinaryWriter writer) { }
         }
 
-        public static bool Transfer(this NativeContract contract, StoreView snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom)
+        public static bool Transfer(this NativeContract contract, StoreView snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom, Block persistingBlock)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application,
-                new ManualWitness(signFrom ? new UInt160(from) : null), snapshot);
+                new ManualWitness(signFrom ? new UInt160(from) : null), snapshot, persistingBlock);
 
             engine.LoadScript(contract.Script, pcount: 4, configureState: p => p.ScriptHash = contract.Hash);
 

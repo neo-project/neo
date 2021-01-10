@@ -16,7 +16,7 @@ namespace Neo.UnitTests.Extensions
             script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", true, nefFile, manifest);
 
             var engine = ApplicationEngine.Create(TriggerType.Application,
-                sender != null ? new Transaction() { Signers = new Signer[] { new Signer() { Account = sender } } } : null, snapshot, gas);
+                sender != null ? new Transaction() { Signers = new Signer[] { new Signer() { Account = sender } } } : null, snapshot, null, gas);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() != VMState.HALT)
@@ -91,12 +91,12 @@ namespace Neo.UnitTests.Extensions
 
         public static StackItem Call(this NativeContract contract, StoreView snapshot, string method, params ContractParameter[] args)
         {
-            return Call(contract, snapshot, null, method, args);
+            return Call(contract, snapshot, null, null, method, args);
         }
 
-        public static StackItem Call(this NativeContract contract, StoreView snapshot, IVerifiable container, string method, params ContractParameter[] args)
+        public static StackItem Call(this NativeContract contract, StoreView snapshot, IVerifiable container, Block persistingBlock, string method, params ContractParameter[] args)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot);
+            var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot, persistingBlock);
             var contractState = NativeContract.ContractManagement.GetContract(snapshot, contract.Hash);
             if (contractState == null) throw new InvalidOperationException();
 

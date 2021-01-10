@@ -26,7 +26,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestInitialize()
         {
-            ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, null, 0);
+            ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, null, null, 0);
             testNativeContract.Initialize(ae);
         }
 
@@ -98,7 +98,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestInvoke()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, 0);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, null, 0);
             engine.LoadScript(testNativeContract.Script, configureState: p => p.ScriptHash = testNativeContract.Hash);
 
             ByteString method1 = new ByteString(System.Text.Encoding.Default.GetBytes("wrongMethod"));
@@ -119,10 +119,10 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
 
-            ApplicationEngine engine1 = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 0);
+            ApplicationEngine engine1 = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, 0);
             Assert.ThrowsException<InvalidOperationException>(() => testNativeContract.TestTrigger(engine1));
 
-            ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, 0);
+            ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, null, 0);
             testNativeContract.TestTrigger(engine2);
         }
 
