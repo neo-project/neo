@@ -597,20 +597,20 @@ namespace Neo.UnitTests.SmartContract
             engine.LoadScript(new byte[] { 0x01 });
 
             engine.Push(args[1]); engine.Push(args[0]);
-            engine.CallContract(state.Hash, method, CallFlags.All, false, (ushort)args.Count);
+            engine.CallContract(state.Hash, method, CallFlags.All, true, (ushort)args.Count);
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.Create("a");
             engine.Push(args[1]); engine.Push(args[0]);
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(state.Hash, method, CallFlags.All, false, (ushort)args.Count));
+            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(state.Hash, method, CallFlags.All, true, (ushort)args.Count));
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.CreateWildcard();
             engine.Push(args[1]); engine.Push(args[0]);
-            engine.CallContract(state.Hash, method, CallFlags.All, false, (ushort)args.Count);
+            engine.CallContract(state.Hash, method, CallFlags.All, true, (ushort)args.Count);
 
             engine.Push(args[1]); engine.Push(args[0]);
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(UInt160.Zero, method, CallFlags.All, false, (ushort)args.Count));
+            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(UInt160.Zero, method, CallFlags.All, true, (ushort)args.Count));
         }
 
         [TestMethod]
