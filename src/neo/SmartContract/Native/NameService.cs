@@ -42,7 +42,7 @@ namespace Neo.SmartContract.Native
 
         internal override void OnPersist(ApplicationEngine engine)
         {
-            uint now = (uint)(engine.Snapshot.PersistingBlock.Timestamp / 1000) + 1;
+            uint now = (uint)(engine.PersistingBlock.Timestamp / 1000) + 1;
             byte[] start = CreateStorageKey(Prefix_Expiration).AddBigEndian(0).ToArray();
             byte[] end = CreateStorageKey(Prefix_Expiration).AddBigEndian(now).ToArray();
             foreach (var (key, _) in engine.Snapshot.Storages.FindRange(start, end))
@@ -119,7 +119,7 @@ namespace Neo.SmartContract.Native
                 Owner = owner,
                 Name = name,
                 Description = "",
-                Expiration = (uint)(engine.Snapshot.PersistingBlock.Timestamp / 1000) + OneYear
+                Expiration = (uint)(engine.PersistingBlock.Timestamp / 1000) + OneYear
             };
             Mint(engine, state);
             engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Expiration).AddBigEndian(state.Expiration).Add(hash), new StorageItem(new byte[] { 0 }));
