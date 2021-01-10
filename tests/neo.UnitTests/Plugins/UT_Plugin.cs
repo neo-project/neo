@@ -33,8 +33,8 @@ namespace Neo.UnitTests.Plugins
 
             // With empty default implementation
 
-            pp.OnCommit(null);
-            pp.OnPersist(null, null);
+            pp.OnCommit(null, null);
+            pp.OnPersist(null, null, null);
         }
 
         [TestMethod]
