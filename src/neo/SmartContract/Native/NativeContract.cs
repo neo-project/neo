@@ -17,20 +17,23 @@ namespace Neo.SmartContract.Native
         private static readonly Dictionary<string, NativeContract> contractsNameDictionary = new Dictionary<string, NativeContract>();
         private static readonly Dictionary<UInt160, NativeContract> contractsHashDictionary = new Dictionary<UInt160, NativeContract>();
         private readonly Dictionary<string, ContractMethodMetadata> methods = new Dictionary<string, ContractMethodMetadata>();
+        private static int id_counter = 0;
 
-        public static IReadOnlyCollection<NativeContract> Contracts { get; } = contractsList;
+        #region Named Native Contracts
         public static ContractManagement ContractManagement { get; } = new ContractManagement();
         public static NeoToken NEO { get; } = new NeoToken();
         public static GasToken GAS { get; } = new GasToken();
         public static PolicyContract Policy { get; } = new PolicyContract();
         public static RoleManagement RoleManagement { get; } = new RoleManagement();
         public static OracleContract Oracle { get; } = new OracleContract();
+        #endregion
 
+        public static IReadOnlyCollection<NativeContract> Contracts { get; } = contractsList;
         public string Name => GetType().Name;
         public NefFile Nef { get; }
         public byte[] Script => Nef.Script;
         public UInt160 Hash { get; }
-        public abstract int Id { get; }
+        public int Id { get; }
         public ContractManifest Manifest { get; }
         public uint ActiveBlockIndex { get; }
 
@@ -52,6 +55,7 @@ namespace Neo.SmartContract.Native
             };
             this.Nef.CheckSum = NefFile.ComputeChecksum(Nef);
             this.Hash = Helper.GetContractHash(UInt160.Zero, script);
+            this.Id = --id_counter;
             List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
             {
