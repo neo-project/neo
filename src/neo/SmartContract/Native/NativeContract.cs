@@ -14,7 +14,7 @@ namespace Neo.SmartContract.Native
     public abstract class NativeContract
     {
         private static readonly List<NativeContract> contractsList = new List<NativeContract>();
-        private static readonly Dictionary<string, NativeContract> contractsNameDictionary = new Dictionary<string, NativeContract>();
+        private static readonly Dictionary<int, NativeContract> contractsIdDictionary = new Dictionary<int, NativeContract>();
         private static readonly Dictionary<UInt160, NativeContract> contractsHashDictionary = new Dictionary<UInt160, NativeContract>();
         private readonly Dictionary<string, ContractMethodMetadata> methods = new Dictionary<string, ContractMethodMetadata>();
         private static int id_counter = 0;
@@ -39,10 +39,11 @@ namespace Neo.SmartContract.Native
 
         protected NativeContract()
         {
+            this.Id = --id_counter;
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitPush(Name);
+                sb.EmitPush(Id);
                 sb.EmitSysCall(ApplicationEngine.System_Contract_CallNative);
                 script = sb.ToArray();
             }
@@ -55,7 +56,6 @@ namespace Neo.SmartContract.Native
             };
             this.Nef.CheckSum = NefFile.ComputeChecksum(Nef);
             this.Hash = Helper.GetContractHash(UInt160.Zero, script);
-            this.Id = --id_counter;
             List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
             {
@@ -88,7 +88,7 @@ namespace Neo.SmartContract.Native
             if (ProtocolSettings.Default.NativeActivations.TryGetValue(Name, out uint activationIndex))
                 this.ActiveBlockIndex = activationIndex;
             contractsList.Add(this);
-            contractsNameDictionary.Add(Name, this);
+            contractsIdDictionary.Add(Id, this);
             contractsHashDictionary.Add(Hash, this);
         }
 
@@ -109,9 +109,9 @@ namespace Neo.SmartContract.Native
             return contract;
         }
 
-        public static NativeContract GetContract(string name)
+        public static NativeContract GetContract(int id)
         {
-            contractsNameDictionary.TryGetValue(name, out var contract);
+            contractsIdDictionary.TryGetValue(id, out var contract);
             return contract;
         }
 
