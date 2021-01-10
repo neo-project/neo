@@ -21,8 +21,6 @@ namespace Neo.UnitTests.Plugins
         public void TestIP2PPlugin()
         {
             var pp = new DummyP2PPlugin() as IP2PPlugin;
-
-            Assert.IsTrue(pp.OnConsensusMessage(null));
             Assert.IsTrue(pp.OnP2PMessage(null));
         }
 

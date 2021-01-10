@@ -8,9 +8,15 @@ namespace Neo.Consensus
     public abstract class ConsensusMessage : ISerializable
     {
         public readonly ConsensusMessageType Type;
+        public uint BlockIndex;
+        public byte ValidatorIndex;
         public byte ViewNumber;
 
-        public virtual int Size => sizeof(ConsensusMessageType) + sizeof(byte);
+        public virtual int Size =>
+            sizeof(ConsensusMessageType) +  //Type
+            sizeof(uint) +                  //BlockIndex
+            sizeof(byte) +                  //ValidatorIndex
+            sizeof(byte);                   //ViewNumber
 
         protected ConsensusMessage(ConsensusMessageType type)
         {
@@ -22,6 +28,10 @@ namespace Neo.Consensus
         public virtual void Deserialize(BinaryReader reader)
         {
             if (Type != (ConsensusMessageType)reader.ReadByte())
+                throw new FormatException();
+            BlockIndex = reader.ReadUInt32();
+            ValidatorIndex = reader.ReadByte();
+            if (ValidatorIndex >= ProtocolSettings.Default.ValidatorsCount)
                 throw new FormatException();
             ViewNumber = reader.ReadByte();
         }
@@ -37,6 +47,8 @@ namespace Neo.Consensus
         public virtual void Serialize(BinaryWriter writer)
         {
             writer.Write((byte)Type);
+            writer.Write(BlockIndex);
+            writer.Write(ValidatorIndex);
             writer.Write(ViewNumber);
         }
     }

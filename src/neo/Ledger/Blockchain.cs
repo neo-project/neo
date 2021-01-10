@@ -561,7 +561,7 @@ namespace Neo.Ledger
             switch (message)
             {
                 case Block _:
-                case ConsensusPayload _:
+                case ExtensiblePayload _:
                 case Terminated _:
                     return true;
                 default:

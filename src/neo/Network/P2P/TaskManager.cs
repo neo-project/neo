@@ -342,7 +342,7 @@ namespace Neo.Network.P2P
                 case TaskManager.RestartTasks _:
                     return true;
                 case TaskManager.NewTasks tasks:
-                    if (tasks.Payload.Type == InventoryType.Block || tasks.Payload.Type == InventoryType.Consensus || tasks.Payload.Type == InventoryType.Extensible)
+                    if (tasks.Payload.Type == InventoryType.Block || tasks.Payload.Type == InventoryType.Extensible)
                         return true;
                     return false;
                 default:

@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using static Neo.Consensus.RecoveryMessage;
 
 namespace Neo.Consensus
 {
@@ -29,10 +30,10 @@ namespace Neo.Consensus
         public int MyIndex;
         public UInt256[] TransactionHashes;
         public Dictionary<UInt256, Transaction> Transactions;
-        public ConsensusPayload[] PreparationPayloads;
-        public ConsensusPayload[] CommitPayloads;
-        public ConsensusPayload[] ChangeViewPayloads;
-        public ConsensusPayload[] LastChangeViewPayloads;
+        public ExtensiblePayload[] PreparationPayloads;
+        public ExtensiblePayload[] CommitPayloads;
+        public ExtensiblePayload[] ChangeViewPayloads;
+        public ExtensiblePayload[] LastChangeViewPayloads;
         // LastSeenMessage array stores the height of the last seen message, for each validator.
         // if this node never heard from validator i, LastSeenMessage[i] will be -1.
         public Dictionary<ECPoint, uint> LastSeenMessage { get; private set; }
@@ -47,6 +48,7 @@ namespace Neo.Consensus
         private int _witnessSize;
         private readonly Wallet wallet;
         private readonly IStore store;
+        private Dictionary<UInt256, ConsensusMessage> cachedMessages;
 
         public int F => (Validators.Length - 1) / 3;
         public int M => Validators.Length - F;
@@ -79,7 +81,7 @@ namespace Neo.Consensus
         public bool ResponseSent => !WatchOnly && PreparationPayloads[MyIndex] != null;
         public bool CommitSent => !WatchOnly && CommitPayloads[MyIndex] != null;
         public bool BlockSent => Block.Transactions != null;
-        public bool ViewChanging => !WatchOnly && ChangeViewPayloads[MyIndex]?.GetDeserializedMessage<ChangeView>().NewViewNumber > ViewNumber;
+        public bool ViewChanging => !WatchOnly && GetMessage<ChangeView>(ChangeViewPayloads[MyIndex])?.NewViewNumber > ViewNumber;
         public bool NotAcceptingPayloadsDueToViewChanging => ViewChanging && !MoreThanFNodesCommittedOrLost;
         // A possible attack can happen if the last node to commit is malicious and either sends change view after his
         // commit to stall nodes in a higher view, or if he refuses to send recovery messages. In addition, if a node
@@ -104,13 +106,32 @@ namespace Neo.Consensus
             ContractParametersContext sc = new ContractParametersContext(Block);
             for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
             {
-                if (CommitPayloads[i]?.ConsensusMessage.ViewNumber != ViewNumber) continue;
-                sc.AddSignature(contract, Validators[i], CommitPayloads[i].GetDeserializedMessage<Commit>().Signature);
+                if (GetMessage(CommitPayloads[i])?.ViewNumber != ViewNumber) continue;
+                sc.AddSignature(contract, Validators[i], GetMessage<Commit>(CommitPayloads[i]).Signature);
                 j++;
             }
             Block.Witness = sc.GetWitnesses()[0];
             Block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
             return Block;
+        }
+
+        public ExtensiblePayload CreatePayload(ConsensusMessage message, byte[] invocationScript = null)
+        {
+            ExtensiblePayload payload = new ExtensiblePayload
+            {
+                Category = "Consensus",
+                ValidBlockStart = 0,
+                ValidBlockEnd = message.BlockIndex,
+                Sender = GetSender(message.ValidatorIndex),
+                Data = message.ToArray(),
+                Witness = invocationScript is null ? null : new Witness
+                {
+                    InvocationScript = invocationScript,
+                    VerificationScript = Contract.CreateSignatureRedeemScript(Validators[message.ValidatorIndex])
+                }
+            };
+            cachedMessages.TryAdd(payload.Hash, message);
+            return payload;
         }
 
         public void Deserialize(BinaryReader reader)
@@ -126,10 +147,10 @@ namespace Neo.Consensus
             ViewNumber = reader.ReadByte();
             TransactionHashes = reader.ReadSerializableArray<UInt256>();
             Transaction[] transactions = reader.ReadSerializableArray<Transaction>(Block.MaxTransactionsPerBlock);
-            PreparationPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.ValidatorsCount);
-            CommitPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.ValidatorsCount);
-            ChangeViewPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.ValidatorsCount);
-            LastChangeViewPayloads = reader.ReadNullableArray<ConsensusPayload>(ProtocolSettings.Default.ValidatorsCount);
+            PreparationPayloads = reader.ReadNullableArray<ExtensiblePayload>(ProtocolSettings.Default.ValidatorsCount);
+            CommitPayloads = reader.ReadNullableArray<ExtensiblePayload>(ProtocolSettings.Default.ValidatorsCount);
+            ChangeViewPayloads = reader.ReadNullableArray<ExtensiblePayload>(ProtocolSettings.Default.ValidatorsCount);
+            LastChangeViewPayloads = reader.ReadNullableArray<ExtensiblePayload>(ProtocolSettings.Default.ValidatorsCount);
             if (TransactionHashes.Length == 0 && !RequestSentOrReceived)
                 TransactionHashes = null;
             Transactions = transactions.Length == 0 && !RequestSentOrReceived ? null : transactions.ToDictionary(p => p.Hash);
@@ -154,11 +175,62 @@ namespace Neo.Consensus
             return Block;
         }
 
+        public ConsensusMessage GetMessage(ExtensiblePayload payload)
+        {
+            if (payload is null) return null;
+            if (!cachedMessages.TryGetValue(payload.Hash, out ConsensusMessage message))
+                cachedMessages.Add(payload.Hash, message = ConsensusMessage.DeserializeFrom(payload.Data));
+            return message;
+        }
+
+        public T GetMessage<T>(ExtensiblePayload payload) where T : ConsensusMessage
+        {
+            return (T)GetMessage(payload);
+        }
+
+        private ChangeViewPayloadCompact GetChangeViewPayloadCompact(ExtensiblePayload payload)
+        {
+            ChangeView message = GetMessage<ChangeView>(payload);
+            return new ChangeViewPayloadCompact
+            {
+                ValidatorIndex = message.ValidatorIndex,
+                OriginalViewNumber = message.ViewNumber,
+                Timestamp = message.Timestamp,
+                InvocationScript = payload.Witness.InvocationScript
+            };
+        }
+
+        private CommitPayloadCompact GetCommitPayloadCompact(ExtensiblePayload payload)
+        {
+            Commit message = GetMessage<Commit>(payload);
+            return new CommitPayloadCompact
+            {
+                ViewNumber = message.ViewNumber,
+                ValidatorIndex = message.ValidatorIndex,
+                Signature = message.Signature,
+                InvocationScript = payload.Witness.InvocationScript
+            };
+        }
+
+        private PreparationPayloadCompact GetPreparationPayloadCompact(ExtensiblePayload payload)
+        {
+            return new PreparationPayloadCompact
+            {
+                ValidatorIndex = GetMessage(payload).ValidatorIndex,
+                InvocationScript = payload.Witness.InvocationScript
+            };
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte GetPrimaryIndex(byte viewNumber)
         {
             int p = ((int)Block.Index - viewNumber) % Validators.Length;
             return p >= 0 ? (byte)p : (byte)(p + Validators.Length);
+        }
+
+        public UInt160 GetSender(int index)
+        {
+            return Contract.CreateSignatureRedeemScript(Validators[index]).ToScriptHash();
         }
 
         public bool Load()
@@ -180,7 +252,7 @@ namespace Neo.Consensus
             }
         }
 
-        public ConsensusPayload MakeChangeView(ChangeViewReason reason)
+        public ExtensiblePayload MakeChangeView(ChangeViewReason reason)
         {
             return ChangeViewPayloads[MyIndex] = MakeSignedPayload(new ChangeView
             {
@@ -189,7 +261,7 @@ namespace Neo.Consensus
             });
         }
 
-        public ConsensusPayload MakeCommit()
+        public ExtensiblePayload MakeCommit()
         {
             return CommitPayloads[MyIndex] ?? (CommitPayloads[MyIndex] = MakeSignedPayload(new Commit
             {
@@ -197,22 +269,17 @@ namespace Neo.Consensus
             }));
         }
 
-        private ConsensusPayload MakeSignedPayload(ConsensusMessage message)
+        private ExtensiblePayload MakeSignedPayload(ConsensusMessage message)
         {
+            message.BlockIndex = Block.Index;
+            message.ValidatorIndex = (byte)MyIndex;
             message.ViewNumber = ViewNumber;
-            ConsensusPayload payload = new ConsensusPayload
-            {
-                Version = Block.Version,
-                PrevHash = Block.PrevHash,
-                BlockIndex = Block.Index,
-                ValidatorIndex = (byte)MyIndex,
-                ConsensusMessage = message
-            };
+            ExtensiblePayload payload = CreatePayload(message, null);
             SignPayload(payload);
             return payload;
         }
 
-        private void SignPayload(ConsensusPayload payload)
+        private void SignPayload(ExtensiblePayload payload)
         {
             ContractParametersContext sc;
             try
@@ -308,7 +375,7 @@ namespace Neo.Consensus
             TransactionHashes = hashes.ToArray();
         }
 
-        public ConsensusPayload MakePrepareRequest()
+        public ExtensiblePayload MakePrepareRequest()
         {
             var random = new Random();
             Span<byte> buffer = stackalloc byte[sizeof(ulong)];
@@ -319,13 +386,15 @@ namespace Neo.Consensus
 
             return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareRequest
             {
+                Version = Block.Version,
+                PrevHash = Block.PrevHash,
                 Timestamp = Block.Timestamp,
                 Nonce = Block.ConsensusData.Nonce,
                 TransactionHashes = TransactionHashes
             });
         }
 
-        public ConsensusPayload MakeRecoveryRequest()
+        public ExtensiblePayload MakeRecoveryRequest()
         {
             return MakeSignedPayload(new RecoveryRequest
             {
@@ -333,33 +402,36 @@ namespace Neo.Consensus
             });
         }
 
-        public ConsensusPayload MakeRecoveryMessage()
+        public ExtensiblePayload MakeRecoveryMessage()
         {
             PrepareRequest prepareRequestMessage = null;
             if (TransactionHashes != null)
             {
                 prepareRequestMessage = new PrepareRequest
                 {
+                    Version = Block.Version,
+                    PrevHash = Block.PrevHash,
                     ViewNumber = ViewNumber,
                     Timestamp = Block.Timestamp,
+                    BlockIndex = Block.Index,
                     Nonce = Block.ConsensusData.Nonce,
                     TransactionHashes = TransactionHashes
                 };
             }
             return MakeSignedPayload(new RecoveryMessage()
             {
-                ChangeViewMessages = LastChangeViewPayloads.Where(p => p != null).Select(p => RecoveryMessage.ChangeViewPayloadCompact.FromPayload(p)).Take(M).ToDictionary(p => (int)p.ValidatorIndex),
+                ChangeViewMessages = LastChangeViewPayloads.Where(p => p != null).Select(p => GetChangeViewPayloadCompact(p)).Take(M).ToDictionary(p => (int)p.ValidatorIndex),
                 PrepareRequestMessage = prepareRequestMessage,
                 // We only need a PreparationHash set if we don't have the PrepareRequest information.
-                PreparationHash = TransactionHashes == null ? PreparationPayloads.Where(p => p != null).GroupBy(p => p.GetDeserializedMessage<PrepareResponse>().PreparationHash, (k, g) => new { Hash = k, Count = g.Count() }).OrderByDescending(p => p.Count).Select(p => p.Hash).FirstOrDefault() : null,
-                PreparationMessages = PreparationPayloads.Where(p => p != null).Select(p => RecoveryMessage.PreparationPayloadCompact.FromPayload(p)).ToDictionary(p => (int)p.ValidatorIndex),
+                PreparationHash = TransactionHashes == null ? PreparationPayloads.Where(p => p != null).GroupBy(p => GetMessage<PrepareResponse>(p).PreparationHash, (k, g) => new { Hash = k, Count = g.Count() }).OrderByDescending(p => p.Count).Select(p => p.Hash).FirstOrDefault() : null,
+                PreparationMessages = PreparationPayloads.Where(p => p != null).Select(p => GetPreparationPayloadCompact(p)).ToDictionary(p => (int)p.ValidatorIndex),
                 CommitMessages = CommitSent
-                    ? CommitPayloads.Where(p => p != null).Select(p => RecoveryMessage.CommitPayloadCompact.FromPayload(p)).ToDictionary(p => (int)p.ValidatorIndex)
-                    : new Dictionary<int, RecoveryMessage.CommitPayloadCompact>()
+                    ? CommitPayloads.Where(p => p != null).Select(p => GetCommitPayloadCompact(p)).ToDictionary(p => (int)p.ValidatorIndex)
+                    : new Dictionary<int, CommitPayloadCompact>()
             });
         }
 
-        public ConsensusPayload MakePrepareResponse()
+        public ExtensiblePayload MakePrepareResponse()
         {
             return PreparationPayloads[MyIndex] = MakeSignedPayload(new PrepareResponse
             {
@@ -401,9 +473,9 @@ namespace Neo.Consensus
                     }
                 }
                 MyIndex = -1;
-                ChangeViewPayloads = new ConsensusPayload[Validators.Length];
-                LastChangeViewPayloads = new ConsensusPayload[Validators.Length];
-                CommitPayloads = new ConsensusPayload[Validators.Length];
+                ChangeViewPayloads = new ExtensiblePayload[Validators.Length];
+                LastChangeViewPayloads = new ExtensiblePayload[Validators.Length];
+                CommitPayloads = new ExtensiblePayload[Validators.Length];
                 if (ValidatorsChanged || LastSeenMessage is null)
                 {
                     var previous_last_seen_message = LastSeenMessage;
@@ -425,11 +497,12 @@ namespace Neo.Consensus
                     keyPair = account.GetKey();
                     break;
                 }
+                cachedMessages = new Dictionary<UInt256, ConsensusMessage>();
             }
             else
             {
                 for (int i = 0; i < LastChangeViewPayloads.Length; i++)
-                    if (ChangeViewPayloads[i]?.GetDeserializedMessage<ChangeView>().NewViewNumber >= viewNumber)
+                    if (GetMessage<ChangeView>(ChangeViewPayloads[i])?.NewViewNumber >= viewNumber)
                         LastChangeViewPayloads[i] = ChangeViewPayloads[i];
                     else
                         LastChangeViewPayloads[i] = null;
@@ -443,7 +516,7 @@ namespace Neo.Consensus
             Block.Timestamp = 0;
             Block.Transactions = null;
             TransactionHashes = null;
-            PreparationPayloads = new ConsensusPayload[Validators.Length];
+            PreparationPayloads = new ExtensiblePayload[Validators.Length];
             if (MyIndex >= 0) LastSeenMessage[Validators[MyIndex]] = Block.Index;
         }
 

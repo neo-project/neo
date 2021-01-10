@@ -12,7 +12,6 @@ using System.Linq;
 
 namespace Neo.UnitTests.Consensus
 {
-
     [TestClass]
     public class UT_ConsensusContext : TestKit
     {

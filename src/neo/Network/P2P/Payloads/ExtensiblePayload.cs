@@ -64,7 +64,7 @@ namespace Neo.Network.P2P.Payloads
             Category = reader.ReadVarString(32);
             ValidBlockStart = reader.ReadUInt32();
             ValidBlockEnd = reader.ReadUInt32();
-            if (ValidBlockStart > ValidBlockEnd) throw new FormatException();
+            if (ValidBlockStart >= ValidBlockEnd) throw new FormatException();
             Sender = reader.ReadSerializable<UInt160>();
             Data = reader.ReadVarBytes(ushort.MaxValue);
         }

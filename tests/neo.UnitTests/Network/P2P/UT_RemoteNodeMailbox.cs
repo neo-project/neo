@@ -57,7 +57,7 @@ namespace Neo.UnitTests.Network.P2P
             uut.IsHighPriority(Message.Create(MessageCommand.NotFound, s)).Should().Be(false);
             uut.IsHighPriority(Message.Create(MessageCommand.Transaction, s)).Should().Be(false);
             uut.IsHighPriority(Message.Create(MessageCommand.Block, s)).Should().Be(false);
-            uut.IsHighPriority(Message.Create(MessageCommand.Consensus, s)).Should().Be(true);
+            uut.IsHighPriority(Message.Create(MessageCommand.Extensible, s)).Should().Be(true);
             uut.IsHighPriority(Message.Create(MessageCommand.Reject, s)).Should().Be(false);
 
             //SPV protocol
@@ -153,7 +153,7 @@ namespace Neo.UnitTests.Network.P2P
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
             uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
             // Consensus (no drop)
-            msg = Message.Create(MessageCommand.Consensus, s);
+            msg = Message.Create(MessageCommand.Extensible, s);
             uut.ShallDrop(msg, emptyQueue).Should().Be(false);
             uut.ShallDrop(msg, new object[] { msg }).Should().Be(false);
             // Reject (no drop)

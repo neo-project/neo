@@ -12,7 +12,7 @@ namespace Neo.UnitTests.Consensus
         public void Size_Get()
         {
             var test = new RecoveryRequest() { Timestamp = 1, ViewNumber = 1 };
-            test.Size.Should().Be(10);
+            test.Size.Should().Be(15);
         }
 
         [TestMethod]

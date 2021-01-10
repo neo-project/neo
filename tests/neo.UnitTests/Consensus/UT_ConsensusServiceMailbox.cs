@@ -34,7 +34,7 @@ namespace Neo.UnitTests.Consensus
         public void ConsensusServiceMailbox_Test_IsHighPriority()
         {
             // high priority
-            uut.IsHighPriority(new ConsensusPayload()).Should().Be(true);
+            uut.IsHighPriority(new ExtensiblePayload()).Should().Be(true);
             uut.IsHighPriority(new ConsensusService.SetViewNumber()).Should().Be(true);
             uut.IsHighPriority(new ConsensusService.Timer()).Should().Be(true);
             uut.IsHighPriority(new Blockchain.PersistCompleted()).Should().Be(true);
