@@ -32,8 +32,6 @@ namespace Neo.UnitTests.SmartContract.Native
 
         private class DummyNative : NativeContract
         {
-            public override int Id => 1;
-
             [ContractMethod(0, CallFlags.None)]
             public void NetTypes(
                     bool p1, sbyte p2, byte p3, short p4, ushort p5, int p6, uint p7, long p8, ulong p9, BigInteger p10,
@@ -90,7 +88,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestGetContract()
         {
-            Assert.IsTrue(NativeContract.NEO == NativeContract.GetContract(NativeContract.NEO.Name));
+            Assert.IsTrue(NativeContract.NEO == NativeContract.GetContract(NativeContract.NEO.Id));
             Assert.IsTrue(NativeContract.NEO == NativeContract.GetContract(NativeContract.NEO.Hash));
         }
 
@@ -136,8 +134,6 @@ namespace Neo.UnitTests.SmartContract.Native
 
     public class TestNativeContract : NativeContract
     {
-        public override int Id => 0x10000006;
-
         [ContractMethod(0, CallFlags.None)]
         public string HelloWorld => "hello world";
 

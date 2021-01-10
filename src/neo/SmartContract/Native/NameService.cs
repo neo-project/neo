@@ -19,7 +19,6 @@ namespace Neo.SmartContract.Native
 {
     public sealed class NameService : NonfungibleToken<NameService.NameState>
     {
-        public override int Id => -6;
         public override string Symbol => "NNS";
 
         private const byte Prefix_Roots = 10;
