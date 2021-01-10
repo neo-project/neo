@@ -43,6 +43,7 @@ namespace Neo.SmartContract
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
+        public Block PersistingBlock { get; }
         public long GasConsumed { get; private set; } = 0;
         public long GasLeft => gas_amount - GasConsumed;
         public Exception FaultException { get; private set; }
@@ -51,11 +52,12 @@ namespace Neo.SmartContract
         public UInt160 EntryScriptHash => EntryContext?.GetScriptHash();
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
 
-        protected ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas)
+        protected ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, Block persistingBlock, long gas)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
             this.Snapshot = snapshot;
+            this.PersistingBlock = persistingBlock;
             this.gas_amount = gas;
             this.exec_fee_factor = snapshot is null ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(Snapshot);
             this.StoragePrice = snapshot is null ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(Snapshot);
@@ -140,10 +142,10 @@ namespace Neo.SmartContract
             return (T)Convert(Pop(), new InteropParameterDescriptor(typeof(T)));
         }
 
-        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas = TestModeGas)
+        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, Block persistingBlock = null, long gas = TestModeGas)
         {
-            return applicationEngineProvider?.Create(trigger, container, snapshot, gas)
-                  ?? new ApplicationEngine(trigger, container, snapshot, gas);
+            return applicationEngineProvider?.Create(trigger, container, snapshot, persistingBlock, gas)
+                  ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, gas);
         }
 
         protected override void LoadContext(ExecutionContext context)
@@ -360,8 +362,7 @@ namespace Neo.SmartContract
                 disposable = Blockchain.Singleton.GetSnapshot();
                 snapshot = disposable;
             }
-            snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? CreateDummyBlock(snapshot);
-            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, gas);
+            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, persistingBlock ?? CreateDummyBlock(snapshot), gas);
             if (disposable != null) engine.Disposables.Add(disposable);
             engine.LoadScript(script, initialPosition: offset);
             engine.Execute();
