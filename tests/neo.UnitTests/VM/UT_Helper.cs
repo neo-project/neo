@@ -53,8 +53,8 @@ namespace Neo.UnitTests.VMT
             ScriptBuilder sb = new ScriptBuilder();
             sb.EmitDynamicCall(UInt160.Zero, "AAAAA");
             byte[] tempArray = new byte[36];
-            tempArray[0] = (byte)OpCode.PUSH15;//(byte)CallFlags.All;
-            tempArray[1] = (byte)OpCode.NEWARRAY0;
+            tempArray[0] = (byte)OpCode.NEWARRAY0;
+            tempArray[1] = (byte)OpCode.PUSH15;//(byte)CallFlags.All;
             tempArray[2] = (byte)OpCode.PUSHDATA1;
             tempArray[3] = 5;//operation.Length
             Array.Copy(Encoding.UTF8.GetBytes("AAAAA"), 0, tempArray, 4, 5);//operation.data
@@ -115,10 +115,10 @@ namespace Neo.UnitTests.VMT
             ScriptBuilder sb = new ScriptBuilder();
             sb.EmitDynamicCall(UInt160.Zero, "AAAAA", new ContractParameter[] { new ContractParameter(ContractParameterType.Integer) });
             byte[] tempArray = new byte[38];
-            tempArray[0] = (byte)OpCode.PUSH15;//(byte)CallFlags.All;
-            tempArray[1] = (byte)OpCode.PUSH0;
-            tempArray[2] = (byte)OpCode.PUSH1;
-            tempArray[3] = (byte)OpCode.PACK;
+            tempArray[0] = (byte)OpCode.PUSH0;
+            tempArray[1] = (byte)OpCode.PUSH1;
+            tempArray[2] = (byte)OpCode.PACK;
+            tempArray[3] = (byte)OpCode.PUSH15;//(byte)CallFlags.All;
             tempArray[4] = (byte)OpCode.PUSHDATA1;
             tempArray[5] = 0x05;//operation.Length
             Array.Copy(Encoding.UTF8.GetBytes("AAAAA"), 0, tempArray, 6, 5);//operation.data
@@ -137,10 +137,10 @@ namespace Neo.UnitTests.VMT
             ScriptBuilder sb = new ScriptBuilder();
             sb.EmitDynamicCall(UInt160.Zero, "AAAAA", true);
             byte[] tempArray = new byte[38];
-            tempArray[0] = (byte)OpCode.PUSH15;//(byte)CallFlags.All;
-            tempArray[1] = (byte)OpCode.PUSH1;
-            tempArray[2] = (byte)OpCode.PUSH1;//arg.Length 
-            tempArray[3] = (byte)OpCode.PACK;
+            tempArray[0] = (byte)OpCode.PUSH1;
+            tempArray[1] = (byte)OpCode.PUSH1;//arg.Length 
+            tempArray[2] = (byte)OpCode.PACK;
+            tempArray[3] = (byte)OpCode.PUSH15;//(byte)CallFlags.All;
             tempArray[4] = (byte)OpCode.PUSHDATA1;
             tempArray[5] = 0x05;//operation.Length
             Array.Copy(Encoding.UTF8.GetBytes("AAAAA"), 0, tempArray, 6, 5);//operation.data
@@ -158,7 +158,7 @@ namespace Neo.UnitTests.VMT
         {
             byte[] testScript = NativeContract.GAS.Hash.MakeScript("balanceOf", UInt160.Zero);
 
-            Assert.AreEqual("1f0c14000000000000000000000000000000000000000011c00c0962616c616e63654f660c141717ddafdd757eec365865b963473beb617f9a1441627d5b52",
+            Assert.AreEqual("0c14000000000000000000000000000000000000000011c01f0c0962616c616e63654f660c141717ddafdd757eec365865b963473beb617f9a1441627d5b52",
                             testScript.ToHexString());
         }
 
