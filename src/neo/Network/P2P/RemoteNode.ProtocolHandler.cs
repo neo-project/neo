@@ -288,15 +288,10 @@ namespace Neo.Network.P2P
         private void OnInventoryReceived(IInventory inventory)
         {
             pendingKnownHashes.Remove(inventory.Hash);
-            switch (inventory)
+            if (inventory is Block block)
             {
-                case Transaction transaction:
-                    system.Consensus?.Tell(transaction);
-                    break;
-                case Block block:
-                    if (block.Index > Blockchain.Singleton.Height + InvPayload.MaxHashesCount) return;
-                    UpdateLastBlockIndex(block.Index, false);
-                    break;
+                if (block.Index > Blockchain.Singleton.Height + InvPayload.MaxHashesCount) return;
+                UpdateLastBlockIndex(block.Index, false);
             }
             knownHashes.Add(inventory.Hash);
             system.TaskManager.Tell(inventory);
