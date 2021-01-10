@@ -43,9 +43,9 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentOutOfRangeException(nameof(role));
             if (!CheckCommittee(engine))
                 throw new InvalidOperationException(nameof(DesignateAsRole));
-            if (engine.Snapshot.PersistingBlock is null)
+            if (engine.PersistingBlock is null)
                 throw new InvalidOperationException(nameof(DesignateAsRole));
-            uint index = engine.Snapshot.PersistingBlock.Index + 1;
+            uint index = engine.PersistingBlock.Index + 1;
             var key = CreateStorageKey((byte)role).AddBigEndian(index);
             if (engine.Snapshot.Storages.Contains(key))
                 throw new InvalidOperationException();

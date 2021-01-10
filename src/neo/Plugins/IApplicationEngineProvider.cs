@@ -6,6 +6,6 @@ namespace Neo.Plugins
 {
     public interface IApplicationEngineProvider
     {
-        ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas);
+        ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, Block persistingBlock, long gas);
     }
 }

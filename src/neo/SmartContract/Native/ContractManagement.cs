@@ -82,7 +82,7 @@ namespace Neo.SmartContract.Native
         {
             foreach (NativeContract contract in Contracts)
             {
-                if (contract.ActiveBlockIndex != engine.Snapshot.PersistingBlock.Index)
+                if (contract.ActiveBlockIndex != engine.PersistingBlock.Index)
                     continue;
                 engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
                 {
