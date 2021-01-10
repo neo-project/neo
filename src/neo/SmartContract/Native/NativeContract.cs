@@ -25,6 +25,7 @@ namespace Neo.SmartContract.Native
         public static PolicyContract Policy { get; } = new PolicyContract();
         public static RoleManagement RoleManagement { get; } = new RoleManagement();
         public static OracleContract Oracle { get; } = new OracleContract();
+        public static NameService NameService { get; } = new NameService();
 
         public string Name => GetType().Name;
         public NefFile Nef { get; }
