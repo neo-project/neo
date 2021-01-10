@@ -24,7 +24,7 @@ namespace Neo.SmartContract.Native
 
         private const byte Prefix_TotalSupply = 11;
         private const byte Prefix_Account = 7;
-        private const byte Prefix_Token = 5;
+        protected const byte Prefix_Token = 5;
 
         protected NonfungibleToken()
         {
@@ -75,17 +75,21 @@ namespace Neo.SmartContract.Native
 
         protected void Burn(ApplicationEngine engine, byte[] tokenId)
         {
-            StorageKey key_token = CreateStorageKey(Prefix_Token).Add(GetKey(tokenId));
-            TokenState token = engine.Snapshot.Storages.TryGet(key_token)?.GetInteroperable<TokenState>();
+            Burn(engine, CreateStorageKey(Prefix_Token).Add(GetKey(tokenId)));
+        }
+
+        private protected void Burn(ApplicationEngine engine, StorageKey key)
+        {
+            TokenState token = engine.Snapshot.Storages.TryGet(key)?.GetInteroperable<TokenState>();
             if (token is null) throw new InvalidOperationException();
-            engine.Snapshot.Storages.Delete(key_token);
+            engine.Snapshot.Storages.Delete(key);
             StorageKey key_account = CreateStorageKey(Prefix_Account).Add(token.Owner);
             NFTAccountState account = engine.Snapshot.Storages.GetAndChange(key_account).GetInteroperable<NFTAccountState>();
-            account.Remove(tokenId);
+            account.Remove(token.Id);
             if (account.Balance.IsZero)
                 engine.Snapshot.Storages.Delete(key_account);
             engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply)).Add(-1);
-            PostTransfer(engine, token.Owner, null, tokenId);
+            PostTransfer(engine, token.Owner, null, token.Id);
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]

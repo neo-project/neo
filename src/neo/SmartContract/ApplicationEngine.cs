@@ -82,16 +82,20 @@ namespace Neo.SmartContract
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
             if (md is null) throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
+            return CallContractInternal(contract, md, flags, hasReturnValue, args);
+        }
 
-            if (md.Safe)
+        private ExecutionContext CallContractInternal(ContractState contract, ContractMethodDescriptor method, CallFlags flags, bool hasReturnValue, IReadOnlyList<StackItem> args)
+        {
+            if (method.Safe)
             {
                 flags &= ~CallFlags.WriteStates;
             }
             else
             {
                 ContractState currentContract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
-                if (currentContract?.CanCall(contract, method) == false)
-                    throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contractHash} From Contract {CurrentScriptHash}");
+                if (currentContract?.CanCall(contract, method.Name) == false)
+                    throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
             }
 
             if (invocationCounter.TryGetValue(contract.Hash, out var counter))
@@ -107,16 +111,16 @@ namespace Neo.SmartContract
             UInt160 callingScriptHash = state.ScriptHash;
             CallFlags callingFlags = state.CallFlags;
 
-            if (args.Length != md.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {md.Parameters.Length} Arguments But Receives {args.Length} Arguments");
-            if (hasReturnValue ^ (md.ReturnType != ContractParameterType.Void)) throw new InvalidOperationException("The return value type does not match.");
-            ExecutionContext context_new = LoadContract(contract, method, flags & callingFlags, hasReturnValue, (ushort)args.Length);
+            if (args.Count != method.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {method.Parameters.Length} Arguments But Receives {args.Count} Arguments");
+            if (hasReturnValue ^ (method.ReturnType != ContractParameterType.Void)) throw new InvalidOperationException("The return value type does not match.");
+            ExecutionContext context_new = LoadContract(contract, method.Name, flags & callingFlags, hasReturnValue, (ushort)args.Count);
             state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
 
-            for (int i = args.Length - 1; i >= 0; i--)
+            for (int i = args.Count - 1; i >= 0; i--)
                 context_new.EvaluationStack.Push(args[i]);
             if (NativeContract.IsNative(contract.Hash))
-                context_new.EvaluationStack.Push(method);
+                context_new.EvaluationStack.Push(method.Name);
 
             return context_new;
         }

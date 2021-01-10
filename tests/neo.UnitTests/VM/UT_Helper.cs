@@ -51,20 +51,19 @@ namespace Neo.UnitTests.VMT
         public void TestEmitAppCall1()
         {
             ScriptBuilder sb = new ScriptBuilder();
-            sb.EmitDynamicCall(UInt160.Zero, "AAAAA", false);
-            byte[] tempArray = new byte[37];
-            tempArray[0] = (byte)OpCode.PUSH0;
-            tempArray[1] = (byte)OpCode.PUSH0;
-            tempArray[2] = (byte)OpCode.PUSH15;//(byte)CallFlags.All;
-            tempArray[3] = (byte)OpCode.PUSHDATA1;
-            tempArray[4] = 5;//operation.Length
-            Array.Copy(Encoding.UTF8.GetBytes("AAAAA"), 0, tempArray, 5, 5);//operation.data
-            tempArray[10] = (byte)OpCode.PUSHDATA1;
-            tempArray[11] = 0x14;//scriptHash.Length
-            Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 12, 20);//operation.data
+            sb.EmitDynamicCall(UInt160.Zero, "AAAAA");
+            byte[] tempArray = new byte[36];
+            tempArray[0] = (byte)OpCode.NEWARRAY0;
+            tempArray[1] = (byte)OpCode.PUSH15;//(byte)CallFlags.All;
+            tempArray[2] = (byte)OpCode.PUSHDATA1;
+            tempArray[3] = 5;//operation.Length
+            Array.Copy(Encoding.UTF8.GetBytes("AAAAA"), 0, tempArray, 4, 5);//operation.data
+            tempArray[9] = (byte)OpCode.PUSHDATA1;
+            tempArray[10] = 0x14;//scriptHash.Length
+            Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 11, 20);//operation.data
             uint api = ApplicationEngine.System_Contract_Call;
-            tempArray[32] = (byte)OpCode.SYSCALL;
-            Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 33, 4);//api.data
+            tempArray[31] = (byte)OpCode.SYSCALL;
+            Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 32, 4);//api.data
             Assert.AreEqual(tempArray.ToHexString(), sb.ToArray().ToHexString());
         }
 
@@ -114,11 +113,11 @@ namespace Neo.UnitTests.VMT
         public void TestEmitAppCall2()
         {
             ScriptBuilder sb = new ScriptBuilder();
-            sb.EmitDynamicCall(UInt160.Zero, "AAAAA", false, new ContractParameter[] { new ContractParameter(ContractParameterType.Integer) });
+            sb.EmitDynamicCall(UInt160.Zero, "AAAAA", new ContractParameter[] { new ContractParameter(ContractParameterType.Integer) });
             byte[] tempArray = new byte[38];
             tempArray[0] = (byte)OpCode.PUSH0;
             tempArray[1] = (byte)OpCode.PUSH1;
-            tempArray[2] = (byte)OpCode.PUSH0;
+            tempArray[2] = (byte)OpCode.PACK;
             tempArray[3] = (byte)OpCode.PUSH15;//(byte)CallFlags.All;
             tempArray[4] = (byte)OpCode.PUSHDATA1;
             tempArray[5] = 0x05;//operation.Length
@@ -136,11 +135,11 @@ namespace Neo.UnitTests.VMT
         public void TestEmitAppCall3()
         {
             ScriptBuilder sb = new ScriptBuilder();
-            sb.EmitDynamicCall(UInt160.Zero, "AAAAA", false, true);
+            sb.EmitDynamicCall(UInt160.Zero, "AAAAA", true);
             byte[] tempArray = new byte[38];
             tempArray[0] = (byte)OpCode.PUSH1;
-            tempArray[1] = (byte)OpCode.PUSH1;//arg.Length
-            tempArray[2] = (byte)OpCode.PUSH0;//return 
+            tempArray[1] = (byte)OpCode.PUSH1;//arg.Length 
+            tempArray[2] = (byte)OpCode.PACK;
             tempArray[3] = (byte)OpCode.PUSH15;//(byte)CallFlags.All;
             tempArray[4] = (byte)OpCode.PUSHDATA1;
             tempArray[5] = 0x05;//operation.Length
@@ -157,9 +156,9 @@ namespace Neo.UnitTests.VMT
         [TestMethod]
         public void TestMakeScript()
         {
-            byte[] testScript = NativeContract.GAS.Hash.MakeScript("balanceOf", true, UInt160.Zero);
+            byte[] testScript = NativeContract.GAS.Hash.MakeScript("balanceOf", UInt160.Zero);
 
-            Assert.AreEqual("0c14000000000000000000000000000000000000000011111f0c0962616c616e63654f660c141717ddafdd757eec365865b963473beb617f9a1441627d5b52",
+            Assert.AreEqual("0c14000000000000000000000000000000000000000011c01f0c0962616c616e63654f660c14a282435d0ee334fecaac7f5fde46f623f24cc09a41627d5b52",
                             testScript.ToHexString());
         }
 
