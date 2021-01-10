@@ -127,7 +127,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestTestCall()
         {
-            ApplicationEngine engine = testNativeContract.TestCall("System.Blockchain.GetHeight", false, 0);
+            ApplicationEngine engine = testNativeContract.TestCall("System.Blockchain.GetHeight", 0);
             engine.ResultStack.Should().BeEmpty();
         }
     }

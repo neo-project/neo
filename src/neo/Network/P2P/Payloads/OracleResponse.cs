@@ -31,7 +31,7 @@ namespace Neo.Network.P2P.Payloads
         static OracleResponse()
         {
             using ScriptBuilder sb = new ScriptBuilder();
-            sb.EmitDynamicCall(NativeContract.Oracle.Hash, "finish", false);
+            sb.EmitDynamicCall(NativeContract.Oracle.Hash, "finish");
             FixedScript = sb.ToArray();
         }
 

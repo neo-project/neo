@@ -511,7 +511,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestGetNextBlockValidators1()
         {
-            using (ApplicationEngine engine = NativeContract.NEO.TestCall("getNextBlockValidators", true))
+            using (ApplicationEngine engine = NativeContract.NEO.TestCall("getNextBlockValidators"))
             {
                 var result = engine.ResultStack.Peek();
                 result.GetType().Should().Be(typeof(VM.Types.Array));
@@ -544,7 +544,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestGetCandidates1()
         {
-            using ApplicationEngine engine = NativeContract.NEO.TestCall("getCandidates", true);
+            using ApplicationEngine engine = NativeContract.NEO.TestCall("getCandidates");
             var array = engine.ResultStack.Pop<VM.Types.Array>();
             array.Count.Should().Be(0);
         }
@@ -605,7 +605,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestGetCommittee()
         {
-            using (ApplicationEngine engine = NativeContract.NEO.TestCall("getCommittee", true))
+            using (ApplicationEngine engine = NativeContract.NEO.TestCall("getCommittee"))
             {
                 var result = engine.ResultStack.Peek();
                 result.GetType().Should().Be(typeof(VM.Types.Array));
@@ -837,7 +837,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 }));
             }
 
-            sb.EmitDynamicCall(NativeContract.NEO.Hash, "transfer", true, from, UInt160.Zero, amount, null);
+            sb.EmitDynamicCall(NativeContract.NEO.Hash, "transfer", from, UInt160.Zero, amount, null);
             engine.LoadScript(sb.ToArray());
             engine.Execute();
             var result = engine.ResultStack.Peek();
