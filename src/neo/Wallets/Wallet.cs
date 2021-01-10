@@ -138,10 +138,10 @@ namespace Neo.Wallets
                 sb.EmitPush(0);
                 foreach (UInt160 account in accounts)
                 {
-                    sb.EmitDynamicCall(asset_id, "balanceOf", true, account);
+                    sb.EmitDynamicCall(asset_id, "balanceOf", account);
                     sb.Emit(OpCode.ADD);
                 }
-                sb.EmitDynamicCall(asset_id, "decimals", true);
+                sb.EmitDynamicCall(asset_id, "decimals");
                 script = sb.ToArray();
             }
             using ApplicationEngine engine = ApplicationEngine.Run(script, gas: 20000000L * accounts.Length);
@@ -265,7 +265,7 @@ namespace Neo.Wallets
                         foreach (UInt160 account in accounts)
                             using (ScriptBuilder sb2 = new ScriptBuilder())
                             {
-                                sb2.EmitDynamicCall(assetId, "balanceOf", true, account);
+                                sb2.EmitDynamicCall(assetId, "balanceOf", account);
                                 using (ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot))
                                 {
                                     if (engine.State.HasFlag(VMState.FAULT))
@@ -296,7 +296,7 @@ namespace Neo.Wallets
                                         Scopes = WitnessScope.CalledByEntry
                                     });
                                 }
-                                sb.EmitDynamicCall(output.AssetId, "transfer", true, account, output.ScriptHash, value, output.Data);
+                                sb.EmitDynamicCall(output.AssetId, "transfer", account, output.ScriptHash, value, output.Data);
                                 sb.Emit(OpCode.ASSERT);
                             }
                         }

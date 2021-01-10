@@ -159,7 +159,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock);
             var script = new ScriptBuilder();
-            script.EmitDynamicCall(NativeContract.NameService.Hash, "deleteRecord", false, new ContractParameter[] {
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "deleteRecord", new ContractParameter[] {
                 new ContractParameter(ContractParameterType.String) { Value = name },
                 new ContractParameter(ContractParameterType.Integer) { Value = (int)type }
             });
@@ -177,7 +177,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock);
             var script = new ScriptBuilder();
-            script.EmitDynamicCall(NativeContract.NameService.Hash, "setRecord", false, new ContractParameter[] {
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "setRecord", new ContractParameter[] {
                 new ContractParameter(ContractParameterType.String) { Value = name },
                 new ContractParameter(ContractParameterType.Integer) { Value = (int)type },
                 new ContractParameter(ContractParameterType.String) { Value = data }
@@ -196,7 +196,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock);
             var script = new ScriptBuilder();
-            script.EmitDynamicCall(NativeContract.NameService.Hash, "renew", true, new ContractParameter[] {
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "renew", new ContractParameter[] {
                 new ContractParameter(ContractParameterType.String) { Value = name }
             });
             engine.LoadScript(script.ToArray(), 0, -1, 0);
@@ -216,7 +216,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(admin, signedBy), snapshot, persistingBlock);
             var script = new ScriptBuilder();
-            script.EmitDynamicCall(NativeContract.NameService.Hash, "setAdmin", false, new ContractParameter[] {
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "setAdmin", new ContractParameter[] {
                 new ContractParameter(ContractParameterType.String) { Value = name },
                 new ContractParameter(ContractParameterType.Hash160) { Value = admin }
             });
@@ -234,7 +234,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(owner), snapshot, persistingBlock);
             var script = new ScriptBuilder();
-            script.EmitDynamicCall(NativeContract.NameService.Hash, "register", true, new ContractParameter[] {
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "register", new ContractParameter[] {
                 new ContractParameter(ContractParameterType.String) { Value = name },
                 new ContractParameter(ContractParameterType.Hash160) { Value = owner }
             });
@@ -255,7 +255,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock);
             var script = new ScriptBuilder();
-            script.EmitDynamicCall(NativeContract.NameService.Hash, "setPrice", false, new ContractParameter[] { new ContractParameter(ContractParameterType.Integer) { Value = price } });
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "setPrice", new ContractParameter[] { new ContractParameter(ContractParameterType.Integer) { Value = price } });
             engine.LoadScript(script.ToArray(), 0, -1, 0);
 
             if (engine.Execute() == VMState.FAULT)
@@ -270,7 +270,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock);
             var script = new ScriptBuilder();
-            script.EmitDynamicCall(NativeContract.NameService.Hash, "addRoot", false, new ContractParameter[] { new ContractParameter(ContractParameterType.String) { Value = root } });
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "addRoot", new ContractParameter[] { new ContractParameter(ContractParameterType.String) { Value = root } });
             engine.LoadScript(script.ToArray(), 0, -1, 0);
 
             if (engine.Execute() == VMState.FAULT)

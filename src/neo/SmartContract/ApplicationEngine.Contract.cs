@@ -1,8 +1,10 @@
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM.Types;
 using System;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
 {
@@ -20,17 +22,20 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Contract_NativeOnPersist = Register("System.Contract.NativeOnPersist", nameof(NativeOnPersist), 0, CallFlags.WriteStates);
         public static readonly InteropDescriptor System_Contract_NativePostPersist = Register("System.Contract.NativePostPersist", nameof(NativePostPersist), 0, CallFlags.WriteStates);
 
-        protected internal void CallContract(UInt160 contractHash, string method, CallFlags callFlags, bool hasReturnValue, ushort pcount)
+        protected internal void CallContract(UInt160 contractHash, string method, CallFlags callFlags, Array args)
         {
             if (method.StartsWith('_')) throw new ArgumentException($"Invalid Method Name: {method}");
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
-            if (pcount > CurrentContext.EvaluationStack.Count)
-                throw new InvalidOperationException();
-            StackItem[] args = new StackItem[pcount];
-            for (int i = 0; i < pcount; i++)
-                args[i] = Pop();
-            CallContractInternal(contractHash, method, callFlags, hasReturnValue, args);
+
+            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
+            if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
+            if (md is null) throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
+            bool hasReturnValue = md.ReturnType != ContractParameterType.Void;
+
+            if (!hasReturnValue) CurrentContext.EvaluationStack.Push(StackItem.Null);
+            CallContractInternal(contract, md, callFlags, hasReturnValue, args);
         }
 
         protected internal void CallNativeContract(string name)

@@ -150,11 +150,11 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        public ApplicationEngine TestCall(string operation, bool hasReturnValue, params object[] args)
+        public ApplicationEngine TestCall(string operation, params object[] args)
         {
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitDynamicCall(Hash, operation, hasReturnValue, args);
+                sb.EmitDynamicCall(Hash, operation, args);
                 return ApplicationEngine.Run(sb.ToArray());
             }
         }
