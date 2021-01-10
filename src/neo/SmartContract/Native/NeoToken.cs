@@ -303,7 +303,7 @@ namespace Neo.SmartContract.Native
             return snapshot.Storages[CreateStorageKey(Prefix_Committee)].GetInteroperable<CachedCommittee>();
         }
 
-        internal ECPoint[] ComputeNextBlockValidators(StoreView snapshot)
+        public ECPoint[] ComputeNextBlockValidators(StoreView snapshot)
         {
             return ComputeCommitteeMembers(snapshot).Select(p => p.PublicKey).Take(ProtocolSettings.Default.ValidatorsCount).OrderBy(p => p).ToArray();
         }
