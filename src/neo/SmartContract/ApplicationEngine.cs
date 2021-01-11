@@ -43,6 +43,7 @@ namespace Neo.SmartContract
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
         public StoreView Snapshot { get; }
+        public Block PersistingBlock { get; }
         public long GasConsumed { get; private set; } = 0;
         public long GasLeft => gas_amount - GasConsumed;
         public Exception FaultException { get; private set; }
@@ -51,11 +52,12 @@ namespace Neo.SmartContract
         public UInt160 EntryScriptHash => EntryContext?.GetScriptHash();
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
 
-        protected ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas)
+        protected ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, Block persistingBlock, long gas)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
             this.Snapshot = snapshot;
+            this.PersistingBlock = persistingBlock;
             this.gas_amount = gas;
             this.exec_fee_factor = snapshot is null ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(Snapshot);
             this.StoragePrice = snapshot is null ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(Snapshot);
@@ -74,27 +76,80 @@ namespace Neo.SmartContract
             base.OnFault(e);
         }
 
+        private ExecutionContext CallContractInternal(UInt160 contractHash, string method, CallFlags flags, bool hasReturnValue, StackItem[] args)
+        {
+            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
+            if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
+            if (md is null) throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
+            return CallContractInternal(contract, md, flags, hasReturnValue, args);
+        }
+
+        private ExecutionContext CallContractInternal(ContractState contract, ContractMethodDescriptor method, CallFlags flags, bool hasReturnValue, IReadOnlyList<StackItem> args)
+        {
+            if (method.Safe)
+            {
+                flags &= ~CallFlags.WriteStates;
+            }
+            else
+            {
+                ContractState currentContract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
+                if (currentContract?.CanCall(contract, method.Name) == false)
+                    throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
+            }
+
+            if (invocationCounter.TryGetValue(contract.Hash, out var counter))
+            {
+                invocationCounter[contract.Hash] = counter + 1;
+            }
+            else
+            {
+                invocationCounter[contract.Hash] = 1;
+            }
+
+            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
+            UInt160 callingScriptHash = state.ScriptHash;
+            CallFlags callingFlags = state.CallFlags;
+
+            if (args.Count != method.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {method.Parameters.Length} Arguments But Receives {args.Count} Arguments");
+            if (hasReturnValue ^ (method.ReturnType != ContractParameterType.Void)) throw new InvalidOperationException("The return value type does not match.");
+            ExecutionContext context_new = LoadContract(contract, method.Name, flags & callingFlags, hasReturnValue, (ushort)args.Count);
+            state = context_new.GetState<ExecutionContextState>();
+            state.CallingScriptHash = callingScriptHash;
+
+            for (int i = args.Count - 1; i >= 0; i--)
+                context_new.EvaluationStack.Push(args[i]);
+            if (NativeContract.IsNative(contract.Hash))
+                context_new.EvaluationStack.Push(method.Name);
+
+            return context_new;
+        }
+
         internal void CallFromNativeContract(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
         {
-            CallContractInternal(hash, method, CallFlags.All, false, args);
-            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
+            ExecutionContext context_current = CurrentContext;
+            ExecutionContext context_new = CallContractInternal(hash, method, CallFlags.All, false, args);
+            ExecutionContextState state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
-            StepOut();
+            while (CurrentContext != context_current)
+                StepOut();
         }
 
         internal T CallFromNativeContract<T>(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
         {
-            CallContractInternal(hash, method, CallFlags.All, true, args);
-            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
+            ExecutionContext context_current = CurrentContext;
+            ExecutionContext context_new = CallContractInternal(hash, method, CallFlags.All, true, args);
+            ExecutionContextState state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
-            StepOut();
+            while (CurrentContext != context_current)
+                StepOut();
             return (T)Convert(Pop(), new InteropParameterDescriptor(typeof(T)));
         }
 
-        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, long gas = TestModeGas)
+        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, Block persistingBlock = null, long gas = TestModeGas)
         {
-            return applicationEngineProvider?.Create(trigger, container, snapshot, gas)
-                  ?? new ApplicationEngine(trigger, container, snapshot, gas);
+            return applicationEngineProvider?.Create(trigger, container, snapshot, persistingBlock, gas)
+                  ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, gas);
         }
 
         protected override void LoadContext(ExecutionContext context)
@@ -121,6 +176,7 @@ namespace Neo.SmartContract
                 {
                     p.CallFlags = callFlags;
                     p.ScriptHash = contract.Hash;
+                    p.Contract = contract;
                 });
 
             // Call initialization
@@ -141,6 +197,20 @@ namespace Neo.SmartContract
             // Load context
             LoadContext(context);
             return context;
+        }
+
+        protected override ExecutionContext LoadToken(ushort tokenId)
+        {
+            ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
+            if (contract is null || tokenId >= contract.Nef.Tokens.Length)
+                throw new InvalidOperationException();
+            MethodToken token = contract.Nef.Tokens[tokenId];
+            if (token.ParametersCount > CurrentContext.EvaluationStack.Count)
+                throw new InvalidOperationException();
+            StackItem[] args = new StackItem[token.ParametersCount];
+            for (int i = 0; i < token.ParametersCount; i++)
+                args[i] = Pop();
+            return CallContractInternal(token.Hash, token.Method, token.CallFlags, token.HasReturnValue, args);
         }
 
         protected internal StackItem Convert(object value)
@@ -296,8 +366,7 @@ namespace Neo.SmartContract
                 disposable = Blockchain.Singleton.GetSnapshot();
                 snapshot = disposable;
             }
-            snapshot.PersistingBlock = persistingBlock ?? snapshot.PersistingBlock ?? CreateDummyBlock(snapshot);
-            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, gas);
+            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, persistingBlock ?? CreateDummyBlock(snapshot), gas);
             if (disposable != null) engine.Disposables.Add(disposable);
             engine.LoadScript(script, initialPosition: offset);
             engine.Execute();

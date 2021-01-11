@@ -14,8 +14,6 @@ namespace Neo.SmartContract.Native
 {
     public sealed class ContractManagement : NativeContract
     {
-        public override int Id => 0;
-
         private const byte Prefix_MinimumDeploymentFee = 20;
         private const byte Prefix_NextAvailableId = 15;
         private const byte Prefix_Contract = 8;
@@ -82,7 +80,7 @@ namespace Neo.SmartContract.Native
         {
             foreach (NativeContract contract in Contracts)
             {
-                if (contract.ActiveBlockIndex != engine.Snapshot.PersistingBlock.Index)
+                if (contract.ActiveBlockIndex != engine.PersistingBlock.Index)
                     continue;
                 engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
                 {

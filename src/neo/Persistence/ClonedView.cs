@@ -15,7 +15,6 @@ namespace Neo.Persistence
 
         public ClonedView(StoreView view)
         {
-            this.PersistingBlock = view.PersistingBlock;
             this.Blocks = view.Blocks.CreateSnapshot();
             this.Transactions = view.Transactions.CreateSnapshot();
             this.Storages = view.Storages.CreateSnapshot();

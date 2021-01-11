@@ -43,7 +43,7 @@ namespace Neo.UnitTests.Network.P2P
             // high priority
             // -> NewTasks: payload Block or Consensus
             uut.IsHighPriority(new TaskManager.NewTasks { Payload = new InvPayload { Type = InventoryType.Block } }).Should().Be(true);
-            uut.IsHighPriority(new TaskManager.NewTasks { Payload = new InvPayload { Type = InventoryType.Consensus } }).Should().Be(true);
+            uut.IsHighPriority(new TaskManager.NewTasks { Payload = new InvPayload { Type = InventoryType.Extensible } }).Should().Be(true);
 
             // any random object should not have priority
             object obj = null;

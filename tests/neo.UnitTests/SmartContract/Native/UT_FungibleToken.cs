@@ -79,7 +79,6 @@ namespace Neo.UnitTests.SmartContract.Native
 
     public class TestNep17Token : FungibleToken<NeoToken.NeoAccountState>
     {
-        public override int Id => 0x10000005;
         public override string Symbol => throw new NotImplementedException();
         public override byte Decimals => 8;
     }

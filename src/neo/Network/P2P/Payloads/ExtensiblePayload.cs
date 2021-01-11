@@ -64,7 +64,7 @@ namespace Neo.Network.P2P.Payloads
             Category = reader.ReadVarString(32);
             ValidBlockStart = reader.ReadUInt32();
             ValidBlockEnd = reader.ReadUInt32();
-            if (ValidBlockStart > ValidBlockEnd) throw new FormatException();
+            if (ValidBlockStart >= ValidBlockEnd) throw new FormatException();
             Sender = reader.ReadSerializable<UInt160>();
             Data = reader.ReadVarBytes(ushort.MaxValue);
         }
@@ -91,7 +91,7 @@ namespace Neo.Network.P2P.Payloads
 
         public bool Verify(StoreView snapshot)
         {
-            if (snapshot.PersistingBlock.Index < ValidBlockStart || snapshot.PersistingBlock.Index > ValidBlockEnd) return false;
+            if (snapshot.Height < ValidBlockStart || snapshot.Height >= ValidBlockEnd) return false;
             if (!Blockchain.Singleton.IsExtensibleWitnessWhiteListed(Sender)) return false;
             return this.VerifyWitnesses(snapshot, 0_02000000);
         }

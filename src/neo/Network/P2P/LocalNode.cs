@@ -15,8 +15,8 @@ namespace Neo.Network.P2P
 {
     public class LocalNode : Peer
     {
-        internal class RelayDirectly { public IInventory Inventory; }
-        internal class SendDirectly { public IInventory Inventory; }
+        public class RelayDirectly { public IInventory Inventory; }
+        public class SendDirectly { public IInventory Inventory; }
 
         public const uint ProtocolVersion = 0;
         private const int MaxCountFromSeedList = 5;
