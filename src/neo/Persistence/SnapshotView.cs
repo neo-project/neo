@@ -16,7 +16,7 @@ namespace Neo.Persistence
         public SnapshotView(IStore store)
         {
             this.snapshot = store.GetSnapshot();
-            Storages = new StoreDataCache<StorageKey, StorageItem>(snapshot, Prefixes.ST_Storage);
+            Storages = new StoreDataCache<StorageKey, StorageItem>(snapshot);
         }
 
         public override void Commit()

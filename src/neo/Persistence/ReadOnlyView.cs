@@ -11,7 +11,7 @@ namespace Neo.Persistence
     {
         private readonly IReadOnlyStore store;
 
-        public override DataCache<StorageKey, StorageItem> Storages => new StoreDataCache<StorageKey, StorageItem>(store, Prefixes.ST_Storage);
+        public override DataCache<StorageKey, StorageItem> Storages => new StoreDataCache<StorageKey, StorageItem>(store);
 
         public ReadOnlyView(IReadOnlyStore store)
         {

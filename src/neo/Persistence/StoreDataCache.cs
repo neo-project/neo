@@ -12,48 +12,46 @@ namespace Neo.Persistence
     {
         private readonly IReadOnlyStore store;
         private readonly ISnapshot snapshot;
-        private readonly byte prefix;
 
-        public StoreDataCache(IReadOnlyStore store, byte prefix)
+        public StoreDataCache(IReadOnlyStore store)
         {
             this.store = store;
             this.snapshot = store as ISnapshot;
-            this.prefix = prefix;
         }
 
         protected override void AddInternal(TKey key, TValue value)
         {
-            snapshot?.Put(prefix, key.ToArray(), value.ToArray());
+            snapshot?.Put(key.ToArray(), value.ToArray());
         }
 
         protected override void DeleteInternal(TKey key)
         {
-            snapshot?.Delete(prefix, key.ToArray());
+            snapshot?.Delete(key.ToArray());
         }
 
         protected override bool ContainsInternal(TKey key)
         {
-            return store.Contains(prefix, key.ToArray());
+            return store.Contains(key.ToArray());
         }
 
         protected override TValue GetInternal(TKey key)
         {
-            return store.TryGet(prefix, key.ToArray()).AsSerializable<TValue>();
+            return store.TryGet(key.ToArray()).AsSerializable<TValue>();
         }
 
         protected override IEnumerable<(TKey, TValue)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction)
         {
-            return store.Seek(prefix, keyOrPrefix, direction).Select(p => (p.Key.AsSerializable<TKey>(), p.Value.AsSerializable<TValue>()));
+            return store.Seek(keyOrPrefix, direction).Select(p => (p.Key.AsSerializable<TKey>(), p.Value.AsSerializable<TValue>()));
         }
 
         protected override TValue TryGetInternal(TKey key)
         {
-            return store.TryGet(prefix, key.ToArray())?.AsSerializable<TValue>();
+            return store.TryGet(key.ToArray())?.AsSerializable<TValue>();
         }
 
         protected override void UpdateInternal(TKey key, TValue value)
         {
-            snapshot?.Put(prefix, key.ToArray(), value.ToArray());
+            snapshot?.Put(key.ToArray(), value.ToArray());
         }
     }
 }
