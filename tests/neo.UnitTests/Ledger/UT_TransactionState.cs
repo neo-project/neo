@@ -1,8 +1,8 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract.Native;
 using System;
 using System.IO;
 
@@ -19,7 +19,6 @@ namespace Neo.UnitTests.Ledger
             origin = new TransactionState
             {
                 BlockIndex = 1,
-                VMState = VM.VMState.NONE,
                 Transaction = new Neo.Network.P2P.Payloads.Transaction()
                 {
                     Attributes = Array.Empty<TransactionAttribute>(),
@@ -34,25 +33,6 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
-        public void TestClone()
-        {
-            TransactionState dest = ((ICloneable<TransactionState>)origin).Clone();
-            dest.BlockIndex.Should().Be(origin.BlockIndex);
-            dest.VMState.Should().Be(origin.VMState);
-            dest.Transaction.Should().Be(origin.Transaction);
-        }
-
-        [TestMethod]
-        public void TestFromReplica()
-        {
-            TransactionState dest = new TransactionState();
-            ((ICloneable<TransactionState>)dest).FromReplica(origin);
-            dest.BlockIndex.Should().Be(origin.BlockIndex);
-            dest.VMState.Should().Be(origin.VMState);
-            dest.Transaction.Should().Be(origin.Transaction);
-        }
-
-        [TestMethod]
         public void TestDeserialize()
         {
             using (MemoryStream ms = new MemoryStream(1024))
@@ -64,7 +44,6 @@ namespace Neo.UnitTests.Ledger
                 TransactionState dest = new TransactionState();
                 ((ISerializable)dest).Deserialize(reader);
                 dest.BlockIndex.Should().Be(origin.BlockIndex);
-                dest.VMState.Should().Be(origin.VMState);
                 dest.Transaction.Hash.Should().Be(origin.Transaction.Hash);
             }
         }

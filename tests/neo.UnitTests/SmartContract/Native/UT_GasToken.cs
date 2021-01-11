@@ -17,7 +17,7 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_GasToken
     {
-        private StoreView _snapshot;
+        private DataCache _snapshot;
         private Block _persistingBlock;
 
         [TestInitialize]
@@ -41,11 +41,11 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_BalanceOfTransferAndBurn()
         {
-            var snapshot = _snapshot.Clone();
+            var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block() { Index = 1000 };
             byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
             byte[] to = new byte[20];
-            var keyCount = snapshot.Storages.GetChangeSet().Count();
+            var keyCount = snapshot.GetChangeSet().Count();
             var supply = NativeContract.GAS.TotalSupply(snapshot);
             supply.Should().Be(3000000050000000); // 3000000000000000 + 50000000 (neo holder reward)
 
@@ -73,11 +73,11 @@ namespace Neo.UnitTests.SmartContract.Native
             supply = NativeContract.GAS.TotalSupply(snapshot);
             supply.Should().Be(3000050050000000);
 
-            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 3); // Gas
+            snapshot.GetChangeSet().Count().Should().Be(keyCount + 3); // Gas
 
             // Transfer
 
-            keyCount = snapshot.Storages.GetChangeSet().Count();
+            keyCount = snapshot.GetChangeSet().Count();
 
             NativeContract.GAS.Transfer(snapshot, from, to, 30000500_00000000, false, persistingBlock).Should().BeFalse(); // Not signed
             NativeContract.GAS.Transfer(snapshot, from, to, 30000500_00000001, true, persistingBlock).Should().BeFalse(); // More than balance
@@ -88,12 +88,12 @@ namespace Neo.UnitTests.SmartContract.Native
             NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(30000500_00000000);
             NativeContract.GAS.BalanceOf(snapshot, from).Should().Be(0);
 
-            snapshot.Storages.GetChangeSet().Count().Should().Be(keyCount + 1); // All
+            snapshot.GetChangeSet().Count().Should().Be(keyCount + 1); // All
 
             // Burn
 
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, 0);
-            keyCount = snapshot.Storages.GetChangeSet().Count();
+            keyCount = snapshot.GetChangeSet().Count();
 
             Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
                 NativeContract.GAS.Burn(engine, new UInt160(to), BigInteger.MinusOne));
@@ -109,13 +109,13 @@ namespace Neo.UnitTests.SmartContract.Native
 
             NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(3000049999999999);
 
-            keyCount.Should().Be(snapshot.Storages.GetChangeSet().Count());
+            keyCount.Should().Be(snapshot.GetChangeSet().Count());
 
             // Burn all
 
             NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(3000049999999999));
 
-            (keyCount - 1).Should().Be(snapshot.Storages.GetChangeSet().Count());
+            (keyCount - 1).Should().Be(snapshot.GetChangeSet().Count());
 
             // Bad inputs
 
