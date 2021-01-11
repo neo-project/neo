@@ -47,7 +47,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block() { Index = 1000 };
 
-            byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
 
             // No signature
 
@@ -101,7 +101,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block() { Index = 1000 };
 
-            byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
             var accountState = snapshot.TryGet(CreateStorageKey(20, from)).GetInteroperable<NeoAccountState>();
             accountState.Balance = 100;
             snapshot.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState()));
@@ -189,7 +189,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block() { Index = 1000 };
 
-            byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
 
             var unclaim = Check_UnclaimedGas(snapshot, from, persistingBlock);
             unclaim.Value.Should().Be(new BigInteger(0.5 * 1000 * 100000000L));
@@ -344,7 +344,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block() { Index = 1000 };
 
-            byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
             byte[] to = new byte[20];
 
             var keyCount = snapshot.GetChangeSet().Count();
@@ -393,7 +393,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_BalanceOf()
         {
             var snapshot = _snapshot.CreateSnapshot();
-            byte[] account = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] account = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
 
             NativeContract.NEO.BalanceOf(snapshot, account).Should().Be(100_000_000);
 

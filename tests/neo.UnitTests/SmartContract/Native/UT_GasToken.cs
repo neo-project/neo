@@ -43,7 +43,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block() { Index = 1000 };
-            byte[] from = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
             byte[] to = new byte[20];
             var keyCount = snapshot.GetChangeSet().Count();
             var supply = NativeContract.GAS.TotalSupply(snapshot);

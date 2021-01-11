@@ -124,7 +124,7 @@ namespace Neo.SmartContract.Native
             // Initialize economic parameters
 
             engine.Snapshot.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u), new StorageItem(5 * GAS.Factor));
-            Mint(engine, Blockchain.GetConsensusAddress(Blockchain.StandbyValidators), TotalAmount, false);
+            Mint(engine, Contract.GetBFTAddress(Blockchain.StandbyValidators), TotalAmount, false);
         }
 
         internal override void OnPersist(ApplicationEngine engine)

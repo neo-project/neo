@@ -43,7 +43,7 @@ namespace Neo.Ledger
             PrevHash = UInt256.Zero,
             Timestamp = (new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc)).ToTimestampMS(),
             Index = 0,
-            NextConsensus = GetConsensusAddress(StandbyValidators),
+            NextConsensus = Contract.GetBFTAddress(StandbyValidators),
             Witness = new Witness
             {
                 InvocationScript = Array.Empty<byte>(),
@@ -127,11 +127,6 @@ namespace Neo.Ledger
         {
             if (MemPool.ContainsKey(hash)) return true;
             return NativeContract.Ledger.ContainsTransaction(View, hash);
-        }
-
-        public static UInt160 GetConsensusAddress(ECPoint[] validators)
-        {
-            return Contract.CreateMultiSigRedeemScript(validators.Length - (validators.Length - 1) / 3, validators).ToScriptHash();
         }
 
         public SnapshotCache GetSnapshot()
@@ -403,18 +398,18 @@ namespace Neo.Ledger
             var builder = ImmutableHashSet.CreateBuilder<UInt160>();
             builder.Add(NativeContract.NEO.GetCommitteeAddress(currentSnapshot));
             var validators = NativeContract.NEO.GetNextBlockValidators(currentSnapshot);
-            builder.Add(GetConsensusAddress(validators));
+            builder.Add(Contract.GetBFTAddress(validators));
             builder.UnionWith(validators.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()));
             var oracles = NativeContract.RoleManagement.GetDesignatedByRole(currentSnapshot, Role.Oracle, Height);
             if (oracles.Length > 0)
             {
-                builder.Add(GetConsensusAddress(oracles));
+                builder.Add(Contract.GetBFTAddress(oracles));
                 builder.UnionWith(oracles.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()));
             }
             var stateValidators = NativeContract.RoleManagement.GetDesignatedByRole(currentSnapshot, Role.StateValidator, Height);
             if (stateValidators.Length > 0)
             {
-                builder.Add(GetConsensusAddress(stateValidators));
+                builder.Add(Contract.GetBFTAddress(stateValidators));
                 builder.UnionWith(stateValidators.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()));
             }
             extensibleWitnessWhiteList = builder.ToImmutable();
