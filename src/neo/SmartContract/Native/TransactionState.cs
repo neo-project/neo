@@ -10,16 +10,20 @@ namespace Neo.SmartContract.Native
         public uint BlockIndex;
         public Transaction Transaction;
 
+        private StackItem _rawTransaction;
+
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
             BlockIndex = (uint)@struct[0].GetInteger();
-            Transaction = @struct[1].GetSpan().AsSerializable<Transaction>();
+            _rawTransaction = @struct[1];
+            Transaction = _rawTransaction.GetSpan().AsSerializable<Transaction>();
         }
 
         StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Struct(referenceCounter) { BlockIndex, Transaction.ToArray() };
+            _rawTransaction ??= Transaction.ToArray();
+            return new Struct(referenceCounter) { BlockIndex, _rawTransaction };
         }
     }
 }
