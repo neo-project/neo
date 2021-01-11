@@ -1,5 +1,3 @@
-using Neo.IO.Caching;
-using Neo.Ledger;
 using System;
 
 namespace Neo.Persistence
@@ -11,7 +9,7 @@ namespace Neo.Persistence
     {
         private readonly IReadOnlyStore store;
 
-        public override DataCache<StorageKey, StorageItem> Storages => new StoreDataCache<StorageKey, StorageItem>(store);
+        public override DataCache Storages => new StoreDataCache(store);
 
         public ReadOnlyView(IReadOnlyStore store)
         {

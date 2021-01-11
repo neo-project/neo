@@ -1,14 +1,11 @@
 using Neo.IO;
-using Neo.IO.Caching;
-using System;
+using Neo.SmartContract;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.Persistence
 {
-    public class StoreDataCache<TKey, TValue> : DataCache<TKey, TValue>
-        where TKey : IEquatable<TKey>, ISerializable, new()
-        where TValue : class, ICloneable<TValue>, ISerializable, new()
+    public class StoreDataCache : DataCache
     {
         private readonly IReadOnlyStore store;
         private readonly ISnapshot snapshot;
@@ -19,37 +16,37 @@ namespace Neo.Persistence
             this.snapshot = store as ISnapshot;
         }
 
-        protected override void AddInternal(TKey key, TValue value)
+        protected override void AddInternal(StorageKey key, StorageItem value)
         {
             snapshot?.Put(key.ToArray(), value.ToArray());
         }
 
-        protected override void DeleteInternal(TKey key)
+        protected override void DeleteInternal(StorageKey key)
         {
             snapshot?.Delete(key.ToArray());
         }
 
-        protected override bool ContainsInternal(TKey key)
+        protected override bool ContainsInternal(StorageKey key)
         {
             return store.Contains(key.ToArray());
         }
 
-        protected override TValue GetInternal(TKey key)
+        protected override StorageItem GetInternal(StorageKey key)
         {
-            return store.TryGet(key.ToArray()).AsSerializable<TValue>();
+            return store.TryGet(key.ToArray()).AsSerializable<StorageItem>();
         }
 
-        protected override IEnumerable<(TKey, TValue)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction)
+        protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction)
         {
-            return store.Seek(keyOrPrefix, direction).Select(p => (p.Key.AsSerializable<TKey>(), p.Value.AsSerializable<TValue>()));
+            return store.Seek(keyOrPrefix, direction).Select(p => (p.Key.AsSerializable<StorageKey>(), p.Value.AsSerializable<StorageItem>()));
         }
 
-        protected override TValue TryGetInternal(TKey key)
+        protected override StorageItem TryGetInternal(StorageKey key)
         {
-            return store.TryGet(key.ToArray())?.AsSerializable<TValue>();
+            return store.TryGet(key.ToArray())?.AsSerializable<StorageItem>();
         }
 
-        protected override void UpdateInternal(TKey key, TValue value)
+        protected override void UpdateInternal(StorageKey key, StorageItem value)
         {
             snapshot?.Put(key.ToArray(), value.ToArray());
         }

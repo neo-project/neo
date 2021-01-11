@@ -1,6 +1,3 @@
-using Neo.IO.Caching;
-using Neo.Ledger;
-
 namespace Neo.Persistence
 {
     /// <summary>
@@ -8,7 +5,7 @@ namespace Neo.Persistence
     /// </summary>
     public abstract class StoreView
     {
-        public abstract DataCache<StorageKey, StorageItem> Storages { get; }
+        public abstract DataCache Storages { get; }
 
         public StoreView Clone()
         {

@@ -1,14 +1,13 @@
 using Neo.IO;
-using Neo.SmartContract;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 
-namespace Neo.Ledger
+namespace Neo.SmartContract
 {
-    public class StorageItem : ICloneable<StorageItem>, ISerializable
+    public class StorageItem : ISerializable
     {
         private byte[] value;
         private object cache;
@@ -61,7 +60,7 @@ namespace Neo.Ledger
             Set(this + integer);
         }
 
-        StorageItem ICloneable<StorageItem>.Clone()
+        public StorageItem Clone()
         {
             return new StorageItem
             {
@@ -76,7 +75,7 @@ namespace Neo.Ledger
             IsConstant = reader.ReadBoolean();
         }
 
-        void ICloneable<StorageItem>.FromReplica(StorageItem replica)
+        public void FromReplica(StorageItem replica)
         {
             Value = replica.Value;
             IsConstant = replica.IsConstant;

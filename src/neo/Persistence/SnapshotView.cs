@@ -1,5 +1,3 @@
-using Neo.IO.Caching;
-using Neo.Ledger;
 using System;
 
 namespace Neo.Persistence
@@ -11,12 +9,12 @@ namespace Neo.Persistence
     {
         private readonly ISnapshot snapshot;
 
-        public override DataCache<StorageKey, StorageItem> Storages { get; }
+        public override DataCache Storages { get; }
 
         public SnapshotView(IStore store)
         {
             this.snapshot = store.GetSnapshot();
-            Storages = new StoreDataCache<StorageKey, StorageItem>(snapshot);
+            Storages = new StoreDataCache(snapshot);
         }
 
         public override void Commit()
