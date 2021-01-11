@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Neo.Persistence
 {
-    internal class ClonedCache : DataCache
+    class ClonedCache : DataCache
     {
         private readonly DataCache innerCache;
 

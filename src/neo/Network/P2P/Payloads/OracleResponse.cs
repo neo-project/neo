@@ -62,7 +62,7 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        public override bool Verify(StoreView snapshot, Transaction tx)
+        public override bool Verify(DataCache snapshot, Transaction tx)
         {
             if (tx.Signers.Any(p => p.Scopes != WitnessScope.None)) return false;
             if (!tx.Script.AsSpan().SequenceEqual(FixedScript)) return false;

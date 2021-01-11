@@ -303,7 +303,7 @@ namespace Neo.Network.P2P
         private void SendPingMessage()
         {
             TrimmedBlock block;
-            using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
+            using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 block = NativeContract.Ledger.GetTrimmedBlock(snapshot, NativeContract.Ledger.CurrentHash(snapshot));
             }

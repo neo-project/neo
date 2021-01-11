@@ -1,7 +1,6 @@
 #pragma warning disable IDE0051
 
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using System;
@@ -23,11 +22,11 @@ namespace Neo.SmartContract.Native
 
         internal override void OnPersist(ApplicationEngine engine)
         {
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_BlockHash).AddBigEndian(engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray(), true));
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Block).Add(engine.PersistingBlock.Hash), new StorageItem(Trim(engine.PersistingBlock).ToArray(), true));
+            engine.Snapshot.Add(CreateStorageKey(Prefix_BlockHash).AddBigEndian(engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray(), true));
+            engine.Snapshot.Add(CreateStorageKey(Prefix_Block).Add(engine.PersistingBlock.Hash), new StorageItem(Trim(engine.PersistingBlock).ToArray(), true));
             foreach (Transaction tx in engine.PersistingBlock.Transactions)
             {
-                engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Transaction).Add(tx.Hash), new StorageItem(new TransactionState
+                engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(tx.Hash), new StorageItem(new TransactionState
                 {
                     BlockIndex = engine.PersistingBlock.Index,
                     Transaction = tx
@@ -37,61 +36,61 @@ namespace Neo.SmartContract.Native
 
         internal override void PostPersist(ApplicationEngine engine)
         {
-            HashIndexState state = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_CurrentBlock), () => new StorageItem(new HashIndexState())).GetInteroperable<HashIndexState>();
+            HashIndexState state = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_CurrentBlock), () => new StorageItem(new HashIndexState())).GetInteroperable<HashIndexState>();
             state.Hash = engine.PersistingBlock.Hash;
             state.Index = engine.PersistingBlock.Index;
         }
 
-        internal bool Initialized(StoreView snapshot)
+        internal bool Initialized(DataCache snapshot)
         {
-            return snapshot.Storages.Find(CreateStorageKey(Prefix_Block).ToArray()).Any();
+            return snapshot.Find(CreateStorageKey(Prefix_Block).ToArray()).Any();
         }
 
-        private bool IsTraceableBlock(StoreView snapshot, uint index)
+        private bool IsTraceableBlock(DataCache snapshot, uint index)
         {
             uint currentIndex = CurrentIndex(snapshot);
             if (index > currentIndex) return false;
             return index + ProtocolSettings.Default.MaxTraceableBlocks > currentIndex;
         }
 
-        public UInt256 GetBlockHash(StoreView snapshot, uint index)
+        public UInt256 GetBlockHash(DataCache snapshot, uint index)
         {
-            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_BlockHash).AddBigEndian(index));
+            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_BlockHash).AddBigEndian(index));
             if (item is null) return null;
             return new UInt256(item.Value);
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        public UInt256 CurrentHash(StoreView snapshot)
+        public UInt256 CurrentHash(DataCache snapshot)
         {
-            return snapshot.Storages[CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>().Hash;
+            return snapshot[CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>().Hash;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        public uint CurrentIndex(StoreView snapshot)
+        public uint CurrentIndex(DataCache snapshot)
         {
-            return snapshot.Storages[CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>().Index;
+            return snapshot[CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>().Index;
         }
 
-        public bool ContainsBlock(StoreView snapshot, UInt256 hash)
+        public bool ContainsBlock(DataCache snapshot, UInt256 hash)
         {
-            return snapshot.Storages.Contains(CreateStorageKey(Prefix_Block).Add(hash));
+            return snapshot.Contains(CreateStorageKey(Prefix_Block).Add(hash));
         }
 
-        public bool ContainsTransaction(StoreView snapshot, UInt256 hash)
+        public bool ContainsTransaction(DataCache snapshot, UInt256 hash)
         {
-            return snapshot.Storages.Contains(CreateStorageKey(Prefix_Transaction).Add(hash));
+            return snapshot.Contains(CreateStorageKey(Prefix_Transaction).Add(hash));
         }
 
-        public TrimmedBlock GetTrimmedBlock(StoreView snapshot, UInt256 hash)
+        public TrimmedBlock GetTrimmedBlock(DataCache snapshot, UInt256 hash)
         {
-            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Block).Add(hash));
+            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_Block).Add(hash));
             if (item is null) return null;
             return item.Value.AsSerializable<TrimmedBlock>();
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        private TrimmedBlock GetBlock(StoreView snapshot, byte[] indexOrHash)
+        private TrimmedBlock GetBlock(DataCache snapshot, byte[] indexOrHash)
         {
             UInt256 hash;
             if (indexOrHash.Length < UInt256.Length)
@@ -106,7 +105,7 @@ namespace Neo.SmartContract.Native
             return block;
         }
 
-        public Block GetBlock(StoreView snapshot, UInt256 hash)
+        public Block GetBlock(DataCache snapshot, UInt256 hash)
         {
             TrimmedBlock state = GetTrimmedBlock(snapshot, hash);
             if (state is null) return null;
@@ -124,48 +123,48 @@ namespace Neo.SmartContract.Native
             };
         }
 
-        public Block GetBlock(StoreView snapshot, uint index)
+        public Block GetBlock(DataCache snapshot, uint index)
         {
             UInt256 hash = GetBlockHash(snapshot, index);
             if (hash is null) return null;
             return GetBlock(snapshot, hash);
         }
 
-        public Header GetHeader(StoreView snapshot, UInt256 hash)
+        public Header GetHeader(DataCache snapshot, UInt256 hash)
         {
             return GetTrimmedBlock(snapshot, hash)?.Header;
         }
 
-        public Header GetHeader(StoreView snapshot, uint index)
+        public Header GetHeader(DataCache snapshot, uint index)
         {
             UInt256 hash = GetBlockHash(snapshot, index);
             if (hash is null) return null;
             return GetHeader(snapshot, hash);
         }
 
-        public Transaction GetTransaction(StoreView snapshot, UInt256 hash)
+        public Transaction GetTransaction(DataCache snapshot, UInt256 hash)
         {
-            return snapshot.Storages.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>().Transaction;
+            return snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>().Transaction;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates, Name = "getTransaction")]
-        private Transaction GetTransactionForContract(StoreView snapshot, UInt256 hash)
+        private Transaction GetTransactionForContract(DataCache snapshot, UInt256 hash)
         {
-            TransactionState state = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
+            TransactionState state = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
             if (state is null || !IsTraceableBlock(snapshot, state.BlockIndex)) return null;
             return state.Transaction;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        private int GetTransactionHeight(StoreView snapshot, UInt256 hash)
+        private int GetTransactionHeight(DataCache snapshot, UInt256 hash)
         {
-            TransactionState state = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
+            TransactionState state = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
             if (state is null || !IsTraceableBlock(snapshot, state.BlockIndex)) return -1;
             return (int)state.BlockIndex;
         }
 
         [ContractMethod(0_02000000, CallFlags.ReadStates)]
-        private Transaction GetTransactionFromBlock(StoreView snapshot, byte[] blockIndexOrHash, int txIndex)
+        private Transaction GetTransactionFromBlock(DataCache snapshot, byte[] blockIndexOrHash, int txIndex)
         {
             UInt256 hash;
             if (blockIndexOrHash.Length < UInt256.Length)

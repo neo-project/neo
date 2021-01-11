@@ -70,7 +70,7 @@ namespace Neo.Network.P2P.Payloads
             Data = reader.ReadVarBytes(ushort.MaxValue);
         }
 
-        UInt160[] IVerifiable.GetScriptHashesForVerifying(StoreView snapshot)
+        UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
         {
             return new[] { Sender }; // This address should be checked by consumer
         }
@@ -90,7 +90,7 @@ namespace Neo.Network.P2P.Payloads
             writer.WriteVarBytes(Data);
         }
 
-        public bool Verify(StoreView snapshot)
+        public bool Verify(DataCache snapshot)
         {
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);
             if (height < ValidBlockStart || height >= ValidBlockEnd) return false;

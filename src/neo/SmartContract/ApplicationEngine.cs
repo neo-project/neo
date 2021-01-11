@@ -42,7 +42,7 @@ namespace Neo.SmartContract
         private List<IDisposable> Disposables => disposables ??= new List<IDisposable>();
         public TriggerType Trigger { get; }
         public IVerifiable ScriptContainer { get; }
-        public StoreView Snapshot { get; }
+        public DataCache Snapshot { get; }
         public Block PersistingBlock { get; }
         public long GasConsumed { get; private set; } = 0;
         public long GasLeft => gas_amount - GasConsumed;
@@ -52,7 +52,7 @@ namespace Neo.SmartContract
         public UInt160 EntryScriptHash => EntryContext?.GetScriptHash();
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
 
-        protected ApplicationEngine(TriggerType trigger, IVerifiable container, StoreView snapshot, Block persistingBlock, long gas)
+        protected ApplicationEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, long gas)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
@@ -146,7 +146,7 @@ namespace Neo.SmartContract
             return (T)Convert(Pop(), new InteropParameterDescriptor(typeof(T)));
         }
 
-        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, StoreView snapshot, Block persistingBlock = null, long gas = TestModeGas)
+        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, long gas = TestModeGas)
         {
             return applicationEngineProvider?.Create(trigger, container, snapshot, persistingBlock, gas)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, gas);
@@ -322,7 +322,7 @@ namespace Neo.SmartContract
                 throw new InvalidOperationException("StepOut failed.", FaultException);
         }
 
-        private static Block CreateDummyBlock(StoreView snapshot)
+        private static Block CreateDummyBlock(DataCache snapshot)
         {
             UInt256 hash = NativeContract.Ledger.CurrentHash(snapshot);
             var currentBlock = NativeContract.Ledger.GetBlock(snapshot, hash);
@@ -359,9 +359,9 @@ namespace Neo.SmartContract
             Exchange(ref applicationEngineProvider, null);
         }
 
-        public static ApplicationEngine Run(byte[] script, StoreView snapshot = null, IVerifiable container = null, Block persistingBlock = null, int offset = 0, long gas = TestModeGas)
+        public static ApplicationEngine Run(byte[] script, DataCache snapshot = null, IVerifiable container = null, Block persistingBlock = null, int offset = 0, long gas = TestModeGas)
         {
-            SnapshotView disposable = null;
+            SnapshotCache disposable = null;
             if (snapshot is null)
             {
                 disposable = Blockchain.Singleton.GetSnapshot();

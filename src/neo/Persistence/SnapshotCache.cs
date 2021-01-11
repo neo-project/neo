@@ -1,16 +1,17 @@
 using Neo.IO;
 using Neo.SmartContract;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.Persistence
 {
-    public class StoreDataCache : DataCache
+    public class SnapshotCache : DataCache, IDisposable
     {
         private readonly IReadOnlyStore store;
         private readonly ISnapshot snapshot;
 
-        public StoreDataCache(IReadOnlyStore store)
+        public SnapshotCache(IReadOnlyStore store)
         {
             this.store = store;
             this.snapshot = store as ISnapshot;
@@ -26,9 +27,20 @@ namespace Neo.Persistence
             snapshot?.Delete(key.ToArray());
         }
 
+        public override void Commit()
+        {
+            base.Commit();
+            snapshot?.Commit();
+        }
+
         protected override bool ContainsInternal(StorageKey key)
         {
             return store.Contains(key.ToArray());
+        }
+
+        public void Dispose()
+        {
+            snapshot?.Dispose();
         }
 
         protected override StorageItem GetInternal(StorageKey key)

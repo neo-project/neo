@@ -252,7 +252,7 @@ namespace Neo.Wallets
             {
                 accounts = new[] { from };
             }
-            using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
+            using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 Dictionary<UInt160, Signer> cosignerList = cosigners?.ToDictionary(p => p.Account) ?? new Dictionary<UInt160, Signer>();
                 byte[] script;
@@ -323,14 +323,14 @@ namespace Neo.Wallets
             {
                 accounts = new[] { sender };
             }
-            using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
+            using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 var balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
                 return MakeTransaction(snapshot, script, cosigners ?? Array.Empty<Signer>(), attributes ?? Array.Empty<TransactionAttribute>(), balances_gas);
             }
         }
 
-        private Transaction MakeTransaction(StoreView snapshot, byte[] script, Signer[] cosigners, TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balances_gas)
+        private Transaction MakeTransaction(DataCache snapshot, byte[] script, Signer[] cosigners, TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balances_gas)
         {
             Random rand = new Random();
             foreach (var (account, value) in balances_gas)
@@ -346,7 +346,7 @@ namespace Neo.Wallets
                 };
 
                 // will try to execute 'transfer' script to check if it works
-                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.Clone(), tx))
+                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.CreateSnapshot(), tx))
                 {
                     if (engine.State == VMState.FAULT)
                     {
@@ -361,7 +361,7 @@ namespace Neo.Wallets
             throw new InvalidOperationException("Insufficient GAS");
         }
 
-        public long CalculateNetworkFee(StoreView snapshot, Transaction tx)
+        public long CalculateNetworkFee(DataCache snapshot, Transaction tx)
         {
             UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
 
@@ -396,7 +396,7 @@ namespace Neo.Wallets
                     size += Array.Empty<byte>().GetVarSize() * 2;
 
                     // Check verify cost
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.Clone());
+                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot());
                     if (engine.LoadContract(contract, "verify", CallFlags.None, true, 0) is null)
                         throw new ArgumentException($"The smart contract {contract.Hash} haven't got verify method");
                     if (NativeContract.IsNative(hash)) engine.Push("verify");

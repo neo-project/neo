@@ -65,11 +65,11 @@ namespace Neo.Ledger
         private readonly ConcurrentDictionary<UInt256, Block> block_cache = new ConcurrentDictionary<UInt256, Block>();
         private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new Dictionary<uint, UnverifiedBlocksList>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
-        private SnapshotView currentSnapshot;
+        private SnapshotCache currentSnapshot;
         private ImmutableHashSet<UInt160> extensibleWitnessWhiteList;
 
         public IStore Store { get; }
-        public ReadOnlyView View { get; }
+        public DataCache View => new SnapshotCache(Store);
         public MemoryPool MemPool { get; }
         public uint Height => NativeContract.Ledger.CurrentIndex(currentSnapshot);
         public UInt256 CurrentBlockHash => NativeContract.Ledger.CurrentHash(currentSnapshot);
@@ -106,7 +106,6 @@ namespace Neo.Ledger
             this.txrouter = Context.ActorOf(TransactionRouter.Props(system));
             this.MemPool = new MemoryPool(system, ProtocolSettings.Default.MemoryPoolMaxTransactions);
             this.Store = store;
-            this.View = new ReadOnlyView(store);
             lock (lockObj)
             {
                 if (singleton != null)
@@ -135,9 +134,9 @@ namespace Neo.Ledger
             return Contract.CreateMultiSigRedeemScript(validators.Length - (validators.Length - 1) / 3, validators).ToScriptHash();
         }
 
-        public SnapshotView GetSnapshot()
+        public SnapshotCache GetSnapshot()
         {
-            return new SnapshotView(Store);
+            return new SnapshotCache(Store.GetSnapshot());
         }
 
         private void OnImport(IEnumerable<Block> blocks, bool verify)
@@ -308,7 +307,7 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
-            using (SnapshotView snapshot = GetSnapshot())
+            using (SnapshotCache snapshot = GetSnapshot())
             {
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block))
@@ -319,7 +318,7 @@ namespace Neo.Ledger
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
-                StoreView clonedSnapshot = snapshot.Clone();
+                DataCache clonedSnapshot = snapshot.CreateSnapshot();
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (Transaction tx in block.Transactions)
                 {
@@ -332,7 +331,7 @@ namespace Neo.Ledger
                         }
                         else
                         {
-                            clonedSnapshot = snapshot.Clone();
+                            clonedSnapshot = snapshot.CreateSnapshot();
                         }
                         ApplicationExecuted application_executed = new ApplicationExecuted(engine);
                         Context.System.EventStream.Publish(application_executed);

@@ -75,7 +75,7 @@ namespace Neo.Persistence
         /// <summary>
         /// Update internals with all changes cached on Dictionary which are not None.
         /// </summary>
-        public void Commit()
+        public virtual void Commit()
         {
             LinkedList<StorageKey> deletedItem = new LinkedList<StorageKey>();
             foreach (Trackable trackable in GetChangeSet())

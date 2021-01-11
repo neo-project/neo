@@ -171,7 +171,7 @@ namespace Neo.Network.P2P
         private void OnGetBlocksMessageReceived(GetBlocksPayload payload)
         {
             List<UInt256> hashes = new List<UInt256>();
-            using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
+            using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 UInt256 hash = payload.HashStart;
                 // The default value of payload.Count is -1
@@ -276,7 +276,7 @@ namespace Neo.Network.P2P
             uint index = payload.IndexStart;
             if (index > Blockchain.Singleton.Height) return;
             List<Header> headers = new List<Header>();
-            using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
+            using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
             {
                 uint count = payload.Count == -1 ? HeadersPayload.MaxHeadersCount : (uint)payload.Count;
                 for (uint i = 0; i < count; i++)
@@ -310,11 +310,11 @@ namespace Neo.Network.P2P
             switch (payload.Type)
             {
                 case InventoryType.Block:
-                    using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
+                    using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
                         hashes = hashes.Where(p => !NativeContract.Ledger.ContainsBlock(snapshot, p)).ToArray();
                     break;
                 case InventoryType.TX:
-                    using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
+                    using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
                         hashes = hashes.Where(p => !NativeContract.Ledger.ContainsTransaction(snapshot, p)).ToArray();
                     break;
             }

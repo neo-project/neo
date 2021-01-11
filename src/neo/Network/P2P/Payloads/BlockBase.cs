@@ -73,7 +73,7 @@ namespace Neo.Network.P2P.Payloads
             NextConsensus = reader.ReadSerializable<UInt160>();
         }
 
-        UInt160[] IVerifiable.GetScriptHashesForVerifying(StoreView snapshot)
+        UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
         {
             if (PrevHash == UInt256.Zero) return new[] { Witness.ScriptHash };
             TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, PrevHash);
@@ -112,7 +112,7 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        public virtual bool Verify(StoreView snapshot)
+        public virtual bool Verify(DataCache snapshot)
         {
             TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, PrevHash);
             if (prev is null) return false;
