@@ -324,14 +324,15 @@ namespace Neo.SmartContract
 
         private static Block CreateDummyBlock(StoreView snapshot)
         {
-            var currentBlock = snapshot.Blocks[snapshot.CurrentBlockHash];
+            UInt256 hash = NativeContract.Ledger.CurrentHash(snapshot);
+            var currentBlock = NativeContract.Ledger.GetBlock(snapshot, hash);
             return new Block
             {
                 Version = 0,
-                PrevHash = snapshot.CurrentBlockHash,
+                PrevHash = hash,
                 MerkleRoot = new UInt256(),
                 Timestamp = currentBlock.Timestamp + Blockchain.MillisecondsPerBlock,
-                Index = snapshot.Height + 1,
+                Index = currentBlock.Index + 1,
                 NextConsensus = currentBlock.NextConsensus,
                 Witness = new Witness
                 {

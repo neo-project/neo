@@ -62,8 +62,6 @@ namespace Neo.Ledger
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
         private readonly IActorRef txrouter;
-        private readonly List<UInt256> header_index = new List<UInt256>();
-        private uint stored_header_count = 0;
         private readonly ConcurrentDictionary<UInt256, Block> block_cache = new ConcurrentDictionary<UInt256, Block>();
         private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new Dictionary<uint, UnverifiedBlocksList>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
@@ -73,10 +71,8 @@ namespace Neo.Ledger
         public IStore Store { get; }
         public ReadOnlyView View { get; }
         public MemoryPool MemPool { get; }
-        public uint Height => currentSnapshot.Height;
-        public uint HeaderHeight => currentSnapshot.HeaderHeight;
-        public UInt256 CurrentBlockHash => currentSnapshot.CurrentBlockHash;
-        public UInt256 CurrentHeaderHash => currentSnapshot.CurrentHeaderHash;
+        public uint Height => NativeContract.Ledger.CurrentIndex(currentSnapshot);
+        public UInt256 CurrentBlockHash => NativeContract.Ledger.CurrentHash(currentSnapshot);
 
         private static Blockchain singleton;
         public static Blockchain Singleton
@@ -115,26 +111,7 @@ namespace Neo.Ledger
             {
                 if (singleton != null)
                     throw new InvalidOperationException();
-                header_index.AddRange(View.HeaderHashList.Find().OrderBy(p => (uint)p.Key).SelectMany(p => p.Value.Hashes));
-                stored_header_count += (uint)header_index.Count;
-                if (stored_header_count == 0)
-                {
-                    header_index.AddRange(View.Blocks.Find().OrderBy(p => p.Value.Index).Select(p => p.Key));
-                }
-                else
-                {
-                    HashIndexState hashIndex = View.HeaderHashIndex.Get();
-                    if (hashIndex.Index >= stored_header_count)
-                    {
-                        DataCache<UInt256, TrimmedBlock> cache = View.Blocks;
-                        for (UInt256 hash = hashIndex.Hash; hash != header_index[(int)stored_header_count - 1];)
-                        {
-                            header_index.Insert((int)stored_header_count, hash);
-                            hash = cache[hash].PrevHash;
-                        }
-                    }
-                }
-                if (header_index.Count == 0)
+                if (!NativeContract.Ledger.Initialized(View))
                 {
                     Persist(GenesisBlock);
                 }
@@ -147,37 +124,10 @@ namespace Neo.Ledger
             }
         }
 
-        public bool ContainsBlock(UInt256 hash)
-        {
-            if (block_cache.ContainsKey(hash)) return true;
-            return View.ContainsBlock(hash);
-        }
-
-        public bool ContainsTransaction(UInt256 hash)
+        private bool ContainsTransaction(UInt256 hash)
         {
             if (MemPool.ContainsKey(hash)) return true;
-            return View.ContainsTransaction(hash);
-        }
-
-        public Block GetBlock(uint index)
-        {
-            if (index == 0) return GenesisBlock;
-            UInt256 hash = GetBlockHash(index);
-            if (hash == null) return null;
-            return GetBlock(hash);
-        }
-
-        public Block GetBlock(UInt256 hash)
-        {
-            if (block_cache.TryGetValue(hash, out Block block))
-                return block;
-            return View.GetBlock(hash);
-        }
-
-        public UInt256 GetBlockHash(uint index)
-        {
-            if (header_index.Count <= index) return null;
-            return header_index[(int)index];
+            return NativeContract.Ledger.ContainsTransaction(View, hash);
         }
 
         public static UInt160 GetConsensusAddress(ECPoint[] validators)
@@ -185,38 +135,9 @@ namespace Neo.Ledger
             return Contract.CreateMultiSigRedeemScript(validators.Length - (validators.Length - 1) / 3, validators).ToScriptHash();
         }
 
-        public Header GetHeader(uint index)
-        {
-            if (index == 0) return GenesisBlock.Header;
-            UInt256 hash = GetBlockHash(index);
-            if (hash == null) return null;
-            return GetHeader(hash);
-        }
-
-        public Header GetHeader(UInt256 hash)
-        {
-            if (block_cache.TryGetValue(hash, out Block block))
-                return block.Header;
-            return View.GetHeader(hash);
-        }
-
-        public UInt256 GetNextBlockHash(UInt256 hash)
-        {
-            Header header = GetHeader(hash);
-            if (header == null) return null;
-            return GetBlockHash(header.Index + 1);
-        }
-
         public SnapshotView GetSnapshot()
         {
             return new SnapshotView(Store);
-        }
-
-        public Transaction GetTransaction(UInt256 hash)
-        {
-            if (MemPool.TryGetValue(hash, out Transaction transaction))
-                return transaction;
-            return View.GetTransaction(hash);
         }
 
         private void OnImport(IEnumerable<Block> blocks, bool verify)
@@ -229,7 +150,6 @@ namespace Neo.Ledger
                 if (verify && !block.Verify(currentSnapshot))
                     throw new InvalidOperationException();
                 Persist(block);
-                SaveHeaderHashList();
             }
             Sender.Tell(new ImportCompleted());
         }
@@ -271,7 +191,7 @@ namespace Neo.Ledger
             // Add the transactions to the memory pool
             foreach (var tx in transactions)
             {
-                if (View.ContainsTransaction(tx.Hash))
+                if (NativeContract.Ledger.ContainsTransaction(View, tx.Hash))
                     continue;
                 // First remove the tx if it is unverified in the pool.
                 MemPool.TryRemoveUnVerified(tx.Hash, out _);
@@ -316,7 +236,6 @@ namespace Neo.Ledger
                 block_cache.TryAdd(block.Hash, block);
                 block_cache_unverified.Remove(block.Index);
                 Persist(block);
-                SaveHeaderHashList();
                 if (block_cache_unverified.TryGetValue(Height + 1, out var unverifiedBlocks))
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks.Blocks)
@@ -391,11 +310,6 @@ namespace Neo.Ledger
         {
             using (SnapshotView snapshot = GetSnapshot())
             {
-                if (block.Index == header_index.Count)
-                {
-                    header_index.Add(block.Hash);
-                    snapshot.HeaderHashIndex.GetAndChange().Set(block);
-                }
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block))
                 {
@@ -405,25 +319,14 @@ namespace Neo.Ledger
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
-                snapshot.Blocks.Add(block.Hash, block.Trim());
                 StoreView clonedSnapshot = snapshot.Clone();
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (Transaction tx in block.Transactions)
                 {
-                    var state = new TransactionState
-                    {
-                        BlockIndex = block.Index,
-                        Transaction = tx
-                    };
-
-                    clonedSnapshot.Transactions.Add(tx.Hash, state);
-                    clonedSnapshot.Transactions.Commit();
-
                     using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, tx.SystemFee))
                     {
                         engine.LoadScript(tx.Script);
-                        state.VMState = engine.Execute();
-                        if (state.VMState == VMState.HALT)
+                        if (engine.Execute() == VMState.HALT)
                         {
                             clonedSnapshot.Commit();
                         }
@@ -436,7 +339,6 @@ namespace Neo.Ledger
                         all_application_executed.Add(application_executed);
                     }
                 }
-                snapshot.BlockHashIndex.GetAndChange().Set(block);
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block))
                 {
                     engine.LoadScript(postPersistScript);
@@ -485,30 +387,6 @@ namespace Neo.Ledger
             return Akka.Actor.Props.Create(() => new Blockchain(system, store)).WithMailbox("blockchain-mailbox");
         }
 
-        private void SaveHeaderHashList(SnapshotView snapshot = null)
-        {
-            if ((header_index.Count - stored_header_count < 2000))
-                return;
-            bool snapshot_created = snapshot == null;
-            if (snapshot_created) snapshot = GetSnapshot();
-            try
-            {
-                while (header_index.Count - stored_header_count >= 2000)
-                {
-                    snapshot.HeaderHashList.Add(stored_header_count, new HeaderHashList
-                    {
-                        Hashes = header_index.Skip((int)stored_header_count).Take(2000).ToArray()
-                    });
-                    stored_header_count += 2000;
-                }
-                if (snapshot_created) snapshot.Commit();
-            }
-            finally
-            {
-                if (snapshot_created) snapshot.Dispose();
-            }
-        }
-
         private void SendRelayResult(IInventory inventory, VerifyResult result)
         {
             RelayResult rr = new RelayResult
@@ -528,13 +406,13 @@ namespace Neo.Ledger
             var validators = NativeContract.NEO.GetNextBlockValidators(currentSnapshot);
             builder.Add(GetConsensusAddress(validators));
             builder.UnionWith(validators.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()));
-            var oracles = NativeContract.RoleManagement.GetDesignatedByRole(currentSnapshot, Role.Oracle, currentSnapshot.Height);
+            var oracles = NativeContract.RoleManagement.GetDesignatedByRole(currentSnapshot, Role.Oracle, Height);
             if (oracles.Length > 0)
             {
                 builder.Add(GetConsensusAddress(oracles));
                 builder.UnionWith(oracles.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()));
             }
-            var stateValidators = NativeContract.RoleManagement.GetDesignatedByRole(currentSnapshot, Role.StateValidator, currentSnapshot.Height);
+            var stateValidators = NativeContract.RoleManagement.GetDesignatedByRole(currentSnapshot, Role.StateValidator, Height);
             if (stateValidators.Length > 0)
             {
                 builder.Add(GetConsensusAddress(stateValidators));

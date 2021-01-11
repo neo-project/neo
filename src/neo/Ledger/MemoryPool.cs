@@ -1,4 +1,3 @@
-using Akka.Actor;
 using Akka.Util.Internal;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -371,11 +370,6 @@ namespace Neo.Ledger
                 _txRwLock.ExitWriteLock();
             }
 
-            // If we know about headers of future blocks, no point in verifying transactions from the unverified tx pool
-            // until we get caught up.
-            if (block.Index > 0 && block.Index < Blockchain.Singleton.HeaderHeight)
-                return;
-
             ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions,
                 _maxTxPerBlock, MaxMillisecondsToReverifyTx, snapshot);
         }
@@ -472,9 +466,6 @@ namespace Neo.Ledger
         /// <returns>true if more unsorted messages exist, otherwise false</returns>
         internal bool ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, StoreView snapshot)
         {
-            if (Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight)
-                return false;
-
             if (_unverifiedSortedTransactions.Count > 0)
             {
                 int verifyCount = _sortedTransactions.Count > _maxTxPerBlock ? 1 : maxToVerify;

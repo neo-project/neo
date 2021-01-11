@@ -283,7 +283,8 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual VerifyResult VerifyStateDependent(StoreView snapshot, TransactionVerificationContext context)
         {
-            if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
+            uint height = NativeContract.Ledger.CurrentIndex(snapshot);
+            if (ValidUntilBlock <= height || ValidUntilBlock > height + MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
             foreach (UInt160 hash in GetScriptHashesForVerifying(snapshot))
                 if (NativeContract.Policy.IsBlocked(snapshot, hash))

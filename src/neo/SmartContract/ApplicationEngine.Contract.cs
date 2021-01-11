@@ -41,7 +41,7 @@ namespace Neo.SmartContract
         protected internal void CallNativeContract(int id)
         {
             NativeContract contract = NativeContract.GetContract(id);
-            if (contract is null || contract.ActiveBlockIndex > Snapshot.Height)
+            if (contract is null || contract.ActiveBlockIndex > NativeContract.Ledger.CurrentIndex(Snapshot))
                 throw new InvalidOperationException();
             contract.Invoke(this);
         }

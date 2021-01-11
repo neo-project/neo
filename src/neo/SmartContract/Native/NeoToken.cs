@@ -191,7 +191,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public BigInteger GetGasPerBlock(StoreView snapshot)
         {
-            return GetSortedGasRecords(snapshot, snapshot.Height + 1).First().GasPerBlock;
+            return GetSortedGasRecords(snapshot, Ledger.CurrentIndex(snapshot) + 1).First().GasPerBlock;
         }
 
         private IEnumerable<(uint Index, BigInteger GasPerBlock)> GetSortedGasRecords(StoreView snapshot, uint end)

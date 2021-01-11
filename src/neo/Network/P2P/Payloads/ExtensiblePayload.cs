@@ -2,6 +2,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using System;
 using System.IO;
 
@@ -91,7 +92,8 @@ namespace Neo.Network.P2P.Payloads
 
         public bool Verify(StoreView snapshot)
         {
-            if (snapshot.Height < ValidBlockStart || snapshot.Height >= ValidBlockEnd) return false;
+            uint height = NativeContract.Ledger.CurrentIndex(snapshot);
+            if (height < ValidBlockStart || height >= ValidBlockEnd) return false;
             if (!Blockchain.Singleton.IsExtensibleWitnessWhiteListed(Sender)) return false;
             return this.VerifyWitnesses(snapshot, 0_02000000);
         }

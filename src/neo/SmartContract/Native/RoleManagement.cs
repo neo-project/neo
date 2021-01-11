@@ -23,7 +23,7 @@ namespace Neo.SmartContract.Native
         {
             if (!Enum.IsDefined(typeof(Role), role))
                 throw new ArgumentOutOfRangeException(nameof(role));
-            if (snapshot.Height + 1 < index)
+            if (Ledger.CurrentIndex(snapshot) + 1 < index)
                 throw new ArgumentOutOfRangeException(nameof(index));
             byte[] key = CreateStorageKey((byte)role).AddBigEndian(index).ToArray();
             byte[] boundary = CreateStorageKey((byte)role).ToArray();

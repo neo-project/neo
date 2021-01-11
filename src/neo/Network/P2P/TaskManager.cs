@@ -5,6 +5,7 @@ using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Native;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -304,7 +305,7 @@ namespace Neo.Network.P2P
             TrimmedBlock block;
             using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                block = snapshot.Blocks[snapshot.CurrentBlockHash];
+                block = NativeContract.Ledger.GetTrimmedBlock(snapshot, NativeContract.Ledger.CurrentHash(snapshot));
             }
 
             foreach (KeyValuePair<IActorRef, TaskSession> item in sessions)

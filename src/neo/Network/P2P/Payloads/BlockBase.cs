@@ -2,6 +2,7 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.Wallets;
 using System;
 using System.IO;
@@ -75,9 +76,9 @@ namespace Neo.Network.P2P.Payloads
         UInt160[] IVerifiable.GetScriptHashesForVerifying(StoreView snapshot)
         {
             if (PrevHash == UInt256.Zero) return new[] { Witness.ScriptHash };
-            Header prev_header = snapshot.GetHeader(PrevHash);
-            if (prev_header == null) throw new InvalidOperationException();
-            return new[] { prev_header.NextConsensus };
+            TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, PrevHash);
+            if (prev is null) throw new InvalidOperationException();
+            return new[] { prev.NextConsensus };
         }
 
         public virtual void Serialize(BinaryWriter writer)
@@ -113,10 +114,10 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual bool Verify(StoreView snapshot)
         {
-            Header prev_header = snapshot.GetHeader(PrevHash);
-            if (prev_header == null) return false;
-            if (prev_header.Index + 1 != Index) return false;
-            if (prev_header.Timestamp >= Timestamp) return false;
+            TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, PrevHash);
+            if (prev is null) return false;
+            if (prev.Index + 1 != Index) return false;
+            if (prev.Timestamp >= Timestamp) return false;
             if (!this.VerifyWitnesses(snapshot, 1_00000000)) return false;
             return true;
         }
