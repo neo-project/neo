@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
-using Neo.IO.Caching;
+using Neo.Persistence;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -54,7 +54,7 @@ namespace Neo.UnitTests.IO.Caching
         }
     }
 
-    public class MyValue : ISerializable, ICloneable<MyValue>
+    public class MyValue : ISerializable
     {
         public string Value;
 
@@ -77,12 +77,12 @@ namespace Neo.UnitTests.IO.Caching
             writer.Write(Value);
         }
 
-        MyValue ICloneable<MyValue>.Clone()
+        public MyValue Clone()
         {
             return new MyValue(Value);
         }
 
-        void ICloneable<MyValue>.FromReplica(MyValue replica)
+        public void FromReplica(MyValue replica)
         {
             Value = replica.Value;
         }
@@ -104,9 +104,9 @@ namespace Neo.UnitTests.IO.Caching
         }
     }
 
-    class MyDataCache<TKey, TValue> : DataCache<TKey, TValue>
+    class MyDataCache<TKey, TValue> : DataCache
            where TKey : IEquatable<TKey>, ISerializable, new()
-           where TValue : class, ICloneable<TValue>, ISerializable, new()
+           where TValue : class, ISerializable, new()
     {
         public Dictionary<TKey, TValue> InnerDict = new Dictionary<TKey, TValue>();
 
