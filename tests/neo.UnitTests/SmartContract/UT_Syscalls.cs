@@ -78,7 +78,7 @@ namespace Neo.UnitTests.SmartContract
                 var blocks = snapshot.Blocks;
                 var txs = snapshot.Transactions;
                 blocks.Add(block.Hash, NativeContract.Ledger.GetTrimmedBlock(snapshot, block.Hash));
-                txs.Add(tx.Hash, new TransactionState() { Transaction = tx, BlockIndex = block.Index, VMState = VMState.HALT });
+                txs.Add(tx.Hash, new TransactionState() { Transaction = tx, BlockIndex = block.Index});
 
                 engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
                 engine.LoadScript(script.ToArray());

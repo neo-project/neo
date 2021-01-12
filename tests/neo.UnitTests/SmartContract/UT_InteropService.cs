@@ -335,12 +335,6 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void TestBlockchain_GetHeight()
-        {
-            GetEngine(true, true).GetBlockchainHeight().Should().Be(0);
-        }
-
-        [TestMethod]
         public void TestBlockchain_GetBlock()
         {
             var engine = GetEngine(true, true);
@@ -366,17 +360,6 @@ namespace Neo.UnitTests.SmartContract
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             NativeContract.Ledger.GetTransaction(engine.Snapshot, new UInt256(data1)).Should().BeNull();
-        }
-
-        [TestMethod]
-        public void TestBlockchain_GetTransactionHeight()
-        {
-            var engine = GetEngine(true, true);
-            byte[] data1 = new byte[] { 0x01, 0x01, 0x01 ,0x01, 0x01, 0x01, 0x01, 0x01,
-                                        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                                        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
-            engine.GetTransactionHeight(new UInt256(data1)).Should().Be(-1);
         }
 
         [TestMethod]
