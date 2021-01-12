@@ -2,29 +2,32 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Persistence;
+using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace Neo.UnitTests.IO.Caching
 {
-    class MyKey : ISerializable, IEquatable<MyKey>, IComparable<MyKey>
+    class MyKey : StorageKey, ISerializable, IEquatable<MyKey>, IComparable<MyKey>
     {
-        public string Key;
-
         public int Size => Key.Length;
 
-        public MyKey() { }
+        public MyKey(UInt256 hash)
+        {
+            Key = hash.ToArray();
+        }
 
         public MyKey(string val)
         {
-            Key = val;
+            Key = Encoding.Default.GetBytes(val);
         }
 
         public void Deserialize(BinaryReader reader)
         {
-            Key = reader.ReadString();
+            Key = Encoding.Default.GetBytes(reader.ReadString());
         }
 
         public void Serialize(BinaryWriter writer)
@@ -50,36 +53,25 @@ namespace Neo.UnitTests.IO.Caching
 
         public int CompareTo(MyKey obj)
         {
-            return Key.CompareTo(obj.Key);
+            return Encoding.Default.GetString(Key).CompareTo(obj.Key);
         }
     }
 
-    public class MyValue : ISerializable
+    public class MyValue : StorageItem, ISerializable
     {
-        public string Value;
-
-        public int Size => Value.Length;
-
-        public MyValue() { }
+        public MyValue(UInt256 hash)
+        {
+            Value = hash.ToArray();
+        }
 
         public MyValue(string val)
         {
+            Value = Encoding.Default.GetBytes(val);
+        }
+
+        public MyValue(byte[] val)
+        {
             Value = val;
-        }
-
-        public void Deserialize(BinaryReader reader)
-        {
-            Value = reader.ReadString();
-        }
-
-        public void Serialize(BinaryWriter writer)
-        {
-            writer.Write(Value);
-        }
-
-        public MyValue Clone()
-        {
-            return new MyValue(Value);
         }
 
         public void FromReplica(MyValue replica)
@@ -94,7 +86,7 @@ namespace Neo.UnitTests.IO.Caching
 
         public override bool Equals(object obj)
         {
-            if (!(obj is MyValue key)) return false;
+            if (obj is not MyValue key) return false;
             return Equals(key);
         }
 
@@ -104,23 +96,21 @@ namespace Neo.UnitTests.IO.Caching
         }
     }
 
-    class MyDataCache<TKey, TValue> : DataCache
-           where TKey : IEquatable<TKey>, ISerializable, new()
-           where TValue : class, ISerializable, new()
+    class MyDataCache<MyKey, MyValue> : DataCache
     {
-        public Dictionary<TKey, TValue> InnerDict = new Dictionary<TKey, TValue>();
+        public Dictionary<StorageKey, StorageItem> InnerDict = new Dictionary<StorageKey, StorageItem>();
 
-        protected override void DeleteInternal(TKey key)
+        protected override void DeleteInternal(StorageKey key)
         {
             InnerDict.Remove(key);
         }
 
-        protected override void AddInternal(TKey key, TValue value)
+        protected override void AddInternal(StorageKey key, StorageItem value)
         {
             InnerDict.Add(key, value);
         }
 
-        protected override IEnumerable<(TKey, TValue)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
+        protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
             if (direction == SeekDirection.Forward)
                 return InnerDict.OrderBy(kvp => kvp.Key).Where(kvp => ByteArrayComparer.Default.Compare(kvp.Key.ToArray(), keyOrPrefix) >= 0).Select(p => (p.Key, p.Value));
@@ -128,30 +118,30 @@ namespace Neo.UnitTests.IO.Caching
                 return InnerDict.OrderByDescending(kvp => kvp.Key).Where(kvp => ByteArrayComparer.Reverse.Compare(kvp.Key.ToArray(), keyOrPrefix) >= 0).Select(p => (p.Key, p.Value));
         }
 
-        protected override TValue GetInternal(TKey key)
+        protected override StorageItem GetInternal(StorageKey key)
         {
-            if (InnerDict.TryGetValue(key, out TValue value))
+            if (InnerDict.TryGetValue(key, out StorageItem value))
             {
                 return value.Clone();
             }
             throw new KeyNotFoundException();
         }
 
-        protected override TValue TryGetInternal(TKey key)
+        protected override StorageItem TryGetInternal(StorageKey key)
         {
-            if (InnerDict.TryGetValue(key, out TValue value))
+            if (InnerDict.TryGetValue(key, out StorageItem value))
             {
                 return value.Clone();
             }
             return null;
         }
 
-        protected override bool ContainsInternal(TKey key)
+        protected override bool ContainsInternal(StorageKey key)
         {
             return InnerDict.ContainsKey(key);
         }
 
-        protected override void UpdateInternal(TKey key, TValue value)
+        protected override void UpdateInternal(StorageKey key, StorageItem value)
         {
             InnerDict[key] = value;
         }
@@ -291,10 +281,10 @@ namespace Neo.UnitTests.IO.Caching
             items[0].Value.Should().Be(new MyValue("value3"));
             items[1].Key.Should().Be(new MyKey("key2"));
             items[1].Value.Should().Be(new MyValue("value2"));
-            items.Count().Should().Be(3);
+            items.Length.Should().Be(3);
 
             items = myDataCache.Seek(new MyKey("key5").ToArray(), SeekDirection.Forward).ToArray();
-            items.Count().Should().Be(0);
+            items.Length.Should().Be(0);
         }
 
         [TestMethod]
@@ -311,7 +301,7 @@ namespace Neo.UnitTests.IO.Caching
             items[0].Value.Should().Be(new MyValue("value3"));
             items[1].Key.Should().Be(new MyKey("key4"));
             items[1].Value.Should().Be(new MyValue("value4"));
-            items.Count().Should().Be(2);
+            items.Length.Should().Be(2);
 
             // case 2 Need to sort the cache of myDataCache
 
@@ -327,7 +317,7 @@ namespace Neo.UnitTests.IO.Caching
             items[0].Value.Should().Be(new MyValue("value3"));
             items[1].Key.Should().Be(new MyKey("key4"));
             items[1].Value.Should().Be(new MyValue("value4"));
-            items.Count().Should().Be(2);
+            items.Length.Should().Be(2);
 
             // case 3 FindRange by Backward
 
@@ -344,7 +334,7 @@ namespace Neo.UnitTests.IO.Caching
             items[0].Value.Should().Be(new MyValue("value5"));
             items[1].Key.Should().Be(new MyKey("key4"));
             items[1].Value.Should().Be(new MyValue("value4"));
-            items.Count().Should().Be(2);
+            items.Length.Should().Be(2);
         }
 
         [TestMethod]
