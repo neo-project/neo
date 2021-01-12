@@ -54,12 +54,12 @@ namespace Neo.UnitTests.SmartContract
                 Transactions = new Transaction[] { tx }
             };
 
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
 
             using (var script = new ScriptBuilder())
             {
                 script.EmitPush(block.Hash.ToArray());
-                script.EmitDynamicCall(NativeContract.Ledger.Hash, "getBlock"); 
+                script.EmitDynamicCall(NativeContract.Ledger.Hash, "getBlock");
 
                 // Without block
 
@@ -72,13 +72,21 @@ namespace Neo.UnitTests.SmartContract
 
                 // Not traceable block
 
-                var height = snapshot.BlockHashIndex.GetAndChange();
+                const byte Prefix_Block = 5;
+                const byte Prefix_BlockHash = 9;
+                const byte Prefix_Transaction = 11;
+                const byte Prefix_CurrentBlock = 12;
+
+                var height = snapshot[NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>();
                 height.Index = block.Index + ProtocolSettings.Default.MaxTraceableBlocks;
 
-                var blocks = snapshot.Blocks;
-                var txs = snapshot.Transactions;
-                blocks.Add(block.Hash, NativeContract.Ledger.GetTrimmedBlock(snapshot, block.Hash));
-                txs.Add(tx.Hash, new TransactionState() { Transaction = tx, BlockIndex = block.Index});
+                snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_BlockHash, block.Hash), new StorageItem(block.Hash.ToArray(), true));
+                snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Block, block.Hash), new StorageItem(LedgerContract.Trim(block).ToArray(), true));
+                snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Transaction, tx.Hash), new StorageItem(new TransactionState
+                {
+                    BlockIndex = block.Index,
+                    Transaction = tx
+                }, true));
 
                 engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
                 engine.LoadScript(script.ToArray());
@@ -99,11 +107,6 @@ namespace Neo.UnitTests.SmartContract
 
                 var array = engine.ResultStack.Pop<VM.Types.Array>();
                 Assert.AreEqual(block.Hash, new UInt256(array[0].GetSpan()));
-
-                // Clean
-
-                blocks.Delete(block.Hash);
-                txs.Delete(tx.Hash);
             }
         }
 

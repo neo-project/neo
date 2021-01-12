@@ -55,12 +55,12 @@ namespace Neo.UnitTests
             return manifest;
         }
 
-        public static StorageKey CreateStorageKey(this NativeContract contract, byte prefix, ISerializable key)
+        public static StorageKey CreateStorageKey(this NativeContract contract, byte prefix, ISerializable key = null)
         {
             return new StorageKey
             {
                 Id = contract.Id,
-                Key = key.ToArray().Prepend(prefix).ToArray()
+                Key = key == null ? new byte[] { prefix } : key.ToArray().Prepend(prefix).ToArray()
             };
         }
 
