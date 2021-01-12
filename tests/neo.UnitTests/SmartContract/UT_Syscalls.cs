@@ -37,7 +37,7 @@ namespace Neo.UnitTests.SmartContract
                 Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
             };
 
-            var block = new Block()
+            var block = new TrimmedBlock()
             {
                 Index = 0,
                 Timestamp = 2,
@@ -51,15 +51,14 @@ namespace Neo.UnitTests.SmartContract
                 MerkleRoot = UInt256.Zero,
                 NextConsensus = UInt160.Zero,
                 ConsensusData = new ConsensusData() { Nonce = 1, PrimaryIndex = 1 },
-                Transactions = new Transaction[] { tx }
+                Hashes = new UInt256[] { new ConsensusData() { Nonce = 1, PrimaryIndex = 1 }.Hash, tx.Hash }
             };
 
             var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitPush(block.Hash.ToArray());
-                script.EmitDynamicCall(NativeContract.Ledger.Hash, "getBlock");
+                script.EmitDynamicCall(NativeContract.Ledger.Hash, "getBlock", block.Hash.ToArray());
 
                 // Without block
 
@@ -78,7 +77,7 @@ namespace Neo.UnitTests.SmartContract
                 var height = snapshot[NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>();
                 height.Index = block.Index + ProtocolSettings.Default.MaxTraceableBlocks;
 
-                UT_SmartContractHelper.BlocksAdd(snapshot, block.Hash, LedgerContract.Trim(block));
+                UT_SmartContractHelper.BlocksAdd(snapshot, block.Hash, block);
                 snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Transaction, tx.Hash), new StorageItem(new TransactionState
                 {
                     BlockIndex = block.Index,

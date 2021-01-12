@@ -181,7 +181,7 @@ namespace Neo.SmartContract.Native
             return GetTransaction(snapshot, block.Hashes[txIndex + 1]);
         }
 
-        internal static TrimmedBlock Trim(Block block)
+        private static TrimmedBlock Trim(Block block)
         {
             return new TrimmedBlock
             {
