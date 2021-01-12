@@ -4,6 +4,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
+using Neo.UnitTests.SmartContract;
 using System.IO;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
@@ -16,6 +17,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestInitialize]
         public void TestSetup()
         {
+            TestBlockchain.InitializeMockNeoSystem();
             uut = new Header();
         }
 
@@ -41,8 +43,22 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void TrimTest()
         {
             UInt256 val256 = UInt256.Zero;
+            var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
             TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _);
-            var trim = NativeContract.Ledger.GetTrimmedBlock(Blockchain.Singleton.GetSnapshot(), uut.Hash);
+            uut.Witness = new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] };
+
+            UT_SmartContractHelper.BlocksAdd(snapshot, uut.Hash, new TrimmedBlock()
+            {
+                Timestamp = uut.Timestamp,
+                PrevHash = uut.PrevHash,
+                MerkleRoot = uut.MerkleRoot,
+                ConsensusData = new ConsensusData(),
+                Hashes = new UInt256[0],
+                NextConsensus = uut.NextConsensus,
+                Witness = uut.Witness
+            });
+
+            var trim = NativeContract.Ledger.GetTrimmedBlock(snapshot, uut.Hash);
 
             trim.Version.Should().Be(uut.Version);
             trim.PrevHash.Should().Be(uut.PrevHash);
@@ -50,7 +66,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             trim.Timestamp.Should().Be(uut.Timestamp);
             trim.Index.Should().Be(uut.Index);
             trim.NextConsensus.Should().Be(uut.NextConsensus);
-            trim.Witness.Should().Be(uut.Witness);
+            trim.Witness.Should().BeEquivalentTo(uut.Witness);
             trim.Hashes.Length.Should().Be(0);
         }
 

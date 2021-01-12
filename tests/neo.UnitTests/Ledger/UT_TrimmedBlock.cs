@@ -33,6 +33,12 @@ namespace Neo.UnitTests.Ledger
             };
         }
 
+        [TestInitialize]
+        public void Init()
+        {
+            TestBlockchain.InitializeMockNeoSystem();
+        }
+
         [TestMethod]
         public void TestGetBlock()
         {

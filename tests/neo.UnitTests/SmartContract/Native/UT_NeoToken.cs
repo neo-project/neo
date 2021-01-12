@@ -326,7 +326,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Check_RegisterValidator(snapshot, Blockchain.StandbyCommittee[i].ToArray(), persistingBlock);
             }
 
-            Check_OnPersist(snapshot, persistingBlock);
+            Check_OnPersist(snapshot, persistingBlock).Should().BeTrue();
 
             committeemembers = NativeContract.NEO.GetCommittee(snapshot);
             committeemembers.Length.Should().Be(ProtocolSettings.Default.CommitteeMembersCount);
@@ -406,9 +406,18 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_CommitteeBonus()
         {
             var snapshot = _snapshot.CreateSnapshot();
-            var persistingBlock = new Block { Index = 1, Transactions = Array.Empty<Transaction>() };
+            var persistingBlock = new Block
+            {
+                Index = 1,
+                Transactions = Array.Empty<Transaction>(),
+                Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() },
+                ConsensusData = new ConsensusData(),
+                MerkleRoot = UInt256.Zero,
+                NextConsensus = UInt160.Zero,
+                PrevHash = UInt256.Zero
+            };
 
-            Check_PostPersist(snapshot, persistingBlock);
+            Check_PostPersist(snapshot, persistingBlock).Should().BeTrue();
 
             var committee = Blockchain.StandbyCommittee;
             NativeContract.GAS.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[0]).ScriptHash.ToArray()).Should().Be(50000000);
@@ -721,12 +730,21 @@ namespace Neo.UnitTests.SmartContract.Native
                 }));
                 cachedCommittee.Add((member, 200 * 10000));
             }
-            snapshot[new KeyBuilder(-2, 14)].Value = BinarySerializer.Serialize(cachedCommittee.ToStackItem(null), 4096);
+            snapshot.GetOrAdd(new KeyBuilder(-2, 14), () => new StorageItem()).Value = BinarySerializer.Serialize(cachedCommittee.ToStackItem(null), 4096);
 
             var item = snapshot.GetAndChange(new KeyBuilder(-2, 1), () => new StorageItem());
             item.Value = ((BigInteger)2100 * 10000L).ToByteArray();
 
-            var persistingBlock = new Block { Index = 0, Transactions = Array.Empty<Transaction>() };
+            var persistingBlock = new Block
+            {
+                Index = 0,
+                Transactions = Array.Empty<Transaction>(),
+                Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() },
+                ConsensusData = new ConsensusData(),
+                MerkleRoot = UInt256.Zero,
+                NextConsensus = UInt160.Zero,
+                PrevHash = UInt256.Zero
+            };
             Check_PostPersist(snapshot, persistingBlock).Should().BeTrue();
 
             var committee = Blockchain.StandbyCommittee.OrderBy(p => p).ToArray();
@@ -741,7 +759,16 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Next block
 
-            persistingBlock = new Block { Index = 1, Transactions = Array.Empty<Transaction>() };
+            persistingBlock = new Block
+            {
+                Index = 1,
+                Transactions = Array.Empty<Transaction>(),
+                Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() },
+                ConsensusData = new ConsensusData(),
+                MerkleRoot = UInt256.Zero,
+                NextConsensus = UInt160.Zero,
+                PrevHash = UInt256.Zero
+            };
             Check_PostPersist(snapshot, persistingBlock).Should().BeTrue();
 
             NativeContract.NEO.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[1]).ScriptHash).Should().Be(0);
@@ -751,7 +778,16 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Next block
 
-            persistingBlock = new Block { Index = 21, Transactions = Array.Empty<Transaction>() };
+            persistingBlock = new Block
+            {
+                Index = 21,
+                Transactions = Array.Empty<Transaction>(),
+                Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() },
+                ConsensusData = new ConsensusData(),
+                MerkleRoot = UInt256.Zero,
+                NextConsensus = UInt160.Zero,
+                PrevHash = UInt256.Zero
+            };
             Check_PostPersist(snapshot, persistingBlock).Should().BeTrue();
 
             accountA = Blockchain.StandbyCommittee.OrderBy(p => p).ToArray()[2];
