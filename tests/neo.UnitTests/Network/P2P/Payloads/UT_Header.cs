@@ -1,7 +1,9 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract.Native;
 using System.IO;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
@@ -40,7 +42,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _);
-            var trim = uut.Trim();
+            var trim = NativeContract.Ledger.GetTrimmedBlock(Blockchain.Singleton.GetSnapshot(), uut.Hash);
 
             trim.Version.Should().Be(uut.Version);
             trim.PrevHash.Should().Be(uut.PrevHash);
@@ -64,16 +66,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             using (MemoryStream ms = new MemoryStream(hex.HexToBytes(), false))
             {
-                using (BinaryReader reader = new BinaryReader(ms))
-                {
-                    uut.Deserialize(reader);
-                }
+                using BinaryReader reader = new BinaryReader(ms);
+                uut.Deserialize(reader);
             }
 
-            assertStandardHeaderTestVals(val256, merkRoot, val160, timestampVal, indexVal, scriptVal);
+            AssertStandardHeaderTestVals(val256, merkRoot, val160, timestampVal, indexVal, scriptVal);
         }
 
-        private void assertStandardHeaderTestVals(UInt256 val256, UInt256 merkRoot, UInt160 val160, ulong timestampVal, uint indexVal, Witness scriptVal)
+        private void AssertStandardHeaderTestVals(UInt256 val256, UInt256 merkRoot, UInt160 val160, ulong timestampVal, uint indexVal, Witness scriptVal)
         {
             uut.PrevHash.Should().Be(val256);
             uut.MerkleRoot.Should().Be(merkRoot);

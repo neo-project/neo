@@ -42,7 +42,7 @@ namespace Neo.UnitTests.IO.Caching
 
         public override bool Equals(object obj)
         {
-            if (!(obj is MyKey key)) return false;
+            if (obj is not MyKey key) return false;
             return Equals(key);
         }
 

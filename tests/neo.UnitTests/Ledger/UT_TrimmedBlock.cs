@@ -2,7 +2,9 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.UnitTests.IO.Caching;
 using Neo.VM;
 using System;
 using System.IO;
@@ -24,10 +26,10 @@ namespace Neo.UnitTests.Ledger
                 NextConsensus = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
                 Witness = new Witness
                 {
-                    InvocationScript = new byte[0],
+                    InvocationScript = Array.Empty<byte>(),
                     VerificationScript = new[] { (byte)OpCode.PUSH1 }
                 },
-                Hashes = new UInt256[0]
+                Hashes = Array.Empty<UInt256>()
             };
         }
 
@@ -55,12 +57,12 @@ namespace Neo.UnitTests.Ledger
                 Transaction = tx2,
                 BlockIndex = 1
             };
-            snapshot.Transactions.Add(tx1.Hash, state1);
-            snapshot.Transactions.Add(tx2.Hash, state2);
+            snapshot.Add(new MyKey(tx1.Hash), new MyValue(state1.Transaction.Hash.ToString()));
+            snapshot.Add(new MyKey(tx2.Hash), new MyValue(state2.Transaction.Hash.ToString()));
 
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
             tblock.Hashes = new UInt256[] { tx1.Hash, tx2.Hash };
-            Block block = tblock.GetBlock(snapshot.Transactions);
+            Block block = NativeContract.Ledger.GetBlock(snapshot, tblock.Hash);
 
             block.Index.Should().Be(1);
             block.MerkleRoot.Should().Be(UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"));

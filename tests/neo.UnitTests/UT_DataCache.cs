@@ -1,6 +1,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
 using Neo.Ledger;
+using Neo.Persistence;
+using Neo.SmartContract;
 using System.Linq;
 
 namespace Neo.UnitTests
@@ -19,7 +21,7 @@ namespace Neo.UnitTests
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var storages = snapshot.Storages.CreateSnapshot();
-            var cache = new CloneCache<StorageKey, StorageItem>(storages);
+            var cache = new ClonedCache(storages);
 
             storages.Add
                 (
@@ -58,7 +60,7 @@ namespace Neo.UnitTests
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var storages = snapshot.Storages.CreateSnapshot();
-            var cache = new CloneCache<StorageKey, StorageItem>(storages);
+            var cache = new ClonedCache(storages);
 
             storages.Add
                 (
@@ -90,7 +92,7 @@ namespace Neo.UnitTests
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var storages = snapshot.Storages.CreateSnapshot();
-            var cache = new CloneCache<StorageKey, StorageItem>(storages);
+            var cache = new ClonedCache(storages);
 
             cache.Add
                 (

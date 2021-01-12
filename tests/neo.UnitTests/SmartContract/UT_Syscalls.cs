@@ -3,6 +3,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
@@ -76,7 +77,7 @@ namespace Neo.UnitTests.SmartContract
 
                 var blocks = snapshot.Blocks;
                 var txs = snapshot.Transactions;
-                blocks.Add(block.Hash, block.Trim());
+                blocks.Add(block.Hash, NativeContract.Ledger.GetTrimmedBlock(snapshot, block.Hash));
                 txs.Add(tx.Hash, new TransactionState() { Transaction = tx, BlockIndex = block.Index, VMState = VMState.HALT });
 
                 engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
@@ -316,7 +317,7 @@ namespace Neo.UnitTests.SmartContract
         public void System_Runtime_GetInvocationCounter()
         {
             ContractState contractA, contractB, contractC;
-            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
 
             // Create dummy contracts
 
