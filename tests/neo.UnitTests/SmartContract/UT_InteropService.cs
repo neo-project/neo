@@ -418,7 +418,7 @@ namespace Neo.UnitTests.SmartContract
                 IsConstant = true
             };
             snapshot.AddContract(state.Hash, state);
-            snapshot.Storages.Add(storageKey, storageItem);
+            snapshot.Add(storageKey, storageItem);
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
 
@@ -475,7 +475,7 @@ namespace Neo.UnitTests.SmartContract
                 IsConstant = true
             };
             snapshot.AddContract(state.Hash, state);
-            snapshot.Storages.Add(storageKey, storageItem);
+            snapshot.Add(storageKey, storageItem);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
             key = new byte[] { 0x01 };
@@ -509,7 +509,7 @@ namespace Neo.UnitTests.SmartContract
                 IsConstant = false
             };
             snapshot.AddContract(state.Hash, state);
-            snapshot.Storages.Add(storageKey, storageItem);
+            snapshot.Add(storageKey, storageItem);
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
             var key = new byte[] { 0x01 };
@@ -539,7 +539,7 @@ namespace Neo.UnitTests.SmartContract
                 IsConstant = false
             };
             snapshot.AddContract(state.Hash, state);
-            snapshot.Storages.Add(storageKey, storageItem);
+            snapshot.Add(storageKey, storageItem);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
             var key = new byte[] { 0x01 };
@@ -611,15 +611,15 @@ namespace Neo.UnitTests.SmartContract
                 Key = new byte[] { 0x01 }
             };
             snapshot.AddContract(scriptHash, state);
-            snapshot.Storages.Add(storageKey, storageItem);
+            snapshot.Add(storageKey, storageItem);
             snapshot.DestroyContract(scriptHash);
-            snapshot.Storages.Find(BitConverter.GetBytes(0x43000000)).Any().Should().BeFalse();
+            snapshot.Find(BitConverter.GetBytes(0x43000000)).Any().Should().BeFalse();
 
             //storages are removed
             state = TestUtils.GetContract();
             snapshot.AddContract(scriptHash, state);
             snapshot.DestroyContract(scriptHash);
-            snapshot.Storages.Find(BitConverter.GetBytes(0x43000000)).Any().Should().BeFalse();
+            snapshot.Find(BitConverter.GetBytes(0x43000000)).Any().Should().BeFalse();
         }
 
         [TestMethod]

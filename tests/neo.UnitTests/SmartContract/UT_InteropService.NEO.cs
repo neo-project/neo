@@ -214,11 +214,11 @@ namespace Neo.UnitTests.SmartContract
                 Key = new byte[] { 0x01 }
             };
             snapshot.AddContract(state.Hash, state);
-            snapshot.Storages.Add(storageKey, storageItem);
+            snapshot.Add(storageKey, storageItem);
             state.UpdateCounter.Should().Be(0);
             snapshot.UpdateContract(state.Hash, nef.ToArray(), manifest.ToJson().ToByteArray(false));
             var ret = NativeContract.ContractManagement.GetContract(snapshot, state.Hash);
-            snapshot.Storages.Find(BitConverter.GetBytes(state.Id)).ToList().Count().Should().Be(1);
+            snapshot.Find(BitConverter.GetBytes(state.Id)).ToList().Count().Should().Be(1);
             ret.UpdateCounter.Should().Be(1);
             ret.Id.Should().Be(state.Id);
             ret.Manifest.ToJson().ToString().Should().Be(manifest.ToJson().ToString());
@@ -273,7 +273,7 @@ namespace Neo.UnitTests.SmartContract
                 Key = new byte[] { 0x01 }
             };
             snapshot.AddContract(state.Hash, state);
-            snapshot.Storages.Add(storageKey, storageItem);
+            snapshot.Add(storageKey, storageItem);
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
 
