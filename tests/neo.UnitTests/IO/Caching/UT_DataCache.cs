@@ -11,7 +11,7 @@ using System.Text;
 
 namespace Neo.UnitTests.IO.Caching
 {
-    class MyKey : StorageKey, ISerializable, IEquatable<MyKey>, IComparable<MyKey>
+    class MyKey : StorageKey, ISerializable
     {
         public int Size => Key.Length;
 
@@ -33,27 +33,6 @@ namespace Neo.UnitTests.IO.Caching
         public void Serialize(BinaryWriter writer)
         {
             writer.Write(Key);
-        }
-
-        public bool Equals(MyKey other)
-        {
-            return Key.Equals(other.Key);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj is not MyKey key) return false;
-            return Equals(key);
-        }
-
-        public override int GetHashCode()
-        {
-            return Key.GetHashCode();
-        }
-
-        public int CompareTo(MyKey obj)
-        {
-            return Encoding.Default.GetString(Key).CompareTo(obj.Key);
         }
     }
 
@@ -81,7 +60,7 @@ namespace Neo.UnitTests.IO.Caching
 
         public bool Equals(MyValue other)
         {
-            return (Value == null && other.Value == null) || Value.Equals(other.Value);
+            return (Value == null && other.Value == null) || Value.SequenceEqual(other.Value);
         }
 
         public override bool Equals(object obj)
@@ -92,7 +71,7 @@ namespace Neo.UnitTests.IO.Caching
 
         public override int GetHashCode()
         {
-            return Value.GetHashCode();
+            return Value.Length;
         }
     }
 

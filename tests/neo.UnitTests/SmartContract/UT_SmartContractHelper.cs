@@ -186,7 +186,7 @@ namespace Neo.UnitTests.SmartContract
 
         public static void BlocksAdd(DataCache snapshot, UInt256 hash, TrimmedBlock block)
         {
-            snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_BlockHash, hash), new StorageItem(hash.ToArray(), true));
+            snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_BlockHash, block.Index), new StorageItem(hash.ToArray(), true));
             snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Block, hash), new StorageItem(block.ToArray(), true));
         }
     }
