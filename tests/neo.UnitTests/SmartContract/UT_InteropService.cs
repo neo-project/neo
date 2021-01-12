@@ -335,6 +335,13 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void TestBlockchain_GetHeight()
+        {
+            var engine = GetEngine(true, true);
+            NativeContract.Ledger.CurrentIndex(engine.Snapshot).Should().Be(0);
+        }
+
+        [TestMethod]
         public void TestBlockchain_GetBlock()
         {
             var engine = GetEngine(true, true);
