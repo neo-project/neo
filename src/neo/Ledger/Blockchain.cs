@@ -10,10 +10,12 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 
@@ -66,6 +68,7 @@ namespace Neo.Ledger
         private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new Dictionary<uint, UnverifiedBlocksList>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
         private SnapshotView currentSnapshot;
+        private ImmutableHashSet<UInt160> extensibleWitnessWhiteList;
 
         public IStore Store { get; }
         public ReadOnlyView View { get; }
@@ -288,8 +291,12 @@ namespace Neo.Ledger
                 Transaction transaction => OnNewTransaction(transaction),
                 _ => OnNewInventory(inventory)
             };
-            if (relay && result == VerifyResult.Succeed)
-                system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = inventory });
+            if (result == VerifyResult.Succeed)
+            {
+                if (relay) system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = inventory });
+                foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
+                    plugin.OnVerifiedInventory(inventory);
+            }
             SendRelayResult(inventory, result);
         }
 
@@ -390,8 +397,7 @@ namespace Neo.Ledger
                     snapshot.HeaderHashIndex.GetAndChange().Set(block);
                 }
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
-                snapshot.PersistingBlock = block;
-                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot))
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block))
                 {
                     engine.LoadScript(onPersistScript);
                     if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
@@ -413,7 +419,7 @@ namespace Neo.Ledger
                     clonedSnapshot.Transactions.Add(tx.Hash, state);
                     clonedSnapshot.Transactions.Commit();
 
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, tx.SystemFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, tx.SystemFee))
                     {
                         engine.LoadScript(tx.Script);
                         state.VMState = engine.Execute();
@@ -431,7 +437,7 @@ namespace Neo.Ledger
                     }
                 }
                 snapshot.BlockHashIndex.GetAndChange().Set(block);
-                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot))
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block))
                 {
                     engine.LoadScript(postPersistScript);
                     if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
@@ -440,14 +446,14 @@ namespace Neo.Ledger
                     all_application_executed.Add(application_executed);
                 }
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
-                    plugin.OnPersist(snapshot, all_application_executed);
+                    plugin.OnPersist(block, snapshot, all_application_executed);
                 snapshot.Commit();
                 List<Exception> commitExceptions = null;
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                 {
                     try
                     {
-                        plugin.OnCommit(snapshot);
+                        plugin.OnCommit(block, snapshot);
                     }
                     catch (Exception ex)
                     {
@@ -517,6 +523,29 @@ namespace Neo.Ledger
         private void UpdateCurrentSnapshot()
         {
             Interlocked.Exchange(ref currentSnapshot, GetSnapshot())?.Dispose();
+            var builder = ImmutableHashSet.CreateBuilder<UInt160>();
+            builder.Add(NativeContract.NEO.GetCommitteeAddress(currentSnapshot));
+            var validators = NativeContract.NEO.GetNextBlockValidators(currentSnapshot);
+            builder.Add(GetConsensusAddress(validators));
+            builder.UnionWith(validators.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()));
+            var oracles = NativeContract.RoleManagement.GetDesignatedByRole(currentSnapshot, Role.Oracle, currentSnapshot.Height);
+            if (oracles.Length > 0)
+            {
+                builder.Add(GetConsensusAddress(oracles));
+                builder.UnionWith(oracles.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()));
+            }
+            var stateValidators = NativeContract.RoleManagement.GetDesignatedByRole(currentSnapshot, Role.StateValidator, currentSnapshot.Height);
+            if (stateValidators.Length > 0)
+            {
+                builder.Add(GetConsensusAddress(stateValidators));
+                builder.UnionWith(stateValidators.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()));
+            }
+            extensibleWitnessWhiteList = builder.ToImmutable();
+        }
+
+        internal bool IsExtensibleWitnessWhiteListed(UInt160 address)
+        {
+            return extensibleWitnessWhiteList.Contains(address);
         }
     }
 
@@ -532,7 +561,7 @@ namespace Neo.Ledger
             switch (message)
             {
                 case Block _:
-                case ConsensusPayload _:
+                case ExtensiblePayload _:
                 case Terminated _:
                     return true;
                 default:

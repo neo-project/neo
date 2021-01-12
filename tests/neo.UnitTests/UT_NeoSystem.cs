@@ -22,8 +22,5 @@ namespace Neo.UnitTests
 
         [TestMethod]
         public void TestGetTaskManager() => neoSystem.TaskManager.Should().NotBeNull();
-
-        [TestMethod]
-        public void TestGetConsensus() => neoSystem.Consensus.Should().BeNull();
     }
 }

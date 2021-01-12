@@ -1,7 +1,9 @@
 using Neo.Cryptography;
 using Neo.IO;
+using Neo.IO.Json;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace Neo.SmartContract
 {
@@ -116,6 +118,19 @@ namespace Neo.SmartContract
         public static uint ComputeChecksum(NefFile file)
         {
             return BitConverter.ToUInt32(Crypto.Hash256(file.ToArray().AsSpan(..^sizeof(int))));
+        }
+
+        public JObject ToJson()
+        {
+            return new JObject
+            {
+                ["magic"] = Magic,
+                ["compiler"] = Compiler,
+                ["version"] = Version,
+                ["tokens"] = new JArray(Tokens.Select(p => p.ToJson())),
+                ["script"] = Convert.ToBase64String(Script),
+                ["checksum"] = CheckSum
+            };
         }
     }
 }

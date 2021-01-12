@@ -279,7 +279,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Execute
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 100_000_000);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, 100_000_000);
                 engine.LoadScript(script.ToArray());
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
 
@@ -324,9 +324,9 @@ namespace Neo.UnitTests.SmartContract
             {
                 script.EmitSysCall(ApplicationEngine.System_Runtime_GetInvocationCounter);
 
-                contractA = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP }.Concat(script.ToArray()).ToArray() };
-                contractB = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() };
-                contractC = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() };
+                contractA = new ContractState() { Nef = new NefFile { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP }.Concat(script.ToArray()).ToArray() } };
+                contractB = new ContractState() { Nef = new NefFile { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() } };
+                contractC = new ContractState() { Nef = new NefFile { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() } };
                 contractA.Hash = contractA.Script.ToScriptHash();
                 contractB.Hash = contractB.Script.ToScriptHash();
                 contractC.Hash = contractC.Script.ToScriptHash();
@@ -349,10 +349,10 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitDynamicCall(contractA.Hash, "dummyMain", true, 0, 1);
-                script.EmitDynamicCall(contractB.Hash, "dummyMain", true, 0, 1);
-                script.EmitDynamicCall(contractB.Hash, "dummyMain", true, 0, 1);
-                script.EmitDynamicCall(contractC.Hash, "dummyMain", true, 0, 1);
+                script.EmitDynamicCall(contractA.Hash, "dummyMain", 0, 1);
+                script.EmitDynamicCall(contractB.Hash, "dummyMain", 0, 1);
+                script.EmitDynamicCall(contractB.Hash, "dummyMain", 0, 1);
+                script.EmitDynamicCall(contractC.Hash, "dummyMain", 0, 1);
 
                 // Execute
 

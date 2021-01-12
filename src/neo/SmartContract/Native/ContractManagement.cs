@@ -14,8 +14,6 @@ namespace Neo.SmartContract.Native
 {
     public sealed class ContractManagement : NativeContract
     {
-        public override int Id => 0;
-
         private const byte Prefix_MinimumDeploymentFee = 20;
         private const byte Prefix_NextAvailableId = 15;
         private const byte Prefix_Contract = 8;
@@ -82,12 +80,12 @@ namespace Neo.SmartContract.Native
         {
             foreach (NativeContract contract in Contracts)
             {
-                if (contract.ActiveBlockIndex != engine.Snapshot.PersistingBlock.Index)
+                if (contract.ActiveBlockIndex != engine.PersistingBlock.Index)
                     continue;
                 engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
                 {
                     Id = contract.Id,
-                    Script = contract.Script,
+                    Nef = contract.Nef,
                     Hash = contract.Hash,
                     Manifest = contract.Manifest
                 }));
@@ -145,7 +143,7 @@ namespace Neo.SmartContract.Native
             {
                 Id = GetNextAvailableId(engine.Snapshot),
                 UpdateCounter = 0,
-                Script = nef.Script,
+                Nef = nef,
                 Hash = hash,
                 Manifest = ContractManifest.Parse(manifest)
             };
@@ -180,10 +178,8 @@ namespace Neo.SmartContract.Native
                 if (nefFile.Length == 0)
                     throw new ArgumentException($"Invalid NefFile Length: {nefFile.Length}");
 
-                NefFile nef = nefFile.AsSerializable<NefFile>();
-
-                // Update script
-                contract.Script = nef.Script;
+                // Update nef
+                contract.Nef = nefFile.AsSerializable<NefFile>();
             }
             if (manifest != null)
             {

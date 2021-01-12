@@ -52,7 +52,7 @@ namespace Neo.UnitTests.SmartContract
                 snapshot.DeleteContract(scriptHash2);
                 snapshot.AddContract(scriptHash2, new ContractState()
                 {
-                    Script = script.ToArray(),
+                    Nef = new NefFile { Script = script.ToArray() },
                     Hash = script.ToArray().ToScriptHash(),
                     Manifest = TestUtils.CreateManifest("test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer),
                 });
@@ -89,7 +89,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Call script
 
-                script.EmitDynamicCall(scriptHash2, "test", true, "testEvent2", 1);
+                script.EmitDynamicCall(scriptHash2, "test", "testEvent2", 1);
 
                 // Drop return
 
@@ -141,7 +141,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Call script
 
-                script.EmitDynamicCall(scriptHash2, "test", true, "testEvent2", 1);
+                script.EmitDynamicCall(scriptHash2, "test", "testEvent2", 1);
 
                 // Drop return
 
@@ -217,14 +217,14 @@ namespace Neo.UnitTests.SmartContract
             var contract = new ContractState()
             {
                 Manifest = TestUtils.CreateManifest("test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer),
-                Script = scriptA.ToArray(),
+                Nef = new NefFile { Script = scriptA.ToArray() },
                 Hash = scriptA.ToArray().ToScriptHash()
             };
-            engine = GetEngine(true, true, false);
+            engine = GetEngine(true, true, addScript: false);
             engine.Snapshot.AddContract(contract.Hash, contract);
 
             using ScriptBuilder scriptB = new ScriptBuilder();
-            scriptB.EmitDynamicCall(contract.Hash, "test", true, 0, 1);
+            scriptB.EmitDynamicCall(contract.Hash, "test", 0, 1);
             engine.LoadScript(scriptB.ToArray());
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -281,9 +281,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestRuntime_GetTime()
         {
             Block block = new Block();
-            TestUtils.SetupBlockWithValues(block, UInt256.Zero, out _, out _, out _, out _, out _, out _, 0);
-            var engine = GetEngine(true, true);
-            engine.Snapshot.PersistingBlock = block;
+            var engine = GetEngine(true, true, hasBlock: true);
             engine.GetTime().Should().Be(block.Timestamp);
         }
 
@@ -598,29 +596,23 @@ namespace Neo.UnitTests.SmartContract
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
 
-            engine.Push(args[1]); engine.Push(args[0]);
-            engine.CallContract(state.Hash, method, CallFlags.All, false, (ushort)args.Count);
+            engine.CallContract(state.Hash, method, CallFlags.All, args);
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.Create("a");
-            engine.Push(args[1]); engine.Push(args[0]);
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(state.Hash, method, CallFlags.All, false, (ushort)args.Count));
+            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(state.Hash, method, CallFlags.All, args));
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.CreateWildcard();
-            engine.Push(args[1]); engine.Push(args[0]);
-            engine.CallContract(state.Hash, method, CallFlags.All, false, (ushort)args.Count);
+            engine.CallContract(state.Hash, method, CallFlags.All, args);
 
-            engine.Push(args[1]); engine.Push(args[0]);
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(UInt160.Zero, method, CallFlags.All, false, (ushort)args.Count));
+            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(UInt160.Zero, method, CallFlags.All, args));
         }
 
         [TestMethod]
         public void TestContract_Destroy()
         {
             var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
-            snapshot.PersistingBlock = new Block();
-
             var state = TestUtils.GetContract();
             var scriptHash = UInt160.Parse("0xcb9f3b7c6fb1cf2c13a40637c189bdd066a272b4");
             var storageItem = new StorageItem
@@ -660,31 +652,13 @@ namespace Neo.UnitTests.SmartContract
             tx.Script = new byte[] { 0x01, 0x02, 0x03 };
         }
 
-        private static ApplicationEngine GetEngine(bool hasContainer = false, bool hasSnapshot = false, bool addScript = true, long gas = 20_00000000)
+        private static ApplicationEngine GetEngine(bool hasContainer = false, bool hasSnapshot = false, bool hasBlock = false, bool addScript = true, long gas = 20_00000000)
         {
-            var tx = TestUtils.GetTransaction(UInt160.Zero);
-            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
-            ApplicationEngine engine;
-            if (hasContainer && hasSnapshot)
-            {
-                engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, gas);
-            }
-            else if (hasContainer && !hasSnapshot)
-            {
-                engine = ApplicationEngine.Create(TriggerType.Application, tx, null, gas);
-            }
-            else if (!hasContainer && hasSnapshot)
-            {
-                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas);
-            }
-            else
-            {
-                engine = ApplicationEngine.Create(TriggerType.Application, null, null, gas);
-            }
-            if (addScript)
-            {
-                engine.LoadScript(new byte[] { 0x01 });
-            }
+            var tx = hasContainer ? TestUtils.GetTransaction(UInt160.Zero) : null;
+            var snapshot = hasSnapshot ? Blockchain.Singleton.GetSnapshot().Clone() : null;
+            var block = hasBlock ? new Block() : null;
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, gas);
+            if (addScript) engine.LoadScript(new byte[] { 0x01 });
             return engine;
         }
     }

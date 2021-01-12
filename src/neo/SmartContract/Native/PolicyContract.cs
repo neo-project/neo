@@ -11,8 +11,6 @@ namespace Neo.SmartContract.Native
 {
     public sealed class PolicyContract : NativeContract
     {
-        public override int Id => -3;
-
         public const uint DefaultExecFeeFactor = 30;
         public const uint DefaultStoragePrice = 100000;
         private const uint MaxExecFeeFactor = 1000;

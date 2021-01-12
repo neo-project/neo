@@ -14,34 +14,49 @@ namespace Neo.SmartContract.Native
     public abstract class NativeContract
     {
         private static readonly List<NativeContract> contractsList = new List<NativeContract>();
-        private static readonly Dictionary<string, NativeContract> contractsNameDictionary = new Dictionary<string, NativeContract>();
+        private static readonly Dictionary<int, NativeContract> contractsIdDictionary = new Dictionary<int, NativeContract>();
         private static readonly Dictionary<UInt160, NativeContract> contractsHashDictionary = new Dictionary<UInt160, NativeContract>();
         private readonly Dictionary<string, ContractMethodMetadata> methods = new Dictionary<string, ContractMethodMetadata>();
+        private static int id_counter = 0;
 
-        public static IReadOnlyCollection<NativeContract> Contracts { get; } = contractsList;
+        #region Named Native Contracts
         public static ContractManagement ContractManagement { get; } = new ContractManagement();
         public static NeoToken NEO { get; } = new NeoToken();
         public static GasToken GAS { get; } = new GasToken();
         public static PolicyContract Policy { get; } = new PolicyContract();
         public static RoleManagement RoleManagement { get; } = new RoleManagement();
         public static OracleContract Oracle { get; } = new OracleContract();
+        public static NameService NameService { get; } = new NameService();
+        #endregion
 
+        public static IReadOnlyCollection<NativeContract> Contracts { get; } = contractsList;
         public string Name => GetType().Name;
-        public byte[] Script { get; }
+        public NefFile Nef { get; }
+        public byte[] Script => Nef.Script;
         public UInt160 Hash { get; }
-        public abstract int Id { get; }
+        public int Id { get; }
         public ContractManifest Manifest { get; }
         public uint ActiveBlockIndex { get; }
 
         protected NativeContract()
         {
+            this.Id = --id_counter;
+            byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitPush(Name);
+                sb.EmitPush(Id);
                 sb.EmitSysCall(ApplicationEngine.System_Contract_CallNative);
-                this.Script = sb.ToArray();
+                script = sb.ToArray();
             }
-            this.Hash = Helper.GetContractHash(UInt160.Zero, Script);
+            this.Nef = new NefFile
+            {
+                Compiler = nameof(ScriptBuilder),
+                Version = "3.0",
+                Tokens = System.Array.Empty<MethodToken>(),
+                Script = script
+            };
+            this.Nef.CheckSum = NefFile.ComputeChecksum(Nef);
+            this.Hash = Helper.GetContractHash(UInt160.Zero, script);
             List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
             {
@@ -74,7 +89,7 @@ namespace Neo.SmartContract.Native
             if (ProtocolSettings.Default.NativeActivations.TryGetValue(Name, out uint activationIndex))
                 this.ActiveBlockIndex = activationIndex;
             contractsList.Add(this);
-            contractsNameDictionary.Add(Name, this);
+            contractsIdDictionary.Add(Id, this);
             contractsHashDictionary.Add(Hash, this);
         }
 
@@ -95,9 +110,9 @@ namespace Neo.SmartContract.Native
             return contract;
         }
 
-        public static NativeContract GetContract(string name)
+        public static NativeContract GetContract(int id)
         {
-            contractsNameDictionary.TryGetValue(name, out var contract);
+            contractsIdDictionary.TryGetValue(id, out var contract);
             return contract;
         }
 
@@ -139,11 +154,11 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        public ApplicationEngine TestCall(string operation, bool hasReturnValue, params object[] args)
+        public ApplicationEngine TestCall(string operation, params object[] args)
         {
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitDynamicCall(Hash, operation, hasReturnValue, args);
+                sb.EmitDynamicCall(Hash, operation, args);
                 return ApplicationEngine.Run(sb.ToArray());
             }
         }
