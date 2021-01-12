@@ -59,7 +59,7 @@ namespace Neo.UnitTests.SmartContract
             using (var script = new ScriptBuilder())
             {
                 script.EmitPush(block.Hash.ToArray());
-                script.EmitSysCall(ApplicationEngine.System_Blockchain_GetBlock);
+                script.EmitDynamicCall(NativeContract.Ledger.Hash, "getBlock"); 
 
                 // Without block
 

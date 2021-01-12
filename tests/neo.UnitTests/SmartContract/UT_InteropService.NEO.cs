@@ -130,7 +130,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestContract_Create()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var nef = new NefFile()
             {
                 Script = new byte[byte.MaxValue],
@@ -175,7 +175,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestContract_Update()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var nef = new NefFile()
             {
                 Script = new byte[] { 0x01 },
@@ -237,7 +237,7 @@ namespace Neo.UnitTests.SmartContract
             };
             nefFile.CheckSum = NefFile.ComputeChecksum(nefFile);
 
-            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
 
             Assert.ThrowsException<InvalidOperationException>(() => snapshot.UpdateContract(null, null, new byte[] { 0x01 }));
             Assert.ThrowsException<InvalidOperationException>(() => snapshot.UpdateContract(null, nefFile.ToArray(), null));

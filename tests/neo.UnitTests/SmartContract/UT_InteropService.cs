@@ -8,6 +8,7 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
@@ -183,7 +184,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.DeleteContract(scriptHash2);
         }
 
-        private void AssertNotification(StackItem stackItem, UInt160 scriptHash, string notification)
+        private static void AssertNotification(StackItem stackItem, UInt160 scriptHash, string notification)
         {
             Assert.IsInstanceOfType(stackItem, typeof(VM.Types.Array));
 
@@ -259,10 +260,10 @@ namespace Neo.UnitTests.SmartContract
             engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeTrue();
             engine.CheckWitness(((Transaction)engine.ScriptContainer).Sender.ToArray()).Should().BeTrue();
 
-            ((Transaction)engine.ScriptContainer).Signers = new Signer[0];
+            ((Transaction)engine.ScriptContainer).Signers = System.Array.Empty<Signer>();
             engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeFalse();
 
-            Action action = () => engine.CheckWitness(new byte[0]);
+            Action action = () => engine.CheckWitness(System.Array.Empty<byte>());
             action.Should().Throw<ArgumentException>();
         }
 
@@ -344,16 +345,16 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(true, true);
 
-            engine.GetBlock(new byte[] { 0x01 }).Should().BeNull();
+            NativeContract.Ledger.GetBlock(engine.Snapshot, new UInt256(new byte[] { 0x01 })).Should().BeNull();
 
             byte[] data1 = new byte[] { 0x01, 0x01, 0x01 ,0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
-            engine.GetBlock(data1).Should().BeNull();
+            NativeContract.Ledger.GetBlock(engine.Snapshot, new UInt256(data1)).Should().BeNull();
 
             byte[] data2 = new byte[] { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => engine.GetBlock(data2));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.Ledger.GetBlock(engine.Snapshot, new UInt256(data2)));
         }
 
         [TestMethod]
@@ -364,7 +365,7 @@ namespace Neo.UnitTests.SmartContract
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
-            engine.GetTransaction(new UInt256(data1)).Should().BeNull();
+            NativeContract.Ledger.GetTransaction(engine.Snapshot, new UInt256(data1)).Should().BeNull();
         }
 
         [TestMethod]
@@ -505,7 +506,7 @@ namespace Neo.UnitTests.SmartContract
 
             //value length == 0
             key = new byte[] { 0x01 };
-            value = new byte[0];
+            value = System.Array.Empty<byte>();
             engine.Put(storageContext, key, value);
         }
 
@@ -612,7 +613,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestContract_Destroy()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             var scriptHash = UInt160.Parse("0xcb9f3b7c6fb1cf2c13a40637c189bdd066a272b4");
             var storageItem = new StorageItem
@@ -655,7 +656,7 @@ namespace Neo.UnitTests.SmartContract
         private static ApplicationEngine GetEngine(bool hasContainer = false, bool hasSnapshot = false, bool hasBlock = false, bool addScript = true, long gas = 20_00000000)
         {
             var tx = hasContainer ? TestUtils.GetTransaction(UInt160.Zero) : null;
-            var snapshot = hasSnapshot ? Blockchain.Singleton.GetSnapshot().Clone() : null;
+            var snapshot = hasSnapshot ? Blockchain.Singleton.GetSnapshot() : null;
             var block = hasBlock ? new Block() : null;
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, gas);
             if (addScript) engine.LoadScript(new byte[] { 0x01 });
