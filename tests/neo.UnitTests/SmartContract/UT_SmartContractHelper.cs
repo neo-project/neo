@@ -1,6 +1,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
@@ -15,6 +17,9 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_SmartContractHelper
     {
+        const byte Prefix_Block = 5;
+        const byte Prefix_BlockHash = 9;
+
         [TestInitialize]
         public void TestSetup()
         {
@@ -117,17 +122,17 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestVerifyWitnesses()
         {
-            var snapshot1 = Blockchain.Singleton.GetSnapshot();
+            var snapshot1 = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
             UInt256 index1 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
-            snapshot1.Blocks.Add(index1, new TrimmedBlock());
-            snapshot1.Blocks.Delete(index1);
+            BlocksAdd(snapshot1, index1, new TrimmedBlock());
+            BlocksDelete(snapshot1, index1);
             Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(new Header() { PrevHash = index1 }, snapshot1, 100));
 
             var snapshot2 = Blockchain.Singleton.GetSnapshot();
             UInt256 index2 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             TrimmedBlock block2 = new TrimmedBlock();
             block2.NextConsensus = UInt160.Zero;
-            snapshot2.Blocks.Add(index2, block2);
+            BlocksAdd(snapshot2, index2, block2);
             Header header2 = new Header() { PrevHash = index2, Witness = new Witness { VerificationScript = new byte[0] } };
 
             snapshot2.AddContract(UInt160.Zero, new ContractState());
@@ -138,7 +143,7 @@ namespace Neo.UnitTests.SmartContract
             UInt256 index3 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             TrimmedBlock block3 = new TrimmedBlock();
             block3.NextConsensus = UInt160.Zero;
-            snapshot3.Blocks.Add(index3, block3);
+            BlocksAdd(snapshot3, index3, block3);
             Header header3 = new Header()
             {
                 PrevHash = index3,
@@ -165,12 +170,24 @@ namespace Neo.UnitTests.SmartContract
                 Manifest = TestUtils.CreateManifest("verify", ContractParameterType.Boolean, ContractParameterType.Signature), // Offset = 0
             };
             snapshot3.AddContract(contract.Hash, contract);
-            var tx = new Extensions.Nep17NativeContractExtensions.ManualWitness(contract.Hash)
+            var tx = new Nep17NativeContractExtensions.ManualWitness(contract.Hash)
             {
-                Witnesses = new Witness[] { new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] } }
+                Witnesses = new Witness[] { new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() } }
             };
 
             Assert.AreEqual(true, Neo.SmartContract.Helper.VerifyWitnesses(tx, snapshot3, 1000));
+        }
+
+        private void BlocksDelete(DataCache snapshot, UInt256 hash)
+        {
+            snapshot.Delete(NativeContract.Ledger.CreateStorageKey(Prefix_BlockHash, hash));
+            snapshot.Delete(NativeContract.Ledger.CreateStorageKey(Prefix_Block, hash));
+        }
+
+        public static void BlocksAdd(DataCache snapshot, UInt256 hash, TrimmedBlock block)
+        {
+            snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_BlockHash, hash), new StorageItem(hash.ToArray(), true));
+            snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Block, hash), new StorageItem(block.ToArray(), true));
         }
     }
 }

@@ -72,16 +72,13 @@ namespace Neo.UnitTests.SmartContract
 
                 // Not traceable block
 
-                const byte Prefix_Block = 5;
-                const byte Prefix_BlockHash = 9;
                 const byte Prefix_Transaction = 11;
                 const byte Prefix_CurrentBlock = 12;
 
                 var height = snapshot[NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>();
                 height.Index = block.Index + ProtocolSettings.Default.MaxTraceableBlocks;
 
-                snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_BlockHash, block.Hash), new StorageItem(block.Hash.ToArray(), true));
-                snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Block, block.Hash), new StorageItem(LedgerContract.Trim(block).ToArray(), true));
+                UT_SmartContractHelper.BlocksAdd(snapshot, block.Hash, LedgerContract.Trim(block));
                 snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Transaction, tx.Hash), new StorageItem(new TransactionState
                 {
                     BlockIndex = block.Index,

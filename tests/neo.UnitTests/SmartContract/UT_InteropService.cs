@@ -339,7 +339,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(true, true);
 
-            NativeContract.Ledger.GetBlock(engine.Snapshot, new UInt256(new byte[] { 0x01 })).Should().BeNull();
+            NativeContract.Ledger.GetBlock(engine.Snapshot, UInt256.Zero).Should().BeNull();
 
             byte[] data1 = new byte[] { 0x01, 0x01, 0x01 ,0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
