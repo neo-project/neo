@@ -5,6 +5,7 @@ using Neo.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Neo.UnitTests.IO.Caching
 {
@@ -112,9 +113,9 @@ namespace Neo.UnitTests.IO.Caching
             myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
 
-            clonedCache.GetAndChange(new MyKey("key1")).Value = "value_new_1";
-            clonedCache.GetAndChange(new MyKey("key2")).Value = "value_new_2";
-            clonedCache.GetAndChange(new MyKey("key3")).Value = "value_new_3";
+            clonedCache.GetAndChange(new MyKey("key1")).Value = Encoding.Default.GetBytes("value_new_1");
+            clonedCache.GetAndChange(new MyKey("key2")).Value = Encoding.Default.GetBytes("value_new_2");
+            clonedCache.GetAndChange(new MyKey("key3")).Value = Encoding.Default.GetBytes("value_new_3");
 
             clonedCache.Commit();
 
