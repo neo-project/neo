@@ -13,12 +13,12 @@ namespace Neo.UnitTests.IO.Caching
     public class UT_CloneCache
     {
         ClonedCache clonedCache;
-        MyDataCache<MyKey, MyValue> myDataCache;
+        MyDataCache myDataCache;
 
         [TestInitialize]
         public void Init()
         {
-            myDataCache = new MyDataCache<MyKey, MyValue>();
+            myDataCache = new MyDataCache();
             clonedCache = new ClonedCache(myDataCache);
         }
 

@@ -3,11 +3,12 @@ using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.SmartContract
 {
-    public class StorageItem : ISerializable
+    public class StorageItem : ISerializable, IEquatable<StorageItem>
     {
         private byte[] value;
         private object cache;
@@ -110,6 +111,19 @@ namespace Neo.SmartContract
         {
             cache = integer;
             value = null;
+        }
+
+        public bool Equals(StorageItem other)
+        {
+            if (other == null) return false;
+
+            return IsConstant == other.IsConstant &&
+                Value.SequenceEqual(other.Value);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(IsConstant, Value.Length);
         }
 
         public static implicit operator BigInteger(StorageItem item)

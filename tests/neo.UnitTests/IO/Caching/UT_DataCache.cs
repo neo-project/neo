@@ -11,7 +11,7 @@ using System.Text;
 
 namespace Neo.UnitTests.IO.Caching
 {
-    class MyKey : StorageKey, ISerializable
+    class MyKey : StorageKey, IEquatable<MyKey>
     {
         public int Size => Key.Length;
 
@@ -34,9 +34,24 @@ namespace Neo.UnitTests.IO.Caching
         {
             writer.Write(Key);
         }
+        public bool Equals(MyKey other)
+        {
+            return Key.SequenceEqual(other.Key);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is not MyKey other) return false;
+            return Key.SequenceEqual(other.Key);
+        }
+
+        public override int GetHashCode()
+        {
+            return Key.Length;
+        }
     }
 
-    public class MyValue : StorageItem, ISerializable
+    public class MyValue : StorageItem, ISerializable, IEquatable<MyValue>
     {
         public MyValue(UInt256 hash)
         {
@@ -65,8 +80,8 @@ namespace Neo.UnitTests.IO.Caching
 
         public override bool Equals(object obj)
         {
-            if (obj is not MyValue key) return false;
-            return Equals(key);
+            if (obj is not StorageItem other) return false;
+            return (Value == null && other.Value == null) || Value.SequenceEqual(other.Value);
         }
 
         public override int GetHashCode()
@@ -75,7 +90,7 @@ namespace Neo.UnitTests.IO.Caching
         }
     }
 
-    class MyDataCache<MyKey, MyValue> : DataCache
+    class MyDataCache : DataCache
     {
         public Dictionary<StorageKey, StorageItem> InnerDict = new Dictionary<StorageKey, StorageItem>();
 
@@ -99,18 +114,18 @@ namespace Neo.UnitTests.IO.Caching
 
         protected override StorageItem GetInternal(StorageKey key)
         {
-            if (InnerDict.TryGetValue(key, out StorageItem value))
+            if (InnerDict.TryGetValue(key, out var value))
             {
-                return value.Clone();
+                return new MyValue(value.Value);
             }
             throw new KeyNotFoundException();
         }
 
         protected override StorageItem TryGetInternal(StorageKey key)
         {
-            if (InnerDict.TryGetValue(key, out StorageItem value))
+            if (InnerDict.TryGetValue(key, out var value))
             {
-                return value.Clone();
+                return new MyValue(value.Value);
             }
             return null;
         }
@@ -122,19 +137,19 @@ namespace Neo.UnitTests.IO.Caching
 
         protected override void UpdateInternal(StorageKey key, StorageItem value)
         {
-            InnerDict[key] = value;
+            InnerDict[key] = new MyValue(value.Value);
         }
     }
 
     [TestClass]
     public class UT_DataCache
     {
-        MyDataCache<MyKey, MyValue> myDataCache;
+        MyDataCache myDataCache;
 
         [TestInitialize]
         public void Initialize()
         {
-            myDataCache = new MyDataCache<MyKey, MyValue>();
+            myDataCache = new MyDataCache();
         }
 
         [TestMethod]
@@ -284,7 +299,7 @@ namespace Neo.UnitTests.IO.Caching
 
             // case 2 Need to sort the cache of myDataCache
 
-            myDataCache = new MyDataCache<MyKey, MyValue>();
+            myDataCache = new MyDataCache();
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
             myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
 
@@ -300,7 +315,7 @@ namespace Neo.UnitTests.IO.Caching
 
             // case 3 FindRange by Backward
 
-            myDataCache = new MyDataCache<MyKey, MyValue>();
+            myDataCache = new MyDataCache();
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
             myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
 
@@ -382,7 +397,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestFindInvalid()
         {
-            var myDataCache = new MyDataCache<MyKey, MyValue>();
+            var myDataCache = new MyDataCache();
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
 
             myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
