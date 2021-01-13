@@ -138,13 +138,14 @@ namespace Neo.SmartContract.Native
         protected bool Transfer(ApplicationEngine engine, UInt160 to, byte[] tokenId)
         {
             if (to is null) throw new ArgumentNullException(nameof(to));
-            TokenState token = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Token).Add(GetKey(tokenId)))?.GetInteroperable<TokenState>();
-            if (token is null) throw new ArgumentException();
+            StorageKey key_token = CreateStorageKey(Prefix_Token).Add(GetKey(tokenId));
+            TokenState token = engine.Snapshot.Storages.TryGet(key_token)?.GetInteroperable<TokenState>();
             UInt160 from = token.Owner;
             if (!from.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(from))
                 return false;
             if (!from.Equals(to))
             {
+                token = engine.Snapshot.Storages.GetAndChange(key_token).GetInteroperable<TokenState>();
                 StorageKey key_from = CreateStorageKey(Prefix_Account).Add(from);
                 NFTAccountState account = engine.Snapshot.Storages.GetAndChange(key_from).GetInteroperable<NFTAccountState>();
                 account.Remove(tokenId);
@@ -154,9 +155,14 @@ namespace Neo.SmartContract.Native
                 StorageKey key_to = CreateStorageKey(Prefix_Account).Add(to);
                 account = engine.Snapshot.Storages.GetAndChange(key_to, () => new StorageItem(new NFTAccountState())).GetInteroperable<NFTAccountState>();
                 account.Add(tokenId);
+                OnTransferred(engine, from, token);
             }
             PostTransfer(engine, from, to, tokenId);
             return true;
+        }
+
+        protected virtual void OnTransferred(ApplicationEngine engine, UInt160 from, TokenState token)
+        {
         }
 
         private void PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, byte[] tokenId)
