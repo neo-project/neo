@@ -163,7 +163,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 new ContractParameter(ContractParameterType.String) { Value = name },
                 new ContractParameter(ContractParameterType.Integer) { Value = (int)type }
             });
-            engine.LoadScript(script.ToArray(), 0, -1, 0);
+            engine.LoadScript(script.ToArray(), 0);
 
             if (engine.Execute() == VMState.FAULT)
             {
@@ -182,7 +182,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 new ContractParameter(ContractParameterType.Integer) { Value = (int)type },
                 new ContractParameter(ContractParameterType.String) { Value = data }
             });
-            engine.LoadScript(script.ToArray(), 0, -1, 0);
+            engine.LoadScript(script.ToArray(), 0);
 
             if (engine.Execute() == VMState.FAULT)
             {
@@ -199,7 +199,7 @@ namespace Neo.UnitTests.SmartContract.Native
             script.EmitDynamicCall(NativeContract.NameService.Hash, "renew", new ContractParameter[] {
                 new ContractParameter(ContractParameterType.String) { Value = name }
             });
-            engine.LoadScript(script.ToArray(), 0, -1, 0);
+            engine.LoadScript(script.ToArray(), 0);
 
             if (engine.Execute() == VMState.FAULT)
             {
@@ -220,7 +220,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 new ContractParameter(ContractParameterType.String) { Value = name },
                 new ContractParameter(ContractParameterType.Hash160) { Value = admin }
             });
-            engine.LoadScript(script.ToArray(), 0, -1, 0);
+            engine.LoadScript(script.ToArray(), 0);
 
             if (engine.Execute() == VMState.FAULT)
             {
@@ -238,7 +238,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 new ContractParameter(ContractParameterType.String) { Value = name },
                 new ContractParameter(ContractParameterType.Hash160) { Value = owner }
             });
-            engine.LoadScript(script.ToArray(), 0, -1, 0);
+            engine.LoadScript(script.ToArray(), 0);
 
             if (engine.Execute() == VMState.FAULT)
             {
@@ -256,7 +256,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock);
             var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.NameService.Hash, "setPrice", new ContractParameter[] { new ContractParameter(ContractParameterType.Integer) { Value = price } });
-            engine.LoadScript(script.ToArray(), 0, -1, 0);
+            engine.LoadScript(script.ToArray(), 0);
 
             if (engine.Execute() == VMState.FAULT)
             {
@@ -271,7 +271,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock);
             var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.NameService.Hash, "addRoot", new ContractParameter[] { new ContractParameter(ContractParameterType.String) { Value = root } });
-            engine.LoadScript(script.ToArray(), 0, -1, 0);
+            engine.LoadScript(script.ToArray(), 0);
 
             if (engine.Execute() == VMState.FAULT)
             {
