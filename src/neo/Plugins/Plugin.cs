@@ -64,7 +64,7 @@ namespace Neo.Plugins
 
         public static void AddService(object service)
         {
-            services = services.Add(service);
+            ImmutableInterlocked.Update(ref services, p => p.Add(service));
         }
 
         private static bool CheckRequiredServices(Type type)
@@ -199,6 +199,36 @@ namespace Neo.Plugins
 
         internal protected virtual void OnPluginsLoaded()
         {
+        }
+
+        public static bool RemoveService(object service)
+        {
+            return ImmutableInterlocked.Update(ref services, p => p.Remove(service));
+        }
+
+        public static bool RemoveService<T>()
+        {
+            return ImmutableInterlocked.Update(ref services, p =>
+            {
+                int index = p.FindIndex(o => o is T);
+                if (index < 0) return p;
+                return p.RemoveAt(index);
+            });
+        }
+
+        public static void ReplaceService(object oldService, object newService)
+        {
+            ImmutableInterlocked.Update(ref services, p => p.Replace(oldService, newService));
+        }
+
+        public static void ReplaceService<T>(T newService)
+        {
+            ImmutableInterlocked.Update(ref services, p =>
+            {
+                int index = p.FindIndex(o => o is T);
+                if (index < 0) throw new ArgumentException(null, nameof(newService));
+                return p.SetItem(index, newService);
+            });
         }
 
         protected static bool ResumeNodeStartup()
