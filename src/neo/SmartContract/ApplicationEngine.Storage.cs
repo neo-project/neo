@@ -62,6 +62,8 @@ namespace Neo.SmartContract
 
         protected internal IIterator Find(StorageContext context, byte[] prefix, FindOptions options)
         {
+            if ((options & (FindOptions)0xc0) != 0)
+                throw new ArgumentOutOfRangeException(nameof(options));
             if (options.HasFlag(FindOptions.KeysOnly) && options.HasFlag(FindOptions.ValuesOnly))
                 throw new ArgumentException();
             if (options.HasFlag(FindOptions.PickField0) && options.HasFlag(FindOptions.PickField1))
