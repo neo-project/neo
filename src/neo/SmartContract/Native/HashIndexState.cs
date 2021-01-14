@@ -4,7 +4,7 @@ using Neo.VM.Types;
 
 namespace Neo.SmartContract.Native
 {
-    internal class HashIndexState : IInteroperable
+    class HashIndexState : IInteroperable
     {
         public UInt256 Hash;
         public uint Index;
