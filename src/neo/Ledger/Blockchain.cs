@@ -205,11 +205,9 @@ namespace Neo.Ledger
                 Transaction transaction => OnNewTransaction(transaction),
                 _ => OnNewInventory(inventory)
             };
-            if (result == VerifyResult.Succeed)
+            if (result == VerifyResult.Succeed && relay)
             {
-                if (relay) system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = inventory });
-                foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
-                    plugin.OnVerifiedInventory(inventory);
+                system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = inventory });
             }
             SendRelayResult(inventory, result);
         }

@@ -64,7 +64,7 @@ namespace Neo.Plugins
 
         public static void AddService(object service)
         {
-            services = services.Add(service);
+            ImmutableInterlocked.Update(ref services, p => p.Add(service));
         }
 
         private static bool CheckRequiredServices(Type type)
