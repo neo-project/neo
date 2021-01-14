@@ -594,8 +594,17 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.Find(storageKey.ToArray()).ToArray().Length.Should().Be(1);
 
             // Pre-persist
-            var persistingBlock = new Block { Index = 21, ConsensusData = new ConsensusData(), Transactions = Array.Empty<Transaction>() };
-            Check_OnPersist(snapshot, persistingBlock);
+            var persistingBlock = new Block
+            {
+                Index = 21,
+                ConsensusData = new ConsensusData(),
+                Transactions = Array.Empty<Transaction>(),
+                Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() },
+                MerkleRoot = UInt256.Zero,
+                NextConsensus = UInt160.Zero,
+                PrevHash = UInt256.Zero
+            };
+            Check_OnPersist(snapshot, persistingBlock).Should().BeTrue();
 
             // Clear votes
             storageKey = new KeyBuilder(NativeContract.NEO.Id, 33).Add(committee[0]);
