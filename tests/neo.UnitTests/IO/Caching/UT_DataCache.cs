@@ -46,12 +46,6 @@ namespace Neo.UnitTests.IO.Caching
             return Id == other.Id && Key.SequenceEqual(other.Key);
         }
 
-        public new bool Equals(StorageKey other)
-        {
-            if (other == null) return false;
-            return Id == other.Id && Key.SequenceEqual(other.Key);
-        }
-
         public override bool Equals(object obj)
         {
             if (obj is not MyKey other) return false;
@@ -105,7 +99,7 @@ namespace Neo.UnitTests.IO.Caching
             Value = replica.Value;
         }
 
-        public new bool Equals(StorageItem other)
+        public bool Equals(StorageItem other)
         {
             if (other == null) return false;
             return (Value == null && other.Value == null) || Value.SequenceEqual(other.Value);
