@@ -370,6 +370,30 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void TestBlockchain_GetTransactionHeight()
+        {
+            var engine = GetEngine(hasSnapshot: true, addScript: false);
+            var state = new TransactionState()
+            {
+                BlockIndex = 0,
+                Transaction = TestUtils.CreateRandomHashTransaction()
+            };
+            UT_SmartContractHelper.TransactionAdd(engine.Snapshot, state);
+            engine.LoadScript(NativeContract.Ledger.Script, pcount: 1, configureState: p => p.ScriptHash = NativeContract.Ledger.Hash);
+
+            var script = new ScriptBuilder();
+            script.EmitPush(state.Transaction.Hash.ToArray());
+            script.EmitPush("getTransactionHeight");
+            engine.LoadScript(script.ToArray());
+            engine.Execute();
+            Assert.AreEqual(engine.State, VMState.HALT);
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Integer));
+            result.GetInteger().Should().Be(0);
+        }
+
+        [TestMethod]
         public void TestBlockchain_GetContract()
         {
             var engine = GetEngine(true, true);
@@ -377,14 +401,14 @@ namespace Neo.UnitTests.SmartContract
                                         0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01 };
-            Neo.SmartContract.Native.NativeContract.ContractManagement.GetContract(engine.Snapshot, new UInt160(data1)).Should().BeNull();
+            NativeContract.ContractManagement.GetContract(engine.Snapshot, new UInt160(data1)).Should().BeNull();
 
             var snapshot = Blockchain.Singleton.GetSnapshot();
             var state = TestUtils.GetContract();
             snapshot.AddContract(state.Hash, state);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
-            Neo.SmartContract.Native.NativeContract.ContractManagement.GetContract(engine.Snapshot, state.Hash).Should().BeSameAs(state);
+            NativeContract.ContractManagement.GetContract(engine.Snapshot, state.Hash).Should().BeSameAs(state);
         }
 
         [TestMethod]
