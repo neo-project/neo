@@ -189,6 +189,7 @@ namespace Neo.SmartContract
             [OpCode.REVERSEITEMS] = 1 << 13,
             [OpCode.REMOVE] = 1 << 4,
             [OpCode.CLEARITEMS] = 1 << 4,
+            [OpCode.POPITEM] = 1 << 4,
             [OpCode.ISNULL] = 1 << 1,
             [OpCode.ISTYPE] = 1 << 1,
             [OpCode.CONVERT] = 1 << 11,

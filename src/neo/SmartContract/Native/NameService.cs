@@ -52,6 +52,11 @@ namespace Neo.SmartContract.Native
             }
         }
 
+        protected override void OnTransferred(ApplicationEngine engine, UInt160 from, NameState token)
+        {
+            token.Admin = null;
+        }
+
         protected override byte[] GetKey(byte[] tokenId)
         {
             return Crypto.Hash160(tokenId);
