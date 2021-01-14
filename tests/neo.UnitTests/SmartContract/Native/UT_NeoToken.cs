@@ -430,7 +430,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_BadScript()
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, Blockchain.Singleton.GetSnapshot(), _persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, Blockchain.Singleton.GetSnapshot(), _persistingBlock);
 
             var script = new ScriptBuilder();
             script.Emit(OpCode.NOP);
@@ -857,9 +857,9 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static bool Check_PostPersist(StoreView snapshot, Block persistingBlock)
         {
-            var script = new ScriptBuilder();
+            using var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Contract_NativePostPersist);
-            var engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, persistingBlock);
             engine.LoadScript(script.ToArray());
 
             return engine.Execute() == VMState.HALT;
@@ -867,11 +867,10 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static (BigInteger Value, bool State) Check_GetGasPerBlock(StoreView snapshot, Block persistingBlock)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock);
-
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock);
             engine.LoadScript(NativeContract.NEO.Script, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
 
-            var script = new ScriptBuilder();
+            using var script = new ScriptBuilder();
             script.EmitPush("getGasPerBlock");
             engine.LoadScript(script.ToArray());
 
@@ -889,7 +888,7 @@ namespace Neo.UnitTests.SmartContract.Native
         internal static (VM.Types.Boolean Value, bool State) Check_SetGasPerBlock(StoreView snapshot, BigInteger gasPerBlock, Block persistingBlock)
         {
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
-            var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), snapshot, persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), snapshot, persistingBlock);
 
             engine.LoadScript(NativeContract.NEO.Script, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
 
@@ -911,12 +910,12 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static (bool State, bool Result) Check_Vote(StoreView snapshot, byte[] account, byte[] pubkey, bool signAccount, Block persistingBlock)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application,
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(signAccount ? new UInt160(account) : UInt160.Zero), snapshot, persistingBlock);
 
             engine.LoadScript(NativeContract.NEO.Script, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
 
-            var script = new ScriptBuilder();
+            using var script = new ScriptBuilder();
 
             if (pubkey is null)
                 script.Emit(OpCode.PUSHNULL);
@@ -939,12 +938,12 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static (bool State, bool Result) Check_RegisterValidator(StoreView snapshot, byte[] pubkey, Block persistingBlock)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application,
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot, persistingBlock);
 
             engine.LoadScript(NativeContract.NEO.Script, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
 
-            var script = new ScriptBuilder();
+            using var script = new ScriptBuilder();
             script.EmitPush(pubkey);
             script.EmitPush("registerCandidate");
             engine.LoadScript(script.ToArray());
@@ -962,11 +961,11 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static ECPoint[] Check_GetCommittee(StoreView snapshot, Block persistingBlock)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock);
 
             engine.LoadScript(NativeContract.NEO.Script, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
 
-            var script = new ScriptBuilder();
+            using var script = new ScriptBuilder();
             script.EmitPush("getCommittee");
             engine.LoadScript(script.ToArray());
 
@@ -980,11 +979,11 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static (BigInteger Value, bool State) Check_UnclaimedGas(StoreView snapshot, byte[] address, Block persistingBlock)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock);
 
             engine.LoadScript(NativeContract.NEO.Script, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
 
-            var script = new ScriptBuilder();
+            using var script = new ScriptBuilder();
             script.EmitPush(persistingBlock.Index);
             script.EmitPush(address);
             script.EmitPush("unclaimedGas");
@@ -1039,12 +1038,12 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static (bool State, bool Result) Check_UnregisterCandidate(StoreView snapshot, byte[] pubkey, Block persistingBlock)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application,
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot, persistingBlock);
 
             engine.LoadScript(NativeContract.NEO.Script, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
 
-            var script = new ScriptBuilder();
+            using var script = new ScriptBuilder();
             script.EmitPush(pubkey);
             script.EmitPush("unregisterCandidate");
             engine.LoadScript(script.ToArray());
