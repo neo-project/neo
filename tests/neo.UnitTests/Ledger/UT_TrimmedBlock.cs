@@ -74,6 +74,8 @@ namespace Neo.UnitTests.Ledger
             block.MerkleRoot.Should().Be(UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"));
             block.Transactions.Length.Should().Be(1);
             block.Transactions[0].Hash.Should().Be(tx2.Hash);
+            block.Witness.InvocationScript.ToHexString().Should().Be(tblock.Witness.InvocationScript.ToHexString());
+            block.Witness.VerificationScript.ToHexString().Should().Be(tblock.Witness.VerificationScript.ToHexString());
         }
 
         [TestMethod]
