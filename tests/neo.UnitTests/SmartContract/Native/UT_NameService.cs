@@ -108,15 +108,17 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsFalse(Check_Register(snapshot, "neo.com\n", UInt160.Zero, persistingBlock));
 
             // good register
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock);
+
             Assert.IsTrue(NativeContract.NameService.IsAvailable(snapshot, "neo.com"));
             result = Check_Register(snapshot, "neo.com", UInt160.Zero, persistingBlock);
             Assert.IsTrue(result);
-            Assert.AreEqual(31536000u, (uint)NativeContract.NameService.Properties(snapshot, Encoding.UTF8.GetBytes("neo.com"))["expiration"].AsNumber());
+            Assert.AreEqual(31536000u, (uint)NativeContract.NameService.Properties(engine, Encoding.UTF8.GetBytes("neo.com"))["expiration"].GetInteger());
             Assert.IsFalse(NativeContract.NameService.IsAvailable(snapshot, "neo.com"));
 
             var resultInt = Check_Renew(snapshot, "neo.com", UInt160.Zero, persistingBlock);
             Assert.AreEqual(31536000u * 2, (uint)resultInt);
-            Assert.AreEqual(31536000u * 2, (uint)NativeContract.NameService.Properties(snapshot, Encoding.UTF8.GetBytes("neo.com"))["expiration"].AsNumber());
+            Assert.AreEqual(31536000u * 2, (uint)NativeContract.NameService.Properties(engine, Encoding.UTF8.GetBytes("neo.com"))["expiration"].GetInteger());
             Assert.IsFalse(NativeContract.NameService.IsAvailable(snapshot, "neo.com"));
         }
 
