@@ -319,11 +319,17 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 Index = (uint)ProtocolSettings.Default.CommitteeMembersCount,
                 Transactions = Array.Empty<Transaction>(),
-                ConsensusData = new ConsensusData()
+                ConsensusData = new ConsensusData(),
+                MerkleRoot = UInt256.Zero,
+                NextConsensus = UInt160.Zero,
+                PrevHash = UInt256.Zero,
+                Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
             };
             for (int i = 0; i < ProtocolSettings.Default.CommitteeMembersCount - 1; i++)
             {
-                Check_RegisterValidator(snapshot, Blockchain.StandbyCommittee[i].ToArray(), persistingBlock);
+                ret = Check_RegisterValidator(snapshot, Blockchain.StandbyCommittee[i].ToArray(), persistingBlock);
+                ret.State.Should().BeTrue();
+                ret.Result.Should().BeTrue();
             }
 
             Check_OnPersist(snapshot, persistingBlock).Should().BeTrue();
@@ -731,7 +737,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 cachedCommittee.Add((member, 200 * 10000));
             }
             snapshot.GetOrAdd(new KeyBuilder(NativeContract.NEO.Id, 14), () => new StorageItem()).Value = BinarySerializer.Serialize(cachedCommittee.ToStackItem(null), 4096);
-            
+
             var item = snapshot.GetAndChange(new KeyBuilder(NativeContract.NEO.Id, 1), () => new StorageItem());
             item.Value = ((BigInteger)2100 * 10000L).ToByteArray();
 
