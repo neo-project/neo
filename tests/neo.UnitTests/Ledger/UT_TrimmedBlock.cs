@@ -2,9 +2,8 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.UnitTests.IO.Caching;
+using Neo.UnitTests.SmartContract;
 using Neo.VM;
 using System;
 using System.IO;
@@ -63,11 +62,12 @@ namespace Neo.UnitTests.Ledger
                 Transaction = tx2,
                 BlockIndex = 1
             };
-            snapshot.Add(new MyKey(tx1.Hash), new MyValue(state1.Transaction.Hash.ToString()));
-            snapshot.Add(new MyKey(tx2.Hash), new MyValue(state2.Transaction.Hash.ToString()));
+            UT_SmartContractHelper.TransactionAdd(snapshot, state1, state2);
 
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
             tblock.Hashes = new UInt256[] { tx1.Hash, tx2.Hash };
+            UT_SmartContractHelper.BlocksAdd(snapshot, tblock.Hash, tblock);
+
             Block block = NativeContract.Ledger.GetBlock(snapshot, tblock.Hash);
 
             block.Index.Should().Be(1);

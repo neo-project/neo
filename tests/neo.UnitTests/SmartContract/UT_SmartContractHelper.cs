@@ -19,6 +19,7 @@ namespace Neo.UnitTests.SmartContract
     {
         const byte Prefix_Block = 5;
         const byte Prefix_BlockHash = 9;
+        const byte Prefix_Transaction = 11;
 
         [TestInitialize]
         public void TestSetup()
@@ -207,6 +208,14 @@ namespace Neo.UnitTests.SmartContract
         {
             snapshot.Delete(NativeContract.Ledger.CreateStorageKey(Prefix_BlockHash, hash));
             snapshot.Delete(NativeContract.Ledger.CreateStorageKey(Prefix_Block, hash));
+        }
+
+        public static void TransactionAdd(DataCache snapshot, params TransactionState[] txs)
+        {
+            foreach (TransactionState tx in txs)
+            {
+                snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Transaction, tx.Transaction.Hash), new StorageItem(tx, true));
+            }
         }
 
         public static void BlocksAdd(DataCache snapshot, UInt256 hash, TrimmedBlock block)
