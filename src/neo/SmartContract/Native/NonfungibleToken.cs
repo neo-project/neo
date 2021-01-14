@@ -1,5 +1,4 @@
 using Neo.IO;
-using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
@@ -106,9 +105,9 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        public JObject Properties(StoreView snapshot, byte[] tokenId)
+        public Map Properties(ApplicationEngine engine, byte[] tokenId)
         {
-            return snapshot.Storages[CreateStorageKey(Prefix_Token).Add(GetKey(tokenId))].GetInteroperable<TokenState>().ToJson();
+            return engine.Snapshot.Storages[CreateStorageKey(Prefix_Token).Add(GetKey(tokenId))].GetInteroperable<TokenState>().ToMap(engine.ReferenceCounter);
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
