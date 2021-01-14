@@ -7,6 +7,7 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
+using Neo.UnitTests.IO.Caching;
 using System;
 using System.Linq;
 
@@ -57,8 +58,6 @@ namespace Neo.UnitTests.SmartContract.Native
             // Fake blockchain
 
             Block block = new Block() { Index = 1000, PrevHash = UInt256.Zero };
-            snapshot.Blocks.Add(UInt256.Zero, new TrimmedBlock() { NextConsensus = UInt160.Zero });
-
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             // Without signature
@@ -104,7 +103,6 @@ namespace Neo.UnitTests.SmartContract.Native
             // Fake blockchain
 
             Block block = new Block() { Index = 1000, PrevHash = UInt256.Zero };
-            snapshot.Blocks.Add(UInt256.Zero, new TrimmedBlock() { NextConsensus = UInt160.Zero });
 
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
@@ -151,7 +149,6 @@ namespace Neo.UnitTests.SmartContract.Native
             // Fake blockchain
 
             Block block = new Block() { Index = 1000, PrevHash = UInt256.Zero };
-            snapshot.Blocks.Add(UInt256.Zero, new TrimmedBlock() { NextConsensus = UInt160.Zero });
 
             // Without signature
 
@@ -184,7 +181,6 @@ namespace Neo.UnitTests.SmartContract.Native
             // Fake blockchain
 
             Block block = new Block() { Index = 1000, PrevHash = UInt256.Zero };
-            snapshot.Blocks.Add(UInt256.Zero, new TrimmedBlock() { NextConsensus = UInt160.Zero });
 
             // Without signature
 
@@ -217,8 +213,6 @@ namespace Neo.UnitTests.SmartContract.Native
             // Fake blockchain
 
             Block block = new Block() { Index = 1000, PrevHash = UInt256.Zero };
-            snapshot.Blocks.Add(UInt256.Zero, new TrimmedBlock() { NextConsensus = UInt160.Zero });
-
             NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, block, 0));
 
             // Without signature
@@ -263,8 +257,6 @@ namespace Neo.UnitTests.SmartContract.Native
             // Fake blockchain
 
             Block block = new Block() { Index = 1000, PrevHash = UInt256.Zero };
-            snapshot.Blocks.Add(UInt256.Zero, new TrimmedBlock() { NextConsensus = UInt160.Zero });
-
             NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, block, 0));
 
             // Without signature
@@ -309,7 +301,6 @@ namespace Neo.UnitTests.SmartContract.Native
             // Fake blockchain
 
             Block block = new Block() { Index = 1000, PrevHash = UInt256.Zero };
-            snapshot.Blocks.Add(UInt256.Zero, new TrimmedBlock() { NextConsensus = UInt160.Zero });
 
             // Without signature
 
@@ -358,8 +349,6 @@ namespace Neo.UnitTests.SmartContract.Native
             // Fake blockchain
 
             Block block = new Block() { Index = 1000, PrevHash = UInt256.Zero };
-            snapshot.Blocks.Add(UInt256.Zero, new TrimmedBlock() { NextConsensus = UInt160.Zero });
-
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             // Block without signature

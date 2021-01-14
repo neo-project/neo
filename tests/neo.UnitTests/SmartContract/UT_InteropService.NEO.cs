@@ -114,7 +114,7 @@ namespace Neo.UnitTests.SmartContract
                                     0x01, 0x01, 0x01, 0x01, 0x01 };
             engine.IsStandardContract(new UInt160(hash)).Should().BeFalse();
 
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
             var state = TestUtils.GetContract();
             snapshot.AddContract(state.Hash, state);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
@@ -130,7 +130,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestContract_Create()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
             var nef = new NefFile()
             {
                 Script = new byte[byte.MaxValue],
@@ -175,7 +175,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestContract_Update()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
             var nef = new NefFile()
             {
                 Script = new byte[] { 0x01 },
@@ -214,11 +214,11 @@ namespace Neo.UnitTests.SmartContract
                 Key = new byte[] { 0x01 }
             };
             snapshot.AddContract(state.Hash, state);
-            snapshot.Storages.Add(storageKey, storageItem);
+            snapshot.Add(storageKey, storageItem);
             state.UpdateCounter.Should().Be(0);
             snapshot.UpdateContract(state.Hash, nef.ToArray(), manifest.ToJson().ToByteArray(false));
             var ret = NativeContract.ContractManagement.GetContract(snapshot, state.Hash);
-            snapshot.Storages.Find(BitConverter.GetBytes(state.Id)).ToList().Count().Should().Be(1);
+            snapshot.Find(BitConverter.GetBytes(state.Id)).ToList().Count().Should().Be(1);
             ret.UpdateCounter.Should().Be(1);
             ret.Id.Should().Be(state.Id);
             ret.Manifest.ToJson().ToString().Should().Be(manifest.ToJson().ToString());
@@ -237,7 +237,7 @@ namespace Neo.UnitTests.SmartContract
             };
             nefFile.CheckSum = NefFile.ComputeChecksum(nefFile);
 
-            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
 
             Assert.ThrowsException<InvalidOperationException>(() => snapshot.UpdateContract(null, null, new byte[] { 0x01 }));
             Assert.ThrowsException<InvalidOperationException>(() => snapshot.UpdateContract(null, nefFile.ToArray(), null));
@@ -259,7 +259,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestStorage_Find()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
             var state = TestUtils.GetContract();
 
             var storageItem = new StorageItem
@@ -273,7 +273,7 @@ namespace Neo.UnitTests.SmartContract
                 Key = new byte[] { 0x01 }
             };
             snapshot.AddContract(state.Hash, state);
-            snapshot.Storages.Add(storageKey, storageItem);
+            snapshot.Add(storageKey, storageItem);
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
 

@@ -144,7 +144,7 @@ namespace Neo.SmartContract.Native
                 return false;
             if (!from.Equals(to))
             {
-                token = engine.Snapshot.Storages.GetAndChange(key_token).GetInteroperable<TokenState>();
+                token = engine.Snapshot.GetAndChange(key_token).GetInteroperable<TokenState>();
                 StorageKey key_from = CreateStorageKey(Prefix_Account).Add(from);
                 NFTAccountState account = engine.Snapshot.GetAndChange(key_from).GetInteroperable<NFTAccountState>();
                 account.Remove(tokenId);
