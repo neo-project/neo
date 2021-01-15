@@ -106,7 +106,7 @@ namespace Neo.UnitTests.Extensions
                 script.EmitPush(args[i]);
 
             script.EmitPush(method);
-            engine.LoadContract(contractState, method, CallFlags.All, contract.Manifest.Abi.GetMethod(method).ReturnType != ContractParameterType.Void, (ushort)args.Length);
+            engine.LoadContract(contractState, method, CallFlags.All, contract.Manifest.Abi.GetMethod(method).ReturnType != ContractParameterType.Void);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() != VMState.HALT)
