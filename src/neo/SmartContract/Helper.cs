@@ -27,13 +27,13 @@ namespace Neo.SmartContract
             ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
             ApplicationEngine.ECDsaVerifyPrice * n;
 
-        public static UInt160 GetContractHash(UInt160 sender, uint nefCheckSum, byte[] manifest)
+        public static UInt160 GetContractHash(UInt160 sender, uint nefCheckSum, string name)
         {
             using var sb = new ScriptBuilder();
             sb.Emit(OpCode.ABORT);
             sb.EmitPush(sender);
             sb.EmitPush(nefCheckSum);
-            sb.EmitPush(manifest);
+            sb.EmitPush(name);
 
             return sb.ToArray().ToScriptHash();
         }

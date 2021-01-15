@@ -155,7 +155,8 @@ namespace Neo.SmartContract.Native
                 ));
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
-            UInt160 hash = Helper.GetContractHash(sender, nef.CheckSum, manifest);
+            ContractManifest parsedManifest = ContractManifest.Parse(manifest);
+            UInt160 hash = Helper.GetContractHash(sender, nef.CheckSum, parsedManifest.Name);
             StorageKey key = CreateStorageKey(Prefix_Contract).Add(hash);
             if (engine.Snapshot.Storages.Contains(key))
                 throw new InvalidOperationException($"Contract Already Exists: {hash}");
@@ -165,7 +166,7 @@ namespace Neo.SmartContract.Native
                 UpdateCounter = 0,
                 Nef = nef,
                 Hash = hash,
-                Manifest = ContractManifest.Parse(manifest)
+                Manifest = parsedManifest
             };
 
             if (!contract.Manifest.IsValid(hash)) throw new InvalidOperationException($"Invalid Manifest Hash: {hash}");
