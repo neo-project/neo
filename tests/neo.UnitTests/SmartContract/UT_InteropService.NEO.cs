@@ -135,7 +135,6 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = new byte[byte.MaxValue],
                 Compiler = "",
-                Version = new Version(1, 2, 3, 4).ToString(),
                 Tokens = System.Array.Empty<MethodToken>()
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
@@ -149,7 +148,6 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = new byte[NefFile.MaxScriptLength - 1],
                 Compiler = "",
-                Version = new Version(1, 2, 3, 4).ToString(),
                 Tokens = System.Array.Empty<MethodToken>()
             };
             script_exceedMaxLength.CheckSum = NefFile.ComputeChecksum(nef);
@@ -180,7 +178,6 @@ namespace Neo.UnitTests.SmartContract
             {
                 Script = new byte[] { 0x01 },
                 Compiler = "",
-                Version = new Version(1, 2, 3, 4).ToString(),
                 Tokens = System.Array.Empty<MethodToken>()
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
@@ -231,7 +228,6 @@ namespace Neo.UnitTests.SmartContract
             var nefFile = new NefFile()
             {
                 Script = new byte[] { 0x01 },
-                Version = new Version(1, 2, 3, 4).ToString(),
                 Compiler = "",
                 Tokens = System.Array.Empty<MethodToken>()
             };
@@ -246,7 +242,6 @@ namespace Neo.UnitTests.SmartContract
             nefFile = new NefFile()
             {
                 Script = new byte[0],
-                Version = new Version(1, 2, 3, 4).ToString(),
                 Compiler = "",
                 Tokens = System.Array.Empty<MethodToken>()
             };

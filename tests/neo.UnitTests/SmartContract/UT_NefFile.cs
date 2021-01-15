@@ -13,7 +13,6 @@ namespace Neo.UnitTests.SmartContract
         public NefFile file = new NefFile()
         {
             Compiler = "".PadLeft(32, ' '),
-            Version = new Version(1, 2, 3, 4).ToString(),
             Tokens = Array.Empty<MethodToken>(),
             Script = new byte[] { 0x01, 0x02, 0x03 }
         };
@@ -70,7 +69,6 @@ namespace Neo.UnitTests.SmartContract
             file.CheckSum = NefFile.ComputeChecksum(file);
             var data = file.ToArray();
             var newFile1 = data.AsSerializable<NefFile>();
-            newFile1.Version.Should().Be(file.Version);
             newFile1.Compiler.Should().Be(file.Compiler);
             newFile1.CheckSum.Should().Be(file.CheckSum);
             newFile1.Script.Should().BeEquivalentTo(file.Script);
@@ -88,7 +86,6 @@ namespace Neo.UnitTests.SmartContract
             var file = new NefFile()
             {
                 Compiler = "".PadLeft(32, ' '),
-                Version = new Version(1, 2, 3, 4).ToString(),
                 Tokens = Array.Empty<MethodToken>(),
                 Script = new byte[] { 0x01, 0x02, 0x03 }
             };
@@ -99,7 +96,6 @@ namespace Neo.UnitTests.SmartContract
             file = data.AsSerializable<NefFile>();
 
             Assert.AreEqual("".PadLeft(32, ' '), file.Compiler);
-            Assert.AreEqual(new Version(1, 2, 3, 4).ToString(), file.Version);
             CollectionAssert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }, file.Script);
         }
 
@@ -109,7 +105,6 @@ namespace Neo.UnitTests.SmartContract
             var file = new NefFile()
             {
                 Compiler = "".PadLeft(byte.MaxValue, ' '),
-                Version = new Version(1, 2, 3, 4).ToString(),
                 Tokens = Array.Empty<MethodToken>(),
                 Script = new byte[1024 * 1024],
                 CheckSum = 0
