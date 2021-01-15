@@ -30,7 +30,7 @@ namespace Neo.Persistence
         public override void Commit()
         {
             base.Commit();
-            snapshot?.Commit();
+            snapshot.Commit();
         }
 
         protected override bool ContainsInternal(StorageKey key)
