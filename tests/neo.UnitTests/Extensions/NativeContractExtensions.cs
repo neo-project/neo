@@ -99,6 +99,7 @@ namespace Neo.UnitTests.Extensions
             var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot, persistingBlock);
             var contractState = NativeContract.ContractManagement.GetContract(snapshot, contract.Hash);
             if (contractState == null) throw new InvalidOperationException();
+            var md = contract.Manifest.Abi.GetMethod(method, args.Length);
 
             var script = new ScriptBuilder();
 
@@ -106,7 +107,7 @@ namespace Neo.UnitTests.Extensions
                 script.EmitPush(args[i]);
 
             script.EmitPush(method);
-            engine.LoadContract(contractState, method, CallFlags.All, contract.Manifest.Abi.GetMethod(method).ReturnType != ContractParameterType.Void, (ushort)args.Length);
+            engine.LoadContract(contractState, md, CallFlags.All);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() != VMState.HALT)
