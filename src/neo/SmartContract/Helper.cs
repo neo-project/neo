@@ -7,7 +7,6 @@ using Neo.VM;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Numerics;
 
 namespace Neo.SmartContract
 {
@@ -28,13 +27,13 @@ namespace Neo.SmartContract
             ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
             ApplicationEngine.ECDsaVerifyPrice * n;
 
-        public static UInt160 GetContractHash(UInt160 sender, byte[] script, BigInteger nonce)
+        public static UInt160 GetContractHash(UInt160 sender, uint nefCheckSum, byte[] manifest)
         {
             using var sb = new ScriptBuilder();
             sb.Emit(OpCode.ABORT);
             sb.EmitPush(sender);
-            sb.EmitPush(script);
-            sb.EmitPush(nonce);
+            sb.EmitPush(nefCheckSum);
+            sb.EmitPush(manifest);
 
             return sb.ToArray().ToScriptHash();
         }

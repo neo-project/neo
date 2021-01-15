@@ -18,8 +18,8 @@ namespace Neo.UnitTests.SmartContract
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
 
-            Assert.AreEqual("0x608e71345334275ccfef9ad4f6d746d84a426f21", Neo.SmartContract.Helper.GetContractHash(UInt160.Zero, nef.Script, 0).ToString());
-            Assert.AreEqual("0xeb24e34ba01036ce1ec0346e480b438e05c12f14", Neo.SmartContract.Helper.GetContractHash(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), nef.Script, 0).ToString());
+            Assert.AreEqual("0x9b9628e4f1611af90e761eea8cc21372380c74b6", Neo.SmartContract.Helper.GetContractHash(UInt160.Zero, nef.CheckSum, new byte[0]).ToString());
+            Assert.AreEqual("0x66eec404d86b918d084e62a29ac9990e3b6f4286", Neo.SmartContract.Helper.GetContractHash(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), nef.CheckSum, new byte[0]).ToString());
         }
 
         [TestMethod]
