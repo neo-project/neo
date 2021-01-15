@@ -121,29 +121,11 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowNotify)]
-        private ContractState CreateChild(ApplicationEngine engine, string newName, StackItem data)
-        {
-            var currentContract = GetContract(engine.CurrentScriptHash);
-            if (currentContract == null)
-                throw new InvalidOperationException();
-
-            var newManifest = currentContract.Manifest.Clone();
-            newManifest.Name = newName;
-
-            return Deploy(engine, currentContract.Nef.ToArray(), Utility.StrictUTF8.GetBytes(newManifest.ToString()), data, currentContract.Hash);
-        }
-
-        [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowNotify)]
         private ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
-            if (!(engine.ScriptContainer is Transaction tx))
+            if (engine.ScriptContainer is not Transaction tx)
                 throw new InvalidOperationException();
 
-            return Deploy(engine, nefFile, manifest, data, tx.Sender);
-        }
-
-        private ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data, UInt160 sender)
-        {
             if (nefFile.Length == 0)
                 throw new ArgumentException($"Invalid NefFile Length: {nefFile.Length}");
             if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
@@ -156,7 +138,7 @@ namespace Neo.SmartContract.Native
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
             ContractManifest parsedManifest = ContractManifest.Parse(manifest);
-            UInt160 hash = Helper.GetContractHash(sender, nef.CheckSum, parsedManifest.Name);
+            UInt160 hash = Helper.GetContractHash(tx.Sender, nef.CheckSum, parsedManifest.Name);
             StorageKey key = CreateStorageKey(Prefix_Contract).Add(hash);
             if (engine.Snapshot.Storages.Contains(key))
                 throw new InvalidOperationException($"Contract Already Exists: {hash}");
