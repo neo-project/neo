@@ -16,6 +16,7 @@ namespace Neo.SmartContract.Native
     public sealed class ContractManagement : NativeContract
     {
         private const byte Prefix_MinimumDeploymentFee = 20;
+        private const byte Prefix_ChildNonce = 16;
         private const byte Prefix_NextAvailableId = 15;
         private const byte Prefix_Contract = 8;
 
@@ -121,10 +122,29 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowNotify)]
+        private ContractState CreateChild(ApplicationEngine engine, StackItem data)
+        {
+            var currentContract = GetContract(engine.CurrentScriptHash);
+            if (currentContract == null)
+                throw new InvalidOperationException();
+
+            StorageItem nonce = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_ChildNonce), () => new StorageItem(0));
+            nonce.Add(1);
+
+            return Deploy(engine, currentContract.Nef.ToArray(), Utility.StrictUTF8.GetBytes(currentContract.Manifest.ToString()), data, currentContract.Hash, nonce);
+        }
+
+        [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowNotify)]
         private ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
             if (!(engine.ScriptContainer is Transaction tx))
                 throw new InvalidOperationException();
+
+            return Deploy(engine, nefFile, manifest, data, tx.Sender, 0);
+        }
+
+        private ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data, UInt160 sender, BigInteger nonce)
+        {
             if (nefFile.Length == 0)
                 throw new ArgumentException($"Invalid NefFile Length: {nefFile.Length}");
             if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
@@ -136,7 +156,7 @@ namespace Neo.SmartContract.Native
                 ));
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
-            UInt160 hash = Helper.GetContractHash(tx.Sender, nef.Script);
+            UInt160 hash = Helper.GetContractHash(sender, nef.Script, nonce);
             StorageKey key = CreateStorageKey(Prefix_Contract).Add(hash);
             if (engine.Snapshot.Storages.Contains(key))
                 throw new InvalidOperationException($"Contract Already Exists: {hash}");
