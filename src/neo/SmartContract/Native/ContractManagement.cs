@@ -16,7 +16,6 @@ namespace Neo.SmartContract.Native
     public sealed class ContractManagement : NativeContract
     {
         private const byte Prefix_MinimumDeploymentFee = 20;
-        private const byte Prefix_ChildNonce = 16;
         private const byte Prefix_NextAvailableId = 15;
         private const byte Prefix_Contract = 8;
 
@@ -127,9 +126,6 @@ namespace Neo.SmartContract.Native
             var currentContract = GetContract(engine.CurrentScriptHash);
             if (currentContract == null)
                 throw new InvalidOperationException();
-
-            StorageItem nonce = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_ChildNonce), () => new StorageItem(0));
-            nonce.Add(1);
 
             var newManifest = currentContract.Manifest.Clone();
             newManifest.Name = newName;
