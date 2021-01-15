@@ -166,7 +166,6 @@ namespace Neo.SmartContract
         public ExecutionContext LoadContract(ContractState contract, ContractMethodDescriptor method, CallFlags callFlags)
         {
             ExecutionContext context = LoadScript(contract.Script,
-                pcount: (ushort)method.Parameters.Length,
                 rvcount: method.ReturnType == ContractParameterType.Void ? 0 : 1,
                 initialPosition: method.Offset,
                 configureState: p =>
@@ -186,10 +185,10 @@ namespace Neo.SmartContract
             return context;
         }
 
-        public ExecutionContext LoadScript(Script script, ushort pcount = 0, int rvcount = -1, int initialPosition = 0, Action<ExecutionContextState> configureState = null)
+        public ExecutionContext LoadScript(Script script, int rvcount = -1, int initialPosition = 0, Action<ExecutionContextState> configureState = null)
         {
             // Create and configure context
-            ExecutionContext context = CreateContext(script, pcount, rvcount, initialPosition);
+            ExecutionContext context = CreateContext(script, rvcount, initialPosition);
             configureState?.Invoke(context.GetState<ExecutionContextState>());
             // Load context
             LoadContext(context);
