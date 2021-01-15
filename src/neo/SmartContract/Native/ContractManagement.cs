@@ -186,9 +186,12 @@ namespace Neo.SmartContract.Native
             {
                 if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
                     throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
-                contract.Manifest = ContractManifest.Parse(manifest);
-                if (!contract.Manifest.IsValid(contract.Hash))
+                ContractManifest manifest_new = ContractManifest.Parse(manifest);
+                if (manifest_new.Name != contract.Manifest.Name)
+                    throw new InvalidOperationException("The name of the contract can't be changed.");
+                if (!manifest_new.IsValid(contract.Hash))
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.Hash}");
+                contract.Manifest = manifest_new;
             }
             contract.UpdateCounter++; // Increase update counter
             if (nefFile != null)
