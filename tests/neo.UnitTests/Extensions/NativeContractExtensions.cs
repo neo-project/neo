@@ -13,7 +13,7 @@ namespace Neo.UnitTests.Extensions
         public static ContractState DeployContract(this StoreView snapshot, UInt160 sender, byte[] nefFile, byte[] manifest, long gas = 200_00000000)
         {
             var script = new ScriptBuilder();
-            script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nefFile, manifest);
+            script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nefFile, manifest, null);
 
             var engine = ApplicationEngine.Create(TriggerType.Application,
                 sender != null ? new Transaction() { Signers = new Signer[] { new Signer() { Account = sender } } } : null, snapshot, null, gas);
@@ -34,7 +34,7 @@ namespace Neo.UnitTests.Extensions
         public static void UpdateContract(this StoreView snapshot, UInt160 callingScriptHash, byte[] nefFile, byte[] manifest)
         {
             var script = new ScriptBuilder();
-            script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "update", nefFile, manifest);
+            script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "update", nefFile, manifest, null);
 
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(script.ToArray());
