@@ -155,7 +155,7 @@ namespace Neo.SmartContract.Native
 
             // Execute _deploy
 
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy", 1);
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy", 2);
             if (md != null)
                 engine.CallFromNativeContract(Hash, hash, md.Name, data, false);
 
@@ -196,7 +196,7 @@ namespace Neo.SmartContract.Native
             contract.UpdateCounter++; // Increase update counter
             if (nefFile != null)
             {
-                ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy", 1);
+                ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy", 2);
                 if (md != null)
                     engine.CallFromNativeContract(Hash, contract.Hash, md.Name, data, true);
             }
