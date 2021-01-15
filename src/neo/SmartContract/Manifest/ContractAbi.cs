@@ -48,18 +48,15 @@ namespace Neo.SmartContract.Manifest
         public ContractMethodDescriptor GetMethod(string name, int pcount)
         {
             if (pcount < -1 || pcount > ushort.MaxValue) throw new ArgumentOutOfRangeException(nameof(pcount));
-            methodDictionary ??= Methods.ToDictionary(p => (p.Name, p.Parameters.Length));
             if (pcount >= 0)
             {
+                methodDictionary ??= Methods.ToDictionary(p => (p.Name, p.Parameters.Length));
                 methodDictionary.TryGetValue((name, pcount), out var method);
                 return method;
             }
             else
             {
-                foreach (var ((n, _), method) in methodDictionary)
-                    if (n == name)
-                        return method;
-                return null;
+                return Methods.FirstOrDefault(p => p.Name == name);
             }
         }
 
