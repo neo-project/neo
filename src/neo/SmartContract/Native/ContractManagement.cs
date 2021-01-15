@@ -125,7 +125,6 @@ namespace Neo.SmartContract.Native
         {
             if (engine.ScriptContainer is not Transaction tx)
                 throw new InvalidOperationException();
-
             if (nefFile.Length == 0)
                 throw new ArgumentException($"Invalid NefFile Length: {nefFile.Length}");
             if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
