@@ -113,7 +113,7 @@ namespace Neo.SmartContract
 
             if (args.Count != method.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {method.Parameters.Length} Arguments But Receives {args.Count} Arguments");
             if (hasReturnValue ^ (method.ReturnType != ContractParameterType.Void)) throw new InvalidOperationException("The return value type does not match.");
-            ExecutionContext context_new = LoadContract(contract, method.Name, flags & callingFlags, hasReturnValue, (ushort)args.Count);
+            ExecutionContext context_new = LoadContract(contract, method.Name, flags & callingFlags, hasReturnValue);
             state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
 
@@ -163,13 +163,12 @@ namespace Neo.SmartContract
             base.LoadContext(context);
         }
 
-        public ExecutionContext LoadContract(ContractState contract, string method, CallFlags callFlags, bool hasReturnValue, ushort pcount)
+        public ExecutionContext LoadContract(ContractState contract, string method, CallFlags callFlags, bool hasReturnValue)
         {
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
             if (md is null) return null;
 
             ExecutionContext context = LoadScript(contract.Script,
-                pcount: pcount,
                 rvcount: hasReturnValue ? 1 : 0,
                 initialPosition: md.Offset,
                 configureState: p =>
@@ -189,10 +188,10 @@ namespace Neo.SmartContract
             return context;
         }
 
-        public ExecutionContext LoadScript(Script script, ushort pcount = 0, int rvcount = -1, int initialPosition = 0, Action<ExecutionContextState> configureState = null)
+        public ExecutionContext LoadScript(Script script, int rvcount = -1, int initialPosition = 0, Action<ExecutionContextState> configureState = null)
         {
             // Create and configure context
-            ExecutionContext context = CreateContext(script, pcount, rvcount, initialPosition);
+            ExecutionContext context = CreateContext(script, rvcount, initialPosition);
             configureState?.Invoke(context.GetState<ExecutionContextState>());
             // Load context
             LoadContext(context);

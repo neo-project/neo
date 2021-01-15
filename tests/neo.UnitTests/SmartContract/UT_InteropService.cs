@@ -379,7 +379,7 @@ namespace Neo.UnitTests.SmartContract
                 Transaction = TestUtils.CreateRandomHashTransaction()
             };
             UT_SmartContractHelper.TransactionAdd(engine.Snapshot, state);
-            engine.LoadScript(NativeContract.Ledger.Script, pcount: 1, configureState: p => p.ScriptHash = NativeContract.Ledger.Hash);
+            engine.LoadScript(NativeContract.Ledger.Script, configureState: p => p.ScriptHash = NativeContract.Ledger.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush(state.Transaction.Hash.ToArray());

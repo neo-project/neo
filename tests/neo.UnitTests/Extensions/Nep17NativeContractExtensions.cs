@@ -40,7 +40,7 @@ namespace Neo.UnitTests.Extensions
             var engine = ApplicationEngine.Create(TriggerType.Application,
                 new ManualWitness(signFrom ? new UInt160(from) : null), snapshot, persistingBlock);
 
-            engine.LoadScript(contract.Script, pcount: 4, configureState: p => p.ScriptHash = contract.Hash);
+            engine.LoadScript(contract.Script, configureState: p => p.ScriptHash = contract.Hash);
 
             var script = new ScriptBuilder();
             script.Emit(OpCode.PUSHNULL);
@@ -65,7 +65,7 @@ namespace Neo.UnitTests.Extensions
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
-            engine.LoadScript(contract.Script, pcount: 0, configureState: p => p.ScriptHash = contract.Hash);
+            engine.LoadScript(contract.Script, configureState: p => p.ScriptHash = contract.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush("totalSupply");
@@ -83,7 +83,7 @@ namespace Neo.UnitTests.Extensions
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
-            engine.LoadScript(contract.Script, pcount: 1, configureState: p => p.ScriptHash = contract.Hash);
+            engine.LoadScript(contract.Script, configureState: p => p.ScriptHash = contract.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush(account);
@@ -102,7 +102,7 @@ namespace Neo.UnitTests.Extensions
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
-            engine.LoadScript(contract.Script, pcount: 0, configureState: p => p.ScriptHash = contract.Hash);
+            engine.LoadScript(contract.Script, configureState: p => p.ScriptHash = contract.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush("decimals");
@@ -120,7 +120,7 @@ namespace Neo.UnitTests.Extensions
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
-            engine.LoadScript(contract.Script, pcount: 0, configureState: p => p.ScriptHash = contract.Hash);
+            engine.LoadScript(contract.Script, configureState: p => p.ScriptHash = contract.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush("symbol");
