@@ -51,7 +51,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestToParameter()
         {
             var manifest = new DummyNative().Manifest;
-            var netTypes = manifest.Abi.GetMethod("netTypes");
+            var netTypes = manifest.Abi.GetMethod("netTypes", 17);
 
             Assert.AreEqual(netTypes.ReturnType, ContractParameterType.Void);
             Assert.AreEqual(netTypes.Parameters[0].Type, ContractParameterType.Boolean);
@@ -72,7 +72,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(netTypes.Parameters[15].Type, ContractParameterType.Integer);
             Assert.AreEqual(netTypes.Parameters[16].Type, ContractParameterType.Any);
 
-            var vmTypes = manifest.Abi.GetMethod("vMTypes");
+            var vmTypes = manifest.Abi.GetMethod("vMTypes", 8);
 
             Assert.AreEqual(vmTypes.ReturnType, ContractParameterType.Void);
             Assert.AreEqual(vmTypes.Parameters[0].Type, ContractParameterType.Boolean);

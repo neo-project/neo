@@ -2,6 +2,7 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
@@ -187,8 +188,9 @@ namespace Neo.SmartContract
                 {
                     ContractState cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (cs is null) return false;
-                    if (engine.LoadContract(cs, "verify", callFlags, true) is null)
-                        return false;
+                    ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify", -1);
+                    if (md?.ReturnType != ContractParameterType.Boolean) return false;
+                    engine.LoadContract(cs, md, callFlags);
                 }
                 else
                 {

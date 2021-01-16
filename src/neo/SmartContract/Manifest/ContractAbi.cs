@@ -1,15 +1,16 @@
 using Neo.IO.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.SmartContract.Manifest
 {
     /// <summary>
-    /// For technical details of ABI, please refer to NEP-3: NeoContract ABI. (https://github.com/neo-project/proposals/blob/master/nep-3.mediawiki)
+    /// NeoContract ABI
     /// </summary>
     public class ContractAbi
     {
-        private IReadOnlyDictionary<string, ContractMethodDescriptor> methodDictionary;
+        private IReadOnlyDictionary<(string, int), ContractMethodDescriptor> methodDictionary;
 
         /// <summary>
         /// Methods is an array of Method objects which describe the details of each method in the contract.
@@ -44,11 +45,19 @@ namespace Neo.SmartContract.Manifest
             };
         }
 
-        public ContractMethodDescriptor GetMethod(string name)
+        public ContractMethodDescriptor GetMethod(string name, int pcount)
         {
-            methodDictionary ??= Methods.ToDictionary(p => p.Name);
-            methodDictionary.TryGetValue(name, out var method);
-            return method;
+            if (pcount < -1 || pcount > ushort.MaxValue) throw new ArgumentOutOfRangeException(nameof(pcount));
+            if (pcount >= 0)
+            {
+                methodDictionary ??= Methods.ToDictionary(p => (p.Name, p.Parameters.Length));
+                methodDictionary.TryGetValue((name, pcount), out var method);
+                return method;
+            }
+            else
+            {
+                return Methods.FirstOrDefault(p => p.Name == name);
+            }
         }
 
         public JObject ToJson()
