@@ -393,7 +393,7 @@ namespace Neo.Wallets
                     if (contract is null) continue;
                     var md = contract.Manifest.Abi.GetMethod("verify", 0);
                     if (md is null)
-                        throw new ArgumentException($"The smart contract {contract.Hash} haven't got verify method");
+                        throw new ArgumentException($"The smart contract {contract.Hash} haven't got verify method without arguments");
                     if (md.ReturnType != ContractParameterType.Boolean)
                         throw new ArgumentException("The verify method doesn't return boolean value.");
 
