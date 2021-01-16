@@ -16,7 +16,7 @@ namespace Neo.SmartContract.Native
         private static readonly List<NativeContract> contractsList = new List<NativeContract>();
         private static readonly Dictionary<int, NativeContract> contractsIdDictionary = new Dictionary<int, NativeContract>();
         private static readonly Dictionary<UInt160, NativeContract> contractsHashDictionary = new Dictionary<UInt160, NativeContract>();
-        private readonly Dictionary<string, ContractMethodMetadata> methods = new Dictionary<string, ContractMethodMetadata>();
+        private readonly Dictionary<(string, int), ContractMethodMetadata> methods = new Dictionary<(string, int), ContractMethodMetadata>();
         private static int id_counter = 0;
 
         #region Named Native Contracts
@@ -69,7 +69,7 @@ namespace Neo.SmartContract.Native
                     Parameters = metadata.Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name }).ToArray(),
                     Safe = (attribute.RequiredCallFlags & ~CallFlags.ReadOnly) == 0
                 });
-                methods.Add(metadata.Name, metadata);
+                methods.Add((metadata.Name, metadata.Parameters.Length), metadata);
             }
             this.Manifest = new ContractManifest
             {
@@ -121,7 +121,7 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException("It is not allowed to use Neo.Native.Call directly to call native contracts. System.Contract.Call should be used.");
             ExecutionContext context = engine.CurrentContext;
             string operation = context.EvaluationStack.Pop().GetString();
-            ContractMethodMetadata method = methods[operation];
+            ContractMethodMetadata method = methods[(operation, context.EvaluationStack.Count)];
             ExecutionContextState state = context.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
