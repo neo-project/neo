@@ -24,10 +24,8 @@ namespace Neo.UnitTests.Persistence
             Assert.AreEqual(UInt256.Zero, r.BlockHashIndex.Get().Hash);
             Assert.AreEqual(uint.MaxValue, r.HeaderHashIndex.Get().Index);
             Assert.AreEqual(UInt256.Zero, r.HeaderHashIndex.Get().Hash);
-            Assert.AreEqual(0, r.ContractId.Get().NextId);
             Assert.AreEqual(0, r.Blocks.Find().Count());
             Assert.AreEqual(0, r.Transactions.Find().Count());
-            Assert.AreEqual(0, r.Contracts.Find().Count());
             Assert.AreEqual(0, r.Storages.Find().Count());
             Assert.AreEqual(0, r.HeaderHashList.Find().Count());
         }

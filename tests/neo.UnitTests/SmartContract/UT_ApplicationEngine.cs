@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.VM.Types;
+using System.Numerics;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -36,6 +37,22 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual("AQIDBA==", engine.Base64Encode(new byte[] { 1, 2, 3, 4 }));
 
             Assert.AreEqual("2VfUX", engine.Base58Encode(new byte[] { 1, 2, 3, 4 }));
+        }
+
+        [TestMethod]
+        public void TestItoaAtoi()
+        {
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+
+            Assert.AreEqual("1", engine.Itoa(BigInteger.One, 10));
+            Assert.AreEqual("1", engine.Itoa(BigInteger.One, 16));
+            Assert.AreEqual("-1", engine.Itoa(BigInteger.MinusOne, 10));
+            Assert.AreEqual("f", engine.Itoa(BigInteger.MinusOne, 16));
+            Assert.AreEqual(-1, engine.Atoi("-1", 10));
+            Assert.AreEqual(1, engine.Atoi("+1", 10));
+            Assert.AreEqual(-1, engine.Atoi("ff", 16));
+            Assert.ThrowsException<System.FormatException>(() => engine.Atoi("a", 10));
+            Assert.ThrowsException<System.ArgumentOutOfRangeException>(() => engine.Atoi("a", 11));
         }
 
         [TestMethod]
@@ -78,10 +95,10 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
-            ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshot);
-            snapshot.PersistingBlock.Version.Should().Be(0);
-            snapshot.PersistingBlock.PrevHash.Should().Be(Blockchain.GenesisBlock.Hash);
-            snapshot.PersistingBlock.MerkleRoot.Should().Be(new UInt256());
+            ApplicationEngine engine = ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshot);
+            engine.PersistingBlock.Version.Should().Be(0);
+            engine.PersistingBlock.PrevHash.Should().Be(Blockchain.GenesisBlock.Hash);
+            engine.PersistingBlock.MerkleRoot.Should().Be(new UInt256());
         }
     }
 }

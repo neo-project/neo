@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
+using Neo.SmartContract;
 using Neo.SmartContract.Iterators;
 using Neo.VM.Types;
 using System;
@@ -14,7 +15,7 @@ namespace Neo.UnitTests.SmartContract.Iterators
         [TestMethod]
         public void TestGeneratorAndDispose()
         {
-            StorageIterator storageIterator = new StorageIterator(new List<(StorageKey, StorageItem)>().GetEnumerator());
+            StorageIterator storageIterator = new StorageIterator(new List<(StorageKey, StorageItem)>().GetEnumerator(), FindOptions.None, null);
             Assert.IsNotNull(storageIterator);
             Action action = () => storageIterator.Dispose();
             action.Should().NotThrow<Exception>();
@@ -29,9 +30,8 @@ namespace Neo.UnitTests.SmartContract.Iterators
             StorageItem storageItem = new StorageItem();
             storageItem.Value = new byte[1];
             list.Add((storageKey, storageItem));
-            StorageIterator storageIterator = new StorageIterator(list.GetEnumerator());
+            StorageIterator storageIterator = new StorageIterator(list.GetEnumerator(), FindOptions.ValuesOnly, null);
             storageIterator.Next();
-            Assert.AreEqual(new ByteString(new byte[1]), storageIterator.Key());
             Assert.AreEqual(new ByteString(new byte[1]), storageIterator.Value());
         }
     }

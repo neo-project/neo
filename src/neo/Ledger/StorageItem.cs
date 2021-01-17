@@ -1,5 +1,6 @@
 using Neo.IO;
 using Neo.SmartContract;
+using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,7 +23,7 @@ namespace Neo.Ledger
                 return value ??= cache switch
                 {
                     BigInteger bi => bi.ToByteArrayStandard(),
-                    IInteroperable interoperable => BinarySerializer.Serialize(interoperable.ToStackItem(null), 4096),
+                    IInteroperable interoperable => BinarySerializer.Serialize(interoperable.ToStackItem(null), 1024 * 1024),
                     IReadOnlyCollection<ISerializable> list => list.ToByteArray(),
                     null => null,
                     _ => throw new InvalidCastException()
@@ -86,7 +87,7 @@ namespace Neo.Ledger
             if (cache is null)
             {
                 var interoperable = new T();
-                interoperable.FromStackItem(BinarySerializer.Deserialize(value, 16, 34));
+                interoperable.FromStackItem(BinarySerializer.Deserialize(value, ExecutionEngineLimits.Default.MaxStackSize, ExecutionEngineLimits.Default.MaxItemSize));
                 cache = interoperable;
             }
             value = null;

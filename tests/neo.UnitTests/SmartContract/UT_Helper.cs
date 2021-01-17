@@ -1,11 +1,27 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
+using System;
 
 namespace Neo.UnitTests.SmartContract
 {
     [TestClass]
     public class UT_Helper
     {
+        [TestMethod]
+        public void TestGetContractHash()
+        {
+            var nef = new NefFile()
+            {
+                Compiler = "test",
+                Tokens = Array.Empty<MethodToken>(),
+                Script = new byte[] { 1, 2, 3 }
+            };
+            nef.CheckSum = NefFile.ComputeChecksum(nef);
+
+            Assert.AreEqual("0xb8e95ff7b11c427c29355e3398722d97bd2ca069", Neo.SmartContract.Helper.GetContractHash(UInt160.Zero, nef.Script).ToString());
+            Assert.AreEqual("0x435c467b8e15cb9b1474ad7ee817ffdcfededef9", Neo.SmartContract.Helper.GetContractHash(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), nef.Script).ToString());
+        }
+
         [TestMethod]
         public void TestIsMultiSigContract()
         {

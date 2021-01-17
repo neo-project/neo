@@ -9,7 +9,6 @@ using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.SmartContract.Native.Tokens;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -224,9 +223,9 @@ namespace Neo.UnitTests.Ledger
         {
             SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, long.MaxValue);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, long.MaxValue);
             NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
-            NativeContract.GAS.Mint(engine, UInt160.Zero, 70);
+            NativeContract.GAS.Mint(engine, UInt160.Zero, 70, true);
 
             long txFee = 1;
             AddTransactionsWithBalanceVerify(70, txFee, snapshot);
@@ -241,9 +240,9 @@ namespace Neo.UnitTests.Ledger
             // Simulate the transfer process in tx by burning the balance
             UInt160 sender = block.Transactions[0].Sender;
 
-            ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.All, block, snapshot, (long)balance);
+            ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.All, block, snapshot, block, (long)balance);
             NativeContract.GAS.Burn(applicationEngine, sender, NativeContract.GAS.BalanceOf(snapshot, sender));
-            NativeContract.GAS.Mint(applicationEngine, sender, txFee * 30); // Set the balance to meet 30 txs only
+            NativeContract.GAS.Mint(applicationEngine, sender, txFee * 30, true); // Set the balance to meet 30 txs only
 
             // Persist block and reverify all the txs in mempool, but half of the txs will be discarded
             _unit.UpdatePoolForBlockPersisted(block, snapshot);
@@ -252,7 +251,7 @@ namespace Neo.UnitTests.Ledger
 
             // Revert the balance
             NativeContract.GAS.Burn(applicationEngine, sender, txFee * 30);
-            NativeContract.GAS.Mint(applicationEngine, sender, balance);
+            NativeContract.GAS.Mint(applicationEngine, sender, balance, true);
         }
 
         private void VerifyTransactionsSortedDescending(IEnumerable<Transaction> transactions)

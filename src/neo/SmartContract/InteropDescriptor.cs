@@ -11,13 +11,12 @@ namespace Neo.SmartContract
     {
         public string Name { get; }
         public uint Hash { get; }
-        internal MethodInfo Handler { get; }
+        public MethodInfo Handler { get; }
         public IReadOnlyList<InteropParameterDescriptor> Parameters { get; }
         public long FixedPrice { get; }
         public CallFlags RequiredCallFlags { get; }
-        public bool AllowCallback { get; }
 
-        internal InteropDescriptor(string name, MethodInfo handler, long fixedPrice, CallFlags requiredCallFlags, bool allowCallback)
+        internal InteropDescriptor(string name, MethodInfo handler, long fixedPrice, CallFlags requiredCallFlags)
         {
             this.Name = name;
             this.Hash = BitConverter.ToUInt32(Encoding.ASCII.GetBytes(name).Sha256(), 0);
@@ -25,7 +24,6 @@ namespace Neo.SmartContract
             this.Parameters = handler.GetParameters().Select(p => new InteropParameterDescriptor(p)).ToList().AsReadOnly();
             this.FixedPrice = fixedPrice;
             this.RequiredCallFlags = requiredCallFlags;
-            this.AllowCallback = allowCallback;
         }
 
         public static implicit operator uint(InteropDescriptor descriptor)

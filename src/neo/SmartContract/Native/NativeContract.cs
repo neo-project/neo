@@ -1,7 +1,5 @@
 using Neo.IO;
 using Neo.SmartContract.Manifest;
-using Neo.SmartContract.Native.Oracle;
-using Neo.SmartContract.Native.Tokens;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -16,34 +14,49 @@ namespace Neo.SmartContract.Native
     public abstract class NativeContract
     {
         private static readonly List<NativeContract> contractsList = new List<NativeContract>();
-        private static readonly Dictionary<string, NativeContract> contractsNameDictionary = new Dictionary<string, NativeContract>();
+        private static readonly Dictionary<int, NativeContract> contractsIdDictionary = new Dictionary<int, NativeContract>();
         private static readonly Dictionary<UInt160, NativeContract> contractsHashDictionary = new Dictionary<UInt160, NativeContract>();
         private readonly Dictionary<string, ContractMethodMetadata> methods = new Dictionary<string, ContractMethodMetadata>();
+        private static int id_counter = 0;
 
-        public static IReadOnlyCollection<NativeContract> Contracts { get; } = contractsList;
+        #region Named Native Contracts
+        public static ContractManagement ContractManagement { get; } = new ContractManagement();
         public static NeoToken NEO { get; } = new NeoToken();
         public static GasToken GAS { get; } = new GasToken();
         public static PolicyContract Policy { get; } = new PolicyContract();
+        public static RoleManagement RoleManagement { get; } = new RoleManagement();
         public static OracleContract Oracle { get; } = new OracleContract();
+        public static NameService NameService { get; } = new NameService();
+        #endregion
 
-        [ContractMethod(0, CallFlags.None)]
-        public abstract string Name { get; }
-        public byte[] Script { get; }
+        public static IReadOnlyCollection<NativeContract> Contracts { get; } = contractsList;
+        public string Name => GetType().Name;
+        public NefFile Nef { get; }
+        public byte[] Script => Nef.Script;
         public UInt160 Hash { get; }
-        public abstract int Id { get; }
+        public int Id { get; }
         public ContractManifest Manifest { get; }
+        public uint ActiveBlockIndex { get; }
 
         protected NativeContract()
         {
+            this.Id = --id_counter;
+            byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitPush(Name);
-                sb.EmitSysCall(ApplicationEngine.Neo_Native_Call);
-                this.Script = sb.ToArray();
+                sb.EmitPush(Id);
+                sb.EmitSysCall(ApplicationEngine.System_Contract_CallNative);
+                script = sb.ToArray();
             }
-            this.Hash = Script.ToScriptHash();
+            this.Nef = new NefFile
+            {
+                Compiler = "neo-core-v3.0",
+                Tokens = System.Array.Empty<MethodToken>(),
+                Script = script
+            };
+            this.Nef.CheckSum = NefFile.ComputeChecksum(Nef);
+            this.Hash = Helper.GetContractHash(UInt160.Zero, script);
             List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
-            List<string> safeMethods = new List<string>();
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
             {
                 ContractMethodAttribute attribute = member.GetCustomAttribute<ContractMethodAttribute>();
@@ -53,29 +66,29 @@ namespace Neo.SmartContract.Native
                 {
                     Name = metadata.Name,
                     ReturnType = ToParameterType(metadata.Handler.ReturnType),
-                    Parameters = metadata.Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name }).ToArray()
+                    Parameters = metadata.Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name }).ToArray(),
+                    Safe = (attribute.RequiredCallFlags & ~CallFlags.ReadOnly) == 0
                 });
-                if (!attribute.RequiredCallFlags.HasFlag(CallFlags.AllowModifyStates)) safeMethods.Add(metadata.Name);
                 methods.Add(metadata.Name, metadata);
             }
             this.Manifest = new ContractManifest
             {
+                Name = Name,
                 Groups = System.Array.Empty<ContractGroup>(),
-                Features = ContractFeatures.NoProperty,
                 SupportedStandards = new string[0],
                 Abi = new ContractAbi()
                 {
-                    Hash = Hash,
                     Events = System.Array.Empty<ContractEventDescriptor>(),
                     Methods = descriptors.ToArray()
                 },
                 Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<UInt160>.Create(),
-                SafeMethods = WildcardContainer<string>.Create(safeMethods.ToArray()),
                 Extra = null
             };
+            if (ProtocolSettings.Default.NativeActivations.TryGetValue(Name, out uint activationIndex))
+                this.ActiveBlockIndex = activationIndex;
             contractsList.Add(this);
-            contractsNameDictionary.Add(Name, this);
+            contractsIdDictionary.Add(Id, this);
             contractsHashDictionary.Add(Hash, this);
         }
 
@@ -96,9 +109,9 @@ namespace Neo.SmartContract.Native
             return contract;
         }
 
-        public static NativeContract GetContract(string name)
+        public static NativeContract GetContract(int id)
         {
-            contractsNameDictionary.TryGetValue(name, out var contract);
+            contractsIdDictionary.TryGetValue(id, out var contract);
             return contract;
         }
 
@@ -106,10 +119,10 @@ namespace Neo.SmartContract.Native
         {
             if (!engine.CurrentScriptHash.Equals(Hash))
                 throw new InvalidOperationException("It is not allowed to use Neo.Native.Call directly to call native contracts. System.Contract.Call should be used.");
-            string operation = engine.Pop().GetString();
-            Array args = engine.Pop<Array>();
+            ExecutionContext context = engine.CurrentContext;
+            string operation = context.EvaluationStack.Pop().GetString();
             ContractMethodMetadata method = methods[operation];
-            ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();
+            ExecutionContextState state = context.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
             engine.AddGas(method.Price);
@@ -117,13 +130,10 @@ namespace Neo.SmartContract.Native
             if (method.NeedApplicationEngine) parameters.Add(engine);
             if (method.NeedSnapshot) parameters.Add(engine.Snapshot);
             for (int i = 0; i < method.Parameters.Length; i++)
-            {
-                StackItem item = i < args.Count ? args[i] : StackItem.Null;
-                parameters.Add(engine.Convert(item, method.Parameters[i]));
-            }
+                parameters.Add(engine.Convert(context.EvaluationStack.Pop(), method.Parameters[i]));
             object returnValue = method.Handler.Invoke(this, parameters.ToArray());
             if (method.Handler.ReturnType != typeof(void))
-                engine.Push(engine.Convert(returnValue));
+                context.EvaluationStack.Push(engine.Convert(returnValue));
         }
 
         public static bool IsNative(UInt160 hash)
@@ -135,25 +145,19 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        [ContractMethod(0, CallFlags.AllowModifyStates)]
-        protected virtual void OnPersist(ApplicationEngine engine)
+        internal virtual void OnPersist(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.System)
-                throw new InvalidOperationException();
         }
 
-        [ContractMethod(0, CallFlags.AllowModifyStates)]
-        protected virtual void PostPersist(ApplicationEngine engine)
+        internal virtual void PostPersist(ApplicationEngine engine)
         {
-            if (engine.Trigger != TriggerType.System)
-                throw new InvalidOperationException();
         }
 
         public ApplicationEngine TestCall(string operation, params object[] args)
         {
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitAppCall(Hash, operation, args);
+                sb.EmitDynamicCall(Hash, operation, args);
                 return ApplicationEngine.Run(sb.ToArray());
             }
         }
@@ -173,6 +177,8 @@ namespace Neo.SmartContract.Native
             if (type == typeof(BigInteger)) return ContractParameterType.Integer;
             if (type == typeof(byte[])) return ContractParameterType.ByteArray;
             if (type == typeof(string)) return ContractParameterType.String;
+            if (type == typeof(UInt160)) return ContractParameterType.Hash160;
+            if (type == typeof(UInt256)) return ContractParameterType.Hash256;
             if (type == typeof(VM.Types.Boolean)) return ContractParameterType.Boolean;
             if (type == typeof(Integer)) return ContractParameterType.Integer;
             if (type == typeof(ByteString)) return ContractParameterType.ByteArray;

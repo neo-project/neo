@@ -62,10 +62,8 @@ namespace Neo.Network.P2P
                     OnAddrMessageReceived((AddrPayload)msg.Payload);
                     break;
                 case MessageCommand.Block:
-                    OnInventoryReceived((Block)msg.Payload);
-                    break;
-                case MessageCommand.Consensus:
-                    OnInventoryReceived((ConsensusPayload)msg.Payload);
+                case MessageCommand.Extensible:
+                    OnInventoryReceived((IInventory)msg.Payload);
                     break;
                 case MessageCommand.FilterAdd:
                     OnFilterAddMessageReceived((FilterAddPayload)msg.Payload);
@@ -121,6 +119,9 @@ namespace Neo.Network.P2P
 
         private void OnAddrMessageReceived(AddrPayload payload)
         {
+            ref bool sent = ref sentCommands[(byte)MessageCommand.GetAddr];
+            if (!sent) return;
+            sent = false;
             system.LocalNode.Tell(new Peer.Peers
             {
                 EndPoints = payload.AddressList.Select(p => p.EndPoint).Where(p => p.Port > 0)
@@ -287,15 +288,10 @@ namespace Neo.Network.P2P
         private void OnInventoryReceived(IInventory inventory)
         {
             pendingKnownHashes.Remove(inventory.Hash);
-            switch (inventory)
+            if (inventory is Block block)
             {
-                case Transaction transaction:
-                    system.Consensus?.Tell(transaction);
-                    break;
-                case Block block:
-                    if (block.Index > Blockchain.Singleton.Height + InvPayload.MaxHashesCount) return;
-                    UpdateLastBlockIndex(block.Index, false);
-                    break;
+                if (block.Index > Blockchain.Singleton.Height + InvPayload.MaxHashesCount) return;
+                UpdateLastBlockIndex(block.Index, false);
             }
             knownHashes.Add(inventory.Hash);
             system.TaskManager.Tell(inventory);
@@ -319,7 +315,7 @@ namespace Neo.Network.P2P
             }
             if (hashes.Length == 0) return;
             foreach (UInt256 hash in hashes)
-                pendingKnownHashes.Add((hash, DateTime.UtcNow));
+                pendingKnownHashes.Add((hash, TimeProvider.Current.UtcNow));
             system.TaskManager.Tell(new TaskManager.NewTasks { Payload = InvPayload.Create(payload.Type, hashes) });
         }
 
@@ -377,7 +373,7 @@ namespace Neo.Network.P2P
             while (pendingKnownHashes.Count > 0)
             {
                 var (_, time) = pendingKnownHashes[0];
-                if (DateTime.UtcNow - time <= PendingTimeout)
+                if (TimeProvider.Current.UtcNow - time <= PendingTimeout)
                     break;
                 pendingKnownHashes.RemoveAt(0);
             }

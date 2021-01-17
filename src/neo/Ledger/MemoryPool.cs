@@ -61,7 +61,6 @@ namespace Neo.Ledger
         internal int UnverifiedSortedTxCount => _unverifiedSortedTransactions.Count;
 
         private int _maxTxPerBlock;
-        private long _feePerByte;
 
         /// <summary>
         /// Total maximum capacity of transactions the pool can hold.
@@ -105,13 +104,9 @@ namespace Neo.Ledger
             Capacity = capacity;
         }
 
-        internal bool LoadPolicy(StoreView snapshot)
+        internal void LoadPolicy(StoreView snapshot)
         {
             _maxTxPerBlock = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot);
-            long newFeePerByte = NativeContract.Policy.GetFeePerByte(snapshot);
-            bool policyChanged = newFeePerByte > _feePerByte;
-            _feePerByte = newFeePerByte;
-            return policyChanged;
         }
 
         /// <summary>
@@ -356,7 +351,7 @@ namespace Neo.Ledger
         // Note: this must only be called from a single thread (the Blockchain actor)
         internal void UpdatePoolForBlockPersisted(Block block, StoreView snapshot)
         {
-            bool policyChanged = LoadPolicy(snapshot);
+            LoadPolicy(snapshot);
 
             _txRwLock.EnterWriteLock();
             try
@@ -370,20 +365,6 @@ namespace Neo.Ledger
 
                 // Add all the previously verified transactions back to the unverified transactions
                 InvalidateVerifiedTransactions();
-
-                if (policyChanged)
-                {
-                    var tx = new List<Transaction>();
-                    foreach (PoolItem item in _unverifiedSortedTransactions.Reverse())
-                        if (item.Tx.FeePerByte >= _feePerByte)
-                            tx.Add(item.Tx);
-
-                    _unverifiedTransactions.Clear();
-                    _unverifiedSortedTransactions.Clear();
-
-                    if (tx.Count > 0)
-                        _system.Blockchain.Tell(tx.ToArray(), ActorRefs.NoSender);
-                }
             }
             finally
             {
@@ -392,7 +373,7 @@ namespace Neo.Ledger
 
             // If we know about headers of future blocks, no point in verifying transactions from the unverified tx pool
             // until we get caught up.
-            if (block.Index > 0 && block.Index < Blockchain.Singleton.HeaderHeight || policyChanged)
+            if (block.Index > 0 && block.Index < Blockchain.Singleton.HeaderHeight)
                 return;
 
             ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions,
@@ -415,7 +396,7 @@ namespace Neo.Ledger
         private int ReverifyTransactions(SortedSet<PoolItem> verifiedSortedTxPool,
             SortedSet<PoolItem> unverifiedSortedTxPool, int count, double millisecondsTimeout, StoreView snapshot)
         {
-            DateTime reverifyCutOffTimeStamp = DateTime.UtcNow.AddMilliseconds(millisecondsTimeout);
+            DateTime reverifyCutOffTimeStamp = TimeProvider.Current.UtcNow.AddMilliseconds(millisecondsTimeout);
             List<PoolItem> reverifiedItems = new List<PoolItem>(count);
             List<PoolItem> invalidItems = new List<PoolItem>();
 
@@ -433,7 +414,7 @@ namespace Neo.Ledger
                     else // Transaction no longer valid -- it will be removed from unverifiedTxPool.
                         invalidItems.Add(item);
 
-                    if (DateTime.UtcNow > reverifyCutOffTimeStamp) break;
+                    if (TimeProvider.Current.UtcNow > reverifyCutOffTimeStamp) break;
                 }
 
                 int blocksTillRebroadcast = BlocksTillRebroadcast;
@@ -441,7 +422,7 @@ namespace Neo.Ledger
                 if (Count > RebroadcastMultiplierThreshold)
                     blocksTillRebroadcast = blocksTillRebroadcast * Count / RebroadcastMultiplierThreshold;
 
-                var rebroadcastCutOffTime = DateTime.UtcNow.AddMilliseconds(
+                var rebroadcastCutOffTime = TimeProvider.Current.UtcNow.AddMilliseconds(
                     -Blockchain.MillisecondsPerBlock * blocksTillRebroadcast);
                 foreach (PoolItem item in reverifiedItems)
                 {
@@ -452,7 +433,7 @@ namespace Neo.Ledger
                         if (item.LastBroadcastTimestamp < rebroadcastCutOffTime)
                         {
                             _system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = item.Tx }, _system.Blockchain);
-                            item.LastBroadcastTimestamp = DateTime.UtcNow;
+                            item.LastBroadcastTimestamp = TimeProvider.Current.UtcNow;
                         }
                     }
                     else

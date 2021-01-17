@@ -4,7 +4,7 @@ using System;
 
 namespace Neo.Persistence
 {
-    internal class StoreMetaDataCache<T> : MetaDataCache<T>
+    public class StoreMetaDataCache<T> : MetaDataCache<T>
         where T : class, ICloneable<T>, ISerializable, new()
     {
         private readonly IReadOnlyStore store;

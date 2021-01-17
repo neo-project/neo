@@ -1,31 +1,34 @@
 #pragma warning disable IDE0051
 
 using Neo.Ledger;
+using Neo.Network.P2P;
+using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.SmartContract.Manifest;
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
     public sealed class PolicyContract : NativeContract
     {
-        public override string Name => "Policy";
-        public override int Id => -3;
+        public const uint DefaultExecFeeFactor = 30;
+        public const uint DefaultStoragePrice = 100000;
+        private const uint MaxExecFeeFactor = 1000;
+        private const uint MaxStoragePrice = 10000000;
 
         private const byte Prefix_MaxTransactionsPerBlock = 23;
         private const byte Prefix_FeePerByte = 10;
-        private const byte Prefix_BlockedAccounts = 15;
+        private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_MaxBlockSize = 12;
         private const byte Prefix_MaxBlockSystemFee = 17;
+        private const byte Prefix_ExecFeeFactor = 18;
+        private const byte Prefix_StoragePrice = 19;
 
-        public PolicyContract()
+        internal PolicyContract()
         {
-            Manifest.Features = ContractFeatures.HasStorage;
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public uint GetMaxTransactionsPerBlock(StoreView snapshot)
         {
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxTransactionsPerBlock));
@@ -33,7 +36,7 @@ namespace Neo.SmartContract.Native
             return (uint)(BigInteger)item;
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public uint GetMaxBlockSize(StoreView snapshot)
         {
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxBlockSize));
@@ -41,7 +44,7 @@ namespace Neo.SmartContract.Native
             return (uint)(BigInteger)item;
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public long GetMaxBlockSystemFee(StoreView snapshot)
         {
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxBlockSystemFee));
@@ -49,7 +52,7 @@ namespace Neo.SmartContract.Native
             return (long)(BigInteger)item;
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public long GetFeePerByte(StoreView snapshot)
         {
             StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_FeePerByte));
@@ -57,97 +60,109 @@ namespace Neo.SmartContract.Native
             return (long)(BigInteger)item;
         }
 
-        [ContractMethod(0_01000000, CallFlags.AllowStates)]
-        public UInt160[] GetBlockedAccounts(StoreView snapshot)
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        public uint GetExecFeeFactor(StoreView snapshot)
         {
-            return snapshot.Storages.TryGet(CreateStorageKey(Prefix_BlockedAccounts))
-                ?.GetSerializableList<UInt160>().ToArray()
-                ?? Array.Empty<UInt160>();
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_ExecFeeFactor));
+            if (item is null) return DefaultExecFeeFactor;
+            return (uint)(BigInteger)item;
         }
 
-        public bool IsAnyAccountBlocked(StoreView snapshot, params UInt160[] hashes)
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        public uint GetStoragePrice(StoreView snapshot)
         {
-            if (hashes.Length == 0) return false;
-
-            var blockedList = snapshot.Storages.TryGet(CreateStorageKey(Prefix_BlockedAccounts))
-                ?.GetSerializableList<UInt160>().ToArray()
-                ?? Array.Empty<UInt160>();
-
-            if (blockedList.Length > 0)
-            {
-                foreach (var acc in hashes)
-                {
-                    if (Array.BinarySearch(blockedList, acc) >= 0) return true;
-                }
-            }
-
-            return false;
+            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_StoragePrice));
+            if (item is null) return DefaultStoragePrice;
+            return (uint)(BigInteger)item;
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        public bool IsBlocked(StoreView snapshot, UInt160 account)
+        {
+            return snapshot.Storages.Contains(CreateStorageKey(Prefix_BlockedAccount).Add(account));
+        }
+
+        [ContractMethod(0_03000000, CallFlags.WriteStates)]
         private bool SetMaxBlockSize(ApplicationEngine engine, uint value)
         {
+            if (value > Message.PayloadMaxSize) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) return false;
-            if (Network.P2P.Message.PayloadMaxSize <= value) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSize), () => new StorageItem());
             storage.Set(value);
             return true;
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_03000000, CallFlags.WriteStates)]
         private bool SetMaxTransactionsPerBlock(ApplicationEngine engine, uint value)
         {
+            if (value > Block.MaxTransactionsPerBlock) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxTransactionsPerBlock), () => new StorageItem());
             storage.Set(value);
             return true;
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_03000000, CallFlags.WriteStates)]
         private bool SetMaxBlockSystemFee(ApplicationEngine engine, long value)
         {
+            if (value <= 4007600) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) return false;
-            if (value <= 4007600) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSystemFee), () => new StorageItem());
             storage.Set(value);
             return true;
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_03000000, CallFlags.WriteStates)]
         private bool SetFeePerByte(ApplicationEngine engine, long value)
         {
+            if (value < 0 || value > 1_00000000) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) return false;
             StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeePerByte), () => new StorageItem());
             storage.Set(value);
             return true;
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
-        private bool BlockAccount(ApplicationEngine engine, UInt160 account)
+        [ContractMethod(0_03000000, CallFlags.WriteStates)]
+        private bool SetExecFeeFactor(ApplicationEngine engine, uint value)
         {
+            if (value == 0 || value > MaxExecFeeFactor) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) return false;
-            StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
-            StorageItem storage = engine.Snapshot.Storages.GetOrAdd(key, () => new StorageItem(new byte[1]));
-            List<UInt160> accounts = storage.GetSerializableList<UInt160>();
-            if (accounts.Contains(account)) return false;
-            engine.Snapshot.Storages.GetAndChange(key);
-            accounts.Add(account);
-            accounts.Sort();
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_ExecFeeFactor), () => new StorageItem());
+            storage.Set(value);
             return true;
         }
 
-        [ContractMethod(0_03000000, CallFlags.AllowModifyStates)]
+        [ContractMethod(0_03000000, CallFlags.WriteStates)]
+        private bool SetStoragePrice(ApplicationEngine engine, uint value)
+        {
+            if (value == 0 || value > MaxStoragePrice) throw new ArgumentOutOfRangeException(nameof(value));
+            if (!CheckCommittee(engine)) return false;
+            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_StoragePrice), () => new StorageItem());
+            storage.Set(value);
+            return true;
+        }
+
+        [ContractMethod(0_03000000, CallFlags.WriteStates)]
+        private bool BlockAccount(ApplicationEngine engine, UInt160 account)
+        {
+            if (!CheckCommittee(engine)) return false;
+
+            var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
+            if (engine.Snapshot.Storages.Contains(key)) return false;
+
+            engine.Snapshot.Storages.Add(key, new StorageItem(new byte[] { 0x01 }));
+            return true;
+        }
+
+        [ContractMethod(0_03000000, CallFlags.WriteStates)]
         private bool UnblockAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine)) return false;
-            StorageKey key = CreateStorageKey(Prefix_BlockedAccounts);
-            StorageItem storage = engine.Snapshot.Storages.TryGet(key);
-            if (storage is null) return false;
-            List<UInt160> accounts = storage.GetSerializableList<UInt160>();
-            int index = accounts.IndexOf(account);
-            if (index < 0) return false;
-            engine.Snapshot.Storages.GetAndChange(key);
-            accounts.RemoveAt(index);
+
+            var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
+            if (!engine.Snapshot.Storages.Contains(key)) return false;
+
+            engine.Snapshot.Storages.Delete(key);
             return true;
         }
     }

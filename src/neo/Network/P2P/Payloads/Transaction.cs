@@ -19,7 +19,7 @@ namespace Neo.Network.P2P.Payloads
     public class Transaction : IEquatable<Transaction>, IInventory, IInteroperable
     {
         public const int MaxTransactionSize = 102400;
-        public const uint MaxValidUntilBlockIncrement = 2102400;
+        public const uint MaxValidUntilBlockIncrement = 5760; // 24 hour
         /// <summary>
         /// Maximum number of attributes that can be contained within a transaction
         /// </summary>
@@ -285,9 +285,9 @@ namespace Neo.Network.P2P.Payloads
         {
             if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
-            UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
-            if (NativeContract.Policy.IsAnyAccountBlocked(snapshot, hashes))
-                return VerifyResult.PolicyFail;
+            foreach (UInt160 hash in GetScriptHashesForVerifying(snapshot))
+                if (NativeContract.Policy.IsBlocked(snapshot, hash))
+                    return VerifyResult.PolicyFail;
             if (NativeContract.Policy.GetMaxBlockSystemFee(snapshot) < SystemFee)
                 return VerifyResult.PolicyFail;
             if (!(context?.CheckTransaction(this, snapshot) ?? true)) return VerifyResult.InsufficientFunds;
@@ -295,8 +295,25 @@ namespace Neo.Network.P2P.Payloads
                 if (!attribute.Verify(snapshot, this))
                     return VerifyResult.Invalid;
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
-            if (!this.VerifyWitnesses(snapshot, net_fee, WitnessFlag.StateDependent))
-                return VerifyResult.Invalid;
+
+            UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
+            if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
+
+            uint execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
+            for (int i = 0; i < hashes.Length; i++)
+            {
+                if (witnesses[i].VerificationScript.IsSignatureContract())
+                    net_fee -= execFeeFactor * SmartContract.Helper.SignatureContractCost();
+                else if (witnesses[i].VerificationScript.IsMultiSigContract(out int m, out int n))
+                    net_fee -= execFeeFactor * SmartContract.Helper.MultiSignatureContractCost(m, n);
+                else
+                {
+                    if (!this.VerifyWitness(snapshot, hashes[i], witnesses[i], net_fee, out long fee))
+                        return VerifyResult.Invalid;
+                    net_fee -= fee;
+                }
+                if (net_fee < 0) return VerifyResult.InsufficientFunds;
+            }
             return VerifyResult.Succeed;
         }
 
@@ -304,8 +321,12 @@ namespace Neo.Network.P2P.Payloads
         {
             if (Size > MaxTransactionSize)
                 return VerifyResult.Invalid;
-            if (!this.VerifyWitnesses(null, NetworkFee, WitnessFlag.StateIndependent))
-                return VerifyResult.Invalid;
+            UInt160[] hashes = GetScriptHashesForVerifying(null);
+            if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
+            for (int i = 0; i < hashes.Length; i++)
+                if (witnesses[i].VerificationScript.IsStandardContract())
+                    if (!this.VerifyWitness(null, hashes[i], witnesses[i], SmartContract.Helper.MaxVerificationGas, out _))
+                        return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }
 
