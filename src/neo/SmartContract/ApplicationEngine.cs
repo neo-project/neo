@@ -80,8 +80,8 @@ namespace Neo.SmartContract
         {
             ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
-            if (md is null) throw new InvalidOperationException($"Method {method} Does Not Exist In Contract {contractHash}");
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method, args.Length);
+            if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Length} parameter(s) doesn't exist in the contract {contractHash}.");
             return CallContractInternal(contract, md, flags, hasReturnValue, args);
         }
 
@@ -113,7 +113,7 @@ namespace Neo.SmartContract
 
             if (args.Count != method.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {method.Parameters.Length} Arguments But Receives {args.Count} Arguments");
             if (hasReturnValue ^ (method.ReturnType != ContractParameterType.Void)) throw new InvalidOperationException("The return value type does not match.");
-            ExecutionContext context_new = LoadContract(contract, method.Name, flags & callingFlags, hasReturnValue);
+            ExecutionContext context_new = LoadContract(contract, method, flags & callingFlags);
             state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
 
@@ -163,14 +163,11 @@ namespace Neo.SmartContract
             base.LoadContext(context);
         }
 
-        public ExecutionContext LoadContract(ContractState contract, string method, CallFlags callFlags, bool hasReturnValue)
+        public ExecutionContext LoadContract(ContractState contract, ContractMethodDescriptor method, CallFlags callFlags)
         {
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
-            if (md is null) return null;
-
             ExecutionContext context = LoadScript(contract.Script,
-                rvcount: hasReturnValue ? 1 : 0,
-                initialPosition: md.Offset,
+                rvcount: method.ReturnType == ContractParameterType.Void ? 0 : 1,
+                initialPosition: method.Offset,
                 configureState: p =>
                 {
                     p.CallFlags = callFlags;
@@ -179,7 +176,7 @@ namespace Neo.SmartContract
                 });
 
             // Call initialization
-            var init = contract.Manifest.Abi.GetMethod("_initialize");
+            var init = contract.Manifest.Abi.GetMethod("_initialize", 0);
             if (init != null)
             {
                 LoadContext(context.Clone(init.Offset));
