@@ -43,12 +43,20 @@ namespace Neo.UnitTests
             value.Value.Should().Be(new BigInteger(123456789));
             value.Decimals.Should().Be(6);
 
+            value = new BigDecimal(-123.45M);
+            value.Value.Should().Be(new BigInteger(-12345));
+            value.Decimals.Should().Be(2);
+
             value = new BigDecimal(123.45M);
             value.Value.Should().Be(new BigInteger(12345));
             value.Decimals.Should().Be(2);
 
             value = new BigDecimal(123M);
             value.Value.Should().Be(new BigInteger(123));
+            value.Decimals.Should().Be(0);
+
+            value = new BigDecimal(0M);
+            value.Value.Should().Be(new BigInteger(0));
             value.Decimals.Should().Be(0);
         }
 
