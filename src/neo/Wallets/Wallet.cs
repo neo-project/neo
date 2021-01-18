@@ -391,14 +391,18 @@ namespace Neo.Wallets
                 {
                     var contract = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (contract is null) continue;
+                    var md = contract.Manifest.Abi.GetMethod("verify", 0);
+                    if (md is null)
+                        throw new ArgumentException($"The smart contract {contract.Hash} haven't got verify method without arguments");
+                    if (md.ReturnType != ContractParameterType.Boolean)
+                        throw new ArgumentException("The verify method doesn't return boolean value.");
 
                     // Empty invocation and verification scripts
                     size += Array.Empty<byte>().GetVarSize() * 2;
 
                     // Check verify cost
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.Clone());
-                    if (engine.LoadContract(contract, "verify", CallFlags.None, true, 0) is null)
-                        throw new ArgumentException($"The smart contract {contract.Hash} haven't got verify method");
+                    engine.LoadContract(contract, md, CallFlags.None);
                     if (NativeContract.IsNative(hash)) engine.Push("verify");
                     if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
                     if (!engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.Hash} returns false.");

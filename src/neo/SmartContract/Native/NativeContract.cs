@@ -50,8 +50,7 @@ namespace Neo.SmartContract.Native
             }
             this.Nef = new NefFile
             {
-                Compiler = nameof(ScriptBuilder),
-                Version = "3.0",
+                Compiler = "neo-core-v3.0",
                 Tokens = System.Array.Empty<MethodToken>(),
                 Script = script
             };
@@ -76,11 +75,11 @@ namespace Neo.SmartContract.Native
             {
                 Name = Name,
                 Groups = System.Array.Empty<ContractGroup>(),
-                SupportedStandards = new string[0],
+                SupportedStandards = System.Array.Empty<string>(),
                 Abi = new ContractAbi()
                 {
                     Events = System.Array.Empty<ContractEventDescriptor>(),
-                    Methods = descriptors.ToArray()
+                    Methods = descriptors.OrderBy(p => p.Name).ThenBy(p => p.Parameters.Length).ToArray()
                 },
                 Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<UInt160>.Create(),

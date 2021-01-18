@@ -2,7 +2,6 @@
 
 using Neo.Cryptography;
 using Neo.IO;
-using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.VM;
@@ -248,11 +247,11 @@ namespace Neo.SmartContract.Native
 
             public override byte[] Id => Utility.StrictUTF8.GetBytes(Name);
 
-            public override JObject ToJson()
+            public override Map ToMap(ReferenceCounter referenceCounter)
             {
-                JObject json = base.ToJson();
-                json["expiration"] = Expiration;
-                return json;
+                Map map = base.ToMap(referenceCounter);
+                map["expiration"] = Expiration;
+                return map;
             }
 
             public override void FromStackItem(StackItem stackItem)
