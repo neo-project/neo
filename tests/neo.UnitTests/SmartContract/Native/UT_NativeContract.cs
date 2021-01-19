@@ -8,7 +8,6 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -100,14 +99,10 @@ namespace Neo.UnitTests.SmartContract.Native
             engine.LoadScript(testNativeContract.Script, configureState: p => p.ScriptHash = testNativeContract.Hash);
 
             ByteString method1 = new ByteString(System.Text.Encoding.Default.GetBytes("wrongMethod"));
-            VMArray args1 = new VMArray();
-            engine.CurrentContext.EvaluationStack.Push(args1);
             engine.CurrentContext.EvaluationStack.Push(method1);
             Assert.ThrowsException<KeyNotFoundException>(() => testNativeContract.Invoke(engine));
 
             ByteString method2 = new ByteString(System.Text.Encoding.Default.GetBytes("helloWorld"));
-            VMArray args2 = new VMArray();
-            engine.CurrentContext.EvaluationStack.Push(args2);
             engine.CurrentContext.EvaluationStack.Push(method2);
             testNativeContract.Invoke(engine);
         }
