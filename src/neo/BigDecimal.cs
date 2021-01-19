@@ -38,7 +38,7 @@ namespace Neo
 
         public static BigDecimal Parse(string s, byte decimals)
         {
-            if (!TryParse(s, decimals, out BigDecimal result))
+            if (!TryParse(Convert.ToDecimal(s).ToString(), decimals, out BigDecimal result))
                 throw new FormatException();
             return result;
         }
