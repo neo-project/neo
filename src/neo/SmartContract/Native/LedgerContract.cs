@@ -12,7 +12,8 @@ namespace Neo.SmartContract.Native
     public sealed class LedgerContract : NativeContract
     {
         private const byte Prefix_BlockHash = 9;
-        private const byte Prefix_CurrentBlock = 12;
+        private const byte Prefix_CurrentBlockHash = 12;
+        private const byte Prefix_CurrentBlockIndex = 13;
         private const byte Prefix_Block = 5;
         private const byte Prefix_Transaction = 11;
 
@@ -36,9 +37,8 @@ namespace Neo.SmartContract.Native
 
         internal override void PostPersist(ApplicationEngine engine)
         {
-            HashIndexState state = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_CurrentBlock), () => new StorageItem(new HashIndexState())).GetInteroperable<HashIndexState>();
-            state.Hash = engine.PersistingBlock.Hash;
-            state.Index = engine.PersistingBlock.Index;
+            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_CurrentBlockHash), () => new StorageItem()).Value = engine.PersistingBlock.Hash.ToArray();
+            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_CurrentBlockIndex), () => new StorageItem()).Set(engine.PersistingBlock.Index);
         }
 
         internal bool Initialized(DataCache snapshot)
@@ -63,13 +63,14 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public UInt256 CurrentHash(DataCache snapshot)
         {
-            return snapshot[CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>().Hash;
+            return new UInt256(snapshot[CreateStorageKey(Prefix_CurrentBlockHash)].Value);
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
         public uint CurrentIndex(DataCache snapshot)
         {
-            return snapshot[CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>().Index;
+            var value = snapshot.TryGet(CreateStorageKey(Prefix_CurrentBlockIndex));
+            return value is not null ? (uint)value : 0u;
         }
 
         public bool ContainsBlock(DataCache snapshot, UInt256 hash)

@@ -32,7 +32,7 @@ namespace Neo.SmartContract.Native
         {
             StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_MaxTransactionsPerBlock));
             if (item is null) return 512;
-            return (uint)(BigInteger)item;
+            return item;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
@@ -40,7 +40,7 @@ namespace Neo.SmartContract.Native
         {
             StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_MaxBlockSize));
             if (item is null) return 1024 * 256;
-            return (uint)(BigInteger)item;
+            return item;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
@@ -48,7 +48,7 @@ namespace Neo.SmartContract.Native
         {
             StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_MaxBlockSystemFee));
             if (item is null) return 9000 * (long)GAS.Factor; // For the transfer method of NEP5, the maximum persisting time is about three seconds.
-            return (long)(BigInteger)item;
+            return item;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
@@ -56,7 +56,7 @@ namespace Neo.SmartContract.Native
         {
             StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_FeePerByte));
             if (item is null) return 1000;
-            return (long)(BigInteger)item;
+            return item;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
@@ -64,7 +64,7 @@ namespace Neo.SmartContract.Native
         {
             StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_ExecFeeFactor));
             if (item is null) return DefaultExecFeeFactor;
-            return (uint)(BigInteger)item;
+            return item;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
@@ -72,7 +72,7 @@ namespace Neo.SmartContract.Native
         {
             StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_StoragePrice));
             if (item is null) return DefaultStoragePrice;
-            return (uint)(BigInteger)item;
+            return item;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]

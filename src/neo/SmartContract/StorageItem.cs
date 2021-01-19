@@ -21,6 +21,8 @@ namespace Neo.SmartContract
             {
                 return value ??= cache switch
                 {
+                    uint ui => BitConverter.GetBytes(ui),
+                    long l => BitConverter.GetBytes(l),
                     BigInteger bi => bi.ToByteArrayStandard(),
                     IInteroperable interoperable => BinarySerializer.Serialize(interoperable.ToStackItem(null), 1024 * 1024),
                     IReadOnlyCollection<ISerializable> list => list.ToByteArray(),
@@ -106,9 +108,21 @@ namespace Neo.SmartContract
             writer.Write(IsConstant);
         }
 
-        public void Set(BigInteger integer)
+        public void Set(BigInteger input)
         {
-            cache = integer;
+            cache = input;
+            value = null;
+        }
+
+        public void Set(uint input)
+        {
+            cache = input;
+            value = null;
+        }
+
+        public void Set(long input)
+        {
+            cache = input;
             value = null;
         }
 
@@ -116,6 +130,18 @@ namespace Neo.SmartContract
         {
             item.cache ??= new BigInteger(item.value);
             return (BigInteger)item.cache;
+        }
+
+        public static implicit operator uint(StorageItem item)
+        {
+            item.cache ??= BitConverter.ToUInt32(item.value);
+            return (uint)item.cache;
+        }
+
+        public static implicit operator long(StorageItem item)
+        {
+            item.cache ??= BitConverter.ToUInt64(item.value);
+            return (long)item.cache;
         }
     }
 }

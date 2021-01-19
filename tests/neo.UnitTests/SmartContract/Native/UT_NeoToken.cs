@@ -697,7 +697,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestEconomicParameter()
         {
-            const byte Prefix_CurrentBlock = 12;
+            const byte Prefix_CurrentBlockIndex = 13;
             var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block { Index = 0 };
 
@@ -710,8 +710,7 @@ namespace Neo.UnitTests.SmartContract.Native
             result1.Item2.Should().BeTrue();
             result1.Item1.GetBoolean().Should().BeTrue();
 
-            var height = snapshot[NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>();
-            height.Index = persistingBlock.Index + 1;
+            snapshot[NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlockIndex)].Set(persistingBlock.Index + 1);
             result = Check_GetGasPerBlock(snapshot, persistingBlock);
             result.Item2.Should().BeTrue();
             result.Item1.Should().Be(10 * NativeContract.GAS.Factor);
@@ -721,7 +720,7 @@ namespace Neo.UnitTests.SmartContract.Native
             NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
             state.Balance = 1000;
             state.BalanceHeight = 0;
-            height.Index = 0; // Fake Height=0
+            snapshot[NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlockIndex)].Set(0); // Fake Height=0
             NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, persistingBlock.Index + 2).Should().Be(6500);
         }
 
