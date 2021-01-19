@@ -55,7 +55,7 @@ namespace Neo.SmartContract.Native
                 Script = script
             };
             this.Nef.CheckSum = NefFile.ComputeChecksum(Nef);
-            this.Hash = Helper.GetContractHash(UInt160.Zero, script);
+            this.Hash = Helper.GetContractHash(UInt160.Zero, this.Nef.CheckSum, Name);
             List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
             {

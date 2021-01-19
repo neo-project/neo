@@ -129,7 +129,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowNotify)]
         private ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
-            if (!(engine.ScriptContainer is Transaction tx))
+            if (engine.ScriptContainer is not Transaction tx)
                 throw new InvalidOperationException();
             if (nefFile.Length == 0)
                 throw new ArgumentException($"Invalid NefFile Length: {nefFile.Length}");
@@ -142,7 +142,8 @@ namespace Neo.SmartContract.Native
                 ));
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
-            UInt160 hash = Helper.GetContractHash(tx.Sender, nef.Script);
+            ContractManifest parsedManifest = ContractManifest.Parse(manifest);
+            UInt160 hash = Helper.GetContractHash(tx.Sender, nef.CheckSum, parsedManifest.Name);
             StorageKey key = CreateStorageKey(Prefix_Contract).Add(hash);
             if (engine.Snapshot.Storages.Contains(key))
                 throw new InvalidOperationException($"Contract Already Exists: {hash}");
@@ -152,7 +153,7 @@ namespace Neo.SmartContract.Native
                 UpdateCounter = 0,
                 Nef = nef,
                 Hash = hash,
-                Manifest = ContractManifest.Parse(manifest)
+                Manifest = parsedManifest
             };
 
             if (!contract.Manifest.IsValid(hash)) throw new InvalidOperationException($"Invalid Manifest Hash: {hash}");

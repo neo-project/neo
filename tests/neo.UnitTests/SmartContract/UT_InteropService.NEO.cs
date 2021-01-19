@@ -161,7 +161,7 @@ namespace Neo.UnitTests.SmartContract
 
             manifest = TestUtils.CreateDefaultManifest();
             var ret = snapshot.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false));
-            ret.Hash.ToString().Should().Be("0x6410935f6b153eeb85f5d95d926c075b1ef51620");
+            ret.Hash.ToString().Should().Be("0x18e26e71e66fb79347581771c0910df5bea9d24b");
             Assert.ThrowsException<InvalidOperationException>(() => snapshot.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false)));
 
             var state = TestUtils.GetContract();
