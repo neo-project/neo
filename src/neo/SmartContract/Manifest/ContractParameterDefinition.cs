@@ -12,7 +12,7 @@ namespace Neo.SmartContract.Manifest
 
         /// <summary>
         /// Type indicates the type of the parameter. It can be one of the following values: 
-        ///     Signature, Boolean, Integer, Hash160, Hash256, ByteArray, PublicKey, String, Array, InteropInterface.
+        ///     Any, Signature, Boolean, Integer, Hash160, Hash256, ByteArray, PublicKey, String, Array, Map, InteropInterface.
         /// </summary>
         public ContractParameterType Type { get; set; }
 
