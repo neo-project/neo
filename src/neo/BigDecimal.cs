@@ -18,6 +18,12 @@ namespace Neo
             this.decimals = decimals;
         }
 
+        public BigDecimal(decimal value)
+        {
+            this.decimals = BitConverter.GetBytes(decimal.GetBits(value)[3])[2];
+            this.value = new BigInteger(decimal.Multiply((Decimal)Math.Pow(10, this.decimals), value));
+        }
+
         public BigDecimal ChangeDecimals(byte decimals)
         {
             if (this.decimals == decimals) return this;
