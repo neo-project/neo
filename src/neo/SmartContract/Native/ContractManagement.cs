@@ -121,6 +121,12 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowNotify)]
+        private ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
+        {
+            return Deploy(engine, nefFile, manifest, StackItem.Null);
+        }
+
+        [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowNotify)]
         private ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
             if (!(engine.ScriptContainer is Transaction tx))
@@ -162,6 +168,12 @@ namespace Neo.SmartContract.Native
             engine.SendNotification(Hash, "Deploy", new VM.Types.Array { contract.Hash.ToArray() });
 
             return contract;
+        }
+
+        [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowNotify)]
+        private void Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
+        {
+            Update(engine, nefFile, manifest, StackItem.Null);
         }
 
         [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowNotify)]
