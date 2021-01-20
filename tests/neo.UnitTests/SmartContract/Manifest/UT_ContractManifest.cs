@@ -1,5 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
+using Neo.IO.Json;
+using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 
 namespace Neo.UnitTests.SmartContract.Manifest
@@ -79,6 +81,19 @@ namespace Neo.UnitTests.SmartContract.Manifest
             var manifest = ContractManifest.Parse(json);
             Assert.AreEqual(json, json);
             Assert.AreEqual("value", manifest.Extra["key"].AsString(), false);
+        }
+
+        [TestMethod]
+        public void TestDeserializeAndSerialize()
+        {
+            var expected = TestUtils.CreateDefaultManifest();
+            expected.Extra = JObject.Parse(@"{""a"":123}");
+
+            var clone = new ContractManifest();
+            ((IInteroperable)clone).FromStackItem(expected.ToStackItem(null));
+
+            Assert.AreEqual(expected.ToString(), clone.ToString());
+            Assert.AreEqual(expected.Extra.ToString(), @"{""a"":123}");
         }
 
         [TestMethod]

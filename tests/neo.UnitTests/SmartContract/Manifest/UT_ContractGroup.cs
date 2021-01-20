@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.Wallets;
 using System;
@@ -10,6 +11,24 @@ namespace Neo.UnitTests.SmartContract.Manifest
     [TestClass]
     public class UT_ContractGroup
     {
+        [TestMethod]
+        public void TestClone()
+        {
+            Random random = new Random();
+            byte[] privateKey = new byte[32];
+            random.NextBytes(privateKey);
+            KeyPair keyPair = new KeyPair(privateKey);
+            ContractGroup contractGroup = new ContractGroup
+            {
+                PubKey = keyPair.PublicKey,
+                Signature = new byte[20]
+            };
+
+            var clone = new ContractGroup();
+            ((IInteroperable)clone).FromStackItem(contractGroup.ToStackItem(null));
+            Assert.AreEqual(clone.ToJson().ToString(), contractGroup.ToJson().ToString());
+        }
+
         [TestMethod]
         public void TestIsValid()
         {
