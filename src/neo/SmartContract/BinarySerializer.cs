@@ -143,7 +143,7 @@ namespace Neo.SmartContract
 
         public static void Serialize(BinaryWriter writer, StackItem item, uint maxSize)
         {
-            List<CompoundType> serialized = new List<CompoundType>();
+            HashSet<CompoundType> serialized = new HashSet<CompoundType>(ReferenceEqualityComparer.Instance);
             Stack<StackItem> unserialized = new Stack<StackItem>();
             unserialized.Push(item);
             while (unserialized.Count > 0)
@@ -163,17 +163,15 @@ namespace Neo.SmartContract
                         writer.WriteVarBytes(item.GetSpan());
                         break;
                     case Array array:
-                        if (serialized.Any(p => ReferenceEquals(p, array)))
+                        if (!serialized.Add(array))
                             throw new NotSupportedException();
-                        serialized.Add(array);
                         writer.WriteVarInt(array.Count);
                         for (int i = array.Count - 1; i >= 0; i--)
                             unserialized.Push(array[i]);
                         break;
                     case Map map:
-                        if (serialized.Any(p => ReferenceEquals(p, map)))
+                        if (!serialized.Add(map))
                             throw new NotSupportedException();
-                        serialized.Add(map);
                         writer.WriteVarInt(map.Count);
                         foreach (var pair in map.Reverse())
                         {
