@@ -69,7 +69,7 @@ namespace Neo.SmartContract.Manifest
                 Array array => WildcardContainer<UInt160>.Create(array.Select(p => new UInt160(p.GetSpan())).ToArray()),
                 _ => throw new ArgumentException(null, nameof(stackItem))
             };
-            Extra = JObject.Parse(@struct[6].GetSpan());
+            Extra = @struct[6].IsNull ? null : JObject.Parse(@struct[6].GetSpan());
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
@@ -82,7 +82,7 @@ namespace Neo.SmartContract.Manifest
                 Abi.ToStackItem(referenceCounter),
                 new Array(referenceCounter, Permissions.Select(p => p.ToStackItem(referenceCounter))),
                 Trusts.IsWildcard ? StackItem.Null : new Array(referenceCounter, Trusts.Select(p => (StackItem)p.ToArray())),
-                Extra is null ? "null" : Extra.ToByteArray(false)
+                Extra is null ? StackItem.Null : Extra.ToByteArray(false)
             };
         }
 
