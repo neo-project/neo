@@ -11,23 +11,6 @@ namespace Neo.UnitTests.SmartContract.Manifest
     public class UT_ContractGroup
     {
         [TestMethod]
-        public void TestClone()
-        {
-            Random random = new Random();
-            byte[] privateKey = new byte[32];
-            random.NextBytes(privateKey);
-            KeyPair keyPair = new KeyPair(privateKey);
-            ContractGroup contractGroup = new ContractGroup
-            {
-                PubKey = keyPair.PublicKey,
-                Signature = new byte[20]
-            };
-
-            var clone = contractGroup.Clone();
-            Assert.AreEqual(clone.ToJson().ToString(), contractGroup.ToJson().ToString());
-        }
-
-        [TestMethod]
         public void TestIsValid()
         {
             Random random = new Random();

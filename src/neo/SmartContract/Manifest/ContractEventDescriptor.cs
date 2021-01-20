@@ -1,9 +1,11 @@
 using Neo.IO.Json;
+using Neo.VM;
+using Neo.VM.Types;
 using System.Linq;
 
 namespace Neo.SmartContract.Manifest
 {
-    public class ContractEventDescriptor
+    public class ContractEventDescriptor : IInteroperable
     {
         /// <summary>
         /// Name is the name of the method, which can be any valid identifier.
@@ -15,12 +17,19 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public ContractParameterDefinition[] Parameters { get; set; }
 
-        public ContractEventDescriptor Clone()
+        public virtual void FromStackItem(StackItem stackItem)
         {
-            return new ContractEventDescriptor
+            Struct @struct = (Struct)stackItem;
+            Name = @struct[0].GetString();
+            Parameters = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractParameterDefinition>()).ToArray();
+        }
+
+        public virtual StackItem ToStackItem(ReferenceCounter referenceCounter)
+        {
+            return new Struct(referenceCounter)
             {
-                Name = Name,
-                Parameters = Parameters.Select(p => p.Clone()).ToArray()
+                Name,
+                new Array(referenceCounter, Parameters.Select(p => p.ToStackItem(referenceCounter)))
             };
         }
 

@@ -5,6 +5,7 @@ using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -141,6 +142,13 @@ namespace Neo.SmartContract
         public static bool IsStandardContract(this byte[] script)
         {
             return script.IsSignatureContract() || script.IsMultiSigContract();
+        }
+
+        public static T ToInteroperable<T>(this StackItem item) where T : IInteroperable, new()
+        {
+            T t = new T();
+            t.FromStackItem(item);
+            return t;
         }
 
         public static UInt160 ToScriptHash(this byte[] script)
