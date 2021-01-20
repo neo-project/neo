@@ -144,7 +144,12 @@ namespace Neo.SmartContract.Native
 
         public Transaction GetTransaction(DataCache snapshot, UInt256 hash)
         {
-            return snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>().Transaction;
+            return GetTransactionState(snapshot, hash)?.Transaction;
+        }
+
+        public TransactionState GetTransactionState(DataCache snapshot, UInt256 hash)
+        {
+            return snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates, Name = "getTransaction")]
