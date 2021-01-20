@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
+using System;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -12,13 +13,13 @@ namespace Neo.UnitTests.SmartContract
             var nef = new NefFile()
             {
                 Compiler = "test",
-                Version = new System.Version().ToString(),
+                Tokens = Array.Empty<MethodToken>(),
                 Script = new byte[] { 1, 2, 3 }
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
 
-            Assert.AreEqual("0xb4b7417195feca1cdb5a99504ab641d8c220ae99", Neo.SmartContract.Helper.GetContractHash(UInt160.Zero, nef.Script).ToString());
-            Assert.AreEqual("0xe56e4ee87f89a70e9138432c387ad49f2ee5b55f", Neo.SmartContract.Helper.GetContractHash(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), nef.Script).ToString());
+            Assert.AreEqual("0x9b9628e4f1611af90e761eea8cc21372380c74b6", Neo.SmartContract.Helper.GetContractHash(UInt160.Zero, nef.CheckSum, "").ToString());
+            Assert.AreEqual("0x66eec404d86b918d084e62a29ac9990e3b6f4286", Neo.SmartContract.Helper.GetContractHash(UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"), nef.CheckSum, "").ToString());
         }
 
         [TestMethod]

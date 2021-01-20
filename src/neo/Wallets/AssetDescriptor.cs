@@ -23,8 +23,8 @@ namespace Neo.Wallets
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitAppCall(asset_id, "decimals");
-                sb.EmitAppCall(asset_id, "symbol");
+                sb.EmitDynamicCall(asset_id, "decimals");
+                sb.EmitDynamicCall(asset_id, "symbol");
                 script = sb.ToArray();
             }
             using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, gas: 0_10000000);

@@ -1,10 +1,8 @@
 using Akka.Actor;
-using Neo.Consensus;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Persistence;
 using Neo.Plugins;
-using Neo.Wallets;
 using System;
 
 namespace Neo
@@ -15,12 +13,10 @@ namespace Neo
             $"akka {{ log-dead-letters = off , loglevel = warning, loggers = [ \"{typeof(Utility.Logger).AssemblyQualifiedName}\" ] }}" +
             $"blockchain-mailbox {{ mailbox-type: \"{typeof(BlockchainMailbox).AssemblyQualifiedName}\" }}" +
             $"task-manager-mailbox {{ mailbox-type: \"{typeof(TaskManagerMailbox).AssemblyQualifiedName}\" }}" +
-            $"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}" +
-            $"consensus-service-mailbox {{ mailbox-type: \"{typeof(ConsensusServiceMailbox).AssemblyQualifiedName}\" }}");
+            $"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}");
         public IActorRef Blockchain { get; }
         public IActorRef LocalNode { get; }
-        internal IActorRef TaskManager { get; }
-        public IActorRef Consensus { get; private set; }
+        public IActorRef TaskManager { get; }
 
         private readonly string storage_engine;
         private readonly IStore store;
@@ -84,12 +80,6 @@ namespace Neo
                 LocalNode.Tell(start_message);
                 start_message = null;
             }
-        }
-
-        public void StartConsensus(Wallet wallet, IStore consensus_store = null, bool ignoreRecoveryLogs = false)
-        {
-            Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.TaskManager, this.Blockchain, consensus_store ?? store, wallet));
-            Consensus.Tell(new ConsensusService.Start { IgnoreRecoveryLogs = ignoreRecoveryLogs }, Blockchain);
         }
 
         public void StartNode(ChannelsConfig config)

@@ -180,7 +180,7 @@ namespace Neo.UnitTests.SmartContract
 
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, null))
             {
-                engine.LoadScript(invocation.Concat(verification).ToArray(), CallFlags.None);
+                engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();
                 engine.GasConsumed.Should().Be(fee);
             }
@@ -208,7 +208,7 @@ namespace Neo.UnitTests.SmartContract
 
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, null))
             {
-                engine.LoadScript(invocation.Concat(verification).ToArray(), CallFlags.None);
+                engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();
                 engine.GasConsumed.Should().Be(fee);
             }

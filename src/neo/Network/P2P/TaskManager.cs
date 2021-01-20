@@ -13,11 +13,11 @@ using System.Runtime.CompilerServices;
 
 namespace Neo.Network.P2P
 {
-    internal class TaskManager : UntypedActor
+    public class TaskManager : UntypedActor
     {
-        public class Register { public VersionPayload Version; }
-        public class Update { public uint LastBlockIndex; public bool RequestTasks; }
-        public class NewTasks { public InvPayload Payload; }
+        internal class Register { public VersionPayload Version; }
+        internal class Update { public uint LastBlockIndex; public bool RequestTasks; }
+        internal class NewTasks { public InvPayload Payload; }
         public class RestartTasks { public InvPayload Payload; }
         private class Timer { }
 
@@ -339,7 +339,7 @@ namespace Neo.Network.P2P
                 case TaskManager.RestartTasks _:
                     return true;
                 case TaskManager.NewTasks tasks:
-                    if (tasks.Payload.Type == InventoryType.Block || tasks.Payload.Type == InventoryType.Consensus)
+                    if (tasks.Payload.Type == InventoryType.Block || tasks.Payload.Type == InventoryType.Extensible)
                         return true;
                     return false;
                 default:

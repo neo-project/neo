@@ -25,7 +25,7 @@ namespace Neo.VM
             return sb.Emit(OpCode.PACK);
         }
 
-        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder sb, IReadOnlyDictionary<TKey, TValue> map = null)
+        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder sb, IEnumerable<KeyValuePair<TKey, TValue>> map = null)
         {
             sb.Emit(OpCode.NEWMAP);
             if (map != null)
@@ -46,40 +46,39 @@ namespace Neo.VM
             return sb;
         }
 
-        public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation)
+        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation)
         {
+            sb.Emit(OpCode.NEWARRAY0);
             sb.EmitPush(CallFlags.All);
-            sb.EmitPush(0);
-            sb.Emit(OpCode.NEWARRAY);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(ApplicationEngine.System_Contract_CallEx);
+            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
             return sb;
         }
 
-        public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params ContractParameter[] args)
+        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params ContractParameter[] args)
         {
-            sb.EmitPush(CallFlags.All);
             for (int i = args.Length - 1; i >= 0; i--)
                 sb.EmitPush(args[i]);
             sb.EmitPush(args.Length);
             sb.Emit(OpCode.PACK);
+            sb.EmitPush(CallFlags.All);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(ApplicationEngine.System_Contract_CallEx);
+            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
             return sb;
         }
 
-        public static ScriptBuilder EmitAppCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params object[] args)
+        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params object[] args)
         {
-            sb.EmitPush(CallFlags.All);
             for (int i = args.Length - 1; i >= 0; i--)
                 sb.EmitPush(args[i]);
             sb.EmitPush(args.Length);
             sb.Emit(OpCode.PACK);
+            sb.EmitPush(CallFlags.All);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
-            sb.EmitSysCall(ApplicationEngine.System_Contract_CallEx);
+            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
             return sb;
         }
 
@@ -127,6 +126,12 @@ namespace Neo.VM
                                 sb.EmitPush(parameters[i]);
                             sb.EmitPush(parameters.Count);
                             sb.Emit(OpCode.PACK);
+                        }
+                        break;
+                    case ContractParameterType.Map:
+                        {
+                            var pairs = (IList<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value;
+                            sb.CreateMap(pairs);
                         }
                         break;
                     default:
@@ -181,6 +186,9 @@ namespace Neo.VM
                 case Enum data:
                     sb.EmitPush(BigInteger.Parse(data.ToString("d")));
                     break;
+                case ContractParameter data:
+                    sb.EmitPush(data);
+                    break;
                 case null:
                     sb.Emit(OpCode.PUSHNULL);
                     break;
@@ -206,14 +214,9 @@ namespace Neo.VM
         /// <returns></returns>
         public static byte[] MakeScript(this UInt160 scriptHash, string operation, params object[] args)
         {
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                if (args.Length > 0)
-                    sb.EmitAppCall(scriptHash, operation, args);
-                else
-                    sb.EmitAppCall(scriptHash, operation);
-                return sb.ToArray();
-            }
+            using ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitDynamicCall(scriptHash, operation, args);
+            return sb.ToArray();
         }
 
         public static JObject ToJson(this StackItem item)

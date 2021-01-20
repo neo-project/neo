@@ -149,7 +149,7 @@ namespace Neo.UnitTests.SmartContract
             };
             snapshot3.AddContract(UInt160.Zero, new ContractState()
             {
-                Script = Array.Empty<byte>(),
+                Nef = new NefFile { Script = Array.Empty<byte>() },
                 Hash = Array.Empty<byte>().ToScriptHash(),
                 Manifest = TestUtils.CreateManifest("verify", ContractParameterType.Boolean, ContractParameterType.Signature),
             });
@@ -159,7 +159,7 @@ namespace Neo.UnitTests.SmartContract
 
             var contract = new ContractState()
             {
-                Script = "11".HexToBytes(), // 17 PUSH1
+                Nef = new NefFile { Script = "11".HexToBytes() }, // 17 PUSH1
                 Hash = "11".HexToBytes().ToScriptHash(),
                 Manifest = TestUtils.CreateManifest("verify", ContractParameterType.Boolean, ContractParameterType.Signature), // Offset = 0
             };

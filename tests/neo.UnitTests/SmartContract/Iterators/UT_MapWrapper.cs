@@ -13,7 +13,7 @@ namespace Neo.UnitTests.SmartContract.Iterators
         [TestMethod]
         public void TestGeneratorAndDispose()
         {
-            MapWrapper mapWrapper = new MapWrapper(new List<KeyValuePair<PrimitiveType, StackItem>>());
+            MapWrapper mapWrapper = new MapWrapper(new List<KeyValuePair<PrimitiveType, StackItem>>(), null);
             Assert.IsNotNull(mapWrapper);
             Action action = () => mapWrapper.Dispose();
             action.Should().NotThrow<Exception>();
@@ -26,16 +26,17 @@ namespace Neo.UnitTests.SmartContract.Iterators
             Integer stackItem1 = new Integer(0);
             StackItem stackItem2 = new Integer(1);
             list.Add(new KeyValuePair<PrimitiveType, StackItem>(stackItem1, stackItem2));
-            MapWrapper mapWrapper = new MapWrapper(list);
+            MapWrapper mapWrapper = new MapWrapper(list, null);
             mapWrapper.Next();
-            Assert.AreEqual(stackItem1, mapWrapper.Key());
-            Assert.AreEqual(stackItem2, mapWrapper.Value());
+            Struct @struct = (Struct)mapWrapper.Value();
+            Assert.AreEqual(stackItem1, @struct[0]);
+            Assert.AreEqual(stackItem2, @struct[1]);
         }
 
         [TestMethod]
         public void TestNext()
         {
-            MapWrapper mapWrapper = new MapWrapper(new List<KeyValuePair<PrimitiveType, StackItem>>());
+            MapWrapper mapWrapper = new MapWrapper(new List<KeyValuePair<PrimitiveType, StackItem>>(), null);
             Assert.AreEqual(false, mapWrapper.Next());
         }
     }

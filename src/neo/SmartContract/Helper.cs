@@ -2,6 +2,7 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
@@ -27,12 +28,13 @@ namespace Neo.SmartContract
             ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
             ApplicationEngine.ECDsaVerifyPrice * n;
 
-        public static UInt160 GetContractHash(UInt160 sender, byte[] script)
+        public static UInt160 GetContractHash(UInt160 sender, uint nefCheckSum, string name)
         {
             using var sb = new ScriptBuilder();
             sb.Emit(OpCode.ABORT);
             sb.EmitPush(sender);
-            sb.EmitPush(script);
+            sb.EmitPush(nefCheckSum);
+            sb.EmitPush(name);
 
             return sb.ToArray().ToScriptHash();
         }
@@ -178,7 +180,7 @@ namespace Neo.SmartContract
         internal static bool VerifyWitness(this IVerifiable verifiable, StoreView snapshot, UInt160 hash, Witness witness, long gas, out long fee)
         {
             fee = 0;
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas))
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), null, gas))
             {
                 CallFlags callFlags = !witness.VerificationScript.IsStandardContract() ? CallFlags.ReadStates : CallFlags.None;
                 byte[] verification = witness.VerificationScript;
@@ -187,19 +189,35 @@ namespace Neo.SmartContract
                 {
                     ContractState cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (cs is null) return false;
-                    if (engine.LoadContract(cs, "verify", callFlags, true) is null)
-                        return false;
+                    ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify", -1);
+                    if (md?.ReturnType != ContractParameterType.Boolean) return false;
+                    engine.LoadContract(cs, md, callFlags);
                 }
                 else
                 {
                     if (NativeContract.IsNative(hash)) return false;
                     if (hash != witness.ScriptHash) return false;
-                    engine.LoadScript(verification, callFlags, hash, 0);
+                    engine.LoadScript(verification, initialPosition: 0, configureState: p =>
+                    {
+                        p.CallFlags = callFlags;
+                        p.ScriptHash = hash;
+                    });
                 }
 
-                engine.LoadScript(witness.InvocationScript, CallFlags.None);
+                engine.LoadScript(witness.InvocationScript, configureState: p => p.CallFlags = CallFlags.None);
+
+                if (NativeContract.IsNative(hash))
+                {
+                    try
+                    {
+                        engine.StepOut();
+                        engine.Push("verify");
+                    }
+                    catch { }
+                }
+
                 if (engine.Execute() == VMState.FAULT) return false;
-                if (engine.ResultStack.Count != 1 || !engine.ResultStack.Peek().GetBoolean()) return false;
+                if (!engine.ResultStack.Peek().GetBoolean()) return false;
                 fee = engine.GasConsumed;
             }
             return true;

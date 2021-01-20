@@ -28,8 +28,6 @@ namespace Neo.SmartContract.Native
 
         private const long OracleRequestPrice = 0_50000000;
 
-        public override int Id => -4;
-
         internal OracleContract()
         {
             var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
@@ -136,7 +134,7 @@ namespace Neo.SmartContract.Native
         internal override void PostPersist(ApplicationEngine engine)
         {
             (UInt160 Account, BigInteger GAS)[] nodes = null;
-            foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
+            foreach (Transaction tx in engine.PersistingBlock.Transactions)
             {
                 //Filter the response transactions
                 OracleResponse response = tx.GetAttribute<OracleResponse>();
@@ -155,7 +153,7 @@ namespace Neo.SmartContract.Native
                 if (list.Count == 0) engine.Snapshot.Storages.Delete(key);
 
                 //Mint GAS for oracle nodes
-                nodes ??= RoleManagement.GetDesignatedByRole(engine.Snapshot, Role.Oracle, engine.Snapshot.PersistingBlock.Index).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
+                nodes ??= RoleManagement.GetDesignatedByRole(engine.Snapshot, Role.Oracle, engine.PersistingBlock.Index).Select(p => (Contract.CreateSignatureRedeemScript(p).ToScriptHash(), BigInteger.Zero)).ToArray();
                 if (nodes.Length > 0)
                 {
                     int index = (int)(response.Id % (ulong)nodes.Length);

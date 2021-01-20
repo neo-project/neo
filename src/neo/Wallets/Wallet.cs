@@ -138,10 +138,10 @@ namespace Neo.Wallets
                 sb.EmitPush(0);
                 foreach (UInt160 account in accounts)
                 {
-                    sb.EmitAppCall(asset_id, "balanceOf", account);
+                    sb.EmitDynamicCall(asset_id, "balanceOf", account);
                     sb.Emit(OpCode.ADD);
                 }
-                sb.EmitAppCall(asset_id, "decimals");
+                sb.EmitDynamicCall(asset_id, "decimals");
                 script = sb.ToArray();
             }
             using ApplicationEngine engine = ApplicationEngine.Run(script, gas: 20000000L * accounts.Length);
@@ -265,7 +265,7 @@ namespace Neo.Wallets
                         foreach (UInt160 account in accounts)
                             using (ScriptBuilder sb2 = new ScriptBuilder())
                             {
-                                sb2.EmitAppCall(assetId, "balanceOf", account);
+                                sb2.EmitDynamicCall(assetId, "balanceOf", account);
                                 using (ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot))
                                 {
                                     if (engine.State.HasFlag(VMState.FAULT))
@@ -296,7 +296,7 @@ namespace Neo.Wallets
                                         Scopes = WitnessScope.CalledByEntry
                                     });
                                 }
-                                sb.EmitAppCall(output.AssetId, "transfer", account, output.ScriptHash, value, output.Data);
+                                sb.EmitDynamicCall(output.AssetId, "transfer", account, output.ScriptHash, value, output.Data);
                                 sb.Emit(OpCode.ASSERT);
                             }
                         }
@@ -391,16 +391,21 @@ namespace Neo.Wallets
                 {
                     var contract = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (contract is null) continue;
+                    var md = contract.Manifest.Abi.GetMethod("verify", 0);
+                    if (md is null)
+                        throw new ArgumentException($"The smart contract {contract.Hash} haven't got verify method without arguments");
+                    if (md.ReturnType != ContractParameterType.Boolean)
+                        throw new ArgumentException("The verify method doesn't return boolean value.");
 
                     // Empty invocation and verification scripts
                     size += Array.Empty<byte>().GetVarSize() * 2;
 
                     // Check verify cost
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.Clone());
-                    if (engine.LoadContract(contract, "verify", CallFlags.None, true) is null)
-                        throw new ArgumentException($"The smart contract {contract.Hash} haven't got verify method");
+                    engine.LoadContract(contract, md, CallFlags.None);
+                    if (NativeContract.IsNative(hash)) engine.Push("verify");
                     if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
-                    if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.Hash} returns false.");
+                    if (!engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.Hash} returns false.");
 
                     networkFee += engine.GasConsumed;
                 }
