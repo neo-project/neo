@@ -16,7 +16,7 @@ namespace Neo.SmartContract.Manifest
 
         /// <summary>
         /// Returntype indicates the return type of the method. It can be one of the following values: 
-        ///     Signature, Boolean, Integer, Hash160, Hash256, ByteArray, PublicKey, String, Array, InteropInterface, Void.
+        ///     Any, Signature, Boolean, Integer, Hash160, Hash256, ByteArray, PublicKey, String, Array, Map, InteropInterface, Void.
         /// </summary>
         public ContractParameterType ReturnType { get; set; }
 
