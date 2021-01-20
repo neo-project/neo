@@ -211,7 +211,7 @@ namespace Neo.SmartContract.Native
             return CalculateBonus(snapshot, state.VoteTo, state.Balance, state.BalanceHeight, end);
         }
 
-        [ContractMethod(0_05000000, CallFlags.WriteStates)]
+        [ContractMethod(1000_00000000, CallFlags.WriteStates)]
         private bool RegisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
