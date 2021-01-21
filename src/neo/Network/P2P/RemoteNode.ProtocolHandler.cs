@@ -6,6 +6,7 @@ using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
+using Neo.SmartContract.Native;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -169,20 +170,23 @@ namespace Neo.Network.P2P
         /// <param name="payload">A GetBlocksPayload including start block Hash and number of blocks requested.</param>
         private void OnGetBlocksMessageReceived(GetBlocksPayload payload)
         {
-            UInt256 hash = payload.HashStart;
-            // The default value of payload.Count is -1
-            int count = payload.Count < 0 || payload.Count > InvPayload.MaxHashesCount ? InvPayload.MaxHashesCount : payload.Count;
-            TrimmedBlock state = Blockchain.Singleton.View.Blocks.TryGet(hash);
-            if (state == null) return;
             List<UInt256> hashes = new List<UInt256>();
-            for (uint i = 1; i <= count; i++)
+            using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                uint index = state.Index + i;
-                if (index > Blockchain.Singleton.Height)
-                    break;
-                hash = Blockchain.Singleton.GetBlockHash(index);
-                if (hash == null) break;
-                hashes.Add(hash);
+                UInt256 hash = payload.HashStart;
+                // The default value of payload.Count is -1
+                int count = payload.Count < 0 || payload.Count > InvPayload.MaxHashesCount ? InvPayload.MaxHashesCount : payload.Count;
+                TrimmedBlock state = NativeContract.Ledger.GetTrimmedBlock(snapshot, hash);
+                if (state == null) return;
+                for (uint i = 1; i <= count; i++)
+                {
+                    uint index = state.Index + i;
+                    if (index > Blockchain.Singleton.Height)
+                        break;
+                    hash = NativeContract.Ledger.GetBlockHash(snapshot, index);
+                    if (hash == null) break;
+                    hashes.Add(hash);
+                }
             }
             if (hashes.Count == 0) return;
             EnqueueMessage(Message.Create(MessageCommand.Inv, InvPayload.Create(InventoryType.Block, hashes.ToArray())));
@@ -193,7 +197,7 @@ namespace Neo.Network.P2P
             uint count = payload.Count == -1 ? InvPayload.MaxHashesCount : Math.Min((uint)payload.Count, InvPayload.MaxHashesCount);
             for (uint i = payload.IndexStart, max = payload.IndexStart + count; i < max; i++)
             {
-                Block block = Blockchain.Singleton.GetBlock(i);
+                Block block = NativeContract.Ledger.GetBlock(Blockchain.Singleton.View, i);
                 if (block == null)
                     break;
 
@@ -223,14 +227,13 @@ namespace Neo.Network.P2P
                 switch (payload.Type)
                 {
                     case InventoryType.TX:
-                        Transaction tx = Blockchain.Singleton.GetTransaction(hash);
-                        if (tx != null)
+                        if (Blockchain.Singleton.MemPool.TryGetValue(hash, out Transaction tx))
                             EnqueueMessage(Message.Create(MessageCommand.Transaction, tx));
                         else
                             notFound.Add(hash);
                         break;
                     case InventoryType.Block:
-                        Block block = Blockchain.Singleton.GetBlock(hash);
+                        Block block = NativeContract.Ledger.GetBlock(Blockchain.Singleton.View, hash);
                         if (block != null)
                         {
                             if (bloom_filter == null)
@@ -271,15 +274,17 @@ namespace Neo.Network.P2P
         private void OnGetHeadersMessageReceived(GetBlockByIndexPayload payload)
         {
             uint index = payload.IndexStart;
-            uint count = payload.Count == -1 ? HeadersPayload.MaxHeadersCount : (uint)payload.Count;
-            if (index > Blockchain.Singleton.HeaderHeight)
-                return;
+            if (index > Blockchain.Singleton.Height) return;
             List<Header> headers = new List<Header>();
-            for (uint i = 0; i < count; i++)
+            using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                var header = Blockchain.Singleton.GetHeader(index + i);
-                if (header == null) break;
-                headers.Add(header);
+                uint count = payload.Count == -1 ? HeadersPayload.MaxHeadersCount : (uint)payload.Count;
+                for (uint i = 0; i < count; i++)
+                {
+                    var header = NativeContract.Ledger.GetHeader(snapshot, index + i);
+                    if (header == null) break;
+                    headers.Add(header);
+                }
             }
             if (headers.Count == 0) return;
             EnqueueMessage(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers.ToArray())));
@@ -305,12 +310,12 @@ namespace Neo.Network.P2P
             switch (payload.Type)
             {
                 case InventoryType.Block:
-                    using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
-                        hashes = hashes.Where(p => !snapshot.ContainsBlock(p)).ToArray();
+                    using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
+                        hashes = hashes.Where(p => !NativeContract.Ledger.ContainsBlock(snapshot, p)).ToArray();
                     break;
                 case InventoryType.TX:
-                    using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
-                        hashes = hashes.Where(p => !snapshot.ContainsTransaction(p)).ToArray();
+                    using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
+                        hashes = hashes.Where(p => !NativeContract.Ledger.ContainsTransaction(snapshot, p)).ToArray();
                     break;
             }
             if (hashes.Length == 0) return;

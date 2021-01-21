@@ -15,7 +15,7 @@ namespace Neo.SmartContract.Native
 
         internal override void Initialize(ApplicationEngine engine)
         {
-            UInt160 account = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators);
+            UInt160 account = Contract.GetBFTAddress(Blockchain.StandbyValidators);
             Mint(engine, account, 30_000_000 * Factor, false);
         }
 

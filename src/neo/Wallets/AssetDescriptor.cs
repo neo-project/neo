@@ -16,7 +16,7 @@ namespace Neo.Wallets
 
         public AssetDescriptor(UInt160 asset_id)
         {
-            using SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
+            using SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot();
             var contract = NativeContract.ContractManagement.GetContract(snapshot, asset_id);
             if (contract is null) throw new ArgumentException();
 

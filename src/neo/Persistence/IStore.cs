@@ -7,12 +7,9 @@ namespace Neo.Persistence
     /// </summary>
     public interface IStore : IDisposable, IReadOnlyStore
     {
-        void Delete(byte table, byte[] key);
+        void Delete(byte[] key);
         ISnapshot GetSnapshot();
-        void Put(byte table, byte[] key, byte[] value);
-        void PutSync(byte table, byte[] key, byte[] value)
-        {
-            Put(table, key, value);
-        }
+        void Put(byte[] key, byte[] value);
+        void PutSync(byte[] key, byte[] value) => Put(key, value);
     }
 }

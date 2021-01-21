@@ -106,5 +106,10 @@ namespace Neo.SmartContract
                 return sb.ToArray();
             }
         }
+
+        public static UInt160 GetBFTAddress(ECPoint[] pubkeys)
+        {
+            return CreateMultiSigRedeemScript(pubkeys.Length - (pubkeys.Length - 1) / 3, pubkeys).ToScriptHash();
+        }
     }
 }
