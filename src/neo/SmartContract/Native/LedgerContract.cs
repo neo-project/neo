@@ -142,20 +142,20 @@ namespace Neo.SmartContract.Native
             return GetHeader(snapshot, hash);
         }
 
-        public Transaction GetTransaction(DataCache snapshot, UInt256 hash)
-        {
-            return GetTransactionState(snapshot, hash)?.Transaction;
-        }
-
         public TransactionState GetTransactionState(DataCache snapshot, UInt256 hash)
         {
             return snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
         }
 
+        public Transaction GetTransaction(DataCache snapshot, UInt256 hash)
+        {
+            return GetTransactionState(snapshot, hash)?.Transaction;
+        }
+
         [ContractMethod(0_01000000, CallFlags.ReadStates, Name = "getTransaction")]
         private Transaction GetTransactionForContract(DataCache snapshot, UInt256 hash)
         {
-            TransactionState state = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
+            TransactionState state = GetTransactionState(snapshot, hash);
             if (state is null || !IsTraceableBlock(snapshot, state.BlockIndex)) return null;
             return state.Transaction;
         }
@@ -163,7 +163,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
         private int GetTransactionHeight(DataCache snapshot, UInt256 hash)
         {
-            TransactionState state = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
+            TransactionState state = GetTransactionState(snapshot, hash);
             if (state is null || !IsTraceableBlock(snapshot, state.BlockIndex)) return -1;
             return (int)state.BlockIndex;
         }
