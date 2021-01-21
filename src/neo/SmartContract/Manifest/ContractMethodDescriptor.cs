@@ -1,4 +1,6 @@
 using Neo.IO.Json;
+using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Linq;
 
@@ -6,8 +8,13 @@ namespace Neo.SmartContract.Manifest
 {
     public class ContractMethodDescriptor : ContractEventDescriptor
     {
-        private int _offset;
+        /// <summary>
+        /// Returntype indicates the return type of the method. It can be one of the following values: 
+        ///     Any, Signature, Boolean, Integer, Hash160, Hash256, ByteArray, PublicKey, String, Array, Map, InteropInterface, Void.
+        /// </summary>
+        public ContractParameterType ReturnType { get; set; }
 
+        private int _offset;
         public int Offset
         {
             get => _offset;
@@ -15,27 +22,27 @@ namespace Neo.SmartContract.Manifest
         }
 
         /// <summary>
-        /// Returntype indicates the return type of the method. It can be one of the following values: 
-        ///     Any, Signature, Boolean, Integer, Hash160, Hash256, ByteArray, PublicKey, String, Array, Map, InteropInterface, Void.
-        /// </summary>
-        public ContractParameterType ReturnType { get; set; }
-
-        /// <summary>
         /// Determine if it's safe to call this method
         /// If a method is marked as safe, the user interface will not give any warnings when it is called by any other contract.
         /// </summary>
         public bool Safe { get; set; }
 
-        public new ContractMethodDescriptor Clone()
+        public override void FromStackItem(StackItem stackItem)
         {
-            return new ContractMethodDescriptor
-            {
-                Name = Name,
-                Parameters = Parameters.Select(p => p.Clone()).ToArray(),
-                Offset = Offset,
-                ReturnType = ReturnType,
-                Safe = Safe
-            };
+            base.FromStackItem(stackItem);
+            Struct @struct = (Struct)stackItem;
+            ReturnType = (ContractParameterType)(byte)@struct[2].GetInteger();
+            Offset = (int)@struct[3].GetInteger();
+            Safe = @struct[4].GetBoolean();
+        }
+
+        public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+        {
+            Struct @struct = (Struct)base.ToStackItem(referenceCounter);
+            @struct.Add((byte)ReturnType);
+            @struct.Add(Offset);
+            @struct.Add(Safe);
+            return @struct;
         }
 
         /// <summary>
@@ -49,8 +56,8 @@ namespace Neo.SmartContract.Manifest
             {
                 Name = json["name"].AsString(),
                 Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson(u)).ToArray(),
-                Offset = (int)json["offset"].AsNumber(),
                 ReturnType = (ContractParameterType)Enum.Parse(typeof(ContractParameterType), json["returntype"].AsString()),
+                Offset = (int)json["offset"].AsNumber(),
                 Safe = json["safe"].AsBoolean(),
             };
         }
@@ -58,8 +65,8 @@ namespace Neo.SmartContract.Manifest
         public override JObject ToJson()
         {
             var json = base.ToJson();
-            json["offset"] = Offset;
             json["returntype"] = ReturnType.ToString();
+            json["offset"] = Offset;
             json["safe"] = Safe;
             return json;
         }

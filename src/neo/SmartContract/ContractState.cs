@@ -25,7 +25,7 @@ namespace Neo.SmartContract
             UpdateCounter = (ushort)array[1].GetInteger();
             Hash = new UInt160(array[2].GetSpan());
             Nef = array[3].GetSpan().AsSerializable<NefFile>();
-            Manifest = ContractManifest.Parse(array[4].GetSpan());
+            Manifest = array[4].ToInteroperable<ContractManifest>();
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace Neo.SmartContract
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new StackItem[] { Id, (int)UpdateCounter, Hash.ToArray(), Nef.ToArray(), Manifest.ToString() });
+            return new Array(referenceCounter, new StackItem[] { Id, (int)UpdateCounter, Hash.ToArray(), Nef.ToArray(), Manifest.ToStackItem(referenceCounter) });
         }
     }
 }
