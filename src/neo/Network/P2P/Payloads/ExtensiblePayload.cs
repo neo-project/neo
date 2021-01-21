@@ -2,6 +2,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using System;
 using System.IO;
 
@@ -69,7 +70,7 @@ namespace Neo.Network.P2P.Payloads
             Data = reader.ReadVarBytes(ushort.MaxValue);
         }
 
-        UInt160[] IVerifiable.GetScriptHashesForVerifying(StoreView snapshot)
+        UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
         {
             return new[] { Sender }; // This address should be checked by consumer
         }
@@ -89,9 +90,10 @@ namespace Neo.Network.P2P.Payloads
             writer.WriteVarBytes(Data);
         }
 
-        public bool Verify(StoreView snapshot)
+        public bool Verify(DataCache snapshot)
         {
-            if (snapshot.Height < ValidBlockStart || snapshot.Height >= ValidBlockEnd) return false;
+            uint height = NativeContract.Ledger.CurrentIndex(snapshot);
+            if (height < ValidBlockStart || height >= ValidBlockEnd) return false;
             if (!Blockchain.Singleton.IsExtensibleWitnessWhiteListed(Sender)) return false;
             return this.VerifyWitnesses(snapshot, 0_02000000);
         }

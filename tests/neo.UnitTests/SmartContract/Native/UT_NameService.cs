@@ -18,7 +18,7 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_NameService : TestKit
     {
-        protected StoreView _snapshot;
+        protected DataCache _snapshot;
 
         [TestInitialize]
         public void TestSetup()
@@ -37,7 +37,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestRoots()
         {
-            var snapshot = _snapshot.Clone();
+            var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block() { Index = 1000 };
             var from = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
@@ -62,7 +62,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestPrice()
         {
-            var snapshot = _snapshot.Clone();
+            var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block() { Index = 1000 };
             var from = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
@@ -87,7 +87,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestRegister()
         {
-            var snapshot = _snapshot.Clone();
+            var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block() { Index = 1000, Timestamp = 0 };
             var from = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
@@ -126,7 +126,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestSetRecord()
         {
-            var snapshot = _snapshot.Clone();
+            var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block() { Index = 1000, Timestamp = 0 };
             var from = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
@@ -158,7 +158,7 @@ namespace Neo.UnitTests.SmartContract.Native
             CollectionAssert.AreEqual(System.Array.Empty<string>(), NativeContract.NameService.GetRecords(snapshot, "neo.com").Select(u => u.Type.ToString() + "=" + u.Data).ToArray());
         }
 
-        internal static bool Check_DeleteRecord(StoreView snapshot, string name, RecordType type, UInt160 signedBy, Block persistingBlock)
+        internal static bool Check_DeleteRecord(DataCache snapshot, string name, RecordType type, UInt160 signedBy, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock);
             using var script = new ScriptBuilder();
@@ -176,7 +176,7 @@ namespace Neo.UnitTests.SmartContract.Native
             return true;
         }
 
-        internal static bool Check_SetRecord(StoreView snapshot, string name, RecordType type, string data, UInt160 signedBy, Block persistingBlock)
+        internal static bool Check_SetRecord(DataCache snapshot, string name, RecordType type, string data, UInt160 signedBy, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock);
             using var script = new ScriptBuilder();
@@ -195,7 +195,7 @@ namespace Neo.UnitTests.SmartContract.Native
             return true;
         }
 
-        internal static BigInteger Check_Renew(StoreView snapshot, string name, UInt160 signedBy, Block persistingBlock)
+        internal static BigInteger Check_Renew(DataCache snapshot, string name, UInt160 signedBy, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock);
             using var script = new ScriptBuilder();
@@ -215,7 +215,7 @@ namespace Neo.UnitTests.SmartContract.Native
             return result.GetInteger();
         }
 
-        internal static bool Check_SetAdmin(StoreView snapshot, string name, UInt160 admin, UInt160 signedBy, Block persistingBlock)
+        internal static bool Check_SetAdmin(DataCache snapshot, string name, UInt160 admin, UInt160 signedBy, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(admin, signedBy), snapshot, persistingBlock);
             using var script = new ScriptBuilder();
@@ -233,7 +233,7 @@ namespace Neo.UnitTests.SmartContract.Native
             return true;
         }
 
-        internal static bool Check_Register(StoreView snapshot, string name, UInt160 owner, Block persistingBlock)
+        internal static bool Check_Register(DataCache snapshot, string name, UInt160 owner, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(owner), snapshot, persistingBlock);
             using var script = new ScriptBuilder();
@@ -254,7 +254,7 @@ namespace Neo.UnitTests.SmartContract.Native
             return result.GetBoolean();
         }
 
-        internal static bool Check_SetPrice(StoreView snapshot, UInt160 signedBy, long price, Block persistingBlock)
+        internal static bool Check_SetPrice(DataCache snapshot, UInt160 signedBy, long price, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock);
             using var script = new ScriptBuilder();
@@ -269,7 +269,7 @@ namespace Neo.UnitTests.SmartContract.Native
             return true;
         }
 
-        internal static bool Check_AddRoot(StoreView snapshot, UInt160 signedBy, string root, Block persistingBlock)
+        internal static bool Check_AddRoot(DataCache snapshot, UInt160 signedBy, string root, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock);
             using var script = new ScriptBuilder();

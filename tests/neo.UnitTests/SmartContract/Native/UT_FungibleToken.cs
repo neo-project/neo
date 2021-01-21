@@ -2,6 +2,7 @@ using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
+using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System;
 using System.Numerics;
@@ -39,7 +40,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             key.Id = test.Id;
 
-            snapshot.Storages.Add(key, item);
+            snapshot.Add(key, item);
             test.TotalSupply(snapshot).Should().Be(1);
         }
 
@@ -59,7 +60,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             key.Id = test.Id;
 
-            snapshot.Storages.Add(key, item);
+            snapshot.Add(key, item);
 
             test.TotalSupply(snapshot).Should().Be(10_000_000_000_000_000);
         }

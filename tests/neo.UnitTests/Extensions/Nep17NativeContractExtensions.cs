@@ -28,14 +28,14 @@ namespace Neo.UnitTests.Extensions
 
             public void DeserializeUnsigned(BinaryReader reader) { }
 
-            public UInt160[] GetScriptHashesForVerifying(StoreView snapshot) => _hashForVerify;
+            public UInt160[] GetScriptHashesForVerifying(DataCache snapshot) => _hashForVerify;
 
             public void Serialize(BinaryWriter writer) { }
 
             public void SerializeUnsigned(BinaryWriter writer) { }
         }
 
-        public static bool Transfer(this NativeContract contract, StoreView snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom, Block persistingBlock)
+        public static bool Transfer(this NativeContract contract, DataCache snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom, Block persistingBlock)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application,
                 new ManualWitness(signFrom ? new UInt160(from) : null), snapshot, persistingBlock);
@@ -61,7 +61,7 @@ namespace Neo.UnitTests.Extensions
             return result.GetBoolean();
         }
 
-        public static BigInteger TotalSupply(this NativeContract contract, StoreView snapshot)
+        public static BigInteger TotalSupply(this NativeContract contract, DataCache snapshot)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
@@ -79,7 +79,7 @@ namespace Neo.UnitTests.Extensions
             return result.GetInteger();
         }
 
-        public static BigInteger BalanceOf(this NativeContract contract, StoreView snapshot, byte[] account)
+        public static BigInteger BalanceOf(this NativeContract contract, DataCache snapshot, byte[] account)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
@@ -98,7 +98,7 @@ namespace Neo.UnitTests.Extensions
             return result.GetInteger();
         }
 
-        public static BigInteger Decimals(this NativeContract contract, StoreView snapshot)
+        public static BigInteger Decimals(this NativeContract contract, DataCache snapshot)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
@@ -116,7 +116,7 @@ namespace Neo.UnitTests.Extensions
             return result.GetInteger();
         }
 
-        public static string Symbol(this NativeContract contract, StoreView snapshot)
+        public static string Symbol(this NativeContract contract, DataCache snapshot)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 

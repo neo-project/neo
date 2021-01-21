@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO;
-using Neo.Ledger;
+using Neo.SmartContract;
 using System.IO;
 using System.Text;
 
@@ -53,7 +52,7 @@ namespace Neo.UnitTests.Ledger
         {
             uut.Value = TestUtils.GetByteArray(10, 0x42);
 
-            StorageItem newSi = ((ICloneable<StorageItem>)uut).Clone();
+            StorageItem newSi = uut.Clone();
             newSi.Value.Length.Should().Be(10);
             newSi.Value[0].Should().Be(0x42);
             for (int i = 1; i < 10; i++)
@@ -112,7 +111,7 @@ namespace Neo.UnitTests.Ledger
             uut.Value = TestUtils.GetByteArray(10, 0x42);
             uut.IsConstant = true;
             StorageItem dest = new StorageItem();
-            ((ICloneable<StorageItem>)dest).FromReplica(uut);
+            dest.FromReplica(uut);
             dest.Value.Should().BeEquivalentTo(uut.Value);
             dest.IsConstant.Should().Be(uut.IsConstant);
         }

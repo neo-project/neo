@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO;
-using Neo.Ledger;
+using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using System.IO;
 
 namespace Neo.UnitTests.Ledger
@@ -22,42 +22,20 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
-        public void TestClone()
-        {
-            HashIndexState dest = ((ICloneable<HashIndexState>)origin).Clone();
-            dest.Hash.Should().Be(origin.Hash);
-            dest.Index.Should().Be(origin.Index);
-        }
-
-        [TestMethod]
-        public void TestFromReplica()
-        {
-            HashIndexState dest = new HashIndexState();
-            ((ICloneable<HashIndexState>)dest).FromReplica(origin);
-            dest.Hash.Should().Be(origin.Hash);
-            dest.Index.Should().Be(origin.Index);
-        }
-
-        [TestMethod]
-        public void TestGetSize()
-        {
-            ((ISerializable)origin).Size.Should().Be(36);
-        }
-
-        [TestMethod]
         public void TestDeserialize()
         {
-            using (MemoryStream ms = new MemoryStream(1024))
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            using (BinaryReader reader = new BinaryReader(ms))
-            {
-                ((ISerializable)origin).Serialize(writer);
-                ms.Seek(0, SeekOrigin.Begin);
-                HashIndexState dest = new HashIndexState();
-                ((ISerializable)dest).Deserialize(reader);
-                dest.Hash.Should().Be(origin.Hash);
-                dest.Index.Should().Be(origin.Index);
-            }
+            using MemoryStream ms = new MemoryStream(1024);
+            using BinaryReader reader = new BinaryReader(ms);
+
+            var data = BinarySerializer.Serialize(((IInteroperable)origin).ToStackItem(null), 1024);
+            ms.Write(data);
+            ms.Seek(0, SeekOrigin.Begin);
+
+            HashIndexState dest = new HashIndexState();
+            ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(reader, 1024, 1024, null));
+
+            dest.Hash.Should().Be(origin.Hash);
+            dest.Index.Should().Be(origin.Index);
         }
     }
 }

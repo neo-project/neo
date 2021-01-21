@@ -21,6 +21,7 @@ namespace Neo.SmartContract.Native
 
         #region Named Native Contracts
         public static ContractManagement ContractManagement { get; } = new ContractManagement();
+        public static LedgerContract Ledger { get; } = new LedgerContract();
         public static NeoToken NEO { get; } = new NeoToken();
         public static GasToken GAS { get; } = new GasToken();
         public static PolicyContract Policy { get; } = new PolicyContract();

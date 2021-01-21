@@ -1,6 +1,5 @@
 #pragma warning disable IDE0051
 
-using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -29,57 +28,57 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        public uint GetMaxTransactionsPerBlock(StoreView snapshot)
+        public uint GetMaxTransactionsPerBlock(DataCache snapshot)
         {
-            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxTransactionsPerBlock));
+            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_MaxTransactionsPerBlock));
             if (item is null) return 512;
             return (uint)(BigInteger)item;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        public uint GetMaxBlockSize(StoreView snapshot)
+        public uint GetMaxBlockSize(DataCache snapshot)
         {
-            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxBlockSize));
+            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_MaxBlockSize));
             if (item is null) return 1024 * 256;
             return (uint)(BigInteger)item;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        public long GetMaxBlockSystemFee(StoreView snapshot)
+        public long GetMaxBlockSystemFee(DataCache snapshot)
         {
-            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_MaxBlockSystemFee));
+            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_MaxBlockSystemFee));
             if (item is null) return 9000 * (long)GAS.Factor; // For the transfer method of NEP5, the maximum persisting time is about three seconds.
             return (long)(BigInteger)item;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        public long GetFeePerByte(StoreView snapshot)
+        public long GetFeePerByte(DataCache snapshot)
         {
-            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_FeePerByte));
+            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_FeePerByte));
             if (item is null) return 1000;
             return (long)(BigInteger)item;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        public uint GetExecFeeFactor(StoreView snapshot)
+        public uint GetExecFeeFactor(DataCache snapshot)
         {
-            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_ExecFeeFactor));
+            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_ExecFeeFactor));
             if (item is null) return DefaultExecFeeFactor;
             return (uint)(BigInteger)item;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        public uint GetStoragePrice(StoreView snapshot)
+        public uint GetStoragePrice(DataCache snapshot)
         {
-            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_StoragePrice));
+            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_StoragePrice));
             if (item is null) return DefaultStoragePrice;
             return (uint)(BigInteger)item;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        public bool IsBlocked(StoreView snapshot, UInt160 account)
+        public bool IsBlocked(DataCache snapshot, UInt160 account)
         {
-            return snapshot.Storages.Contains(CreateStorageKey(Prefix_BlockedAccount).Add(account));
+            return snapshot.Contains(CreateStorageKey(Prefix_BlockedAccount).Add(account));
         }
 
         [ContractMethod(0_03000000, CallFlags.WriteStates)]
@@ -87,7 +86,7 @@ namespace Neo.SmartContract.Native
         {
             if (value > Message.PayloadMaxSize) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) return false;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSize), () => new StorageItem());
+            StorageItem storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_MaxBlockSize), () => new StorageItem());
             storage.Set(value);
             return true;
         }
@@ -97,7 +96,7 @@ namespace Neo.SmartContract.Native
         {
             if (value > Block.MaxTransactionsPerBlock) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) return false;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxTransactionsPerBlock), () => new StorageItem());
+            StorageItem storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_MaxTransactionsPerBlock), () => new StorageItem());
             storage.Set(value);
             return true;
         }
@@ -107,7 +106,7 @@ namespace Neo.SmartContract.Native
         {
             if (value <= 4007600) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) return false;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_MaxBlockSystemFee), () => new StorageItem());
+            StorageItem storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_MaxBlockSystemFee), () => new StorageItem());
             storage.Set(value);
             return true;
         }
@@ -117,7 +116,7 @@ namespace Neo.SmartContract.Native
         {
             if (value < 0 || value > 1_00000000) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) return false;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_FeePerByte), () => new StorageItem());
+            StorageItem storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_FeePerByte), () => new StorageItem());
             storage.Set(value);
             return true;
         }
@@ -127,7 +126,7 @@ namespace Neo.SmartContract.Native
         {
             if (value == 0 || value > MaxExecFeeFactor) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) return false;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_ExecFeeFactor), () => new StorageItem());
+            StorageItem storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_ExecFeeFactor), () => new StorageItem());
             storage.Set(value);
             return true;
         }
@@ -137,7 +136,7 @@ namespace Neo.SmartContract.Native
         {
             if (value == 0 || value > MaxStoragePrice) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) return false;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_StoragePrice), () => new StorageItem());
+            StorageItem storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_StoragePrice), () => new StorageItem());
             storage.Set(value);
             return true;
         }
@@ -148,9 +147,9 @@ namespace Neo.SmartContract.Native
             if (!CheckCommittee(engine)) return false;
 
             var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
-            if (engine.Snapshot.Storages.Contains(key)) return false;
+            if (engine.Snapshot.Contains(key)) return false;
 
-            engine.Snapshot.Storages.Add(key, new StorageItem(new byte[] { 0x01 }));
+            engine.Snapshot.Add(key, new StorageItem(new byte[] { 0x01 }));
             return true;
         }
 
@@ -160,9 +159,9 @@ namespace Neo.SmartContract.Native
             if (!CheckCommittee(engine)) return false;
 
             var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
-            if (!engine.Snapshot.Storages.Contains(key)) return false;
+            if (!engine.Snapshot.Contains(key)) return false;
 
-            engine.Snapshot.Storages.Delete(key);
+            engine.Snapshot.Delete(key);
             return true;
         }
     }

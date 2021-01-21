@@ -1,5 +1,4 @@
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
@@ -61,11 +60,11 @@ namespace Neo.SmartContract.Native
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Account).Add(account), () => new StorageItem(new TState()));
+            StorageItem storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Account).Add(account), () => new StorageItem(new TState()));
             TState state = storage.GetInteroperable<TState>();
             OnBalanceChanging(engine, account, state, amount);
             state.Balance += amount;
-            storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem(BigInteger.Zero));
+            storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem(BigInteger.Zero));
             storage.Add(amount);
             PostTransfer(engine, null, account, amount, StackItem.Null, callOnPayment);
         }
@@ -75,31 +74,31 @@ namespace Neo.SmartContract.Native
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
             StorageKey key = CreateStorageKey(Prefix_Account).Add(account);
-            StorageItem storage = engine.Snapshot.Storages.GetAndChange(key);
+            StorageItem storage = engine.Snapshot.GetAndChange(key);
             TState state = storage.GetInteroperable<TState>();
             if (state.Balance < amount) throw new InvalidOperationException();
             OnBalanceChanging(engine, account, state, -amount);
             if (state.Balance == amount)
-                engine.Snapshot.Storages.Delete(key);
+                engine.Snapshot.Delete(key);
             else
                 state.Balance -= amount;
-            storage = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
+            storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
             storage.Add(-amount);
             PostTransfer(engine, account, null, amount, StackItem.Null, false);
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        public virtual BigInteger TotalSupply(StoreView snapshot)
+        public virtual BigInteger TotalSupply(DataCache snapshot)
         {
-            StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_TotalSupply));
+            StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_TotalSupply));
             if (storage is null) return BigInteger.Zero;
             return storage;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        public virtual BigInteger BalanceOf(StoreView snapshot, UInt160 account)
+        public virtual BigInteger BalanceOf(DataCache snapshot, UInt160 account)
         {
-            StorageItem storage = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Account).Add(account));
+            StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account));
             if (storage is null) return BigInteger.Zero;
             return storage.GetInteroperable<TState>().Balance;
         }
@@ -111,7 +110,7 @@ namespace Neo.SmartContract.Native
             if (!from.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(from))
                 return false;
             StorageKey key_from = CreateStorageKey(Prefix_Account).Add(from);
-            StorageItem storage_from = engine.Snapshot.Storages.GetAndChange(key_from);
+            StorageItem storage_from = engine.Snapshot.GetAndChange(key_from);
             if (amount.IsZero)
             {
                 if (storage_from != null)
@@ -133,11 +132,11 @@ namespace Neo.SmartContract.Native
                 {
                     OnBalanceChanging(engine, from, state_from, -amount);
                     if (state_from.Balance == amount)
-                        engine.Snapshot.Storages.Delete(key_from);
+                        engine.Snapshot.Delete(key_from);
                     else
                         state_from.Balance -= amount;
                     StorageKey key_to = CreateStorageKey(Prefix_Account).Add(to);
-                    StorageItem storage_to = engine.Snapshot.Storages.GetAndChange(key_to, () => new StorageItem(new TState()));
+                    StorageItem storage_to = engine.Snapshot.GetAndChange(key_to, () => new StorageItem(new TState()));
                     TState state_to = storage_to.GetInteroperable<TState>();
                     OnBalanceChanging(engine, to, state_to, amount);
                     state_to.Balance += amount;

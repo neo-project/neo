@@ -8,8 +8,8 @@ namespace Neo.Plugins
 {
     public interface IPersistencePlugin
     {
-        void OnPersist(Block block, StoreView snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList) { }
-        void OnCommit(Block block, StoreView snapshot) { }
+        void OnPersist(Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList) { }
+        void OnCommit(Block block, DataCache snapshot) { }
         bool ShouldThrowExceptionFromCommit(Exception ex) => false;
     }
 }

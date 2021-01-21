@@ -1,4 +1,4 @@
-namespace Neo.IO.Caching
+namespace Neo.Persistence
 {
     public enum SeekDirection : sbyte
     {
