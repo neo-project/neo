@@ -27,13 +27,24 @@ namespace Neo
         /// Create BigDecimal from decimal
         /// </summary>
         /// <param name="value">Value</param>
-        /// <param name="changeDecimals">Change decimals to</param>
-        public BigDecimal(decimal value, byte changeDecimals)
+        public unsafe BigDecimal(decimal value)
         {
-            this.decimals = BitConverter.GetBytes(decimal.GetBits(value)[3])[2];
-            this.value = new BigInteger(decimal.Multiply((Decimal)Math.Pow(10, this.decimals), value));
-            this.value = this.ChangeDecimals(changeDecimals).value;
-            this.decimals = changeDecimals;
+            ReadOnlySpan<byte> buffer = new ReadOnlySpan<byte>(&value, sizeof(decimal));
+            this.decimals = buffer[14];
+            this.value = new BigInteger(decimal.Multiply((decimal)Math.Pow(10, decimals), value));
+        }
+
+        /// <summary>
+        /// Create BigDecimal from decimal
+        /// </summary>
+        /// <param name="value">Value</param>
+        /// <param name="decimals">Decimals</param>
+        public unsafe BigDecimal(decimal value, byte decimals)
+        {
+            ReadOnlySpan<byte> buffer = new ReadOnlySpan<byte>(&value, sizeof(decimal));
+            if (buffer[14] > decimals) throw new ArgumentException(null, nameof(value));
+            this.value = new BigInteger(decimal.Multiply((decimal)Math.Pow(10, decimals), value));
+            this.decimals = decimals;
         }
 
         public BigDecimal ChangeDecimals(byte decimals)
