@@ -62,14 +62,15 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_03000000, CallFlags.WriteStates)]
-        private void AddRoot(ApplicationEngine engine, string root)
+        private bool AddRoot(ApplicationEngine engine, string root)
         {
             if (!rootRegex.IsMatch(root)) throw new ArgumentException(null, nameof(root));
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            if (!CheckCommittee(engine)) return false;
             StringList roots = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Roots), () => new StorageItem(new StringList())).GetInteroperable<StringList>();
             int index = roots.BinarySearch(root);
             if (index >= 0) throw new InvalidOperationException("The name already exists.");
             roots.Insert(~index, root);
+            return true;
         }
 
         public IEnumerable<string> GetRoots(DataCache snapshot)
@@ -78,11 +79,12 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_03000000, CallFlags.WriteStates)]
-        private void SetPrice(ApplicationEngine engine, long price)
+        private bool SetPrice(ApplicationEngine engine, long price)
         {
             if (price <= 0 || price > 10000_00000000) throw new ArgumentOutOfRangeException(nameof(price));
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            if (!CheckCommittee(engine)) return false;
             engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_DomainPrice)).Set(price);
+            return true;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]

@@ -266,7 +266,10 @@ namespace Neo.UnitTests.SmartContract.Native
                 return false;
             }
 
-            return true;
+            var result = engine.ResultStack.Pop();
+            Assert.IsInstanceOfType(result, typeof(VM.Types.Boolean));
+
+            return result.GetBoolean();
         }
 
         internal static bool Check_AddRoot(DataCache snapshot, UInt160 signedBy, string root, Block persistingBlock)
@@ -281,7 +284,10 @@ namespace Neo.UnitTests.SmartContract.Native
                 return false;
             }
 
-            return true;
+            var result = engine.ResultStack.Pop();
+            Assert.IsInstanceOfType(result, typeof(VM.Types.Boolean));
+
+            return result.GetBoolean();
         }
     }
 }
