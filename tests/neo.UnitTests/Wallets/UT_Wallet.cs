@@ -9,6 +9,7 @@ using Neo.UnitTests.Cryptography;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace Neo.UnitTests.Wallets
 {
@@ -206,7 +207,7 @@ namespace Neo.UnitTests.Wallets
             entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
             snapshot.Commit();
 
-            wallet.GetAvailable(NativeContract.GAS.Hash).Should().Be(new BigDecimal(1000000000000, 8));
+            wallet.GetAvailable(NativeContract.GAS.Hash).Should().Be(new BigDecimal(new BigInteger(1000000000000M), 8));
 
             entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 0;
@@ -228,8 +229,8 @@ namespace Neo.UnitTests.Wallets
             entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
             snapshot.Commit();
 
-            wallet.GetBalance(UInt160.Zero, new UInt160[] { account.ScriptHash }).Should().Be(new BigDecimal(0, 0));
-            wallet.GetBalance(NativeContract.GAS.Hash, new UInt160[] { account.ScriptHash }).Should().Be(new BigDecimal(1000000000000, 8));
+            wallet.GetBalance(UInt160.Zero, new UInt160[] { account.ScriptHash }).Should().Be(new BigDecimal(BigInteger.Zero, 0));
+            wallet.GetBalance(NativeContract.GAS.Hash, new UInt160[] { account.ScriptHash }).Should().Be(new BigDecimal(new BigInteger(1000000000000M), 8));
 
             entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 0;
@@ -294,7 +295,7 @@ namespace Neo.UnitTests.Wallets
                 {
                      AssetId = NativeContract.GAS.Hash,
                      ScriptHash = account.ScriptHash,
-                     Value = new BigDecimal(1,8),
+                     Value = new BigDecimal(BigInteger.One,8),
                      Data = "Dec 12th"
                 }
             }, UInt160.Zero);
@@ -306,7 +307,7 @@ namespace Neo.UnitTests.Wallets
                 {
                      AssetId = NativeContract.GAS.Hash,
                      ScriptHash = account.ScriptHash,
-                     Value = new BigDecimal(1,8),
+                     Value = new BigDecimal(BigInteger.One,8),
                      Data = "Dec 12th"
                 }
             }, account.ScriptHash);
@@ -318,7 +319,7 @@ namespace Neo.UnitTests.Wallets
                 {
                      AssetId = UInt160.Zero,
                      ScriptHash = account.ScriptHash,
-                     Value = new BigDecimal(1,8),
+                     Value = new BigDecimal(BigInteger.One,8),
                      Data = "Dec 12th"
                 }
             }, account.ScriptHash);
@@ -342,7 +343,7 @@ namespace Neo.UnitTests.Wallets
                 {
                      AssetId = NativeContract.GAS.Hash,
                      ScriptHash = account.ScriptHash,
-                     Value = new BigDecimal(1,8)
+                     Value = new BigDecimal(BigInteger.One,8)
                 }
             });
             tx.Should().NotBeNull();
@@ -353,7 +354,7 @@ namespace Neo.UnitTests.Wallets
                 {
                      AssetId = NativeContract.NEO.Hash,
                      ScriptHash = account.ScriptHash,
-                     Value = new BigDecimal(1,8),
+                     Value = new BigDecimal(BigInteger.One,8),
                      Data = "Dec 12th"
                 }
             });
