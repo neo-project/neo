@@ -12,16 +12,28 @@ namespace Neo
         public byte Decimals => decimals;
         public int Sign => value.Sign;
 
+        /// <summary>
+        /// Create BigDecimal from BigInteger
+        /// </summary>
+        /// <param name="value">Value</param>
+        /// <param name="decimals">Decimals</param>
         public BigDecimal(BigInteger value, byte decimals)
         {
             this.value = value;
             this.decimals = decimals;
         }
 
-        public BigDecimal(decimal value)
+        /// <summary>
+        /// Create BigDecimal from decimal
+        /// </summary>
+        /// <param name="value">Value</param>
+        /// <param name="changeDecimals">Change decimals to</param>
+        public BigDecimal(decimal value, byte changeDecimals)
         {
             this.decimals = BitConverter.GetBytes(decimal.GetBits(value)[3])[2];
             this.value = new BigInteger(decimal.Multiply((Decimal)Math.Pow(10, this.decimals), value));
+            this.value = this.ChangeDecimals(changeDecimals).value;
+            this.decimals = changeDecimals;
         }
 
         public BigDecimal ChangeDecimals(byte decimals)
