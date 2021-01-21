@@ -92,8 +92,15 @@ namespace Neo.UnitTests.SmartContract.Manifest
             var clone = new ContractManifest();
             ((IInteroperable)clone).FromStackItem(expected.ToStackItem(null));
 
-            Assert.AreEqual(expected.ToString(), clone.ToString());
             Assert.AreEqual(expected.Extra.ToString(), @"{""a"":123}");
+            Assert.AreEqual(expected.ToString(), clone.ToString());
+
+            expected.Extra = null;
+            clone = new ContractManifest();
+            ((IInteroperable)clone).FromStackItem(expected.ToStackItem(null));
+
+            Assert.AreEqual(expected.Extra, clone.Extra);
+            Assert.AreEqual(expected.ToString(), clone.ToString());
         }
 
         [TestMethod]
