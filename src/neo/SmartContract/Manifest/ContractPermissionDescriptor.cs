@@ -1,4 +1,5 @@
 using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.IO.Json;
 using System;
 
@@ -17,6 +18,21 @@ namespace Neo.SmartContract.Manifest
         {
             this.Hash = hash;
             this.Group = group;
+        }
+
+        internal ContractPermissionDescriptor(ReadOnlySpan<byte> span)
+        {
+            switch (span.Length)
+            {
+                case UInt160.Length:
+                    Hash = new UInt160(span);
+                    break;
+                case 33:
+                    Group = span.AsSerializable<ECPoint>();
+                    break;
+                default:
+                    throw new ArgumentException(null, nameof(span));
+            }
         }
 
         public static ContractPermissionDescriptor Create(UInt160 hash)
