@@ -69,7 +69,7 @@ namespace Neo.SmartContract.Manifest
                 Array array => WildcardContainer<UInt160>.Create(array.Select(p => new UInt160(p.GetSpan())).ToArray()),
                 _ => throw new ArgumentException(null, nameof(stackItem))
             };
-            Extra = @struct[6].IsNull ? null : JObject.Parse(@struct[6].GetSpan());
+            Extra = JObject.Parse(@struct[6].GetSpan());
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
