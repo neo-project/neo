@@ -14,10 +14,10 @@ namespace Neo.Network.P2P
         GetAddr = 0x10,
         [ReflectionCache(typeof(AddrPayload))]
         Addr = 0x11,
-        [ReflectionCache(typeof(PingPayload))]
-        Ping = 0x18,
-        [ReflectionCache(typeof(PingPayload))]
-        Pong = 0x19,
+        //[ReflectionCache(typeof(PingPayload))]
+        //Ping = 0x18,
+        //[ReflectionCache(typeof(PingPayload))]
+        //Pong = 0x19,
 
         //synchronization
         [ReflectionCache(typeof(GetBlockByIndexPayload))]

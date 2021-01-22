@@ -72,6 +72,7 @@ namespace Neo.Ledger
         public DataCache View => new SnapshotCache(Store);
         public MemoryPool MemPool { get; }
         public uint Height => NativeContract.Ledger.CurrentIndex(currentSnapshot);
+        public uint HeaderHeight => NativeContract.Ledger.CurrentHeaderIndex(currentSnapshot);
         public UInt256 CurrentBlockHash => NativeContract.Ledger.CurrentHash(currentSnapshot);
 
         private static Blockchain singleton;
@@ -216,28 +217,81 @@ namespace Neo.Ledger
         {
             if (block.Index <= Height)
                 return VerifyResult.AlreadyExists;
-            if (block.Index - 1 > Height)
+            if (block.Index - 1 > HeaderHeight)
             {
                 AddUnverifiedBlockToCache(block);
                 return VerifyResult.UnableToVerify;
             }
-            if (block.Index == Height + 1)
+            if (block.Index == HeaderHeight + 1)
             {
                 if (!block.Verify(currentSnapshot))
                     return VerifyResult.Invalid;
-                block_cache.TryAdd(block.Hash, block);
-                block_cache_unverified.Remove(block.Index);
-                Persist(block);
+            }
+            else
+            {
+                if (!block.Hash.Equals(NativeContract.Ledger.GetBlockHash(currentSnapshot, block.Index)))
+                    return VerifyResult.Invalid;
+            }
+            block_cache.TryAdd(block.Hash, block);
+            if (block.Index == Height + 1)
+            {
+                Block block_persist = block;
+                List<Block> blocksToPersistList = new List<Block>();
+                while (true)
+                {
+                    blocksToPersistList.Add(block_persist);
+                    if (block_persist.Index + 1 >= NativeContract.Ledger.CurrentHeaderIndex(currentSnapshot)) break;
+                    UInt256 hash = NativeContract.Ledger.CurrentHeaderHash(currentSnapshot);
+                    if (!block_cache.TryGetValue(hash, out block_persist)) break;
+                }
+
+                int blocksPersisted = 0;
+                foreach (Block blockToPersist in blocksToPersistList)
+                {
+                    block_cache_unverified.Remove(blockToPersist.Index);
+                    Persist(blockToPersist);
+
+                    // 15000 is the default among of seconds per block, while MilliSecondsPerBlock is the current
+                    uint extraBlocks = (15000 - MillisecondsPerBlock) / 1000;
+
+                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, extraBlocks))) continue;
+                    // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
+                    // Increase in the rate of 1 block per second in configurations with faster blocks
+
+                    if (blockToPersist.Index + 100 >= NativeContract.Ledger.CurrentHeaderIndex(currentSnapshot))
+                        system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = blockToPersist });
+                }
                 if (block_cache_unverified.TryGetValue(Height + 1, out var unverifiedBlocks))
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks.Blocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
                     block_cache_unverified.Remove(Height + 1);
                 }
-                // We can store the new block in block_cache and tell the new height to other nodes after Persist().
-                system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Singleton.Height)));
+            }
+            else
+            {
+                if (block.Index + 100 >= NativeContract.Ledger.CurrentHeaderIndex(currentSnapshot))
+                    system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
             }
             return VerifyResult.Succeed;
+        }
+
+        private void OnNewHeaders(Header[] headers)
+        {
+            using (SnapshotCache snapshot = GetSnapshot())
+            {
+                foreach (Header header in headers)
+                {
+                    if (header.Index - 1 >= HeaderHeight) break;
+                    if (header.Index < HeaderHeight) continue;
+                    if (!header.Verify(snapshot)) break;
+                    NativeContract.Ledger.SaveHeader(snapshot, header);
+                    NativeContract.Ledger.SetCurrentHeader(snapshot, header.Hash, header.Index);
+                }
+                snapshot.Commit();
+            }
+            UpdateCurrentSnapshot();
+            system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
         }
 
         private VerifyResult OnNewInventory(IInventory inventory)
@@ -270,6 +324,9 @@ namespace Neo.Ledger
                     break;
                 case FillMemoryPool fill:
                     OnFillMemoryPool(fill.Transactions);
+                    break;
+                case Header[] headers:
+                    OnNewHeaders(headers);
                     break;
                 case Block block:
                     OnInventory(block, false);
@@ -430,6 +487,7 @@ namespace Neo.Ledger
         {
             switch (message)
             {
+                case Header[] _:
                 case Block _:
                 case ExtensiblePayload _:
                 case Terminated _:

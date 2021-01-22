@@ -77,8 +77,6 @@ namespace Neo.Network.P2P
                 case MessageCommand.GetBlocks:
                 case MessageCommand.GetHeaders:
                 case MessageCommand.Mempool:
-                case MessageCommand.Ping:
-                case MessageCommand.Pong:
                     is_single = true;
                     break;
             }
@@ -130,8 +128,6 @@ namespace Neo.Network.P2P
                     {
                         if (payload.LastBlockIndex > LastHeightSent)
                             LastHeightSent = payload.LastBlockIndex;
-                        else if (msg.Command == MessageCommand.Ping)
-                            break;
                     }
                     EnqueueMessage(msg);
                     break;

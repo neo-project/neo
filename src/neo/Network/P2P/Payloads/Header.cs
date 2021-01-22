@@ -1,3 +1,4 @@
+using Neo.SmartContract.Native;
 using System;
 using System.IO;
 
@@ -34,6 +35,21 @@ namespace Neo.Network.P2P.Payloads
         {
             base.Serialize(writer);
             writer.Write((byte)0);
+        }
+
+        public TrimmedBlock Trim()
+        {
+            return new TrimmedBlock
+            {
+                Version = Version,
+                PrevHash = PrevHash,
+                MerkleRoot = MerkleRoot,
+                Timestamp = Timestamp,
+                Index = Index,
+                NextConsensus = NextConsensus,
+                Witness = Witness,
+                Hashes = new UInt256[0]
+            };
         }
     }
 }

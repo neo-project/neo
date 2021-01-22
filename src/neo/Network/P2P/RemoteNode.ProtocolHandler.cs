@@ -90,17 +90,14 @@ namespace Neo.Network.P2P
                 case MessageCommand.GetHeaders:
                     OnGetHeadersMessageReceived((GetBlockByIndexPayload)msg.Payload);
                     break;
+                case MessageCommand.Headers:
+                    OnHeadersMessageReceived((HeadersPayload)msg.Payload);
+                    break;
                 case MessageCommand.Inv:
                     OnInvMessageReceived((InvPayload)msg.Payload);
                     break;
                 case MessageCommand.Mempool:
                     OnMemPoolMessageReceived();
-                    break;
-                case MessageCommand.Ping:
-                    OnPingMessageReceived((PingPayload)msg.Payload);
-                    break;
-                case MessageCommand.Pong:
-                    OnPongMessageReceived((PingPayload)msg.Payload);
                     break;
                 case MessageCommand.Transaction:
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
@@ -110,7 +107,6 @@ namespace Neo.Network.P2P
                 case MessageCommand.Version:
                     throw new ProtocolViolationException();
                 case MessageCommand.Alert:
-                case MessageCommand.Headers:
                 case MessageCommand.MerkleBlock:
                 case MessageCommand.NotFound:
                 case MessageCommand.Reject:
@@ -290,6 +286,12 @@ namespace Neo.Network.P2P
             EnqueueMessage(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers.ToArray())));
         }
 
+        private void OnHeadersMessageReceived(HeadersPayload payload)
+        {
+            if (payload.Headers.Length == 0) return;
+            system.Blockchain.Tell(payload.Headers);
+        }
+
         private void OnInventoryReceived(IInventory inventory)
         {
             pendingKnownHashes.Remove(inventory.Hash);
@@ -328,17 +330,6 @@ namespace Neo.Network.P2P
         {
             foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => p.Hash).ToArray()))
                 EnqueueMessage(Message.Create(MessageCommand.Inv, payload));
-        }
-
-        private void OnPingMessageReceived(PingPayload payload)
-        {
-            UpdateLastBlockIndex(payload.LastBlockIndex, true);
-            EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce)));
-        }
-
-        private void OnPongMessageReceived(PingPayload payload)
-        {
-            UpdateLastBlockIndex(payload.LastBlockIndex, true);
         }
 
         private void OnVerackMessageReceived()

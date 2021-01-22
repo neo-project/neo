@@ -15,6 +15,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_CurrentBlock = 12;
         private const byte Prefix_Block = 5;
         private const byte Prefix_Transaction = 11;
+        private const byte Prefix_CurrentHeader = 14;
 
         internal LedgerContract()
         {
@@ -23,7 +24,7 @@ namespace Neo.SmartContract.Native
         internal override void OnPersist(ApplicationEngine engine)
         {
             engine.Snapshot.Add(CreateStorageKey(Prefix_BlockHash).AddBigEndian(engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray(), true));
-            engine.Snapshot.Add(CreateStorageKey(Prefix_Block).Add(engine.PersistingBlock.Hash), new StorageItem(Trim(engine.PersistingBlock).ToArray(), true));
+            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Block).Add(engine.PersistingBlock.Hash), () => new StorageItem(Trim(engine.PersistingBlock).ToArray(), true));
             foreach (Transaction tx in engine.PersistingBlock.Transactions)
             {
                 engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(tx.Hash), new StorageItem(new TransactionState
@@ -150,6 +151,28 @@ namespace Neo.SmartContract.Native
         public Transaction GetTransaction(DataCache snapshot, UInt256 hash)
         {
             return GetTransactionState(snapshot, hash)?.Transaction;
+        }
+
+        public void SetCurrentHeader(DataCache snapshot, UInt256 hash, uint index)
+        {
+            HashIndexState state = snapshot.GetAndChange(CreateStorageKey(Prefix_CurrentHeader), () => new StorageItem(new HashIndexState())).GetInteroperable<HashIndexState>();
+            state.Hash = hash;
+            state.Index = index;
+        }
+
+        public UInt256 CurrentHeaderHash(DataCache snapshot)
+        {
+            return snapshot[CreateStorageKey(Prefix_CurrentHeader)].GetInteroperable<HashIndexState>().Hash;
+        }
+
+        public uint CurrentHeaderIndex(DataCache snapshot)
+        {
+            return snapshot[CreateStorageKey(Prefix_CurrentHeader)].GetInteroperable<HashIndexState>().Index;
+        }
+
+        public void SaveHeader(DataCache snapshot, Header header)
+        {
+            snapshot.Add(CreateStorageKey(Prefix_Block).Add(header.Hash), new StorageItem(header.Trim().ToArray(), true));
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates, Name = "getTransaction")]
