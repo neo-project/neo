@@ -60,7 +60,7 @@ namespace Neo.Network.P2P
                 return;
             session.InvTasks.Remove(HeaderTaskHash);
             DecrementGlobalTask(HeaderTaskHash);
-            RequestTasks();
+            RequestTasks(true);
         }
 
         private bool AssignSyncTask(uint index, TaskSession filterSession = null)
@@ -90,7 +90,7 @@ namespace Neo.Network.P2P
             if (session is null) return;
             session.IndexTasks.Remove(block.Index);
             receivedBlockIndex.TryAdd(block.Index, session);
-            RequestTasks();
+            RequestTasks(false);
         }
 
         private void OnInvalidBlock(Block invalidBlock)
@@ -133,7 +133,7 @@ namespace Neo.Network.P2P
         private void OnPersistCompleted(Block block)
         {
             receivedBlockIndex.Remove(block.Index);
-            RequestTasks();
+            RequestTasks(false);
         }
 
         protected override void OnReceive(object message)
@@ -184,7 +184,7 @@ namespace Neo.Network.P2P
             if (session.IsFullNode)
                 session.InvTasks.TryAdd(MemPoolTaskHash, TimeProvider.Current.UtcNow);
             sessions.TryAdd(Sender, session);
-            RequestTasks();
+            RequestTasks(true);
         }
 
         private void OnUpdate(Update update)
@@ -193,7 +193,7 @@ namespace Neo.Network.P2P
                 return;
             session.LastBlockIndex = update.LastBlockIndex;
             session.ExpireTime = TimeProvider.Current.UtcNow.AddMilliseconds(PingCoolingOffPeriod);
-            if (update.RequestTasks) RequestTasks();
+            if (update.RequestTasks) RequestTasks(true);
         }
 
         private void OnRestartTasks(InvPayload payload)
@@ -275,7 +275,7 @@ namespace Neo.Network.P2P
                     }
                 }
             }
-            RequestTasks();
+            RequestTasks(true);
         }
 
         protected override void PostStop()
@@ -289,9 +289,11 @@ namespace Neo.Network.P2P
             return Akka.Actor.Props.Create(() => new TaskManager(system)).WithMailbox("task-manager-mailbox");
         }
 
-        private void RequestTasks()
+        private void RequestTasks(bool sendPing)
         {
             if (sessions.Count() == 0) return;
+
+            if (sendPing) SendPingMessage();
 
             while (failedSyncTasks.Count() > 0)
             {
@@ -310,6 +312,33 @@ namespace Neo.Network.P2P
             {
                 if (lastTaskIndex >= highestBlockIndex || lastTaskIndex >= Blockchain.Singleton.Height + InvPayload.MaxHashesCount) break;
                 if (!AssignSyncTask(++lastTaskIndex)) break;
+            }
+        }
+
+        private void SendPingMessage()
+        {
+            TrimmedBlock block;
+            using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
+            {
+                block = NativeContract.Ledger.GetTrimmedBlock(snapshot, NativeContract.Ledger.CurrentHash(snapshot));
+            }
+
+            foreach (KeyValuePair<IActorRef, TaskSession> item in sessions)
+            {
+                var node = item.Key;
+                var session = item.Value;
+
+                if (session.ExpireTime < TimeProvider.Current.UtcNow ||
+                     (block.Index >= session.LastBlockIndex &&
+                     TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= block.Timestamp))
+                {
+                    if (session.InvTasks.Remove(MemPoolTaskHash))
+                    {
+                        node.Tell(Message.Create(MessageCommand.Mempool));
+                    }
+                    node.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height)));
+                    session.ExpireTime = TimeProvider.Current.UtcNow.AddMilliseconds(PingCoolingOffPeriod);
+                }
             }
         }
     }

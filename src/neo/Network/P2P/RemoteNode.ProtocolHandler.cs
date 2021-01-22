@@ -99,6 +99,12 @@ namespace Neo.Network.P2P
                 case MessageCommand.Mempool:
                     OnMemPoolMessageReceived();
                     break;
+                case MessageCommand.Ping:
+                    OnPingMessageReceived((PingPayload)msg.Payload);
+                    break;
+                case MessageCommand.Pong:
+                    OnPongMessageReceived((PingPayload)msg.Payload);
+                    break;
                 case MessageCommand.Transaction:
                     if (msg.Payload.Size <= Transaction.MaxTransactionSize)
                         OnInventoryReceived((Transaction)msg.Payload);
@@ -330,6 +336,17 @@ namespace Neo.Network.P2P
         {
             foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => p.Hash).ToArray()))
                 EnqueueMessage(Message.Create(MessageCommand.Inv, payload));
+        }
+
+        private void OnPingMessageReceived(PingPayload payload)
+        {
+            UpdateLastBlockIndex(payload.LastBlockIndex, true);
+            EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce)));
+        }
+
+        private void OnPongMessageReceived(PingPayload payload)
+        {
+            UpdateLastBlockIndex(payload.LastBlockIndex, true);
         }
 
         private void OnVerackMessageReceived()
