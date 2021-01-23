@@ -146,7 +146,7 @@ namespace Neo.Wallets
             }
             using ApplicationEngine engine = ApplicationEngine.Run(script, gas: 20000000L * accounts.Length);
             if (engine.State.HasFlag(VMState.FAULT))
-                return new BigDecimal(0, 0);
+                return new BigDecimal(BigInteger.Zero, 0);
             byte decimals = (byte)engine.ResultStack.Pop().GetInteger();
             BigInteger amount = engine.ResultStack.Pop().GetInteger();
             return new BigDecimal(amount, decimals);
