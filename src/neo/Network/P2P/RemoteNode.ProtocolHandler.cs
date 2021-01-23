@@ -294,7 +294,6 @@ namespace Neo.Network.P2P
 
         private void OnHeadersMessageReceived(HeadersPayload payload)
         {
-            if (payload.Headers.Length == 0) return;
             system.Blockchain.Tell(payload.Headers);
         }
 
