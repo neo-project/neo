@@ -1,14 +1,17 @@
 using Neo.IO.Json;
+using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Manifest
 {
     /// <summary>
     /// NeoContract ABI
     /// </summary>
-    public class ContractAbi
+    public class ContractAbi : IInteroperable
     {
         private IReadOnlyDictionary<(string, int), ContractMethodDescriptor> methodDictionary;
 
@@ -22,12 +25,19 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public ContractEventDescriptor[] Events { get; set; }
 
-        public ContractAbi Clone()
+        void IInteroperable.FromStackItem(StackItem stackItem)
         {
-            return new ContractAbi
+            Struct @struct = (Struct)stackItem;
+            Methods = ((Array)@struct[0]).Select(p => p.ToInteroperable<ContractMethodDescriptor>()).ToArray();
+            Events = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractEventDescriptor>()).ToArray();
+        }
+
+        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        {
+            return new Struct(referenceCounter)
             {
-                Methods = Methods.Select(p => p.Clone()).ToArray(),
-                Events = Events.Select(p => p.Clone()).ToArray()
+                new Array(referenceCounter, Methods.Select(p => p.ToStackItem(referenceCounter))),
+                new Array(referenceCounter, Events.Select(p => p.ToStackItem(referenceCounter))),
             };
         }
 

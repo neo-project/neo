@@ -954,10 +954,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 return (false, false);
             }
 
-            var result = engine.ResultStack.Pop();
-            result.Should().BeOfType(typeof(VM.Types.Boolean));
-
-            return (((VM.Types.Boolean)result).GetBoolean(), true);
+            return (true, true);
         }
 
         internal static (bool State, bool Result) Check_Vote(DataCache snapshot, byte[] account, byte[] pubkey, bool signAccount, Block persistingBlock)

@@ -11,6 +11,7 @@ using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 
 namespace Neo.UnitTests.Ledger
@@ -119,7 +120,7 @@ namespace Neo.UnitTests.Ledger
                     {
                         AssetId = NativeContract.GAS.Hash,
                         ScriptHash = account,
-                        Value = new BigDecimal(1,8)
+                        Value = new BigDecimal(BigInteger.One,8)
                     }
                 },
                 account);

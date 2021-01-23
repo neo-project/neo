@@ -82,69 +82,63 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_03000000, CallFlags.WriteStates)]
-        private bool SetMaxBlockSize(ApplicationEngine engine, uint value)
+        private void SetMaxBlockSize(ApplicationEngine engine, uint value)
         {
             if (value > Message.PayloadMaxSize) throw new ArgumentOutOfRangeException(nameof(value));
-            if (!CheckCommittee(engine)) return false;
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
             StorageItem storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_MaxBlockSize), () => new StorageItem());
             storage.Set(value);
-            return true;
         }
 
         [ContractMethod(0_03000000, CallFlags.WriteStates)]
-        private bool SetMaxTransactionsPerBlock(ApplicationEngine engine, uint value)
+        private void SetMaxTransactionsPerBlock(ApplicationEngine engine, uint value)
         {
             if (value > Block.MaxTransactionsPerBlock) throw new ArgumentOutOfRangeException(nameof(value));
-            if (!CheckCommittee(engine)) return false;
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
             StorageItem storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_MaxTransactionsPerBlock), () => new StorageItem());
             storage.Set(value);
-            return true;
         }
 
         [ContractMethod(0_03000000, CallFlags.WriteStates)]
-        private bool SetMaxBlockSystemFee(ApplicationEngine engine, long value)
+        private void SetMaxBlockSystemFee(ApplicationEngine engine, long value)
         {
             if (value <= 4007600) throw new ArgumentOutOfRangeException(nameof(value));
-            if (!CheckCommittee(engine)) return false;
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
             StorageItem storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_MaxBlockSystemFee), () => new StorageItem());
             storage.Set(value);
-            return true;
         }
 
         [ContractMethod(0_03000000, CallFlags.WriteStates)]
-        private bool SetFeePerByte(ApplicationEngine engine, long value)
+        private void SetFeePerByte(ApplicationEngine engine, long value)
         {
             if (value < 0 || value > 1_00000000) throw new ArgumentOutOfRangeException(nameof(value));
-            if (!CheckCommittee(engine)) return false;
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
             StorageItem storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_FeePerByte), () => new StorageItem());
             storage.Set(value);
-            return true;
         }
 
         [ContractMethod(0_03000000, CallFlags.WriteStates)]
-        private bool SetExecFeeFactor(ApplicationEngine engine, uint value)
+        private void SetExecFeeFactor(ApplicationEngine engine, uint value)
         {
             if (value == 0 || value > MaxExecFeeFactor) throw new ArgumentOutOfRangeException(nameof(value));
-            if (!CheckCommittee(engine)) return false;
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
             StorageItem storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_ExecFeeFactor), () => new StorageItem());
             storage.Set(value);
-            return true;
         }
 
         [ContractMethod(0_03000000, CallFlags.WriteStates)]
-        private bool SetStoragePrice(ApplicationEngine engine, uint value)
+        private void SetStoragePrice(ApplicationEngine engine, uint value)
         {
             if (value == 0 || value > MaxStoragePrice) throw new ArgumentOutOfRangeException(nameof(value));
-            if (!CheckCommittee(engine)) return false;
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
             StorageItem storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_StoragePrice), () => new StorageItem());
             storage.Set(value);
-            return true;
         }
 
         [ContractMethod(0_03000000, CallFlags.WriteStates)]
         private bool BlockAccount(ApplicationEngine engine, UInt160 account)
         {
-            if (!CheckCommittee(engine)) return false;
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
             var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
             if (engine.Snapshot.Contains(key)) return false;
@@ -156,7 +150,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_03000000, CallFlags.WriteStates)]
         private bool UnblockAccount(ApplicationEngine engine, UInt160 account)
         {
-            if (!CheckCommittee(engine)) return false;
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
             var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
             if (!engine.Snapshot.Contains(key)) return false;

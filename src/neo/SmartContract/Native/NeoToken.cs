@@ -175,16 +175,15 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_05000000, CallFlags.WriteStates)]
-        private bool SetGasPerBlock(ApplicationEngine engine, BigInteger gasPerBlock)
+        private void SetGasPerBlock(ApplicationEngine engine, BigInteger gasPerBlock)
         {
             if (gasPerBlock < 0 || gasPerBlock > 10 * GAS.Factor)
                 throw new ArgumentOutOfRangeException(nameof(gasPerBlock));
-            if (!CheckCommittee(engine)) return false;
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
             uint index = engine.PersistingBlock.Index + 1;
             StorageItem entry = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(index), () => new StorageItem(gasPerBlock));
             entry.Set(gasPerBlock);
-            return true;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
