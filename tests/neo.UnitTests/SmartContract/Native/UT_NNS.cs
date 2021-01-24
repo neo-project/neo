@@ -69,16 +69,16 @@ namespace Neo.UnitTests.SmartContract.Native
             register_ret.State.Should().BeTrue();
 
             //check NFT token
-            Assert.AreEqual(NativeContract.NameService.BalanceOf(snapshot,from), (BigInteger)1);
+            Assert.AreEqual(NativeContract.NameService.BalanceOf(snapshot, from), (BigInteger)1);
 
             //after register
-            checkAvail_ret = Check_IsAvailable(snapshot, UInt160.Zero, domain,persistingBlock);
+            checkAvail_ret = Check_IsAvailable(snapshot, UInt160.Zero, domain, persistingBlock);
             checkAvail_ret.Result.Should().BeTrue();
             checkAvail_ret.State.Should().BeFalse();
 
             //set As IPv4 Address
             string testA = "10.10.10.10";
-            var setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, testA, from , persistingBlock);
+            var setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, testA, from, persistingBlock);
             setRecord_ret.Should().BeTrue();
 
             var getRecord_ret = Check_GetRecord(snapshot, domain, RecordType.A, persistingBlock);
@@ -487,7 +487,7 @@ namespace Neo.UnitTests.SmartContract.Native
             checkAvail_ret.Result.Should().BeTrue();
             checkAvail_ret.State.Should().BeFalse();
 
-            UInt160 admin =  Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash;
+            UInt160 admin = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash;
             var checkadmin_ret = Check_SetAdmin(snapshot, domain, admin, from, persistingBlock);
             checkadmin_ret.Should().BeTrue();
 
@@ -516,12 +516,6 @@ namespace Neo.UnitTests.SmartContract.Native
             checkadmin_ret.Should().BeFalse();
         }
 
-        [TestMethod]
-        public void Check_Initialize()
-        {
-            var snapshot = _snapshot.CreateSnapshot();
-        }
-        
         internal static bool Check_AddRoot(DataCache snapshot, UInt160 account, string root, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(account), snapshot, persistingBlock);
@@ -581,7 +575,7 @@ namespace Neo.UnitTests.SmartContract.Native
             return (((VM.Types.Boolean)result).GetBoolean(), true);
         }
 
-        internal static (bool State, bool Result) Check_SetPrice(DataCache snapshot, byte[] pubkey,long price, Block persistingBlock)
+        internal static (bool State, bool Result) Check_SetPrice(DataCache snapshot, byte[] pubkey, long price, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot, persistingBlock);
@@ -622,7 +616,7 @@ namespace Neo.UnitTests.SmartContract.Native
             return new BigDecimal(((VM.Types.PrimitiveType)result).GetInteger(), NativeContract.GAS.Decimals);
         }
 
-        internal static (bool State, bool Result) Check_Register(DataCache snapshot,string name, byte[] owner, Block persistingBlock)
+        internal static (bool State, bool Result) Check_Register(DataCache snapshot, string name, byte[] owner, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(new UInt160(owner)), snapshot, persistingBlock);
