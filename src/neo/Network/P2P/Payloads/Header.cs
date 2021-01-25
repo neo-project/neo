@@ -48,7 +48,7 @@ namespace Neo.Network.P2P.Payloads
                 Index = Index,
                 NextConsensus = NextConsensus,
                 Witness = Witness,
-                Hashes = new UInt256[0]
+                Hashes = Array.Empty<UInt256>()
             };
         }
     }
