@@ -85,28 +85,7 @@ namespace Neo.UnitTests.SmartContract.Native
             getRecord_ret.State.Should().BeTrue();
             getRecord_ret.Result.Should().Equals(testA);
 
-            testA = "0.0.0";
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, testA, from, persistingBlock);
-            setRecord_ret.Should().BeTrue();
-            getRecord_ret = Check_GetRecord(snapshot, domain, RecordType.A, persistingBlock);
-            getRecord_ret.State.Should().BeTrue();
-            getRecord_ret.Result.Should().Equals(testA);
-
-            testA = "1.1";
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, testA, from, persistingBlock);
-            setRecord_ret.Should().BeTrue();
-            getRecord_ret = Check_GetRecord(snapshot, domain, RecordType.A, persistingBlock);
-            getRecord_ret.State.Should().BeTrue();
-            getRecord_ret.Result.Should().Equals(testA);
-
-            testA = "1";
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, testA, from, persistingBlock);
-            setRecord_ret.Should().BeTrue();
-            getRecord_ret = Check_GetRecord(snapshot, domain, RecordType.A, persistingBlock);
-            getRecord_ret.State.Should().BeTrue();
-            getRecord_ret.Result.Should().Equals(testA);
-
-            testA = "0.0.255";
+            testA = "0.0.0.0";
             setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, testA, from, persistingBlock);
             setRecord_ret.Should().BeTrue();
             getRecord_ret = Check_GetRecord(snapshot, domain, RecordType.A, persistingBlock);
@@ -145,10 +124,19 @@ namespace Neo.UnitTests.SmartContract.Native
             setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "0.0.256", from, persistingBlock);
             setRecord_ret.Should().BeFalse();
 
+            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "0.0.0", from, persistingBlock);
+            setRecord_ret.Should().BeFalse();
+
             setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "0.257", from, persistingBlock);
             setRecord_ret.Should().BeFalse();
 
+            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "1.1", from, persistingBlock);
+            setRecord_ret.Should().BeFalse();
+
             setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "257", from, persistingBlock);
+            setRecord_ret.Should().BeFalse();
+
+            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "1", from, persistingBlock);
             setRecord_ret.Should().BeFalse();
 
         }
