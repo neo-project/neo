@@ -81,14 +81,14 @@ namespace Neo.Network.P2P
                 case MessageCommand.GetBlocks:
                     OnGetBlocksMessageReceived((GetBlocksPayload)msg.Payload);
                     break;
-                case MessageCommand.GetBlockByIndex:
-                    OnGetBlockByIndexMessageReceived((GetBlockByIndexPayload)msg.Payload);
+                case MessageCommand.GetBlockData:
+                    OnGetBlockDataMessageReceived((GetBlockDataPayload)msg.Payload);
                     break;
                 case MessageCommand.GetData:
                     OnGetDataMessageReceived((InvPayload)msg.Payload);
                     break;
                 case MessageCommand.GetHeaders:
-                    OnGetHeadersMessageReceived((GetBlockByIndexPayload)msg.Payload);
+                    OnGetHeadersMessageReceived((GetBlocksPayload)msg.Payload);
                     break;
                 case MessageCommand.Headers:
                     OnHeadersMessageReceived((HeadersPayload)msg.Payload);
@@ -194,10 +194,9 @@ namespace Neo.Network.P2P
             EnqueueMessage(Message.Create(MessageCommand.Inv, InvPayload.Create(InventoryType.Block, hashes.ToArray())));
         }
 
-        private void OnGetBlockByIndexMessageReceived(GetBlockByIndexPayload payload)
+        private void OnGetBlockDataMessageReceived(GetBlockDataPayload payload)
         {
-            uint count = payload.Count == -1 ? InvPayload.MaxHashesCount : Math.Min((uint)payload.Count, InvPayload.MaxHashesCount);
-            for (uint i = payload.IndexStart, max = payload.IndexStart + count; i < max; i++)
+            for (uint i = payload.IndexStart, max = payload.IndexStart + payload.Count; i < max; i++)
             {
                 Block block = NativeContract.Ledger.GetBlock(Blockchain.Singleton.View, i);
                 if (block == null)
@@ -269,27 +268,28 @@ namespace Neo.Network.P2P
 
         /// <summary>
         /// Will be triggered when a MessageCommand.GetHeaders message is received.
-        /// Tell the specified number of blocks' headers starting with the requested IndexStart to RemoteNode actor.
+        /// Tell the specified number of blocks' headers starting with the requested HashStart to RemoteNode actor.
         /// A limit set by HeadersPayload.MaxHeadersCount is also applied to the number of requested Headers, namely payload.Count.
         /// </summary>
-        /// <param name="payload">A GetBlocksPayload including start block index and number of blocks' headers requested.</param>
-        private void OnGetHeadersMessageReceived(GetBlockByIndexPayload payload)
+        /// <param name="payload">A GetBlocksPayload including start block Hash and number of blocks' headers requested.</param>
+        private void OnGetHeadersMessageReceived(GetBlocksPayload payload)
         {
-            uint index = payload.IndexStart;
-            if (index > Blockchain.Singleton.Height) return;
-            List<Header> headers = new List<Header>();
+            UInt256 hash = payload.HashStart;
+            int count = payload.Count < 0 || payload.Count > HeadersPayload.MaxHeadersCount ? HeadersPayload.MaxHeadersCount : payload.Count;
             using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                uint count = payload.Count == -1 ? HeadersPayload.MaxHeadersCount : (uint)payload.Count;
-                for (uint i = 0; i < count; i++)
+                Block block = NativeContract.Ledger.GetBlock(snapshot, hash);
+                if (block == null) return;
+                List<Header> headers = new List<Header>();
+                for (uint i = 1; i <= count; i++)
                 {
-                    var header = NativeContract.Ledger.GetHeader(snapshot, index + i);
+                    var header = NativeContract.Ledger.GetHeader(snapshot, block.Index + i);
                     if (header == null) break;
                     headers.Add(header);
                 }
+                if (headers.Count == 0) return;
+                EnqueueMessage(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers.ToArray())));
             }
-            if (headers.Count == 0) return;
-            EnqueueMessage(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers.ToArray())));
         }
 
         private void OnHeadersMessageReceived(HeadersPayload payload)
@@ -303,10 +303,10 @@ namespace Neo.Network.P2P
             if (inventory is Block block)
             {
                 if (block.Index > Blockchain.Singleton.Height + InvPayload.MaxHashesCount) return;
-                UpdateLastBlockIndex(block.Index, false);
+                UpdateLastBlockIndex(block.Index);
             }
             knownHashes.Add(inventory.Hash);
-            system.TaskManager.Tell(inventory);
+            system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash });
             system.Blockchain.Tell(inventory);
         }
 
@@ -339,13 +339,13 @@ namespace Neo.Network.P2P
 
         private void OnPingMessageReceived(PingPayload payload)
         {
-            UpdateLastBlockIndex(payload.LastBlockIndex, true);
+            UpdateLastBlockIndex(payload.LastBlockIndex);
             EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce)));
         }
 
         private void OnPongMessageReceived(PingPayload payload)
         {
-            UpdateLastBlockIndex(payload.LastBlockIndex, true);
+            UpdateLastBlockIndex(payload.LastBlockIndex);
         }
 
         private void OnVerackMessageReceived()
@@ -391,12 +391,12 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void UpdateLastBlockIndex(uint lastBlockIndex, bool requestTasks)
+        private void UpdateLastBlockIndex(uint lastBlockIndex)
         {
             if (lastBlockIndex > LastBlockIndex)
             {
                 LastBlockIndex = lastBlockIndex;
-                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex, RequestTasks = requestTasks });
+                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex });
             }
         }
     }

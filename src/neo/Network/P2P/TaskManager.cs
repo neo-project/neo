@@ -17,8 +17,9 @@ namespace Neo.Network.P2P
     public class TaskManager : UntypedActor
     {
         internal class Register { public VersionPayload Version; }
-        internal class Update { public uint LastBlockIndex; public bool RequestTasks; }
+        internal class Update { public uint LastBlockIndex; }
         internal class NewTasks { public InvPayload Payload; }
+        public class TaskCompleted { public UInt256 Hash; }
         public class HeaderTaskCompleted { }
         public class RestartTasks { public InvPayload Payload; }
         private class Timer { }
@@ -29,7 +30,6 @@ namespace Neo.Network.P2P
         private static readonly UInt256 MemPoolTaskHash = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000001");
 
         private const int MaxConncurrentTasks = 3;
-        private const int MaxSyncTasksCount = 50;
         private const int PingCoolingOffPeriod = 60_000; // in ms.
 
         private readonly NeoSystem system;
@@ -38,19 +38,14 @@ namespace Neo.Network.P2P
         /// </summary>
         private readonly HashSetCache<UInt256> knownHashes;
         private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
-        private readonly Dictionary<uint, TaskSession> receivedBlockIndex = new Dictionary<uint, TaskSession>();
-        private readonly HashSet<uint> failedSyncTasks = new HashSet<uint>();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
         private bool HasHeaderTask => globalTasks.ContainsKey(HeaderTaskHash);
-        private uint lastTaskIndex = 0;
 
         public TaskManager(NeoSystem system)
         {
             this.system = system;
             this.knownHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
-            this.lastTaskIndex = Blockchain.Singleton.Height;
-            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
 
@@ -58,49 +53,9 @@ namespace Neo.Network.P2P
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
-            session.InvTasks.Remove(HeaderTaskHash);
+            session.Tasks.Remove(HeaderTaskHash);
             DecrementGlobalTask(HeaderTaskHash);
-            RequestTasks(true);
-        }
-
-        private bool AssignSyncTask(uint index, TaskSession filterSession = null)
-        {
-            if (index <= Blockchain.Singleton.Height || sessions.Values.Any(p => p != filterSession && p.IndexTasks.ContainsKey(index)))
-                return true;
-            Random rand = new Random();
-            KeyValuePair<IActorRef, TaskSession> remoteNode = sessions.Where(p => p.Value != filterSession && p.Value.LastBlockIndex >= index)
-                .OrderBy(p => p.Value.IndexTasks.Count)
-                .ThenBy(s => rand.Next())
-                .FirstOrDefault();
-            if (remoteNode.Value == null)
-            {
-                failedSyncTasks.Add(index);
-                return false;
-            }
-            TaskSession session = remoteNode.Value;
-            session.IndexTasks.TryAdd(index, TimeProvider.Current.UtcNow);
-            remoteNode.Key.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(index, 1)));
-            failedSyncTasks.Remove(index);
-            return true;
-        }
-
-        private void OnBlock(Block block)
-        {
-            var session = sessions.Values.FirstOrDefault(p => p.IndexTasks.ContainsKey(block.Index));
-            if (session is null) return;
-            session.IndexTasks.Remove(block.Index);
-            receivedBlockIndex.TryAdd(block.Index, session);
-            RequestTasks(false);
-        }
-
-        private void OnInvalidBlock(Block invalidBlock)
-        {
-            receivedBlockIndex.TryGetValue(invalidBlock.Index, out TaskSession session);
-            if (session is null) return;
-            session.InvalidBlockCount++;
-            session.IndexTasks.Remove(invalidBlock.Index);
-            receivedBlockIndex.Remove(invalidBlock.Index);
-            AssignSyncTask(invalidBlock.Index, session);
+            RequestTasks(session);
         }
 
         private void OnNewTasks(InvPayload payload)
@@ -108,32 +63,35 @@ namespace Neo.Network.P2P
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
             // Do not accept payload of type InventoryType.TX if not synced on best known HeaderHeight
-            if (payload.Type == InventoryType.TX && Blockchain.Singleton.Height < sessions.Values.Max(p => p.LastBlockIndex))
+            if (payload.Type == InventoryType.TX && Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight)
+            {
+                RequestTasks(session);
                 return;
+            }
             HashSet<UInt256> hashes = new HashSet<UInt256>(payload.Hashes);
             // Remove all previously processed knownHashes from the list that is being requested
             hashes.Remove(knownHashes);
+            // Add to AvailableTasks the ones, of type InventoryType.Block, that are global (already under process by other sessions)
+            if (payload.Type == InventoryType.Block)
+                session.AvailableTasks.UnionWith(hashes.Where(p => globalTasks.ContainsKey(p)));
 
             // Remove those that are already in process by other sessions
             hashes.Remove(globalTasks);
             if (hashes.Count == 0)
+            {
+                RequestTasks(session);
                 return;
+            }
 
             // Update globalTasks with the ones that will be requested within this current session
             foreach (UInt256 hash in hashes)
             {
                 IncrementGlobalTask(hash);
-                session.InvTasks[hash] = TimeProvider.Current.UtcNow;
+                session.Tasks[hash] = DateTime.UtcNow;
             }
 
             foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, hashes.ToArray()))
                 Sender.Tell(Message.Create(MessageCommand.GetData, group));
-        }
-
-        private void OnPersistCompleted(Block block)
-        {
-            receivedBlockIndex.Remove(block.Index);
-            RequestTasks(false);
         }
 
         protected override void OnReceive(object message)
@@ -149,24 +107,14 @@ namespace Neo.Network.P2P
                 case NewTasks tasks:
                     OnNewTasks(tasks.Payload);
                     break;
+                case TaskCompleted completed:
+                    OnTaskCompleted(completed.Hash);
+                    break;
                 case HeaderTaskCompleted _:
                     OnHeaderTaskCompleted();
                     break;
                 case RestartTasks restart:
                     OnRestartTasks(restart.Payload);
-                    break;
-                case Block block:
-                    OnBlock(block);
-                    break;
-                case IInventory inventory:
-                    OnTaskCompleted(inventory.Hash);
-                    break;
-                case Blockchain.PersistCompleted pc:
-                    OnPersistCompleted(pc.Block);
-                    break;
-                case Blockchain.RelayResult rr:
-                    if (rr.Inventory is Block invalidBlock && rr.Result == VerifyResult.Invalid)
-                        OnInvalidBlock(invalidBlock);
                     break;
                 case Timer _:
                     OnTimer();
@@ -180,11 +128,11 @@ namespace Neo.Network.P2P
         private void OnRegister(VersionPayload version)
         {
             Context.Watch(Sender);
-            TaskSession session = new TaskSession(version);
+            TaskSession session = new TaskSession(Sender, version);
             if (session.IsFullNode)
-                session.InvTasks.TryAdd(MemPoolTaskHash, TimeProvider.Current.UtcNow);
-            sessions.TryAdd(Sender, session);
-            RequestTasks(true);
+                session.AvailableTasks.Add(TaskManager.MemPoolTaskHash);
+            sessions.Add(Sender, session);
+            RequestTasks(session);
         }
 
         private void OnUpdate(Update update)
@@ -192,8 +140,6 @@ namespace Neo.Network.P2P
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
             session.LastBlockIndex = update.LastBlockIndex;
-            session.ExpireTime = TimeProvider.Current.UtcNow.AddMilliseconds(PingCoolingOffPeriod);
-            if (update.RequestTasks) RequestTasks(true);
         }
 
         private void OnRestartTasks(InvPayload payload)
@@ -209,8 +155,13 @@ namespace Neo.Network.P2P
         {
             knownHashes.Add(hash);
             globalTasks.Remove(hash);
+            foreach (TaskSession ms in sessions.Values)
+                ms.AvailableTasks.Remove(hash);
             if (sessions.TryGetValue(Sender, out TaskSession session))
-                session.InvTasks.Remove(hash);
+            {
+                session.Tasks.Remove(hash);
+                RequestTasks(session);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -244,10 +195,7 @@ namespace Neo.Network.P2P
         {
             if (!sessions.TryGetValue(actor, out TaskSession session))
                 return;
-            foreach (uint index in session.IndexTasks.Keys)
-                AssignSyncTask(index, session);
-
-            foreach (UInt256 hash in session.InvTasks.Keys)
+            foreach (UInt256 hash in session.Tasks.Keys)
                 DecrementGlobalTask(hash);
             sessions.Remove(actor);
         }
@@ -255,27 +203,14 @@ namespace Neo.Network.P2P
         private void OnTimer()
         {
             foreach (TaskSession session in sessions.Values)
-            {
-                foreach (KeyValuePair<uint, DateTime> kvp in session.IndexTasks)
-                {
-                    if (TimeProvider.Current.UtcNow - kvp.Value > TaskTimeout)
-                    {
-                        session.IndexTasks.Remove(kvp.Key);
-                        session.TimeoutTimes++;
-                        AssignSyncTask(kvp.Key, session);
-                    }
-                }
-
-                foreach (var task in session.InvTasks.ToArray())
-                {
+                foreach (var task in session.Tasks.ToArray())
                     if (TimeProvider.Current.UtcNow - task.Value > TaskTimeout)
                     {
-                        if (session.InvTasks.Remove(task.Key))
+                        if (session.Tasks.Remove(task.Key))
                             DecrementGlobalTask(task.Key);
                     }
-                }
-            }
-            RequestTasks(true);
+            foreach (TaskSession session in sessions.Values)
+                RequestTasks(session);
         }
 
         protected override void PostStop()
@@ -289,56 +224,68 @@ namespace Neo.Network.P2P
             return Akka.Actor.Props.Create(() => new TaskManager(system)).WithMailbox("task-manager-mailbox");
         }
 
-        private void RequestTasks(bool sendPing)
+        private void RequestTasks(TaskSession session)
         {
-            if (sessions.Count() == 0) return;
-
-            if (sendPing) SendPingMessage();
-
-            while (failedSyncTasks.Count() > 0)
+            if (session.HasTask) return;
+            // If there are pending tasks of InventoryType.Block we should process them
+            if (session.AvailableTasks.Count > 0)
             {
-                var failedTask = failedSyncTasks.First();
-                if (failedTask <= Blockchain.Singleton.Height)
+                session.AvailableTasks.Remove(knownHashes);
+                // Search any similar hash that is on Singleton's knowledge, which means, on the way or already processed
+                using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
+                    session.AvailableTasks.RemoveWhere(p => NativeContract.Ledger.ContainsBlock(snapshot, p));
+                HashSet<UInt256> hashes = new HashSet<UInt256>(session.AvailableTasks);
+                hashes.Remove(MemPoolTaskHash);
+                if (hashes.Count > 0)
                 {
-                    failedSyncTasks.Remove(failedTask);
-                    continue;
-                }
-                if (!AssignSyncTask(failedTask)) return;
-            }
-
-            int taskCounts = sessions.Values.Sum(p => p.IndexTasks.Count);
-            var highestBlockIndex = sessions.Values.Max(p => p.LastBlockIndex);
-            for (; taskCounts < MaxSyncTasksCount; taskCounts++)
-            {
-                if (lastTaskIndex >= highestBlockIndex || lastTaskIndex >= Blockchain.Singleton.Height + InvPayload.MaxHashesCount) break;
-                if (!AssignSyncTask(++lastTaskIndex)) break;
-            }
-        }
-
-        private void SendPingMessage()
-        {
-            TrimmedBlock block;
-            using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
-            {
-                block = NativeContract.Ledger.GetTrimmedBlock(snapshot, NativeContract.Ledger.CurrentHash(snapshot));
-            }
-
-            foreach (KeyValuePair<IActorRef, TaskSession> item in sessions)
-            {
-                var node = item.Key;
-                var session = item.Value;
-
-                if (session.ExpireTime < TimeProvider.Current.UtcNow ||
-                     (block.Index >= session.LastBlockIndex &&
-                     TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= block.Timestamp))
-                {
-                    if (session.InvTasks.Remove(MemPoolTaskHash))
+                    foreach (UInt256 hash in hashes.ToArray())
                     {
-                        node.Tell(Message.Create(MessageCommand.Mempool));
+                        if (!IncrementGlobalTask(hash))
+                            hashes.Remove(hash);
                     }
-                    node.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height)));
-                    session.ExpireTime = TimeProvider.Current.UtcNow.AddMilliseconds(PingCoolingOffPeriod);
+                    session.AvailableTasks.Remove(hashes);
+                    foreach (UInt256 hash in hashes)
+                        session.Tasks[hash] = DateTime.UtcNow;
+                    foreach (InvPayload group in InvPayload.CreateGroup(InventoryType.Block, hashes.ToArray()))
+                        session.RemoteNode.Tell(Message.Create(MessageCommand.GetData, group));
+                    return;
                 }
+            }
+
+            // When the number of AvailableTasks is no more than 0, no pending tasks of InventoryType.Block, it should process pending the tasks of headers
+            // If not HeaderTask pending to be processed it should ask for more Blocks
+            if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks) && Blockchain.Singleton.HeaderHeight < session.LastBlockIndex)
+            {
+                session.Tasks[HeaderTaskHash] = DateTime.UtcNow;
+                IncrementGlobalTask(HeaderTaskHash);
+                session.RemoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlocksPayload.Create(Blockchain.Singleton.CurrentHeaderHash)));
+            }
+            else if (Blockchain.Singleton.Height < session.LastBlockIndex)
+            {
+                UInt256 hash = Blockchain.Singleton.CurrentBlockHash;
+                using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
+                {
+                    for (uint i = Blockchain.Singleton.Height + 1; i <= Blockchain.Singleton.HeaderHeight; i++)
+                    {
+                        hash = NativeContract.Ledger.GetBlockHash(snapshot, i);
+                        if (!globalTasks.ContainsKey(hash))
+                        {
+                            hash = NativeContract.Ledger.GetBlockHash(snapshot, i - 1);
+                            break;
+                        }
+                    }
+                }
+                session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlocks, GetBlocksPayload.Create(hash)));
+            }
+            else if (Blockchain.Singleton.HeaderHeight >= session.LastBlockIndex
+                    && TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= NativeContract.Ledger.GetBlock(Blockchain.Singleton.GetSnapshot(), Blockchain.Singleton.CurrentHeaderHash)?.Timestamp)
+            {
+                if (session.AvailableTasks.Remove(MemPoolTaskHash))
+                {
+                    session.RemoteNode.Tell(Message.Create(MessageCommand.Mempool));
+                }
+
+                session.RemoteNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height)));
             }
         }
     }
@@ -355,6 +302,7 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case TaskManager.Register _:
+                case TaskManager.Update _:
                 case TaskManager.RestartTasks _:
                     return true;
                 case TaskManager.NewTasks tasks:

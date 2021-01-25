@@ -74,6 +74,7 @@ namespace Neo.Ledger
         public uint Height => NativeContract.Ledger.CurrentIndex(currentSnapshot);
         public uint HeaderHeight => NativeContract.Ledger.CurrentHeaderIndex(currentSnapshot);
         public UInt256 CurrentBlockHash => NativeContract.Ledger.CurrentHash(currentSnapshot);
+        public UInt256 CurrentHeaderHash => NativeContract.Ledger.CurrentHeaderHash(currentSnapshot);
 
         private static Blockchain singleton;
         public static Blockchain Singleton
