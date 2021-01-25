@@ -26,8 +26,8 @@ namespace Neo.Network.P2P
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan TaskTimeout = TimeSpan.FromMinutes(1);
-        private static readonly UInt256 HeaderTaskHash = UInt256.Zero;
         private static readonly UInt256 MemPoolTaskHash = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000001");
+        private static readonly UInt256 HeaderTaskHash = UInt256.Zero;
 
         private const int MaxConncurrentTasks = 3;
         private const int PingCoolingOffPeriod = 60_000; // in ms.
