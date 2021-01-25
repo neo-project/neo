@@ -27,6 +27,8 @@ namespace Neo.SmartContract.Native
         private const uint OneYear = 365 * 24 * 3600;
         private static readonly Regex rootRegex = new Regex("^[a-z][a-z0-9]{0,15}$", RegexOptions.Singleline);
         private static readonly Regex nameRegex = new Regex("^(?=.{3,255}$)([a-z0-9]{1,62}\\.)+[a-z][a-z0-9]{0,15}$", RegexOptions.Singleline);
+        private static readonly Regex ipv4Regex = new Regex("^(2(5[0-5]|[0-4]\\d))|1?\\d{1,2}(\\.((2(5[0-5]|[0-4]\\d))|1?\\d{1,2})){3}$", RegexOptions.Singleline);
+        private static readonly Regex ipv6Regex = new Regex("^([a-f0-9]{1,4}:){7}[a-f0-9]{1,4}$", RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
         internal NameService()
         {
@@ -169,6 +171,7 @@ namespace Neo.SmartContract.Native
             switch (type)
             {
                 case RecordType.A:
+                    if (!ipv4Regex.IsMatch(data)) throw new FormatException();
                     if (!IPAddress.TryParse(data, out IPAddress address)) throw new FormatException();
                     if (address.AddressFamily != AddressFamily.InterNetwork) throw new FormatException();
                     break;
@@ -179,6 +182,7 @@ namespace Neo.SmartContract.Native
                     if (Utility.StrictUTF8.GetByteCount(data) > 255) throw new FormatException();
                     break;
                 case RecordType.AAAA:
+                    if (!ipv6Regex.IsMatch(data)) throw new FormatException();
                     if (!IPAddress.TryParse(data, out address)) throw new FormatException();
                     if (address.AddressFamily != AddressFamily.InterNetworkV6) throw new FormatException();
                     break;
