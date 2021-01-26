@@ -21,7 +21,7 @@ namespace Neo.IO.Caching
 
         public bool Added => startPos != -1;
 
-        public void Add (Header header)
+        public void Add(Header header)
         {
             if (!Added)
             {
