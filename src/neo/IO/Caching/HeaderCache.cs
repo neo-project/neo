@@ -46,10 +46,10 @@ namespace Neo.IO.Caching
             headers[endPos] = header;
         }
 
-        public Header At(uint index)
+        public Header At(uint height)
         {
-            if (startPos == -1 || index < startIndex || index > endIndex) return null;
-            return headers[(startPos + index - startIndex) % max_capacity];
+            if (startPos == -1 || height < startIndex || height > endIndex) return null;
+            return headers[(startPos + height - startIndex) % max_capacity];
         }
 
         public uint HeaderHeight()
