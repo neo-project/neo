@@ -37,24 +37,21 @@ namespace Neo.Ledger
                 if (!Added)
                 {
                     startIndex = header.Index;
-                    endIndex = header.Index;
                     startPos = 0;
                     endPos = 0;
-                    headers[0] = header;
-                    return;
                 }
                 else
                 {
                     if (header.Index != headers[endPos].Index + 1) throw new ArgumentException("illegal header");
                     endPos = (endPos + 1) % max_capacity;
-                    endIndex++;
-                }
-                if (endPos == startPos)
-                {
-                    startPos = (startPos + 1) % max_capacity;
-                    startIndex++;
+                    if (endPos == startPos)
+                    {
+                        startPos = (startPos + 1) % max_capacity;
+                        startIndex++;
+                    }
                 }
                 headers[endPos] = header;
+                endIndex = header.Index;
             }
             finally
             {
