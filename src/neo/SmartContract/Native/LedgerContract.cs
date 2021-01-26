@@ -40,6 +40,10 @@ namespace Neo.SmartContract.Native
             HashIndexState state = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_CurrentBlock), () => new StorageItem(new HashIndexState())).GetInteroperable<HashIndexState>();
             state.Hash = engine.PersistingBlock.Hash;
             state.Index = engine.PersistingBlock.Index;
+            if (CurrentHeaderIndex(engine.Snapshot) < engine.PersistingBlock.Index)
+            {
+                SetCurrentHeader(engine.Snapshot, engine.PersistingBlock.Hash, engine.PersistingBlock.Index);
+            }
         }
 
         internal bool Initialized(DataCache snapshot)

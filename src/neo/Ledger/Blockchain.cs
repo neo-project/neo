@@ -65,6 +65,8 @@ namespace Neo.Ledger
         private readonly ConcurrentDictionary<UInt256, Block> block_cache = new ConcurrentDictionary<UInt256, Block>();
         private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new Dictionary<uint, UnverifiedBlocksList>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
+        private readonly HeaderCache recentHeaders = new HeaderCache(10000);
+
         private SnapshotCache currentSnapshot;
         private ImmutableHashSet<UInt160> extensibleWitnessWhiteList;
 
@@ -72,9 +74,9 @@ namespace Neo.Ledger
         public DataCache View => new SnapshotCache(Store);
         public MemoryPool MemPool { get; }
         public uint Height => NativeContract.Ledger.CurrentIndex(currentSnapshot);
-        public uint HeaderHeight => NativeContract.Ledger.CurrentHeaderIndex(currentSnapshot);
+        public uint HeaderHeight => recentHeaders.Added ? recentHeaders.HeaderHeight() : NativeContract.Ledger.CurrentHeaderIndex(currentSnapshot);
         public UInt256 CurrentBlockHash => NativeContract.Ledger.CurrentHash(currentSnapshot);
-        public UInt256 CurrentHeaderHash => NativeContract.Ledger.CurrentHeaderHash(currentSnapshot);
+        public UInt256 CurrentHeaderHash => recentHeaders.Added ? recentHeaders.CurrentHeader().Hash : NativeContract.Ledger.CurrentHeaderHash(currentSnapshot);
 
         private static Blockchain singleton;
         public static Blockchain Singleton
@@ -230,7 +232,7 @@ namespace Neo.Ledger
             }
             else
             {
-                if (!block.Hash.Equals(NativeContract.Ledger.GetBlockHash(currentSnapshot, block.Index)))
+                if (!block.Hash.Equals(GetBlockHash(block.Index)))
                     return VerifyResult.Invalid;
             }
             block_cache.TryAdd(block.Hash, block);
@@ -241,8 +243,8 @@ namespace Neo.Ledger
                 while (true)
                 {
                     blocksToPersistList.Add(block_persist);
-                    if (block_persist.Index + 1 >= NativeContract.Ledger.CurrentHeaderIndex(currentSnapshot)) break;
-                    UInt256 hash = NativeContract.Ledger.CurrentHeaderHash(currentSnapshot);
+                    if (block_persist.Index + 1 > HeaderHeight) break;
+                    UInt256 hash = recentHeaders.At(block_persist.Index + 1).Hash;
                     if (!block_cache.TryGetValue(hash, out block_persist)) break;
                 }
 
@@ -259,7 +261,7 @@ namespace Neo.Ledger
                     // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
                     // Increase in the rate of 1 block per second in configurations with faster blocks
 
-                    if (blockToPersist.Index + 100 >= NativeContract.Ledger.CurrentHeaderIndex(currentSnapshot))
+                    if (blockToPersist.Index + 99 >= HeaderHeight)
                         system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = blockToPersist });
                 }
                 if (block_cache_unverified.TryGetValue(Height + 1, out var unverifiedBlocks))
@@ -273,8 +275,20 @@ namespace Neo.Ledger
             }
             else
             {
-                if (block.Index + 100 >= NativeContract.Ledger.CurrentHeaderIndex(currentSnapshot))
+                if (block.Index + 99 >= HeaderHeight)
                     system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
+                if (block.Index == HeaderHeight + 1)
+                {
+                    Header header = block.Header;
+                    recentHeaders.Add(header);
+                    using (SnapshotCache snapshot = GetSnapshot())
+                    {
+                        NativeContract.Ledger.SaveHeader(snapshot, header);
+                        NativeContract.Ledger.SetCurrentHeader(snapshot, header.Hash, header.Index);
+                        snapshot.Commit();
+                    }
+                    UpdateCurrentSnapshot();
+                }
             }
             return VerifyResult.Succeed;
         }
@@ -285,9 +299,10 @@ namespace Neo.Ledger
             {
                 foreach (Header header in headers)
                 {
-                    if (header.Index - 1 >= HeaderHeight) break;
-                    if (header.Index < HeaderHeight) continue;
+                    if (header.Index > HeaderHeight + 1) break;
+                    if (header.Index < HeaderHeight + 1) continue;
                     if (!header.Verify(snapshot)) break;
+                    recentHeaders.Add(header);
                     NativeContract.Ledger.SaveHeader(snapshot, header);
                     NativeContract.Ledger.SetCurrentHeader(snapshot, header.Hash, header.Index);
                 }
@@ -362,6 +377,7 @@ namespace Neo.Ledger
         {
             using (SnapshotCache snapshot = GetSnapshot())
             {
+                if (block.Index == 0) NativeContract.Ledger.SetCurrentHeader(snapshot, block.Hash, block.Index);
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block))
                 {
@@ -448,6 +464,12 @@ namespace Neo.Ledger
             };
             Sender.Tell(rr);
             Context.System.EventStream.Publish(rr);
+        }
+
+        private UInt256 GetBlockHash(uint index)
+        {
+            UInt256 hash = recentHeaders.At(index)?.Hash;
+            return hash != null ? hash : NativeContract.Ledger.GetBlockHash(currentSnapshot, index);
         }
 
         private void UpdateCurrentSnapshot()
