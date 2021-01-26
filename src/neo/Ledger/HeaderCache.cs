@@ -2,32 +2,38 @@ using Neo.Network.P2P.Payloads;
 using System;
 using System.Threading;
 
-namespace Neo.IO.Caching
+namespace Neo.Ledger
 {
-    internal class HeaderCache
+    internal class HeaderCache : IDisposable
     {
-        private int max_capacity;
+        private readonly ReaderWriterLockSlim readerWriterLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+        private readonly Header[] headers;
+        private readonly int max_capacity;
         private int startPos = -1;
         private int endPos = -1;
         private uint startIndex;
         private uint endIndex;
-        private Header[] headers = null;
-        protected readonly ReaderWriterLockSlim RwSyncRootLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
-
-        public HeaderCache(int max_capacity)
-        {
-            if (max_capacity <= 0) throw new ArgumentException("illegal max_capacity");
-            this.max_capacity = max_capacity;
-            headers = new Header[max_capacity];
-        }
 
         public bool Added => startPos != -1;
 
+        public HeaderCache(int max_capacity)
+        {
+            if (max_capacity <= 0)
+                throw new ArgumentOutOfRangeException(nameof(max_capacity));
+            this.max_capacity = max_capacity;
+            this.headers = new Header[max_capacity];
+        }
+
+        public void Dispose()
+        {
+            readerWriterLock.Dispose();
+        }
+
         public void Add(Header header)
         {
+            readerWriterLock.EnterWriteLock();
             try
             {
-                RwSyncRootLock.EnterWriteLock();
                 if (!Added)
                 {
                     startIndex = header.Index;
@@ -52,47 +58,47 @@ namespace Neo.IO.Caching
             }
             finally
             {
-                RwSyncRootLock.ExitWriteLock();
+                readerWriterLock.ExitWriteLock();
             }
         }
 
         public Header At(uint height)
         {
+            readerWriterLock.EnterReadLock();
             try
             {
-                RwSyncRootLock.EnterReadLock();
                 if (startPos == -1 || height < startIndex || height > endIndex) return null;
                 return headers[(startPos + height - startIndex) % max_capacity];
             }
             finally
             {
-                RwSyncRootLock.ExitReadLock();
+                readerWriterLock.ExitReadLock();
             }
         }
 
         public uint HeaderHeight()
         {
+            readerWriterLock.EnterReadLock();
             try
             {
-                RwSyncRootLock.EnterReadLock();
                 return endIndex;
             }
             finally
             {
-                RwSyncRootLock.ExitReadLock();
+                readerWriterLock.ExitReadLock();
             }
         }
 
         public Header CurrentHeader()
         {
+            readerWriterLock.EnterReadLock();
             try
             {
-                RwSyncRootLock.EnterReadLock();
                 return endPos == -1 ? null : headers[endPos];
             }
             finally
             {
-                RwSyncRootLock.ExitReadLock();
+                readerWriterLock.ExitReadLock();
             }
         }
     }

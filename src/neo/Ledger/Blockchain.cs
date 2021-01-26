@@ -439,6 +439,7 @@ namespace Neo.Ledger
         protected override void PostStop()
         {
             base.PostStop();
+            recentHeaders.Dispose();
             currentSnapshot?.Dispose();
         }
 
