@@ -1,7 +1,9 @@
 using Neo.IO.Json;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
 using System.Linq;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Manifest
 {
@@ -40,11 +42,14 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return ContractEventDescriptor</returns>
         public static ContractEventDescriptor FromJson(JObject json)
         {
-            return new ContractEventDescriptor
+            ContractEventDescriptor descriptor = new ContractEventDescriptor
             {
                 Name = json["name"].AsString(),
                 Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson(u)).ToArray(),
             };
+            if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException();
+            _ = descriptor.Parameters.ToDictionary(p => p.Name);
+            return descriptor;
         }
 
         public virtual JObject ToJson()
