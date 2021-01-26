@@ -110,10 +110,10 @@ namespace Neo.SmartContract.Native
 
         public IEnumerable<(ulong, OracleRequest)> GetRequests(DataCache snapshot)
         {
-            return snapshot.Find(new KeyBuilder(Id, Prefix_Request).ToArray())
+            return snapshot.Find(CreateStorageKey(Prefix_Request).ToArray())
                 .Select(p => (BitConverter.IsLittleEndian ?
                     BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt64(p.Key.Key, 1)) :
-                    BitConverter.ToUInt64(p.Key.Key, 1), p.Value.GetInteroperable<OracleRequest>()));            
+                    BitConverter.ToUInt64(p.Key.Key, 1), p.Value.GetInteroperable<OracleRequest>()));
         }
 
         public IEnumerable<(ulong, OracleRequest)> GetRequestsByUrl(DataCache snapshot, string url)
@@ -121,7 +121,7 @@ namespace Neo.SmartContract.Native
             IdList list = snapshot.TryGet(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)))?.GetInteroperable<IdList>();
             if (list is null) yield break;
             foreach (ulong id in list)
-                yield return (id, snapshot[CreateStorageKey(Prefix_Request).Add(id)].GetInteroperable<OracleRequest>());
+                yield return (id, snapshot[CreateStorageKey(Prefix_Request).AddBigEndian(id)].GetInteroperable<OracleRequest>());
         }
 
         private static byte[] GetUrlHash(string url)
@@ -144,7 +144,7 @@ namespace Neo.SmartContract.Native
                 if (response is null) continue;
 
                 //Remove the request from storage
-                StorageKey key = CreateStorageKey(Prefix_Request).Add(response.Id);
+                StorageKey key = CreateStorageKey(Prefix_Request).AddBigEndian(response.Id);
                 OracleRequest request = engine.Snapshot.TryGet(key)?.GetInteroperable<OracleRequest>();
                 if (request == null) continue;
                 engine.Snapshot.Delete(key);
