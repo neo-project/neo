@@ -133,8 +133,8 @@ namespace Neo.SmartContract.Native
             {
                 if (!instructions.ContainsKey(method.Offset))
                     throw new ArgumentException(null, nameof(script));
-                abi.GetMethod(string.Empty, 0); // Trigger the construction of ContractAbi.methodDictionary to check the uniqueness of the method names.
             }
+            abi.GetMethod(string.Empty, 0); // Trigger the construction of ContractAbi.methodDictionary to check the uniqueness of the method names.
             _ = abi.Events.ToDictionary(p => p.Name); // Check the uniqueness of the event names.
         }
 
