@@ -267,10 +267,10 @@ namespace Neo.Network.P2P
                 {
                     for (uint i = Blockchain.Singleton.Height + 1; i <= Blockchain.Singleton.HeaderHeight; i++)
                     {
-                        hash = NativeContract.Ledger.GetBlockHash(snapshot, i);
+                        hash = Blockchain.Singleton.GetBlockHash(i);
                         if (!globalTasks.ContainsKey(hash))
                         {
-                            hash = NativeContract.Ledger.GetBlockHash(snapshot, i - 1);
+                            hash = Blockchain.Singleton.GetBlockHash(i - 1);
                             break;
                         }
                     }

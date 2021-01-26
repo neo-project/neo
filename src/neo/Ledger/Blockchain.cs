@@ -74,9 +74,9 @@ namespace Neo.Ledger
         public DataCache View => new SnapshotCache(Store);
         public MemoryPool MemPool { get; }
         public uint Height => NativeContract.Ledger.CurrentIndex(currentSnapshot);
-        public uint HeaderHeight => recentHeaders.Added ? recentHeaders.HeaderHeight() : NativeContract.Ledger.CurrentHeaderIndex(currentSnapshot);
+        public uint HeaderHeight => recentHeaders.Added ? recentHeaders.HeaderHeight() : NativeContract.Ledger.CurrentIndex(currentSnapshot);
         public UInt256 CurrentBlockHash => NativeContract.Ledger.CurrentHash(currentSnapshot);
-        public UInt256 CurrentHeaderHash => recentHeaders.Added ? recentHeaders.CurrentHeader().Hash : NativeContract.Ledger.CurrentHeaderHash(currentSnapshot);
+        public UInt256 CurrentHeaderHash => recentHeaders.Added ? recentHeaders.CurrentHeader().Hash : NativeContract.Ledger.CurrentHash(currentSnapshot);
 
         private static Blockchain singleton;
         public static Blockchain Singleton
@@ -281,13 +281,6 @@ namespace Neo.Ledger
                 {
                     Header header = block.Header;
                     recentHeaders.Add(header);
-                    using (SnapshotCache snapshot = GetSnapshot())
-                    {
-                        NativeContract.Ledger.SaveHeader(snapshot, header);
-                        NativeContract.Ledger.SetCurrentHeader(snapshot, header.Hash, header.Index);
-                        snapshot.Commit();
-                    }
-                    UpdateCurrentSnapshot();
                 }
             }
             return VerifyResult.Succeed;
@@ -303,12 +296,8 @@ namespace Neo.Ledger
                     if (header.Index < HeaderHeight + 1) continue;
                     if (!header.Verify(snapshot)) break;
                     recentHeaders.Add(header);
-                    NativeContract.Ledger.SaveHeader(snapshot, header);
-                    NativeContract.Ledger.SetCurrentHeader(snapshot, header.Hash, header.Index);
                 }
-                snapshot.Commit();
             }
-            UpdateCurrentSnapshot();
             system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
         }
 
@@ -377,12 +366,7 @@ namespace Neo.Ledger
         {
             using (SnapshotCache snapshot = GetSnapshot())
             {
-                if (block.Index == 0)
-                {
-                    NativeContract.Ledger.SetCurrentHeader(snapshot, block.Hash, block.Index);
-                    recentHeaders.Add(block.Header);
-                }
-                else if (block.Index == HeaderHeight + 1)
+                if (block.Index != 0 && block.Index == HeaderHeight + 1)
                 {
                     recentHeaders.Add(block.Header);
                 }
@@ -474,7 +458,7 @@ namespace Neo.Ledger
             Context.System.EventStream.Publish(rr);
         }
 
-        private UInt256 GetBlockHash(uint index)
+        public UInt256 GetBlockHash(uint index)
         {
             UInt256 hash = recentHeaders.At(index)?.Hash;
             return hash != null ? hash : NativeContract.Ledger.GetBlockHash(currentSnapshot, index);
