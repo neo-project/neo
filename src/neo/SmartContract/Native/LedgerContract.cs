@@ -23,7 +23,7 @@ namespace Neo.SmartContract.Native
 
         internal override void OnPersist(ApplicationEngine engine)
         {
-            engine.Snapshot.Add(CreateStorageKey(Prefix_BlockHash).AddBigEndian(engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray(), true));
+            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_BlockHash).AddBigEndian(engine.PersistingBlock.Index), () => new StorageItem(engine.PersistingBlock.Hash.ToArray(), true));
             engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Block).Add(engine.PersistingBlock.Hash), () => new StorageItem(Trim(engine.PersistingBlock).ToArray(), true));
             foreach (Transaction tx in engine.PersistingBlock.Transactions)
             {
@@ -176,6 +176,7 @@ namespace Neo.SmartContract.Native
 
         public void SaveHeader(DataCache snapshot, Header header)
         {
+            snapshot.Add(CreateStorageKey(Prefix_BlockHash).AddBigEndian(header.Index), new StorageItem(header.Hash.ToArray(), true));
             snapshot.Add(CreateStorageKey(Prefix_Block).Add(header.Hash), new StorageItem(header.Trim().ToArray(), true));
         }
 
