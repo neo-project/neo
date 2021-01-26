@@ -4,7 +4,7 @@ using System;
 using System.Buffers.Binary;
 using System.IO;
 
-namespace Neo.Ledger
+namespace Neo.SmartContract
 {
     public class StorageKey : IEquatable<StorageKey>, ISerializable
     {

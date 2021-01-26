@@ -16,7 +16,7 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_RoleManagement
     {
-        private StoreView _snapshot;
+        private DataCache _snapshot;
 
         [TestInitialize]
         public void TestSetup()
@@ -28,7 +28,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestSetAndGet()
         {
-            var snapshot1 = _snapshot.Clone();
+            var snapshot1 = _snapshot.CreateSnapshot();
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
             ECPoint[] validators = NativeContract.NEO.ComputeNextBlockValidators(snapshot1);
             var ret = NativeContract.RoleManagement.Call(
@@ -40,7 +40,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 new ContractParameter(ContractParameterType.Array) { Value = validators.Select(p => new ContractParameter(ContractParameterType.ByteArray) { Value = p.ToArray() }).ToList() }
             );
             snapshot1.Commit();
-            var snapshot2 = _snapshot.Clone();
+            var snapshot2 = _snapshot.CreateSnapshot();
             ret = NativeContract.RoleManagement.Call(
                 snapshot2,
                 "getDesignatedByRole",

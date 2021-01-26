@@ -1,4 +1,3 @@
-using Akka.Actor;
 using Akka.Util.Internal;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -104,7 +103,7 @@ namespace Neo.Ledger
             Capacity = capacity;
         }
 
-        internal void LoadPolicy(StoreView snapshot)
+        internal void LoadPolicy(DataCache snapshot)
         {
             _maxTxPerBlock = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot);
         }
@@ -206,7 +205,7 @@ namespace Neo.Ledger
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private PoolItem GetLowestFeeTransaction(SortedSet<PoolItem> verifiedTxSorted,
+        private static PoolItem GetLowestFeeTransaction(SortedSet<PoolItem> verifiedTxSorted,
             SortedSet<PoolItem> unverifiedTxSorted, out SortedSet<PoolItem> sortedPool)
         {
             PoolItem minItem = unverifiedTxSorted.Min;
@@ -256,7 +255,7 @@ namespace Neo.Ledger
         /// <param name="hash"></param>
         /// <param name="tx"></param>
         /// <returns></returns>
-        internal VerifyResult TryAdd(Transaction tx, StoreView snapshot)
+        internal VerifyResult TryAdd(Transaction tx, DataCache snapshot)
         {
             var poolItem = new PoolItem(tx);
 
@@ -349,7 +348,7 @@ namespace Neo.Ledger
         }
 
         // Note: this must only be called from a single thread (the Blockchain actor)
-        internal void UpdatePoolForBlockPersisted(Block block, StoreView snapshot)
+        internal void UpdatePoolForBlockPersisted(Block block, DataCache snapshot)
         {
             LoadPolicy(snapshot);
 
@@ -371,11 +370,6 @@ namespace Neo.Ledger
                 _txRwLock.ExitWriteLock();
             }
 
-            // If we know about headers of future blocks, no point in verifying transactions from the unverified tx pool
-            // until we get caught up.
-            if (block.Index > 0 && block.Index < Blockchain.Singleton.HeaderHeight)
-                return;
-
             ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions,
                 _maxTxPerBlock, MaxMillisecondsToReverifyTx, snapshot);
         }
@@ -394,7 +388,7 @@ namespace Neo.Ledger
         }
 
         private int ReverifyTransactions(SortedSet<PoolItem> verifiedSortedTxPool,
-            SortedSet<PoolItem> unverifiedSortedTxPool, int count, double millisecondsTimeout, StoreView snapshot)
+            SortedSet<PoolItem> unverifiedSortedTxPool, int count, double millisecondsTimeout, DataCache snapshot)
         {
             DateTime reverifyCutOffTimeStamp = TimeProvider.Current.UtcNow.AddMilliseconds(millisecondsTimeout);
             List<PoolItem> reverifiedItems = new List<PoolItem>(count);
@@ -470,11 +464,8 @@ namespace Neo.Ledger
         /// <param name="maxToVerify">Max transactions to reverify, the value passed can be >=1</param>
         /// <param name="snapshot">The snapshot to use for verifying.</param>
         /// <returns>true if more unsorted messages exist, otherwise false</returns>
-        internal bool ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, StoreView snapshot)
+        internal bool ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, DataCache snapshot)
         {
-            if (Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight)
-                return false;
-
             if (_unverifiedSortedTransactions.Count > 0)
             {
                 int verifyCount = _sortedTransactions.Count > _maxTxPerBlock ? 1 : maxToVerify;

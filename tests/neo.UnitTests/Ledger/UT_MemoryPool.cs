@@ -83,8 +83,8 @@ namespace Neo.UnitTests.Ledger
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new Mock<Transaction>();
-            mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
-            mock.Setup(p => p.VerifyStateDependent(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.Verify(It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyStateDependent(It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateIndependent()).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
@@ -108,8 +108,8 @@ namespace Neo.UnitTests.Ledger
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new Mock<Transaction>();
             UInt160 sender = senderAccount;
-            mock.Setup(p => p.Verify(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
-            mock.Setup(p => p.VerifyStateDependent(It.IsAny<StoreView>(), It.IsAny<TransactionVerificationContext>())).Returns((StoreView snapshot, TransactionVerificationContext context) => context.CheckTransaction(mock.Object, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
+            mock.Setup(p => p.Verify(It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyStateDependent(It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>())).Returns((DataCache snapshot, TransactionVerificationContext context) => context.CheckTransaction(mock.Object, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
             mock.Setup(p => p.VerifyStateIndependent()).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
@@ -151,7 +151,7 @@ namespace Neo.UnitTests.Ledger
             _unit.TryAdd(txToAdd, snapshot);
         }
 
-        private void AddTransactionsWithBalanceVerify(int count, long fee, SnapshotView snapshot)
+        private void AddTransactionsWithBalanceVerify(int count, long fee, DataCache snapshot)
         {
             for (int i = 0; i < count; i++)
             {
@@ -221,7 +221,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void BlockPersistAndReverificationWillAbandonTxAsBalanceTransfered()
         {
-            SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
+            using SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot();
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, long.MaxValue);
             NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
@@ -506,8 +506,8 @@ namespace Neo.UnitTests.Ledger
             var key2 = CreateStorageKey(Prefix_FeePerByte);
             key1.Id = NativeContract.Policy.Id;
             key2.Id = NativeContract.Policy.Id;
-            snapshot.Storages.Add(key1, item1);
-            snapshot.Storages.Add(key2, item2);
+            snapshot.Add(key1, item1);
+            snapshot.Add(key2, item2);
 
             var tx1 = CreateTransaction();
             var tx2 = CreateTransaction();

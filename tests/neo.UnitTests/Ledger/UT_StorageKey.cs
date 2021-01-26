@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
-using Neo.Ledger;
+using Neo.SmartContract;
 using System.IO;
 
 namespace Neo.UnitTests.Ledger

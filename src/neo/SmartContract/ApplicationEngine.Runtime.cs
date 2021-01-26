@@ -70,7 +70,7 @@ namespace Neo.SmartContract
                 else
                 {
                     OracleRequest request = NativeContract.Oracle.GetRequest(Snapshot, response.Id);
-                    signers = Snapshot.GetTransaction(request.OriginalTxid).Signers;
+                    signers = NativeContract.Ledger.GetTransaction(Snapshot, request.OriginalTxid).Signers;
                 }
                 Signer signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
                 if (signer is null) return false;

@@ -1,9 +1,11 @@
 using Neo.IO.Json;
+using Neo.VM;
+using Neo.VM.Types;
 using System;
 
 namespace Neo.SmartContract.Manifest
 {
-    public class ContractParameterDefinition
+    public class ContractParameterDefinition : IInteroperable
     {
         /// <summary>
         /// Name is the name of the parameter, which can be any valid identifier.
@@ -16,13 +18,16 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public ContractParameterType Type { get; set; }
 
-        public ContractParameterDefinition Clone()
+        void IInteroperable.FromStackItem(StackItem stackItem)
         {
-            return new ContractParameterDefinition
-            {
-                Name = Name,
-                Type = Type
-            };
+            Struct @struct = (Struct)stackItem;
+            Name = @struct[0].GetString();
+            Type = (ContractParameterType)(byte)@struct[1].GetInteger();
+        }
+
+        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        {
+            return new Struct(referenceCounter) { Name, (byte)Type };
         }
 
         /// <summary>

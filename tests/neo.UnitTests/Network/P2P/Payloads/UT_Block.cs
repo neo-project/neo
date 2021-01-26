@@ -135,13 +135,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Block newBlock = new Block();
             UInt256 val256 = UInt256.Zero;
             UInt256 prevHash = new UInt256(TestUtils.GetByteArray(32, 0x42));
-            UInt256 merkRoot;
-            UInt160 val160;
-            ulong timestampVal;
-            uint indexVal;
-            Witness scriptVal;
-            Transaction[] transactionsVal;
-            TestUtils.SetupBlockWithValues(newBlock, val256, out merkRoot, out val160, out timestampVal, out indexVal, out scriptVal, out transactionsVal, 1);
+            TestUtils.SetupBlockWithValues(newBlock, val256, out UInt256 merkRoot, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal, out Transaction[] transactionsVal, 1);
             TestUtils.SetupBlockWithValues(uut, prevHash, out merkRoot, out val160, out timestampVal, out indexVal, out scriptVal, out transactionsVal, 0);
 
             uut.Equals(newBlock).Should().BeFalse();
@@ -156,16 +150,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Equals_SameHash()
         {
-
             Block newBlock = new Block();
             UInt256 prevHash = new UInt256(TestUtils.GetByteArray(32, 0x42));
-            UInt256 merkRoot;
-            UInt160 val160;
-            ulong timestampVal;
-            uint indexVal;
-            Witness scriptVal;
-            Transaction[] transactionsVal;
-            TestUtils.SetupBlockWithValues(newBlock, prevHash, out merkRoot, out val160, out timestampVal, out indexVal, out scriptVal, out transactionsVal, 1);
+            TestUtils.SetupBlockWithValues(newBlock, prevHash, out UInt256 merkRoot, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal, out Transaction[] transactionsVal, 1);
             TestUtils.SetupBlockWithValues(uut, prevHash, out merkRoot, out val160, out timestampVal, out indexVal, out scriptVal, out transactionsVal, 1);
 
             uut.Equals(newBlock).Should().BeTrue();
@@ -175,19 +162,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void RebuildMerkleRoot_Updates()
         {
             UInt256 val256 = UInt256.Zero;
-            UInt256 merkRoot;
-            UInt160 val160;
-            ulong timestampVal;
-            uint indexVal;
-            Witness scriptVal;
-            Transaction[] transactionsVal;
-            TestUtils.SetupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out scriptVal, out transactionsVal, 1);
-
+            TestUtils.SetupBlockWithValues(uut, val256, out UInt256 merkRoot, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal, out Transaction[] transactionsVal, 1);
             UInt256 merkleRoot = uut.MerkleRoot;
 
             TestUtils.SetupBlockWithValues(uut, val256, out merkRoot, out val160, out timestampVal, out indexVal, out scriptVal, out transactionsVal, 3);
             uut.RebuildMerkleRoot();
-
             uut.MerkleRoot.Should().NotBe(merkleRoot);
         }
 

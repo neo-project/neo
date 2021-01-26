@@ -1,6 +1,6 @@
 using System;
 
-namespace Neo.Ledger
+namespace Neo.SmartContract
 {
     [Flags]
     public enum StorageFlags : byte

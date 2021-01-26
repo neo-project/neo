@@ -5,6 +5,7 @@ using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -143,6 +144,13 @@ namespace Neo.SmartContract
             return script.IsSignatureContract() || script.IsMultiSigContract();
         }
 
+        public static T ToInteroperable<T>(this StackItem item) where T : IInteroperable, new()
+        {
+            T t = new T();
+            t.FromStackItem(item);
+            return t;
+        }
+
         public static UInt160 ToScriptHash(this byte[] script)
         {
             return new UInt160(Crypto.Hash160(script));
@@ -153,7 +161,7 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
-        public static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas)
+        public static bool VerifyWitnesses(this IVerifiable verifiable, DataCache snapshot, long gas)
         {
             if (gas < 0) return false;
             if (gas > MaxVerificationGas) gas = MaxVerificationGas;
@@ -177,10 +185,10 @@ namespace Neo.SmartContract
             return true;
         }
 
-        internal static bool VerifyWitness(this IVerifiable verifiable, StoreView snapshot, UInt160 hash, Witness witness, long gas, out long fee)
+        internal static bool VerifyWitness(this IVerifiable verifiable, DataCache snapshot, UInt160 hash, Witness witness, long gas, out long fee)
         {
             fee = 0;
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), null, gas))
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CreateSnapshot(), null, gas))
             {
                 CallFlags callFlags = !witness.VerificationScript.IsStandardContract() ? CallFlags.ReadStates : CallFlags.None;
                 byte[] verification = witness.VerificationScript;
