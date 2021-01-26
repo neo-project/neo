@@ -104,7 +104,7 @@ namespace Neo.SmartContract.Native
 
         public OracleRequest GetRequest(DataCache snapshot, ulong id)
         {
-            return snapshot.TryGet(CreateStorageKey(Prefix_Request).Add(id))?.GetInteroperable<OracleRequest>();
+            return snapshot.TryGet(CreateStorageKey(Prefix_Request).AddBigEndian(id))?.GetInteroperable<OracleRequest>();
         }
 
         public IEnumerable<(ulong, OracleRequest)> GetRequests(DataCache snapshot)
