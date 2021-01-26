@@ -4,7 +4,6 @@ using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -62,80 +61,6 @@ namespace Neo.SmartContract.Native
             };
 
             Manifest.Abi.Events = events.ToArray();
-        }
-
-        private static void CheckScriptAndAbi(Script script, ContractAbi abi)
-        {
-            Dictionary<int, Instruction> instructions = new Dictionary<int, Instruction>();
-            for (int ip = 0; ip < script.Length;)
-            {
-                Instruction instruction = script.GetInstruction(ip);
-                instructions.Add(ip, instruction);
-                ip += instruction.Size;
-            }
-            foreach (var (ip, instruction) in instructions)
-            {
-                switch (instruction.OpCode)
-                {
-                    case OpCode.JMP:
-                    case OpCode.JMPIF:
-                    case OpCode.JMPIFNOT:
-                    case OpCode.JMPEQ:
-                    case OpCode.JMPNE:
-                    case OpCode.JMPGT:
-                    case OpCode.JMPGE:
-                    case OpCode.JMPLT:
-                    case OpCode.JMPLE:
-                    case OpCode.CALL:
-                    case OpCode.ENDTRY:
-                        if (!instructions.ContainsKey(checked(ip + instruction.TokenI8)))
-                            throw new ArgumentException(null, nameof(script));
-                        break;
-                    case OpCode.PUSHA:
-                    case OpCode.JMP_L:
-                    case OpCode.JMPIF_L:
-                    case OpCode.JMPIFNOT_L:
-                    case OpCode.JMPEQ_L:
-                    case OpCode.JMPNE_L:
-                    case OpCode.JMPGT_L:
-                    case OpCode.JMPGE_L:
-                    case OpCode.JMPLT_L:
-                    case OpCode.JMPLE_L:
-                    case OpCode.CALL_L:
-                    case OpCode.ENDTRY_L:
-                        if (!instructions.ContainsKey(checked(ip + instruction.TokenI32)))
-                            throw new ArgumentException(null, nameof(script));
-                        break;
-                    case OpCode.TRY:
-                        if (!instructions.ContainsKey(checked(ip + instruction.TokenI8)))
-                            throw new ArgumentException(null, nameof(script));
-                        if (!instructions.ContainsKey(checked(ip + instruction.TokenI8_1)))
-                            throw new ArgumentException(null, nameof(script));
-                        break;
-                    case OpCode.TRY_L:
-                        if (!instructions.ContainsKey(checked(ip + instruction.TokenI32)))
-                            throw new ArgumentException(null, nameof(script));
-                        if (!instructions.ContainsKey(checked(ip + instruction.TokenI32_1)))
-                            throw new ArgumentException(null, nameof(script));
-                        break;
-                    case OpCode.NEWARRAY_T:
-                    case OpCode.ISTYPE:
-                    case OpCode.CONVERT:
-                        StackItemType type = (StackItemType)instruction.TokenU8;
-                        if (!Enum.IsDefined(typeof(StackItemType), type))
-                            throw new ArgumentException(null, nameof(script));
-                        if (instruction.OpCode != OpCode.NEWARRAY_T && type == StackItemType.Any)
-                            throw new ArgumentException(null, nameof(script));
-                        break;
-                }
-            }
-            foreach (ContractMethodDescriptor method in abi.Methods)
-            {
-                if (!instructions.ContainsKey(method.Offset))
-                    throw new ArgumentException(null, nameof(script));
-            }
-            abi.GetMethod(string.Empty, 0); // Trigger the construction of ContractAbi.methodDictionary to check the uniqueness of the method names.
-            _ = abi.Events.ToDictionary(p => p.Name); // Check the uniqueness of the event names.
         }
 
         private int GetNextAvailableId(DataCache snapshot)
@@ -218,7 +143,7 @@ namespace Neo.SmartContract.Native
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
             ContractManifest parsedManifest = ContractManifest.Parse(manifest);
-            CheckScriptAndAbi(nef.Script, parsedManifest.Abi);
+            Helper.Check(nef.Script, parsedManifest.Abi);
             UInt160 hash = Helper.GetContractHash(tx.Sender, nef.CheckSum, parsedManifest.Name);
             StorageKey key = CreateStorageKey(Prefix_Contract).Add(hash);
             if (engine.Snapshot.Contains(key))
@@ -282,7 +207,7 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.Hash}");
                 contract.Manifest = manifest_new;
             }
-            CheckScriptAndAbi(contract.Nef.Script, contract.Manifest.Abi);
+            Helper.Check(contract.Nef.Script, contract.Manifest.Abi);
             contract.UpdateCounter++; // Increase update counter
             if (nefFile != null)
             {
