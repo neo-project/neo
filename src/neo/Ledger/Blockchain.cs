@@ -377,7 +377,15 @@ namespace Neo.Ledger
         {
             using (SnapshotCache snapshot = GetSnapshot())
             {
-                if (block.Index == 0) NativeContract.Ledger.SetCurrentHeader(snapshot, block.Hash, block.Index);
+                if (block.Index == 0)
+                {
+                    NativeContract.Ledger.SetCurrentHeader(snapshot, block.Hash, block.Index);
+                    recentHeaders.Add(block.Header);
+                }
+                else if (block.Index == HeaderHeight + 1)
+                {
+                    recentHeaders.Add(block.Header);
+                }
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block))
                 {
