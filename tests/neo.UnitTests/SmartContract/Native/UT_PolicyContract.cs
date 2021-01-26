@@ -7,7 +7,6 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
-using Neo.UnitTests.IO.Caching;
 using System;
 using System.Linq;
 
@@ -207,12 +206,11 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_SetBaseExecFee()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = _snapshot.CreateSnapshot();
 
             // Fake blockchain
 
             Block block = new Block() { Index = 1000, PrevHash = UInt256.Zero };
-            NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, block, 0));
 
             // Without signature
 
@@ -251,12 +249,11 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_SetStoragePrice()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = _snapshot.CreateSnapshot();
 
             // Fake blockchain
 
             Block block = new Block() { Index = 1000, PrevHash = UInt256.Zero };
-            NativeContract.Policy.Initialize(ApplicationEngine.Create(TriggerType.Application, null, snapshot, block, 0));
 
             // Without signature
 

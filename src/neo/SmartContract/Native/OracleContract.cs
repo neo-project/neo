@@ -127,7 +127,7 @@ namespace Neo.SmartContract.Native
 
         internal override void Initialize(ApplicationEngine engine)
         {
-            engine.Snapshot.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BitConverter.GetBytes(0ul)));
+            engine.Snapshot.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BigInteger.Zero));
         }
 
         internal override void PostPersist(ApplicationEngine engine)
@@ -184,13 +184,13 @@ namespace Neo.SmartContract.Native
 
             //Increase the request id
             StorageItem item_id = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_RequestId));
-            ulong id = BitConverter.ToUInt64(item_id.Value) + 1;
-            item_id.Value = BitConverter.GetBytes(id);
+            ulong id = (ulong)(BigInteger)item_id;
+            item_id.Add(1);
 
             //Put the request to storage
             if (ContractManagement.GetContract(engine.Snapshot, engine.CallingScriptHash) is null)
                 throw new InvalidOperationException();
-            engine.Snapshot.Add(CreateStorageKey(Prefix_Request).Add(item_id.Value), new StorageItem(new OracleRequest
+            engine.Snapshot.Add(CreateStorageKey(Prefix_Request).AddBigEndian(id), new StorageItem(new OracleRequest
             {
                 OriginalTxid = GetOriginalTxid(engine),
                 GasForResponse = gasForResponse,
