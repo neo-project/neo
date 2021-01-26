@@ -8,6 +8,7 @@ using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -109,7 +110,10 @@ namespace Neo.SmartContract.Native
 
         public IEnumerable<(ulong, OracleRequest)> GetRequests(DataCache snapshot)
         {
-            return snapshot.Find(new KeyBuilder(Id, Prefix_Request).ToArray()).Select(p => (BitConverter.ToUInt64(p.Key.Key, 1), p.Value.GetInteroperable<OracleRequest>()));
+            return snapshot.Find(new KeyBuilder(Id, Prefix_Request).ToArray())
+                .Select(p => (BitConverter.IsLittleEndian ?
+                    BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt64(p.Key.Key, 1)) :
+                    BitConverter.ToUInt64(p.Key.Key, 1), p.Value.GetInteroperable<OracleRequest>()));            
         }
 
         public IEnumerable<(ulong, OracleRequest)> GetRequestsByUrl(DataCache snapshot, string url)
