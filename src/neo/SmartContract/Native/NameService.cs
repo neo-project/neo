@@ -36,6 +36,8 @@ namespace Neo.SmartContract.Native
 
         internal override void Initialize(ApplicationEngine engine)
         {
+            base.Initialize(engine);
+            engine.Snapshot.Add(CreateStorageKey(Prefix_Roots), new StorageItem(new StringList()));
             engine.Snapshot.Add(CreateStorageKey(Prefix_DomainPrice), new StorageItem(10_00000000));
         }
 
@@ -68,7 +70,7 @@ namespace Neo.SmartContract.Native
         {
             if (!rootRegex.IsMatch(root)) throw new ArgumentException(null, nameof(root));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            StringList roots = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Roots), () => new StorageItem(new StringList())).GetInteroperable<StringList>();
+            StringList roots = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Roots)).GetInteroperable<StringList>();
             int index = roots.BinarySearch(root);
             if (index >= 0) throw new InvalidOperationException("The name already exists.");
             roots.Insert(~index, root);
@@ -76,7 +78,7 @@ namespace Neo.SmartContract.Native
 
         public IEnumerable<string> GetRoots(DataCache snapshot)
         {
-            return snapshot.TryGet(CreateStorageKey(Prefix_Roots))?.GetInteroperable<StringList>() ?? Enumerable.Empty<string>();
+            return snapshot[CreateStorageKey(Prefix_Roots)].GetInteroperable<StringList>();
         }
 
         [ContractMethod(0_03000000, CallFlags.WriteStates)]
@@ -101,8 +103,8 @@ namespace Neo.SmartContract.Native
             if (names.Length != 2) throw new ArgumentException(null, nameof(name));
             byte[] hash = GetKey(Utility.StrictUTF8.GetBytes(name));
             if (snapshot.TryGet(CreateStorageKey(Prefix_Token).Add(hash)) is not null) return false;
-            StringList roots = snapshot.TryGet(CreateStorageKey(Prefix_Roots))?.GetInteroperable<StringList>();
-            if (roots is null || roots.BinarySearch(names[1]) < 0) throw new InvalidOperationException();
+            StringList roots = snapshot[CreateStorageKey(Prefix_Roots)].GetInteroperable<StringList>();
+            if (roots.BinarySearch(names[1]) < 0) throw new InvalidOperationException();
             return true;
         }
 
@@ -115,8 +117,8 @@ namespace Neo.SmartContract.Native
             if (!engine.CheckWitnessInternal(owner)) throw new InvalidOperationException();
             byte[] hash = GetKey(Utility.StrictUTF8.GetBytes(name));
             if (engine.Snapshot.TryGet(CreateStorageKey(Prefix_Token).Add(hash)) is not null) return false;
-            StringList roots = engine.Snapshot.TryGet(CreateStorageKey(Prefix_Roots))?.GetInteroperable<StringList>();
-            if (roots is null || roots.BinarySearch(names[1]) < 0) throw new InvalidOperationException();
+            StringList roots = engine.Snapshot[CreateStorageKey(Prefix_Roots)].GetInteroperable<StringList>();
+            if (roots.BinarySearch(names[1]) < 0) throw new InvalidOperationException();
             engine.AddGas(GetPrice(engine.Snapshot));
             NameState state = new NameState
             {
