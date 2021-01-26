@@ -368,7 +368,7 @@ namespace Neo.Ledger
             {
                 if (block.Index != 0 && block.Index == HeaderHeight + 1)
                 {
-                    recentHeaders.Add(block.Header);
+                    recentHeaders.Remove(block.Index);
                 }
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block))

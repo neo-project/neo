@@ -29,7 +29,7 @@ namespace Neo.Ledger
             readerWriterLock.Dispose();
         }
 
-        public void Add(Header header)
+        public bool Add(Header header)
         {
             readerWriterLock.EnterWriteLock();
             try
@@ -43,15 +43,37 @@ namespace Neo.Ledger
                 else
                 {
                     if (header.Index != headers[endPos].Index + 1) throw new ArgumentException("illegal header");
-                    endPos = (endPos + 1) % max_capacity;
-                    if (endPos == startPos)
-                    {
-                        startPos = (startPos + 1) % max_capacity;
-                        startIndex++;
-                    }
+                    var newEndPos = (endPos + 1) % max_capacity;
+                    if (newEndPos == startPos) return false;
+                    endPos = newEndPos;
                 }
                 headers[endPos] = header;
                 endIndex = header.Index;
+                return true;
+            }
+            finally
+            {
+                readerWriterLock.ExitWriteLock();
+            }
+        }
+
+        public bool Remove(uint height)
+        {
+            readerWriterLock.EnterWriteLock();
+            try
+            {
+                if (!Added) return false;
+                if (startIndex != height) return false;
+                headers[startPos] = null;
+                startPos = (startPos + 1) % max_capacity;
+                if ((endPos + 1) % max_capacity == startPos)
+                {
+                    startPos = -1;
+                    endPos = -1;
+                    return true;
+                }
+                startIndex = headers[startPos].Index;
+                return true;
             }
             finally
             {
