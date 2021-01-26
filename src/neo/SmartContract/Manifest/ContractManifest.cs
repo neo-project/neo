@@ -110,9 +110,13 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">Json</param>
         /// <returns>Return ContractManifest</returns>
-        public static ContractManifest Parse(ReadOnlySpan<byte> json) => FromJson(JObject.Parse(json));
+        public static ContractManifest Parse(ReadOnlySpan<byte> json)
+        {
+            if (json.Length > MaxLength) throw new ArgumentException(null, nameof(json));
+            return FromJson(JObject.Parse(json));
+        }
 
-        public static ContractManifest Parse(string json) => FromJson(JObject.Parse(json));
+        public static ContractManifest Parse(string json) => Parse(Utility.StrictUTF8.GetBytes(json));
 
         /// <summary
         /// To json

@@ -52,11 +52,13 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return ContractMethodDescription</returns>
         public new static ContractMethodDescriptor FromJson(JObject json)
         {
+            ContractParameterType returnType = (ContractParameterType)Enum.Parse(typeof(ContractParameterType), json["returntype"].AsString());
+            if (!Enum.IsDefined(returnType)) throw new FormatException();
             return new ContractMethodDescriptor
             {
                 Name = json["name"].AsString(),
                 Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson(u)).ToArray(),
-                ReturnType = (ContractParameterType)Enum.Parse(typeof(ContractParameterType), json["returntype"].AsString()),
+                ReturnType = returnType,
                 Offset = (int)json["offset"].AsNumber(),
                 Safe = json["safe"].AsBoolean(),
             };
