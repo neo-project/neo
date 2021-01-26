@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using static Neo.SmartContract.Helper;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads
@@ -199,6 +200,7 @@ namespace Neo.Network.P2P.Payloads
             Attributes = DeserializeAttributes(reader, MaxTransactionAttributes - Signers.Length).ToArray();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
+            if (!Check(Script)) throw new FormatException();
         }
 
         public bool Equals(Transaction other)
