@@ -3,7 +3,6 @@ using Neo.IO.Json;
 using Neo.SmartContract;
 using System;
 using System.IO;
-using static Neo.SmartContract.Helper;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -41,9 +40,7 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Deserialize(BinaryReader reader)
         {
             InvocationScript = reader.ReadVarBytes(MaxInvocationScript);
-            if (!Check(InvocationScript)) throw new FormatException();
             VerificationScript = reader.ReadVarBytes(MaxVerificationScript);
-            if (!Check(VerificationScript)) throw new FormatException();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

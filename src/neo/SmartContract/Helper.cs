@@ -280,6 +280,8 @@ namespace Neo.SmartContract
         internal static bool VerifyWitness(this IVerifiable verifiable, DataCache snapshot, UInt160 hash, Witness witness, long gas, out long fee)
         {
             fee = 0;
+            if (!Check(witness.InvocationScript)) return false;
+            if (!Check(witness.VerificationScript)) return false;
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CreateSnapshot(), null, gas))
             {
                 CallFlags callFlags = !witness.VerificationScript.IsStandardContract() ? CallFlags.ReadStates : CallFlags.None;
