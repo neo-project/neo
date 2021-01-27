@@ -35,7 +35,15 @@ namespace Neo.SmartContract
             Dictionary<int, Instruction> instructions = new Dictionary<int, Instruction>();
             for (int ip = 0; ip < script.Length;)
             {
-                Instruction instruction = script.GetInstruction(ip);
+                Instruction instruction;
+                try
+                {
+                    instruction = script.GetInstruction(ip);
+                }
+                catch (InvalidOperationException)
+                {
+                    return false;
+                }
                 instructions.Add(ip, instruction);
                 ip += instruction.Size;
             }
