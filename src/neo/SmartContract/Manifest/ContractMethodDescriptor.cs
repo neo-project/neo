@@ -14,12 +14,7 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public ContractParameterType ReturnType { get; set; }
 
-        private int _offset;
-        public int Offset
-        {
-            get => _offset;
-            set => _offset = value >= 0 ? value : throw new FormatException();
-        }
+        public int Offset { get; set; }
 
         /// <summary>
         /// Determine if it's safe to call this method
@@ -52,7 +47,7 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return ContractMethodDescription</returns>
         public new static ContractMethodDescriptor FromJson(JObject json)
         {
-            return new ContractMethodDescriptor
+            ContractMethodDescriptor descriptor = new ContractMethodDescriptor
             {
                 Name = json["name"].AsString(),
                 Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson(u)).ToArray(),
@@ -60,6 +55,11 @@ namespace Neo.SmartContract.Manifest
                 Offset = (int)json["offset"].AsNumber(),
                 Safe = json["safe"].AsBoolean(),
             };
+            if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException();
+            _ = descriptor.Parameters.ToDictionary(p => p.Name);
+            if (!Enum.IsDefined(descriptor.ReturnType)) throw new FormatException();
+            if (descriptor.Offset < 0) throw new FormatException();
+            return descriptor;
         }
 
         public override JObject ToJson()

@@ -133,7 +133,7 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException();
             if (nefFile.Length == 0)
                 throw new ArgumentException($"Invalid NefFile Length: {nefFile.Length}");
-            if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
+            if (manifest.Length == 0)
                 throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
 
             engine.AddGas(Math.Max(
@@ -143,6 +143,8 @@ namespace Neo.SmartContract.Native
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
             ContractManifest parsedManifest = ContractManifest.Parse(manifest);
+            if (!Helper.Check(nef.Script, parsedManifest.Abi))
+                throw new FormatException();
             UInt160 hash = Helper.GetContractHash(tx.Sender, nef.CheckSum, parsedManifest.Name);
             StorageKey key = CreateStorageKey(Prefix_Contract).Add(hash);
             if (engine.Snapshot.Contains(key))
@@ -197,7 +199,7 @@ namespace Neo.SmartContract.Native
             }
             if (manifest != null)
             {
-                if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
+                if (manifest.Length == 0)
                     throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
                 ContractManifest manifest_new = ContractManifest.Parse(manifest);
                 if (manifest_new.Name != contract.Manifest.Name)
@@ -206,6 +208,8 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.Hash}");
                 contract.Manifest = manifest_new;
             }
+            if (!Helper.Check(contract.Nef.Script, contract.Manifest.Abi))
+                throw new FormatException();
             contract.UpdateCounter++; // Increase update counter
             if (nefFile != null)
             {
