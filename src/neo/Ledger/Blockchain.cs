@@ -62,10 +62,10 @@ namespace Neo.Ledger
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
         private readonly IActorRef txrouter;
+        private readonly IndexedQueue<Header> header_cache = new IndexedQueue<Header>();
         private readonly ConcurrentDictionary<UInt256, Block> block_cache = new ConcurrentDictionary<UInt256, Block>();
         private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new Dictionary<uint, UnverifiedBlocksList>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
-        private readonly IndexedQueue<Header> recentHeaders = new IndexedQueue<Header>();
 
         private SnapshotCache currentSnapshot;
         private ImmutableHashSet<UInt160> extensibleWitnessWhiteList;
@@ -74,9 +74,9 @@ namespace Neo.Ledger
         public DataCache View => new SnapshotCache(Store);
         public MemoryPool MemPool { get; }
         public uint Height => NativeContract.Ledger.CurrentIndex(currentSnapshot);
-        public uint HeaderHeight => recentHeaders.Count > 0 ? recentHeaders[^1].Index : NativeContract.Ledger.CurrentIndex(currentSnapshot);
+        public uint HeaderHeight => header_cache.Count > 0 ? header_cache[^1].Index : NativeContract.Ledger.CurrentIndex(currentSnapshot);
         public UInt256 CurrentBlockHash => NativeContract.Ledger.CurrentHash(currentSnapshot);
-        public UInt256 CurrentHeaderHash => recentHeaders.Count > 0 ? recentHeaders[^1].Hash : NativeContract.Ledger.CurrentHash(currentSnapshot);
+        public UInt256 CurrentHeaderHash => header_cache.Count > 0 ? header_cache[^1].Hash : NativeContract.Ledger.CurrentHash(currentSnapshot);
 
         private static Blockchain singleton;
         public static Blockchain Singleton
@@ -278,7 +278,7 @@ namespace Neo.Ledger
                 if (block.Index + 99 >= HeaderHeight)
                     system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
                 if (block.Index == HeaderHeight + 1)
-                    recentHeaders.Enqueue(block.Header);
+                    header_cache.Enqueue(block.Header);
             }
             return VerifyResult.Succeed;
         }
@@ -292,7 +292,7 @@ namespace Neo.Ledger
                     if (header.Index > HeaderHeight + 1) break;
                     if (header.Index < HeaderHeight + 1) continue;
                     if (!header.Verify(snapshot)) break;
-                    recentHeaders.Enqueue(header);
+                    header_cache.Enqueue(header);
                 }
             }
             system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
@@ -363,7 +363,7 @@ namespace Neo.Ledger
         {
             using (SnapshotCache snapshot = GetSnapshot())
             {
-                recentHeaders.TryDequeue(out _);
+                header_cache.TryDequeue(out _);
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block))
                 {
@@ -454,12 +454,12 @@ namespace Neo.Ledger
 
         private Header GetCachedHeader(uint index)
         {
-            if (recentHeaders.Count == 0) return null;
-            uint firstIndex = recentHeaders[0].Index;
+            if (header_cache.Count == 0) return null;
+            uint firstIndex = header_cache[0].Index;
             if (index < firstIndex) return null;
             index -= firstIndex;
-            if (index >= recentHeaders.Count) return null;
-            return recentHeaders[(int)index];
+            if (index >= header_cache.Count) return null;
+            return header_cache[(int)index];
         }
 
         public Header GetHeader(uint index, DataCache snapshot)
