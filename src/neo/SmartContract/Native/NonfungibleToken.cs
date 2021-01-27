@@ -1,3 +1,5 @@
+#pragma warning disable IDE0051
+
 using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
@@ -121,19 +123,18 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        public IIterator TokensOf(DataCache snapshot, UInt160 owner)
+        private IIterator Tokens(DataCache snapshot)
         {
-            if (owner is null)
-            {
-                var results = snapshot.Find(new[] { Prefix_Token }).GetEnumerator();
-                return new StorageIterator(results, FindOptions.ValuesOnly | FindOptions.DeserializeValues | FindOptions.PickField1, null);
-            }
-            else
-            {
-                NFTAccountState account = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(owner))?.GetInteroperable<NFTAccountState>();
-                IReadOnlyList<byte[]> tokens = account?.Tokens ?? (IReadOnlyList<byte[]>)System.Array.Empty<byte[]>();
-                return new ArrayWrapper(tokens.Select(p => (StackItem)p).ToArray());
-            }
+            var results = snapshot.Find(new[] { Prefix_Token }).GetEnumerator();
+            return new StorageIterator(results, FindOptions.ValuesOnly | FindOptions.DeserializeValues | FindOptions.PickField1, null);
+        }
+
+        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        private IIterator TokensOf(DataCache snapshot, UInt160 owner)
+        {
+            NFTAccountState account = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(owner))?.GetInteroperable<NFTAccountState>();
+            IReadOnlyList<byte[]> tokens = account?.Tokens ?? (IReadOnlyList<byte[]>)System.Array.Empty<byte[]>();
+            return new ArrayWrapper(tokens.Select(p => (StackItem)p).ToArray());
         }
 
         [ContractMethod(0_09000000, CallFlags.WriteStates | CallFlags.AllowNotify)]
