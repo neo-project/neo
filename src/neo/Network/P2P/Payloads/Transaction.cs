@@ -200,7 +200,6 @@ namespace Neo.Network.P2P.Payloads
             Attributes = DeserializeAttributes(reader, MaxTransactionAttributes - Signers.Length).ToArray();
             Script = reader.ReadVarBytes(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
-            if (!Check(Script)) throw new FormatException();
         }
 
         public bool Equals(Transaction other)
@@ -322,13 +321,13 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual VerifyResult VerifyStateIndependent()
         {
-            if (Size > MaxTransactionSize)
-                return VerifyResult.Invalid;
+            if (Size > MaxTransactionSize) return VerifyResult.Invalid;
+            if (!Check(Script)) return VerifyResult.Invalid;
             UInt160[] hashes = GetScriptHashesForVerifying(null);
             if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
             for (int i = 0; i < hashes.Length; i++)
                 if (witnesses[i].VerificationScript.IsStandardContract())
-                    if (!this.VerifyWitness(null, hashes[i], witnesses[i], SmartContract.Helper.MaxVerificationGas, out _))
+                    if (!this.VerifyWitness(null, hashes[i], witnesses[i], MaxVerificationGas, out _))
                         return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }
