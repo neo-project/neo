@@ -103,7 +103,7 @@ namespace Neo.UnitTests
         {
             return new Transaction
             {
-                Script = new byte[1],
+                Script = new byte[] { (byte)OpCode.PUSH2 },
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Signers = new[]{ new Signer()
                 {
