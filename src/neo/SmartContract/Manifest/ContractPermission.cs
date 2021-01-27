@@ -63,11 +63,15 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return ContractPermission</returns>
         public static ContractPermission FromJson(JObject json)
         {
-            return new ContractPermission
+            ContractPermission permission = new ContractPermission
             {
                 Contract = ContractPermissionDescriptor.FromJson(json["contract"]),
                 Methods = WildcardContainer<string>.FromJson(json["methods"], u => u.AsString()),
             };
+            if (permission.Methods.Any(p => string.IsNullOrEmpty(p)))
+                throw new FormatException();
+            _ = permission.Methods.ToDictionary(p => p);
+            return permission;
         }
 
         /// <summary

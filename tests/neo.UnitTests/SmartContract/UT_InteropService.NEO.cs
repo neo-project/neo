@@ -11,6 +11,7 @@ using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
+using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
@@ -133,7 +134,7 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
             var nef = new NefFile()
             {
-                Script = new byte[byte.MaxValue],
+                Script = Enumerable.Repeat((byte)OpCode.RET, byte.MaxValue).ToArray(),
                 Compiler = "",
                 Tokens = System.Array.Empty<MethodToken>()
             };
@@ -161,7 +162,7 @@ namespace Neo.UnitTests.SmartContract
 
             manifest = TestUtils.CreateDefaultManifest();
             var ret = snapshot.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false));
-            ret.Hash.ToString().Should().Be("0x18e26e71e66fb79347581771c0910df5bea9d24b");
+            ret.Hash.ToString().Should().Be("0x7b37d4bd3d87f53825c3554bd1a617318235a685");
             Assert.ThrowsException<InvalidOperationException>(() => snapshot.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false)));
 
             var state = TestUtils.GetContract();
@@ -176,7 +177,7 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
             var nef = new NefFile()
             {
-                Script = new byte[] { 0x01 },
+                Script = new[] { (byte)OpCode.RET },
                 Compiler = "",
                 Tokens = System.Array.Empty<MethodToken>()
             };

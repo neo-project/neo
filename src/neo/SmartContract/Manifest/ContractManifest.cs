@@ -93,7 +93,7 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return ContractManifest</returns>
         public static ContractManifest FromJson(JObject json)
         {
-            return new ContractManifest
+            ContractManifest manifest = new ContractManifest
             {
                 Name = json["name"].AsString(),
                 Groups = ((JArray)json["groups"]).Select(u => ContractGroup.FromJson(u)).ToArray(),
@@ -103,6 +103,15 @@ namespace Neo.SmartContract.Manifest
                 Trusts = WildcardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString())),
                 Extra = json["extra"]
             };
+            if (string.IsNullOrEmpty(manifest.Name))
+                throw new FormatException();
+            _ = manifest.Groups.ToDictionary(p => p.PubKey);
+            if (manifest.SupportedStandards.Any(p => string.IsNullOrEmpty(p)))
+                throw new FormatException();
+            _ = manifest.SupportedStandards.ToDictionary(p => p);
+            _ = manifest.Permissions.ToDictionary(p => p.Contract);
+            _ = manifest.Trusts.ToDictionary(p => p);
+            return manifest;
         }
 
         /// <summary>
@@ -110,9 +119,13 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">Json</param>
         /// <returns>Return ContractManifest</returns>
-        public static ContractManifest Parse(ReadOnlySpan<byte> json) => FromJson(JObject.Parse(json));
+        public static ContractManifest Parse(ReadOnlySpan<byte> json)
+        {
+            if (json.Length > MaxLength) throw new ArgumentException(null, nameof(json));
+            return FromJson(JObject.Parse(json));
+        }
 
-        public static ContractManifest Parse(string json) => FromJson(JObject.Parse(json));
+        public static ContractManifest Parse(string json) => Parse(Utility.StrictUTF8.GetBytes(json));
 
         /// <summary
         /// To json

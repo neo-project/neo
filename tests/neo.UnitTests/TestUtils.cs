@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Neo.IO;
 using Neo.IO.Json;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
@@ -28,7 +27,17 @@ namespace Neo.UnitTests
                 Abi = new ContractAbi()
                 {
                     Events = new ContractEventDescriptor[0],
-                    Methods = new ContractMethodDescriptor[0]
+                    Methods = new[]
+                    {
+                        new ContractMethodDescriptor
+                        {
+                            Name = "testMethod",
+                            Parameters = new ContractParameterDefinition[0],
+                            ReturnType = ContractParameterType.Void,
+                            Offset = 0,
+                            Safe = true
+                        }
+                    }
                 },
                 Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<UInt160>.Create(),

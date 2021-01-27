@@ -48,11 +48,13 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return ContractAbi</returns>
         public static ContractAbi FromJson(JObject json)
         {
-            return new ContractAbi
+            ContractAbi abi = new ContractAbi
             {
                 Methods = ((JArray)json["methods"]).Select(u => ContractMethodDescriptor.FromJson(u)).ToArray(),
                 Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.FromJson(u)).ToArray()
             };
+            if (abi.Methods.Length == 0) throw new FormatException();
+            return abi;
         }
 
         public ContractMethodDescriptor GetMethod(string name, int pcount)
