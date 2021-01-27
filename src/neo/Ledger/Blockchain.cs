@@ -65,7 +65,7 @@ namespace Neo.Ledger
         private readonly ConcurrentDictionary<UInt256, Block> block_cache = new ConcurrentDictionary<UInt256, Block>();
         private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new Dictionary<uint, UnverifiedBlocksList>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
-        private readonly HeaderCache recentHeaders = new HeaderCache(10000);
+        private readonly IndexedQueue<Header> recentHeaders = new IndexedQueue<Header>();
 
         private SnapshotCache currentSnapshot;
         private ImmutableHashSet<UInt160> extensibleWitnessWhiteList;
@@ -74,9 +74,9 @@ namespace Neo.Ledger
         public DataCache View => new SnapshotCache(Store);
         public MemoryPool MemPool { get; }
         public uint Height => NativeContract.Ledger.CurrentIndex(currentSnapshot);
-        public uint HeaderHeight => recentHeaders.Added ? recentHeaders.HeaderHeight() : NativeContract.Ledger.CurrentIndex(currentSnapshot);
+        public uint HeaderHeight => recentHeaders.Count > 0 ? recentHeaders[^1].Index : NativeContract.Ledger.CurrentIndex(currentSnapshot);
         public UInt256 CurrentBlockHash => NativeContract.Ledger.CurrentHash(currentSnapshot);
-        public UInt256 CurrentHeaderHash => recentHeaders.Added ? recentHeaders.CurrentHeader().Hash : NativeContract.Ledger.CurrentHash(currentSnapshot);
+        public UInt256 CurrentHeaderHash => recentHeaders.Count > 0 ? recentHeaders[^1].Hash : NativeContract.Ledger.CurrentHash(currentSnapshot);
 
         private static Blockchain singleton;
         public static Blockchain Singleton
@@ -244,7 +244,7 @@ namespace Neo.Ledger
                 {
                     blocksToPersistList.Add(block_persist);
                     if (block_persist.Index + 1 > HeaderHeight) break;
-                    UInt256 hash = recentHeaders.At(block_persist.Index + 1).Hash;
+                    UInt256 hash = GetCachedHeader(block_persist.Index + 1).Hash;
                     if (!block_cache.TryGetValue(hash, out block_persist)) break;
                 }
 
@@ -278,10 +278,7 @@ namespace Neo.Ledger
                 if (block.Index + 99 >= HeaderHeight)
                     system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
                 if (block.Index == HeaderHeight + 1)
-                {
-                    Header header = block.Header;
-                    recentHeaders.Add(header);
-                }
+                    recentHeaders.Enqueue(block.Header);
             }
             return VerifyResult.Succeed;
         }
@@ -295,7 +292,7 @@ namespace Neo.Ledger
                     if (header.Index > HeaderHeight + 1) break;
                     if (header.Index < HeaderHeight + 1) continue;
                     if (!header.Verify(snapshot)) break;
-                    recentHeaders.Add(header);
+                    recentHeaders.Enqueue(header);
                 }
             }
             system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
@@ -366,10 +363,7 @@ namespace Neo.Ledger
         {
             using (SnapshotCache snapshot = GetSnapshot())
             {
-                if (block.Index != 0 && block.Index == HeaderHeight + 1)
-                {
-                    recentHeaders.Remove(block.Index);
-                }
+                recentHeaders.TryDequeue(out _);
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block))
                 {
@@ -439,7 +433,6 @@ namespace Neo.Ledger
         protected override void PostStop()
         {
             base.PostStop();
-            recentHeaders.Dispose();
             currentSnapshot?.Dispose();
         }
 
@@ -461,7 +454,12 @@ namespace Neo.Ledger
 
         private Header GetCachedHeader(uint index)
         {
-            return recentHeaders.At(index);
+            if (recentHeaders.Count == 0) return null;
+            uint firstIndex = recentHeaders[0].Index;
+            if (index < firstIndex) return null;
+            index -= firstIndex;
+            if (index >= recentHeaders.Count) return null;
+            return recentHeaders[(int)index];
         }
 
         public Header GetHeader(uint index, DataCache snapshot)
