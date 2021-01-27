@@ -43,11 +43,13 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return ContractManifestGroup</returns>
         public static ContractGroup FromJson(JObject json)
         {
-            return new ContractGroup
+            ContractGroup group = new ContractGroup
             {
                 PubKey = ECPoint.Parse(json["pubkey"].AsString(), ECCurve.Secp256r1),
                 Signature = Convert.FromBase64String(json["signature"].AsString()),
             };
+            if (group.Signature.Length != 64) throw new FormatException();
+            return group;
         }
 
         /// <summary>
