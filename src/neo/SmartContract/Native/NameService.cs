@@ -2,7 +2,6 @@
 
 using Neo.Cryptography;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
@@ -28,6 +27,8 @@ namespace Neo.SmartContract.Native
         private const uint OneYear = 365 * 24 * 3600;
         private static readonly Regex rootRegex = new Regex("^[a-z][a-z0-9]{0,15}$", RegexOptions.Singleline);
         private static readonly Regex nameRegex = new Regex("^(?=.{3,255}$)([a-z0-9]{1,62}\\.)+[a-z][a-z0-9]{0,15}$", RegexOptions.Singleline);
+        private static readonly Regex ipv4Regex = new Regex("^(2(5[0-5]|[0-4]\\d))|1?\\d{1,2}(\\.((2(5[0-5]|[0-4]\\d))|1?\\d{1,2})){3}$", RegexOptions.Singleline);
+        private static readonly Regex ipv6Regex = new Regex("^([a-f0-9]{1,4}:){7}[a-f0-9]{1,4}$", RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
         internal NameService()
         {
@@ -35,7 +36,9 @@ namespace Neo.SmartContract.Native
 
         internal override void Initialize(ApplicationEngine engine)
         {
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_DomainPrice), new StorageItem(10_00000000));
+            base.Initialize(engine);
+            engine.Snapshot.Add(CreateStorageKey(Prefix_Roots), new StorageItem(new StringList()));
+            engine.Snapshot.Add(CreateStorageKey(Prefix_DomainPrice), new StorageItem(10_00000000));
         }
 
         internal override void OnPersist(ApplicationEngine engine)
@@ -43,11 +46,11 @@ namespace Neo.SmartContract.Native
             uint now = (uint)(engine.PersistingBlock.Timestamp / 1000) + 1;
             byte[] start = CreateStorageKey(Prefix_Expiration).AddBigEndian(0).ToArray();
             byte[] end = CreateStorageKey(Prefix_Expiration).AddBigEndian(now).ToArray();
-            foreach (var (key, _) in engine.Snapshot.Storages.FindRange(start, end))
+            foreach (var (key, _) in engine.Snapshot.FindRange(start, end))
             {
-                engine.Snapshot.Storages.Delete(key);
-                foreach (var (key2, _) in engine.Snapshot.Storages.Find(CreateStorageKey(Prefix_Record).Add(key.Key.AsSpan(5)).ToArray()))
-                    engine.Snapshot.Storages.Delete(key2);
+                engine.Snapshot.Delete(key);
+                foreach (var (key2, _) in engine.Snapshot.Find(CreateStorageKey(Prefix_Record).Add(key.Key.AsSpan(5)).ToArray()))
+                    engine.Snapshot.Delete(key2);
                 Burn(engine, CreateStorageKey(Prefix_Token).Add(key.Key.AsSpan(5)));
             }
         }
@@ -67,15 +70,15 @@ namespace Neo.SmartContract.Native
         {
             if (!rootRegex.IsMatch(root)) throw new ArgumentException(null, nameof(root));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            StringList roots = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Roots), () => new StorageItem(new StringList())).GetInteroperable<StringList>();
+            StringList roots = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Roots)).GetInteroperable<StringList>();
             int index = roots.BinarySearch(root);
             if (index >= 0) throw new InvalidOperationException("The name already exists.");
             roots.Insert(~index, root);
         }
 
-        public IEnumerable<string> GetRoots(StoreView snapshot)
+        public IEnumerable<string> GetRoots(DataCache snapshot)
         {
-            return snapshot.Storages.TryGet(CreateStorageKey(Prefix_Roots))?.GetInteroperable<StringList>() ?? Enumerable.Empty<string>();
+            return snapshot[CreateStorageKey(Prefix_Roots)].GetInteroperable<StringList>();
         }
 
         [ContractMethod(0_03000000, CallFlags.WriteStates)]
@@ -83,25 +86,25 @@ namespace Neo.SmartContract.Native
         {
             if (price <= 0 || price > 10000_00000000) throw new ArgumentOutOfRangeException(nameof(price));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_DomainPrice)).Set(price);
+            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_DomainPrice)).Set(price);
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        public long GetPrice(StoreView snapshot)
+        public long GetPrice(DataCache snapshot)
         {
-            return (long)(BigInteger)snapshot.Storages[CreateStorageKey(Prefix_DomainPrice)];
+            return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_DomainPrice)];
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        public bool IsAvailable(StoreView snapshot, string name)
+        public bool IsAvailable(DataCache snapshot, string name)
         {
             if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
             string[] names = name.Split('.');
             if (names.Length != 2) throw new ArgumentException(null, nameof(name));
             byte[] hash = GetKey(Utility.StrictUTF8.GetBytes(name));
-            if (snapshot.Storages.TryGet(CreateStorageKey(Prefix_Token).Add(hash)) is not null) return false;
-            StringList roots = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Roots))?.GetInteroperable<StringList>();
-            if (roots is null || roots.BinarySearch(names[1]) < 0) throw new InvalidOperationException();
+            if (snapshot.TryGet(CreateStorageKey(Prefix_Token).Add(hash)) is not null) return false;
+            StringList roots = snapshot[CreateStorageKey(Prefix_Roots)].GetInteroperable<StringList>();
+            if (roots.BinarySearch(names[1]) < 0) throw new InvalidOperationException();
             return true;
         }
 
@@ -113,9 +116,9 @@ namespace Neo.SmartContract.Native
             if (names.Length != 2) throw new ArgumentException(null, nameof(name));
             if (!engine.CheckWitnessInternal(owner)) throw new InvalidOperationException();
             byte[] hash = GetKey(Utility.StrictUTF8.GetBytes(name));
-            if (engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Token).Add(hash)) is not null) return false;
-            StringList roots = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Roots))?.GetInteroperable<StringList>();
-            if (roots is null || roots.BinarySearch(names[1]) < 0) throw new InvalidOperationException();
+            if (engine.Snapshot.TryGet(CreateStorageKey(Prefix_Token).Add(hash)) is not null) return false;
+            StringList roots = engine.Snapshot[CreateStorageKey(Prefix_Roots)].GetInteroperable<StringList>();
+            if (roots.BinarySearch(names[1]) < 0) throw new InvalidOperationException();
             engine.AddGas(GetPrice(engine.Snapshot));
             NameState state = new NameState
             {
@@ -125,7 +128,7 @@ namespace Neo.SmartContract.Native
                 Expiration = (uint)(engine.PersistingBlock.Timestamp / 1000) + OneYear
             };
             Mint(engine, state);
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Expiration).AddBigEndian(state.Expiration).Add(hash), new StorageItem(new byte[] { 0 }));
+            engine.Snapshot.Add(CreateStorageKey(Prefix_Expiration).AddBigEndian(state.Expiration).Add(hash), new StorageItem(new byte[] { 0 }));
             return true;
         }
 
@@ -137,10 +140,10 @@ namespace Neo.SmartContract.Native
             if (names.Length != 2) throw new ArgumentException(null, nameof(name));
             engine.AddGas(GetPrice(engine.Snapshot));
             byte[] hash = GetKey(Utility.StrictUTF8.GetBytes(name));
-            NameState state = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Token).Add(hash)).GetInteroperable<NameState>();
-            engine.Snapshot.Storages.Delete(CreateStorageKey(Prefix_Expiration).AddBigEndian(state.Expiration).Add(hash));
+            NameState state = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Token).Add(hash)).GetInteroperable<NameState>();
+            engine.Snapshot.Delete(CreateStorageKey(Prefix_Expiration).AddBigEndian(state.Expiration).Add(hash));
             state.Expiration += OneYear;
-            engine.Snapshot.Storages.Add(CreateStorageKey(Prefix_Expiration).AddBigEndian(state.Expiration).Add(hash), new StorageItem(new byte[] { 0 }));
+            engine.Snapshot.Add(CreateStorageKey(Prefix_Expiration).AddBigEndian(state.Expiration).Add(hash), new StorageItem(new byte[] { 0 }));
             return state.Expiration;
         }
 
@@ -151,7 +154,7 @@ namespace Neo.SmartContract.Native
             string[] names = name.Split('.');
             if (names.Length != 2) throw new ArgumentException(null, nameof(name));
             if (admin != null && !engine.CheckWitnessInternal(admin)) throw new InvalidOperationException();
-            NameState state = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Token).Add(GetKey(Utility.StrictUTF8.GetBytes(name)))).GetInteroperable<NameState>();
+            NameState state = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Token).Add(GetKey(Utility.StrictUTF8.GetBytes(name)))).GetInteroperable<NameState>();
             if (!engine.CheckWitnessInternal(state.Owner)) throw new InvalidOperationException();
             state.Admin = admin;
         }
@@ -170,6 +173,7 @@ namespace Neo.SmartContract.Native
             switch (type)
             {
                 case RecordType.A:
+                    if (!ipv4Regex.IsMatch(data)) throw new FormatException();
                     if (!IPAddress.TryParse(data, out IPAddress address)) throw new FormatException();
                     if (address.AddressFamily != AddressFamily.InterNetwork) throw new FormatException();
                     break;
@@ -180,6 +184,7 @@ namespace Neo.SmartContract.Native
                     if (Utility.StrictUTF8.GetByteCount(data) > 255) throw new FormatException();
                     break;
                 case RecordType.AAAA:
+                    if (!ipv6Regex.IsMatch(data)) throw new FormatException();
                     if (!IPAddress.TryParse(data, out address)) throw new FormatException();
                     if (address.AddressFamily != AddressFamily.InterNetworkV6) throw new FormatException();
                     break;
@@ -188,29 +193,29 @@ namespace Neo.SmartContract.Native
             }
             string domain = string.Join('.', name.Split('.')[^2..]);
             byte[] hash_domain = GetKey(Utility.StrictUTF8.GetBytes(domain));
-            NameState state = engine.Snapshot.Storages[CreateStorageKey(Prefix_Token).Add(hash_domain)].GetInteroperable<NameState>();
+            NameState state = engine.Snapshot[CreateStorageKey(Prefix_Token).Add(hash_domain)].GetInteroperable<NameState>();
             if (!CheckAdmin(engine, state)) throw new InvalidOperationException();
-            StorageItem item = engine.Snapshot.Storages.GetAndChange(CreateStorageKey(Prefix_Record).Add(hash_domain).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).Add(type), () => new StorageItem());
+            StorageItem item = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Record).Add(hash_domain).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).Add(type), () => new StorageItem());
             item.Value = Utility.StrictUTF8.GetBytes(data);
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        public string GetRecord(StoreView snapshot, string name, RecordType type)
+        public string GetRecord(DataCache snapshot, string name, RecordType type)
         {
             if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
             string domain = string.Join('.', name.Split('.')[^2..]);
             byte[] hash_domain = GetKey(Utility.StrictUTF8.GetBytes(domain));
-            StorageItem item = snapshot.Storages.TryGet(CreateStorageKey(Prefix_Record).Add(hash_domain).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).Add(type));
+            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_Record).Add(hash_domain).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).Add(type));
             if (item is null) return null;
             return Utility.StrictUTF8.GetString(item.Value);
         }
 
-        public IEnumerable<(RecordType Type, string Data)> GetRecords(StoreView snapshot, string name)
+        public IEnumerable<(RecordType Type, string Data)> GetRecords(DataCache snapshot, string name)
         {
             if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
             string domain = string.Join('.', name.Split('.')[^2..]);
             byte[] hash_domain = GetKey(Utility.StrictUTF8.GetBytes(domain));
-            foreach (var (key, value) in snapshot.Storages.Find(CreateStorageKey(Prefix_Record).Add(hash_domain).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).ToArray()))
+            foreach (var (key, value) in snapshot.Find(CreateStorageKey(Prefix_Record).Add(hash_domain).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).ToArray()))
                 yield return ((RecordType)key.Key[^1], Utility.StrictUTF8.GetString(value.Value));
         }
 
@@ -220,18 +225,18 @@ namespace Neo.SmartContract.Native
             if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
             string domain = string.Join('.', name.Split('.')[^2..]);
             byte[] hash_domain = GetKey(Utility.StrictUTF8.GetBytes(domain));
-            NameState state = engine.Snapshot.Storages[CreateStorageKey(Prefix_Token).Add(hash_domain)].GetInteroperable<NameState>();
+            NameState state = engine.Snapshot[CreateStorageKey(Prefix_Token).Add(hash_domain)].GetInteroperable<NameState>();
             if (!CheckAdmin(engine, state)) throw new InvalidOperationException();
-            engine.Snapshot.Storages.Delete(CreateStorageKey(Prefix_Record).Add(hash_domain).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).Add(type));
+            engine.Snapshot.Delete(CreateStorageKey(Prefix_Record).Add(hash_domain).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).Add(type));
         }
 
         [ContractMethod(0_03000000, CallFlags.ReadStates)]
-        public string Resolve(StoreView snapshot, string name, RecordType type)
+        public string Resolve(DataCache snapshot, string name, RecordType type)
         {
             return Resolve(snapshot, name, type, 2);
         }
 
-        private string Resolve(StoreView snapshot, string name, RecordType type, int redirect)
+        private string Resolve(DataCache snapshot, string name, RecordType type, int redirect)
         {
             if (redirect < 0) throw new InvalidOperationException();
             var dictionary = GetRecords(snapshot, name).ToDictionary(p => p.Type, p => p.Data);

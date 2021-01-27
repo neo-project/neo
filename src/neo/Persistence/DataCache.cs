@@ -1,24 +1,24 @@
+using Neo.IO;
+using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Neo.IO.Caching
+namespace Neo.Persistence
 {
-    public abstract class DataCache<TKey, TValue>
-        where TKey : IEquatable<TKey>, ISerializable
-        where TValue : class, ICloneable<TValue>, ISerializable, new()
+    public abstract class DataCache
     {
         public class Trackable
         {
-            public TKey Key;
-            public TValue Item;
+            public StorageKey Key;
+            public StorageItem Item;
             public TrackState State;
         }
 
-        private readonly Dictionary<TKey, Trackable> dictionary = new Dictionary<TKey, Trackable>();
-        private readonly HashSet<TKey> changeSet = new HashSet<TKey>();
+        private readonly Dictionary<StorageKey, Trackable> dictionary = new Dictionary<StorageKey, Trackable>();
+        private readonly HashSet<StorageKey> changeSet = new HashSet<StorageKey>();
 
-        public TValue this[TKey key]
+        public StorageItem this[StorageKey key]
         {
             get
             {
@@ -54,7 +54,7 @@ namespace Neo.IO.Caching
         /// </param>
         /// <param name="value">Corresponding value to be added, in the case of sucess.</param>
         /// <exception cref="ArgumentException">If cached on dictionary, with any state rather than `Deleted`, an Exception will be raised.</exception>
-        public void Add(TKey key, TValue value)
+        public void Add(StorageKey key, StorageItem value)
         {
             lock (dictionary)
             {
@@ -70,14 +70,14 @@ namespace Neo.IO.Caching
             }
         }
 
-        protected abstract void AddInternal(TKey key, TValue value);
+        protected abstract void AddInternal(StorageKey key, StorageItem value);
 
         /// <summary>
         /// Update internals with all changes cached on Dictionary which are not None.
         /// </summary>
-        public void Commit()
+        public virtual void Commit()
         {
-            LinkedList<TKey> deletedItem = new LinkedList<TKey>();
+            LinkedList<StorageKey> deletedItem = new LinkedList<StorageKey>();
             foreach (Trackable trackable in GetChangeSet())
                 switch (trackable.State)
                 {
@@ -94,23 +94,23 @@ namespace Neo.IO.Caching
                         deletedItem.AddFirst(trackable.Key);
                         break;
                 }
-            foreach (TKey key in deletedItem)
+            foreach (StorageKey key in deletedItem)
             {
                 dictionary.Remove(key);
             }
             changeSet.Clear();
         }
 
-        public DataCache<TKey, TValue> CreateSnapshot()
+        public DataCache CreateSnapshot()
         {
-            return new CloneCache<TKey, TValue>(this);
+            return new ClonedCache(this);
         }
 
         /// <summary>
         /// Delete key from cached Dictionary or search in Internal.
         /// </summary>
         /// <param name="key">Key to be deleted.</param>
-        public void Delete(TKey key)
+        public void Delete(StorageKey key)
         {
             lock (dictionary)
             {
@@ -129,7 +129,7 @@ namespace Neo.IO.Caching
                 }
                 else
                 {
-                    TValue item = TryGetInternal(key);
+                    StorageItem item = TryGetInternal(key);
                     if (item == null) return;
                     dictionary.Add(key, new Trackable
                     {
@@ -142,14 +142,14 @@ namespace Neo.IO.Caching
             }
         }
 
-        protected abstract void DeleteInternal(TKey key);
+        protected abstract void DeleteInternal(StorageKey key);
 
         /// <summary>
         /// Find the entries that start with the `key_prefix`
         /// </summary>
-        /// <param name="key_prefix">Must maintain the deserialized format of TKey</param>
+        /// <param name="key_prefix">Must maintain the deserialized format of StorageKey</param>
         /// <returns>Entries found with the desired prefix</returns>
-        public IEnumerable<(TKey Key, TValue Value)> Find(byte[] key_prefix = null)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[] key_prefix = null)
         {
             foreach (var (key, value) in Seek(key_prefix, SeekDirection.Forward))
                 if (key.ToArray().AsSpan().StartsWith(key_prefix))
@@ -165,7 +165,7 @@ namespace Neo.IO.Caching
         /// <param name="end">End key (exclusive)</param>
         /// <param name="direction">The search direction.</param>
         /// <returns>Entries found with the desired range</returns>
-        public IEnumerable<(TKey Key, TValue Value)> FindRange(byte[] start, byte[] end, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> FindRange(byte[] start, byte[] end, SeekDirection direction = SeekDirection.Forward)
         {
             ByteArrayComparer comparer = direction == SeekDirection.Forward
                 ? ByteArrayComparer.Default
@@ -181,12 +181,12 @@ namespace Neo.IO.Caching
         {
             lock (dictionary)
             {
-                foreach (TKey key in changeSet)
+                foreach (StorageKey key in changeSet)
                     yield return dictionary[key];
             }
         }
 
-        public bool Contains(TKey key)
+        public bool Contains(StorageKey key)
         {
             lock (dictionary)
             {
@@ -199,9 +199,9 @@ namespace Neo.IO.Caching
             }
         }
 
-        protected abstract bool ContainsInternal(TKey key);
+        protected abstract bool ContainsInternal(StorageKey key);
 
-        protected abstract TValue GetInternal(TKey key);
+        protected abstract StorageItem GetInternal(StorageKey key);
 
         /// <summary>
         /// Try to Get a specific key from current cached dictionary.
@@ -211,7 +211,7 @@ namespace Neo.IO.Caching
         /// <param name="factory">Function that may replace current object stored. 
         /// If object already exists the factory passed as parameter will not be used.
         /// </param>
-        public TValue GetAndChange(TKey key, Func<TValue> factory = null)
+        public StorageItem GetAndChange(StorageKey key, Func<StorageItem> factory = null)
         {
             lock (dictionary)
             {
@@ -253,7 +253,7 @@ namespace Neo.IO.Caching
             }
         }
 
-        public TValue GetOrAdd(TKey key, Func<TValue> factory)
+        public StorageItem GetOrAdd(StorageKey key, Func<StorageItem> factory)
         {
             lock (dictionary)
             {
@@ -294,10 +294,10 @@ namespace Neo.IO.Caching
         /// <param name="keyOrPrefix">The key to be sought</param>
         /// <param name="direction">The direction of seek</param>
         /// <returns>An enumerator containing all the entries after seeking.</returns>
-        public IEnumerable<(TKey Key, TValue Value)> Seek(byte[] keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Seek(byte[] keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward)
         {
-            IEnumerable<(byte[], TKey, TValue)> cached;
-            HashSet<TKey> cachedKeySet;
+            IEnumerable<(byte[], StorageKey, StorageItem)> cached;
+            HashSet<StorageKey> cachedKeySet;
             ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
             lock (dictionary)
             {
@@ -311,7 +311,7 @@ namespace Neo.IO.Caching
                     ))
                     .OrderBy(p => p.KeyBytes, comparer)
                     .ToArray();
-                cachedKeySet = new HashSet<TKey>(dictionary.Keys);
+                cachedKeySet = new HashSet<StorageKey>(dictionary.Keys);
             }
             var uncached = SeekInternal(keyOrPrefix ?? Array.Empty<byte>(), direction)
                 .Where(p => !cachedKeySet.Contains(p.Key))
@@ -324,7 +324,7 @@ namespace Neo.IO.Caching
             using (var e1 = cached.GetEnumerator())
             using (var e2 = uncached.GetEnumerator())
             {
-                (byte[] KeyBytes, TKey Key, TValue Item) i1, i2;
+                (byte[] KeyBytes, StorageKey Key, StorageItem Item) i1, i2;
                 bool c1 = e1.MoveNext();
                 bool c2 = e2.MoveNext();
                 i1 = c1 ? e1.Current : default;
@@ -347,9 +347,9 @@ namespace Neo.IO.Caching
             }
         }
 
-        protected abstract IEnumerable<(TKey Key, TValue Value)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction);
+        protected abstract IEnumerable<(StorageKey Key, StorageItem Value)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction);
 
-        public TValue TryGet(TKey key)
+        public StorageItem TryGet(StorageKey key)
         {
             lock (dictionary)
             {
@@ -358,7 +358,7 @@ namespace Neo.IO.Caching
                     if (trackable.State == TrackState.Deleted) return null;
                     return trackable.Item;
                 }
-                TValue value = TryGetInternal(key);
+                StorageItem value = TryGetInternal(key);
                 if (value == null) return null;
                 dictionary.Add(key, new Trackable
                 {
@@ -370,8 +370,8 @@ namespace Neo.IO.Caching
             }
         }
 
-        protected abstract TValue TryGetInternal(TKey key);
+        protected abstract StorageItem TryGetInternal(StorageKey key);
 
-        protected abstract void UpdateInternal(TKey key, TValue value);
+        protected abstract void UpdateInternal(StorageKey key, StorageItem value);
     }
 }
