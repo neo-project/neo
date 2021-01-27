@@ -3,7 +3,6 @@ using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.SmartContract.Native;
 using Neo.Wallets;
 using System;
 using System.IO;
@@ -118,6 +117,7 @@ namespace Neo.Network.P2P.Payloads
         {
             var prev = Blockchain.Singleton.GetHeader(Index - 1, snapshot);
             if (prev is null) return false;
+            if (prev.Index + 1 != Index) return false;
             if (prev.Hash != PrevHash) return false;
             if (prev.Timestamp >= Timestamp) return false;
             if (!this.VerifyWitnesses(snapshot, 1_00000000)) return false;
