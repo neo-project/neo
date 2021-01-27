@@ -81,8 +81,8 @@ namespace Neo.Network.P2P
                 case MessageCommand.GetBlocks:
                     OnGetBlocksMessageReceived((GetBlocksPayload)msg.Payload);
                     break;
-                case MessageCommand.GetBlockData:
-                    OnGetBlockDataMessageReceived((GetBlockDataPayload)msg.Payload);
+                case MessageCommand.GetBlockByIndex:
+                    OnGetBlockByIndexMessageReceived((GetBlockByIndexPayload)msg.Payload);
                     break;
                 case MessageCommand.GetData:
                     OnGetDataMessageReceived((InvPayload)msg.Payload);
@@ -194,9 +194,10 @@ namespace Neo.Network.P2P
             EnqueueMessage(Message.Create(MessageCommand.Inv, InvPayload.Create(InventoryType.Block, hashes.ToArray())));
         }
 
-        private void OnGetBlockDataMessageReceived(GetBlockDataPayload payload)
+        private void OnGetBlockByIndexMessageReceived(GetBlockByIndexPayload payload)
         {
-            for (uint i = payload.IndexStart, max = payload.IndexStart + payload.Count; i < max; i++)
+            uint count = payload.Count == -1 ? InvPayload.MaxHashesCount : Math.Min((uint)payload.Count, InvPayload.MaxHashesCount);
+            for (uint i = payload.IndexStart, max = payload.IndexStart + count; i < max; i++)
             {
                 Block block = NativeContract.Ledger.GetBlock(Blockchain.Singleton.View, i);
                 if (block == null)
