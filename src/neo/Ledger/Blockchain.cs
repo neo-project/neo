@@ -232,7 +232,7 @@ namespace Neo.Ledger
             }
             else
             {
-                if (!block.Hash.Equals(GetBlockHash(block.Index)))
+                if (!block.Hash.Equals(GetBlockHash(block.Index, currentSnapshot)))
                     return VerifyResult.Invalid;
             }
             block_cache.TryAdd(block.Hash, block);
@@ -459,10 +459,21 @@ namespace Neo.Ledger
             Context.System.EventStream.Publish(rr);
         }
 
-        public UInt256 GetBlockHash(uint index)
+        private Header GetCachedHeader(uint index)
         {
-            UInt256 hash = recentHeaders.At(index)?.Hash;
-            return hash != null ? hash : NativeContract.Ledger.GetBlockHash(currentSnapshot, index);
+            return recentHeaders.At(index);
+        }
+
+        public Header GetHeader(uint index, DataCache snapshot)
+        {
+            Header header = GetCachedHeader(index);
+            return header != null ? header : NativeContract.Ledger.GetHeader(snapshot, index);
+        }
+
+        public UInt256 GetBlockHash(uint index, DataCache snapshot)
+        {
+            UInt256 hash = GetCachedHeader(index)?.Hash;
+            return hash != null ? hash : NativeContract.Ledger.GetBlockHash(snapshot, index);
         }
 
         private void UpdateCurrentSnapshot()

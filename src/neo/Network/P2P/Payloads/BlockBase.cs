@@ -1,5 +1,6 @@
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -76,8 +77,9 @@ namespace Neo.Network.P2P.Payloads
         UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
         {
             if (PrevHash == UInt256.Zero) return new[] { Witness.ScriptHash };
-            TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, PrevHash);
+            var prev = Blockchain.Singleton.GetHeader(Index - 1, snapshot);
             if (prev is null) throw new InvalidOperationException();
+            if (prev.Hash != PrevHash) throw new InvalidOperationException();
             return new[] { prev.NextConsensus };
         }
 
@@ -114,9 +116,9 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual bool Verify(DataCache snapshot)
         {
-            TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, PrevHash);
+            var prev = Blockchain.Singleton.GetHeader(Index - 1, snapshot);
             if (prev is null) return false;
-            if (prev.Index + 1 != Index) return false;
+            if (prev.Hash != PrevHash) return false;
             if (prev.Timestamp >= Timestamp) return false;
             if (!this.VerifyWitnesses(snapshot, 1_00000000)) return false;
             return true;
