@@ -285,6 +285,7 @@ namespace Neo.Ledger
 
         private void OnNewHeaders(Header[] headers)
         {
+            if (header_cache.Count >= 10000) return;
             using (SnapshotCache snapshot = GetSnapshot())
             {
                 foreach (Header header in headers)
