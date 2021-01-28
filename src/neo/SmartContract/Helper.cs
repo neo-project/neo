@@ -9,7 +9,6 @@ using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Neo.SmartContract
 {
@@ -29,19 +28,6 @@ namespace Neo.SmartContract
             ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
             ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
             ApplicationEngine.ECDsaVerifyPrice * n;
-
-        public static Script Check(byte[] script, ContractAbi abi = null)
-        {
-            Script s = new Script(script, true);
-            if (abi is not null)
-            {
-                foreach (ContractMethodDescriptor method in abi.Methods)
-                    s.GetInstruction(method.Offset);
-                abi.GetMethod(string.Empty, 0); // Trigger the construction of ContractAbi.methodDictionary to check the uniqueness of the method names.
-                _ = abi.Events.ToDictionary(p => p.Name); // Check the uniqueness of the event names.
-            }
-            return s;
-        }
 
         public static UInt160 GetContractHash(UInt160 sender, uint nefCheckSum, string name)
         {
@@ -205,7 +191,7 @@ namespace Neo.SmartContract
             Script invocationScript;
             try
             {
-                invocationScript = Check(witness.InvocationScript);
+                invocationScript = new Script(witness.InvocationScript);
             }
             catch (BadScriptException)
             {
@@ -230,7 +216,7 @@ namespace Neo.SmartContract
                     Script verificationScript;
                     try
                     {
-                        verificationScript = Check(witness.VerificationScript);
+                        verificationScript = new Script(witness.VerificationScript);
                     }
                     catch (BadScriptException)
                     {

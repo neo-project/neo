@@ -12,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using static Neo.SmartContract.Helper;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads
@@ -324,7 +323,7 @@ namespace Neo.Network.P2P.Payloads
             if (Size > MaxTransactionSize) return VerifyResult.Invalid;
             try
             {
-                Check(Script);
+                _ = new Script(Script, true);
             }
             catch (BadScriptException)
             {
@@ -334,7 +333,7 @@ namespace Neo.Network.P2P.Payloads
             if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
             for (int i = 0; i < hashes.Length; i++)
                 if (witnesses[i].VerificationScript.IsStandardContract())
-                    if (!this.VerifyWitness(null, hashes[i], witnesses[i], MaxVerificationGas, out _))
+                    if (!this.VerifyWitness(null, hashes[i], witnesses[i], SmartContract.Helper.MaxVerificationGas, out _))
                         return VerifyResult.Invalid;
             return VerifyResult.Succeed;
         }
