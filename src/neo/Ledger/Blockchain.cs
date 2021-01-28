@@ -66,7 +66,6 @@ namespace Neo.Ledger
         private readonly ConcurrentDictionary<UInt256, Block> block_cache = new ConcurrentDictionary<UInt256, Block>();
         private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new Dictionary<uint, UnverifiedBlocksList>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
-
         private SnapshotCache currentSnapshot;
         private ImmutableHashSet<UInt160> extensibleWitnessWhiteList;
 
@@ -77,7 +76,7 @@ namespace Neo.Ledger
         public uint HeaderHeight => header_cache.Count > 0 ? header_cache[^1].Index : NativeContract.Ledger.CurrentIndex(currentSnapshot);
         public UInt256 CurrentBlockHash => NativeContract.Ledger.CurrentHash(currentSnapshot);
         public UInt256 CurrentHeaderHash => header_cache.Count > 0 ? header_cache[^1].Hash : NativeContract.Ledger.CurrentHash(currentSnapshot);
-        public int HeaderCacheCount => header_cache.Count;
+        public bool HeaderCacheFull => header_cache.Count >= 10000;
 
         private static Blockchain singleton;
         public static Blockchain Singleton
@@ -286,7 +285,7 @@ namespace Neo.Ledger
 
         private void OnNewHeaders(Header[] headers)
         {
-            if (header_cache.Count >= 10000) return;
+            if (HeaderCacheFull) return;
             using (SnapshotCache snapshot = GetSnapshot())
             {
                 foreach (Header header in headers)
