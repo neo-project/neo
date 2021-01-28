@@ -69,7 +69,8 @@ namespace Neo.Ledger
 
         public IStore Store { get; }
         /// <summary>
-        /// It doesn't need to be disposed because the ISnapshot inside it is null.
+        /// A readonly view of the blockchain store.
+        /// Note: It doesn't need to be disposed because the <see cref="ISnapshot"/> inside it is null.
         /// </summary>
         public DataCache View => new SnapshotCache(Store);
         public MemoryPool MemPool { get; }
