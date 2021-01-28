@@ -471,8 +471,7 @@ namespace Neo.Wallets
 
                 // Try Smart contract verification
 
-                using var snapshot = Blockchain.Singleton.GetSnapshot();
-                var contract = NativeContract.ContractManagement.GetContract(snapshot, scriptHash);
+                var contract = NativeContract.ContractManagement.GetContract(Blockchain.Singleton.View, scriptHash);
 
                 if (contract != null)
                 {
