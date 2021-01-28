@@ -46,6 +46,8 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             this.knownHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
+            this.lastTaskIndex = NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View);
+            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
 
@@ -274,6 +276,8 @@ namespace Neo.Network.P2P
                             break;
                         }
                     }
+                    node.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(currentHeight)));
+                    session.ExpireTime = TimeProvider.Current.UtcNow.AddMilliseconds(PingCoolingOffPeriod);
                 }
                 session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlocks, GetBlocksPayload.Create(hash)));
             }

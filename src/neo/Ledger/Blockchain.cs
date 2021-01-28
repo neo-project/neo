@@ -66,10 +66,13 @@ namespace Neo.Ledger
         private readonly ConcurrentDictionary<UInt256, Block> block_cache = new ConcurrentDictionary<UInt256, Block>();
         private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new Dictionary<uint, UnverifiedBlocksList>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
-        private SnapshotCache currentSnapshot;
         private ImmutableHashSet<UInt160> extensibleWitnessWhiteList;
 
         public IStore Store { get; }
+        /// <summary>
+        /// A readonly view of the blockchain store.
+        /// Note: It doesn't need to be disposed because the <see cref="ISnapshot"/> inside it is null.
+        /// </summary>
         public DataCache View => new SnapshotCache(Store);
         public MemoryPool MemPool { get; }
         public uint Height => NativeContract.Ledger.CurrentIndex(currentSnapshot);
@@ -114,14 +117,14 @@ namespace Neo.Ledger
             {
                 if (singleton != null)
                     throw new InvalidOperationException();
-                if (!NativeContract.Ledger.Initialized(View))
+                DataCache snapshot = View;
+                if (!NativeContract.Ledger.Initialized(snapshot))
                 {
                     Persist(GenesisBlock);
                 }
                 else
                 {
-                    UpdateCurrentSnapshot();
-                    MemPool.LoadPolicy(currentSnapshot);
+                    UpdateExtensibleWitnessWhiteList(snapshot);
                 }
                 singleton = this;
             }
@@ -140,14 +143,16 @@ namespace Neo.Ledger
 
         private void OnImport(IEnumerable<Block> blocks, bool verify)
         {
+            uint currentHeight = NativeContract.Ledger.CurrentIndex(View);
             foreach (Block block in blocks)
             {
-                if (block.Index <= Height) continue;
-                if (block.Index != Height + 1)
+                if (block.Index <= currentHeight) continue;
+                if (block.Index != currentHeight + 1)
                     throw new InvalidOperationException();
-                if (verify && !block.Verify(currentSnapshot))
+                if (verify && !block.Verify(View))
                     throw new InvalidOperationException();
                 Persist(block);
+                ++currentHeight;
             }
             Sender.Tell(new ImportCompleted());
         }
@@ -186,15 +191,17 @@ namespace Neo.Ledger
             // Invalidate all the transactions in the memory pool, to avoid any failures when adding new transactions.
             MemPool.InvalidateAllTransactions();
 
+            DataCache snapshot = View;
+
             // Add the transactions to the memory pool
             foreach (var tx in transactions)
             {
-                if (NativeContract.Ledger.ContainsTransaction(View, tx.Hash))
+                if (NativeContract.Ledger.ContainsTransaction(snapshot, tx.Hash))
                     continue;
                 // First remove the tx if it is unverified in the pool.
                 MemPool.TryRemoveUnVerified(tx.Hash, out _);
                 // Add to the memory pool
-                MemPool.TryAdd(tx, currentSnapshot);
+                MemPool.TryAdd(tx, snapshot);
             }
             // Transactions originally in the pool will automatically be reverified based on their priority.
 
@@ -218,7 +225,9 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewBlock(Block block)
         {
-            if (block.Index <= Height)
+            DataCache snapshot = View;
+            uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
+            if (block.Index <= currentHeight)
                 return VerifyResult.AlreadyExists;
             if (block.Index - 1 > HeaderHeight)
             {
@@ -227,7 +236,7 @@ namespace Neo.Ledger
             }
             if (block.Index == HeaderHeight + 1)
             {
-                if (!block.Verify(currentSnapshot))
+                if (!block.Verify(snapshot))
                     return VerifyResult.Invalid;
             }
             else
@@ -268,10 +277,10 @@ namespace Neo.Ledger
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks.Blocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
-                    block_cache_unverified.Remove(Height + 1);
+                    block_cache_unverified.Remove(block.Index + 1);
                 }
                 // We can store the new block in block_cache and tell the new height to other nodes after Persist().
-                system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Singleton.Height)));
+                system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(block.Index)));
             }
             else
             {
@@ -301,7 +310,7 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewInventory(IInventory inventory)
         {
-            if (!inventory.Verify(currentSnapshot)) return VerifyResult.Invalid;
+            if (!inventory.Verify(View)) return VerifyResult.Invalid;
             RelayCache.Add(inventory);
             return VerifyResult.Succeed;
         }
@@ -309,7 +318,7 @@ namespace Neo.Ledger
         private VerifyResult OnNewTransaction(Transaction transaction)
         {
             if (ContainsTransaction(transaction.Hash)) return VerifyResult.AlreadyExists;
-            return MemPool.TryAdd(transaction, currentSnapshot);
+            return MemPool.TryAdd(transaction, View);
         }
 
         private void OnPreverifyCompleted(PreverifyCompleted task)
@@ -346,7 +355,7 @@ namespace Neo.Ledger
                     OnPreverifyCompleted(task);
                     break;
                 case Idle _:
-                    if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot))
+                    if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, View))
                         Self.Tell(Idle.Instance, ActorRefs.NoSender);
                     break;
             }
@@ -424,17 +433,11 @@ namespace Neo.Ledger
                     }
                 }
                 if (commitExceptions != null) throw new AggregateException(commitExceptions);
+                UpdateExtensibleWitnessWhiteList(snapshot);
+                MemPool.UpdatePoolForBlockPersisted(block, snapshot);
             }
-            UpdateCurrentSnapshot();
             block_cache.TryRemove(block.PrevHash, out _);
-            MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
-        }
-
-        protected override void PostStop()
-        {
-            base.PostStop();
-            currentSnapshot?.Dispose();
         }
 
         public static Props Props(NeoSystem system, IStore store)
@@ -475,21 +478,21 @@ namespace Neo.Ledger
             return hash != null ? hash : NativeContract.Ledger.GetBlockHash(snapshot, index);
         }
 
-        private void UpdateCurrentSnapshot()
+        private void UpdateExtensibleWitnessWhiteList(DataCache snapshot)
         {
-            Interlocked.Exchange(ref currentSnapshot, GetSnapshot())?.Dispose();
+            uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             var builder = ImmutableHashSet.CreateBuilder<UInt160>();
-            builder.Add(NativeContract.NEO.GetCommitteeAddress(currentSnapshot));
-            var validators = NativeContract.NEO.GetNextBlockValidators(currentSnapshot);
+            builder.Add(NativeContract.NEO.GetCommitteeAddress(snapshot));
+            var validators = NativeContract.NEO.GetNextBlockValidators(snapshot);
             builder.Add(Contract.GetBFTAddress(validators));
             builder.UnionWith(validators.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()));
-            var oracles = NativeContract.RoleManagement.GetDesignatedByRole(currentSnapshot, Role.Oracle, Height);
+            var oracles = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, currentHeight);
             if (oracles.Length > 0)
             {
                 builder.Add(Contract.GetBFTAddress(oracles));
                 builder.UnionWith(oracles.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()));
             }
-            var stateValidators = NativeContract.RoleManagement.GetDesignatedByRole(currentSnapshot, Role.StateValidator, Height);
+            var stateValidators = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.StateValidator, currentHeight);
             if (stateValidators.Length > 0)
             {
                 builder.Add(Contract.GetBFTAddress(stateValidators));
