@@ -320,8 +320,15 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual VerifyResult VerifyStateIndependent()
         {
-            if (Size > MaxTransactionSize)
+            if (Size > MaxTransactionSize) return VerifyResult.Invalid;
+            try
+            {
+                _ = new Script(Script, true);
+            }
+            catch (BadScriptException)
+            {
                 return VerifyResult.Invalid;
+            }
             UInt160[] hashes = GetScriptHashesForVerifying(null);
             if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
             for (int i = 0; i < hashes.Length; i++)
