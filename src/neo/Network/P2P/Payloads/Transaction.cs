@@ -220,14 +220,15 @@ namespace Neo.Network.P2P.Payloads
 
         public T GetAttribute<T>() where T : TransactionAttribute
         {
-            return GetAttributes<T>()?.First();
+            return GetAttributes<T>().FirstOrDefault();
         }
 
-        public T[] GetAttributes<T>() where T : TransactionAttribute
+        public IEnumerable<T> GetAttributes<T>() where T : TransactionAttribute
         {
-            _attributesCache ??= attributes.GroupBy(p => p.GetType()).ToDictionary(p => p.Key, p => (TransactionAttribute[])p.OfType<T>().ToArray());
-            _attributesCache.TryGetValue(typeof(T), out var result);
-            return (T[])result;
+            _attributesCache ??= attributes.GroupBy(p => p.GetType()).ToDictionary(p => p.Key, p => p.ToArray());
+            if (_attributesCache.TryGetValue(typeof(T), out var result))
+                return result.OfType<T>();
+            return Enumerable.Empty<T>();
         }
 
         public override int GetHashCode()
