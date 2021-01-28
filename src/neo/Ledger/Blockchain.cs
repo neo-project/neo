@@ -133,13 +133,14 @@ namespace Neo.Ledger
 
         private void OnImport(IEnumerable<Block> blocks, bool verify)
         {
-            uint currentHeight = NativeContract.Ledger.CurrentIndex(View);
+            DataCache snapshot = View;
+            uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             foreach (Block block in blocks)
             {
                 if (block.Index <= currentHeight) continue;
                 if (block.Index != currentHeight + 1)
                     throw new InvalidOperationException();
-                if (verify && !block.Verify(View))
+                if (verify && !block.Verify(snapshot))
                     throw new InvalidOperationException();
                 Persist(block);
                 ++currentHeight;
@@ -215,7 +216,8 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewBlock(Block block)
         {
-            uint currentHeight = NativeContract.Ledger.CurrentIndex(View);
+            DataCache snapshot = View;
+            uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             if (block.Index <= currentHeight)
                 return VerifyResult.AlreadyExists;
             if (block.Index - 1 > currentHeight)
@@ -225,7 +227,7 @@ namespace Neo.Ledger
             }
             if (block.Index == currentHeight + 1)
             {
-                if (!block.Verify(View))
+                if (!block.Verify(snapshot))
                     return VerifyResult.Invalid;
                 block_cache.TryAdd(block.Hash, block);
                 block_cache_unverified.Remove(block.Index);
