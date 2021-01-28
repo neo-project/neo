@@ -227,10 +227,10 @@ namespace Neo.Network.P2P.Payloads
         {
             _attributesCache ??= attributes.GroupBy(p => p.GetType()).ToDictionary(p => p.Key, p =>
             {
-                var enumerator = p.Where(u => u.GetType() == p.Key).ToArray();
-                var array = (TransactionAttribute[])Activator.CreateInstance(p.Key.MakeArrayType(), enumerator.Length);
-                System.Array.Copy(enumerator, array, array.Length);
-                return array;
+                var src = p.ToArray();
+                var dst = System.Array.CreateInstance(p.Key, src.Length);
+                src.CopyTo(dst, 0);
+                return (TransactionAttribute[])dst;
             });
             _attributesCache.TryGetValue(typeof(T), out var result);
             return (T[])result;
