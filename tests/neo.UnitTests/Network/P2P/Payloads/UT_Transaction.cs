@@ -1073,6 +1073,31 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
+        public void Test_GetAttribute()
+        {
+            var tx = new Transaction()
+            {
+                Attributes = Array.Empty<TransactionAttribute>(),
+                NetworkFee = 0,
+                Nonce = (uint)Environment.TickCount,
+                Script = new byte[Transaction.MaxTransactionSize],
+                Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
+                SystemFee = 0,
+                ValidUntilBlock = 0,
+                Version = 0,
+                Witnesses = new Witness[0],
+            };
+
+            Assert.IsNull(tx.GetAttribute<OracleResponse>());
+            Assert.IsNull(tx.GetAttribute<HighPriorityAttribute>());
+
+            tx.Attributes = new TransactionAttribute[] { new HighPriorityAttribute() };
+
+            Assert.IsNull(tx.GetAttribute<OracleResponse>());
+            Assert.IsNotNull(tx.GetAttribute<HighPriorityAttribute>());
+        }
+
+        [TestMethod]
         public void Test_VerifyStateIndependent()
         {
             var tx = new Transaction()

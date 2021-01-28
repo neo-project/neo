@@ -225,7 +225,13 @@ namespace Neo.Network.P2P.Payloads
 
         public T[] GetAttributes<T>() where T : TransactionAttribute
         {
-            _attributesCache ??= attributes.GroupBy(p => p.GetType()).ToDictionary(p => p.Key, p => (TransactionAttribute[])p.OfType<T>().ToArray());
+            _attributesCache ??= attributes.GroupBy(p => p.GetType()).ToDictionary(p => p.Key, p =>
+            {
+                var enumerator = p.Where(u => u.GetType() == p.Key);
+                var array = (TransactionAttribute[])Activator.CreateInstance(p.Key.MakeArrayType(), enumerator.Count());
+                System.Array.Copy(enumerator.ToArray(), array, array.Length);
+                return array;
+            });
             _attributesCache.TryGetValue(typeof(T), out var result);
             return (T[])result;
         }
