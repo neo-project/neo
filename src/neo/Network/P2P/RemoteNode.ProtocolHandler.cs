@@ -298,7 +298,7 @@ namespace Neo.Network.P2P
             pendingKnownHashes.Remove(inventory.Hash);
             if (inventory is Block block)
             {
-                if (block.Index > Blockchain.Singleton.Height + InvPayload.MaxHashesCount) return;
+                if (block.Index > NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View) + InvPayload.MaxHashesCount) return;
                 UpdateLastBlockIndex(block.Index);
             }
             knownHashes.Add(inventory.Hash);
@@ -340,7 +340,7 @@ namespace Neo.Network.P2P
         private void OnPingMessageReceived(PingPayload payload)
         {
             UpdateLastBlockIndex(payload.LastBlockIndex);
-            EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce)));
+            EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View), payload.Nonce)));
         }
 
         private void OnPongMessageReceived(PingPayload payload)

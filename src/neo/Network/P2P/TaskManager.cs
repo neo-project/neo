@@ -46,7 +46,6 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             this.knownHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
-            this.lastTaskIndex = NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View);
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
@@ -65,7 +64,7 @@ namespace Neo.Network.P2P
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
             // Do not accept payload of type InventoryType.TX if not synced on best known HeaderHeight
-            if (payload.Type == InventoryType.TX && Blockchain.Singleton.Height < Blockchain.Singleton.HeaderHeight)
+            if (payload.Type == InventoryType.TX && NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View) < sessions.Values.Max(p => p.LastBlockIndex))
             {
                 RequestTasks(session);
                 return;
@@ -234,8 +233,7 @@ namespace Neo.Network.P2P
             {
                 session.AvailableTasks.Remove(knownHashes);
                 // Search any similar hash that is on Singleton's knowledge, which means, on the way or already processed
-                using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
-                    session.AvailableTasks.RemoveWhere(p => NativeContract.Ledger.ContainsBlock(snapshot, p));
+                session.AvailableTasks.RemoveWhere(p => NativeContract.Ledger.ContainsBlock(Blockchain.Singleton.View, p));
                 HashSet<UInt256> hashes = new HashSet<UInt256>(session.AvailableTasks);
                 hashes.Remove(MemPoolTaskHash);
                 if (hashes.Count > 0)
@@ -254,42 +252,39 @@ namespace Neo.Network.P2P
                 }
             }
 
+            uint headerHeight = Blockchain.Singleton.HeaderHeight(Blockchain.Singleton.View);
+            uint currentHeight = NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View);
             // When the number of AvailableTasks is no more than 0, no pending tasks of InventoryType.Block, it should process pending the tasks of headers
             // If not HeaderTask pending to be processed it should ask for more Blocks
-            if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks) && Blockchain.Singleton.HeaderHeight < session.LastBlockIndex && !Blockchain.Singleton.HeaderCacheFull)
+            if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks) && headerHeight < session.LastBlockIndex && !Blockchain.Singleton.HeaderCacheFull)
             {
                 session.Tasks[HeaderTaskHash] = DateTime.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);
-                session.RemoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlockByIndexPayload.Create(Blockchain.Singleton.HeaderHeight)));
+                session.RemoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlockByIndexPayload.Create(headerHeight)));
             }
-            else if (Blockchain.Singleton.Height < session.LastBlockIndex)
+            else if (currentHeight < session.LastBlockIndex)
             {
-                UInt256 hash = Blockchain.Singleton.CurrentBlockHash;
-                using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
+                UInt256 hash = NativeContract.Ledger.CurrentHash(Blockchain.Singleton.View);
+                for (uint i = currentHeight + 1; i <= headerHeight; i++)
                 {
-                    for (uint i = Blockchain.Singleton.Height + 1; i <= Blockchain.Singleton.HeaderHeight; i++)
+                    hash = Blockchain.Singleton.GetBlockHash(i, Blockchain.Singleton.View);
+                    if (!globalTasks.ContainsKey(hash))
                     {
-                        hash = Blockchain.Singleton.GetBlockHash(i, snapshot);
-                        if (!globalTasks.ContainsKey(hash))
-                        {
-                            hash = Blockchain.Singleton.GetBlockHash(i - 1, snapshot);
-                            break;
-                        }
+                        hash = Blockchain.Singleton.GetBlockHash(i - 1, Blockchain.Singleton.View);
+                        break;
                     }
-                    node.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(currentHeight)));
-                    session.ExpireTime = TimeProvider.Current.UtcNow.AddMilliseconds(PingCoolingOffPeriod);
                 }
                 session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlocks, GetBlocksPayload.Create(hash)));
             }
-            else if (Blockchain.Singleton.HeaderHeight >= session.LastBlockIndex
-                    && TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= NativeContract.Ledger.GetBlock(Blockchain.Singleton.GetSnapshot(), Blockchain.Singleton.CurrentHeaderHash)?.Timestamp)
+            else if (headerHeight >= session.LastBlockIndex
+                    && TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= NativeContract.Ledger.GetBlock(Blockchain.Singleton.View, Blockchain.Singleton.CurrentHeaderHash(Blockchain.Singleton.View))?.Timestamp)
             {
                 if (session.AvailableTasks.Remove(MemPoolTaskHash))
                 {
                     session.RemoteNode.Tell(Message.Create(MessageCommand.Mempool));
                 }
 
-                session.RemoteNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(Blockchain.Singleton.Height)));
+                session.RemoteNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(currentHeight)));
             }
         }
     }

@@ -75,10 +75,8 @@ namespace Neo.Ledger
         /// </summary>
         public DataCache View => new SnapshotCache(Store);
         public MemoryPool MemPool { get; }
-        public uint Height => NativeContract.Ledger.CurrentIndex(currentSnapshot);
-        public uint HeaderHeight => header_cache.Count > 0 ? header_cache[^1].Index : NativeContract.Ledger.CurrentIndex(currentSnapshot);
-        public UInt256 CurrentBlockHash => NativeContract.Ledger.CurrentHash(currentSnapshot);
-        public UInt256 CurrentHeaderHash => header_cache.Count > 0 ? header_cache[^1].Hash : NativeContract.Ledger.CurrentHash(currentSnapshot);
+        public uint HeaderHeight(DataCache snapshot) => header_cache.Count > 0 ? header_cache[^1].Index : NativeContract.Ledger.CurrentIndex(snapshot);
+        public UInt256 CurrentHeaderHash(DataCache snapshot) => header_cache.Count > 0 ? header_cache[^1].Hash : NativeContract.Ledger.CurrentHash(snapshot);
         public bool HeaderCacheFull => header_cache.Count >= 10000;
 
         private static Blockchain singleton;
@@ -229,30 +227,30 @@ namespace Neo.Ledger
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             if (block.Index <= currentHeight)
                 return VerifyResult.AlreadyExists;
-            if (block.Index - 1 > HeaderHeight)
+            if (block.Index - 1 > HeaderHeight(snapshot))
             {
                 AddUnverifiedBlockToCache(block);
                 return VerifyResult.UnableToVerify;
             }
-            if (block.Index == HeaderHeight + 1)
+            if (block.Index == HeaderHeight(snapshot) + 1)
             {
                 if (!block.Verify(snapshot))
                     return VerifyResult.Invalid;
             }
             else
             {
-                if (!block.Hash.Equals(GetBlockHash(block.Index, currentSnapshot)))
+                if (!block.Hash.Equals(GetBlockHash(block.Index, snapshot)))
                     return VerifyResult.Invalid;
             }
             block_cache.TryAdd(block.Hash, block);
-            if (block.Index == Height + 1)
+            if (block.Index == currentHeight + 1)
             {
                 Block block_persist = block;
                 List<Block> blocksToPersistList = new List<Block>();
                 while (true)
                 {
                     blocksToPersistList.Add(block_persist);
-                    if (block_persist.Index + 1 > HeaderHeight) break;
+                    if (block_persist.Index + 1 > HeaderHeight(snapshot)) break;
                     UInt256 hash = GetCachedHeader(block_persist.Index + 1).Hash;
                     if (!block_cache.TryGetValue(hash, out block_persist)) break;
                 }
@@ -270,10 +268,10 @@ namespace Neo.Ledger
                     // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
                     // Increase in the rate of 1 block per second in configurations with faster blocks
 
-                    if (blockToPersist.Index + 99 >= HeaderHeight)
+                    if (blockToPersist.Index + 99 >= HeaderHeight(snapshot))
                         system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = blockToPersist });
                 }
-                if (block_cache_unverified.TryGetValue(Height + 1, out var unverifiedBlocks))
+                if (block_cache_unverified.TryGetValue(currentHeight + 1, out var unverifiedBlocks))
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks.Blocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
@@ -284,9 +282,9 @@ namespace Neo.Ledger
             }
             else
             {
-                if (block.Index + 99 >= HeaderHeight)
+                if (block.Index + 99 >= HeaderHeight(snapshot))
                     system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
-                if (block.Index == HeaderHeight + 1)
+                if (block.Index == HeaderHeight(snapshot) + 1)
                     header_cache.Enqueue(block.Header);
             }
             return VerifyResult.Succeed;
@@ -299,8 +297,8 @@ namespace Neo.Ledger
             {
                 foreach (Header header in headers)
                 {
-                    if (header.Index > HeaderHeight + 1) break;
-                    if (header.Index < HeaderHeight + 1) continue;
+                    if (header.Index > HeaderHeight(snapshot) + 1) break;
+                    if (header.Index < HeaderHeight(snapshot) + 1) continue;
                     if (!header.Verify(snapshot)) break;
                     header_cache.Enqueue(header);
                 }
