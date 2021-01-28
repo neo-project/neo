@@ -280,7 +280,7 @@ namespace Neo.Network.P2P
             List<Header> headers = new List<Header>();
             using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
             {
-                uint count = payload.Count == -1 || payload.Count > HeadersPayload.MaxHeadersCount ? HeadersPayload.MaxHeadersCount : (uint)payload.Count;
+                uint count = payload.Count == -1 ? HeadersPayload.MaxHeadersCount : (uint)payload.Count;
                 for (uint i = 0; i < count; i++)
                 {
                     var header = NativeContract.Ledger.GetHeader(snapshot, index + i);
