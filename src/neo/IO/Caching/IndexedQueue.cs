@@ -9,7 +9,7 @@ namespace Neo.IO.Caching
     /// Represents a queue with indexed access to the items
     /// </summary>
     /// <typeparam name="T">The type of items in the queue</typeparam>
-    class IndexedQueue<T> : IReadOnlyList<T>
+    class IndexedQueue<T> : IReadOnlyCollection<T>
     {
         private const int DefaultCapacity = 16;
         private const int GrowthFactor = 2;
@@ -56,23 +56,17 @@ namespace Neo.IO.Caching
         }
 
         /// <summary>
-        /// Gets or sets the value at the index
+        /// Gets the value at the index
         /// </summary>
         /// <param name="index">The index</param>
         /// <returns>The value at the specified index</returns>
-        public T this[int index]
+        public ref T this[int index]
         {
             get
             {
                 if (index < 0 || index >= _count)
                     throw new IndexOutOfRangeException();
-                return _array[(index + _head) % _array.Length];
-            }
-            set
-            {
-                if (index < 0 || index >= _count)
-                    throw new IndexOutOfRangeException();
-                _array[(index + _head) % _array.Length] = value;
+                return ref _array[(index + _head) % _array.Length];
             }
         }
 
