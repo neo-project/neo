@@ -66,8 +66,9 @@ namespace Neo.SmartContract.Native
         private int GetNextAvailableId(DataCache snapshot)
         {
             StorageItem item = snapshot.GetAndChange(CreateStorageKey(Prefix_NextAvailableId));
+            int value = (int)(BigInteger)item;
             item.Add(1);
-            return (int)(BigInteger)item;
+            return value;
         }
 
         internal override void Initialize(ApplicationEngine engine)
