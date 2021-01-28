@@ -68,6 +68,9 @@ namespace Neo.Ledger
         private ImmutableHashSet<UInt160> extensibleWitnessWhiteList;
 
         public IStore Store { get; }
+        /// <summary>
+        /// It doesn't need to be disposed because the ISnapshot inside it is null.
+        /// </summary>
         public DataCache View => new SnapshotCache(Store);
         public MemoryPool MemPool { get; }
 
