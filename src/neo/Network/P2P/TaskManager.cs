@@ -304,13 +304,10 @@ namespace Neo.Network.P2P
 
         private void SendPingMessage()
         {
-            TrimmedBlock block;
-            using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
-            {
-                block = NativeContract.Ledger.GetTrimmedBlock(snapshot, NativeContract.Ledger.CurrentHash(snapshot));
-            }
-
-            uint currentHeight = NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View);
+            DataCache snapshot = Blockchain.Singleton.View;
+            uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
+            UInt256 currentHash = NativeContract.Ledger.CurrentHash(snapshot);
+            TrimmedBlock block = NativeContract.Ledger.GetTrimmedBlock(snapshot, currentHash);
             foreach (KeyValuePair<IActorRef, TaskSession> item in sessions)
             {
                 var node = item.Key;

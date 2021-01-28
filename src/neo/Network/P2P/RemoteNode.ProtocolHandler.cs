@@ -306,12 +306,16 @@ namespace Neo.Network.P2P
             switch (payload.Type)
             {
                 case InventoryType.Block:
-                    using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
+                    {
+                        DataCache snapshot = Blockchain.Singleton.View;
                         hashes = hashes.Where(p => !NativeContract.Ledger.ContainsBlock(snapshot, p)).ToArray();
+                    }
                     break;
                 case InventoryType.TX:
-                    using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
+                    {
+                        DataCache snapshot = Blockchain.Singleton.View;
                         hashes = hashes.Where(p => !NativeContract.Ledger.ContainsTransaction(snapshot, p)).ToArray();
+                    }
                     break;
             }
             if (hashes.Length == 0) return;
