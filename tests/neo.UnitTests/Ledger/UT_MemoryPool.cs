@@ -52,7 +52,6 @@ namespace Neo.UnitTests.Ledger
 
             // Create a MemoryPool with capacity of 100
             _unit = new MemoryPool(TestBlockchain.TheNeoSystem, 100);
-            _unit.LoadPolicy(Blockchain.Singleton.GetSnapshot());
 
             // Verify capacity equals the amount specified
             _unit.Capacity.Should().Be(100);
@@ -429,7 +428,6 @@ namespace Neo.UnitTests.Ledger
         public void TestReVerifyTopUnverifiedTransactionsIfNeeded()
         {
             _unit = new MemoryPool(TestBlockchain.TheNeoSystem, 600);
-            _unit.LoadPolicy(Blockchain.Singleton.GetSnapshot());
             AddTransaction(CreateTransaction(100000001));
             AddTransaction(CreateTransaction(100000001));
             AddTransaction(CreateTransaction(100000001));
