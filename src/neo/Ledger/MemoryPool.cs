@@ -59,8 +59,6 @@ namespace Neo.Ledger
         internal int SortedTxCount => _sortedTransactions.Count;
         internal int UnverifiedSortedTxCount => _unverifiedSortedTransactions.Count;
 
-        private int _maxTxPerBlock;
-
         /// <summary>
         /// Total maximum capacity of transactions the pool can hold.
         /// </summary>
@@ -101,11 +99,6 @@ namespace Neo.Ledger
         {
             _system = system;
             Capacity = capacity;
-        }
-
-        internal void LoadPolicy(DataCache snapshot)
-        {
-            _maxTxPerBlock = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot);
         }
 
         /// <summary>
@@ -350,8 +343,6 @@ namespace Neo.Ledger
         // Note: this must only be called from a single thread (the Blockchain actor)
         internal void UpdatePoolForBlockPersisted(Block block, DataCache snapshot)
         {
-            LoadPolicy(snapshot);
-
             _txRwLock.EnterWriteLock();
             try
             {
@@ -370,8 +361,8 @@ namespace Neo.Ledger
                 _txRwLock.ExitWriteLock();
             }
 
-            ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions,
-                _maxTxPerBlock, MaxMillisecondsToReverifyTx, snapshot);
+            uint _maxTxPerBlock = NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot);
+            ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions, (int)_maxTxPerBlock, MaxMillisecondsToReverifyTx, snapshot);
         }
 
         internal void InvalidateAllTransactions()
@@ -468,6 +459,7 @@ namespace Neo.Ledger
         {
             if (_unverifiedSortedTransactions.Count > 0)
             {
+                uint _maxTxPerBlock = NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot);
                 int verifyCount = _sortedTransactions.Count > _maxTxPerBlock ? 1 : maxToVerify;
                 ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions,
                     verifyCount, MaxMillisecondsToReverifyTxPerIdle, snapshot);
