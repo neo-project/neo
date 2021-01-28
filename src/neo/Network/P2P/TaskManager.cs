@@ -258,7 +258,7 @@ namespace Neo.Network.P2P
             {
                 session.Tasks[HeaderTaskHash] = DateTime.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);
-                session.RemoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlocksPayload.Create(Blockchain.Singleton.CurrentHeaderHash)));
+                session.RemoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlockByIndexPayload.Create(Blockchain.Singleton.HeaderHeight)));
             }
             else if (Blockchain.Singleton.Height < session.LastBlockIndex)
             {

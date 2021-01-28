@@ -20,7 +20,7 @@ namespace Neo.Network.P2P
         Pong = 0x19,
 
         //synchronization
-        [ReflectionCache(typeof(GetBlocksPayload))]
+        [ReflectionCache(typeof(GetBlockByIndexPayload))]
         GetHeaders = 0x20,
         [ReflectionCache(typeof(HeadersPayload))]
         Headers = 0x21,
