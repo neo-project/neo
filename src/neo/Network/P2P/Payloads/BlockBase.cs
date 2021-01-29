@@ -77,9 +77,8 @@ namespace Neo.Network.P2P.Payloads
         UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
         {
             if (PrevHash == UInt256.Zero) return new[] { Witness.ScriptHash };
-            var prev = Blockchain.Singleton.HeaderCache[Index - 1] ?? NativeContract.Ledger.GetHeader(snapshot, Index - 1);
+            BlockBase prev = Blockchain.Singleton.HeaderCache[Index - 1] ?? (BlockBase)NativeContract.Ledger.GetTrimmedBlock(snapshot, PrevHash);
             if (prev is null) throw new InvalidOperationException();
-            if (prev.Hash != PrevHash) throw new InvalidOperationException();
             return new[] { prev.NextConsensus };
         }
 
