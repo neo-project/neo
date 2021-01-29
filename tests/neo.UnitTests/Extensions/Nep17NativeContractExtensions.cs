@@ -28,19 +28,19 @@ namespace Neo.UnitTests.Extensions
 
             public void DeserializeUnsigned(BinaryReader reader) { }
 
-            public UInt160[] GetScriptHashesForVerifying(StoreView snapshot) => _hashForVerify;
+            public UInt160[] GetScriptHashesForVerifying(DataCache snapshot) => _hashForVerify;
 
             public void Serialize(BinaryWriter writer) { }
 
             public void SerializeUnsigned(BinaryWriter writer) { }
         }
 
-        public static bool Transfer(this NativeContract contract, StoreView snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom)
+        public static bool Transfer(this NativeContract contract, DataCache snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom, Block persistingBlock)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application,
-                new ManualWitness(signFrom ? new UInt160(from) : null), snapshot);
+                new ManualWitness(signFrom ? new UInt160(from) : null), snapshot, persistingBlock);
 
-            engine.LoadScript(contract.Script, pcount: 4, configureState: p => p.ScriptHash = contract.Hash);
+            engine.LoadScript(contract.Script, configureState: p => p.ScriptHash = contract.Hash);
 
             var script = new ScriptBuilder();
             script.Emit(OpCode.PUSHNULL);
@@ -61,11 +61,11 @@ namespace Neo.UnitTests.Extensions
             return result.GetBoolean();
         }
 
-        public static BigInteger TotalSupply(this NativeContract contract, StoreView snapshot)
+        public static BigInteger TotalSupply(this NativeContract contract, DataCache snapshot)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
-            engine.LoadScript(contract.Script, pcount: 0, configureState: p => p.ScriptHash = contract.Hash);
+            engine.LoadScript(contract.Script, configureState: p => p.ScriptHash = contract.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush("totalSupply");
@@ -79,11 +79,11 @@ namespace Neo.UnitTests.Extensions
             return result.GetInteger();
         }
 
-        public static BigInteger BalanceOf(this NativeContract contract, StoreView snapshot, byte[] account)
+        public static BigInteger BalanceOf(this NativeContract contract, DataCache snapshot, byte[] account)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
-            engine.LoadScript(contract.Script, pcount: 1, configureState: p => p.ScriptHash = contract.Hash);
+            engine.LoadScript(contract.Script, configureState: p => p.ScriptHash = contract.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush(account);
@@ -98,11 +98,11 @@ namespace Neo.UnitTests.Extensions
             return result.GetInteger();
         }
 
-        public static BigInteger Decimals(this NativeContract contract, StoreView snapshot)
+        public static BigInteger Decimals(this NativeContract contract, DataCache snapshot)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
-            engine.LoadScript(contract.Script, pcount: 0, configureState: p => p.ScriptHash = contract.Hash);
+            engine.LoadScript(contract.Script, configureState: p => p.ScriptHash = contract.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush("decimals");
@@ -116,11 +116,11 @@ namespace Neo.UnitTests.Extensions
             return result.GetInteger();
         }
 
-        public static string Symbol(this NativeContract contract, StoreView snapshot)
+        public static string Symbol(this NativeContract contract, DataCache snapshot)
         {
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
 
-            engine.LoadScript(contract.Script, pcount: 0, configureState: p => p.ScriptHash = contract.Hash);
+            engine.LoadScript(contract.Script, configureState: p => p.ScriptHash = contract.Hash);
 
             var script = new ScriptBuilder();
             script.EmitPush("symbol");

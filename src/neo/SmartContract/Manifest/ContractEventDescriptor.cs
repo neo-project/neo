@@ -1,9 +1,13 @@
 using Neo.IO.Json;
+using Neo.VM;
+using Neo.VM.Types;
+using System;
 using System.Linq;
+using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Manifest
 {
-    public class ContractEventDescriptor
+    public class ContractEventDescriptor : IInteroperable
     {
         /// <summary>
         /// Name is the name of the method, which can be any valid identifier.
@@ -15,12 +19,19 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public ContractParameterDefinition[] Parameters { get; set; }
 
-        public ContractEventDescriptor Clone()
+        public virtual void FromStackItem(StackItem stackItem)
         {
-            return new ContractEventDescriptor
+            Struct @struct = (Struct)stackItem;
+            Name = @struct[0].GetString();
+            Parameters = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractParameterDefinition>()).ToArray();
+        }
+
+        public virtual StackItem ToStackItem(ReferenceCounter referenceCounter)
+        {
+            return new Struct(referenceCounter)
             {
-                Name = Name,
-                Parameters = Parameters.Select(p => p.Clone()).ToArray()
+                Name,
+                new Array(referenceCounter, Parameters.Select(p => p.ToStackItem(referenceCounter)))
             };
         }
 
@@ -31,11 +42,14 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return ContractEventDescriptor</returns>
         public static ContractEventDescriptor FromJson(JObject json)
         {
-            return new ContractEventDescriptor
+            ContractEventDescriptor descriptor = new ContractEventDescriptor
             {
                 Name = json["name"].AsString(),
                 Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson(u)).ToArray(),
             };
+            if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException();
+            _ = descriptor.Parameters.ToDictionary(p => p.Name);
+            return descriptor;
         }
 
         public virtual JObject ToJson()

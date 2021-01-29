@@ -1,5 +1,4 @@
 using Neo.IO;
-using Neo.IO.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System.Linq;
@@ -14,9 +13,9 @@ namespace Neo.SmartContract.Native
 
         public abstract byte[] Id { get; }
 
-        public virtual JObject ToJson()
+        public virtual Map ToMap(ReferenceCounter referenceCounter)
         {
-            return new JObject
+            return new Map(referenceCounter)
             {
                 ["name"] = Name,
                 ["description"] = Description

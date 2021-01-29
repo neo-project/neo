@@ -1,8 +1,6 @@
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
-using Neo.IO.Caching;
-using Neo.Ledger;
 using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
@@ -14,22 +12,20 @@ namespace Neo.SmartContract.Native
 {
     public sealed class RoleManagement : NativeContract
     {
-        public override int Id => -4;
-
         internal RoleManagement()
         {
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        public ECPoint[] GetDesignatedByRole(StoreView snapshot, Role role, uint index)
+        public ECPoint[] GetDesignatedByRole(DataCache snapshot, Role role, uint index)
         {
             if (!Enum.IsDefined(typeof(Role), role))
                 throw new ArgumentOutOfRangeException(nameof(role));
-            if (snapshot.Height + 1 < index)
+            if (Ledger.CurrentIndex(snapshot) + 1 < index)
                 throw new ArgumentOutOfRangeException(nameof(index));
             byte[] key = CreateStorageKey((byte)role).AddBigEndian(index).ToArray();
             byte[] boundary = CreateStorageKey((byte)role).ToArray();
-            return snapshot.Storages.FindRange(key, boundary, SeekDirection.Backward)
+            return snapshot.FindRange(key, boundary, SeekDirection.Backward)
                 .Select(u => u.Value.GetInteroperable<NodeList>().ToArray())
                 .FirstOrDefault() ?? System.Array.Empty<ECPoint>();
         }
@@ -43,16 +39,16 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentOutOfRangeException(nameof(role));
             if (!CheckCommittee(engine))
                 throw new InvalidOperationException(nameof(DesignateAsRole));
-            if (engine.Snapshot.PersistingBlock is null)
+            if (engine.PersistingBlock is null)
                 throw new InvalidOperationException(nameof(DesignateAsRole));
-            uint index = engine.Snapshot.PersistingBlock.Index + 1;
+            uint index = engine.PersistingBlock.Index + 1;
             var key = CreateStorageKey((byte)role).AddBigEndian(index);
-            if (engine.Snapshot.Storages.Contains(key))
+            if (engine.Snapshot.Contains(key))
                 throw new InvalidOperationException();
             NodeList list = new NodeList();
             list.AddRange(nodes);
             list.Sort();
-            engine.Snapshot.Storages.Add(key, new StorageItem(list));
+            engine.Snapshot.Add(key, new StorageItem(list));
         }
 
         private class NodeList : List<ECPoint>, IInteroperable

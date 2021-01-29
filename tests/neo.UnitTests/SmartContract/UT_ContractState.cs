@@ -24,7 +24,6 @@ namespace Neo.UnitTests.SmartContract
                 Nef = new NefFile
                 {
                     Compiler = nameof(ScriptBuilder),
-                    Version = typeof(ScriptBuilder).Assembly.GetVersion(),
                     Tokens = Array.Empty<MethodToken>(),
                     Script = script
                 },

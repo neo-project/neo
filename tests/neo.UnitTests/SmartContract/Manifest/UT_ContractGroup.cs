@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.Wallets;
 using System;
@@ -23,7 +24,8 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 Signature = new byte[20]
             };
 
-            var clone = contractGroup.Clone();
+            var clone = new ContractGroup();
+            ((IInteroperable)clone).FromStackItem(contractGroup.ToStackItem(null));
             Assert.AreEqual(clone.ToJson().ToString(), contractGroup.ToJson().ToString());
         }
 

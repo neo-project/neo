@@ -2,6 +2,8 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.VM;
+using Neo.VM.Types;
 using System;
 
 namespace Neo.SmartContract.Manifest
@@ -10,7 +12,7 @@ namespace Neo.SmartContract.Manifest
     /// A group represents a set of mutually trusted contracts. A contract will trust and allow any contract in the same group to invoke it, and the user interface will not give any warnings.
     /// A group is identified by a public key and must be accompanied by a signature for the contract hash to prove that the contract is indeed included in the group.
     /// </summary>
-    public class ContractGroup
+    public class ContractGroup : IInteroperable
     {
         /// <summary>
         /// Pubkey represents the public key of the group.
@@ -22,13 +24,16 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public byte[] Signature { get; set; }
 
-        public ContractGroup Clone()
+        void IInteroperable.FromStackItem(StackItem stackItem)
         {
-            return new ContractGroup
-            {
-                PubKey = PubKey,
-                Signature = Signature
-            };
+            Struct @struct = (Struct)stackItem;
+            PubKey = @struct[0].GetSpan().AsSerializable<ECPoint>();
+            Signature = @struct[1].GetSpan().ToArray();
+        }
+
+        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        {
+            return new Struct(referenceCounter) { PubKey.ToArray(), Signature };
         }
 
         /// <summary>
@@ -38,11 +43,13 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return ContractManifestGroup</returns>
         public static ContractGroup FromJson(JObject json)
         {
-            return new ContractGroup
+            ContractGroup group = new ContractGroup
             {
                 PubKey = ECPoint.Parse(json["pubkey"].AsString(), ECCurve.Secp256r1),
                 Signature = Convert.FromBase64String(json["signature"].AsString()),
             };
+            if (group.Signature.Length != 64) throw new FormatException();
+            return group;
         }
 
         /// <summary>

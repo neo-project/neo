@@ -14,8 +14,7 @@ namespace Neo.SmartContract
     /// │  Field   │     Type      │                  Comment                   │
     /// ├──────────┼───────────────┼────────────────────────────────────────────┤
     /// │ Magic    │ uint32        │ Magic header                               │
-    /// │ Compiler │ byte[32]      │ Compiler used                              │
-    /// │ Version  │ byte[32]      │ Compiler version                           │
+    /// │ Compiler │ byte[64]      │ Compiler name and version                  │
     /// ├──────────┼───────────────┼────────────────────────────────────────────┤
     /// │ Reserve  │ byte[2]       │ Reserved for future extensions. Must be 0. │
     /// │ Tokens   │ MethodToken[] │ Method tokens.                             │
@@ -33,14 +32,9 @@ namespace Neo.SmartContract
         private const uint Magic = 0x3346454E;
 
         /// <summary>
-        /// Compiler
+        /// Compiler name and version
         /// </summary>
         public string Compiler { get; set; }
-
-        /// <summary>
-        /// Version
-        /// </summary>
-        public string Version { get; set; }
 
         /// <summary>
         /// Method tokens
@@ -60,8 +54,8 @@ namespace Neo.SmartContract
         public const int MaxScriptLength = 512 * 1024;
 
         private const int HeaderSize =
-            sizeof(uint) +      // Magic
-            (32 * 2);           // Compiler+Version
+            sizeof(uint) +  // Magic
+            64;             // Compiler
 
         public int Size =>
             HeaderSize +            // Header
@@ -84,18 +78,14 @@ namespace Neo.SmartContract
         private void SerializeHeader(BinaryWriter writer)
         {
             writer.Write(Magic);
-            writer.WriteFixedString(Compiler, 32);
-
-            // Version
-            writer.WriteFixedString(Version, 32);
+            writer.WriteFixedString(Compiler, 64);
         }
 
         public void Deserialize(BinaryReader reader)
         {
             if (reader.ReadUInt32() != Magic) throw new FormatException("Wrong magic");
 
-            Compiler = reader.ReadFixedString(32);
-            Version = reader.ReadFixedString(32);
+            Compiler = reader.ReadFixedString(64);
 
             if (reader.ReadUInt16() != 0) throw new FormatException("Reserved bytes must be 0");
 
@@ -126,7 +116,6 @@ namespace Neo.SmartContract
             {
                 ["magic"] = Magic,
                 ["compiler"] = Compiler,
-                ["version"] = Version,
                 ["tokens"] = new JArray(Tokens.Select(p => p.ToJson())),
                 ["script"] = Convert.ToBase64String(Script),
                 ["checksum"] = CheckSum

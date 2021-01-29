@@ -1,3 +1,4 @@
+using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using System;
 using System.Collections.Generic;
@@ -7,8 +8,8 @@ namespace Neo.Plugins
 {
     public interface IPersistencePlugin
     {
-        void OnPersist(StoreView snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList) { }
-        void OnCommit(StoreView snapshot) { }
+        void OnPersist(Block block, DataCache snapshot, IReadOnlyList<ApplicationExecuted> applicationExecutedList) { }
+        void OnCommit(Block block, DataCache snapshot) { }
         bool ShouldThrowExceptionFromCommit(Exception ex) => false;
     }
 }

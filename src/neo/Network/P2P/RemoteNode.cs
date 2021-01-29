@@ -7,6 +7,7 @@ using Neo.IO.Actors;
 using Neo.Ledger;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract.Native;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -86,7 +87,6 @@ namespace Neo.Network.P2P
             switch (message.Command)
             {
                 case MessageCommand.Alert:
-                case MessageCommand.Consensus:
                 case MessageCommand.Extensible:
                 case MessageCommand.FilterAdd:
                 case MessageCommand.FilterClear:
@@ -174,7 +174,7 @@ namespace Neo.Network.P2P
         {
             var capabilities = new List<NodeCapability>
             {
-                new FullNodeCapability(Blockchain.Singleton.Height)
+                new FullNodeCapability(NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View))
             };
 
             if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
@@ -223,7 +223,6 @@ namespace Neo.Network.P2P
                 case Message msg:
                     switch (msg.Command)
                     {
-                        case MessageCommand.Consensus:
                         case MessageCommand.Extensible:
                         case MessageCommand.FilterAdd:
                         case MessageCommand.FilterClear:

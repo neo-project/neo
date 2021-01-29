@@ -1,8 +1,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.IO.Json;
+using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
-using System.IO;
 
 namespace Neo.UnitTests.SmartContract.Manifest
 {
@@ -12,20 +12,20 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void ParseFromJson_Default()
         {
-            var json = @"{""name"":""testManifest"",""groups"":[],""supportedstandards"":[],""abi"":{""methods"":[],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[],""extra"":null}";
+            var json = @"{""name"":""testManifest"",""groups"":[],""supportedstandards"":[],""abi"":{""methods"":[{""name"":""testMethod"",""parameters"":[],""returntype"":""Void"",""offset"":0,""safe"":true}],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[],""extra"":null}";
             var manifest = ContractManifest.Parse(json);
 
-            Assert.AreEqual(manifest.ToString(), json);
-            Assert.AreEqual(manifest.ToString(), TestUtils.CreateDefaultManifest().ToString());
+            Assert.AreEqual(manifest.ToJson().ToString(), json);
+            Assert.AreEqual(manifest.ToJson().ToString(), TestUtils.CreateDefaultManifest().ToJson().ToString());
             Assert.IsTrue(manifest.IsValid(UInt160.Zero));
         }
 
         [TestMethod]
         public void ParseFromJson_Permissions()
         {
-            var json = @"{""name"":""testManifest"",""groups"":[],""supportedstandards"":[],""abi"":{""methods"":[],""events"":[]},""permissions"":[{""contract"":""0x0000000000000000000000000000000000000000"",""methods"":[""method1"",""method2""]}],""trusts"":[],""extra"":null}";
+            var json = @"{""name"":""testManifest"",""groups"":[],""supportedstandards"":[],""abi"":{""methods"":[{""name"":""testMethod"",""parameters"":[],""returntype"":""Void"",""offset"":0,""safe"":true}],""events"":[]},""permissions"":[{""contract"":""0x0000000000000000000000000000000000000000"",""methods"":[""method1"",""method2""]}],""trusts"":[],""extra"":null}";
             var manifest = ContractManifest.Parse(json);
-            Assert.AreEqual(manifest.ToString(), json);
+            Assert.AreEqual(manifest.ToJson().ToString(), json);
 
             var check = TestUtils.CreateDefaultManifest();
             check.Permissions = new[]
@@ -36,48 +36,48 @@ namespace Neo.UnitTests.SmartContract.Manifest
                     Methods = WildcardContainer<string>.Create("method1", "method2")
                 }
             };
-            Assert.AreEqual(manifest.ToString(), check.ToString());
+            Assert.AreEqual(manifest.ToJson().ToString(), check.ToJson().ToString());
         }
 
         [TestMethod]
         public void ParseFromJson_SafeMethods()
         {
-            var json = @"{""name"":""testManifest"",""groups"":[],""supportedstandards"":[],""abi"":{""methods"":[],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[],""extra"":null}";
+            var json = @"{""name"":""testManifest"",""groups"":[],""supportedstandards"":[],""abi"":{""methods"":[{""name"":""testMethod"",""parameters"":[],""returntype"":""Void"",""offset"":0,""safe"":true}],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[],""extra"":null}";
             var manifest = ContractManifest.Parse(json);
-            Assert.AreEqual(manifest.ToString(), json);
+            Assert.AreEqual(manifest.ToJson().ToString(), json);
 
             var check = TestUtils.CreateDefaultManifest();
-            Assert.AreEqual(manifest.ToString(), check.ToString());
+            Assert.AreEqual(manifest.ToJson().ToString(), check.ToJson().ToString());
         }
 
         [TestMethod]
         public void ParseFromJson_Trust()
         {
-            var json = @"{""name"":""testManifest"",""groups"":[],""supportedstandards"":[],""abi"":{""methods"":[],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[""0x0000000000000000000000000000000000000001""],""extra"":null}";
+            var json = @"{""name"":""testManifest"",""groups"":[],""supportedstandards"":[],""abi"":{""methods"":[{""name"":""testMethod"",""parameters"":[],""returntype"":""Void"",""offset"":0,""safe"":true}],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[""0x0000000000000000000000000000000000000001""],""extra"":null}";
             var manifest = ContractManifest.Parse(json);
-            Assert.AreEqual(manifest.ToString(), json);
+            Assert.AreEqual(manifest.ToJson().ToString(), json);
 
             var check = TestUtils.CreateDefaultManifest();
             check.Trusts = WildcardContainer<UInt160>.Create(UInt160.Parse("0x0000000000000000000000000000000000000001"));
-            Assert.AreEqual(manifest.ToString(), check.ToString());
+            Assert.AreEqual(manifest.ToJson().ToString(), check.ToJson().ToString());
         }
 
         [TestMethod]
         public void ParseFromJson_Groups()
         {
-            var json = @"{""name"":""testManifest"",""groups"":[{""pubkey"":""03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c"",""signature"":""QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ==""}],""supportedstandards"":[],""abi"":{""methods"":[],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[],""extra"":null}";
+            var json = @"{""name"":""testManifest"",""groups"":[{""pubkey"":""03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c"",""signature"":""QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ==""}],""supportedstandards"":[],""abi"":{""methods"":[{""name"":""testMethod"",""parameters"":[],""returntype"":""Void"",""offset"":0,""safe"":true}],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[],""extra"":null}";
             var manifest = ContractManifest.Parse(json);
-            Assert.AreEqual(manifest.ToString(), json);
+            Assert.AreEqual(manifest.ToJson().ToString(), json);
 
             var check = TestUtils.CreateDefaultManifest();
             check.Groups = new ContractGroup[] { new ContractGroup() { PubKey = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1), Signature = "41414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141".HexToBytes() } };
-            Assert.AreEqual(manifest.ToString(), check.ToString());
+            Assert.AreEqual(manifest.ToJson().ToString(), check.ToJson().ToString());
         }
 
         [TestMethod]
         public void ParseFromJson_Extra()
         {
-            var json = @"{""name"":""testManifest"",""groups"":[],""supportedstandards"":[],""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""methods"":[],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[],""extra"":{""key"":""value""}}";
+            var json = @"{""name"":""testManifest"",""groups"":[],""supportedstandards"":[],""abi"":{""hash"":""0x0000000000000000000000000000000000000000"",""methods"":[{""name"":""testMethod"",""parameters"":[],""returntype"":""Void"",""offset"":0,""safe"":true}],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[],""extra"":{""key"":""value""}}";
             var manifest = ContractManifest.Parse(json);
             Assert.AreEqual(json, json);
             Assert.AreEqual("value", manifest.Extra["key"].AsString(), false);
@@ -86,24 +86,21 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestDeserializeAndSerialize()
         {
-            MemoryStream stream = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(stream);
-            BinaryReader reader = new BinaryReader(stream);
             var expected = TestUtils.CreateDefaultManifest();
             expected.Extra = JObject.Parse(@"{""a"":123}");
-            expected.Serialize(writer);
-            stream.Seek(0, SeekOrigin.Begin);
-            var actual = TestUtils.CreateDefaultManifest();
-            actual.Deserialize(reader);
-            Assert.AreEqual(expected.ToString(), actual.ToString());
-            Assert.AreEqual(expected.Extra.ToString(), @"{""a"":123}");
-        }
 
-        [TestMethod]
-        public void TestGetSize()
-        {
-            var temp = TestUtils.CreateDefaultManifest();
-            Assert.AreEqual(165, temp.Size);
+            var clone = new ContractManifest();
+            ((IInteroperable)clone).FromStackItem(expected.ToStackItem(null));
+
+            Assert.AreEqual(expected.Extra.ToString(), @"{""a"":123}");
+            Assert.AreEqual(expected.ToString(), clone.ToString());
+
+            expected.Extra = null;
+            clone = new ContractManifest();
+            ((IInteroperable)clone).FromStackItem(expected.ToStackItem(null));
+
+            Assert.AreEqual(expected.Extra, clone.Extra);
+            Assert.AreEqual(expected.ToString(), clone.ToString());
         }
 
         [TestMethod]
@@ -111,15 +108,6 @@ namespace Neo.UnitTests.SmartContract.Manifest
         {
             ContractManifest contractManifest = new ContractManifest();
             Assert.IsNotNull(contractManifest);
-        }
-
-        [TestMethod]
-        public void TestClone()
-        {
-            var expected = TestUtils.CreateDefaultManifest();
-            expected.Extra = JObject.Parse(@"{ ""a"":123}");
-            var actual = expected.Clone();
-            Assert.AreEqual(actual.ToString(), expected.ToString());
         }
     }
 }

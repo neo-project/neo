@@ -16,15 +16,15 @@ namespace Neo.Wallets
 
         public AssetDescriptor(UInt160 asset_id)
         {
-            using SnapshotView snapshot = Blockchain.Singleton.GetSnapshot();
+            DataCache snapshot = Blockchain.Singleton.View;
             var contract = NativeContract.ContractManagement.GetContract(snapshot, asset_id);
             if (contract is null) throw new ArgumentException();
 
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitDynamicCall(asset_id, "decimals", true);
-                sb.EmitDynamicCall(asset_id, "symbol", true);
+                sb.EmitDynamicCall(asset_id, "decimals");
+                sb.EmitDynamicCall(asset_id, "symbol");
                 script = sb.ToArray();
             }
             using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, gas: 0_10000000);

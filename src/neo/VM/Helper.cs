@@ -25,7 +25,7 @@ namespace Neo.VM
             return sb.Emit(OpCode.PACK);
         }
 
-        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder sb, IReadOnlyDictionary<TKey, TValue> map = null)
+        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder sb, IEnumerable<KeyValuePair<TKey, TValue>> map = null)
         {
             sb.Emit(OpCode.NEWMAP);
             if (map != null)
@@ -46,10 +46,9 @@ namespace Neo.VM
             return sb;
         }
 
-        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, bool hasReturnValue)
+        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation)
         {
-            sb.EmitPush(0);
-            sb.EmitPush(hasReturnValue ? 1 : 0);
+            sb.Emit(OpCode.NEWARRAY0);
             sb.EmitPush(CallFlags.All);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
@@ -57,12 +56,12 @@ namespace Neo.VM
             return sb;
         }
 
-        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, bool hasReturnValue, params ContractParameter[] args)
+        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params ContractParameter[] args)
         {
             for (int i = args.Length - 1; i >= 0; i--)
                 sb.EmitPush(args[i]);
             sb.EmitPush(args.Length);
-            sb.EmitPush(hasReturnValue ? 1 : 0);
+            sb.Emit(OpCode.PACK);
             sb.EmitPush(CallFlags.All);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
@@ -70,12 +69,12 @@ namespace Neo.VM
             return sb;
         }
 
-        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, bool hasReturnValue, params object[] args)
+        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params object[] args)
         {
             for (int i = args.Length - 1; i >= 0; i--)
                 sb.EmitPush(args[i]);
             sb.EmitPush(args.Length);
-            sb.EmitPush(hasReturnValue ? 1 : 0);
+            sb.Emit(OpCode.PACK);
             sb.EmitPush(CallFlags.All);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
@@ -127,6 +126,12 @@ namespace Neo.VM
                                 sb.EmitPush(parameters[i]);
                             sb.EmitPush(parameters.Count);
                             sb.Emit(OpCode.PACK);
+                        }
+                        break;
+                    case ContractParameterType.Map:
+                        {
+                            var pairs = (IList<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value;
+                            sb.CreateMap(pairs);
                         }
                         break;
                     default:
@@ -181,6 +186,9 @@ namespace Neo.VM
                 case Enum data:
                     sb.EmitPush(BigInteger.Parse(data.ToString("d")));
                     break;
+                case ContractParameter data:
+                    sb.EmitPush(data);
+                    break;
                 case null:
                     sb.Emit(OpCode.PUSHNULL);
                     break;
@@ -204,10 +212,10 @@ namespace Neo.VM
         /// <param name="operation">contract operation</param>
         /// <param name="args">operation arguments</param>
         /// <returns></returns>
-        public static byte[] MakeScript(this UInt160 scriptHash, string operation, bool hasReturnValue, params object[] args)
+        public static byte[] MakeScript(this UInt160 scriptHash, string operation, params object[] args)
         {
             using ScriptBuilder sb = new ScriptBuilder();
-            sb.EmitDynamicCall(scriptHash, operation, hasReturnValue, args);
+            sb.EmitDynamicCall(scriptHash, operation, args);
             return sb.ToArray();
         }
 

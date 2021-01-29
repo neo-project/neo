@@ -2,7 +2,6 @@ using Neo.Cryptography.ECC;
 using Neo.IO.Json;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
@@ -84,19 +83,13 @@ namespace Neo.SmartContract
         {
             get
             {
-                if (_ScriptHashes == null)
+                if (_ScriptHashes is null)
                 {
                     // snapshot is not necessary for Transaction
                     if (Verifiable is Transaction)
-                    {
                         _ScriptHashes = Verifiable.GetScriptHashesForVerifying(null);
-                        return _ScriptHashes;
-                    }
-
-                    using (SnapshotView snapshot = Blockchain.Singleton.GetSnapshot())
-                    {
-                        _ScriptHashes = Verifiable.GetScriptHashesForVerifying(snapshot);
-                    }
+                    else
+                        _ScriptHashes = Verifiable.GetScriptHashesForVerifying(Blockchain.Singleton.View);
                 }
                 return _ScriptHashes;
             }

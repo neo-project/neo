@@ -7,7 +7,6 @@ namespace Neo.SmartContract.Native
 {
     public sealed class GasToken : FungibleToken<AccountState>
     {
-        public override int Id => -2;
         public override string Symbol => "GAS";
         public override byte Decimals => 8;
 
@@ -17,7 +16,7 @@ namespace Neo.SmartContract.Native
 
         internal override void Initialize(ApplicationEngine engine)
         {
-            UInt160 account = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators);
+            UInt160 account = Contract.GetBFTAddress(Blockchain.StandbyValidators);
             Mint(engine, account, 30_000_000 * Factor, false);
         }
 
@@ -25,14 +24,14 @@ namespace Neo.SmartContract.Native
         {
             long totalNetworkFee = 0;
             HashSet<UInt160> distributed = new HashSet<UInt160>();
-            foreach (Transaction tx in engine.Snapshot.PersistingBlock.Transactions)
+            foreach (Transaction tx in engine.PersistingBlock.Transactions)
             {
                 if (distributed.Add(tx.Sender)) NEO.DistributeGas(engine, tx.Sender);
                 Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
                 totalNetworkFee += tx.NetworkFee;
             }
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot);
-            UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.Snapshot.PersistingBlock.ConsensusData.PrimaryIndex]).ToScriptHash();
+            UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.ConsensusData.PrimaryIndex]).ToScriptHash();
             Mint(engine, primary, totalNetworkFee, false);
         }
     }

@@ -2,8 +2,10 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -27,12 +29,13 @@ namespace Neo.SmartContract
             ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
             ApplicationEngine.ECDsaVerifyPrice * n;
 
-        public static UInt160 GetContractHash(UInt160 sender, byte[] script)
+        public static UInt160 GetContractHash(UInt160 sender, uint nefCheckSum, string name)
         {
             using var sb = new ScriptBuilder();
             sb.Emit(OpCode.ABORT);
             sb.EmitPush(sender);
-            sb.EmitPush(script);
+            sb.EmitPush(nefCheckSum);
+            sb.EmitPush(name);
 
             return sb.ToArray().ToScriptHash();
         }
@@ -141,6 +144,13 @@ namespace Neo.SmartContract
             return script.IsSignatureContract() || script.IsMultiSigContract();
         }
 
+        public static T ToInteroperable<T>(this StackItem item) where T : IInteroperable, new()
+        {
+            T t = new T();
+            t.FromStackItem(item);
+            return t;
+        }
+
         public static UInt160 ToScriptHash(this byte[] script)
         {
             return new UInt160(Crypto.Hash160(script));
@@ -151,7 +161,7 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
-        public static bool VerifyWitnesses(this IVerifiable verifiable, StoreView snapshot, long gas)
+        public static bool VerifyWitnesses(this IVerifiable verifiable, DataCache snapshot, long gas)
         {
             if (gas < 0) return false;
             if (gas > MaxVerificationGas) gas = MaxVerificationGas;
@@ -175,33 +185,51 @@ namespace Neo.SmartContract
             return true;
         }
 
-        internal static bool VerifyWitness(this IVerifiable verifiable, StoreView snapshot, UInt160 hash, Witness witness, long gas, out long fee)
+        internal static bool VerifyWitness(this IVerifiable verifiable, DataCache snapshot, UInt160 hash, Witness witness, long gas, out long fee)
         {
             fee = 0;
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.Clone(), gas))
+            Script invocationScript;
+            try
+            {
+                invocationScript = new Script(witness.InvocationScript, true);
+            }
+            catch (BadScriptException)
+            {
+                return false;
+            }
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CreateSnapshot(), null, gas))
             {
                 CallFlags callFlags = !witness.VerificationScript.IsStandardContract() ? CallFlags.ReadStates : CallFlags.None;
-                byte[] verification = witness.VerificationScript;
 
-                if (verification.Length == 0)
+                if (witness.VerificationScript.Length == 0)
                 {
                     ContractState cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (cs is null) return false;
-                    if (engine.LoadContract(cs, "verify", callFlags, true, 0) is null)
-                        return false;
+                    ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify", -1);
+                    if (md?.ReturnType != ContractParameterType.Boolean) return false;
+                    engine.LoadContract(cs, md, callFlags);
                 }
                 else
                 {
                     if (NativeContract.IsNative(hash)) return false;
                     if (hash != witness.ScriptHash) return false;
-                    engine.LoadScript(verification, initialPosition: 0, configureState: p =>
+                    Script verificationScript;
+                    try
+                    {
+                        verificationScript = new Script(witness.VerificationScript, true);
+                    }
+                    catch (BadScriptException)
+                    {
+                        return false;
+                    }
+                    engine.LoadScript(verificationScript, initialPosition: 0, configureState: p =>
                     {
                         p.CallFlags = callFlags;
                         p.ScriptHash = hash;
                     });
                 }
 
-                engine.LoadScript(witness.InvocationScript, configureState: p => p.CallFlags = CallFlags.None);
+                engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
 
                 if (NativeContract.IsNative(hash))
                 {

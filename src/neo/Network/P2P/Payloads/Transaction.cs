@@ -220,14 +220,15 @@ namespace Neo.Network.P2P.Payloads
 
         public T GetAttribute<T>() where T : TransactionAttribute
         {
-            return GetAttributes<T>()?.First();
+            return GetAttributes<T>().FirstOrDefault();
         }
 
-        public T[] GetAttributes<T>() where T : TransactionAttribute
+        public IEnumerable<T> GetAttributes<T>() where T : TransactionAttribute
         {
-            _attributesCache ??= attributes.GroupBy(p => p.GetType()).ToDictionary(p => p.Key, p => (TransactionAttribute[])p.OfType<T>().ToArray());
-            _attributesCache.TryGetValue(typeof(T), out var result);
-            return (T[])result;
+            _attributesCache ??= attributes.GroupBy(p => p.GetType()).ToDictionary(p => p.Key, p => p.ToArray());
+            if (_attributesCache.TryGetValue(typeof(T), out var result))
+                return result.OfType<T>();
+            return Enumerable.Empty<T>();
         }
 
         public override int GetHashCode()
@@ -235,7 +236,7 @@ namespace Neo.Network.P2P.Payloads
             return Hash.GetHashCode();
         }
 
-        public UInt160[] GetScriptHashesForVerifying(StoreView snapshot)
+        public UInt160[] GetScriptHashesForVerifying(DataCache snapshot)
         {
             return Signers.Select(p => p.Account).ToArray();
         }
@@ -276,14 +277,15 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        bool IInventory.Verify(StoreView snapshot)
+        bool IInventory.Verify(DataCache snapshot)
         {
             return Verify(snapshot, null) == VerifyResult.Succeed;
         }
 
-        public virtual VerifyResult VerifyStateDependent(StoreView snapshot, TransactionVerificationContext context)
+        public virtual VerifyResult VerifyStateDependent(DataCache snapshot, TransactionVerificationContext context)
         {
-            if (ValidUntilBlock <= snapshot.Height || ValidUntilBlock > snapshot.Height + MaxValidUntilBlockIncrement)
+            uint height = NativeContract.Ledger.CurrentIndex(snapshot);
+            if (ValidUntilBlock <= height || ValidUntilBlock > height + MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
             foreach (UInt160 hash in GetScriptHashesForVerifying(snapshot))
                 if (NativeContract.Policy.IsBlocked(snapshot, hash))
@@ -319,8 +321,15 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual VerifyResult VerifyStateIndependent()
         {
-            if (Size > MaxTransactionSize)
+            if (Size > MaxTransactionSize) return VerifyResult.Invalid;
+            try
+            {
+                _ = new Script(Script, true);
+            }
+            catch (BadScriptException)
+            {
                 return VerifyResult.Invalid;
+            }
             UInt160[] hashes = GetScriptHashesForVerifying(null);
             if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
             for (int i = 0; i < hashes.Length; i++)
@@ -330,7 +339,7 @@ namespace Neo.Network.P2P.Payloads
             return VerifyResult.Succeed;
         }
 
-        public virtual VerifyResult Verify(StoreView snapshot, TransactionVerificationContext context)
+        public virtual VerifyResult Verify(DataCache snapshot, TransactionVerificationContext context)
         {
             VerifyResult result = VerifyStateIndependent();
             if (result != VerifyResult.Succeed) return result;

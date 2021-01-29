@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Neo.IO;
 using Neo.IO.Json;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
@@ -28,7 +27,17 @@ namespace Neo.UnitTests
                 Abi = new ContractAbi()
                 {
                     Events = new ContractEventDescriptor[0],
-                    Methods = new ContractMethodDescriptor[0]
+                    Methods = new[]
+                    {
+                        new ContractMethodDescriptor
+                        {
+                            Name = "testMethod",
+                            Parameters = new ContractParameterDefinition[0],
+                            ReturnType = ContractParameterType.Void,
+                            Offset = 0,
+                            Safe = true
+                        }
+                    }
                 },
                 Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<UInt160>.Create(),
@@ -55,13 +64,16 @@ namespace Neo.UnitTests
             return manifest;
         }
 
-        public static StorageKey CreateStorageKey(this NativeContract contract, byte prefix, ISerializable key)
+        public static StorageKey CreateStorageKey(this NativeContract contract, byte prefix, ISerializable key = null)
         {
-            return new StorageKey
-            {
-                Id = contract.Id,
-                Key = key.ToArray().Prepend(prefix).ToArray()
-            };
+            var k = new KeyBuilder(contract.Id, prefix);
+            if (key != null) k = k.Add(key);
+            return k;
+        }
+
+        public static StorageKey CreateStorageKey(this NativeContract contract, byte prefix, uint value)
+        {
+            return new KeyBuilder(contract.Id, prefix).AddBigEndian(value);
         }
 
         public static byte[] GetByteArray(int length, byte firstByte)
@@ -91,7 +103,7 @@ namespace Neo.UnitTests
         {
             return new Transaction
             {
-                Script = new byte[1],
+                Script = new byte[] { (byte)OpCode.PUSH2 },
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Signers = new[]{ new Signer()
                 {

@@ -29,7 +29,7 @@ namespace Neo.Ledger
                 senderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
         }
 
-        public bool CheckTransaction(Transaction tx, StoreView snapshot)
+        public bool CheckTransaction(Transaction tx, DataCache snapshot)
         {
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
             senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);

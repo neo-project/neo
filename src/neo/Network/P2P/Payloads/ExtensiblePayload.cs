@@ -2,6 +2,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using System;
 using System.IO;
 
@@ -64,12 +65,12 @@ namespace Neo.Network.P2P.Payloads
             Category = reader.ReadVarString(32);
             ValidBlockStart = reader.ReadUInt32();
             ValidBlockEnd = reader.ReadUInt32();
-            if (ValidBlockStart > ValidBlockEnd) throw new FormatException();
+            if (ValidBlockStart >= ValidBlockEnd) throw new FormatException();
             Sender = reader.ReadSerializable<UInt160>();
             Data = reader.ReadVarBytes(ushort.MaxValue);
         }
 
-        UInt160[] IVerifiable.GetScriptHashesForVerifying(StoreView snapshot)
+        UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
         {
             return new[] { Sender }; // This address should be checked by consumer
         }
@@ -89,9 +90,10 @@ namespace Neo.Network.P2P.Payloads
             writer.WriteVarBytes(Data);
         }
 
-        public bool Verify(StoreView snapshot)
+        public bool Verify(DataCache snapshot)
         {
-            if (snapshot.PersistingBlock.Index < ValidBlockStart || snapshot.PersistingBlock.Index > ValidBlockEnd) return false;
+            uint height = NativeContract.Ledger.CurrentIndex(snapshot);
+            if (height < ValidBlockStart || height >= ValidBlockEnd) return false;
             if (!Blockchain.Singleton.IsExtensibleWitnessWhiteListed(Sender)) return false;
             return this.VerifyWitnesses(snapshot, 0_02000000);
         }

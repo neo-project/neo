@@ -1,4 +1,3 @@
-using Neo.Ledger;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Native;
 using System;
@@ -53,7 +52,7 @@ namespace Neo.SmartContract
 
         protected internal byte[] Get(StorageContext context, byte[] key)
         {
-            return Snapshot.Storages.TryGet(new StorageKey
+            return Snapshot.TryGet(new StorageKey
             {
                 Id = context.Id,
                 Key = key.ToArray()
@@ -62,14 +61,18 @@ namespace Neo.SmartContract
 
         protected internal IIterator Find(StorageContext context, byte[] prefix, FindOptions options)
         {
-            if (options.HasFlag(FindOptions.KeysOnly) && options.HasFlag(FindOptions.ValuesOnly))
+            if ((options & ~FindOptions.All) != 0)
+                throw new ArgumentOutOfRangeException(nameof(options));
+            if (options.HasFlag(FindOptions.KeysOnly) && (options.HasFlag(FindOptions.ValuesOnly) || options.HasFlag(FindOptions.DeserializeValues) || options.HasFlag(FindOptions.PickField0) || options.HasFlag(FindOptions.PickField1)))
+                throw new ArgumentException();
+            if (options.HasFlag(FindOptions.ValuesOnly) && (options.HasFlag(FindOptions.KeysOnly) || options.HasFlag(FindOptions.RemovePrefix)))
                 throw new ArgumentException();
             if (options.HasFlag(FindOptions.PickField0) && options.HasFlag(FindOptions.PickField1))
                 throw new ArgumentException();
             if ((options.HasFlag(FindOptions.PickField0) || options.HasFlag(FindOptions.PickField1)) && !options.HasFlag(FindOptions.DeserializeValues))
                 throw new ArgumentException();
             byte[] prefix_key = StorageKey.CreateSearchPrefix(context.Id, prefix);
-            return new StorageIterator(Snapshot.Storages.Find(prefix_key).GetEnumerator(), options, ReferenceCounter);
+            return new StorageIterator(Snapshot.Find(prefix_key).GetEnumerator(), options, ReferenceCounter);
         }
 
         protected internal void Put(StorageContext context, byte[] key, byte[] value)
@@ -93,11 +96,11 @@ namespace Neo.SmartContract
                 Id = context.Id,
                 Key = key
             };
-            StorageItem item = Snapshot.Storages.GetAndChange(skey);
+            StorageItem item = Snapshot.GetAndChange(skey);
             if (item is null)
             {
                 newDataSize = key.Length + value.Length;
-                Snapshot.Storages.Add(skey, item = new StorageItem());
+                Snapshot.Add(skey, item = new StorageItem());
             }
             else
             {
@@ -124,9 +127,9 @@ namespace Neo.SmartContract
                 Id = context.Id,
                 Key = key
             };
-            if (Snapshot.Storages.TryGet(skey)?.IsConstant == true)
+            if (Snapshot.TryGet(skey)?.IsConstant == true)
                 throw new InvalidOperationException();
-            Snapshot.Storages.Delete(skey);
+            Snapshot.Delete(skey);
         }
     }
 }
