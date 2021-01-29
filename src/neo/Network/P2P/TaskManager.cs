@@ -258,9 +258,9 @@ namespace Neo.Network.P2P
             }
 
             Header last = Blockchain.Singleton.HeaderCache.Last;
-            uint headerHeight = last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
-            UInt256 headerHash = last?.Hash ?? NativeContract.Ledger.CurrentHash(snapshot);
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
+            uint headerHeight = last?.Index ?? currentHeight;
+            UInt256 headerHash = last?.Hash ?? NativeContract.Ledger.CurrentHash(snapshot);
             // When the number of AvailableTasks is no more than 0, no pending tasks of InventoryType.Block, it should process pending the tasks of headers
             // If not HeaderTask pending to be processed it should ask for more Blocks
             if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks) && headerHeight < session.LastBlockIndex && !Blockchain.Singleton.HeaderCache.Full)
@@ -271,14 +271,14 @@ namespace Neo.Network.P2P
             }
             else if (currentHeight < session.LastBlockIndex)
             {
-                UInt256 hash = NativeContract.Ledger.CurrentHash(snapshot);
+                uint startHeight = currentHeight;
                 for (uint i = currentHeight + 1; i <= headerHeight; i++)
                 {
                     UInt256 nextHash = Blockchain.Singleton.HeaderCache[i].Hash;
                     if (!globalTasks.ContainsKey(nextHash)) break;
-                    hash = nextHash;
+                    startHeight = i;
                 }
-                session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlocks, GetBlocksPayload.Create(hash)));
+                session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(startHeight)));
             }
             else if (headerHeight >= session.LastBlockIndex
                     && TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= NativeContract.Ledger.GetBlock(snapshot, headerHash)?.Timestamp)
