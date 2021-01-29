@@ -24,7 +24,7 @@ namespace Neo.Network.P2P
         GetHeaders = 0x20,
         [ReflectionCache(typeof(HeadersPayload))]
         Headers = 0x21,
-        [ReflectionCache(typeof(GetBlockByIndexPayload))]
+        [ReflectionCache(typeof(GetBlocksPayload))]
         GetBlocks = 0x24,
         Mempool = 0x25,
         [ReflectionCache(typeof(InvPayload))]

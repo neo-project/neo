@@ -79,7 +79,7 @@ namespace Neo.Network.P2P
                     OnGetAddrMessageReceived();
                     break;
                 case MessageCommand.GetBlocks:
-                    OnGetBlocksMessageReceived((GetBlockByIndexPayload)msg.Payload);
+                    OnGetBlocksMessageReceived((GetBlocksPayload)msg.Payload);
                     break;
                 case MessageCommand.GetBlockByIndex:
                     OnGetBlockByIndexMessageReceived((GetBlockByIndexPayload)msg.Payload);
@@ -166,23 +166,23 @@ namespace Neo.Network.P2P
 
         /// <summary>
         /// Will be triggered when a MessageCommand.GetBlocks message is received.
-        /// Tell the specified number of blocks' hashes starting with the requested height until payload.Count or MaxHashesCount
+        /// Tell the specified number of blocks' hashes starting with the requested HashStart until payload.Count or MaxHashesCount
         /// Responses are sent to RemoteNode actor as MessageCommand.Inv Message.
         /// </summary>
-        /// <param name="payload">A GetBlockByIndexPayload including start block height and number of blocks requested.</param>
-        private void OnGetBlocksMessageReceived(GetBlockByIndexPayload payload)
+        /// <param name="payload">A GetBlocksPayload including start block Hash and number of blocks requested.</param>
+        private void OnGetBlocksMessageReceived(GetBlocksPayload payload)
         {
             // The default value of payload.Count is -1
             int count = payload.Count < 0 || payload.Count > InvPayload.MaxHashesCount ? InvPayload.MaxHashesCount : payload.Count;
             DataCache snapshot = Blockchain.Singleton.View;
-            uint startIndex = payload.IndexStart;
-            UInt256 hash = NativeContract.Ledger.GetBlockHash(snapshot, startIndex);
-            if (hash == null) return;
+            UInt256 hash = payload.HashStart;
+            TrimmedBlock state = NativeContract.Ledger.GetTrimmedBlock(snapshot, hash);
+            if (state == null) return;
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             List<UInt256> hashes = new List<UInt256>();
             for (uint i = 1; i <= count; i++)
             {
-                uint index = startIndex + i;
+                uint index = state.Index + i;
                 if (index > currentHeight)
                     break;
                 hash = NativeContract.Ledger.GetBlockHash(snapshot, index);
