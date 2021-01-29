@@ -275,7 +275,7 @@ namespace Neo.Network.P2P
                 for (uint i = currentHeight + 1; i <= headerHeight; i++)
                 {
                     UInt256 nextHash = Blockchain.Singleton.HeaderCache[i].Hash;
-                    if (!globalTasks.ContainsKey(nextHash)) break;
+                    if (nextHash is null || !globalTasks.ContainsKey(nextHash)) break;
                     startHeight = i;
                 }
                 session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(startHeight)));
