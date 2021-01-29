@@ -274,7 +274,7 @@ namespace Neo.Network.P2P
                 uint startHeight = currentHeight;
                 for (uint i = currentHeight + 1; i <= headerHeight; i++)
                 {
-                    UInt256 nextHash = Blockchain.Singleton.HeaderCache[i].Hash;
+                    UInt256 nextHash = Blockchain.Singleton.HeaderCache[i]?.Hash;
                     if (nextHash is null || !globalTasks.ContainsKey(nextHash)) break;
                     startHeight = i;
                 }
