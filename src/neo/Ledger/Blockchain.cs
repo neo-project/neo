@@ -438,12 +438,6 @@ namespace Neo.Ledger
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
         }
 
-        protected override void PostStop()
-        {
-            base.PostStop();
-            header_cache.Dispose();
-        }
-
         public static Props Props(NeoSystem system, IStore store)
         {
             return Akka.Actor.Props.Create(() => new Blockchain(system, store)).WithMailbox("blockchain-mailbox");

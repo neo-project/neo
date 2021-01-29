@@ -34,8 +34,6 @@ namespace Neo.UnitTests.IO.Caching
             Assert.ThrowsException<IndexOutOfRangeException>(() => _ = queue[1]);
             Assert.ThrowsException<IndexOutOfRangeException>(() => queue[1] = 1);
             Assert.ThrowsException<ArgumentOutOfRangeException>(() => new IndexedQueue<int>(-1));
-
-            queue.Dispose();
         }
 
         [TestMethod]

@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 
 namespace Neo.IO.Caching
 {
@@ -12,7 +11,6 @@ namespace Neo.IO.Caching
     /// <typeparam name="T">The type of items in the queue</typeparam>
     class IndexedQueue<T> : IReadOnlyCollection<T>
     {
-        private readonly ReaderWriterLockSlim readerWriterLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
         private const int DefaultCapacity = 16;
         private const int GrowthFactor = 2;
         private const float TrimThreshold = 0.9f;
@@ -24,21 +22,7 @@ namespace Neo.IO.Caching
         /// <summary>
         /// Indicates the count of items in the queue
         /// </summary>
-        public int Count
-        {
-            get
-            {
-                readerWriterLock.EnterReadLock();
-                try
-                {
-                    return _count;
-                }
-                finally
-                {
-                    readerWriterLock.ExitReadLock();
-                }
-            }
-        }
+        public int Count => _count;
 
         /// <summary>
         /// Creates a queue with the default capacity
@@ -72,14 +56,6 @@ namespace Neo.IO.Caching
         }
 
         /// <summary>
-        /// Resource releasing
-        /// </summary>
-        public void Dispose()
-        {
-            readerWriterLock.Dispose();
-        }
-
-        /// <summary>
         /// Gets the value at the index
         /// </summary>
         /// <param name="index">The index</param>
@@ -88,17 +64,9 @@ namespace Neo.IO.Caching
         {
             get
             {
-                readerWriterLock.EnterReadLock();
-                try
-                {
-                    if (index < 0 || index >= _count)
-                        throw new IndexOutOfRangeException();
-                    return ref _array[(index + _head) % _array.Length];
-                }
-                finally
-                {
-                    readerWriterLock.ExitReadLock();
-                }
+                if (index < 0 || index >= _count)
+                    throw new IndexOutOfRangeException();
+                return ref _array[(index + _head) % _array.Length];
             }
         }
 
@@ -108,32 +76,24 @@ namespace Neo.IO.Caching
         /// <param name="item">The item to insert</param>
         public void Enqueue(T item)
         {
-            readerWriterLock.EnterWriteLock();
-            try
+            if (_array.Length == _count)
             {
-                if (_array.Length == _count)
+                int newSize = _array.Length * GrowthFactor;
+                if (_head == 0)
                 {
-                    int newSize = _array.Length * GrowthFactor;
-                    if (_head == 0)
-                    {
-                        Array.Resize(ref _array, newSize);
-                    }
-                    else
-                    {
-                        T[] buffer = new T[newSize];
-                        Array.Copy(_array, _head, buffer, 0, _array.Length - _head);
-                        Array.Copy(_array, 0, buffer, _array.Length - _head, _head);
-                        _array = buffer;
-                        _head = 0;
-                    }
+                    Array.Resize(ref _array, newSize);
                 }
-                _array[(_head + _count) % _array.Length] = item;
-                ++_count;
+                else
+                {
+                    T[] buffer = new T[newSize];
+                    Array.Copy(_array, _head, buffer, 0, _array.Length - _head);
+                    Array.Copy(_array, 0, buffer, _array.Length - _head, _head);
+                    _array = buffer;
+                    _head = 0;
+                }
             }
-            finally
-            {
-                readerWriterLock.ExitWriteLock();
-            }
+            _array[(_head + _count) % _array.Length] = item;
+            ++_count;
         }
 
         /// <summary>
@@ -142,17 +102,9 @@ namespace Neo.IO.Caching
         /// <returns>The frontmost item</returns>
         public T Peek()
         {
-            readerWriterLock.EnterReadLock();
-            try
-            {
-                if (_count == 0)
-                    throw new InvalidOperationException("The queue is empty.");
-                return _array[_head];
-            }
-            finally
-            {
-                readerWriterLock.ExitReadLock();
-            }
+            if (_count == 0)
+                throw new InvalidOperationException("The queue is empty.");
+            return _array[_head];
         }
 
         /// <summary>
@@ -162,23 +114,15 @@ namespace Neo.IO.Caching
         /// <returns>True if the queue returned an item or false if the queue is empty</returns>
         public bool TryPeek(out T item)
         {
-            readerWriterLock.EnterReadLock();
-            try
+            if (_count == 0)
             {
-                if (_count == 0)
-                {
-                    item = default;
-                    return false;
-                }
-                else
-                {
-                    item = _array[_head];
-                    return true;
-                }
+                item = default;
+                return false;
             }
-            finally
+            else
             {
-                readerWriterLock.ExitReadLock();
+                item = _array[_head];
+                return true;
             }
         }
 
@@ -188,21 +132,13 @@ namespace Neo.IO.Caching
         /// <returns>The item that was removed</returns>
         public T Dequeue()
         {
-            readerWriterLock.EnterWriteLock();
-            try
-            {
-                if (_count == 0)
-                    throw new InvalidOperationException("The queue is empty");
-                T result = _array[_head];
-                ++_head;
-                _head %= _array.Length;
-                --_count;
-                return result;
-            }
-            finally
-            {
-                readerWriterLock.ExitWriteLock();
-            }
+            if (_count == 0)
+                throw new InvalidOperationException("The queue is empty");
+            T result = _array[_head];
+            ++_head;
+            _head %= _array.Length;
+            --_count;
+            return result;
         }
 
         /// <summary>
@@ -212,26 +148,18 @@ namespace Neo.IO.Caching
         /// <returns>True if the queue returned an item or false if the queue is empty</returns>
         public bool TryDequeue(out T item)
         {
-            readerWriterLock.EnterWriteLock();
-            try
+            if (_count == 0)
             {
-                if (_count == 0)
-                {
-                    item = default;
-                    return false;
-                }
-                else
-                {
-                    item = _array[_head];
-                    ++_head;
-                    _head %= _array.Length;
-                    --_count;
-                    return true;
-                }
+                item = default;
+                return false;
             }
-            finally
+            else
             {
-                readerWriterLock.ExitWriteLock();
+                item = _array[_head];
+                ++_head;
+                _head %= _array.Length;
+                --_count;
+                return true;
             }
         }
 
@@ -240,16 +168,8 @@ namespace Neo.IO.Caching
         /// </summary>
         public void Clear()
         {
-            readerWriterLock.EnterWriteLock();
-            try
-            {
-                _head = 0;
-                _count = 0;
-            }
-            finally
-            {
-                readerWriterLock.ExitWriteLock();
-            }
+            _head = 0;
+            _count = 0;
         }
 
         /// <summary>
@@ -257,24 +177,16 @@ namespace Neo.IO.Caching
         /// </summary>
         public void TrimExcess()
         {
-            readerWriterLock.EnterWriteLock();
-            try
+            if (_count == 0)
             {
-                if (_count == 0)
-                {
-                    _array = new T[DefaultCapacity];
-                }
-                else if (_array.Length * TrimThreshold >= _count)
-                {
-                    T[] arr = new T[_count];
-                    CopyTo(arr, 0);
-                    _array = arr;
-                    _head = 0;
-                }
+                _array = new T[DefaultCapacity];
             }
-            finally
+            else if (_array.Length * TrimThreshold >= _count)
             {
-                readerWriterLock.ExitWriteLock();
+                T[] arr = new T[_count];
+                CopyTo(arr, 0);
+                _array = arr;
+                _head = 0;
             }
         }
 
@@ -285,25 +197,17 @@ namespace Neo.IO.Caching
         /// <param name="arrayIndex">The index in the destination to start copying at</param>
         public void CopyTo(T[] array, int arrayIndex)
         {
-            if (readerWriterLock.RecursiveWriteCount == 0) readerWriterLock.EnterReadLock();
-            try
+            if (array is null) throw new ArgumentNullException(nameof(array));
+            if (arrayIndex < 0 || arrayIndex + _count > array.Length)
+                throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+            if (_head + _count <= _array.Length)
             {
-                if (array is null) throw new ArgumentNullException(nameof(array));
-                if (arrayIndex < 0 || arrayIndex + _count > array.Length)
-                    throw new ArgumentOutOfRangeException(nameof(arrayIndex));
-                if (_head + _count <= _array.Length)
-                {
-                    Array.Copy(_array, _head, array, arrayIndex, _count);
-                }
-                else
-                {
-                    Array.Copy(_array, _head, array, arrayIndex, _array.Length - _head);
-                    Array.Copy(_array, 0, array, arrayIndex + _array.Length - _head, _count + _head - _array.Length);
-                }
+                Array.Copy(_array, _head, array, arrayIndex, _count);
             }
-            finally
+            else
             {
-                if (readerWriterLock.RecursiveWriteCount == 0) readerWriterLock.ExitReadLock();
+                Array.Copy(_array, _head, array, arrayIndex, _array.Length - _head);
+                Array.Copy(_array, 0, array, arrayIndex + _array.Length - _head, _count + _head - _array.Length);
             }
         }
 
@@ -313,31 +217,15 @@ namespace Neo.IO.Caching
         /// <returns>An array containing the queue's items</returns>
         public T[] ToArray()
         {
-            readerWriterLock.EnterReadLock();
-            try
-            {
-                T[] result = new T[_count];
-                CopyTo(result, 0);
-                return result;
-            }
-            finally
-            {
-                readerWriterLock.ExitReadLock();
-            }
+            T[] result = new T[_count];
+            CopyTo(result, 0);
+            return result;
         }
 
         public IEnumerator<T> GetEnumerator()
         {
-            readerWriterLock.EnterReadLock();
-            try
-            {
-                for (int i = 0; i < _count; i++)
-                    yield return _array[(_head + i) % _array.Length];
-            }
-            finally
-            {
-                readerWriterLock.ExitReadLock();
-            }
+            for (int i = 0; i < _count; i++)
+                yield return _array[(_head + i) % _array.Length];
         }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
