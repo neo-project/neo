@@ -1,5 +1,7 @@
 using Neo.IO.Caching;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
+using Neo.SmartContract.Native;
 using System;
 using System.Threading;
 
@@ -79,6 +81,11 @@ namespace Neo.Ledger
             {
                 readerWriterLock.ExitWriteLock();
             }
+        }
+
+        internal uint GetCurrentIndex(DataCache snapshot)
+        {
+            return Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
         }
     }
 }
