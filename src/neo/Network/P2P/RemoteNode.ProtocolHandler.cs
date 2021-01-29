@@ -275,12 +275,12 @@ namespace Neo.Network.P2P
         private void OnGetHeadersMessageReceived(GetBlockByIndexPayload payload)
         {
             DataCache snapshot = Blockchain.Singleton.View;
-            if (payload.IndexStart > NativeContract.Ledger.CurrentIndex(snapshot)) return;
+            if (payload.IndexStart > Blockchain.Singleton.HeaderHeight(snapshot)) return;
             List<Header> headers = new List<Header>();
             uint count = payload.Count == -1 ? HeadersPayload.MaxHeadersCount : (uint)payload.Count;
             for (uint i = 0; i < count; i++)
             {
-                var header = NativeContract.Ledger.GetHeader(snapshot, payload.IndexStart + i);
+                var header = Blockchain.Singleton.GetHeader(payload.IndexStart + i, snapshot);
                 if (header == null) break;
                 headers.Add(header);
             }
