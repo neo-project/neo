@@ -4,6 +4,7 @@ using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -63,6 +64,15 @@ namespace Neo.SmartContract.Native
             Manifest.Abi.Events = events.ToArray();
         }
 
+        private static void Check(byte[] script, ContractAbi abi)
+        {
+            Script s = new Script(script, true);
+            foreach (ContractMethodDescriptor method in abi.Methods)
+                s.GetInstruction(method.Offset);
+            abi.GetMethod(string.Empty, 0); // Trigger the construction of ContractAbi.methodDictionary to check the uniqueness of the method names.
+            _ = abi.Events.ToDictionary(p => p.Name); // Check the uniqueness of the event names.
+        }
+
         private int GetNextAvailableId(DataCache snapshot)
         {
             StorageItem item = snapshot.GetAndChange(CreateStorageKey(Prefix_NextAvailableId));
@@ -74,7 +84,7 @@ namespace Neo.SmartContract.Native
         internal override void Initialize(ApplicationEngine engine)
         {
             engine.Snapshot.Add(CreateStorageKey(Prefix_MinimumDeploymentFee), new StorageItem(10_00000000));
-            engine.Snapshot.Add(CreateStorageKey(Prefix_NextAvailableId), new StorageItem(0));
+            engine.Snapshot.Add(CreateStorageKey(Prefix_NextAvailableId), new StorageItem(1));
         }
 
         internal override void OnPersist(ApplicationEngine engine)
@@ -143,8 +153,7 @@ namespace Neo.SmartContract.Native
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
             ContractManifest parsedManifest = ContractManifest.Parse(manifest);
-            if (!Helper.Check(nef.Script, parsedManifest.Abi))
-                throw new FormatException();
+            Check(nef.Script, parsedManifest.Abi);
             UInt160 hash = Helper.GetContractHash(tx.Sender, nef.CheckSum, parsedManifest.Name);
             StorageKey key = CreateStorageKey(Prefix_Contract).Add(hash);
             if (engine.Snapshot.Contains(key))
@@ -208,8 +217,7 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.Hash}");
                 contract.Manifest = manifest_new;
             }
-            if (!Helper.Check(contract.Nef.Script, contract.Manifest.Abi))
-                throw new FormatException();
+            Check(contract.Nef.Script, contract.Manifest.Abi);
             contract.UpdateCounter++; // Increase update counter
             if (nefFile != null)
             {

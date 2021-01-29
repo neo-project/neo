@@ -357,14 +357,9 @@ namespace Neo.SmartContract
 
         public static ApplicationEngine Run(byte[] script, DataCache snapshot = null, IVerifiable container = null, Block persistingBlock = null, int offset = 0, long gas = TestModeGas)
         {
-            SnapshotCache disposable = null;
-            if (snapshot is null)
-            {
-                disposable = Blockchain.Singleton.GetSnapshot();
-                snapshot = disposable;
-            }
-            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, persistingBlock ?? CreateDummyBlock(snapshot), gas);
-            if (disposable != null) engine.Disposables.Add(disposable);
+            snapshot ??= Blockchain.Singleton.View;
+            persistingBlock ??= CreateDummyBlock(snapshot);
+            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, persistingBlock, gas);
             engine.LoadScript(script, initialPosition: offset);
             engine.Execute();
             return engine;

@@ -151,7 +151,7 @@ namespace Neo.UnitTests.SmartContract
                 Witness = new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] }
             };
             BlocksAdd(snapshot2, index2, block2);
-            Header header2 = new Header() { PrevHash = index2, Witness = new Witness { VerificationScript = new byte[0] } };
+            Header header2 = new Header() { PrevHash = index2, Witness = new Witness { InvocationScript = new byte[0], VerificationScript = new byte[0] } };
 
             snapshot2.AddContract(UInt160.Zero, new ContractState());
             snapshot2.DeleteContract(UInt160.Zero);
