@@ -80,5 +80,18 @@ namespace Neo.Ledger
                 readerWriterLock.ExitWriteLock();
             }
         }
+
+        public Header[] GetSnapshot()
+        {
+            readerWriterLock.EnterReadLock();
+            try
+            {
+                return headers.ToArray();
+            }
+            finally
+            {
+                readerWriterLock.ExitReadLock();
+            }
+        }
     }
 }
