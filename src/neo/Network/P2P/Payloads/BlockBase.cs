@@ -117,7 +117,6 @@ namespace Neo.Network.P2P.Payloads
         {
             var prev = Blockchain.Singleton.HeaderCache[Index - 1] ?? NativeContract.Ledger.GetHeader(snapshot, Index - 1);
             if (prev is null) return false;
-            if (prev.Index + 1 != Index) return false;
             if (prev.Hash != PrevHash) return false;
             if (prev.Timestamp >= Timestamp) return false;
             if (!this.VerifyWitnesses(snapshot, 1_00000000)) return false;
