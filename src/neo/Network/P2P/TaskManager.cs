@@ -63,8 +63,10 @@ namespace Neo.Network.P2P
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
-            // Do not accept payload of type InventoryType.TX if not synced on best known HeaderHeight
-            if (payload.Type == InventoryType.TX && NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View) < sessions.Values.Max(p => p.LastBlockIndex))
+            // Do not accept payload of type InventoryType.TX if not synced on HeaderHeight
+            uint currentHeight = NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View);
+            uint headerHeight = Blockchain.Singleton.HeaderCache.Last?.Index ?? currentHeight;
+            if (payload.Type == InventoryType.TX && currentHeight < headerHeight)
             {
                 RequestTasks(session);
                 return;
