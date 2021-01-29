@@ -341,7 +341,7 @@ namespace Neo.Wallets
                     Attributes = attributes,
                 };
 
-                // will try to execute 'transfer' script to check if it works
+                // will try to execute 'transfer' script to check if it works 
                 using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.CreateSnapshot(), tx, gas: maxGas))
                 {
                     if (engine.State == VMState.FAULT)
