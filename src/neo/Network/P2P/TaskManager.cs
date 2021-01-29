@@ -228,12 +228,15 @@ namespace Neo.Network.P2P
         private void RequestTasks(TaskSession session)
         {
             if (session.HasTask) return;
+
+            DataCache snapshot = Blockchain.Singleton.View;
+
             // If there are pending tasks of InventoryType.Block we should process them
             if (session.AvailableTasks.Count > 0)
             {
                 session.AvailableTasks.Remove(knownHashes);
                 // Search any similar hash that is on Singleton's knowledge, which means, on the way or already processed
-                session.AvailableTasks.RemoveWhere(p => NativeContract.Ledger.ContainsBlock(Blockchain.Singleton.View, p));
+                session.AvailableTasks.RemoveWhere(p => NativeContract.Ledger.ContainsBlock(snapshot, p));
                 HashSet<UInt256> hashes = new HashSet<UInt256>(session.AvailableTasks);
                 hashes.Remove(MemPoolTaskHash);
                 if (hashes.Count > 0)
@@ -252,11 +255,13 @@ namespace Neo.Network.P2P
                 }
             }
 
-            uint headerHeight = Blockchain.Singleton.HeaderHeight(Blockchain.Singleton.View);
-            uint currentHeight = NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View);
+            Header last = Blockchain.Singleton.HeaderCache.Last;
+            uint headerHeight = last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
+            UInt256 headerHash = last?.Hash ?? NativeContract.Ledger.CurrentHash(snapshot);
+            uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             // When the number of AvailableTasks is no more than 0, no pending tasks of InventoryType.Block, it should process pending the tasks of headers
             // If not HeaderTask pending to be processed it should ask for more Blocks
-            if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks) && headerHeight < session.LastBlockIndex && !Blockchain.Singleton.HeaderCacheFull)
+            if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks) && headerHeight < session.LastBlockIndex && !Blockchain.Singleton.HeaderCache.Full)
             {
                 session.Tasks[HeaderTaskHash] = DateTime.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);
@@ -264,20 +269,17 @@ namespace Neo.Network.P2P
             }
             else if (currentHeight < session.LastBlockIndex)
             {
-                UInt256 hash = NativeContract.Ledger.CurrentHash(Blockchain.Singleton.View);
+                UInt256 hash = NativeContract.Ledger.CurrentHash(snapshot);
                 for (uint i = currentHeight + 1; i <= headerHeight; i++)
                 {
-                    hash = Blockchain.Singleton.GetBlockHash(i, Blockchain.Singleton.View);
-                    if (!globalTasks.ContainsKey(hash))
-                    {
-                        hash = Blockchain.Singleton.GetBlockHash(i - 1, Blockchain.Singleton.View);
-                        break;
-                    }
+                    UInt256 nextHash = Blockchain.Singleton.HeaderCache[i].Hash;
+                    if (!globalTasks.ContainsKey(nextHash)) break;
+                    hash = nextHash;
                 }
                 session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlocks, GetBlocksPayload.Create(hash)));
             }
             else if (headerHeight >= session.LastBlockIndex
-                    && TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= NativeContract.Ledger.GetBlock(Blockchain.Singleton.View, Blockchain.Singleton.CurrentHeaderHash(Blockchain.Singleton.View))?.Timestamp)
+                    && TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= NativeContract.Ledger.GetBlock(snapshot, headerHash)?.Timestamp)
             {
                 if (session.AvailableTasks.Remove(MemPoolTaskHash))
                 {
