@@ -56,7 +56,7 @@ namespace Neo.SmartContract.Native
 
         internal void DistributeGas(ApplicationEngine engine, UInt160 account)
         {
-            StorageItem storage = engine.Snapshot.Storages.TryGet(CreateStorageKey(Prefix_Account).Add(account));
+            StorageItem storage = engine.Snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account));
             if (storage is null) return;
 
             // PersistingBlock is null when running under the debugger

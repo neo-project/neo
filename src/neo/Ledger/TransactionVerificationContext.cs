@@ -41,7 +41,7 @@ namespace Neo.Ledger
             if (oracle != null && oracleResponses.ContainsKey(oracle.Id))
                 return false;
 
-            BigInteger unclaimed = NativeContract.NEO.UnclaimedGas(snapshot, tx.Sender, snapshot.Height);
+            BigInteger unclaimed = NativeContract.NEO.UnclaimedGas(snapshot, tx.Sender, NativeContract.Ledger.CurrentIndex(snapshot));
             return balance + unclaimed >= fee;
         }
 
