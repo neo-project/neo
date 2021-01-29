@@ -153,9 +153,15 @@ namespace Neo.SmartContract.Native
             if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
             string[] names = name.Split('.');
             if (names.Length != 2) throw new ArgumentException(null, nameof(name));
-            if (admin != null && !engine.CheckWitnessInternal(admin)) throw new InvalidOperationException();
             NameState state = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Token).Add(GetKey(Utility.StrictUTF8.GetBytes(name)))).GetInteroperable<NameState>();
-            if (!engine.CheckWitnessInternal(state.Owner)) throw new InvalidOperationException();
+            if (!engine.CheckWitnessInternal(state.Owner))
+            {
+                if (admin != null)
+                {
+                    if (!engine.CheckWitnessInternal(admin)) throw new InvalidOperationException();
+                }
+                else throw new InvalidOperationException();
+            }
             state.Admin = admin;
         }
 
