@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.VM;
 using System;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
@@ -33,7 +34,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 ValidBlockEnd = 789,
                 Sender = Array.Empty<byte>().ToScriptHash(),
                 Data = new byte[] { 1, 2, 3 },
-                Witness = new Witness() { InvocationScript = new byte[] { 3, 5, 6 }, VerificationScript = Array.Empty<byte>() }
+                Witness = new Witness() { InvocationScript = new byte[] { (byte)OpCode.PUSH1, (byte)OpCode.PUSH2, (byte)OpCode.PUSH3 }, VerificationScript = Array.Empty<byte>() }
             };
             var clone = test.ToArray().AsSerializable<ExtensiblePayload>();
 
