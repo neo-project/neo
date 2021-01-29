@@ -228,7 +228,7 @@ namespace Neo.Ledger
         {
             DataCache snapshot = View;
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
-            uint headerHeight = HeaderCache.GetCurrentIndex(snapshot);
+            uint headerHeight = HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
             if (block.Index <= currentHeight)
                 return VerifyResult.AlreadyExists;
             if (block.Index - 1 > headerHeight)
@@ -298,7 +298,7 @@ namespace Neo.Ledger
         {
             if (HeaderCache.Full) return;
             DataCache snapshot = View;
-            uint headerHeight = HeaderCache.GetCurrentIndex(snapshot);
+            uint headerHeight = HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
             foreach (Header header in headers)
             {
                 if (header.Index > headerHeight + 1) break;
