@@ -260,11 +260,8 @@ namespace Neo.Network.P2P
                 }
             }
 
-            Header[] headers = Blockchain.Singleton.HeaderCache.GetSnapshot();
-            Header last = headers.Length > 0 ? headers[^1] : null;
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
-            uint headerHeight = last?.Index ?? currentHeight;
-            UInt256 headerHash = last?.Hash ?? NativeContract.Ledger.CurrentHash(snapshot);
+            uint headerHeight = Blockchain.Singleton.HeaderCache.Last?.Index ?? currentHeight;
             // When the number of AvailableTasks is no more than 0, no pending tasks of InventoryType.Block, it should process pending the tasks of headers
             // If not HeaderTask pending to be processed it should ask for more Blocks
             if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks) && headerHeight < session.LastBlockIndex && !Blockchain.Singleton.HeaderCache.Full)
@@ -276,12 +273,11 @@ namespace Neo.Network.P2P
             else if (currentHeight < session.LastBlockIndex)
             {
                 uint startHeight = currentHeight;
-                for (uint i = 0; i < headers.Length; i++)
+                foreach (Header header in Blockchain.Singleton.HeaderCache)
                 {
-                    if (headers[i].Index <= currentHeight) continue;
-                    UInt256 nextHash = headers[i].Hash;
-                    if (!globalTasks.ContainsKey(nextHash)) break;
-                    startHeight = i;
+                    if (header.Index <= currentHeight) continue;
+                    if (!globalTasks.ContainsKey(header.Hash)) break;
+                    ++startHeight;
                 }
                 remoteNode.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(startHeight)));
             }

@@ -1,11 +1,13 @@
 using Neo.IO.Caching;
 using Neo.Network.P2P.Payloads;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace Neo.Ledger
 {
-    public sealed class HeaderCache : IDisposable
+    public sealed class HeaderCache : IDisposable, IEnumerable<Header>
     {
         private readonly IndexedQueue<Header> headers = new IndexedQueue<Header>();
         private readonly ReaderWriterLockSlim readerWriterLock = new ReaderWriterLockSlim();
@@ -81,17 +83,20 @@ namespace Neo.Ledger
             }
         }
 
-        public Header[] GetSnapshot()
+        public IEnumerator<Header> GetEnumerator()
         {
             readerWriterLock.EnterReadLock();
             try
             {
-                return headers.ToArray();
+                foreach (Header header in headers)
+                    yield return header;
             }
             finally
             {
                 readerWriterLock.ExitReadLock();
             }
         }
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
