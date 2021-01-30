@@ -303,7 +303,7 @@ namespace Neo.Network.P2P
                 UpdateLastBlockIndex(block.Index);
             }
             knownHashes.Add(inventory.Hash);
-            system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash });
+            system.TaskManager.Tell(inventory);
             system.Blockchain.Tell(inventory);
         }
 

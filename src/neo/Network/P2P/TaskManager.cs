@@ -19,7 +19,6 @@ namespace Neo.Network.P2P
         internal class Register { public VersionPayload Version; }
         internal class Update { public uint LastBlockIndex; }
         internal class NewTasks { public InvPayload Payload; }
-        public class TaskCompleted { public UInt256 Hash; }
         public class HeaderTaskCompleted { }
         public class RestartTasks { public InvPayload Payload; }
         private class Timer { }
@@ -110,14 +109,14 @@ namespace Neo.Network.P2P
                 case NewTasks tasks:
                     OnNewTasks(tasks.Payload);
                     break;
-                case TaskCompleted completed:
-                    OnTaskCompleted(completed.Hash);
-                    break;
                 case HeaderTaskCompleted _:
                     OnHeaderTaskCompleted();
                     break;
                 case RestartTasks restart:
                     OnRestartTasks(restart.Payload);
+                    break;
+                case IInventory inventory:
+                    OnTaskCompleted(inventory.Hash);
                     break;
                 case Timer _:
                     OnTimer();
