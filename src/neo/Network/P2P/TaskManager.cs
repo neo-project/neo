@@ -19,7 +19,6 @@ namespace Neo.Network.P2P
         internal class Register { public VersionPayload Version; }
         internal class Update { public uint LastBlockIndex; }
         internal class NewTasks { public InvPayload Payload; }
-        public class HeaderTaskCompleted { }
         public class RestartTasks { public InvPayload Payload; }
         private class Timer { }
 
@@ -49,7 +48,7 @@ namespace Neo.Network.P2P
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
 
-        private void OnHeaderTaskCompleted()
+        private void OnHeaders(Header[] headers)
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
@@ -109,11 +108,11 @@ namespace Neo.Network.P2P
                 case NewTasks tasks:
                     OnNewTasks(tasks.Payload);
                     break;
-                case HeaderTaskCompleted _:
-                    OnHeaderTaskCompleted();
-                    break;
                 case RestartTasks restart:
                     OnRestartTasks(restart.Payload);
+                    break;
+                case Header[] headers:
+                    OnHeaders(headers);
                     break;
                 case IInventory inventory:
                     OnTaskCompleted(inventory.Hash);

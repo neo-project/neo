@@ -305,7 +305,6 @@ namespace Neo.Ledger
                 HeaderCache.Add(header);
                 ++headerHeight;
             }
-            system.TaskManager.Tell(new TaskManager.HeaderTaskCompleted(), Sender);
         }
 
         private VerifyResult OnNewInventory(IInventory inventory)
