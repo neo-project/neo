@@ -52,7 +52,7 @@ namespace Neo.Network.P2P
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
-            RequestTasks(session);
+            RequestTasks(Sender, session);
         }
 
         private void OnHeaders(Header[] _)
@@ -61,7 +61,7 @@ namespace Neo.Network.P2P
                 return;
             session.Tasks.Remove(HeaderTaskHash);
             DecrementGlobalTask(HeaderTaskHash);
-            RequestTasks(session);
+            RequestTasks(Sender, session);
         }
 
         private void OnNewTasks(InvPayload payload)
@@ -73,7 +73,7 @@ namespace Neo.Network.P2P
             uint headerHeight = Blockchain.Singleton.HeaderCache.Last?.Index ?? currentHeight;
             if (payload.Type == InventoryType.TX && currentHeight < headerHeight)
             {
-                RequestTasks(session);
+                RequestTasks(Sender, session);
                 return;
             }
             HashSet<UInt256> hashes = new HashSet<UInt256>(payload.Hashes);
@@ -87,7 +87,7 @@ namespace Neo.Network.P2P
             hashes.Remove(globalTasks);
             if (hashes.Count == 0)
             {
-                RequestTasks(session);
+                RequestTasks(Sender, session);
                 return;
             }
 
@@ -139,11 +139,11 @@ namespace Neo.Network.P2P
         private void OnRegister(VersionPayload version)
         {
             Context.Watch(Sender);
-            TaskSession session = new TaskSession(Sender, version);
+            TaskSession session = new TaskSession(version);
             if (session.IsFullNode)
-                session.AvailableTasks.Add(TaskManager.MemPoolTaskHash);
+                session.AvailableTasks.Add(MemPoolTaskHash);
             sessions.Add(Sender, session);
-            RequestTasks(session);
+            RequestTasks(Sender, session);
         }
 
         private void OnUpdate(Update update)
@@ -171,7 +171,7 @@ namespace Neo.Network.P2P
             if (sessions.TryGetValue(Sender, out TaskSession session))
             {
                 session.Tasks.Remove(hash);
-                RequestTasks(session);
+                RequestTasks(Sender, session);
             }
         }
 
@@ -220,8 +220,8 @@ namespace Neo.Network.P2P
                         if (session.Tasks.Remove(task.Key))
                             DecrementGlobalTask(task.Key);
                     }
-            foreach (TaskSession session in sessions.Values)
-                RequestTasks(session);
+            foreach (var (actor, session) in sessions)
+                RequestTasks(actor, session);
         }
 
         protected override void PostStop()
@@ -235,7 +235,7 @@ namespace Neo.Network.P2P
             return Akka.Actor.Props.Create(() => new TaskManager(system)).WithMailbox("task-manager-mailbox");
         }
 
-        private void RequestTasks(TaskSession session)
+        private void RequestTasks(IActorRef remoteNode, TaskSession session)
         {
             if (session.HasTask) return;
 
@@ -260,7 +260,7 @@ namespace Neo.Network.P2P
                     foreach (UInt256 hash in hashes)
                         session.Tasks[hash] = DateTime.UtcNow;
                     foreach (InvPayload group in InvPayload.CreateGroup(InventoryType.Block, hashes.ToArray()))
-                        session.RemoteNode.Tell(Message.Create(MessageCommand.GetData, group));
+                        remoteNode.Tell(Message.Create(MessageCommand.GetData, group));
                     return;
                 }
             }
@@ -276,7 +276,7 @@ namespace Neo.Network.P2P
             {
                 session.Tasks[HeaderTaskHash] = DateTime.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);
-                session.RemoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlockByIndexPayload.Create(headerHeight)));
+                remoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlockByIndexPayload.Create(headerHeight)));
             }
             else if (currentHeight < session.LastBlockIndex)
             {
@@ -288,14 +288,14 @@ namespace Neo.Network.P2P
                     if (!globalTasks.ContainsKey(nextHash)) break;
                     startHeight = i;
                 }
-                session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(startHeight)));
+                remoteNode.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(startHeight)));
             }
             else if (headerHeight >= session.LastBlockIndex
                     && TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= NativeContract.Ledger.GetBlock(snapshot, headerHash)?.Timestamp)
             {
                 if (session.AvailableTasks.Remove(MemPoolTaskHash))
                 {
-                    session.RemoteNode.Tell(Message.Create(MessageCommand.Mempool));
+                    remoteNode.Tell(Message.Create(MessageCommand.Mempool));
                 }
             }
         }
