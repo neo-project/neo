@@ -8,7 +8,6 @@ namespace Neo.Network.P2P
 {
     internal class TaskSession
     {
-        public readonly VersionPayload Version;
         public readonly Dictionary<UInt256, DateTime> Tasks = new Dictionary<UInt256, DateTime>();
         public readonly HashSet<UInt256> AvailableTasks = new HashSet<UInt256>();
 
@@ -20,7 +19,6 @@ namespace Neo.Network.P2P
         {
             var fullNode = version.Capabilities.OfType<FullNodeCapability>().FirstOrDefault();
             this.IsFullNode = fullNode != null;
-            this.Version = version;
             this.LastBlockIndex = fullNode?.StartHeight ?? 0;
         }
     }
