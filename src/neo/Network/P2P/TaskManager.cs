@@ -258,7 +258,7 @@ namespace Neo.Network.P2P
             }
 
             Header[] headers = Blockchain.Singleton.HeaderCache.GetSnapshot();
-            Header last = headers == null ? null : (headers.Length > 0 ? headers[headers.Length - 1] : null);
+            Header last = headers.Length > 0 ? headers[^1] : null;
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             uint headerHeight = last?.Index ?? currentHeight;
             UInt256 headerHash = last?.Hash ?? NativeContract.Ledger.CurrentHash(snapshot);
