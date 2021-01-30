@@ -297,8 +297,6 @@ namespace Neo.Network.P2P
                 {
                     session.RemoteNode.Tell(Message.Create(MessageCommand.Mempool));
                 }
-
-                session.RemoteNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(currentHeight)));
             }
         }
     }

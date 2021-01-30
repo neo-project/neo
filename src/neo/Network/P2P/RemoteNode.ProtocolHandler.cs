@@ -34,8 +34,6 @@ namespace Neo.Network.P2P
         private BloomFilter bloom_filter;
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
-        private static readonly TimeSpan PendingTimeout = TimeSpan.FromMinutes(1);
-
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
 
         private void OnMessage(Message msg)
@@ -382,15 +380,17 @@ namespace Neo.Network.P2P
             SendMessage(Message.Create(MessageCommand.Verack));
         }
 
-        private void RefreshPendingKnownHashes()
+        private void OnTimer()
         {
+            DateTime oneMinuteAgo = TimeProvider.Current.UtcNow.AddMinutes(-1);
             while (pendingKnownHashes.Count > 0)
             {
                 var (_, time) = pendingKnownHashes[0];
-                if (TimeProvider.Current.UtcNow - time <= PendingTimeout)
-                    break;
+                if (oneMinuteAgo <= time) break;
                 pendingKnownHashes.RemoveAt(0);
             }
+            if (oneMinuteAgo > lastSent)
+                EnqueueMessage(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View))));
         }
 
         private void UpdateLastBlockIndex(uint lastBlockIndex)
