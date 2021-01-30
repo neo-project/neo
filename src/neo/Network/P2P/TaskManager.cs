@@ -48,7 +48,14 @@ namespace Neo.Network.P2P
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
 
-        private void OnHeaders(Header[] headers)
+        private void OnBlock(Block _)
+        {
+            if (!sessions.TryGetValue(Sender, out TaskSession session))
+                return;
+            RequestTasks(session);
+        }
+
+        private void OnHeaders(Header[] _)
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
@@ -110,6 +117,9 @@ namespace Neo.Network.P2P
                     break;
                 case RestartTasks restart:
                     OnRestartTasks(restart.Payload);
+                    break;
+                case Block block:
+                    OnBlock(block);
                     break;
                 case Header[] headers:
                     OnHeaders(headers);
