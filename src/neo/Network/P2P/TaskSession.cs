@@ -13,6 +13,7 @@ namespace Neo.Network.P2P
         public bool HasTask => Tasks.Count > 0;
         public bool IsFullNode { get; }
         public uint LastBlockIndex { get; set; }
+        public bool MempoolSent { get; set; }
 
         public TaskSession(VersionPayload version)
         {

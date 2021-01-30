@@ -24,11 +24,9 @@ namespace Neo.Network.P2P
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private static readonly TimeSpan TaskTimeout = TimeSpan.FromMinutes(1);
-        private static readonly UInt256 MemPoolTaskHash = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000001");
         private static readonly UInt256 HeaderTaskHash = UInt256.Zero;
 
         private const int MaxConncurrentTasks = 3;
-        private const int PingCoolingOffPeriod = 60_000; // in ms.
 
         private readonly NeoSystem system;
         /// <summary>
@@ -140,8 +138,6 @@ namespace Neo.Network.P2P
         {
             Context.Watch(Sender);
             TaskSession session = new TaskSession(version);
-            if (session.IsFullNode)
-                session.AvailableTasks.Add(MemPoolTaskHash);
             sessions.Add(Sender, session);
             RequestTasks(Sender, session);
         }
@@ -248,7 +244,6 @@ namespace Neo.Network.P2P
                 // Search any similar hash that is on Singleton's knowledge, which means, on the way or already processed
                 session.AvailableTasks.RemoveWhere(p => NativeContract.Ledger.ContainsBlock(snapshot, p));
                 HashSet<UInt256> hashes = new HashSet<UInt256>(session.AvailableTasks);
-                hashes.Remove(MemPoolTaskHash);
                 if (hashes.Count > 0)
                 {
                     foreach (UInt256 hash in hashes.ToArray())
@@ -290,13 +285,10 @@ namespace Neo.Network.P2P
                 }
                 remoteNode.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(startHeight)));
             }
-            else if (headerHeight >= session.LastBlockIndex
-                    && TimeProvider.Current.UtcNow.ToTimestampMS() - PingCoolingOffPeriod >= NativeContract.Ledger.GetBlock(snapshot, headerHash)?.Timestamp)
+            else if (!session.MempoolSent)
             {
-                if (session.AvailableTasks.Remove(MemPoolTaskHash))
-                {
-                    remoteNode.Tell(Message.Create(MessageCommand.Mempool));
-                }
+                session.MempoolSent = true;
+                remoteNode.Tell(Message.Create(MessageCommand.Mempool));
             }
         }
     }
