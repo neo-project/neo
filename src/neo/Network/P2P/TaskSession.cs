@@ -8,6 +8,7 @@ namespace Neo.Network.P2P
 {
     internal class TaskSession
     {
+        public readonly Dictionary<uint, DateTime> IndexTasks = new Dictionary<uint, DateTime>();
         public Dictionary<UInt256, DateTime> Tasks { get; } = new Dictionary<UInt256, DateTime>();
         public HashSet<UInt256> AvailableTasks { get; } = new HashSet<UInt256>();
         public bool HasTask => Tasks.Count > 0;

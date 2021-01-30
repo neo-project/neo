@@ -46,11 +46,15 @@ namespace Neo.Network.P2P
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
 
-        private void OnBlock(Block _)
+        private void OnBlock(Block block)
         {
-            if (!sessions.TryGetValue(Sender, out TaskSession session))
+            foreach (var session in sessions.Values)
+            {
+                session.IndexTasks.Remove(block.Index);
+            }
+            if (!sessions.TryGetValue(Sender, out TaskSession senderSession))
                 return;
-            RequestTasks(Sender, session);
+            RequestTasks(Sender, senderSession);
         }
 
         private void OnHeaders(Header[] _)
@@ -279,7 +283,11 @@ namespace Neo.Network.P2P
                     if (!globalTasks.ContainsKey(header.Hash)) break;
                     ++startHeight;
                 }
-                remoteNode.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(startHeight)));
+                if (!sessions.Values.Any(p => p.IndexTasks.ContainsKey(startHeight) && p.IndexTasks[startHeight].AddSeconds(5) > TimeProvider.Current.UtcNow))
+                {
+                    session.IndexTasks[startHeight] = TimeProvider.Current.UtcNow;
+                    remoteNode.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(startHeight)));
+                }
             }
             else if (!session.MempoolSent)
             {
