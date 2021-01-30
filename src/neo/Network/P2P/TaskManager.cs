@@ -257,7 +257,8 @@ namespace Neo.Network.P2P
                 }
             }
 
-            Header last = Blockchain.Singleton.HeaderCache.Last;
+            Header[] headers = Blockchain.Singleton.HeaderCache.GetSnapshot();
+            Header last = headers == null ? null : (headers.Length > 0 ? headers[headers.Length - 1] : null);
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             uint headerHeight = last?.Index ?? currentHeight;
             UInt256 headerHash = last?.Hash ?? NativeContract.Ledger.CurrentHash(snapshot);
@@ -272,10 +273,11 @@ namespace Neo.Network.P2P
             else if (currentHeight < session.LastBlockIndex)
             {
                 uint startHeight = currentHeight;
-                for (uint i = currentHeight + 1; i <= headerHeight; i++)
+                for (uint i = 0; i < headers.Length; i++)
                 {
-                    UInt256 nextHash = Blockchain.Singleton.HeaderCache[i]?.Hash;
-                    if (nextHash is null || !globalTasks.ContainsKey(nextHash)) break;
+                    if (headers[i].Index <= currentHeight) continue;
+                    UInt256 nextHash = headers[i].Hash;
+                    if (!globalTasks.ContainsKey(nextHash)) break;
                     startHeight = i;
                 }
                 session.RemoteNode.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(startHeight)));
