@@ -15,7 +15,6 @@ namespace Neo.Network.P2P
         public readonly HashSet<UInt256> AvailableTasks = new HashSet<UInt256>();
 
         public bool HasTask => Tasks.Count > 0;
-        public uint StartHeight { get; }
         public bool IsFullNode { get; }
         public uint LastBlockIndex { get; set; }
 
@@ -25,8 +24,7 @@ namespace Neo.Network.P2P
             this.IsFullNode = fullNode != null;
             this.RemoteNode = node;
             this.Version = version;
-            this.StartHeight = fullNode?.StartHeight ?? 0;
-            this.LastBlockIndex = this.StartHeight;
+            this.LastBlockIndex = fullNode?.StartHeight ?? 0;
         }
     }
 }

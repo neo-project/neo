@@ -16,7 +16,6 @@ namespace Neo.UnitTests.Network.P2P
 
             Assert.IsNull(ses.RemoteNode);
             Assert.IsFalse(ses.HasTask);
-            Assert.AreEqual((uint)123, ses.StartHeight);
             Assert.AreEqual((uint)123, ses.LastBlockIndex);
             Assert.IsTrue(ses.IsFullNode);
 
@@ -24,7 +23,6 @@ namespace Neo.UnitTests.Network.P2P
 
             Assert.IsNull(ses.RemoteNode);
             Assert.IsFalse(ses.HasTask);
-            Assert.AreEqual((uint)0, ses.StartHeight);
             Assert.AreEqual((uint)0, ses.LastBlockIndex);
             Assert.IsFalse(ses.IsFullNode);
         }
