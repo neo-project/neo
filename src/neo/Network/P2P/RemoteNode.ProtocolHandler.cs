@@ -290,6 +290,7 @@ namespace Neo.Network.P2P
 
         private void OnHeadersMessageReceived(HeadersPayload payload)
         {
+            UpdateLastBlockIndex(payload.Headers[^1].Index);
             system.Blockchain.Tell(payload.Headers);
         }
 
