@@ -95,6 +95,18 @@ namespace Neo.Network.P2P
                 case MessageCommand.Mempool:
                     message_queue = message_queue_high;
                     break;
+                case MessageCommand.Inv:
+                    {
+                        if (message.Payload is IInventory inv && inv.InventoryType == InventoryType.Block)
+                        {
+                            message_queue = message_queue_high;
+                        }
+                        else
+                        {
+                            message_queue = message_queue_low;
+                        }
+                        break;
+                    }
                 default:
                     message_queue = message_queue_low;
                     break;
@@ -231,6 +243,8 @@ namespace Neo.Network.P2P
                         case MessageCommand.Version:
                         case MessageCommand.Alert:
                             return true;
+                        case MessageCommand.Inv:
+                            return msg.Payload is IInventory inv && inv.InventoryType == InventoryType.Block;
                         default:
                             return false;
                     }
