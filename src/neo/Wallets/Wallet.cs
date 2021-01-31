@@ -132,6 +132,7 @@ namespace Neo.Wallets
 
         public BigDecimal GetBalance(UInt160 asset_id, params UInt160[] accounts)
         {
+            bool isGas = asset_id == NativeContract.GAS.Hash;
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
@@ -140,6 +141,12 @@ namespace Neo.Wallets
                 {
                     sb.EmitDynamicCall(asset_id, "balanceOf", account);
                     sb.Emit(OpCode.ADD);
+                    if (isGas)
+                    {
+                        // add unclaimed gas
+                        sb.EmitDynamicCall(NativeContract.NEO.Hash, "unclaimedGas", account, NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View));
+                        sb.Emit(OpCode.ADD);
+                    }
                 }
                 sb.EmitDynamicCall(asset_id, "decimals");
                 script = sb.ToArray();
@@ -260,11 +267,19 @@ namespace Neo.Wallets
             {
                 foreach (var (assetId, group, sum) in outputs.GroupBy(p => p.AssetId, (k, g) => (k, g, g.Select(p => p.Value.Value).Sum())))
                 {
+                    var isGas = assetId == NativeContract.GAS.Hash;
                     var balances = new List<(UInt160 Account, BigInteger Value)>();
                     foreach (UInt160 account in accounts)
                         using (ScriptBuilder sb2 = new ScriptBuilder())
                         {
                             sb2.EmitDynamicCall(assetId, "balanceOf", account);
+                            if (isGas)
+                            {
+                                // add unclaimed gas
+                                sb2.EmitDynamicCall(NativeContract.NEO.Hash, "unclaimedGas", account, NativeContract.Ledger.CurrentIndex(snapshot));
+                                sb2.Emit(OpCode.ADD);
+                            }
+
                             using (ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot))
                             {
                                 if (engine.State.HasFlag(VMState.FAULT))
