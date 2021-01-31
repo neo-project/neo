@@ -260,13 +260,12 @@ namespace Neo.Ledger
                 }
 
                 int blocksPersisted = 0;
+                // 15000 is the default among of seconds per block, while MilliSecondsPerBlock is the current
+                uint extraBlocks = (ProtocolSettings.Default.MillisecondsPerBlock - MillisecondsPerBlock) / 1000;
                 foreach (Block blockToPersist in blocksToPersistList)
                 {
                     block_cache_unverified.Remove(blockToPersist.Index);
                     Persist(blockToPersist);
-
-                    // 15000 is the default among of seconds per block, while MilliSecondsPerBlock is the current
-                    uint extraBlocks = (ProtocolSettings.Default.MillisecondsPerBlock - MillisecondsPerBlock) / 1000;
 
                     if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, extraBlocks))) continue;
                     // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
