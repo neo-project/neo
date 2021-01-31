@@ -1,5 +1,4 @@
 using Akka.TestKit.Xunit2;
-using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Ledger;
@@ -12,7 +11,6 @@ using Neo.Wallets.NEP6;
 using System;
 using System.Linq;
 using System.Numerics;
-using System.Reflection;
 
 namespace Neo.UnitTests.Ledger
 {
@@ -63,12 +61,6 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
-        public void TestGetCurrentBlockHash()
-        {
-            Blockchain.Singleton.CurrentBlockHash.Should().Be(UInt256.Parse("0x00c6803707b564153d444bfcdf3a13325fc96dda55cc8a740bbd543a1d752fda"));
-        }
-
-        [TestMethod]
         public void TestValidTransaction()
         {
             var senderProbe = CreateTestProbe();
@@ -84,10 +76,6 @@ namespace Neo.UnitTests.Ledger
             var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
             snapshot.Commit();
-
-            typeof(Blockchain)
-                .GetMethod("UpdateCurrentSnapshot", BindingFlags.Instance | BindingFlags.NonPublic)
-                .Invoke(Blockchain.Singleton, null);
 
             // Make transaction
 

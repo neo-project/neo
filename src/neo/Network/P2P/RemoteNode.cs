@@ -7,6 +7,7 @@ using Neo.IO.Actors;
 using Neo.Ledger;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract.Native;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -173,7 +174,7 @@ namespace Neo.Network.P2P
         {
             var capabilities = new List<NodeCapability>
             {
-                new FullNodeCapability(Blockchain.Singleton.Height)
+                new FullNodeCapability(NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View))
             };
 
             if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));

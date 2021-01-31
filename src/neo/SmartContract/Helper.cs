@@ -188,12 +188,20 @@ namespace Neo.SmartContract
         internal static bool VerifyWitness(this IVerifiable verifiable, DataCache snapshot, UInt160 hash, Witness witness, long gas, out long fee)
         {
             fee = 0;
+            Script invocationScript;
+            try
+            {
+                invocationScript = new Script(witness.InvocationScript, true);
+            }
+            catch (BadScriptException)
+            {
+                return false;
+            }
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CreateSnapshot(), null, gas))
             {
                 CallFlags callFlags = !witness.VerificationScript.IsStandardContract() ? CallFlags.ReadStates : CallFlags.None;
-                byte[] verification = witness.VerificationScript;
 
-                if (verification.Length == 0)
+                if (witness.VerificationScript.Length == 0)
                 {
                     ContractState cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (cs is null) return false;
@@ -205,14 +213,23 @@ namespace Neo.SmartContract
                 {
                     if (NativeContract.IsNative(hash)) return false;
                     if (hash != witness.ScriptHash) return false;
-                    engine.LoadScript(verification, initialPosition: 0, configureState: p =>
+                    Script verificationScript;
+                    try
+                    {
+                        verificationScript = new Script(witness.VerificationScript, true);
+                    }
+                    catch (BadScriptException)
+                    {
+                        return false;
+                    }
+                    engine.LoadScript(verificationScript, initialPosition: 0, configureState: p =>
                     {
                         p.CallFlags = callFlags;
                         p.ScriptHash = hash;
                     });
                 }
 
-                engine.LoadScript(witness.InvocationScript, configureState: p => p.CallFlags = CallFlags.None);
+                engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
 
                 if (NativeContract.IsNative(hash))
                 {

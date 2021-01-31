@@ -5,7 +5,7 @@ using System;
 
 namespace Neo.SmartContract.Manifest
 {
-    public class ContractPermissionDescriptor
+    public class ContractPermissionDescriptor : IEquatable<ContractPermissionDescriptor>
     {
         public UInt160 Hash { get; }
         public ECPoint Group { get; }
@@ -48,6 +48,26 @@ namespace Neo.SmartContract.Manifest
         public static ContractPermissionDescriptor CreateWildcard()
         {
             return new ContractPermissionDescriptor(null, null);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is not ContractPermissionDescriptor other) return false;
+            return Equals(other);
+        }
+
+        public bool Equals(ContractPermissionDescriptor other)
+        {
+            if (other is null) return false;
+            if (this == other) return true;
+            if (IsWildcard == other.IsWildcard) return true;
+            if (IsHash) return Hash.Equals(other.Hash);
+            else return Group.Equals(other.Group);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Hash, Group);
         }
 
         public static ContractPermissionDescriptor FromJson(JObject json)

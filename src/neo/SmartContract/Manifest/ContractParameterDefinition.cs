@@ -37,11 +37,16 @@ namespace Neo.SmartContract.Manifest
         /// <returns>Return ContractParameterDefinition</returns>
         public static ContractParameterDefinition FromJson(JObject json)
         {
-            return new ContractParameterDefinition
+            ContractParameterDefinition parameter = new ContractParameterDefinition
             {
                 Name = json["name"].AsString(),
                 Type = (ContractParameterType)Enum.Parse(typeof(ContractParameterType), json["type"].AsString()),
             };
+            if (string.IsNullOrEmpty(parameter.Name))
+                throw new FormatException();
+            if (!Enum.IsDefined(parameter.Type) || parameter.Type == ContractParameterType.Void)
+                throw new FormatException();
+            return parameter;
         }
 
         public virtual JObject ToJson()

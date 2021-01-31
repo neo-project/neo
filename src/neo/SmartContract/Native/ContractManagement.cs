@@ -4,6 +4,7 @@ using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -63,9 +64,18 @@ namespace Neo.SmartContract.Native
             Manifest.Abi.Events = events.ToArray();
         }
 
+        private static void Check(byte[] script, ContractAbi abi)
+        {
+            Script s = new Script(script, true);
+            foreach (ContractMethodDescriptor method in abi.Methods)
+                s.GetInstruction(method.Offset);
+            abi.GetMethod(string.Empty, 0); // Trigger the construction of ContractAbi.methodDictionary to check the uniqueness of the method names.
+            _ = abi.Events.ToDictionary(p => p.Name); // Check the uniqueness of the event names.
+        }
+
         private int GetNextAvailableId(DataCache snapshot)
         {
-            StorageItem item = snapshot.GetAndChange(CreateStorageKey(Prefix_NextAvailableId), () => new StorageItem(1));
+            StorageItem item = snapshot.GetAndChange(CreateStorageKey(Prefix_NextAvailableId));
             int value = (int)(BigInteger)item;
             item.Add(1);
             return value;
@@ -74,6 +84,7 @@ namespace Neo.SmartContract.Native
         internal override void Initialize(ApplicationEngine engine)
         {
             engine.Snapshot.Add(CreateStorageKey(Prefix_MinimumDeploymentFee), new StorageItem(10_00000000));
+            engine.Snapshot.Add(CreateStorageKey(Prefix_NextAvailableId), new StorageItem(1));
         }
 
         internal override void OnPersist(ApplicationEngine engine)
@@ -132,7 +143,7 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException();
             if (nefFile.Length == 0)
                 throw new ArgumentException($"Invalid NefFile Length: {nefFile.Length}");
-            if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
+            if (manifest.Length == 0)
                 throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
 
             engine.AddGas(Math.Max(
@@ -142,6 +153,7 @@ namespace Neo.SmartContract.Native
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
             ContractManifest parsedManifest = ContractManifest.Parse(manifest);
+            Check(nef.Script, parsedManifest.Abi);
             UInt160 hash = Helper.GetContractHash(tx.Sender, nef.CheckSum, parsedManifest.Name);
             StorageKey key = CreateStorageKey(Prefix_Contract).Add(hash);
             if (engine.Snapshot.Contains(key))
@@ -196,7 +208,7 @@ namespace Neo.SmartContract.Native
             }
             if (manifest != null)
             {
-                if (manifest.Length == 0 || manifest.Length > ContractManifest.MaxLength)
+                if (manifest.Length == 0)
                     throw new ArgumentException($"Invalid Manifest Length: {manifest.Length}");
                 ContractManifest manifest_new = ContractManifest.Parse(manifest);
                 if (manifest_new.Name != contract.Manifest.Name)
@@ -205,6 +217,7 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.Hash}");
                 contract.Manifest = manifest_new;
             }
+            Check(contract.Nef.Script, contract.Manifest.Abi);
             contract.UpdateCounter++; // Increase update counter
             if (nefFile != null)
             {
