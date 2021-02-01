@@ -106,6 +106,12 @@ namespace Neo.UnitTests.SmartContract.Native
             setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "256.0.0.0", from, persistingBlock);
             setRecord_ret.Should().BeFalse();
 
+            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "01.01.01.01", from, persistingBlock);
+            setRecord_ret.Should().BeFalse();
+
+            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "00.0.0.0", from, persistingBlock);
+            setRecord_ret.Should().BeFalse();
+
             setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "0.0.0.-1", from, persistingBlock);
             setRecord_ret.Should().BeFalse();
 
