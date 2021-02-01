@@ -46,17 +46,6 @@ namespace Neo.Network.P2P
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
 
-        private void OnBlock(Block block)
-        {
-            foreach (var session in sessions.Values)
-            {
-                session.IndexTasks.Remove(block.Index);
-            }
-            if (!sessions.TryGetValue(Sender, out TaskSession senderSession))
-                return;
-            RequestTasks(Sender, senderSession);
-        }
-
         private void OnHeaders(Header[] _)
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
@@ -120,14 +109,11 @@ namespace Neo.Network.P2P
                 case RestartTasks restart:
                     OnRestartTasks(restart.Payload);
                     break;
-                case Block block:
-                    OnBlock(block);
-                    break;
                 case Header[] headers:
                     OnHeaders(headers);
                     break;
                 case IInventory inventory:
-                    OnTaskCompleted(inventory.Hash);
+                    OnTaskCompleted(inventory);
                     break;
                 case Timer _:
                     OnTimer();
@@ -162,15 +148,17 @@ namespace Neo.Network.P2P
                 system.LocalNode.Tell(Message.Create(MessageCommand.GetData, group));
         }
 
-        private void OnTaskCompleted(UInt256 hash)
+        private void OnTaskCompleted(IInventory inventory)
         {
-            knownHashes.Add(hash);
-            globalTasks.Remove(hash);
+            knownHashes.Add(inventory.Hash);
+            globalTasks.Remove(inventory.Hash);
             foreach (TaskSession ms in sessions.Values)
-                ms.AvailableTasks.Remove(hash);
+                ms.AvailableTasks.Remove(inventory.Hash);
             if (sessions.TryGetValue(Sender, out TaskSession session))
             {
-                session.InvTasks.Remove(hash);
+                session.InvTasks.Remove(inventory.Hash);
+                if (inventory is Block block)
+                    session.IndexTasks.Remove(block.Index);
                 RequestTasks(Sender, session);
             }
         }
