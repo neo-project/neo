@@ -16,6 +16,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 
@@ -435,7 +436,8 @@ namespace Neo.Ledger
             }
             block_cache.TryRemove(block.PrevHash, out _);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
-            HeaderCache.TryRemoveFirst();
+            if (HeaderCache.TryRemoveFirst(out Header header))
+                Debug.Assert(header.Index == block.Index);
         }
 
         public static Props Props(NeoSystem system, IStore store)

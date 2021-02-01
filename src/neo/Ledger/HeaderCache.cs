@@ -70,12 +70,12 @@ namespace Neo.Ledger
             }
         }
 
-        internal void TryRemoveFirst()
+        internal bool TryRemoveFirst(out Header header)
         {
             readerWriterLock.EnterWriteLock();
             try
             {
-                headers.TryDequeue(out _);
+                return headers.TryDequeue(out header);
             }
             finally
             {
