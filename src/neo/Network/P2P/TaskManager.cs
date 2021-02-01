@@ -86,7 +86,7 @@ namespace Neo.Network.P2P
             foreach (UInt256 hash in hashes)
             {
                 IncrementGlobalTask(hash);
-                session.InvTasks[hash] = DateTime.UtcNow;
+                session.InvTasks[hash] = TimeProvider.Current.UtcNow;
             }
 
             foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, hashes.ToArray()))
