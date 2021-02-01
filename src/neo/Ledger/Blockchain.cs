@@ -371,7 +371,6 @@ namespace Neo.Ledger
         {
             using (SnapshotCache snapshot = GetSnapshot())
             {
-                HeaderCache.TryRemoveFirst();
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block))
                 {
@@ -436,6 +435,7 @@ namespace Neo.Ledger
             }
             block_cache.TryRemove(block.PrevHash, out _);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
+            HeaderCache.TryRemoveFirst();
         }
 
         public static Props Props(NeoSystem system, IStore store)
