@@ -33,10 +33,12 @@ namespace Neo.Network.P2P
         /// A set of known hashes, of inventories or payloads, already received.
         /// </summary>
         private readonly HashSetCache<UInt256> knownHashes;
-        private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
+        private readonly Dictionary<UInt256, int> globalInvTasks = new Dictionary<UInt256, int>();
+        private readonly Dictionary<uint, int> globalIndexTasks = new Dictionary<uint, int>();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
-        private bool HasHeaderTask => globalTasks.ContainsKey(HeaderTaskHash);
+
+        private bool HasHeaderTask => globalInvTasks.ContainsKey(HeaderTaskHash);
 
         public TaskManager(NeoSystem system)
         {
@@ -50,8 +52,8 @@ namespace Neo.Network.P2P
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
-            session.InvTasks.Remove(HeaderTaskHash);
-            DecrementGlobalTask(HeaderTaskHash);
+            if (session.InvTasks.Remove(HeaderTaskHash))
+                DecrementGlobalTask(HeaderTaskHash);
             RequestTasks(Sender, session);
         }
 
@@ -72,10 +74,10 @@ namespace Neo.Network.P2P
             hashes.Remove(knownHashes);
             // Add to AvailableTasks the ones, of type InventoryType.Block, that are global (already under process by other sessions)
             if (payload.Type == InventoryType.Block)
-                session.AvailableTasks.UnionWith(hashes.Where(p => globalTasks.ContainsKey(p)));
+                session.AvailableTasks.UnionWith(hashes.Where(p => globalInvTasks.ContainsKey(p)));
 
             // Remove those that are already in process by other sessions
-            hashes.Remove(globalTasks);
+            hashes.Remove(globalInvTasks);
             if (hashes.Count == 0)
             {
                 RequestTasks(Sender, session);
@@ -143,21 +145,24 @@ namespace Neo.Network.P2P
         {
             knownHashes.ExceptWith(payload.Hashes);
             foreach (UInt256 hash in payload.Hashes)
-                globalTasks.Remove(hash);
+                globalInvTasks.Remove(hash);
             foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, payload.Hashes))
                 system.LocalNode.Tell(Message.Create(MessageCommand.GetData, group));
         }
 
         private void OnTaskCompleted(IInventory inventory)
         {
+            Block block = inventory as Block;
             knownHashes.Add(inventory.Hash);
-            globalTasks.Remove(inventory.Hash);
+            globalInvTasks.Remove(inventory.Hash);
+            if (block is not null)
+                globalIndexTasks.Remove(block.Index);
             foreach (TaskSession ms in sessions.Values)
                 ms.AvailableTasks.Remove(inventory.Hash);
             if (sessions.TryGetValue(Sender, out TaskSession session))
             {
                 session.InvTasks.Remove(inventory.Hash);
-                if (inventory is Block block)
+                if (block is not null)
                     session.IndexTasks.Remove(block.Index);
                 RequestTasks(Sender, session);
             }
@@ -166,27 +171,54 @@ namespace Neo.Network.P2P
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void DecrementGlobalTask(UInt256 hash)
         {
-            if (globalTasks.TryGetValue(hash, out var value))
+            if (globalInvTasks.TryGetValue(hash, out var value))
             {
                 if (value == 1)
-                    globalTasks.Remove(hash);
+                    globalInvTasks.Remove(hash);
                 else
-                    globalTasks[hash] = value - 1;
+                    globalInvTasks[hash] = value - 1;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void DecrementGlobalTask(uint index)
+        {
+            if (globalIndexTasks.TryGetValue(index, out var value))
+            {
+                if (value == 1)
+                    globalIndexTasks.Remove(index);
+                else
+                    globalIndexTasks[index] = value - 1;
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool IncrementGlobalTask(UInt256 hash)
         {
-            if (!globalTasks.TryGetValue(hash, out var value))
+            if (!globalInvTasks.TryGetValue(hash, out var value))
             {
-                globalTasks[hash] = 1;
+                globalInvTasks[hash] = 1;
                 return true;
             }
             if (value >= MaxConncurrentTasks)
                 return false;
 
-            globalTasks[hash] = value + 1;
+            globalInvTasks[hash] = value + 1;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool IncrementGlobalTask(uint index)
+        {
+            if (!globalIndexTasks.TryGetValue(index, out var value))
+            {
+                globalIndexTasks[index] = 1;
+                return true;
+            }
+            if (value >= MaxConncurrentTasks)
+                return false;
+
+            globalIndexTasks[index] = value + 1;
             return true;
         }
 
@@ -196,18 +228,28 @@ namespace Neo.Network.P2P
                 return;
             foreach (UInt256 hash in session.InvTasks.Keys)
                 DecrementGlobalTask(hash);
+            foreach (uint index in session.IndexTasks.Keys)
+                DecrementGlobalTask(index);
             sessions.Remove(actor);
         }
 
         private void OnTimer()
         {
             foreach (TaskSession session in sessions.Values)
-                foreach (var task in session.InvTasks.ToArray())
-                    if (TimeProvider.Current.UtcNow - task.Value > TaskTimeout)
+            {
+                foreach (var (hash, time) in session.InvTasks.ToArray())
+                    if (TimeProvider.Current.UtcNow - time > TaskTimeout)
                     {
-                        if (session.InvTasks.Remove(task.Key))
-                            DecrementGlobalTask(task.Key);
+                        if (session.InvTasks.Remove(hash))
+                            DecrementGlobalTask(hash);
                     }
+                foreach (var (index, time) in session.IndexTasks.ToArray())
+                    if (TimeProvider.Current.UtcNow - time > TaskTimeout)
+                    {
+                        if (session.IndexTasks.Remove(index))
+                            DecrementGlobalTask(index);
+                    }
+            }
             foreach (var (actor, session) in sessions)
                 RequestTasks(actor, session);
         }
@@ -256,7 +298,7 @@ namespace Neo.Network.P2P
             uint headerHeight = Blockchain.Singleton.HeaderCache.Last?.Index ?? currentHeight;
             // When the number of AvailableTasks is no more than 0, no pending tasks of InventoryType.Block, it should process pending the tasks of headers
             // If not HeaderTask pending to be processed it should ask for more Blocks
-            if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks) && headerHeight < session.LastBlockIndex && !Blockchain.Singleton.HeaderCache.Full)
+            if ((!HasHeaderTask || globalInvTasks[HeaderTaskHash] < MaxConncurrentTasks) && headerHeight < session.LastBlockIndex && !Blockchain.Singleton.HeaderCache.Full)
             {
                 session.InvTasks[HeaderTaskHash] = DateTime.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);
@@ -265,19 +307,16 @@ namespace Neo.Network.P2P
             else if (currentHeight < session.LastBlockIndex)
             {
                 uint startHeight = currentHeight;
-                foreach (Header header in Blockchain.Singleton.HeaderCache)
+                while (globalIndexTasks.ContainsKey(++startHeight)) { }
+                uint endHeight = startHeight;
+                while (!globalIndexTasks.ContainsKey(++endHeight) && endHeight <= session.LastBlockIndex) { }
+                uint count = Math.Min(endHeight - startHeight, HeadersPayload.MaxHeadersCount);
+                for (uint i = 0; i < count; i++)
                 {
-                    if (header.Index <= currentHeight) continue;
-                    if (!globalTasks.ContainsKey(header.Hash)) break;
-                    ++startHeight;
+                    session.IndexTasks[startHeight + i] = TimeProvider.Current.UtcNow;
+                    IncrementGlobalTask(startHeight + i);
                 }
-                if (!sessions.Values.Any(p => p.IndexTasks.ContainsKey(startHeight) && p.IndexTasks[startHeight].AddSeconds(5) > TimeProvider.Current.UtcNow))
-                {
-                    short count = 0;
-                    for (uint i = startHeight; i <= session.LastBlockIndex && count < HeadersPayload.MaxHeadersCount; i++, count++)
-                        session.IndexTasks[i] = TimeProvider.Current.UtcNow;
-                    remoteNode.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(startHeight, count)));
-                }
+                remoteNode.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(startHeight, (short)count)));
             }
             else if (!session.MempoolSent)
             {
