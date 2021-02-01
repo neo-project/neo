@@ -273,8 +273,10 @@ namespace Neo.Network.P2P
                 }
                 if (!sessions.Values.Any(p => p.IndexTasks.ContainsKey(startHeight) && p.IndexTasks[startHeight].AddSeconds(5) > TimeProvider.Current.UtcNow))
                 {
-                    session.IndexTasks[startHeight] = TimeProvider.Current.UtcNow;
-                    remoteNode.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(startHeight)));
+                    for (uint i = startHeight; i < session.LastBlockIndex; i++)
+                        session.IndexTasks[i] = TimeProvider.Current.UtcNow;
+                    short count = (short)(session.LastBlockIndex - startHeight);
+                    remoteNode.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(startHeight, count)));
                 }
             }
             else if (!session.MempoolSent)
