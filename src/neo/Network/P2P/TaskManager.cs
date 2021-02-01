@@ -308,6 +308,7 @@ namespace Neo.Network.P2P
             {
                 uint startHeight = currentHeight;
                 while (globalIndexTasks.ContainsKey(++startHeight)) { }
+                if (startHeight > session.LastBlockIndex) return;
                 uint endHeight = startHeight;
                 while (!globalIndexTasks.ContainsKey(++endHeight) && endHeight <= session.LastBlockIndex) { }
                 uint count = Math.Min(endHeight - startHeight, HeadersPayload.MaxHeadersCount);
