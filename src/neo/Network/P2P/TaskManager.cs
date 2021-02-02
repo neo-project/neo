@@ -109,8 +109,13 @@ namespace Neo.Network.P2P
         private void OnPersistCompleted(Block block)
         {
             foreach (var (actor, session) in sessions)
-                if (session.ReceivedBlock.Remove(block.Index, out Block receivedBlock) && block.Hash == receivedBlock.Hash)
-                    RequestTasks(actor, session);
+                if (session.ReceivedBlock.Remove(block.Index, out Block receivedBlock))
+                {
+                    if (block.Hash == receivedBlock.Hash)
+                        RequestTasks(actor, session);
+                    else
+                        actor.Tell(Tcp.Abort.Instance);
+                }
         }
 
         protected override void OnReceive(object message)
