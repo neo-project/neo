@@ -70,6 +70,7 @@ namespace Neo.Network.P2P
         {
             if (!sessions.TryGetValue(Sender, out TaskSession session))
                 return;
+
             // Do not accept payload of type InventoryType.TX if not synced on HeaderHeight
             uint currentHeight = NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View);
             uint headerHeight = Blockchain.Singleton.HeaderCache.Last?.Index ?? currentHeight;
@@ -78,6 +79,7 @@ namespace Neo.Network.P2P
                 RequestTasks(Sender, session);
                 return;
             }
+
             HashSet<UInt256> hashes = new HashSet<UInt256>(payload.Hashes);
             // Remove all previously processed knownHashes from the list that is being requested
             hashes.Remove(knownHashes);
