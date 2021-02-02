@@ -31,15 +31,15 @@ namespace Neo.Ledger
 
         public bool CheckTransaction(Transaction tx, DataCache snapshot)
         {
+            var oracle = tx.GetAttribute<OracleResponse>();
+            if (oracle != null && oracleResponses.ContainsKey(oracle.Id))
+                return false;
+
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
             senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
 
             BigInteger fee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
-            if (balance < fee) return false;
-
-            var oracle = tx.GetAttribute<OracleResponse>();
-            if (oracle != null && oracleResponses.ContainsKey(oracle.Id))
-                return false;
+            if (balance >= fee) return true;
 
             BigInteger unclaimed = NativeContract.NEO.UnclaimedGas(snapshot, tx.Sender, NativeContract.Ledger.CurrentIndex(snapshot));
             return balance + unclaimed >= fee;
