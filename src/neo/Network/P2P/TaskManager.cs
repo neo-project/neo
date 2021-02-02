@@ -35,7 +35,7 @@ namespace Neo.Network.P2P
         /// </summary>
         private readonly HashSetCache<UInt256> knownHashes;
         private readonly Dictionary<UInt256, int> globalInvTasks = new Dictionary<UInt256, int>();
-        private readonly Dictionary<uint, Dictionary<IActorRef, uint>> globalIndexTasks = new Dictionary<uint, Dictionary<IActorRef, uint>>();
+        private readonly Dictionary<uint, int> globalIndexTasks = new Dictionary<uint, int>();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
 
@@ -225,14 +225,14 @@ namespace Neo.Network.P2P
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void DecrementGlobalTask(uint index, IActorRef actor)
+        private void DecrementGlobalTask(uint index)
         {
             if (globalIndexTasks.TryGetValue(index, out var value))
             {
-                if (value.Remove(actor))
-                {
-                    if (value.Count == 0) globalIndexTasks.Remove(index);
-                }
+                if (value == 1)
+                    globalIndexTasks.Remove(index);
+                else
+                    globalIndexTasks[index] = value - 1;
             }
         }
 
@@ -252,19 +252,17 @@ namespace Neo.Network.P2P
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool IncrementGlobalTask(uint index, IActorRef actor, uint count)
+        private bool IncrementGlobalTask(uint index)
         {
             if (!globalIndexTasks.TryGetValue(index, out var value))
             {
-                value = new Dictionary<IActorRef, uint>();
-                value[actor] = count;
-                globalIndexTasks[index] = value;
+                globalIndexTasks[index] = 1;
                 return true;
             }
-            if (value.Count >= MaxConncurrentTasks)
+            if (value >= MaxConncurrentTasks)
                 return false;
 
-            globalIndexTasks[index][actor] = count;
+            globalIndexTasks[index] = value + 1;
             return true;
         }
 
@@ -275,13 +273,13 @@ namespace Neo.Network.P2P
             foreach (UInt256 hash in session.InvTasks.Keys)
                 DecrementGlobalTask(hash);
             foreach (uint index in session.IndexTasks.Keys)
-                DecrementGlobalTask(index, actor);
+                DecrementGlobalTask(index);
             sessions.Remove(actor);
         }
 
         private void OnTimer()
         {
-            foreach (var (actor, session) in sessions)
+            foreach (TaskSession session in sessions.Values)
             {
                 foreach (var (hash, time) in session.InvTasks.ToArray())
                     if (TimeProvider.Current.UtcNow - time > TaskTimeout)
@@ -293,7 +291,7 @@ namespace Neo.Network.P2P
                     if (TimeProvider.Current.UtcNow - time > TaskTimeout)
                     {
                         if (session.IndexTasks.Remove(index))
-                            DecrementGlobalTask(index, actor);
+                            DecrementGlobalTask(index);
                     }
             }
             foreach (var (actor, session) in sessions)
@@ -313,6 +311,8 @@ namespace Neo.Network.P2P
 
         private void RequestTasks(IActorRef remoteNode, TaskSession session)
         {
+            if (session.HasTask) return;
+
             DataCache snapshot = Blockchain.Singleton.View;
 
             // If there are pending tasks of InventoryType.Block we should process them
@@ -351,14 +351,7 @@ namespace Neo.Network.P2P
             else if (currentHeight < session.LastBlockIndex)
             {
                 uint startHeight = currentHeight;
-                foreach (var (index, pair) in globalIndexTasks)
-                {
-                    foreach (uint _count in pair.Values)
-                    {
-                        uint maxRequiredHeight = index + _count;
-                        startHeight = startHeight < maxRequiredHeight ? maxRequiredHeight : startHeight;
-                    }
-                }
+                while (globalIndexTasks.ContainsKey(++startHeight)) { }
                 if (startHeight > session.LastBlockIndex) return;
                 uint endHeight = startHeight;
                 while (!globalIndexTasks.ContainsKey(++endHeight) && endHeight <= session.LastBlockIndex) { }
@@ -366,7 +359,7 @@ namespace Neo.Network.P2P
                 for (uint i = 0; i < count; i++)
                 {
                     session.IndexTasks[startHeight + i] = TimeProvider.Current.UtcNow;
-                    IncrementGlobalTask(startHeight + i, remoteNode, count);
+                    IncrementGlobalTask(startHeight + i);
                 }
                 remoteNode.Tell(Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(startHeight, (short)count)));
             }
