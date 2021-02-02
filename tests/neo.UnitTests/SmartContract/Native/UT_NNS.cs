@@ -13,6 +13,7 @@ using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Linq;
+using System.Net;
 using System.Numerics;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -120,6 +121,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             //invalid AAAA case
             foreach (var testFalse in new string[] {
+                "::ffff:1.01.1.01",
                 "2001:DB8:0:0:8:800:200C:4Z"
             })
             {
