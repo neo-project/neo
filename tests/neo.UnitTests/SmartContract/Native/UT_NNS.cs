@@ -94,7 +94,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             //test As IPv6 Address
             foreach (var testTrue in new string[] {
-                "2001:DB8::8:800:200C:417A", "FF01::101", "::1", "::", "::13.1.68.3",
+                "2001:DB8::8:800:200C:417A", "FF01::101", "fF01::101", "::1", "::", "::13.1.68.3",
                 "2001:DB8:0:0:8:800:200C:417A", "FF01:0:0:0:0:0:0:101", "0:0:0:0:0:0:0:1", "0:0:0:0:0:0:0:0"
             })
             {
