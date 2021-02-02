@@ -352,10 +352,10 @@ namespace Neo.Network.P2P
             {
                 uint startHeight = currentHeight;
                 while (globalIndexTasks.ContainsKey(++startHeight)) { }
-                if (startHeight > session.LastBlockIndex) return;
+                if (startHeight > session.LastBlockIndex || startHeight >= currentHeight + InvPayload.MaxHashesCount) return;
                 uint endHeight = startHeight;
-                while (!globalIndexTasks.ContainsKey(++endHeight) && endHeight <= session.LastBlockIndex) { }
-                uint count = Math.Min(endHeight - startHeight, HeadersPayload.MaxHeadersCount);
+                while (!globalIndexTasks.ContainsKey(++endHeight) && endHeight <= session.LastBlockIndex && endHeight <= currentHeight + InvPayload.MaxHashesCount) { }
+                uint count = Math.Min(endHeight - startHeight, InvPayload.MaxHashesCount);
                 for (uint i = 0; i < count; i++)
                 {
                     session.IndexTasks[startHeight + i] = TimeProvider.Current.UtcNow;
