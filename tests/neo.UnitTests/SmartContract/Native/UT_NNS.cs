@@ -13,7 +13,6 @@ using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Linq;
-using System.Net;
 using System.Numerics;
 
 namespace Neo.UnitTests.SmartContract.Native
@@ -54,8 +53,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // committee member,add a new root and then register, setrecord
             string validroot = "testroot";
-            var ret = Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock);
-            ret.Should().BeTrue();
+            Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock).Should().BeTrue();
 
             string name = "testname";
             string domain = name + "." + validroot;
@@ -71,7 +69,7 @@ namespace Neo.UnitTests.SmartContract.Native
             register_ret.State.Should().BeTrue();
 
             //check NFT token
-            Assert.AreEqual(NativeContract.NameService.BalanceOf(snapshot, from), (BigInteger)1);
+            Assert.AreEqual(NativeContract.NameService.BalanceOf(snapshot, from), 1);
 
             //after register
             checkAvail_ret = Check_IsAvailable(snapshot, UInt160.Zero, domain, persistingBlock);
@@ -142,7 +140,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // committee member,add a new root and then register, setrecord
             string validroot = "testroot";
-            var ret = Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock);
+            Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock).Should().BeTrue();
 
             string name = "testname";
 
@@ -219,7 +217,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // committee member,add a new root and then register, setrecord
             string validroot = "testroot";
-            var ret = Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock);
+            Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock).Should().BeTrue();
 
             string name = "testname";
             string domain = name + "." + validroot;
@@ -310,7 +308,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // committee member,add a new root and then register, setrecord
             string validroot = "testroot";
-            var ret = Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock);
+            Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock).Should().BeTrue();
 
             string name = "testname";
             string domain = name + "." + validroot;
@@ -326,7 +324,7 @@ namespace Neo.UnitTests.SmartContract.Native
             register_ret.State.Should().BeTrue();
 
             //set as IPV6 address
-            string testAAAA = "2001:0000:1F1F:0000:0000:0100:11A0:ADDF";
+            string testAAAA = "2001:0000:1f1f:0000:0000:0100:11a0:addf";
             var setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.AAAA, testAAAA, from, persistingBlock);
             setRecord_ret.Should().BeTrue();
 
@@ -442,7 +440,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // committee member,add a new root and then register, setrecord
             string validroot = "testroot";
-            var ret = Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock);
+            Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock).Should().BeTrue();
 
             string name = "testname";
             string domain = name + "." + validroot;
