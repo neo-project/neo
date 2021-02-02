@@ -298,8 +298,8 @@ namespace Neo.Network.P2P
             pendingKnownHashes.Remove(inventory.Hash);
             if (inventory is Block block)
             {
-                if (block.Index > NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View) + InvPayload.MaxHashesCount) return;
                 UpdateLastBlockIndex(block.Index);
+                if (block.Index > NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View) + InvPayload.MaxHashesCount) return;
             }
             knownHashes.Add(inventory.Hash);
             system.TaskManager.Tell(inventory);
