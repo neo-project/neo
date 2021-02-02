@@ -61,14 +61,9 @@ namespace Neo.Network.P2P
         private void OnInvalidBlock(Block invalidBlock)
         {
             foreach (var (actor, session) in sessions)
-            {
-                if (!session.ReceivedBlock.Remove(invalidBlock.Index, out Block block))
-                    continue;
-                if (block.Hash == invalidBlock.Hash)
-                    actor.Tell(Tcp.Abort.Instance);
-                else
-                    RequestTasks(actor, session);
-            }
+                if (session.ReceivedBlock.TryGetValue(invalidBlock.Index, out Block block))
+                    if (block.Hash == invalidBlock.Hash)
+                        actor.Tell(Tcp.Abort.Instance);
         }
 
         private void OnNewTasks(InvPayload payload)
