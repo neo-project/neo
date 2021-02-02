@@ -36,7 +36,6 @@ namespace Neo.Network.P2P
         private readonly HashSetCache<UInt256> knownHashes;
         private readonly Dictionary<UInt256, int> globalInvTasks = new Dictionary<UInt256, int>();
         private readonly Dictionary<uint, int> globalIndexTasks = new Dictionary<uint, int>();
-        private readonly Dictionary<uint, Dictionary<IActorRef, UInt256>> receivedBlockIndex = new Dictionary<uint, Dictionary<IActorRef, UInt256>>();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
 
@@ -61,25 +60,14 @@ namespace Neo.Network.P2P
 
         private void OnInvalidBlock(Block invalidBlock)
         {
-            receivedBlockIndex.TryGetValue(invalidBlock.Index, out var record);
-            if (record is null) return;
-            var invalidSenders = record.Where(p => p.Value == invalidBlock.Hash).Select(p => p.Key);
-            foreach (var invalidSender in invalidSenders)
+            foreach (var (actor, session) in sessions)
             {
-                sessions.TryGetValue(invalidSender, out TaskSession session);
-                if (session != null)
-                {
-                    session.IndexTasks.Remove(invalidBlock.Index);
-                }
-                Sender.Tell(Tcp.Abort.Instance);
-            }
-            receivedBlockIndex.Remove(invalidBlock.Index);
-            foreach (var pair in sessions)
-            {
-                if (!invalidSenders.Contains(pair.Key))
-                {
-                    RequestTasks(pair.Key, pair.Value);
-                }
+                if (!session.ReceivedBlock.Remove(invalidBlock.Index, out Block block))
+                    continue;
+                if (block.Hash == invalidBlock.Hash)
+                    actor.Tell(Tcp.Abort.Instance);
+                else
+                    RequestTasks(actor, session);
             }
         }
 
@@ -123,15 +111,9 @@ namespace Neo.Network.P2P
 
         private void OnPersistCompleted(Block block)
         {
-            if (receivedBlockIndex.TryGetValue(block.Index, out var record))
-            {
-                var validPair = record.Where(p => p.Value == block.Hash).FirstOrDefault();
-                if (!default(KeyValuePair<IActorRef, UInt256>).Equals(validPair) && sessions.TryGetValue(validPair.Key, out TaskSession session))
-                {
-                    RequestTasks(validPair.Key, session);
-                }
-                receivedBlockIndex.Remove(block.Index);
-            }
+            foreach (var (actor, session) in sessions)
+                if (session.ReceivedBlock.Remove(block.Index))
+                    RequestTasks(actor, session);
         }
 
         protected override void OnReceive(object message)
@@ -211,26 +193,17 @@ namespace Neo.Network.P2P
                 if (block is not null)
                 {
                     session.IndexTasks.Remove(block.Index);
-                    if (receivedBlockIndex.TryGetValue(block.Index, out var record))
+                    if (session.ReceivedBlock.TryGetValue(block.Index, out var block_old))
                     {
-                        if (record.TryGetValue(Sender, out UInt256 hash))
+                        if (block.Hash != block_old.Hash)
                         {
-                            if (hash != inventory.Hash)
-                            {
-                                Sender.Tell(Tcp.Abort.Instance);
-                                return;
-                            }
-                        }
-                        else
-                        {
-                            record.TryAdd(Sender, block.Hash);
+                            Sender.Tell(Tcp.Abort.Instance);
+                            return;
                         }
                     }
                     else
                     {
-                        record = new Dictionary<IActorRef, UInt256>();
-                        record.TryAdd(Sender, block.Hash);
-                        receivedBlockIndex.TryAdd(block.Index, record);
+                        session.ReceivedBlock.Add(block.Index, block);
                     }
                 }
                 RequestTasks(Sender, session);
