@@ -854,13 +854,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     }
                 },
                 Script = new byte[] { (byte)OpCode.PUSH1 },
-                Witnesses = new Witness[] { new Witness() { InvocationScript = new byte[0], VerificationScript = Array.Empty<byte>() } }
+                Witnesses = new Witness[] { new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() } }
             };
 
             byte[] sTx = txDoubleCosigners.ToArray();
 
             // no need for detailed hexstring here (see basic tests for it)
-            sTx.ToHexString().Should().Be("000403020100e1f505000000000100000000000000040302010209080706050403020100090807060504030201008009080706050403020100090807060504030201000100011100");
+            sTx.ToHexString().Should().Be("000403020100e1f5050000000001000000000000000403020102090807060504030201000908070605040302010080090807060504030201000908070605040302010001000111010000");
 
             // back to transaction (should fail, due to non-distinct cosigners)
             Transaction tx2 = null;
@@ -1172,7 +1172,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Test_VerifyStateDependent()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
             var height = NativeContract.Ledger.CurrentIndex(snapshot);
             var tx = new Transaction()
             {
@@ -1225,7 +1225,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
                 balance = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
                 balance.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
-                snapshot.Commit();
 
                 // Make transaction
 
@@ -1237,7 +1236,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                          ScriptHash = acc.ScriptHash,
                          Value = new BigDecimal(BigInteger.One,8)
                     }
-                }, acc.ScriptHash);
+                }, acc.ScriptHash, snapshot: snapshot);
 
                 // Sign
 
