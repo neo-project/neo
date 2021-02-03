@@ -1,5 +1,4 @@
 using Neo.IO;
-using Neo.IO.Caching;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
