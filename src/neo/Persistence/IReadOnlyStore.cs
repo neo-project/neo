@@ -1,4 +1,3 @@
-using Neo.IO.Caching;
 using System.Collections.Generic;
 
 namespace Neo.Persistence
@@ -8,8 +7,8 @@ namespace Neo.Persistence
     /// </summary>
     public interface IReadOnlyStore
     {
-        IEnumerable<(byte[] Key, byte[] Value)> Seek(byte table, byte[] key, SeekDirection direction);
-        byte[] TryGet(byte table, byte[] key);
-        bool Contains(byte table, byte[] key);
+        IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] key, SeekDirection direction);
+        byte[] TryGet(byte[] key);
+        bool Contains(byte[] key);
     }
 }

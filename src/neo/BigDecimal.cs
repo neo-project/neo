@@ -12,9 +12,38 @@ namespace Neo
         public byte Decimals => decimals;
         public int Sign => value.Sign;
 
+        /// <summary>
+        /// Create BigDecimal from BigInteger
+        /// </summary>
+        /// <param name="value">Value</param>
+        /// <param name="decimals">Decimals</param>
         public BigDecimal(BigInteger value, byte decimals)
         {
             this.value = value;
+            this.decimals = decimals;
+        }
+
+        /// <summary>
+        /// Create BigDecimal from decimal
+        /// </summary>
+        /// <param name="value">Value</param>
+        public unsafe BigDecimal(decimal value)
+        {
+            ReadOnlySpan<byte> buffer = new ReadOnlySpan<byte>(&value, sizeof(decimal));
+            this.decimals = buffer[14];
+            this.value = new BigInteger(decimal.Multiply((decimal)Math.Pow(10, decimals), value));
+        }
+
+        /// <summary>
+        /// Create BigDecimal from decimal
+        /// </summary>
+        /// <param name="value">Value</param>
+        /// <param name="decimals">Decimals</param>
+        public unsafe BigDecimal(decimal value, byte decimals)
+        {
+            ReadOnlySpan<byte> buffer = new ReadOnlySpan<byte>(&value, sizeof(decimal));
+            if (buffer[14] > decimals) throw new ArgumentException(null, nameof(value));
+            this.value = new BigInteger(decimal.Multiply((decimal)Math.Pow(10, decimals), value));
             this.decimals = decimals;
         }
 

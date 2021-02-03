@@ -1,7 +1,9 @@
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.Wallets;
 using System;
 using System.IO;
@@ -72,12 +74,12 @@ namespace Neo.Network.P2P.Payloads
             NextConsensus = reader.ReadSerializable<UInt160>();
         }
 
-        UInt160[] IVerifiable.GetScriptHashesForVerifying(StoreView snapshot)
+        UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
         {
             if (PrevHash == UInt256.Zero) return new[] { Witness.ScriptHash };
-            Header prev_header = snapshot.GetHeader(PrevHash);
-            if (prev_header == null) throw new InvalidOperationException();
-            return new[] { prev_header.NextConsensus };
+            BlockBase prev = Blockchain.Singleton.HeaderCache[Index - 1] ?? (BlockBase)NativeContract.Ledger.GetTrimmedBlock(snapshot, PrevHash);
+            if (prev is null) throw new InvalidOperationException();
+            return new[] { prev.NextConsensus };
         }
 
         public virtual void Serialize(BinaryWriter writer)
@@ -111,12 +113,12 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        public virtual bool Verify(StoreView snapshot)
+        public virtual bool Verify(DataCache snapshot)
         {
-            Header prev_header = snapshot.GetHeader(PrevHash);
-            if (prev_header == null) return false;
-            if (prev_header.Index + 1 != Index) return false;
-            if (prev_header.Timestamp >= Timestamp) return false;
+            var prev = Blockchain.Singleton.HeaderCache[Index - 1] ?? NativeContract.Ledger.GetHeader(snapshot, Index - 1);
+            if (prev is null) return false;
+            if (prev.Hash != PrevHash) return false;
+            if (prev.Timestamp >= Timestamp) return false;
             if (!this.VerifyWitnesses(snapshot, 1_00000000)) return false;
             return true;
         }

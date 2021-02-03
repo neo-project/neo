@@ -20,13 +20,6 @@ namespace Neo.SmartContract.Iterators
 
         public void Dispose() { }
 
-        public PrimitiveType Key()
-        {
-            if (index < 0)
-                throw new InvalidOperationException();
-            return index;
-        }
-
         public bool Next()
         {
             int next = index + 1;

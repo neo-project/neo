@@ -47,6 +47,6 @@ namespace Neo.Network.P2P.Payloads
 
         protected abstract void SerializeWithoutType(BinaryWriter writer);
 
-        public virtual bool Verify(StoreView snapshot, Transaction tx) => true;
+        public virtual bool Verify(DataCache snapshot, Transaction tx) => true;
     }
 }

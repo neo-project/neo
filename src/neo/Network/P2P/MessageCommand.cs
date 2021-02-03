@@ -33,13 +33,14 @@ namespace Neo.Network.P2P
         GetData = 0x28,
         [ReflectionCache(typeof(GetBlockByIndexPayload))]
         GetBlockByIndex = 0x29,
+        [ReflectionCache(typeof(InvPayload))]
         NotFound = 0x2a,
         [ReflectionCache(typeof(Transaction))]
         Transaction = 0x2b,
         [ReflectionCache(typeof(Block))]
         Block = 0x2c,
-        [ReflectionCache(typeof(ConsensusPayload))]
-        Consensus = 0x2d,
+        [ReflectionCache(typeof(ExtensiblePayload))]
+        Extensible = 0x2e,
         Reject = 0x2f,
 
         //SPV protocol

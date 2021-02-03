@@ -7,6 +7,8 @@ using Neo.IO.Actors;
 using Neo.Ledger;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract.Native;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +24,7 @@ namespace Neo.Network.P2P
         private readonly NeoSystem system;
         private readonly Queue<Message> message_queue_high = new Queue<Message>();
         private readonly Queue<Message> message_queue_low = new Queue<Message>();
+        private DateTime lastSent = TimeProvider.Current.UtcNow;
         private readonly bool[] sentCommands = new bool[1 << (sizeof(MessageCommand) * 8)];
         private ByteString msg_buffer = ByteString.Empty;
         private bool ack = true;
@@ -86,7 +89,7 @@ namespace Neo.Network.P2P
             switch (message.Command)
             {
                 case MessageCommand.Alert:
-                case MessageCommand.Consensus:
+                case MessageCommand.Extensible:
                 case MessageCommand.FilterAdd:
                 case MessageCommand.FilterClear:
                 case MessageCommand.FilterLoad:
@@ -99,7 +102,10 @@ namespace Neo.Network.P2P
                     break;
             }
             if (!is_single || message_queue.All(p => p.Command != message.Command))
+            {
                 message_queue.Enqueue(message);
+                lastSent = TimeProvider.Current.UtcNow;
+            }
             CheckMessageQueue();
         }
 
@@ -123,7 +129,7 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case Timer _:
-                    RefreshPendingKnownHashes();
+                    OnTimer();
                     break;
                 case Message msg:
                     if (msg.Payload is PingPayload payload)
@@ -173,7 +179,7 @@ namespace Neo.Network.P2P
         {
             var capabilities = new List<NodeCapability>
             {
-                new FullNodeCapability(Blockchain.Singleton.Height)
+                new FullNodeCapability(NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View))
             };
 
             if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
@@ -222,7 +228,7 @@ namespace Neo.Network.P2P
                 case Message msg:
                     switch (msg.Command)
                     {
-                        case MessageCommand.Consensus:
+                        case MessageCommand.Extensible:
                         case MessageCommand.FilterAdd:
                         case MessageCommand.FilterClear:
                         case MessageCommand.FilterLoad:

@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Network.P2P.Payloads;
 using Neo.Plugins;
 using System;
 
@@ -10,15 +11,16 @@ namespace Neo.UnitTests.Plugins
     {
         private static readonly object locker = new object();
 
-        private class DummyP2PPlugin : IP2PPlugin { }
+        private class DummyP2PPlugin : IP2PPlugin
+        {
+            public void OnVerifiedInventory(IInventory inventory) { }
+        }
         private class dummyPersistencePlugin : IPersistencePlugin { }
 
         [TestMethod]
         public void TestIP2PPlugin()
         {
             var pp = new DummyP2PPlugin() as IP2PPlugin;
-
-            Assert.IsTrue(pp.OnConsensusMessage(null));
             Assert.IsTrue(pp.OnP2PMessage(null));
         }
 
@@ -31,8 +33,8 @@ namespace Neo.UnitTests.Plugins
 
             // With empty default implementation
 
-            pp.OnCommit(null);
-            pp.OnPersist(null, null);
+            pp.OnCommit(null, null);
+            pp.OnPersist(null, null, null);
         }
 
         [TestMethod]

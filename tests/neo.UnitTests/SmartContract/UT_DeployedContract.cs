@@ -26,7 +26,7 @@ namespace Neo.UnitTests.SmartContract
                          }
                     }
                 },
-                Script = new byte[] { 1, 2, 3 },
+                Nef = new NefFile { Script = new byte[] { 1, 2, 3 } },
                 Hash = new byte[] { 1, 2, 3 }.ToScriptHash()
             });
 
@@ -54,7 +54,7 @@ namespace Neo.UnitTests.SmartContract
                          }
                     }
                 },
-                Script = new byte[] { 1, 2, 3 }
+                Nef = new NefFile { Script = new byte[] { 1, 2, 3 } }
             }));
         }
     }

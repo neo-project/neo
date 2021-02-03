@@ -3,6 +3,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
@@ -36,7 +37,7 @@ namespace Neo.UnitTests.SmartContract
                 Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
             };
 
-            var block = new Block()
+            var block = new TrimmedBlock()
             {
                 Index = 0,
                 Timestamp = 2,
@@ -50,15 +51,14 @@ namespace Neo.UnitTests.SmartContract
                 MerkleRoot = UInt256.Zero,
                 NextConsensus = UInt160.Zero,
                 ConsensusData = new ConsensusData() { Nonce = 1, PrimaryIndex = 1 },
-                Transactions = new Transaction[] { tx }
+                Hashes = new UInt256[] { new ConsensusData() { Nonce = 1, PrimaryIndex = 1 }.Hash, tx.Hash }
             };
 
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitPush(block.Hash.ToArray());
-                script.EmitSysCall(ApplicationEngine.System_Blockchain_GetBlock);
+                script.EmitDynamicCall(NativeContract.Ledger.Hash, "getBlock", block.Hash.ToArray());
 
                 // Without block
 
@@ -71,13 +71,18 @@ namespace Neo.UnitTests.SmartContract
 
                 // Not traceable block
 
-                var height = snapshot.BlockHashIndex.GetAndChange();
+                const byte Prefix_Transaction = 11;
+                const byte Prefix_CurrentBlock = 12;
+
+                var height = snapshot[NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>();
                 height.Index = block.Index + ProtocolSettings.Default.MaxTraceableBlocks;
 
-                var blocks = snapshot.Blocks;
-                var txs = snapshot.Transactions;
-                blocks.Add(block.Hash, block.Trim());
-                txs.Add(tx.Hash, new TransactionState() { Transaction = tx, BlockIndex = block.Index, VMState = VMState.HALT });
+                UT_SmartContractHelper.BlocksAdd(snapshot, block.Hash, block);
+                snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Transaction, tx.Hash), new StorageItem(new TransactionState
+                {
+                    BlockIndex = block.Index,
+                    Transaction = tx
+                }, true));
 
                 engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
                 engine.LoadScript(script.ToArray());
@@ -98,11 +103,6 @@ namespace Neo.UnitTests.SmartContract
 
                 var array = engine.ResultStack.Pop<VM.Types.Array>();
                 Assert.AreEqual(block.Hash, new UInt256(array[0].GetSpan()));
-
-                // Clean
-
-                blocks.Delete(block.Hash);
-                txs.Delete(tx.Hash);
             }
         }
 
@@ -279,7 +279,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Execute
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, 100_000_000);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, 100_000_000);
                 engine.LoadScript(script.ToArray());
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
 
@@ -316,7 +316,7 @@ namespace Neo.UnitTests.SmartContract
         public void System_Runtime_GetInvocationCounter()
         {
             ContractState contractA, contractB, contractC;
-            var snapshot = Blockchain.Singleton.GetSnapshot().Clone();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
 
             // Create dummy contracts
 
@@ -324,9 +324,9 @@ namespace Neo.UnitTests.SmartContract
             {
                 script.EmitSysCall(ApplicationEngine.System_Runtime_GetInvocationCounter);
 
-                contractA = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP }.Concat(script.ToArray()).ToArray() };
-                contractB = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() };
-                contractC = new ContractState() { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() };
+                contractA = new ContractState() { Nef = new NefFile { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP }.Concat(script.ToArray()).ToArray() } };
+                contractB = new ContractState() { Nef = new NefFile { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() } };
+                contractC = new ContractState() { Nef = new NefFile { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() } };
                 contractA.Hash = contractA.Script.ToScriptHash();
                 contractB.Hash = contractB.Script.ToScriptHash();
                 contractC.Hash = contractC.Script.ToScriptHash();
@@ -349,10 +349,10 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitAppCall(contractA.Hash, "dummyMain", 0, 1);
-                script.EmitAppCall(contractB.Hash, "dummyMain", 0, 1);
-                script.EmitAppCall(contractB.Hash, "dummyMain", 0, 1);
-                script.EmitAppCall(contractC.Hash, "dummyMain", 0, 1);
+                script.EmitDynamicCall(contractA.Hash, "dummyMain", 0, 1);
+                script.EmitDynamicCall(contractB.Hash, "dummyMain", 0, 1);
+                script.EmitDynamicCall(contractB.Hash, "dummyMain", 0, 1);
+                script.EmitDynamicCall(contractC.Hash, "dummyMain", 0, 1);
 
                 // Execute
 

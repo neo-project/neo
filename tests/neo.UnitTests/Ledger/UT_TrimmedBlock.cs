@@ -1,8 +1,9 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract.Native;
+using Neo.UnitTests.SmartContract;
 using Neo.VM;
 using System;
 using System.IO;
@@ -24,19 +25,17 @@ namespace Neo.UnitTests.Ledger
                 NextConsensus = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
                 Witness = new Witness
                 {
-                    InvocationScript = new byte[0],
+                    InvocationScript = Array.Empty<byte>(),
                     VerificationScript = new[] { (byte)OpCode.PUSH1 }
                 },
-                Hashes = new UInt256[0]
+                Hashes = Array.Empty<UInt256>()
             };
         }
 
-        [TestMethod]
-        public void TestGetIsBlock()
+        [TestInitialize]
+        public void Init()
         {
-            TrimmedBlock block = GetTrimmedBlockWithNoTransaction();
-            block.Hashes = new UInt256[] { TestUtils.GetTransaction(UInt160.Zero).Hash };
-            block.IsBlock.Should().BeTrue();
+            TestBlockchain.InitializeMockNeoSystem();
         }
 
         [TestMethod]
@@ -63,17 +62,20 @@ namespace Neo.UnitTests.Ledger
                 Transaction = tx2,
                 BlockIndex = 1
             };
-            snapshot.Transactions.Add(tx1.Hash, state1);
-            snapshot.Transactions.Add(tx2.Hash, state2);
+            UT_SmartContractHelper.TransactionAdd(snapshot, state1, state2);
 
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
             tblock.Hashes = new UInt256[] { tx1.Hash, tx2.Hash };
-            Block block = tblock.GetBlock(snapshot.Transactions);
+            UT_SmartContractHelper.BlocksAdd(snapshot, tblock.Hash, tblock);
+
+            Block block = NativeContract.Ledger.GetBlock(snapshot, tblock.Hash);
 
             block.Index.Should().Be(1);
             block.MerkleRoot.Should().Be(UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"));
             block.Transactions.Length.Should().Be(1);
             block.Transactions[0].Hash.Should().Be(tx2.Hash);
+            block.Witness.InvocationScript.ToHexString().Should().Be(tblock.Witness.InvocationScript.ToHexString());
+            block.Witness.VerificationScript.ToHexString().Should().Be(tblock.Witness.VerificationScript.ToHexString());
         }
 
         [TestMethod]
@@ -113,26 +115,6 @@ namespace Neo.UnitTests.Ledger
             tblock.Hashes.Length.Should().Be(newBlock.Hashes.Length);
             tblock.Witness.ScriptHash.Should().Be(newBlock.Witness.ScriptHash);
             tblock.ToJson().ToString().Should().Be(newBlock.ToJson().ToString());
-        }
-
-        [TestMethod]
-        public void TestClone()
-        {
-            TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
-            tblock.Hashes = new UInt256[] { TestUtils.GetTransaction(UInt160.Zero).Hash };
-            ICloneable<TrimmedBlock> cloneable = tblock;
-            var clonedBlock = cloneable.Clone();
-            clonedBlock.ToJson().ToString().Should().Be(tblock.ToJson().ToString());
-        }
-
-        [TestMethod]
-        public void TestFromReplica()
-        {
-            TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
-            tblock.Hashes = new UInt256[] { TestUtils.GetTransaction(UInt160.Zero).Hash };
-            ICloneable<TrimmedBlock> cloneable = new TrimmedBlock();
-            cloneable.FromReplica(tblock);
-            ((TrimmedBlock)cloneable).ToJson().ToString().Should().Be(tblock.ToJson().ToString());
         }
     }
 }

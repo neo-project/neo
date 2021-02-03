@@ -95,10 +95,10 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = Blockchain.Singleton.GetSnapshot();
             byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
-            ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshot);
-            snapshot.PersistingBlock.Version.Should().Be(0);
-            snapshot.PersistingBlock.PrevHash.Should().Be(Blockchain.GenesisBlock.Hash);
-            snapshot.PersistingBlock.MerkleRoot.Should().Be(new UInt256());
+            ApplicationEngine engine = ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshot);
+            engine.PersistingBlock.Version.Should().Be(0);
+            engine.PersistingBlock.PrevHash.Should().Be(Blockchain.GenesisBlock.Hash);
+            engine.PersistingBlock.MerkleRoot.Should().Be(new UInt256());
         }
     }
 }
