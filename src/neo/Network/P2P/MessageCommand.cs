@@ -33,6 +33,7 @@ namespace Neo.Network.P2P
         GetData = 0x28,
         [ReflectionCache(typeof(GetBlockByIndexPayload))]
         GetBlockByIndex = 0x29,
+        [ReflectionCache(typeof(InvPayload))]
         NotFound = 0x2a,
         [ReflectionCache(typeof(Transaction))]
         Transaction = 0x2b,

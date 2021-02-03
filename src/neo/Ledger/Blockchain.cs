@@ -16,6 +16,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 
@@ -74,6 +75,7 @@ namespace Neo.Ledger
         /// </summary>
         public DataCache View => new SnapshotCache(Store);
         public MemoryPool MemPool { get; }
+        public HeaderCache HeaderCache { get; } = new HeaderCache();
 
         private static Blockchain singleton;
         public static Blockchain Singleton
@@ -122,6 +124,12 @@ namespace Neo.Ledger
                 }
                 singleton = this;
             }
+        }
+
+        protected override void PostStop()
+        {
+            base.PostStop();
+            HeaderCache.Dispose();
         }
 
         private bool ContainsTransaction(UInt256 hash)
@@ -221,30 +229,82 @@ namespace Neo.Ledger
         {
             DataCache snapshot = View;
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
+            uint headerHeight = HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
             if (block.Index <= currentHeight)
                 return VerifyResult.AlreadyExists;
-            if (block.Index - 1 > currentHeight)
+            if (block.Index - 1 > headerHeight)
             {
                 AddUnverifiedBlockToCache(block);
                 return VerifyResult.UnableToVerify;
             }
-            if (block.Index == currentHeight + 1)
+            if (block.Index == headerHeight + 1)
             {
                 if (!block.Verify(snapshot))
                     return VerifyResult.Invalid;
-                block_cache.TryAdd(block.Hash, block);
-                block_cache_unverified.Remove(block.Index);
-                Persist(block);
-                if (block_cache_unverified.TryGetValue(block.Index + 1, out var unverifiedBlocks))
+            }
+            else
+            {
+                if (!block.Hash.Equals(HeaderCache[block.Index].Hash))
+                    return VerifyResult.Invalid;
+            }
+            block_cache.TryAdd(block.Hash, block);
+            if (block.Index == currentHeight + 1)
+            {
+                Block block_persist = block;
+                List<Block> blocksToPersistList = new List<Block>();
+                while (true)
+                {
+                    blocksToPersistList.Add(block_persist);
+                    if (block_persist.Index + 1 > headerHeight) break;
+                    UInt256 hash = HeaderCache[block_persist.Index + 1].Hash;
+                    if (!block_cache.TryGetValue(hash, out block_persist)) break;
+                }
+
+                int blocksPersisted = 0;
+                // 15000 is the default among of seconds per block, while MilliSecondsPerBlock is the current
+                uint extraBlocks = (15000 - MillisecondsPerBlock) / 1000;
+                foreach (Block blockToPersist in blocksToPersistList)
+                {
+                    block_cache_unverified.Remove(blockToPersist.Index);
+                    Persist(blockToPersist);
+
+                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, extraBlocks))) continue;
+                    // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
+                    // Increase in the rate of 1 block per second in configurations with faster blocks
+
+                    if (blockToPersist.Index + 99 >= headerHeight)
+                        system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = blockToPersist });
+                }
+                if (block_cache_unverified.TryGetValue(currentHeight + 1, out var unverifiedBlocks))
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks.Blocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
                     block_cache_unverified.Remove(block.Index + 1);
                 }
-                // We can store the new block in block_cache and tell the new height to other nodes after Persist().
-                system.LocalNode.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(block.Index)));
+            }
+            else
+            {
+                if (block.Index + 99 >= headerHeight)
+                    system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
+                if (block.Index == headerHeight + 1)
+                    HeaderCache.Add(block.Header);
             }
             return VerifyResult.Succeed;
+        }
+
+        private void OnNewHeaders(Header[] headers)
+        {
+            if (HeaderCache.Full) return;
+            DataCache snapshot = View;
+            uint headerHeight = HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
+            foreach (Header header in headers)
+            {
+                if (header.Index > headerHeight + 1) break;
+                if (header.Index < headerHeight + 1) continue;
+                if (!header.Verify(snapshot)) break;
+                HeaderCache.Add(header);
+                ++headerHeight;
+            }
         }
 
         private VerifyResult OnNewInventory(IInventory inventory)
@@ -277,6 +337,9 @@ namespace Neo.Ledger
                     break;
                 case FillMemoryPool fill:
                     OnFillMemoryPool(fill.Transactions);
+                    break;
+                case Header[] headers:
+                    OnNewHeaders(headers);
                     break;
                 case Block block:
                     OnInventory(block, false);
@@ -373,6 +436,8 @@ namespace Neo.Ledger
             }
             block_cache.TryRemove(block.PrevHash, out _);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
+            if (HeaderCache.TryRemoveFirst(out Header header))
+                Debug.Assert(header.Index == block.Index);
         }
 
         public static Props Props(NeoSystem system, IStore store)
@@ -431,6 +496,7 @@ namespace Neo.Ledger
         {
             switch (message)
             {
+                case Header[] _:
                 case Block _:
                 case ExtensiblePayload _:
                 case Terminated _:
