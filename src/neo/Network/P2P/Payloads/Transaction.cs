@@ -154,6 +154,7 @@ namespace Neo.Network.P2P.Payloads
                 startPosition = (int)reader.BaseStream.Position;
             DeserializeUnsigned(reader);
             Witnesses = reader.ReadSerializableArray<Witness>();
+            if (Witnesses.Length == 0) throw new FormatException();
             if (startPosition >= 0)
                 _size = (int)reader.BaseStream.Position - startPosition;
         }
@@ -287,7 +288,8 @@ namespace Neo.Network.P2P.Payloads
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);
             if (ValidUntilBlock <= height || ValidUntilBlock > height + MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
-            foreach (UInt160 hash in GetScriptHashesForVerifying(snapshot))
+            UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
+            foreach (UInt160 hash in hashes)
                 if (NativeContract.Policy.IsBlocked(snapshot, hash))
                     return VerifyResult.PolicyFail;
             if (NativeContract.Policy.GetMaxBlockSystemFee(snapshot) < SystemFee)
@@ -297,9 +299,7 @@ namespace Neo.Network.P2P.Payloads
                 if (!attribute.Verify(snapshot, this))
                     return VerifyResult.Invalid;
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
-
-            UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
-            if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
+            if (net_fee < 0) return VerifyResult.InsufficientFunds;
 
             uint execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             for (int i = 0; i < hashes.Length; i++)
