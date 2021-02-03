@@ -123,14 +123,14 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        private IIterator Tokens(DataCache snapshot)
+        protected IIterator Tokens(DataCache snapshot)
         {
-            var results = snapshot.Find(new[] { Prefix_Token }).GetEnumerator();
+            var results = snapshot.Find(CreateStorageKey(Prefix_Token).ToArray()).GetEnumerator();
             return new StorageIterator(results, FindOptions.ValuesOnly | FindOptions.DeserializeValues | FindOptions.PickField1, null);
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        private IIterator TokensOf(DataCache snapshot, UInt160 owner)
+        protected IIterator TokensOf(DataCache snapshot, UInt160 owner)
         {
             NFTAccountState account = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(owner))?.GetInteroperable<NFTAccountState>();
             IReadOnlyList<byte[]> tokens = account?.Tokens ?? (IReadOnlyList<byte[]>)System.Array.Empty<byte[]>();
@@ -172,6 +172,9 @@ namespace Neo.SmartContract.Native
         {
             engine.SendNotification(Hash, "Transfer",
                 new Array { from?.ToArray() ?? StackItem.Null, to?.ToArray() ?? StackItem.Null, 1, tokenId });
+
+            if (to is not null && ContractManagement.GetContract(engine.Snapshot, to) is not null)
+                engine.CallFromNativeContract(Hash, to, "onNEP11Payment", from?.ToArray() ?? StackItem.Null, 1, tokenId);
         }
 
         class NFTAccountState : AccountState
