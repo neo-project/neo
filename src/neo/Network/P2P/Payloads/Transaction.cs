@@ -154,7 +154,7 @@ namespace Neo.Network.P2P.Payloads
                 startPosition = (int)reader.BaseStream.Position;
             DeserializeUnsigned(reader);
             Witnesses = reader.ReadSerializableArray<Witness>(Signers.Length);
-            if (Witnesses.Length == Signers.Length) throw new FormatException();
+            if (Witnesses.Length != Signers.Length) throw new FormatException();
             if (startPosition >= 0)
                 _size = (int)reader.BaseStream.Position - startPosition;
         }
