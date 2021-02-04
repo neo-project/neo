@@ -241,7 +241,7 @@ namespace Neo.Wallets
             return account;
         }
 
-        public Transaction MakeTransaction(TransferOutput[] outputs, UInt160 from = null, Signer[] cosigners = null, DataCache snapshot = null)
+        public Transaction MakeTransaction(TransferOutput[] outputs, UInt160 from = null, Signer[] cosigners = null)
         {
             UInt160[] accounts;
             if (from is null)
@@ -252,7 +252,7 @@ namespace Neo.Wallets
             {
                 accounts = new[] { from };
             }
-            snapshot ??= Blockchain.Singleton.View;
+            DataCache snapshot = Blockchain.Singleton.View;
             Dictionary<UInt160, Signer> cosignerList = cosigners?.ToDictionary(p => p.Account) ?? new Dictionary<UInt160, Signer>();
             byte[] script;
             List<(UInt160 Account, BigInteger Value)> balances_gas = null;
@@ -310,7 +310,7 @@ namespace Neo.Wallets
             return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), Array.Empty<TransactionAttribute>(), balances_gas);
         }
 
-        public Transaction MakeTransaction(byte[] script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null, long maxGas = ApplicationEngine.TestModeGas, DataCache snapshot = null)
+        public Transaction MakeTransaction(byte[] script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null, long maxGas = ApplicationEngine.TestModeGas)
         {
             UInt160[] accounts;
             if (sender is null)
@@ -321,7 +321,7 @@ namespace Neo.Wallets
             {
                 accounts = new[] { sender };
             }
-            snapshot ??= Blockchain.Singleton.View;
+            DataCache snapshot = Blockchain.Singleton.View;
             var balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
             return MakeTransaction(snapshot, script, cosigners ?? Array.Empty<Signer>(), attributes ?? Array.Empty<TransactionAttribute>(), balances_gas, maxGas);
         }

@@ -1178,7 +1178,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Test_VerifyStateDependent()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
+            var snapshot = Blockchain.Singleton.GetSnapshot();
             var height = NativeContract.Ledger.CurrentIndex(snapshot);
             var tx = new Transaction()
             {
@@ -1228,12 +1228,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // Fake balance
 
+                snapshot = Blockchain.Singleton.GetSnapshot();
                 key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
                 balance = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
                 balance.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 // Make transaction
 
+                snapshot.Commit();
                 tx = walletA.MakeTransaction(new TransferOutput[]
                 {
                     new TransferOutput()
@@ -1242,7 +1244,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                          ScriptHash = acc.ScriptHash,
                          Value = new BigDecimal(BigInteger.One,8)
                     }
-                }, acc.ScriptHash, snapshot: snapshot);
+                }, acc.ScriptHash);
 
                 // Sign
 
