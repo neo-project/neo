@@ -788,7 +788,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Script = new byte[] { (byte)OpCode.PUSH1 },
-                Witnesses = new Witness[0] { }
+                Witnesses = new Witness[] { new Witness() { InvocationScript = new byte[0], VerificationScript = Array.Empty<byte>() } }
             };
 
             byte[] sTx = txSimple.ToArray();
@@ -803,7 +803,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 "01000000000000000000000000000000000000000000" + // empty signer
                 "00" + // no attributes
                 "0111" + // push1 script
-                "00"); // no witnesses
+                "010000"); // empty witnesses
 
             // try to deserialize
             Transaction tx2 = Neo.IO.Helper.AsSerializable<Transaction>(sTx);
@@ -824,7 +824,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
             );
             tx2.Script.Should().BeEquivalentTo(new byte[] { (byte)OpCode.PUSH1 });
-            tx2.Witnesses.Should().BeEquivalentTo(new Witness[0] { });
+            tx2.Witnesses.Should().BeEquivalentTo(new Witness[] { new Witness() { InvocationScript = new byte[0], VerificationScript = Array.Empty<byte>() } });
         }
 
         [TestMethod]
@@ -854,13 +854,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     }
                 },
                 Script = new byte[] { (byte)OpCode.PUSH1 },
-                Witnesses = new Witness[0] { }
+                Witnesses = new Witness[] { new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() } }
             };
 
             byte[] sTx = txDoubleCosigners.ToArray();
 
             // no need for detailed hexstring here (see basic tests for it)
-            sTx.ToHexString().Should().Be("000403020100e1f505000000000100000000000000040302010209080706050403020100090807060504030201008009080706050403020100090807060504030201000100011100");
+            sTx.ToHexString().Should().Be("000403020100e1f5050000000001000000000000000403020102090807060504030201000908070605040302010080090807060504030201000908070605040302010001000111010000");
 
             // back to transaction (should fail, due to non-distinct cosigners)
             Transaction tx2 = null;
@@ -904,14 +904,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Signers = cosigners1, // max + 1 (should fail)
                 Script = new byte[] { (byte)OpCode.PUSH1 },
-                Witnesses = new Witness[0] { }
+                Witnesses = new Witness[] { new Witness() { InvocationScript = new byte[0], VerificationScript = Array.Empty<byte>() } }
             };
 
             byte[] sTx1 = txCosigners1.ToArray();
 
             // back to transaction (should fail, due to non-distinct cosigners)
-            Transaction tx1 = Neo.IO.Helper.AsSerializable<Transaction>(sTx1);
-            Assert.IsNotNull(tx1);
+            Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.AsSerializable<Transaction>(sTx1));
 
             // ----------------------------
             // this should fail (max + 1)
@@ -938,7 +937,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Signers = cosigners, // max + 1 (should fail)
                 Script = new byte[] { (byte)OpCode.PUSH1 },
-                Witnesses = new Witness[0] { }
+                Witnesses = new Witness[] { new Witness() { InvocationScript = new byte[0], VerificationScript = Array.Empty<byte>() } }
             };
 
             byte[] sTx2 = txCosigners.ToArray();
@@ -1110,11 +1109,18 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 SystemFee = 0,
                 ValidUntilBlock = 0,
                 Version = 0,
-                Witnesses = new Witness[0],
+                Witnesses = new[]
+                {
+                    new Witness
+                    {
+                        InvocationScript = Array.Empty<byte>(),
+                        VerificationScript = Array.Empty<byte>()
+                    }
+                }
             };
             tx.VerifyStateIndependent().Should().Be(VerifyResult.Invalid);
             tx.Script = new byte[0];
-            tx.VerifyStateIndependent().Should().Be(VerifyResult.Invalid);
+            tx.VerifyStateIndependent().Should().Be(VerifyResult.Succeed);
 
             var walletA = TestUtils.GenerateTestWallet();
             var walletB = TestUtils.GenerateTestWallet();
@@ -1177,16 +1183,27 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var tx = new Transaction()
             {
                 Attributes = Array.Empty<TransactionAttribute>(),
-                NetworkFee = 0,
+                NetworkFee = 55000,
                 Nonce = (uint)Environment.TickCount,
-                Script = new byte[0],
+                Script = Array.Empty<byte>(),
                 Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
                 SystemFee = 0,
                 ValidUntilBlock = height + 1,
                 Version = 0,
-                Witnesses = new Witness[0],
+                Witnesses = new Witness[] {
+                    new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = new byte[0] },
+                    new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = new byte[1] }
+                }
             };
+
+            // Fake balance
+
+            var key = NativeContract.GAS.CreateStorageKey(20, tx.Sender);
+            var balance = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
+            balance.GetInteroperable<AccountState>().Balance = tx.NetworkFee;
+
             tx.VerifyStateDependent(snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.Invalid);
+            balance.GetInteroperable<AccountState>().Balance = 0;
             tx.SystemFee = 10;
             tx.VerifyStateDependent(snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.InsufficientFunds);
 
@@ -1211,15 +1228,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // Fake balance
 
-                var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
-                var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
-
-                entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
-
-                snapshot.Commit();
+                snapshot = Blockchain.Singleton.GetSnapshot();
+                key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
+                balance = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
+                balance.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
 
                 // Make transaction
 
+                snapshot.Commit();
                 tx = walletA.MakeTransaction(new TransferOutput[]
                 {
                     new TransferOutput()

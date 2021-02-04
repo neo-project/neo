@@ -153,7 +153,8 @@ namespace Neo.Network.P2P.Payloads
             if (reader.BaseStream.CanSeek)
                 startPosition = (int)reader.BaseStream.Position;
             DeserializeUnsigned(reader);
-            Witnesses = reader.ReadSerializableArray<Witness>();
+            Witnesses = reader.ReadSerializableArray<Witness>(Signers.Length);
+            if (Witnesses.Length != Signers.Length) throw new FormatException();
             if (startPosition >= 0)
                 _size = (int)reader.BaseStream.Position - startPosition;
         }
@@ -287,7 +288,8 @@ namespace Neo.Network.P2P.Payloads
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);
             if (ValidUntilBlock <= height || ValidUntilBlock > height + MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
-            foreach (UInt160 hash in GetScriptHashesForVerifying(snapshot))
+            UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
+            foreach (UInt160 hash in hashes)
                 if (NativeContract.Policy.IsBlocked(snapshot, hash))
                     return VerifyResult.PolicyFail;
             if (NativeContract.Policy.GetMaxBlockSystemFee(snapshot) < SystemFee)
@@ -297,9 +299,7 @@ namespace Neo.Network.P2P.Payloads
                 if (!attribute.Verify(snapshot, this))
                     return VerifyResult.Invalid;
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
-
-            UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
-            if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
+            if (net_fee < 0) return VerifyResult.InsufficientFunds;
 
             uint execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             for (int i = 0; i < hashes.Length; i++)
@@ -331,7 +331,6 @@ namespace Neo.Network.P2P.Payloads
                 return VerifyResult.Invalid;
             }
             UInt160[] hashes = GetScriptHashesForVerifying(null);
-            if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
             for (int i = 0; i < hashes.Length; i++)
                 if (witnesses[i].VerificationScript.IsStandardContract())
                     if (!this.VerifyWitness(null, hashes[i], witnesses[i], SmartContract.Helper.MaxVerificationGas, out _))
