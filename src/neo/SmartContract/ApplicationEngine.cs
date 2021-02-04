@@ -318,7 +318,7 @@ namespace Neo.SmartContract
                 throw new InvalidOperationException("StepOut failed.", FaultException);
         }
 
-        private static Block CreateDummyBlock(DataCache snapshot)
+        protected static Block CreateDummyBlock(DataCache snapshot)
         {
             UInt256 hash = NativeContract.Ledger.CurrentHash(snapshot);
             var currentBlock = NativeContract.Ledger.GetBlock(snapshot, hash);
