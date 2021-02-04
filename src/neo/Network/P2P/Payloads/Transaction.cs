@@ -331,7 +331,6 @@ namespace Neo.Network.P2P.Payloads
                 return VerifyResult.Invalid;
             }
             UInt160[] hashes = GetScriptHashesForVerifying(null);
-            if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
             for (int i = 0; i < hashes.Length; i++)
                 if (witnesses[i].VerificationScript.IsStandardContract())
                     if (!this.VerifyWitness(null, hashes[i], witnesses[i], SmartContract.Helper.MaxVerificationGas, out _))
