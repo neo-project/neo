@@ -199,7 +199,7 @@ namespace Neo.SmartContract
             }
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CreateSnapshot(), null, gas))
             {
-                CallFlags callFlags = !witness.VerificationScript.IsStandardContract() ? CallFlags.ReadStates : CallFlags.None;
+                CallFlags callFlags = witness.VerificationScript.IsStandardContract() ? CallFlags.None : CallFlags.ReadOnly;
 
                 if (witness.VerificationScript.Length == 0)
                 {
