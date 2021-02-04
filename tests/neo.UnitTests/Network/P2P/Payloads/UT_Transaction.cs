@@ -910,8 +910,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             byte[] sTx1 = txCosigners1.ToArray();
 
             // back to transaction (should fail, due to non-distinct cosigners)
-            Transaction tx1 = Neo.IO.Helper.AsSerializable<Transaction>(sTx1);
-            Assert.IsNotNull(tx1);
+            Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.AsSerializable<Transaction>(sTx1));
 
             // ----------------------------
             // this should fail (max + 1)
@@ -1110,11 +1109,18 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 SystemFee = 0,
                 ValidUntilBlock = 0,
                 Version = 0,
-                Witnesses = new Witness[0],
+                Witnesses = new[]
+                {
+                    new Witness
+                    {
+                        InvocationScript = Array.Empty<byte>(),
+                        VerificationScript = Array.Empty<byte>()
+                    }
+                }
             };
             tx.VerifyStateIndependent().Should().Be(VerifyResult.Invalid);
             tx.Script = new byte[0];
-            tx.VerifyStateIndependent().Should().Be(VerifyResult.Invalid);
+            tx.VerifyStateIndependent().Should().Be(VerifyResult.Succeed);
 
             var walletA = TestUtils.GenerateTestWallet();
             var walletB = TestUtils.GenerateTestWallet();
