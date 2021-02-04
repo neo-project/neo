@@ -67,7 +67,7 @@ namespace Neo.Network.P2P.Payloads
             ValidBlockEnd = reader.ReadUInt32();
             if (ValidBlockStart >= ValidBlockEnd) throw new FormatException();
             Sender = reader.ReadSerializable<UInt160>();
-            Data = reader.ReadVarBytes(ushort.MaxValue);
+            Data = reader.ReadVarBytes(Message.PayloadMaxSize);
         }
 
         UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
