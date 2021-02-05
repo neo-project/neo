@@ -233,6 +233,7 @@ namespace Neo.UnitTests.Ledger
 
             var block = new Block
             {
+                Header = new Header(),
                 Transactions = _unit.GetSortedVerifiedTransactions().Take(10).ToArray()
             };
 

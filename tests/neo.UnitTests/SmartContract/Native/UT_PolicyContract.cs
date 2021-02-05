@@ -23,7 +23,7 @@ namespace Neo.UnitTests.SmartContract.Native
             TestBlockchain.InitializeMockNeoSystem();
             _snapshot = Blockchain.Singleton.GetSnapshot();
 
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, _snapshot, new Block(), 0);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, _snapshot, new Block { Header = new Header() }, 0);
             NativeContract.ContractManagement.OnPersist(engine);
         }
 
@@ -56,7 +56,14 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Fake blockchain
 
-            Block block = new Block() { Index = 1000, PrevHash = UInt256.Zero };
+            Block block = new Block()
+            {
+                Header = new Header
+                {
+                    Index = 1000,
+                    PrevHash = UInt256.Zero
+                }
+            };
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             // Without signature
@@ -101,7 +108,14 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Fake blockchain
 
-            Block block = new Block() { Index = 1000, PrevHash = UInt256.Zero };
+            Block block = new Block()
+            {
+                Header = new Header
+                {
+                    Index = 1000,
+                    PrevHash = UInt256.Zero
+                }
+            };
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             // Without signature
@@ -146,7 +160,14 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Fake blockchain
 
-            Block block = new Block() { Index = 1000, PrevHash = UInt256.Zero };
+            Block block = new Block()
+            {
+                Header = new Header
+                {
+                    Index = 1000,
+                    PrevHash = UInt256.Zero
+                }
+            };
 
             // Without signature
 
@@ -178,7 +199,14 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Fake blockchain
 
-            Block block = new Block() { Index = 1000, PrevHash = UInt256.Zero };
+            Block block = new Block()
+            {
+                Header = new Header
+                {
+                    Index = 1000,
+                    PrevHash = UInt256.Zero
+                }
+            };
 
             // Without signature
 
@@ -210,7 +238,14 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Fake blockchain
 
-            Block block = new Block() { Index = 1000, PrevHash = UInt256.Zero };
+            Block block = new Block()
+            {
+                Header = new Header
+                {
+                    Index = 1000,
+                    PrevHash = UInt256.Zero
+                }
+            };
 
             // Without signature
 
@@ -253,7 +288,14 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Fake blockchain
 
-            Block block = new Block() { Index = 1000, PrevHash = UInt256.Zero };
+            Block block = new Block()
+            {
+                Header = new Header
+                {
+                    Index = 1000,
+                    PrevHash = UInt256.Zero
+                }
+            };
 
             // Without signature
 
@@ -296,7 +338,14 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Fake blockchain
 
-            Block block = new Block() { Index = 1000, PrevHash = UInt256.Zero };
+            Block block = new Block()
+            {
+                Header = new Header
+                {
+                    Index = 1000,
+                    PrevHash = UInt256.Zero
+                }
+            };
 
             // Without signature
 
@@ -345,7 +394,14 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Fake blockchain
 
-            Block block = new Block() { Index = 1000, PrevHash = UInt256.Zero };
+            Block block = new Block()
+            {
+                Header = new Header
+                {
+                    Index = 1000,
+                    PrevHash = UInt256.Zero
+                }
+            };
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             // Block without signature

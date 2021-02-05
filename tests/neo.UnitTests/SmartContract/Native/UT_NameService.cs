@@ -38,7 +38,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestRoots()
         {
             var snapshot = _snapshot.CreateSnapshot();
-            var persistingBlock = new Block() { Index = 1000 };
+            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             var from = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             // no match
@@ -63,7 +63,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestPrice()
         {
             var snapshot = _snapshot.CreateSnapshot();
-            var persistingBlock = new Block() { Index = 1000 };
+            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             var from = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             // unsigned
@@ -88,7 +88,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestRegister()
         {
             var snapshot = _snapshot.CreateSnapshot();
-            var persistingBlock = new Block() { Index = 1000, Timestamp = 0 };
+            var persistingBlock = new Block { Header = new Header { Index = 1000, Timestamp = 0 } };
             var from = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             // add root
@@ -127,7 +127,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestSetRecord()
         {
             var snapshot = _snapshot.CreateSnapshot();
-            var persistingBlock = new Block() { Index = 1000, Timestamp = 0 };
+            var persistingBlock = new Block { Header = new Header { Index = 1000, Timestamp = 0 } };
             var from = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             // add root

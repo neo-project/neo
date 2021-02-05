@@ -33,7 +33,11 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             TestBlockchain.InitializeMockNeoSystem();
             _snapshot = Blockchain.Singleton.GetSnapshot();
-            _persistingBlock = new Block() { Index = 0, Transactions = Array.Empty<Transaction>(), ConsensusData = new ConsensusData() };
+            _persistingBlock = new Block
+            {
+                Header = new Header(),
+                Transactions = Array.Empty<Transaction>()
+            };
         }
 
         [TestMethod]
@@ -48,7 +52,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
             // Fake blockchain
 
-            var persistingBlock = new Block() { Index = 1000 };
+            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             UInt160 committeeAddress = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             // committee member,add a new root and then register, setrecord
@@ -135,7 +139,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
             // Fake blockchain
 
-            var persistingBlock = new Block() { Index = 1000 };
+            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             UInt160 committeeAddress = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             // committee member,add a new root and then register, setrecord
@@ -212,7 +216,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
             // Fake blockchain
 
-            var persistingBlock = new Block() { Index = 1000 };
+            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             UInt160 committeeAddress = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             // committee member,add a new root and then register, setrecord
@@ -303,7 +307,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
             // Fake blockchain
 
-            var persistingBlock = new Block() { Index = 1000 };
+            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             UInt160 committeeAddress = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             // committee member,add a new root and then register, setrecord
@@ -435,7 +439,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
             // Fake blockchain
 
-            var persistingBlock = new Block() { Index = 1000 };
+            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             UInt160 committeeAddress = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             // committee member,add a new root and then register, setrecord
