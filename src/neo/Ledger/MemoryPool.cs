@@ -363,7 +363,7 @@ namespace Neo.Ledger
 
             // If we know about headers of future blocks, no point in verifying transactions from the unverified tx pool
             // until we get caught up.
-            if (Blockchain.Singleton.HeaderCache.Count > 0)
+            if (block.Index > 0 && Blockchain.Singleton.HeaderCache.Count > 0)
                 return;
 
             uint _maxTxPerBlock = NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot);
