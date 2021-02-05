@@ -68,6 +68,7 @@ namespace Neo.Network.P2P.Payloads
         void IVerifiable.DeserializeUnsigned(BinaryReader reader)
         {
             Version = reader.ReadUInt32();
+            if (Version > 0) throw new FormatException();
             PrevHash = reader.ReadSerializable<UInt256>();
             MerkleRoot = reader.ReadSerializable<UInt256>();
             Timestamp = reader.ReadUInt64();
