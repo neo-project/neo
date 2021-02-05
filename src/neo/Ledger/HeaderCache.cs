@@ -33,6 +33,7 @@ namespace Neo.Ledger
             }
         }
 
+        public int Count => headers.Count;
         public bool Full => headers.Count >= 10000;
 
         public Header Last
