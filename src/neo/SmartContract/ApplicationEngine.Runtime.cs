@@ -89,8 +89,7 @@ namespace Neo.SmartContract
                 {
                     // Check allow state callflag
 
-                    if (!CurrentContext.GetState<ExecutionContextState>().CallFlags.HasFlag(CallFlags.ReadStates))
-                        throw new InvalidOperationException($"Cannot call this SYSCALL without the flag AllowStates.");
+                    ValidateCallFlags(CallFlags.ReadStates);
 
                     var contract = NativeContract.ContractManagement.GetContract(Snapshot, CallingScriptHash);
                     // check if current group is the required one
@@ -102,8 +101,7 @@ namespace Neo.SmartContract
 
             // Check allow state callflag
 
-            if (!CurrentContext.GetState<ExecutionContextState>().CallFlags.HasFlag(CallFlags.ReadStates))
-                throw new InvalidOperationException($"Cannot call this SYSCALL without the flag AllowStates.");
+            ValidateCallFlags(CallFlags.ReadStates);
 
             // only for non-Transaction types (Block, etc)
 

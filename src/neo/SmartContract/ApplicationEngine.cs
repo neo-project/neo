@@ -197,6 +197,7 @@ namespace Neo.SmartContract
 
         protected override ExecutionContext LoadToken(ushort tokenId)
         {
+            ValidateCallFlags(CallFlags.ReadStates | CallFlags.AllowCall);
             ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
             if (contract is null || tokenId >= contract.Nef.Tokens.Length)
                 throw new InvalidOperationException();
@@ -281,17 +282,17 @@ namespace Neo.SmartContract
             base.Dispose();
         }
 
-        protected void ValidateCallFlags(InteropDescriptor descriptor)
+        protected void ValidateCallFlags(CallFlags requiredCallFlags)
         {
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
-            if (!state.CallFlags.HasFlag(descriptor.RequiredCallFlags))
+            if (!state.CallFlags.HasFlag(requiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
         }
 
         protected override void OnSysCall(uint method)
         {
             InteropDescriptor descriptor = services[method];
-            ValidateCallFlags(descriptor);
+            ValidateCallFlags(descriptor.RequiredCallFlags);
             AddGas(descriptor.FixedPrice * exec_fee_factor);
             List<object> parameters = descriptor.Parameters.Count > 0
                 ? new List<object>()
