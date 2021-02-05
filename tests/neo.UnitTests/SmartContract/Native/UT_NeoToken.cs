@@ -450,7 +450,7 @@ namespace Neo.UnitTests.SmartContract.Native
             script.Emit(OpCode.NOP);
             engine.LoadScript(script.ToArray());
 
-            Assert.ThrowsException<InvalidOperationException>(() => NativeContract.NEO.Invoke(engine));
+            Assert.ThrowsException<InvalidOperationException>(() => NativeContract.NEO.Invoke(engine, 0));
         }
 
         [TestMethod]

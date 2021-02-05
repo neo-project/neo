@@ -133,7 +133,7 @@ namespace Neo.UnitTests.SmartContract.Native
             script.Emit(OpCode.NOP);
             engine.LoadScript(script.ToArray());
 
-            Assert.ThrowsException<InvalidOperationException>(() => NativeContract.GAS.Invoke(engine));
+            Assert.ThrowsException<InvalidOperationException>(() => NativeContract.GAS.Invoke(engine, 0));
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, uint key)

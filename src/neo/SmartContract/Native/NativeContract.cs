@@ -45,6 +45,7 @@ namespace Neo.SmartContract.Native
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
+                sb.EmitPush(0);
                 sb.EmitPush(Id);
                 sb.EmitSysCall(ApplicationEngine.System_Contract_CallNative);
                 script = sb.ToArray();
@@ -116,8 +117,10 @@ namespace Neo.SmartContract.Native
             return contract;
         }
 
-        internal void Invoke(ApplicationEngine engine)
+        internal void Invoke(ApplicationEngine engine, byte version)
         {
+            if (version != 0)
+                throw new InvalidOperationException($"The native contract of version {version} is not found.");
             if (!engine.CurrentScriptHash.Equals(Hash))
                 throw new InvalidOperationException("It is not allowed to use Neo.Native.Call directly to call native contracts. System.Contract.Call should be used.");
             ExecutionContext context = engine.CurrentContext;

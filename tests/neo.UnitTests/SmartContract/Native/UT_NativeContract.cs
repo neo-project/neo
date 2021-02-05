@@ -100,11 +100,11 @@ namespace Neo.UnitTests.SmartContract.Native
 
             ByteString method1 = new ByteString(System.Text.Encoding.Default.GetBytes("wrongMethod"));
             engine.CurrentContext.EvaluationStack.Push(method1);
-            Assert.ThrowsException<KeyNotFoundException>(() => testNativeContract.Invoke(engine));
+            Assert.ThrowsException<KeyNotFoundException>(() => testNativeContract.Invoke(engine, 0));
 
             ByteString method2 = new ByteString(System.Text.Encoding.Default.GetBytes("helloWorld"));
             engine.CurrentContext.EvaluationStack.Push(method2);
-            testNativeContract.Invoke(engine);
+            testNativeContract.Invoke(engine, 0);
         }
 
         [TestMethod]

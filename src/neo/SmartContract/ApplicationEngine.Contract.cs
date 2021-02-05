@@ -38,12 +38,12 @@ namespace Neo.SmartContract
             CallContractInternal(contract, md, callFlags, hasReturnValue, args);
         }
 
-        protected internal void CallNativeContract(int id)
+        protected internal void CallNativeContract(int id, byte version)
         {
             NativeContract contract = NativeContract.GetContract(id);
             if (contract is null || contract.ActiveBlockIndex > NativeContract.Ledger.CurrentIndex(Snapshot))
                 throw new InvalidOperationException();
-            contract.Invoke(this);
+            contract.Invoke(this, version);
         }
 
         protected internal bool IsStandardContract(UInt160 hash)
