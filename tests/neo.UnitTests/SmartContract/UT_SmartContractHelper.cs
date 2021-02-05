@@ -127,13 +127,15 @@ namespace Neo.UnitTests.SmartContract
             UInt256 index1 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             BlocksAdd(snapshot1, index1, new TrimmedBlock()
             {
-                Timestamp = 1,
-                PrevHash = UInt256.Zero,
-                MerkleRoot = UInt256.Zero,
-                ConsensusData = new ConsensusData(),
+                Header = new Header
+                {
+                    Timestamp = 1,
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    Witness = new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] }
+                },
                 Hashes = new UInt256[1] { UInt256.Zero },
-                NextConsensus = UInt160.Zero,
-                Witness = new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] }
             });
             BlocksDelete(snapshot1, index1);
             Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(new Header() { PrevHash = index1 }, snapshot1, 100));
@@ -142,13 +144,15 @@ namespace Neo.UnitTests.SmartContract
             UInt256 index2 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             TrimmedBlock block2 = new TrimmedBlock()
             {
-                Timestamp = 2,
-                PrevHash = UInt256.Zero,
-                MerkleRoot = UInt256.Zero,
-                ConsensusData = new ConsensusData(),
+                Header = new Header
+                {
+                    Timestamp = 2,
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    Witness = new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] }
+                },
                 Hashes = new UInt256[1] { UInt256.Zero },
-                NextConsensus = UInt160.Zero,
-                Witness = new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] }
             };
             BlocksAdd(snapshot2, index2, block2);
             Header header2 = new Header() { PrevHash = index2, Witness = new Witness { InvocationScript = new byte[0], VerificationScript = new byte[0] } };
@@ -161,13 +165,15 @@ namespace Neo.UnitTests.SmartContract
             UInt256 index3 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             TrimmedBlock block3 = new TrimmedBlock()
             {
-                Timestamp = 3,
-                PrevHash = UInt256.Zero,
-                MerkleRoot = UInt256.Zero,
-                ConsensusData = new ConsensusData(),
+                Header = new Header
+                {
+                    Timestamp = 3,
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    Witness = new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] }
+                },
                 Hashes = new UInt256[1] { UInt256.Zero },
-                NextConsensus = UInt160.Zero,
-                Witness = new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] }
             };
             BlocksAdd(snapshot3, index3, block3);
             Header header3 = new Header()

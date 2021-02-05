@@ -1,45 +1,16 @@
 using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
-using System.Linq;
 using System.Numerics;
 
 namespace Neo.UnitTests.Ledger
 {
-    internal class TestBlock : Block
-    {
-        public override bool Verify(DataCache snapshot)
-        {
-            return true;
-        }
-
-        public static TestBlock Cast(Block input)
-        {
-            return input.ToArray().AsSerializable<TestBlock>();
-        }
-    }
-
-    internal class TestHeader : Header
-    {
-        public override bool Verify(DataCache snapshot)
-        {
-            return true;
-        }
-
-        public static TestHeader Cast(Header input)
-        {
-            return input.ToArray().AsSerializable<TestHeader>();
-        }
-    }
-
     [TestClass]
     public class UT_Blockchain : TestKit
     {
@@ -100,7 +71,7 @@ namespace Neo.UnitTests.Ledger
             return storageKey;
         }
 
-        private Transaction CreateValidTx(NEP6Wallet wallet, UInt160 account, uint nonce)
+        private static Transaction CreateValidTx(NEP6Wallet wallet, UInt160 account, uint nonce)
         {
             var tx = wallet.MakeTransaction(new TransferOutput[]
                 {
