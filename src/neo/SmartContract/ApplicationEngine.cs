@@ -325,18 +325,20 @@ namespace Neo.SmartContract
             var currentBlock = NativeContract.Ledger.GetBlock(snapshot, hash);
             return new Block
             {
-                Version = 0,
-                PrevHash = hash,
-                MerkleRoot = new UInt256(),
-                Timestamp = currentBlock.Timestamp + Blockchain.MillisecondsPerBlock,
-                Index = currentBlock.Index + 1,
-                NextConsensus = currentBlock.NextConsensus,
-                Witness = new Witness
+                Header = new Header
                 {
-                    InvocationScript = Array.Empty<byte>(),
-                    VerificationScript = Array.Empty<byte>()
+                    Version = 0,
+                    PrevHash = hash,
+                    MerkleRoot = new UInt256(),
+                    Timestamp = currentBlock.Timestamp + Blockchain.MillisecondsPerBlock,
+                    Index = currentBlock.Index + 1,
+                    NextConsensus = currentBlock.NextConsensus,
+                    Witness = new Witness
+                    {
+                        InvocationScript = Array.Empty<byte>(),
+                        VerificationScript = Array.Empty<byte>()
+                    },
                 },
-                ConsensusData = new ConsensusData(),
                 Transactions = new Transaction[0]
             };
         }

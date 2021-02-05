@@ -111,15 +111,8 @@ namespace Neo.SmartContract.Native
             if (state is null) return null;
             return new Block
             {
-                Version = state.Version,
-                PrevHash = state.PrevHash,
-                MerkleRoot = state.MerkleRoot,
-                Timestamp = state.Timestamp,
-                Index = state.Index,
-                NextConsensus = state.NextConsensus,
-                Witness = state.Witness,
-                ConsensusData = state.ConsensusData,
-                Transactions = state.Hashes.Skip(1).Select(p => GetTransaction(snapshot, p)).ToArray()
+                Header = state.Header,
+                Transactions = state.Hashes.Select(p => GetTransaction(snapshot, p)).ToArray()
             };
         }
 
@@ -181,24 +174,17 @@ namespace Neo.SmartContract.Native
             if (hash is null) return null;
             TrimmedBlock block = GetTrimmedBlock(snapshot, hash);
             if (block is null || !IsTraceableBlock(snapshot, block.Index)) return null;
-            if (txIndex < 0 || txIndex >= block.Hashes.Length - 1)
+            if (txIndex < 0 || txIndex >= block.Hashes.Length)
                 throw new ArgumentOutOfRangeException(nameof(txIndex));
-            return GetTransaction(snapshot, block.Hashes[txIndex + 1]);
+            return GetTransaction(snapshot, block.Hashes[txIndex]);
         }
 
         private static TrimmedBlock Trim(Block block)
         {
             return new TrimmedBlock
             {
-                Version = block.Version,
-                PrevHash = block.PrevHash,
-                MerkleRoot = block.MerkleRoot,
-                Timestamp = block.Timestamp,
-                Index = block.Index,
-                NextConsensus = block.NextConsensus,
-                Witness = block.Witness,
-                Hashes = block.Transactions.Select(p => p.Hash).Prepend(block.ConsensusData.Hash).ToArray(),
-                ConsensusData = block.ConsensusData
+                Header = block.Header,
+                Hashes = block.Transactions.Select(p => p.Hash).ToArray()
             };
         }
     }

@@ -26,7 +26,7 @@ namespace Neo.UnitTests.SmartContract.Native
             TestBlockchain.InitializeMockNeoSystem();
 
             _snapshot = Blockchain.Singleton.GetSnapshot();
-            _persistingBlock = new Block() { Index = 0 };
+            _persistingBlock = new Block { Header = new Header() };
         }
 
         [TestMethod]
@@ -42,7 +42,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_BalanceOfTransferAndBurn()
         {
             var snapshot = _snapshot.CreateSnapshot();
-            var persistingBlock = new Block() { Index = 1000 };
+            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
             byte[] to = new byte[20];
             var keyCount = snapshot.GetChangeSet().Count();
