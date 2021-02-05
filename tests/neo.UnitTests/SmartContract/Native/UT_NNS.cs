@@ -43,7 +43,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_Symbol() => NativeContract.NameService.Symbol(_snapshot).Should().Be("NNS");
 
         [TestMethod]
-        public void Test_SetRecord_IPV4()
+        public void Test_SetRecord_A_AAAA()
         {
             var snapshot = _snapshot.CreateSnapshot();
             // Fake blockchain
@@ -53,7 +53,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // committee member,add a new root and then register, setrecord
             string validroot = "testroot";
-            var ret = Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock);
+            Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock).Should().BeTrue();
 
             string name = "testname";
             string domain = name + "." + validroot;
@@ -69,76 +69,64 @@ namespace Neo.UnitTests.SmartContract.Native
             register_ret.State.Should().BeTrue();
 
             //check NFT token
-            Assert.AreEqual(NativeContract.NameService.BalanceOf(snapshot, from), (BigInteger)1);
+            Assert.AreEqual(NativeContract.NameService.BalanceOf(snapshot, from), 1);
 
             //after register
             checkAvail_ret = Check_IsAvailable(snapshot, UInt160.Zero, domain, persistingBlock);
             checkAvail_ret.Result.Should().BeTrue();
             checkAvail_ret.State.Should().BeFalse();
 
-            //set As IPv4 Address
-            string testA = "10.10.10.10";
-            var setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, testA, from, persistingBlock);
-            setRecord_ret.Should().BeTrue();
+            //test As IPv4 Address
+            bool setRecord_ret;
+            (bool State, string Result) getRecord_ret;
 
-            var getRecord_ret = Check_GetRecord(snapshot, domain, RecordType.A, persistingBlock);
-            getRecord_ret.State.Should().BeTrue();
-            getRecord_ret.Result.Should().Equals(testA);
+            foreach (var testTrue in new string[] {
+                "0.0.0.0", "10.10.10.10", "255.255.255.255","192.168.1.1"
+            })
+            {
+                setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, testTrue, from, persistingBlock);
+                setRecord_ret.Should().BeTrue();
+                getRecord_ret = Check_GetRecord(snapshot, domain, RecordType.A, persistingBlock);
+                getRecord_ret.State.Should().BeTrue();
+                getRecord_ret.Result.Should().Equals(testTrue);
+            }
 
-            testA = "0.0.0.0";
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, testA, from, persistingBlock);
-            setRecord_ret.Should().BeTrue();
-            getRecord_ret = Check_GetRecord(snapshot, domain, RecordType.A, persistingBlock);
-            getRecord_ret.State.Should().BeTrue();
-            getRecord_ret.Result.Should().Equals(testA);
+            //test As IPv6 Address
+            foreach (var testTrue in new string[] {
+                "2001:db8::8:800:200c:417a", "ff01::101", "ff01::101", "::1", "::",
+                "2001:db8:0:0:8:800:200c:417a", "ff01:0:0:0:0:0:0:101", "0:0:0:0:0:0:0:1", "0:0:0:0:0:0:0:0"
+            })
+            {
+                setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.AAAA, testTrue, from, persistingBlock);
+                setRecord_ret.Should().BeTrue();
+                getRecord_ret = Check_GetRecord(snapshot, domain, RecordType.AAAA, persistingBlock);
+                getRecord_ret.State.Should().BeTrue();
+                getRecord_ret.Result.Should().Equals(testTrue);
+            }
 
-            testA = "255.255.255.255";
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, testA, from, persistingBlock);
-            setRecord_ret.Should().BeTrue();
-            getRecord_ret = Check_GetRecord(snapshot, domain, RecordType.A, persistingBlock);
-            getRecord_ret.State.Should().BeTrue();
-            getRecord_ret.Result.Should().Equals(testA);
+            //invalid A case
+            foreach (var testFalse in new string[] {
+                "1a", "256.0.0.0", "01.01.01.01", "00.0.0.0", "0.0.0.-1",
+                "0.0.0.0.1", "11111111.11111111.11111111.11111111",
+                "11111111.11111111.11111111.11111111", "ff.ff.ff.ff", "0.0.256",
+                "0.0.0", "0.257", "1.1", "257",
+                "1"
+            })
+            {
+                setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, testFalse, from, persistingBlock);
+                setRecord_ret.Should().BeFalse();
+            }
 
-            //invalid case
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "1a", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "256.0.0.0", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "0.0.0.-1", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "0.0.0.0.1", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "11111111.11111111.11111111.11111111", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "11111111.11111111.11111111.11111111", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "ff.ff.ff.ff", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "0.0.256", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "0.0.0", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "0.257", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "1.1", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "257", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "1", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
+            //invalid AAAA case
+            foreach (var testFalse in new string[] {
+                "2001:DB8::8:800:200C:417A", "FF01::101", "fF01::101",
+                "2001:DB8:0:0:8:800:200C:417A", "FF01:0:0:0:0:0:0:101",
+                "::ffff:1.01.1.01", "2001:DB8:0:0:8:800:200C:4Z", "::13.1.68.3",
+            })
+            {
+                setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.AAAA, testFalse, from, persistingBlock);
+                setRecord_ret.Should().BeFalse();
+            }
         }
 
         [TestMethod]
@@ -152,7 +140,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // committee member,add a new root and then register, setrecord
             string validroot = "testroot";
-            var ret = Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock);
+            Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock).Should().BeTrue();
 
             string name = "testname";
 
@@ -229,7 +217,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // committee member,add a new root and then register, setrecord
             string validroot = "testroot";
-            var ret = Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock);
+            Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock).Should().BeTrue();
 
             string name = "testname";
             string domain = name + "." + validroot;
@@ -320,7 +308,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // committee member,add a new root and then register, setrecord
             string validroot = "testroot";
-            var ret = Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock);
+            Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock).Should().BeTrue();
 
             string name = "testname";
             string domain = name + "." + validroot;
@@ -336,7 +324,7 @@ namespace Neo.UnitTests.SmartContract.Native
             register_ret.State.Should().BeTrue();
 
             //set as IPV6 address
-            string testAAAA = "2001:0000:1F1F:0000:0000:0100:11A0:ADDF";
+            string testAAAA = "2001:0000:1f1f:0000:0000:0100:11a0:addf";
             var setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.AAAA, testAAAA, from, persistingBlock);
             setRecord_ret.Should().BeTrue();
 
@@ -452,7 +440,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // committee member,add a new root and then register, setrecord
             string validroot = "testroot";
-            var ret = Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock);
+            Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock).Should().BeTrue();
 
             string name = "testname";
             string domain = name + "." + validroot;
