@@ -1,5 +1,4 @@
 using Neo.IO;
-using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.VM;
 using Neo.VM.Types;
@@ -9,59 +8,26 @@ using System.Linq;
 
 namespace Neo.SmartContract.Native
 {
-    public class TrimmedBlock : BlockBase, IInteroperable
+    public class TrimmedBlock : IInteroperable, ISerializable
     {
+        public Header Header;
         public UInt256[] Hashes;
-        public ConsensusData ConsensusData;
 
-        private Header _header = null;
-        public Header Header
+        public UInt256 Hash => Header.Hash;
+        public uint Index => Header.Index;
+
+        public int Size => Header.Size + Hashes.GetVarSize();
+
+        public void Deserialize(BinaryReader reader)
         {
-            get
-            {
-                if (_header == null)
-                {
-                    _header = new Header
-                    {
-                        Version = Version,
-                        PrevHash = PrevHash,
-                        MerkleRoot = MerkleRoot,
-                        Timestamp = Timestamp,
-                        Index = Index,
-                        NextConsensus = NextConsensus,
-                        Witness = Witness
-                    };
-                }
-                return _header;
-            }
+            Header = reader.ReadSerializable<Header>();
+            Hashes = reader.ReadSerializableArray<UInt256>(Block.MaxTransactionsPerBlock);
         }
 
-        public override int Size => base.Size
-            + Hashes.GetVarSize()           //Hashes
-            + (ConsensusData?.Size ?? 0);   //ConsensusData
-
-        public override void Deserialize(BinaryReader reader)
+        public void Serialize(BinaryWriter writer)
         {
-            base.Deserialize(reader);
-            Hashes = reader.ReadSerializableArray<UInt256>(Block.MaxContentsPerBlock);
-            if (Hashes.Length > 0)
-                ConsensusData = reader.ReadSerializable<ConsensusData>();
-        }
-
-        public override void Serialize(BinaryWriter writer)
-        {
-            base.Serialize(writer);
+            writer.Write(Header);
             writer.Write(Hashes);
-            if (Hashes.Length > 0)
-                writer.Write(ConsensusData);
-        }
-
-        public override JObject ToJson()
-        {
-            JObject json = base.ToJson();
-            json["consensusdata"] = ConsensusData?.ToJson();
-            json["hashes"] = Hashes.Select(p => (JObject)p.ToString()).ToArray();
-            return json;
         }
 
         void IInteroperable.FromStackItem(StackItem stackItem)
@@ -74,15 +40,16 @@ namespace Neo.SmartContract.Native
             return new VM.Types.Array(referenceCounter, new StackItem[]
             {
                 // Computed properties
-                Hash.ToArray(),
+                Header.Hash.ToArray(),
 
                 // BlockBase properties
-                Version,
-                PrevHash.ToArray(),
-                MerkleRoot.ToArray(),
-                Timestamp,
-                Index,
-                NextConsensus.ToArray(),
+                Header.Version,
+                Header.PrevHash.ToArray(),
+                Header.MerkleRoot.ToArray(),
+                Header.Timestamp,
+                Header.Index,
+                Header.PrimaryIndex,
+                Header.NextConsensus.ToArray(),
 
                 // Block properties
                 Hashes.Length - 1

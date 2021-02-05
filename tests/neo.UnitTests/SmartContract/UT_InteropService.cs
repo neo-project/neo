@@ -281,7 +281,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestRuntime_GetTime()
         {
-            Block block = new Block();
+            Block block = new Block { Header = new Header() };
             var engine = GetEngine(true, true, hasBlock: true);
             engine.GetTime().Should().Be(block.Timestamp);
         }
@@ -671,7 +671,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var tx = hasContainer ? TestUtils.GetTransaction(UInt160.Zero) : null;
             var snapshot = hasSnapshot ? Blockchain.Singleton.GetSnapshot() : null;
-            var block = hasBlock ? new Block() : null;
+            var block = hasBlock ? new Block { Header = new Header() } : null;
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, gas);
             if (addScript) engine.LoadScript(new byte[] { 0x01 });
             return engine;

@@ -1,68 +1,45 @@
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.Persistence;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class Block : BlockBase, IInventory, IEquatable<Block>
+    public sealed class Block : IEquatable<Block>, IInventory
     {
-        public const int MaxContentsPerBlock = ushort.MaxValue;
-        public const int MaxTransactionsPerBlock = MaxContentsPerBlock - 1;
+        public const int MaxTransactionsPerBlock = ushort.MaxValue;
 
-        public ConsensusData ConsensusData;
+        public Header Header;
         public Transaction[] Transactions;
 
-        private Header _header = null;
-        public Header Header
-        {
-            get
-            {
-                if (_header == null)
-                {
-                    _header = new Header
-                    {
-                        PrevHash = PrevHash,
-                        MerkleRoot = MerkleRoot,
-                        Timestamp = Timestamp,
-                        Index = Index,
-                        NextConsensus = NextConsensus,
-                        Witness = Witness
-                    };
-                }
-                return _header;
-            }
-        }
+        public UInt256 Hash => Header.Hash;
+        public uint Version => Header.Version;
+        public UInt256 PrevHash => Header.PrevHash;
+        public UInt256 MerkleRoot => Header.MerkleRoot;
+        public ulong Timestamp => Header.Timestamp;
+        public uint Index => Header.Index;
+        public byte PrimaryIndex => Header.PrimaryIndex;
+        public UInt160 NextConsensus => Header.NextConsensus;
+        public Witness Witness => Header.Witness;
 
         InventoryType IInventory.InventoryType => InventoryType.Block;
+        public int Size => Header.Size + Transactions.GetVarSize();
+        Witness[] IVerifiable.Witnesses { get => ((IVerifiable)Header).Witnesses; set => throw new NotSupportedException(); }
 
-        public override int Size => base.Size
-            + IO.Helper.GetVarSize(Transactions.Length + 1) //Count
-            + ConsensusData.Size                            //ConsensusData
-            + Transactions.Sum(p => p.Size);                //Transactions
-
-        public static UInt256 CalculateMerkleRoot(UInt256 consensusDataHash, IEnumerable<UInt256> transactionHashes)
+        public void Deserialize(BinaryReader reader)
         {
-            return MerkleTree.ComputeRoot(transactionHashes.Prepend(consensusDataHash).ToArray());
-        }
-
-        public override void Deserialize(BinaryReader reader)
-        {
-            base.Deserialize(reader);
-            int count = (int)reader.ReadVarInt(MaxContentsPerBlock);
-            if (count == 0) throw new FormatException();
-            ConsensusData = reader.ReadSerializable<ConsensusData>();
-            Transactions = new Transaction[count - 1];
-            for (int i = 0; i < Transactions.Length; i++)
-                Transactions[i] = reader.ReadSerializable<Transaction>();
+            Header = reader.ReadSerializable<Header>();
+            Transactions = reader.ReadSerializableArray<Transaction>(MaxTransactionsPerBlock);
             if (Transactions.Distinct().Count() != Transactions.Length)
                 throw new FormatException();
-            if (CalculateMerkleRoot(ConsensusData.Hash, Transactions.Select(p => p.Hash)) != MerkleRoot)
+            if (MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != Header.MerkleRoot)
                 throw new FormatException();
         }
+
+        void IVerifiable.DeserializeUnsigned(BinaryReader reader) => throw new NotSupportedException();
 
         public bool Equals(Block other)
         {
@@ -81,26 +58,27 @@ namespace Neo.Network.P2P.Payloads
             return Hash.GetHashCode();
         }
 
-        public void RebuildMerkleRoot()
+        UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot) => ((IVerifiable)Header).GetScriptHashesForVerifying(snapshot);
+
+        public void Serialize(BinaryWriter writer)
         {
-            MerkleRoot = CalculateMerkleRoot(ConsensusData.Hash, Transactions.Select(p => p.Hash));
+            writer.Write(Header);
+            writer.Write(Transactions);
         }
 
-        public override void Serialize(BinaryWriter writer)
-        {
-            base.Serialize(writer);
-            writer.WriteVarInt(Transactions.Length + 1);
-            writer.Write(ConsensusData);
-            foreach (Transaction tx in Transactions)
-                writer.Write(tx);
-        }
+        void IVerifiable.SerializeUnsigned(BinaryWriter writer) => ((IVerifiable)Header).SerializeUnsigned(writer);
 
-        public override JObject ToJson()
+        public JObject ToJson()
         {
-            JObject json = base.ToJson();
-            json["consensusdata"] = ConsensusData.ToJson();
+            JObject json = Header.ToJson();
+            json["size"] = Size;
             json["tx"] = Transactions.Select(p => p.ToJson()).ToArray();
             return json;
+        }
+
+        public bool Verify(DataCache snapshot)
+        {
+            return Header.Verify(snapshot);
         }
     }
 }
