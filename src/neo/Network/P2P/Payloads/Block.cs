@@ -10,8 +10,6 @@ namespace Neo.Network.P2P.Payloads
 {
     public sealed class Block : IEquatable<Block>, IInventory
     {
-        public const int MaxTransactionsPerBlock = ushort.MaxValue;
-
         public Header Header;
         public Transaction[] Transactions;
 
@@ -32,7 +30,7 @@ namespace Neo.Network.P2P.Payloads
         public void Deserialize(BinaryReader reader)
         {
             Header = reader.ReadSerializable<Header>();
-            Transactions = reader.ReadSerializableArray<Transaction>(MaxTransactionsPerBlock);
+            Transactions = reader.ReadSerializableArray<Transaction>((int)ProtocolSettings.Default.MaxTransactionsPerBlock);
             if (Transactions.Distinct().Count() != Transactions.Length)
                 throw new FormatException();
             if (MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != Header.MerkleRoot)

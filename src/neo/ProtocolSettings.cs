@@ -15,6 +15,7 @@ namespace Neo
         public int ValidatorsCount { get; }
         public string[] SeedList { get; }
         public uint MillisecondsPerBlock { get; }
+        public uint MaxTransactionsPerBlock { get; }
         public int MemoryPoolMaxTransactions { get; }
         public uint MaxTraceableBlocks { get; }
         public IReadOnlyDictionary<string, uint> NativeActivations { get; }
@@ -96,6 +97,7 @@ namespace Neo
                     "seed5.neo.org:10333"
                 };
             this.MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", 15000u);
+            this.MaxTransactionsPerBlock = section.GetValue("MaxTransactionsPerBlock", 512u);
             this.MemoryPoolMaxTransactions = Math.Max(1, section.GetValue("MemoryPoolMaxTransactions", 50_000));
             this.MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", 2_102_400u);// 365 days
             IConfigurationSection section_na = section.GetSection("NativeActivations");
