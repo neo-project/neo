@@ -43,7 +43,6 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Index = 0,
                     Timestamp = 2,
-                    Version = 3,
                     Witness = new Witness()
                     {
                         InvocationScript = new byte[0],
