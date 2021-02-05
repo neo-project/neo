@@ -16,7 +16,6 @@ using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Linq;
-using System.Text;
 using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract
@@ -332,18 +331,6 @@ namespace Neo.UnitTests.SmartContract
             Struct @struct = (Struct)ret.Value();
             @struct[0].GetInteger().Should().Be(1);
             @struct[1].GetInteger().Should().Be(2);
-        }
-
-        [TestMethod]
-        public void TestJson_Deserialize()
-        {
-            GetEngine().JsonDeserialize(new byte[] { (byte)'1' }).GetInteger().Should().Be(1);
-        }
-
-        [TestMethod]
-        public void TestJson_Serialize()
-        {
-            Encoding.UTF8.GetString(GetEngine().JsonSerialize(1)).Should().Be("1");
         }
     }
 }

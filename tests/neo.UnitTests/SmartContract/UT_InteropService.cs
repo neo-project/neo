@@ -287,29 +287,6 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void TestRuntime_Serialize()
-        {
-            var engine = GetEngine();
-            engine.BinarySerialize(100).ToHexString().Should().Be(new byte[] { 0x21, 0x01, 0x64 }.ToHexString());
-
-            //Larger than MaxItemSize
-            Assert.ThrowsException<InvalidOperationException>(() => engine.BinarySerialize(new byte[1024 * 1024 * 2]));
-
-            //NotSupportedException
-            Assert.ThrowsException<NotSupportedException>(() => engine.BinarySerialize(new InteropInterface(new object())));
-        }
-
-        [TestMethod]
-        public void TestRuntime_Deserialize()
-        {
-            var engine = GetEngine();
-            engine.BinaryDeserialize(engine.BinarySerialize(100)).GetInteger().Should().Be(100);
-
-            //FormatException
-            Assert.ThrowsException<FormatException>(() => engine.BinaryDeserialize(new byte[] { 0xfa, 0x01 }));
-        }
-
-        [TestMethod]
         public void TestRuntime_GetInvocationCounter()
         {
             var engine = GetEngine();

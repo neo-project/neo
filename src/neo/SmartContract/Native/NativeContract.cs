@@ -21,6 +21,7 @@ namespace Neo.SmartContract.Native
 
         #region Named Native Contracts
         public static ContractManagement ContractManagement { get; } = new ContractManagement();
+        public static StdLib StdLib { get; } = new StdLib();
         public static LedgerContract Ledger { get; } = new LedgerContract();
         public static NeoToken NEO { get; } = new NeoToken();
         public static GasToken GAS { get; } = new GasToken();
@@ -58,7 +59,7 @@ namespace Neo.SmartContract.Native
             this.Nef.CheckSum = NefFile.ComputeChecksum(Nef);
             this.Hash = Helper.GetContractHash(UInt160.Zero, this.Nef.CheckSum, Name);
             List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
-            foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+            foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
             {
                 ContractMethodAttribute attribute = member.GetCustomAttribute<ContractMethodAttribute>();
                 if (attribute is null) continue;
