@@ -34,7 +34,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var ret = NativeContract.RoleManagement.Call(
                 snapshot1,
                 new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
-                new Block(),
+                new Block { Header = new Header() },
                 "designateAsRole",
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.StateValidator) },
                 new ContractParameter(ContractParameterType.Array) { Value = validators.Select(p => new ContractParameter(ContractParameterType.ByteArray) { Value = p.ToArray() }).ToList() }

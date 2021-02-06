@@ -20,10 +20,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Size_Get()
         {
             var test = MerkleBlockPayload.Create(Blockchain.GenesisBlock, new BitArray(1024, false));
-            test.Size.Should().Be(270);
+            test.Size.Should().Be(239);
 
             test = MerkleBlockPayload.Create(Blockchain.GenesisBlock, new BitArray(0, false));
-            test.Size.Should().Be(142);
+            test.Size.Should().Be(111);
         }
 
         [TestMethod]
@@ -32,8 +32,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var test = MerkleBlockPayload.Create(Blockchain.GenesisBlock, new BitArray(2, false));
             var clone = test.ToArray().AsSerializable<MerkleBlockPayload>();
 
-            Assert.AreEqual(test.ContentCount, clone.ContentCount);
-            Assert.AreEqual(test.Hashes.Length, clone.ContentCount);
+            Assert.AreEqual(test.TxCount, clone.TxCount);
+            Assert.AreEqual(test.Hashes.Length, clone.TxCount);
             CollectionAssert.AreEqual(test.Hashes, clone.Hashes);
             CollectionAssert.AreEqual(test.Flags, clone.Flags);
         }

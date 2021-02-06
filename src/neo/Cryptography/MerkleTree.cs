@@ -11,12 +11,12 @@ namespace Neo.Cryptography
     {
         private readonly MerkleTreeNode root;
 
-        public int Depth { get; private set; }
+        public int Depth { get; }
 
         internal MerkleTree(UInt256[] hashes)
         {
-            if (hashes is null || hashes.Length == 0) throw new ArgumentException();
             this.root = Build(hashes.Select(p => new MerkleTreeNode { Hash = p }).ToArray());
+            if (root is null) return;
             int depth = 1;
             for (MerkleTreeNode i = root; i.LeftChild != null; i = i.LeftChild)
                 depth++;
@@ -25,7 +25,7 @@ namespace Neo.Cryptography
 
         private static MerkleTreeNode Build(MerkleTreeNode[] leaves)
         {
-            if (leaves.Length == 0) throw new ArgumentException();
+            if (leaves.Length == 0) return null;
             if (leaves.Length == 1) return leaves[0];
 
             Span<byte> buffer = stackalloc byte[64];
@@ -60,7 +60,7 @@ namespace Neo.Cryptography
 
         public static UInt256 ComputeRoot(UInt256[] hashes)
         {
-            if (hashes.Length == 0) throw new ArgumentException();
+            if (hashes.Length == 0) return UInt256.Zero;
             if (hashes.Length == 1) return hashes[0];
             MerkleTree tree = new MerkleTree(hashes);
             return tree.root.Hash;
@@ -83,6 +83,7 @@ namespace Neo.Cryptography
         // depth-first order
         public UInt256[] ToHashArray()
         {
+            if (root is null) return Array.Empty<UInt256>();
             List<UInt256> hashes = new List<UInt256>();
             DepthFirstSearch(root, hashes);
             return hashes.ToArray();
@@ -90,6 +91,7 @@ namespace Neo.Cryptography
 
         public void Trim(BitArray flags)
         {
+            if (root is null) return;
             flags = new BitArray(flags);
             flags.Length = 1 << (Depth - 1);
             Trim(root, 0, Depth, flags);
