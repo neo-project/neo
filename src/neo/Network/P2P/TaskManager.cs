@@ -72,7 +72,7 @@ namespace Neo.Network.P2P
                 return;
 
             // Do not accept payload of type InventoryType.TX if not synced on HeaderHeight
-            uint currentHeight = NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View);
+            uint currentHeight = NativeContract.Ledger.CurrentIndex(system.StoreView);
             uint headerHeight = Blockchain.Singleton.HeaderCache.Last?.Index ?? currentHeight;
             if (currentHeight < headerHeight && (payload.Type == InventoryType.TX || (payload.Type == InventoryType.Block && currentHeight < session.LastBlockIndex - InvPayload.MaxHashesCount)))
             {
@@ -313,7 +313,7 @@ namespace Neo.Network.P2P
         {
             if (session.HasTooManyTasks) return;
 
-            DataCache snapshot = Blockchain.Singleton.View;
+            DataCache snapshot = system.StoreView;
 
             // If there are pending tasks of InventoryType.Block we should process them
             if (session.AvailableTasks.Count > 0)

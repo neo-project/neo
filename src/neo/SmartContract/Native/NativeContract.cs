@@ -1,4 +1,5 @@
 using Neo.IO;
+using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
@@ -154,13 +155,11 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        public ApplicationEngine TestCall(string operation, params object[] args)
+        public ApplicationEngine TestCall(DataCache snapshot, string operation, params object[] args)
         {
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                sb.EmitDynamicCall(Hash, operation, args);
-                return ApplicationEngine.Run(sb.ToArray());
-            }
+            using ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitDynamicCall(Hash, operation, args);
+            return ApplicationEngine.Run(sb.ToArray(), snapshot);
         }
 
         private static ContractParameterType ToParameterType(Type type)

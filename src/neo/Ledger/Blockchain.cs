@@ -67,11 +67,6 @@ namespace Neo.Ledger
         private ImmutableHashSet<UInt160> extensibleWitnessWhiteList;
 
         public IStore Store { get; }
-        /// <summary>
-        /// A readonly view of the blockchain store.
-        /// Note: It doesn't need to be disposed because the <see cref="ISnapshot"/> inside it is null.
-        /// </summary>
-        public DataCache View => new SnapshotCache(Store);
         public MemoryPool MemPool { get; }
         public HeaderCache HeaderCache { get; } = new HeaderCache();
 
@@ -109,7 +104,7 @@ namespace Neo.Ledger
             {
                 if (singleton != null)
                     throw new InvalidOperationException();
-                DataCache snapshot = View;
+                DataCache snapshot = system.StoreView;
                 if (!NativeContract.Ledger.Initialized(snapshot))
                 {
                     Persist(GenesisBlock);
@@ -131,7 +126,7 @@ namespace Neo.Ledger
         private bool ContainsTransaction(UInt256 hash)
         {
             if (MemPool.ContainsKey(hash)) return true;
-            return NativeContract.Ledger.ContainsTransaction(View, hash);
+            return NativeContract.Ledger.ContainsTransaction(system.StoreView, hash);
         }
 
         public SnapshotCache GetSnapshot()
@@ -141,13 +136,13 @@ namespace Neo.Ledger
 
         private void OnImport(IEnumerable<Block> blocks, bool verify)
         {
-            uint currentHeight = NativeContract.Ledger.CurrentIndex(View);
+            uint currentHeight = NativeContract.Ledger.CurrentIndex(system.StoreView);
             foreach (Block block in blocks)
             {
                 if (block.Index <= currentHeight) continue;
                 if (block.Index != currentHeight + 1)
                     throw new InvalidOperationException();
-                if (verify && !block.Verify(View))
+                if (verify && !block.Verify(system.StoreView))
                     throw new InvalidOperationException();
                 Persist(block);
                 ++currentHeight;
@@ -189,7 +184,7 @@ namespace Neo.Ledger
             // Invalidate all the transactions in the memory pool, to avoid any failures when adding new transactions.
             MemPool.InvalidateAllTransactions();
 
-            DataCache snapshot = View;
+            DataCache snapshot = system.StoreView;
 
             // Add the transactions to the memory pool
             foreach (var tx in transactions)
@@ -223,9 +218,9 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewBlock(Block block)
         {
-            DataCache snapshot = View;
+            DataCache snapshot = system.StoreView;
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
-            uint headerHeight = HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
+            uint headerHeight = HeaderCache.Last?.Index ?? currentHeight;
             if (block.Index <= currentHeight)
                 return VerifyResult.AlreadyExists;
             if (block.Index - 1 > headerHeight)
@@ -291,7 +286,7 @@ namespace Neo.Ledger
         private void OnNewHeaders(Header[] headers)
         {
             if (HeaderCache.Full) return;
-            DataCache snapshot = View;
+            DataCache snapshot = system.StoreView;
             uint headerHeight = HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
             foreach (Header header in headers)
             {
@@ -305,7 +300,7 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewInventory(IInventory inventory)
         {
-            if (!inventory.Verify(View)) return VerifyResult.Invalid;
+            if (!inventory.Verify(system.StoreView)) return VerifyResult.Invalid;
             RelayCache.Add(inventory);
             return VerifyResult.Succeed;
         }
@@ -313,7 +308,7 @@ namespace Neo.Ledger
         private VerifyResult OnNewTransaction(Transaction transaction)
         {
             if (ContainsTransaction(transaction.Hash)) return VerifyResult.AlreadyExists;
-            return MemPool.TryAdd(transaction, View);
+            return MemPool.TryAdd(transaction, system.StoreView);
         }
 
         private void OnPreverifyCompleted(PreverifyCompleted task)
@@ -350,7 +345,7 @@ namespace Neo.Ledger
                     OnPreverifyCompleted(task);
                     break;
                 case Idle _:
-                    if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, View))
+                    if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, system.StoreView))
                         Self.Tell(Idle.Instance, ActorRefs.NoSender);
                     break;
             }

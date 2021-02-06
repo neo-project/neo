@@ -358,9 +358,8 @@ namespace Neo.SmartContract
             Exchange(ref applicationEngineProvider, null);
         }
 
-        public static ApplicationEngine Run(byte[] script, DataCache snapshot = null, IVerifiable container = null, Block persistingBlock = null, int offset = 0, long gas = TestModeGas)
+        public static ApplicationEngine Run(byte[] script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, int offset = 0, long gas = TestModeGas)
         {
-            snapshot ??= Blockchain.Singleton.View;
             persistingBlock ??= CreateDummyBlock(snapshot);
             ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, persistingBlock, gas);
             engine.LoadScript(script, initialPosition: offset);

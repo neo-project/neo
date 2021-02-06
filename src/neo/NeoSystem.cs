@@ -18,6 +18,14 @@ namespace Neo
         public IActorRef LocalNode { get; }
         public IActorRef TaskManager { get; }
 
+        /// <summary>
+        /// A readonly view of the store.
+        /// </summary>
+        /// <remarks>
+        /// It doesn't need to be disposed because the <see cref="ISnapshot"/> inside it is null.
+        /// </remarks>
+        public DataCache StoreView => new SnapshotCache(store);
+
         private readonly string storage_engine;
         private readonly IStore store;
         private ChannelsConfig start_message = null;
