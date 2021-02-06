@@ -119,8 +119,6 @@ namespace Neo.SmartContract
 
             for (int i = args.Count - 1; i >= 0; i--)
                 context_new.EvaluationStack.Push(args[i]);
-            if (NativeContract.IsNative(contract.Hash))
-                context_new.EvaluationStack.Push(method.Name);
 
             return context_new;
         }

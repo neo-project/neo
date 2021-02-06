@@ -908,10 +908,9 @@ namespace Neo.UnitTests.SmartContract.Native
         internal static (BigInteger Value, bool State) Check_GetGasPerBlock(DataCache snapshot, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock);
-            engine.LoadScript(NativeContract.NEO.Script, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
 
             using var script = new ScriptBuilder();
-            script.EmitPush("getGasPerBlock");
+            script.EmitDynamicCall(NativeContract.NEO.Hash, "getGasPerBlock");
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -930,11 +929,8 @@ namespace Neo.UnitTests.SmartContract.Native
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
             using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), snapshot, persistingBlock);
 
-            engine.LoadScript(NativeContract.NEO.Script, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
-
             var script = new ScriptBuilder();
-            script.EmitPush(gasPerBlock);
-            script.EmitPush("setGasPerBlock");
+            script.EmitDynamicCall(NativeContract.NEO.Hash, "setGasPerBlock", gasPerBlock);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -950,16 +946,8 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(signAccount ? new UInt160(account) : UInt160.Zero), snapshot, persistingBlock);
 
-            engine.LoadScript(NativeContract.NEO.Script, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
-
             using var script = new ScriptBuilder();
-
-            if (pubkey is null)
-                script.Emit(OpCode.PUSHNULL);
-            else
-                script.EmitPush(pubkey);
-            script.EmitPush(account);
-            script.EmitPush("vote");
+            script.EmitDynamicCall(NativeContract.NEO.Hash, "vote", account, pubkey);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -978,11 +966,8 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot, persistingBlock, 1100_00000000);
 
-            engine.LoadScript(NativeContract.NEO.Script, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
-
             using var script = new ScriptBuilder();
-            script.EmitPush(pubkey);
-            script.EmitPush("registerCandidate");
+            script.EmitDynamicCall(NativeContract.NEO.Hash, "registerCandidate", pubkey);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -1000,10 +985,8 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock);
 
-            engine.LoadScript(NativeContract.NEO.Script, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
-
             using var script = new ScriptBuilder();
-            script.EmitPush("getCommittee");
+            script.EmitDynamicCall(NativeContract.NEO.Hash, "getCommittee");
             engine.LoadScript(script.ToArray());
 
             engine.Execute().Should().Be(VMState.HALT);
@@ -1018,12 +1001,8 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock);
 
-            engine.LoadScript(NativeContract.NEO.Script, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
-
             using var script = new ScriptBuilder();
-            script.EmitPush(persistingBlock.Index);
-            script.EmitPush(address);
-            script.EmitPush("unclaimedGas");
+            script.EmitDynamicCall(NativeContract.NEO.Hash, "unclaimedGas", address, persistingBlock.Index);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -1078,11 +1057,8 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot, persistingBlock);
 
-            engine.LoadScript(NativeContract.NEO.Script, configureState: p => p.ScriptHash = NativeContract.NEO.Hash);
-
             using var script = new ScriptBuilder();
-            script.EmitPush(pubkey);
-            script.EmitPush("unregisterCandidate");
+            script.EmitDynamicCall(NativeContract.NEO.Hash, "unregisterCandidate", pubkey);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)

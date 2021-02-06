@@ -495,11 +495,9 @@ namespace Neo.UnitTests.SmartContract.Native
         internal static bool Check_AddRoot(DataCache snapshot, UInt160 account, string root, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(account), snapshot, persistingBlock);
-            engine.LoadScript(NativeContract.NameService.Script, configureState: p => p.ScriptHash = NativeContract.NameService.Hash);
 
-            var script = new ScriptBuilder();
-            script.EmitPush(root);
-            script.EmitPush("addRoot");
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "addRoot", root);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -513,12 +511,9 @@ namespace Neo.UnitTests.SmartContract.Native
         internal static bool Check_Transfer(DataCache snapshot, UInt160 to, string domain, UInt160 owner, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(owner), snapshot, persistingBlock);
-            engine.LoadScript(NativeContract.NameService.Script, configureState: p => p.ScriptHash = NativeContract.NameService.Hash);
 
-            var script = new ScriptBuilder();
-            script.EmitPush(domain);
-            script.EmitPush(to);
-            script.EmitPush("transfer");
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "transfer", to, domain);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -533,11 +528,8 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(account), snapshot, persistingBlock);
 
-            engine.LoadScript(NativeContract.NameService.Script, configureState: p => p.ScriptHash = NativeContract.NameService.Hash);
-
-            var script = new ScriptBuilder();
-            script.EmitPush(name);
-            script.EmitPush("isAvailable");
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "isAvailable", name);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -556,11 +548,8 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot, persistingBlock);
 
-            engine.LoadScript(NativeContract.NameService.Script, configureState: p => p.ScriptHash = NativeContract.NameService.Hash);
-
             using var script = new ScriptBuilder();
-            script.EmitPush(price);
-            script.EmitPush("setPrice");
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "setPrice", price);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -578,10 +567,8 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock);
 
-            engine.LoadScript(NativeContract.NameService.Script, configureState: p => p.ScriptHash = NativeContract.NameService.Hash);
-
             using var script = new ScriptBuilder();
-            script.EmitPush("getPrice");
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "getPrice");
             engine.LoadScript(script.ToArray());
 
             engine.Execute().Should().Be(VMState.HALT);
@@ -597,12 +584,8 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(new UInt160(owner)), snapshot, persistingBlock);
 
-            engine.LoadScript(NativeContract.NameService.Script, configureState: p => p.ScriptHash = NativeContract.NameService.Hash);
-
             using var script = new ScriptBuilder();
-            script.EmitPush(new UInt160(owner));
-            script.EmitPush(name);
-            script.EmitPush("register");
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "register", name, owner);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -621,13 +604,8 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(new UInt160(pubkey)), snapshot, persistingBlock);
 
-            engine.LoadScript(NativeContract.NameService.Script, configureState: p => p.ScriptHash = NativeContract.NameService.Hash);
-
             using var script = new ScriptBuilder();
-            script.EmitPush(data);
-            script.EmitPush(type);
-            script.EmitPush(name);
-            script.EmitPush("setRecord");
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "setRecord", name, type, data);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -643,12 +621,8 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), snapshot, persistingBlock);
 
-            engine.LoadScript(NativeContract.NameService.Script, configureState: p => p.ScriptHash = NativeContract.NameService.Hash);
-
             using var script = new ScriptBuilder();
-            script.EmitPush(type);
-            script.EmitPush(name);
-            script.EmitPush("getRecord");
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "getRecord", name, type);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -667,12 +641,8 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(new UInt160[] { admin, new UInt160(pubkey) }), snapshot, persistingBlock);
 
-            engine.LoadScript(NativeContract.NameService.Script, configureState: p => p.ScriptHash = NativeContract.NameService.Hash);
-
             using var script = new ScriptBuilder();
-            script.EmitPush(admin);
-            script.EmitPush(name);
-            script.EmitPush("setAdmin");
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "setAdmin", name, admin);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
