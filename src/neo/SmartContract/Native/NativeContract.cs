@@ -29,7 +29,6 @@ namespace Neo.SmartContract.Native
         public static IReadOnlyCollection<NativeContract> Contracts { get; } = contractsList;
         public string Name => GetType().Name;
         public NefFile Nef { get; }
-        public byte[] Script => Nef.Script;
         public UInt160 Hash { get; }
         public int Id { get; } = --id_counter;
         public ContractManifest Manifest { get; }
@@ -61,19 +60,19 @@ namespace Neo.SmartContract.Native
             this.Nef = new NefFile
             {
                 Compiler = "neo-core-v3.0",
-                Tokens = System.Array.Empty<MethodToken>(),
+                Tokens = Array.Empty<MethodToken>(),
                 Script = script
             };
             this.Nef.CheckSum = NefFile.ComputeChecksum(Nef);
-            this.Hash = Helper.GetContractHash(UInt160.Zero, this.Nef.CheckSum, Name);
+            this.Hash = Helper.GetContractHash(UInt160.Zero, 0, Name);
             this.Manifest = new ContractManifest
             {
                 Name = Name,
-                Groups = System.Array.Empty<ContractGroup>(),
-                SupportedStandards = System.Array.Empty<string>(),
+                Groups = Array.Empty<ContractGroup>(),
+                SupportedStandards = Array.Empty<string>(),
                 Abi = new ContractAbi()
                 {
-                    Events = System.Array.Empty<ContractEventDescriptor>(),
+                    Events = Array.Empty<ContractEventDescriptor>(),
                     Methods = descriptors.Select(p => p.Descriptor).ToArray()
                 },
                 Permissions = new[] { ContractPermission.DefaultPermission },
