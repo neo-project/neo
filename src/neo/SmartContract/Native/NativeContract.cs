@@ -1,22 +1,18 @@
 using Neo.IO;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
-using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using System.Reflection;
-using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
 {
     public abstract class NativeContract
     {
         private static readonly List<NativeContract> contractsList = new List<NativeContract>();
-        private static readonly Dictionary<int, NativeContract> contractsIdDictionary = new Dictionary<int, NativeContract>();
-        private static readonly Dictionary<UInt160, NativeContract> contractsHashDictionary = new Dictionary<UInt160, NativeContract>();
-        private readonly Dictionary<(string, int), ContractMethodMetadata> methods = new Dictionary<(string, int), ContractMethodMetadata>();
+        private static readonly Dictionary<UInt160, NativeContract> contractsDictionary = new Dictionary<UInt160, NativeContract>();
+        private readonly Dictionary<int, ContractMethodMetadata> methods = new Dictionary<int, ContractMethodMetadata>();
         private static int id_counter = 0;
 
         #region Named Native Contracts
@@ -35,54 +31,51 @@ namespace Neo.SmartContract.Native
         public static IReadOnlyCollection<NativeContract> Contracts { get; } = contractsList;
         public string Name => GetType().Name;
         public NefFile Nef { get; }
-        public byte[] Script => Nef.Script;
         public UInt160 Hash { get; }
-        public int Id { get; }
+        public int Id { get; } = --id_counter;
         public ContractManifest Manifest { get; }
         public uint ActiveBlockIndex { get; }
 
         protected NativeContract()
         {
-            this.Id = --id_counter;
+            List<ContractMethodMetadata> descriptors = new List<ContractMethodMetadata>();
+            foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
+            {
+                ContractMethodAttribute attribute = member.GetCustomAttribute<ContractMethodAttribute>();
+                if (attribute is null) continue;
+                descriptors.Add(new ContractMethodMetadata(member, attribute));
+            }
+            descriptors = descriptors.OrderBy(p => p.Name).ThenBy(p => p.Parameters.Length).ToList();
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
-                sb.EmitPush(Id);
-                sb.EmitSysCall(ApplicationEngine.System_Contract_CallNative);
+                foreach (ContractMethodMetadata method in descriptors)
+                {
+                    method.Descriptor.Offset = sb.Offset;
+                    sb.EmitPush(0); //version
+                    methods.Add(sb.Offset, method);
+                    sb.EmitSysCall(ApplicationEngine.System_Contract_CallNative);
+                    sb.Emit(OpCode.RET);
+                }
                 script = sb.ToArray();
             }
             this.Nef = new NefFile
             {
                 Compiler = "neo-core-v3.0",
-                Tokens = System.Array.Empty<MethodToken>(),
+                Tokens = Array.Empty<MethodToken>(),
                 Script = script
             };
             this.Nef.CheckSum = NefFile.ComputeChecksum(Nef);
-            this.Hash = Helper.GetContractHash(UInt160.Zero, this.Nef.CheckSum, Name);
-            List<ContractMethodDescriptor> descriptors = new List<ContractMethodDescriptor>();
-            foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
-            {
-                ContractMethodAttribute attribute = member.GetCustomAttribute<ContractMethodAttribute>();
-                if (attribute is null) continue;
-                ContractMethodMetadata metadata = new ContractMethodMetadata(member, attribute);
-                descriptors.Add(new ContractMethodDescriptor
-                {
-                    Name = metadata.Name,
-                    ReturnType = ToParameterType(metadata.Handler.ReturnType),
-                    Parameters = metadata.Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name }).ToArray(),
-                    Safe = (attribute.RequiredCallFlags & ~CallFlags.ReadOnly) == 0
-                });
-                methods.Add((metadata.Name, metadata.Parameters.Length), metadata);
-            }
+            this.Hash = Helper.GetContractHash(UInt160.Zero, 0, Name);
             this.Manifest = new ContractManifest
             {
                 Name = Name,
-                Groups = System.Array.Empty<ContractGroup>(),
-                SupportedStandards = System.Array.Empty<string>(),
+                Groups = Array.Empty<ContractGroup>(),
+                SupportedStandards = Array.Empty<string>(),
                 Abi = new ContractAbi()
                 {
-                    Events = System.Array.Empty<ContractEventDescriptor>(),
-                    Methods = descriptors.OrderBy(p => p.Name).ThenBy(p => p.Parameters.Length).ToArray()
+                    Events = Array.Empty<ContractEventDescriptor>(),
+                    Methods = descriptors.Select(p => p.Descriptor).ToArray()
                 },
                 Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<UInt160>.Create(),
@@ -91,8 +84,7 @@ namespace Neo.SmartContract.Native
             if (ProtocolSettings.Default.NativeActivations.TryGetValue(Name, out uint activationIndex))
                 this.ActiveBlockIndex = activationIndex;
             contractsList.Add(this);
-            contractsIdDictionary.Add(Id, this);
-            contractsHashDictionary.Add(Hash, this);
+            contractsDictionary.Add(Hash, this);
         }
 
         protected bool CheckCommittee(ApplicationEngine engine)
@@ -108,23 +100,18 @@ namespace Neo.SmartContract.Native
 
         public static NativeContract GetContract(UInt160 hash)
         {
-            contractsHashDictionary.TryGetValue(hash, out var contract);
+            contractsDictionary.TryGetValue(hash, out var contract);
             return contract;
         }
 
-        public static NativeContract GetContract(int id)
+        internal void Invoke(ApplicationEngine engine, byte version)
         {
-            contractsIdDictionary.TryGetValue(id, out var contract);
-            return contract;
-        }
-
-        internal void Invoke(ApplicationEngine engine)
-        {
-            if (!engine.CurrentScriptHash.Equals(Hash))
-                throw new InvalidOperationException("It is not allowed to use Neo.Native.Call directly to call native contracts. System.Contract.Call should be used.");
+            if (ActiveBlockIndex > Ledger.CurrentIndex(engine.Snapshot))
+                throw new InvalidOperationException($"The native contract {Name} is not active.");
+            if (version != 0)
+                throw new InvalidOperationException($"The native contract of version {version} is not active.");
             ExecutionContext context = engine.CurrentContext;
-            string operation = context.EvaluationStack.Pop().GetString();
-            ContractMethodMetadata method = methods[(operation, context.EvaluationStack.Count)];
+            ContractMethodMetadata method = methods[context.InstructionPointer];
             ExecutionContextState state = context.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
@@ -141,7 +128,7 @@ namespace Neo.SmartContract.Native
 
         public static bool IsNative(UInt160 hash)
         {
-            return contractsHashDictionary.ContainsKey(hash);
+            return contractsDictionary.ContainsKey(hash);
         }
 
         internal virtual void Initialize(ApplicationEngine engine)
@@ -158,43 +145,9 @@ namespace Neo.SmartContract.Native
 
         public ApplicationEngine TestCall(string operation, params object[] args)
         {
-            using (ScriptBuilder sb = new ScriptBuilder())
-            {
-                sb.EmitDynamicCall(Hash, operation, args);
-                return ApplicationEngine.Run(sb.ToArray());
-            }
-        }
-
-        private static ContractParameterType ToParameterType(Type type)
-        {
-            if (type == typeof(void)) return ContractParameterType.Void;
-            if (type == typeof(bool)) return ContractParameterType.Boolean;
-            if (type == typeof(sbyte)) return ContractParameterType.Integer;
-            if (type == typeof(byte)) return ContractParameterType.Integer;
-            if (type == typeof(short)) return ContractParameterType.Integer;
-            if (type == typeof(ushort)) return ContractParameterType.Integer;
-            if (type == typeof(int)) return ContractParameterType.Integer;
-            if (type == typeof(uint)) return ContractParameterType.Integer;
-            if (type == typeof(long)) return ContractParameterType.Integer;
-            if (type == typeof(ulong)) return ContractParameterType.Integer;
-            if (type == typeof(BigInteger)) return ContractParameterType.Integer;
-            if (type == typeof(byte[])) return ContractParameterType.ByteArray;
-            if (type == typeof(string)) return ContractParameterType.String;
-            if (type == typeof(UInt160)) return ContractParameterType.Hash160;
-            if (type == typeof(UInt256)) return ContractParameterType.Hash256;
-            if (type == typeof(VM.Types.Boolean)) return ContractParameterType.Boolean;
-            if (type == typeof(Integer)) return ContractParameterType.Integer;
-            if (type == typeof(ByteString)) return ContractParameterType.ByteArray;
-            if (type == typeof(VM.Types.Buffer)) return ContractParameterType.ByteArray;
-            if (type == typeof(Array)) return ContractParameterType.Array;
-            if (type == typeof(Struct)) return ContractParameterType.Array;
-            if (type == typeof(Map)) return ContractParameterType.Map;
-            if (type == typeof(StackItem)) return ContractParameterType.Any;
-            if (typeof(IInteroperable).IsAssignableFrom(type)) return ContractParameterType.Array;
-            if (typeof(ISerializable).IsAssignableFrom(type)) return ContractParameterType.ByteArray;
-            if (type.IsArray) return ContractParameterType.Array;
-            if (type.IsEnum) return ContractParameterType.Integer;
-            return ContractParameterType.Any;
+            using ScriptBuilder sb = new ScriptBuilder();
+            sb.EmitDynamicCall(Hash, operation, args);
+            return ApplicationEngine.Run(sb.ToArray());
         }
     }
 }

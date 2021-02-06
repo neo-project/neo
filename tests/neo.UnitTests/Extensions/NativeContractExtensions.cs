@@ -96,18 +96,9 @@ namespace Neo.UnitTests.Extensions
 
         public static StackItem Call(this NativeContract contract, DataCache snapshot, IVerifiable container, Block persistingBlock, string method, params ContractParameter[] args)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot, persistingBlock);
-            var contractState = NativeContract.ContractManagement.GetContract(snapshot, contract.Hash);
-            if (contractState == null) throw new InvalidOperationException();
-            var md = contract.Manifest.Abi.GetMethod(method, args.Length);
-
-            var script = new ScriptBuilder();
-
-            for (var i = args.Length - 1; i >= 0; i--)
-                script.EmitPush(args[i]);
-
-            script.EmitPush(method);
-            engine.LoadContract(contractState, md, CallFlags.All);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot, persistingBlock);
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(contract.Hash, method, args);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() != VMState.HALT)

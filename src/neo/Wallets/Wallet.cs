@@ -400,7 +400,6 @@ namespace Neo.Wallets
                     // Check verify cost
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot());
                     engine.LoadContract(contract, md, CallFlags.None);
-                    if (NativeContract.IsNative(hash)) engine.Push("verify");
                     if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
                     if (!engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.Hash} returns false.");
 

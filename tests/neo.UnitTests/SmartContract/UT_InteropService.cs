@@ -356,11 +356,9 @@ namespace Neo.UnitTests.SmartContract
                 Transaction = TestUtils.CreateRandomHashTransaction()
             };
             UT_SmartContractHelper.TransactionAdd(engine.Snapshot, state);
-            engine.LoadScript(NativeContract.Ledger.Script, configureState: p => p.ScriptHash = NativeContract.Ledger.Hash);
 
-            var script = new ScriptBuilder();
-            script.EmitPush(state.Transaction.Hash.ToArray());
-            script.EmitPush("getTransactionHeight");
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.Ledger.Hash, "getTransactionHeight", state.Transaction.Hash);
             engine.LoadScript(script.ToArray());
             engine.Execute();
             Assert.AreEqual(engine.State, VMState.HALT);
