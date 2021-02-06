@@ -229,16 +229,6 @@ namespace Neo.SmartContract
 
                 engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
 
-                if (NativeContract.IsNative(hash))
-                {
-                    try
-                    {
-                        engine.StepOut();
-                        engine.Push("verify");
-                    }
-                    catch { }
-                }
-
                 if (engine.Execute() == VMState.FAULT) return false;
                 if (!engine.ResultStack.Peek().GetBoolean()) return false;
                 fee = engine.GasConsumed;
