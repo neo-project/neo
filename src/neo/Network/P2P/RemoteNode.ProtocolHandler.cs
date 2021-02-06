@@ -1,7 +1,6 @@
 using Akka.Actor;
 using Neo.Cryptography;
 using Neo.IO.Caching;
-using Neo.Ledger;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -28,8 +27,8 @@ namespace Neo.Network.P2P
         }
 
         private readonly PendingKnownHashesCollection pendingKnownHashes = new PendingKnownHashesCollection();
-        private readonly HashSetCache<UInt256> knownHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
-        private readonly HashSetCache<UInt256> sentHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
+        private readonly HashSetCache<UInt256> knownHashes = new HashSetCache<UInt256>(ProtocolSettings.Default.MemoryPoolMaxTransactions * 2 / 5);
+        private readonly HashSetCache<UInt256> sentHashes = new HashSetCache<UInt256>(ProtocolSettings.Default.MemoryPoolMaxTransactions * 2 / 5);
         private bool verack = false;
         private BloomFilter bloom_filter;
 
@@ -226,7 +225,7 @@ namespace Neo.Network.P2P
                 switch (payload.Type)
                 {
                     case InventoryType.TX:
-                        if (Blockchain.Singleton.MemPool.TryGetValue(hash, out Transaction tx))
+                        if (system.MemPool.TryGetValue(hash, out Transaction tx))
                             EnqueueMessage(Message.Create(MessageCommand.Transaction, tx));
                         else
                             notFound.Add(hash);
@@ -251,7 +250,7 @@ namespace Neo.Network.P2P
                         }
                         break;
                     default:
-                        if (Blockchain.Singleton.RelayCache.TryGet(hash, out IInventory inventory))
+                        if (system.RelayCache.TryGet(hash, out IInventory inventory))
                             EnqueueMessage(Message.Create((MessageCommand)payload.Type, inventory));
                         break;
                 }
@@ -333,7 +332,7 @@ namespace Neo.Network.P2P
 
         private void OnMemPoolMessageReceived()
         {
-            foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => p.Hash).ToArray()))
+            foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, system.MemPool.GetVerifiedTransactions().Select(p => p.Hash).ToArray()))
                 EnqueueMessage(Message.Create(MessageCommand.Inv, payload));
         }
 

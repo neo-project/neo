@@ -44,7 +44,7 @@ namespace Neo.Network.P2P
         public TaskManager(NeoSystem system)
         {
             this.system = system;
-            this.knownHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
+            this.knownHashes = new HashSetCache<UInt256>(ProtocolSettings.Default.MemoryPoolMaxTransactions * 2 / 5);
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.RelayResult));
         }
@@ -73,7 +73,7 @@ namespace Neo.Network.P2P
 
             // Do not accept payload of type InventoryType.TX if not synced on HeaderHeight
             uint currentHeight = NativeContract.Ledger.CurrentIndex(system.StoreView);
-            uint headerHeight = Blockchain.Singleton.HeaderCache.Last?.Index ?? currentHeight;
+            uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
             if (currentHeight < headerHeight && (payload.Type == InventoryType.TX || (payload.Type == InventoryType.Block && currentHeight < session.LastBlockIndex - InvPayload.MaxHashesCount)))
             {
                 RequestTasks(Sender, session);
@@ -339,10 +339,10 @@ namespace Neo.Network.P2P
             }
 
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
-            uint headerHeight = Blockchain.Singleton.HeaderCache.Last?.Index ?? currentHeight;
+            uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
             // When the number of AvailableTasks is no more than 0, no pending tasks of InventoryType.Block, it should process pending the tasks of headers
             // If not HeaderTask pending to be processed it should ask for more Blocks
-            if ((!HasHeaderTask || globalInvTasks[HeaderTaskHash] < MaxConncurrentTasks) && headerHeight < session.LastBlockIndex && !Blockchain.Singleton.HeaderCache.Full)
+            if ((!HasHeaderTask || globalInvTasks[HeaderTaskHash] < MaxConncurrentTasks) && headerHeight < session.LastBlockIndex && !system.HeaderCache.Full)
             {
                 session.InvTasks[HeaderTaskHash] = DateTime.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);

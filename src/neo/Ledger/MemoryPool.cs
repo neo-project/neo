@@ -95,10 +95,10 @@ namespace Neo.Ledger
 
         public int UnVerifiedCount => _unverifiedTransactions.Count;
 
-        public MemoryPool(NeoSystem system, int capacity)
+        public MemoryPool(NeoSystem system)
         {
             _system = system;
-            Capacity = capacity;
+            Capacity = ProtocolSettings.Default.MemoryPoolMaxTransactions;
         }
 
         /// <summary>
@@ -363,7 +363,7 @@ namespace Neo.Ledger
 
             // If we know about headers of future blocks, no point in verifying transactions from the unverified tx pool
             // until we get caught up.
-            if (block.Index > 0 && Blockchain.Singleton.HeaderCache.Count > 0)
+            if (block.Index > 0 && _system.HeaderCache.Count > 0)
                 return;
 
             uint _maxTxPerBlock = NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot);
@@ -462,7 +462,7 @@ namespace Neo.Ledger
         /// <returns>true if more unsorted messages exist, otherwise false</returns>
         internal bool ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, DataCache snapshot)
         {
-            if (Blockchain.Singleton.HeaderCache.Count > 0)
+            if (_system.HeaderCache.Count > 0)
                 return false;
 
             if (_unverifiedSortedTransactions.Count > 0)

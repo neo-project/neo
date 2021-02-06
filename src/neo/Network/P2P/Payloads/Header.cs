@@ -99,9 +99,9 @@ namespace Neo.Network.P2P.Payloads
         UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
         {
             if (PrevHash == UInt256.Zero) return new[] { Witness.ScriptHash };
-            Header prev = Blockchain.Singleton.HeaderCache[Index - 1] ?? NativeContract.Ledger.GetTrimmedBlock(snapshot, PrevHash)?.Header;
+            TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, PrevHash);
             if (prev is null) throw new InvalidOperationException();
-            return new[] { prev.NextConsensus };
+            return new[] { prev.Header.NextConsensus };
         }
 
         public void Serialize(BinaryWriter writer)
@@ -137,14 +137,24 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        public bool Verify(DataCache snapshot)
+        internal bool Verify(DataCache snapshot)
         {
-            var prev = Blockchain.Singleton.HeaderCache[Index - 1] ?? NativeContract.Ledger.GetHeader(snapshot, Index - 1);
+            TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, PrevHash);
             if (prev is null) return false;
-            if (prev.Hash != PrevHash) return false;
-            if (prev.Timestamp >= Timestamp) return false;
+            if (prev.Index + 1 != Index) return false;
+            if (prev.Header.Timestamp >= Timestamp) return false;
             if (!this.VerifyWitnesses(snapshot, 1_00000000)) return false;
             return true;
+        }
+
+        internal bool Verify(DataCache snapshot, HeaderCache headerCache)
+        {
+            Header prev = headerCache.Last;
+            if (prev is null) return Verify(snapshot);
+            if (prev.Hash != PrevHash) return false;
+            if (prev.Index + 1 != Index) return false;
+            if (prev.Timestamp >= Timestamp) return false;
+            return this.VerifyWitness(snapshot, prev.NextConsensus, Witness, 1_00000000, out _);
         }
     }
 }

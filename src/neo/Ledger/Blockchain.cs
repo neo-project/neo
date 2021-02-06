@@ -3,7 +3,6 @@ using Akka.Configuration;
 using Akka.IO;
 using Neo.Cryptography.ECC;
 using Neo.IO.Actors;
-using Neo.IO.Caching;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -16,7 +15,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 
 namespace Neo.Ledger
 {
@@ -58,27 +56,11 @@ namespace Neo.Ledger
 
         private readonly static Script onPersistScript, postPersistScript;
         private const int MaxTxToReverifyPerIdle = 10;
-        private static readonly object lockObj = new object();
         private readonly NeoSystem system;
         private readonly IActorRef txrouter;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new Dictionary<uint, UnverifiedBlocksList>();
-        internal readonly RelayCache RelayCache = new RelayCache(100);
         private ImmutableHashSet<UInt160> extensibleWitnessWhiteList;
-
-        public IStore Store { get; }
-        public MemoryPool MemPool { get; }
-        public HeaderCache HeaderCache { get; } = new HeaderCache();
-
-        private static Blockchain singleton;
-        public static Blockchain Singleton
-        {
-            get
-            {
-                while (singleton == null) Thread.Sleep(10);
-                return singleton;
-            }
-        }
 
         static Blockchain()
         {
@@ -94,44 +76,19 @@ namespace Neo.Ledger
             }
         }
 
-        public Blockchain(NeoSystem system, IStore store)
+        public Blockchain(NeoSystem system)
         {
             this.system = system;
             this.txrouter = Context.ActorOf(TransactionRouter.Props(system));
-            this.MemPool = new MemoryPool(system, ProtocolSettings.Default.MemoryPoolMaxTransactions);
-            this.Store = store;
-            lock (lockObj)
-            {
-                if (singleton != null)
-                    throw new InvalidOperationException();
-                DataCache snapshot = system.StoreView;
-                if (!NativeContract.Ledger.Initialized(snapshot))
-                {
-                    Persist(GenesisBlock);
-                }
-                else
-                {
-                    UpdateExtensibleWitnessWhiteList(snapshot);
-                }
-                singleton = this;
-            }
-        }
-
-        protected override void PostStop()
-        {
-            base.PostStop();
-            HeaderCache.Dispose();
+            DataCache snapshot = system.StoreView;
+            if (!NativeContract.Ledger.Initialized(snapshot))
+                Persist(GenesisBlock);
         }
 
         private bool ContainsTransaction(UInt256 hash)
         {
-            if (MemPool.ContainsKey(hash)) return true;
+            if (system.MemPool.ContainsKey(hash)) return true;
             return NativeContract.Ledger.ContainsTransaction(system.StoreView, hash);
-        }
-
-        public SnapshotCache GetSnapshot()
-        {
-            return new SnapshotCache(Store.GetSnapshot());
         }
 
         private void OnImport(IEnumerable<Block> blocks, bool verify)
@@ -182,7 +139,7 @@ namespace Neo.Ledger
         private void OnFillMemoryPool(IEnumerable<Transaction> transactions)
         {
             // Invalidate all the transactions in the memory pool, to avoid any failures when adding new transactions.
-            MemPool.InvalidateAllTransactions();
+            system.MemPool.InvalidateAllTransactions();
 
             DataCache snapshot = system.StoreView;
 
@@ -192,9 +149,9 @@ namespace Neo.Ledger
                 if (NativeContract.Ledger.ContainsTransaction(snapshot, tx.Hash))
                     continue;
                 // First remove the tx if it is unverified in the pool.
-                MemPool.TryRemoveUnVerified(tx.Hash, out _);
+                system.MemPool.TryRemoveUnVerified(tx.Hash, out _);
                 // Add to the memory pool
-                MemPool.TryAdd(tx, snapshot);
+                system.MemPool.TryAdd(tx, snapshot);
             }
             // Transactions originally in the pool will automatically be reverified based on their priority.
 
@@ -207,7 +164,8 @@ namespace Neo.Ledger
             {
                 Block block => OnNewBlock(block),
                 Transaction transaction => OnNewTransaction(transaction),
-                _ => OnNewInventory(inventory)
+                ExtensiblePayload payload => OnNewExtensiblePayload(payload),
+                _ => throw new NotSupportedException()
             };
             if (result == VerifyResult.Succeed && relay)
             {
@@ -220,7 +178,7 @@ namespace Neo.Ledger
         {
             DataCache snapshot = system.StoreView;
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
-            uint headerHeight = HeaderCache.Last?.Index ?? currentHeight;
+            uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
             if (block.Index <= currentHeight)
                 return VerifyResult.AlreadyExists;
             if (block.Index - 1 > headerHeight)
@@ -230,12 +188,12 @@ namespace Neo.Ledger
             }
             if (block.Index == headerHeight + 1)
             {
-                if (!block.Verify(snapshot))
+                if (!block.Verify(snapshot, system.HeaderCache))
                     return VerifyResult.Invalid;
             }
             else
             {
-                if (!block.Hash.Equals(HeaderCache[block.Index].Hash))
+                if (!block.Hash.Equals(system.HeaderCache[block.Index].Hash))
                     return VerifyResult.Invalid;
             }
             block_cache.TryAdd(block.Hash, block);
@@ -247,7 +205,7 @@ namespace Neo.Ledger
                 {
                     blocksToPersistList.Add(block_persist);
                     if (block_persist.Index + 1 > headerHeight) break;
-                    UInt256 hash = HeaderCache[block_persist.Index + 1].Hash;
+                    UInt256 hash = system.HeaderCache[block_persist.Index + 1].Hash;
                     if (!block_cache.TryGetValue(hash, out block_persist)) break;
                 }
 
@@ -278,37 +236,39 @@ namespace Neo.Ledger
                 if (block.Index + 99 >= headerHeight)
                     system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
                 if (block.Index == headerHeight + 1)
-                    HeaderCache.Add(block.Header);
+                    system.HeaderCache.Add(block.Header);
             }
             return VerifyResult.Succeed;
         }
 
         private void OnNewHeaders(Header[] headers)
         {
-            if (HeaderCache.Full) return;
+            if (system.HeaderCache.Full) return;
             DataCache snapshot = system.StoreView;
-            uint headerHeight = HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
+            uint headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
             foreach (Header header in headers)
             {
                 if (header.Index > headerHeight + 1) break;
                 if (header.Index < headerHeight + 1) continue;
-                if (!header.Verify(snapshot)) break;
-                HeaderCache.Add(header);
+                if (!header.Verify(snapshot, system.HeaderCache)) break;
+                system.HeaderCache.Add(header);
                 ++headerHeight;
             }
         }
 
-        private VerifyResult OnNewInventory(IInventory inventory)
+        private VerifyResult OnNewExtensiblePayload(ExtensiblePayload payload)
         {
-            if (!inventory.Verify(system.StoreView)) return VerifyResult.Invalid;
-            RelayCache.Add(inventory);
+            DataCache snapshot = system.StoreView;
+            extensibleWitnessWhiteList ??= UpdateExtensibleWitnessWhiteList(snapshot);
+            if (!payload.Verify(snapshot, extensibleWitnessWhiteList)) return VerifyResult.Invalid;
+            system.RelayCache.Add(payload);
             return VerifyResult.Succeed;
         }
 
         private VerifyResult OnNewTransaction(Transaction transaction)
         {
             if (ContainsTransaction(transaction.Hash)) return VerifyResult.AlreadyExists;
-            return MemPool.TryAdd(transaction, system.StoreView);
+            return system.MemPool.TryAdd(transaction, system.StoreView);
         }
 
         private void OnPreverifyCompleted(PreverifyCompleted task)
@@ -345,7 +305,7 @@ namespace Neo.Ledger
                     OnPreverifyCompleted(task);
                     break;
                 case Idle _:
-                    if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, system.StoreView))
+                    if (system.MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, system.StoreView))
                         Self.Tell(Idle.Instance, ActorRefs.NoSender);
                     break;
             }
@@ -361,7 +321,7 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
-            using (SnapshotCache snapshot = GetSnapshot())
+            using (SnapshotCache snapshot = system.GetSnapshot())
             {
                 List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block))
@@ -422,18 +382,18 @@ namespace Neo.Ledger
                     }
                 }
                 if (commitExceptions != null) throw new AggregateException(commitExceptions);
-                UpdateExtensibleWitnessWhiteList(snapshot);
-                MemPool.UpdatePoolForBlockPersisted(block, snapshot);
+                system.MemPool.UpdatePoolForBlockPersisted(block, snapshot);
             }
+            extensibleWitnessWhiteList = null;
             block_cache.Remove(block.PrevHash);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
-            if (HeaderCache.TryRemoveFirst(out Header header))
+            if (system.HeaderCache.TryRemoveFirst(out Header header))
                 Debug.Assert(header.Index == block.Index);
         }
 
-        public static Props Props(NeoSystem system, IStore store)
+        public static Props Props(NeoSystem system)
         {
-            return Akka.Actor.Props.Create(() => new Blockchain(system, store)).WithMailbox("blockchain-mailbox");
+            return Akka.Actor.Props.Create(() => new Blockchain(system)).WithMailbox("blockchain-mailbox");
         }
 
         private void SendRelayResult(IInventory inventory, VerifyResult result)
@@ -447,7 +407,7 @@ namespace Neo.Ledger
             Context.System.EventStream.Publish(rr);
         }
 
-        private void UpdateExtensibleWitnessWhiteList(DataCache snapshot)
+        private static ImmutableHashSet<UInt160> UpdateExtensibleWitnessWhiteList(DataCache snapshot)
         {
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             var builder = ImmutableHashSet.CreateBuilder<UInt160>();
@@ -467,12 +427,7 @@ namespace Neo.Ledger
                 builder.Add(Contract.GetBFTAddress(stateValidators));
                 builder.UnionWith(stateValidators.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()));
             }
-            extensibleWitnessWhiteList = builder.ToImmutable();
-        }
-
-        internal bool IsExtensibleWitnessWhiteListed(UInt160 address)
-        {
-            return extensibleWitnessWhiteList.Contains(address);
+            return builder.ToImmutable();
         }
     }
 

@@ -278,11 +278,6 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        bool IInventory.Verify(DataCache snapshot)
-        {
-            return Verify(snapshot, null) == VerifyResult.Succeed;
-        }
-
         public virtual VerifyResult VerifyStateDependent(DataCache snapshot, TransactionVerificationContext context)
         {
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);

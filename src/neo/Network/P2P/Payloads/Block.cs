@@ -1,6 +1,7 @@
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.Ledger;
 using Neo.Persistence;
 using System;
 using System.IO;
@@ -76,9 +77,14 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        public bool Verify(DataCache snapshot)
+        internal bool Verify(DataCache snapshot)
         {
             return Header.Verify(snapshot);
+        }
+
+        internal bool Verify(DataCache snapshot, HeaderCache headerCache)
+        {
+            return Header.Verify(snapshot, headerCache);
         }
     }
 }
