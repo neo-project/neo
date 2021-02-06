@@ -442,18 +442,6 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void Check_BadScript()
-        {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, Blockchain.Singleton.GetSnapshot(), _persistingBlock);
-
-            var script = new ScriptBuilder();
-            script.Emit(OpCode.NOP);
-            engine.LoadScript(script.ToArray());
-
-            Assert.ThrowsException<InvalidOperationException>(() => NativeContract.NEO.Invoke(engine, 0));
-        }
-
-        [TestMethod]
         public void TestCalculateBonus()
         {
             var snapshot = _snapshot.CreateSnapshot();

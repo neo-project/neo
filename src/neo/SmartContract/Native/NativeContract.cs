@@ -14,8 +14,7 @@ namespace Neo.SmartContract.Native
     public abstract class NativeContract
     {
         private static readonly List<NativeContract> contractsList = new List<NativeContract>();
-        private static readonly Dictionary<int, NativeContract> contractsIdDictionary = new Dictionary<int, NativeContract>();
-        private static readonly Dictionary<UInt160, NativeContract> contractsHashDictionary = new Dictionary<UInt160, NativeContract>();
+        private static readonly Dictionary<UInt160, NativeContract> contractsDictionary = new Dictionary<UInt160, NativeContract>();
         private readonly Dictionary<(string, int), ContractMethodMetadata> methods = new Dictionary<(string, int), ContractMethodMetadata>();
         private static int id_counter = 0;
 
@@ -35,18 +34,16 @@ namespace Neo.SmartContract.Native
         public NefFile Nef { get; }
         public byte[] Script => Nef.Script;
         public UInt160 Hash { get; }
-        public int Id { get; }
+        public int Id { get; } = --id_counter;
         public ContractManifest Manifest { get; }
         public uint ActiveBlockIndex { get; }
 
         protected NativeContract()
         {
-            this.Id = --id_counter;
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
             {
                 sb.EmitPush(0);
-                sb.EmitPush(Id);
                 sb.EmitSysCall(ApplicationEngine.System_Contract_CallNative);
                 script = sb.ToArray();
             }
@@ -90,8 +87,7 @@ namespace Neo.SmartContract.Native
             if (ProtocolSettings.Default.NativeActivations.TryGetValue(Name, out uint activationIndex))
                 this.ActiveBlockIndex = activationIndex;
             contractsList.Add(this);
-            contractsIdDictionary.Add(Id, this);
-            contractsHashDictionary.Add(Hash, this);
+            contractsDictionary.Add(Hash, this);
         }
 
         protected bool CheckCommittee(ApplicationEngine engine)
@@ -107,22 +103,16 @@ namespace Neo.SmartContract.Native
 
         public static NativeContract GetContract(UInt160 hash)
         {
-            contractsHashDictionary.TryGetValue(hash, out var contract);
-            return contract;
-        }
-
-        public static NativeContract GetContract(int id)
-        {
-            contractsIdDictionary.TryGetValue(id, out var contract);
+            contractsDictionary.TryGetValue(hash, out var contract);
             return contract;
         }
 
         internal void Invoke(ApplicationEngine engine, byte version)
         {
+            if (ActiveBlockIndex > Ledger.CurrentIndex(engine.Snapshot))
+                throw new InvalidOperationException($"The native contract {Name} is not active.");
             if (version != 0)
-                throw new InvalidOperationException($"The native contract of version {version} is not found.");
-            if (!engine.CurrentScriptHash.Equals(Hash))
-                throw new InvalidOperationException("It is not allowed to use Neo.Native.Call directly to call native contracts. System.Contract.Call should be used.");
+                throw new InvalidOperationException($"The native contract of version {version} is not active.");
             ExecutionContext context = engine.CurrentContext;
             string operation = context.EvaluationStack.Pop().GetString();
             ContractMethodMetadata method = methods[(operation, context.EvaluationStack.Count)];
@@ -142,7 +132,7 @@ namespace Neo.SmartContract.Native
 
         public static bool IsNative(UInt160 hash)
         {
-            return contractsHashDictionary.ContainsKey(hash);
+            return contractsDictionary.ContainsKey(hash);
         }
 
         internal virtual void Initialize(ApplicationEngine engine)

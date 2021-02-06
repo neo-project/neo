@@ -38,11 +38,11 @@ namespace Neo.SmartContract
             CallContractInternal(contract, md, callFlags, hasReturnValue, args);
         }
 
-        protected internal void CallNativeContract(int id, byte version)
+        protected internal void CallNativeContract(byte version)
         {
-            NativeContract contract = NativeContract.GetContract(id);
-            if (contract is null || contract.ActiveBlockIndex > NativeContract.Ledger.CurrentIndex(Snapshot))
-                throw new InvalidOperationException();
+            NativeContract contract = NativeContract.GetContract(CurrentScriptHash);
+            if (contract is null)
+                throw new InvalidOperationException("It is not allowed to use \"System.Contract.CallNative\" directly.");
             contract.Invoke(this, version);
         }
 
