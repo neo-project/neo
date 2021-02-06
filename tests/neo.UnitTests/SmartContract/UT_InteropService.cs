@@ -304,11 +304,11 @@ namespace Neo.UnitTests.SmartContract
             KeyPair keyPair = new KeyPair(privateKey);
             ECPoint pubkey = keyPair.PublicKey;
             byte[] signature = Crypto.Sign(message, privateKey, pubkey.EncodePoint(false).Skip(1).ToArray());
-            engine.VerifyWithECDsaSecp256r1(message, pubkey.EncodePoint(false), signature).Should().BeTrue();
+            engine.CheckSig(pubkey.EncodePoint(false), signature).Should().BeTrue();
 
             byte[] wrongkey = pubkey.EncodePoint(false);
             wrongkey[0] = 5;
-            engine.VerifyWithECDsaSecp256r1(new InteropInterface(engine.ScriptContainer), wrongkey, signature).Should().BeFalse();
+            engine.CheckSig(wrongkey, signature).Should().BeFalse();
         }
 
         [TestMethod]
@@ -635,7 +635,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(true, true);
             ECPoint pubkey = ECPoint.Parse("024b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e", ECCurve.Secp256r1);
-            engine.CreateStandardAccount(pubkey).ToArray().ToHexString().Should().Be("a17e91aff4bb5e0ad54d7ce8de8472e17ce88bf1");
+            engine.CreateStandardAccount(pubkey).ToArray().ToHexString().Should().Be("a78796ab56598585c80dbe95059324eabde764db");
         }
 
         public static void LogEvent(object sender, LogEventArgs args)
