@@ -75,7 +75,6 @@ namespace Neo.SmartContract.Native
             if (type == typeof(Array)) return ContractParameterType.Array;
             if (type == typeof(Struct)) return ContractParameterType.Array;
             if (type == typeof(Map)) return ContractParameterType.Map;
-            if (type == typeof(StackItem)) return ContractParameterType.Any;
             if (typeof(IInteroperable).IsAssignableFrom(type)) return ContractParameterType.Array;
             if (typeof(ISerializable).IsAssignableFrom(type)) return ContractParameterType.ByteArray;
             if (type.IsArray) return ContractParameterType.Array;
