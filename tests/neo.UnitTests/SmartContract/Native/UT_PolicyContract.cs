@@ -69,7 +69,7 @@ namespace Neo.UnitTests.SmartContract.Native
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
             ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
                 "setFeePerByte", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
-            ret.Should().BeNull();
+            ret.IsNull.Should().BeTrue();
 
             ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
             ret.Should().BeOfType<VM.Types.Integer>();
@@ -119,7 +119,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // Proper set
             ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
                 "setExecFeeFactor", new ContractParameter(ContractParameterType.Integer) { Value = 50 });
-            ret.Should().BeNull();
+            ret.IsNull.Should().BeTrue();
 
             ret = NativeContract.Policy.Call(snapshot, "getExecFeeFactor");
             ret.Should().BeOfType<VM.Types.Integer>();
@@ -169,7 +169,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // Proper set
             ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
                 "setStoragePrice", new ContractParameter(ContractParameterType.Integer) { Value = 300300 });
-            ret.Should().BeNull();
+            ret.IsNull.Should().BeTrue();
 
             ret = NativeContract.Policy.Call(snapshot, "getStoragePrice");
             ret.Should().BeOfType<VM.Types.Integer>();
