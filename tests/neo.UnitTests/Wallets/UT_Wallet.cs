@@ -201,13 +201,13 @@ namespace Neo.UnitTests.Wallets
             account.Lock = false;
 
             // Fake balance
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
             var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
             snapshot.Commit();
 
-            wallet.GetAvailable(NativeContract.GAS.Hash).Should().Be(new BigDecimal(new BigInteger(1000000000000M), 8));
+            wallet.GetAvailable(snapshot, NativeContract.GAS.Hash).Should().Be(new BigDecimal(new BigInteger(1000000000000M), 8));
 
             entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 0;
@@ -223,14 +223,14 @@ namespace Neo.UnitTests.Wallets
             account.Lock = false;
 
             // Fake balance
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
             var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
             snapshot.Commit();
 
-            wallet.GetBalance(UInt160.Zero, new UInt160[] { account.ScriptHash }).Should().Be(new BigDecimal(BigInteger.Zero, 0));
-            wallet.GetBalance(NativeContract.GAS.Hash, new UInt160[] { account.ScriptHash }).Should().Be(new BigDecimal(new BigInteger(1000000000000M), 8));
+            wallet.GetBalance(snapshot, UInt160.Zero, new UInt160[] { account.ScriptHash }).Should().Be(new BigDecimal(BigInteger.Zero, 0));
+            wallet.GetBalance(snapshot, NativeContract.GAS.Hash, new UInt160[] { account.ScriptHash }).Should().Be(new BigDecimal(new BigInteger(1000000000000M), 8));
 
             entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 0;
@@ -284,12 +284,13 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestMakeTransaction1()
         {
+            var snapshot = TestBlockchain.GetTestSnapshot();
             MyWallet wallet = new MyWallet();
             Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
             WalletAccount account = wallet.CreateAccount(contract, glkey.PrivateKey);
             account.Lock = false;
 
-            Action action = () => wallet.MakeTransaction(new TransferOutput[]
+            Action action = () => wallet.MakeTransaction(snapshot, new TransferOutput[]
             {
                 new TransferOutput()
                 {
@@ -301,7 +302,7 @@ namespace Neo.UnitTests.Wallets
             }, UInt160.Zero);
             action.Should().Throw<InvalidOperationException>();
 
-            action = () => wallet.MakeTransaction(new TransferOutput[]
+            action = () => wallet.MakeTransaction(snapshot, new TransferOutput[]
             {
                 new TransferOutput()
                 {
@@ -313,7 +314,7 @@ namespace Neo.UnitTests.Wallets
             }, account.ScriptHash);
             action.Should().Throw<InvalidOperationException>();
 
-            action = () => wallet.MakeTransaction(new TransferOutput[]
+            action = () => wallet.MakeTransaction(snapshot, new TransferOutput[]
             {
                 new TransferOutput()
                 {
@@ -326,7 +327,6 @@ namespace Neo.UnitTests.Wallets
             action.Should().Throw<InvalidOperationException>();
 
             // Fake balance
-            var snapshot = Blockchain.Singleton.GetSnapshot();
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
             var entry1 = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry1.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
@@ -337,7 +337,7 @@ namespace Neo.UnitTests.Wallets
 
             snapshot.Commit();
 
-            var tx = wallet.MakeTransaction(new TransferOutput[]
+            var tx = wallet.MakeTransaction(snapshot, new TransferOutput[]
             {
                 new TransferOutput()
                 {
@@ -348,7 +348,7 @@ namespace Neo.UnitTests.Wallets
             });
             tx.Should().NotBeNull();
 
-            tx = wallet.MakeTransaction(new TransferOutput[]
+            tx = wallet.MakeTransaction(snapshot, new TransferOutput[]
             {
                 new TransferOutput()
                 {
@@ -370,8 +370,9 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestMakeTransaction2()
         {
+            var snapshot = TestBlockchain.GetTestSnapshot();
             MyWallet wallet = new MyWallet();
-            Action action = () => wallet.MakeTransaction(new byte[] { }, null, null, Array.Empty<TransactionAttribute>());
+            Action action = () => wallet.MakeTransaction(snapshot, new byte[] { }, null, null, Array.Empty<TransactionAttribute>());
             action.Should().Throw<InvalidOperationException>();
 
             Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
@@ -379,13 +380,12 @@ namespace Neo.UnitTests.Wallets
             account.Lock = false;
 
             // Fake balance
-            var snapshot = Blockchain.Singleton.GetSnapshot();
             var key = NativeContract.GAS.CreateStorageKey(20, account.ScriptHash);
             var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 1000000 * NativeContract.GAS.Factor;
             snapshot.Commit();
 
-            var tx = wallet.MakeTransaction(new byte[] { }, account.ScriptHash, new[]{ new Signer()
+            var tx = wallet.MakeTransaction(snapshot, new byte[] { }, account.ScriptHash, new[]{ new Signer()
             {
                 Account = account.ScriptHash,
                 Scopes = WitnessScope.CalledByEntry
@@ -393,7 +393,7 @@ namespace Neo.UnitTests.Wallets
 
             tx.Should().NotBeNull();
 
-            tx = wallet.MakeTransaction(new byte[] { }, null, null, Array.Empty<TransactionAttribute>());
+            tx = wallet.MakeTransaction(snapshot, new byte[] { }, null, null, Array.Empty<TransactionAttribute>());
             tx.Should().NotBeNull();
 
             entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));

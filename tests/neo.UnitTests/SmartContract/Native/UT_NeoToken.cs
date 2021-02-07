@@ -28,7 +28,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
-            _snapshot = Blockchain.Singleton.GetSnapshot();
+            _snapshot = TestBlockchain.GetTestSnapshot();
             _persistingBlock = new Block
             {
                 Header = new Header(),
@@ -521,7 +521,8 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestGetNextBlockValidators1()
         {
-            using (ApplicationEngine engine = NativeContract.NEO.TestCall("getNextBlockValidators"))
+            var snapshot = TestBlockchain.GetTestSnapshot();
+            using (ApplicationEngine engine = NativeContract.NEO.TestCall(snapshot, "getNextBlockValidators"))
             {
                 var result = engine.ResultStack.Peek();
                 result.GetType().Should().Be(typeof(VM.Types.Array));
@@ -554,7 +555,8 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestGetCandidates1()
         {
-            using ApplicationEngine engine = NativeContract.NEO.TestCall("getCandidates");
+            var snapshot = TestBlockchain.GetTestSnapshot();
+            using ApplicationEngine engine = NativeContract.NEO.TestCall(snapshot, "getCandidates");
             var array = engine.ResultStack.Pop<VM.Types.Array>();
             array.Count.Should().Be(0);
         }
@@ -626,7 +628,8 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestGetCommittee()
         {
-            using (ApplicationEngine engine = NativeContract.NEO.TestCall("getCommittee"))
+            var snapshot = TestBlockchain.GetTestSnapshot();
+            using (ApplicationEngine engine = NativeContract.NEO.TestCall(snapshot, "getCommittee"))
             {
                 var result = engine.ResultStack.Peek();
                 result.GetType().Should().Be(typeof(VM.Types.Array));

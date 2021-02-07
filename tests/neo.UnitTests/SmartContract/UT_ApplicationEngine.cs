@@ -20,7 +20,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestNotify()
         {
-            using var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             ApplicationEngine.Notify += Test_Notify1;
             const string notifyEvent = "TestEvent";
@@ -55,7 +55,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestCreateDummyBlock()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
             byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
             ApplicationEngine engine = ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshot);
             engine.PersistingBlock.Version.Should().Be(0);

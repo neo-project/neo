@@ -51,7 +51,7 @@ namespace Neo.UnitTests.Ledger
         public void TestDuplicateOracle()
         {
             // Fake balance
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
 
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, long.MaxValue);
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
@@ -73,7 +73,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestTransactionSenderFee()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, long.MaxValue);
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
             NativeContract.GAS.Burn(engine, UInt160.Zero, balance);

@@ -20,6 +20,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void TestSetup()
         {
             uut = new Witness();
+            TestBlockchain.InitializeMockNeoSystem();
         }
 
         [TestMethod]
@@ -33,6 +34,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var address = new WalletAccount[pubKeys];
             var wallets = new NEP6Wallet[pubKeys];
             var walletsUnlocks = new IDisposable[pubKeys];
+            var snapshot = TestBlockchain.GetTestSnapshot();
 
             for (int x = 0; x < pubKeys; x++)
             {
@@ -52,7 +54,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Sign
 
-            var data = new ContractParametersContext(new Transaction()
+            var data = new ContractParametersContext(snapshot, new Transaction()
             {
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Signers = new[] {new Signer()

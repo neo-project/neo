@@ -1,5 +1,3 @@
-using Neo.Persistence;
-
 namespace Neo.Network.P2P.Payloads
 {
     public interface IInventory : IVerifiable
@@ -7,7 +5,5 @@ namespace Neo.Network.P2P.Payloads
         UInt256 Hash { get; }
 
         InventoryType InventoryType { get; }
-
-        bool Verify(DataCache snapshot);
     }
 }

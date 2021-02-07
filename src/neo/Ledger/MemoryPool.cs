@@ -19,10 +19,10 @@ namespace Neo.Ledger
         private const int BlocksTillRebroadcast = 10;
         private int RebroadcastMultiplierThreshold => Capacity / 10;
 
-        private static readonly double MaxMillisecondsToReverifyTx = (double)Blockchain.MillisecondsPerBlock / 3;
+        private readonly double MaxMillisecondsToReverifyTx;
 
         // These two are not expected to be hit, they are just safegaurds.
-        private static readonly double MaxMillisecondsToReverifyTxPerIdle = (double)Blockchain.MillisecondsPerBlock / 15;
+        private readonly double MaxMillisecondsToReverifyTxPerIdle;
 
         private readonly NeoSystem _system;
 
@@ -95,10 +95,12 @@ namespace Neo.Ledger
 
         public int UnVerifiedCount => _unverifiedTransactions.Count;
 
-        public MemoryPool(NeoSystem system, int capacity)
+        public MemoryPool(NeoSystem system)
         {
             _system = system;
-            Capacity = capacity;
+            Capacity = system.Settings.MemoryPoolMaxTransactions;
+            MaxMillisecondsToReverifyTx = (double)system.Settings.MillisecondsPerBlock / 3;
+            MaxMillisecondsToReverifyTxPerIdle = (double)system.Settings.MillisecondsPerBlock / 15;
         }
 
         /// <summary>
@@ -363,7 +365,7 @@ namespace Neo.Ledger
 
             // If we know about headers of future blocks, no point in verifying transactions from the unverified tx pool
             // until we get caught up.
-            if (block.Index > 0 && Blockchain.Singleton.HeaderCache.Count > 0)
+            if (block.Index > 0 && _system.HeaderCache.Count > 0)
                 return;
 
             uint _maxTxPerBlock = NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot);
@@ -412,8 +414,7 @@ namespace Neo.Ledger
                 if (Count > RebroadcastMultiplierThreshold)
                     blocksTillRebroadcast = blocksTillRebroadcast * Count / RebroadcastMultiplierThreshold;
 
-                var rebroadcastCutOffTime = TimeProvider.Current.UtcNow.AddMilliseconds(
-                    -Blockchain.MillisecondsPerBlock * blocksTillRebroadcast);
+                var rebroadcastCutOffTime = TimeProvider.Current.UtcNow.AddMilliseconds(-_system.Settings.MillisecondsPerBlock * blocksTillRebroadcast);
                 foreach (PoolItem item in reverifiedItems)
                 {
                     if (_unsortedTransactions.TryAdd(item.Tx.Hash, item))
@@ -462,7 +463,7 @@ namespace Neo.Ledger
         /// <returns>true if more unsorted messages exist, otherwise false</returns>
         internal bool ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, DataCache snapshot)
         {
-            if (Blockchain.Singleton.HeaderCache.Count > 0)
+            if (_system.HeaderCache.Count > 0)
                 return false;
 
             if (_unverifiedSortedTransactions.Count > 0)

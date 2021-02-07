@@ -56,7 +56,7 @@ namespace Neo.UnitTests.SmartContract
                 Hashes = new[] { tx.Hash }
             };
 
-            var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
 
             using (var script = new ScriptBuilder())
             {
@@ -111,7 +111,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void System_ExecutionEngine_GetScriptContainer()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
             using (var script = new ScriptBuilder())
             {
                 script.EmitSysCall(ApplicationEngine.System_Runtime_GetScriptContainer);
@@ -154,7 +154,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void System_Runtime_GasLeft()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
 
             using (var script = new ScriptBuilder())
             {
@@ -206,7 +206,7 @@ namespace Neo.UnitTests.SmartContract
         public void System_Runtime_GetInvocationCounter()
         {
             ContractState contractA, contractB, contractC;
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
 
             // Create dummy contracts
 

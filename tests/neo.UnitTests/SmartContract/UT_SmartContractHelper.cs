@@ -123,7 +123,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestVerifyWitnesses()
         {
-            var snapshot1 = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
+            var snapshot1 = TestBlockchain.GetTestSnapshot().CreateSnapshot();
             UInt256 index1 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             BlocksAdd(snapshot1, index1, new TrimmedBlock()
             {
@@ -140,7 +140,7 @@ namespace Neo.UnitTests.SmartContract
             BlocksDelete(snapshot1, index1);
             Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(new Header() { PrevHash = index1 }, snapshot1, 100));
 
-            var snapshot2 = Blockchain.Singleton.GetSnapshot();
+            var snapshot2 = TestBlockchain.GetTestSnapshot();
             UInt256 index2 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             TrimmedBlock block2 = new TrimmedBlock()
             {
@@ -161,7 +161,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot2.DeleteContract(UInt160.Zero);
             Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header2, snapshot2, 100));
 
-            var snapshot3 = Blockchain.Singleton.GetSnapshot();
+            var snapshot3 = TestBlockchain.GetTestSnapshot();
             UInt256 index3 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             TrimmedBlock block3 = new TrimmedBlock()
             {
