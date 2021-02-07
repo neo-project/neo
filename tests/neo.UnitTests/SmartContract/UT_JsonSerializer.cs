@@ -166,7 +166,7 @@ namespace Neo.UnitTests.SmartContract
             json = @" {""\uAAAA"":   true}";
             parsed = JObject.Parse(json);
 
-            Assert.AreEqual(@"{""\uAAAA"":true}", parsed.ToString());
+            Assert.AreEqual(@"{""ꪪ"":true}", parsed.ToString());
 
             json = @"{""a"":}";
             Assert.ThrowsException<FormatException>(() => JObject.Parse(json));

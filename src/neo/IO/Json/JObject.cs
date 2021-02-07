@@ -142,6 +142,7 @@ namespace Neo.IO.Json
             using MemoryStream ms = new MemoryStream();
             using Utf8JsonWriter writer = new Utf8JsonWriter(ms, new JsonWriterOptions
             {
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
                 Indented = indented,
                 SkipValidation = true
             });
