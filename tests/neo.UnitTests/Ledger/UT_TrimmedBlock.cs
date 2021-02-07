@@ -43,7 +43,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetBlock()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
             var tx1 = TestUtils.GetTransaction(UInt160.Zero);
             tx1.Script = new byte[] { 0x01,0x01,0x01,0x01,
                                       0x01,0x01,0x01,0x01,

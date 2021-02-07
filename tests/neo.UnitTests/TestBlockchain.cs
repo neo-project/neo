@@ -1,4 +1,5 @@
 using Neo.Ledger;
+using Neo.Persistence;
 using System;
 using System.Collections.Immutable;
 using System.Linq;
@@ -14,15 +15,16 @@ namespace Neo.UnitTests
         static TestBlockchain()
         {
             Console.WriteLine("initialize NeoSystem");
-            TheNeoSystem = new NeoSystem();
+            TheNeoSystem = new NeoSystem(ProtocolSettings.Default, null, null);
 
             // Ensure that blockchain is loaded
 
-            var bc = Blockchain.Singleton;
+            // TODO: fix extensibleWitnessWhiteList
+            //Blockchain.Singleton = TheNeoSystem.Blockchain;
 
-            DefaultExtensibleWitnessWhiteList = (typeof(Blockchain).GetField("extensibleWitnessWhiteList",
-                BindingFlags.Instance | BindingFlags.NonPublic).GetValue(bc) as ImmutableHashSet<UInt160>).ToArray();
-            AddWhiteList(DefaultExtensibleWitnessWhiteList); // Add other address
+            //DefaultExtensibleWitnessWhiteList = (typeof(Blockchain).GetField("extensibleWitnessWhiteList",
+            //    BindingFlags.Instance | BindingFlags.NonPublic).GetValue(bc) as ImmutableHashSet<UInt160>).ToArray();
+            //AddWhiteList(DefaultExtensibleWitnessWhiteList); // Add other address
         }
 
         public static void InitializeMockNeoSystem() { }
@@ -32,7 +34,12 @@ namespace Neo.UnitTests
             var builder = ImmutableHashSet.CreateBuilder<UInt160>();
             foreach (var entry in address) builder.Add(entry);
 
-            typeof(Blockchain).GetField("extensibleWitnessWhiteList", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(Blockchain.Singleton, builder.ToImmutable());
+            //typeof(Blockchain).GetField("extensibleWitnessWhiteList", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(bc, builder.ToImmutable());
+        }
+
+        internal static DataCache GetTestSnapshot()
+        {
+            return TheNeoSystem.GetSnapshot().CreateSnapshot();
         }
     }
 }

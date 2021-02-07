@@ -20,15 +20,17 @@ namespace Neo.UnitTests.Network.P2P
         [TestMethod]
         public void TestDefaults()
         {
-            Assert.AreEqual(0, LocalNode.Singleton.ListenerTcpPort);
-            Assert.AreEqual(0, LocalNode.Singleton.ListenerWsPort);
-            Assert.AreEqual(3, LocalNode.Singleton.MaxConnectionsPerAddress);
-            Assert.AreEqual(10, LocalNode.Singleton.MinDesiredConnections);
-            Assert.AreEqual(40, LocalNode.Singleton.MaxConnections);
-            Assert.AreEqual(0, LocalNode.Singleton.UnconnectedCount);
+            var localNode = new LocalNode(testBlockchain);
 
-            CollectionAssert.AreEqual(Array.Empty<RemoteNode>(), LocalNode.Singleton.GetRemoteNodes().ToArray());
-            CollectionAssert.AreEqual(Array.Empty<IPEndPoint>(), LocalNode.Singleton.GetUnconnectedPeers().ToArray());
+            Assert.AreEqual(0, localNode.ListenerTcpPort);
+            Assert.AreEqual(0, localNode.ListenerWsPort);
+            Assert.AreEqual(3, localNode.MaxConnectionsPerAddress);
+            Assert.AreEqual(10, localNode.MinDesiredConnections);
+            Assert.AreEqual(40, localNode.MaxConnections);
+            Assert.AreEqual(0, localNode.UnconnectedCount);
+
+            CollectionAssert.AreEqual(Array.Empty<RemoteNode>(), localNode.GetRemoteNodes().ToArray());
+            CollectionAssert.AreEqual(Array.Empty<IPEndPoint>(), localNode.GetUnconnectedPeers().ToArray());
         }
     }
 }

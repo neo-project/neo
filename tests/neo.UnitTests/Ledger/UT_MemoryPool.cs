@@ -42,6 +42,11 @@ namespace Neo.UnitTests.Ledger
             testBlockchain = TestBlockchain.TheNeoSystem;
         }
 
+        private DataCache GetSnapshot()
+        {
+            return testBlockchain.StoreView.CreateSnapshot();
+        }
+
         [TestInitialize]
         public void TestSetup()
         {
@@ -134,7 +139,7 @@ namespace Neo.UnitTests.Ledger
 
         private void AddTransactions(int count)
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = GetSnapshot();
             for (int i = 0; i < count; i++)
             {
                 var txToAdd = CreateTransaction();
@@ -146,7 +151,7 @@ namespace Neo.UnitTests.Ledger
 
         private void AddTransaction(Transaction txToAdd)
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = GetSnapshot();
             _unit.TryAdd(txToAdd, snapshot);
         }
 
@@ -188,32 +193,32 @@ namespace Neo.UnitTests.Ledger
                 Transactions = _unit.GetSortedVerifiedTransactions().Take(10)
                     .Concat(_unit.GetSortedVerifiedTransactions().Take(5)).ToArray()
             };
-            _unit.UpdatePoolForBlockPersisted(block, Blockchain.Singleton.GetSnapshot());
+            _unit.UpdatePoolForBlockPersisted(block, GetSnapshot());
             _unit.InvalidateVerifiedTransactions();
             _unit.SortedTxCount.Should().Be(0);
             _unit.UnverifiedSortedTxCount.Should().Be(60);
 
-            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
+            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, GetSnapshot());
             _unit.SortedTxCount.Should().Be(10);
             _unit.UnverifiedSortedTxCount.Should().Be(50);
 
-            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
+            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, GetSnapshot());
             _unit.SortedTxCount.Should().Be(20);
             _unit.UnverifiedSortedTxCount.Should().Be(40);
 
-            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
+            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, GetSnapshot());
             _unit.SortedTxCount.Should().Be(30);
             _unit.UnverifiedSortedTxCount.Should().Be(30);
 
-            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
+            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, GetSnapshot());
             _unit.SortedTxCount.Should().Be(40);
             _unit.UnverifiedSortedTxCount.Should().Be(20);
 
-            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
+            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, GetSnapshot());
             _unit.SortedTxCount.Should().Be(50);
             _unit.UnverifiedSortedTxCount.Should().Be(10);
 
-            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, Blockchain.Singleton.GetSnapshot());
+            _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(10, GetSnapshot());
             _unit.SortedTxCount.Should().Be(60);
             _unit.UnverifiedSortedTxCount.Should().Be(0);
         }
@@ -221,7 +226,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void BlockPersistAndReverificationWillAbandonTxAsBalanceTransfered()
         {
-            using SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = GetSnapshot();
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, long.MaxValue);
             NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
@@ -294,7 +299,7 @@ namespace Neo.UnitTests.Ledger
                 Header = new Header(),
                 Transactions = Array.Empty<Transaction>()
             };
-            _unit.UpdatePoolForBlockPersisted(block, Blockchain.Singleton.GetSnapshot());
+            _unit.UpdatePoolForBlockPersisted(block, GetSnapshot());
             _unit.InvalidateVerifiedTransactions();
             _unit.SortedTxCount.Should().Be(0);
             _unit.UnverifiedSortedTxCount.Should().Be(100);
@@ -310,7 +315,7 @@ namespace Neo.UnitTests.Ledger
                 var minTransaction = sortedUnverifiedArray.Last();
 
                 // reverify 1 high priority and 1 low priority transaction
-                _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(1, Blockchain.Singleton.GetSnapshot());
+                _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(1, GetSnapshot());
                 var verifiedTxs = _unit.GetSortedVerifiedTransactions().ToArray();
                 verifiedTxs.Length.Should().Be(1);
                 verifiedTxs[0].Should().BeEquivalentTo(maxTransaction);
@@ -320,7 +325,7 @@ namespace Neo.UnitTests.Ledger
                     Transactions = new[] { maxTransaction, minTransaction }
                 };
                 // verify and remove the 2 transactions from the verified pool
-                _unit.UpdatePoolForBlockPersisted(blockWith2Tx, Blockchain.Singleton.GetSnapshot());
+                _unit.UpdatePoolForBlockPersisted(blockWith2Tx, GetSnapshot());
                 _unit.InvalidateVerifiedTransactions();
                 _unit.SortedTxCount.Should().Be(0);
             }
@@ -363,7 +368,7 @@ namespace Neo.UnitTests.Ledger
                 Header = new Header(),
                 Transactions = Array.Empty<Transaction>()
             };
-            _unit.UpdatePoolForBlockPersisted(block, Blockchain.Singleton.GetSnapshot());
+            _unit.UpdatePoolForBlockPersisted(block, GetSnapshot());
 
             _unit.CanTransactionFitInPool(CreateTransaction()).Should().Be(true);
             AddTransactions(1);
@@ -385,7 +390,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestContainsKey()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = GetSnapshot();
             AddTransactions(10);
 
             var txToAdd = CreateTransaction();
@@ -425,7 +430,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestGetVerifiedTransactions()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = GetSnapshot();
             var tx1 = CreateTransaction();
             var tx2 = CreateTransaction();
             _unit.TryAdd(tx1, snapshot);
@@ -457,17 +462,17 @@ namespace Neo.UnitTests.Ledger
             _unit.VerifiedCount.Should().Be(511);
             _unit.UnVerifiedCount.Should().Be(4);
 
-            var result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(1, Blockchain.Singleton.GetSnapshot());
+            var result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(1, GetSnapshot());
             result.Should().BeTrue();
             _unit.VerifiedCount.Should().Be(512);
             _unit.UnVerifiedCount.Should().Be(3);
 
-            result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(2, Blockchain.Singleton.GetSnapshot());
+            result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(2, GetSnapshot());
             result.Should().BeTrue();
             _unit.VerifiedCount.Should().Be(514);
             _unit.UnVerifiedCount.Should().Be(1);
 
-            result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(3, Blockchain.Singleton.GetSnapshot());
+            result = _unit.ReVerifyTopUnverifiedTransactionsIfNeeded(3, GetSnapshot());
             result.Should().BeFalse();
             _unit.VerifiedCount.Should().Be(515);
             _unit.UnVerifiedCount.Should().Be(0);
@@ -476,7 +481,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestTryAdd()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = GetSnapshot();
             var tx1 = CreateTransaction();
             _unit.TryAdd(tx1, snapshot).Should().Be(VerifyResult.Succeed);
             _unit.TryAdd(tx1, snapshot).Should().NotBe(VerifyResult.Succeed);
@@ -486,7 +491,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestTryGetValue()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = GetSnapshot();
             var tx1 = CreateTransaction();
             _unit.TryAdd(tx1, snapshot);
             _unit.TryGetValue(tx1.Hash, out Transaction tx).Should().BeTrue();
@@ -503,7 +508,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestUpdatePoolForBlockPersisted()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = GetSnapshot();
             byte[] transactionsPerBlock = { 0x18, 0x00, 0x00, 0x00 }; // 24
             byte[] feePerByte = { 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00 }; // 1048576
             StorageItem item1 = new StorageItem

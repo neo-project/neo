@@ -2,6 +2,7 @@ using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.Wallets;
@@ -28,14 +29,14 @@ namespace Neo.UnitTests.Ledger
                 Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
                 Witnesses = Array.Empty<Witness>()
             };
-            Blockchain.Singleton.MemPool.TryAdd(txSample, Blockchain.Singleton.GetSnapshot());
+            system.MemPool.TryAdd(txSample, TestBlockchain.GetTestSnapshot());
         }
 
         [TestMethod]
         public void TestValidTransaction()
         {
             var senderProbe = CreateTestProbe();
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
             var walletA = TestUtils.GenerateTestWallet();
 
             using var unlockA = walletA.Unlock("123");
@@ -50,7 +51,7 @@ namespace Neo.UnitTests.Ledger
 
             // Make transaction
 
-            var tx = CreateValidTx(walletA, acc.ScriptHash, 0);
+            var tx = CreateValidTx(snapshot, walletA, acc.ScriptHash, 0);
 
             senderProbe.Send(system.Blockchain, tx);
             senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Succeed);
@@ -71,9 +72,9 @@ namespace Neo.UnitTests.Ledger
             return storageKey;
         }
 
-        private static Transaction CreateValidTx(NEP6Wallet wallet, UInt160 account, uint nonce)
+        private static Transaction CreateValidTx(DataCache snapshot, NEP6Wallet wallet, UInt160 account, uint nonce)
         {
-            var tx = wallet.MakeTransaction(new TransferOutput[]
+            var tx = wallet.MakeTransaction(snapshot, new TransferOutput[]
                 {
                     new TransferOutput()
                     {
@@ -86,7 +87,7 @@ namespace Neo.UnitTests.Ledger
 
             tx.Nonce = nonce;
 
-            var data = new ContractParametersContext(tx);
+            var data = new ContractParametersContext(snapshot, tx);
             Assert.IsTrue(wallet.Sign(data));
             Assert.IsTrue(data.Completed);
 
