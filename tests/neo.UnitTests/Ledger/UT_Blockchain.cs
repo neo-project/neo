@@ -1,3 +1,4 @@
+using Akka.TestKit;
 using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Ledger;
@@ -17,11 +18,17 @@ namespace Neo.UnitTests.Ledger
     {
         private NeoSystem system;
         private Transaction txSample;
+        private TestProbe senderProbe;
 
         [TestInitialize]
         public void Initialize()
         {
             system = TestBlockchain.TheNeoSystem;
+
+            senderProbe = CreateTestProbe();
+            senderProbe.Send(system.Blockchain, new object());
+            senderProbe.ExpectNoMsg(); // Ensure blockchain it's created
+
             txSample = new Transaction()
             {
                 Attributes = Array.Empty<TransactionAttribute>(),
@@ -35,8 +42,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestValidTransaction()
         {
-            var senderProbe = CreateTestProbe();
-            var snapshot = TestBlockchain.GetTestSnapshot();
+            var snapshot = TestBlockchain.TheNeoSystem.GetSnapshot();
             var walletA = TestUtils.GenerateTestWallet();
 
             using var unlockA = walletA.Unlock("123");
