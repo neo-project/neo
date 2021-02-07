@@ -52,7 +52,7 @@ namespace Neo.SmartContract.Native
                 Header.NextConsensus.ToArray(),
 
                 // Block properties
-                Hashes.Length - 1
+                Hashes.Length
             });
         }
     }
