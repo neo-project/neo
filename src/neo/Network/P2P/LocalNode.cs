@@ -8,7 +8,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
@@ -22,7 +21,6 @@ namespace Neo.Network.P2P
         private const int MaxCountFromSeedList = 5;
         private readonly IPEndPoint[] SeedList = new IPEndPoint[ProtocolSettings.Default.SeedList.Length];
 
-        private static readonly object lockObj = new object();
         private readonly NeoSystem system;
         internal readonly ConcurrentDictionary<IActorRef, RemoteNode> RemoteNodes = new ConcurrentDictionary<IActorRef, RemoteNode>();
 
@@ -30,16 +28,6 @@ namespace Neo.Network.P2P
         public int UnconnectedCount => UnconnectedPeers.Count;
         public static readonly uint Nonce;
         public static string UserAgent { get; set; }
-
-        private static LocalNode singleton;
-        public static LocalNode Singleton
-        {
-            get
-            {
-                while (singleton == null) Thread.Sleep(10);
-                return singleton;
-            }
-        }
 
         static LocalNode()
         {
@@ -50,20 +38,14 @@ namespace Neo.Network.P2P
 
         public LocalNode(NeoSystem system)
         {
-            lock (lockObj)
-            {
-                if (singleton != null)
-                    throw new InvalidOperationException();
-                this.system = system;
-                singleton = this;
+            this.system = system;
 
-                // Start dns resolution in parallel
-                string[] seedList = ProtocolSettings.Default.SeedList;
-                for (int i = 0; i < seedList.Length; i++)
-                {
-                    int index = i;
-                    Task.Run(() => SeedList[index] = GetIpEndPoint(seedList[index]));
-                }
+            // Start dns resolution in parallel
+            string[] seedList = ProtocolSettings.Default.SeedList;
+            for (int i = 0; i < seedList.Length; i++)
+            {
+                int index = i;
+                Task.Run(() => SeedList[index] = GetIpEndPoint(seedList[index]));
             }
         }
 
@@ -230,7 +212,7 @@ namespace Neo.Network.P2P
 
         protected override Props ProtocolProps(object connection, IPEndPoint remote, IPEndPoint local)
         {
-            return RemoteNode.Props(system, connection, remote, local);
+            return RemoteNode.Props(system, this, connection, remote, local);
         }
     }
 }

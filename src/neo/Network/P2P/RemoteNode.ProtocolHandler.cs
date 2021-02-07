@@ -151,7 +151,7 @@ namespace Neo.Network.P2P
         private void OnGetAddrMessageReceived()
         {
             Random rand = new Random();
-            IEnumerable<RemoteNode> peers = LocalNode.Singleton.RemoteNodes.Values
+            IEnumerable<RemoteNode> peers = localNode.RemoteNodes.Values
                 .Where(p => p.ListenerTcpPort > 0)
                 .GroupBy(p => p.Remote.Address, (k, g) => g.First())
                 .OrderBy(p => rand.Next())
@@ -371,7 +371,7 @@ namespace Neo.Network.P2P
                         break;
                 }
             }
-            if (!LocalNode.Singleton.AllowNewConnection(Self, this))
+            if (!localNode.AllowNewConnection(Self, this))
             {
                 Disconnect(true);
                 return;

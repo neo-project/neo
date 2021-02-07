@@ -21,6 +21,7 @@ namespace Neo.Network.P2P
         internal class Relay { public IInventory Inventory; }
 
         private readonly NeoSystem system;
+        private readonly LocalNode localNode;
         private readonly Queue<Message> message_queue_high = new Queue<Message>();
         private readonly Queue<Message> message_queue_low = new Queue<Message>();
         private DateTime lastSent = TimeProvider.Current.UtcNow;
@@ -35,11 +36,12 @@ namespace Neo.Network.P2P
         public uint LastHeightSent { get; private set; } = 0;
         public bool IsFullNode { get; private set; } = false;
 
-        public RemoteNode(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local)
+        public RemoteNode(NeoSystem system, LocalNode localNode, object connection, IPEndPoint remote, IPEndPoint local)
             : base(connection, remote, local)
         {
             this.system = system;
-            LocalNode.Singleton.RemoteNodes.TryAdd(Self, this);
+            this.localNode = localNode;
+            localNode.RemoteNodes.TryAdd(Self, this);
         }
 
         /// <summary>
@@ -181,8 +183,8 @@ namespace Neo.Network.P2P
                 new FullNodeCapability(NativeContract.Ledger.CurrentIndex(system.StoreView))
             };
 
-            if (LocalNode.Singleton.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)LocalNode.Singleton.ListenerTcpPort));
-            if (LocalNode.Singleton.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)LocalNode.Singleton.ListenerWsPort));
+            if (localNode.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)localNode.ListenerTcpPort));
+            if (localNode.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)localNode.ListenerWsPort));
 
             SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
         }
@@ -190,13 +192,13 @@ namespace Neo.Network.P2P
         protected override void PostStop()
         {
             timer.CancelIfNotNull();
-            LocalNode.Singleton.RemoteNodes.TryRemove(Self, out _);
+            localNode.RemoteNodes.TryRemove(Self, out _);
             base.PostStop();
         }
 
-        internal static Props Props(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local)
+        internal static Props Props(NeoSystem system, LocalNode localNode, object connection, IPEndPoint remote, IPEndPoint local)
         {
-            return Akka.Actor.Props.Create(() => new RemoteNode(system, connection, remote, local)).WithMailbox("remote-node-mailbox");
+            return Akka.Actor.Props.Create(() => new RemoteNode(system, localNode, connection, remote, local)).WithMailbox("remote-node-mailbox");
         }
 
         private void SendMessage(Message message)
