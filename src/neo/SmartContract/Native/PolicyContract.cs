@@ -10,6 +10,8 @@ namespace Neo.SmartContract.Native
     {
         public const uint DefaultExecFeeFactor = 30;
         public const uint DefaultStoragePrice = 100000;
+        public const uint MaxExecFeeFactor = 1000;
+        public const uint MaxStoragePrice = 10000000;
 
         private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_FeePerByte = 10;
@@ -62,7 +64,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_03000000, CallFlags.WriteStates)]
         private void SetExecFeeFactor(ApplicationEngine engine, uint value)
         {
-            if (value == 0 || value > 1000) throw new ArgumentOutOfRangeException(nameof(value));
+            if (value == 0 || value > MaxExecFeeFactor) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_ExecFeeFactor)).Set(value);
         }
@@ -70,7 +72,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(0_03000000, CallFlags.WriteStates)]
         private void SetStoragePrice(ApplicationEngine engine, uint value)
         {
-            if (value == 0 || value > 10000000) throw new ArgumentOutOfRangeException(nameof(value));
+            if (value == 0 || value > MaxStoragePrice) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_StoragePrice)).Set(value);
         }
