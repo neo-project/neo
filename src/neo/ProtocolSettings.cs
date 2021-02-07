@@ -7,20 +7,20 @@ using System.Threading;
 
 namespace Neo
 {
-    public class ProtocolSettings
+    public record ProtocolSettings
     {
-        public uint Magic { get; }
-        public byte AddressVersion { get; }
-        public ECPoint[] StandbyCommittee { get; }
-        public ECPoint[] StandbyValidators { get; }
-        public int CommitteeMembersCount { get; }
-        public int ValidatorsCount { get; }
-        public string[] SeedList { get; }
-        public uint MillisecondsPerBlock { get; }
-        public TimeSpan TimePerBlock { get; }
-        public int MemoryPoolMaxTransactions { get; }
-        public uint MaxTraceableBlocks { get; }
-        public IReadOnlyDictionary<string, uint> NativeActivations { get; }
+        public uint Magic { get; init; }
+        public byte AddressVersion { get; init; }
+        public ECPoint[] StandbyCommittee { get; init; }
+        public ECPoint[] StandbyValidators { get; init; }
+        public int CommitteeMembersCount { get; init; }
+        public int ValidatorsCount { get; init; }
+        public string[] SeedList { get; init; }
+        public uint MillisecondsPerBlock { get; init; }
+        public TimeSpan TimePerBlock { get; init; }
+        public int MemoryPoolMaxTransactions { get; init; }
+        public uint MaxTraceableBlocks { get; init; }
+        public IReadOnlyDictionary<string, uint> NativeActivations { get; init; }
 
         static ProtocolSettings _default;
 

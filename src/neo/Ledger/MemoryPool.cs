@@ -95,11 +95,10 @@ namespace Neo.Ledger
 
         public int UnVerifiedCount => _unverifiedTransactions.Count;
 
-        public MemoryPool(NeoSystem system) : this(system, system.Settings.MemoryPoolMaxTransactions) { }
-        public MemoryPool(NeoSystem system, int capacity)
+        public MemoryPool(NeoSystem system)
         {
             _system = system;
-            Capacity = capacity;
+            Capacity = system.Settings.MemoryPoolMaxTransactions;
             MaxMillisecondsToReverifyTx = (double)system.Settings.MillisecondsPerBlock / 3;
             MaxMillisecondsToReverifyTxPerIdle = (double)system.Settings.MillisecondsPerBlock / 15;
         }
