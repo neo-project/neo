@@ -24,7 +24,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
-            _snapshot = Blockchain.Singleton.GetSnapshot();
+            _snapshot = TestBlockchain.GetTestSnapshot();
         }
 
         [TestMethod]

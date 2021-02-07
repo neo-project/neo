@@ -1,4 +1,3 @@
-using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -14,9 +13,8 @@ namespace Neo.Wallets
         public string Symbol { get; }
         public byte Decimals { get; }
 
-        public AssetDescriptor(UInt160 asset_id)
+        public AssetDescriptor(DataCache snapshot, UInt160 asset_id)
         {
-            DataCache snapshot = Blockchain.Singleton.View;
             var contract = NativeContract.ContractManagement.GetContract(snapshot, asset_id);
             if (contract is null) throw new ArgumentException();
 

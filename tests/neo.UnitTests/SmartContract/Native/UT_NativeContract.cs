@@ -92,7 +92,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestInvoke()
         {
-            using var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.Add(NativeContract.ContractManagement.CreateStorageKey(8, testNativeContract.Hash), new StorageItem(new ContractState
             {
                 Id = 0,
@@ -121,7 +121,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestTrigger()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
 
             ApplicationEngine engine1 = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, 0);
             Assert.ThrowsException<InvalidOperationException>(() => testNativeContract.TestTrigger(engine1));
@@ -133,7 +133,8 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestTestCall()
         {
-            ApplicationEngine engine = testNativeContract.TestCall("System.Blockchain.GetHeight", 0);
+            var snapshot = TestBlockchain.GetTestSnapshot();
+            ApplicationEngine engine = testNativeContract.TestCall(snapshot, "System.Blockchain.GetHeight", 0);
             engine.ResultStack.Should().BeEmpty();
         }
     }

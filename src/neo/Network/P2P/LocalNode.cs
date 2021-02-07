@@ -8,7 +8,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
@@ -20,9 +19,8 @@ namespace Neo.Network.P2P
 
         public const uint ProtocolVersion = 0;
         private const int MaxCountFromSeedList = 5;
-        private readonly IPEndPoint[] SeedList = new IPEndPoint[ProtocolSettings.Default.SeedList.Length];
+        private readonly IPEndPoint[] SeedList;
 
-        private static readonly object lockObj = new object();
         private readonly NeoSystem system;
         internal readonly ConcurrentDictionary<IActorRef, RemoteNode> RemoteNodes = new ConcurrentDictionary<IActorRef, RemoteNode>();
 
@@ -30,16 +28,6 @@ namespace Neo.Network.P2P
         public int UnconnectedCount => UnconnectedPeers.Count;
         public static readonly uint Nonce;
         public static string UserAgent { get; set; }
-
-        private static LocalNode singleton;
-        public static LocalNode Singleton
-        {
-            get
-            {
-                while (singleton == null) Thread.Sleep(10);
-                return singleton;
-            }
-        }
 
         static LocalNode()
         {
@@ -50,20 +38,15 @@ namespace Neo.Network.P2P
 
         public LocalNode(NeoSystem system)
         {
-            lock (lockObj)
-            {
-                if (singleton != null)
-                    throw new InvalidOperationException();
-                this.system = system;
-                singleton = this;
+            this.system = system;
+            this.SeedList = new IPEndPoint[system.Settings.SeedList.Length];
 
-                // Start dns resolution in parallel
-                string[] seedList = ProtocolSettings.Default.SeedList;
-                for (int i = 0; i < seedList.Length; i++)
-                {
-                    int index = i;
-                    Task.Run(() => SeedList[index] = GetIpEndPoint(seedList[index]));
-                }
+            // Start dns resolution in parallel
+            string[] seedList = system.Settings.SeedList;
+            for (int i = 0; i < seedList.Length; i++)
+            {
+                int index = i;
+                Task.Run(() => SeedList[index] = GetIpEndPoint(seedList[index]));
             }
         }
 
@@ -135,7 +118,7 @@ namespace Neo.Network.P2P
         /// <param name="node">Remote node</param>
         public bool AllowNewConnection(IActorRef actor, RemoteNode node)
         {
-            if (node.Version.Magic != ProtocolSettings.Default.Magic) return false;
+            if (node.Version.Magic != system.Settings.Magic) return false;
             if (node.Version.Nonce == Nonce) return false;
 
             // filter duplicate connections
@@ -230,7 +213,7 @@ namespace Neo.Network.P2P
 
         protected override Props ProtocolProps(object connection, IPEndPoint remote, IPEndPoint local)
         {
-            return RemoteNode.Props(system, connection, remote, local);
+            return RemoteNode.Props(system, this, connection, remote, local);
         }
     }
 }
