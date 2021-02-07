@@ -24,7 +24,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             TestBlockchain.InitializeMockNeoSystem();
 
-            _snapshot = Blockchain.Singleton.GetSnapshot();
+            _snapshot = TestBlockchain.GetTestSnapshot();
             _persistingBlock = new Block { Header = new Header() };
         }
 

@@ -30,7 +30,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestTotalSupply()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
 
             StorageItem item = new StorageItem
             {
@@ -47,7 +47,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestTotalSupplyDecimal()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
 
             BigInteger totalSupply = 100_000_000;
             totalSupply *= test.Factor;

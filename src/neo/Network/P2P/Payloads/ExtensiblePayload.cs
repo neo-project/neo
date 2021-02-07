@@ -1,9 +1,9 @@
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads
@@ -90,11 +90,11 @@ namespace Neo.Network.P2P.Payloads
             writer.WriteVarBytes(Data);
         }
 
-        public bool Verify(DataCache snapshot)
+        internal bool Verify(DataCache snapshot, ISet<UInt160> extensibleWitnessWhiteList)
         {
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);
             if (height < ValidBlockStart || height >= ValidBlockEnd) return false;
-            if (!Blockchain.Singleton.IsExtensibleWitnessWhiteListed(Sender)) return false;
+            if (!extensibleWitnessWhiteList.Contains(Sender)) return false;
             return this.VerifyWitnesses(snapshot, 0_02000000);
         }
     }
