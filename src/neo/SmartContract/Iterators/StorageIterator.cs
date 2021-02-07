@@ -1,4 +1,3 @@
-using Neo.Ledger;
 using Neo.VM;
 using Neo.VM.Types;
 using System.Collections.Generic;

@@ -199,15 +199,13 @@ namespace Neo.SmartContract
             }
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CreateSnapshot(), null, gas))
             {
-                CallFlags callFlags = !witness.VerificationScript.IsStandardContract() ? CallFlags.ReadStates : CallFlags.None;
-
                 if (witness.VerificationScript.Length == 0)
                 {
                     ContractState cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (cs is null) return false;
                     ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify", -1);
                     if (md?.ReturnType != ContractParameterType.Boolean) return false;
-                    engine.LoadContract(cs, md, callFlags);
+                    engine.LoadContract(cs, md, CallFlags.ReadOnly);
                 }
                 else
                 {
@@ -224,22 +222,12 @@ namespace Neo.SmartContract
                     }
                     engine.LoadScript(verificationScript, initialPosition: 0, configureState: p =>
                     {
-                        p.CallFlags = callFlags;
+                        p.CallFlags = CallFlags.ReadOnly;
                         p.ScriptHash = hash;
                     });
                 }
 
                 engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
-
-                if (NativeContract.IsNative(hash))
-                {
-                    try
-                    {
-                        engine.StepOut();
-                        engine.Push("verify");
-                    }
-                    catch { }
-                }
 
                 if (engine.Execute() == VMState.FAULT) return false;
                 if (!engine.ResultStack.Peek().GetBoolean()) return false;

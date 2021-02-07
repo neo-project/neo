@@ -119,8 +119,6 @@ namespace Neo.SmartContract
 
             for (int i = args.Count - 1; i >= 0; i--)
                 context_new.EvaluationStack.Push(args[i]);
-            if (NativeContract.IsNative(contract.Hash))
-                context_new.EvaluationStack.Push(method.Name);
 
             return context_new;
         }
@@ -197,6 +195,7 @@ namespace Neo.SmartContract
 
         protected override ExecutionContext LoadToken(ushort tokenId)
         {
+            ValidateCallFlags(CallFlags.ReadStates | CallFlags.AllowCall);
             ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
             if (contract is null || tokenId >= contract.Nef.Tokens.Length)
                 throw new InvalidOperationException();
@@ -281,17 +280,17 @@ namespace Neo.SmartContract
             base.Dispose();
         }
 
-        protected void ValidateCallFlags(InteropDescriptor descriptor)
+        protected void ValidateCallFlags(CallFlags requiredCallFlags)
         {
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
-            if (!state.CallFlags.HasFlag(descriptor.RequiredCallFlags))
+            if (!state.CallFlags.HasFlag(requiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
         }
 
         protected override void OnSysCall(uint method)
         {
             InteropDescriptor descriptor = services[method];
-            ValidateCallFlags(descriptor);
+            ValidateCallFlags(descriptor.RequiredCallFlags);
             AddGas(descriptor.FixedPrice * exec_fee_factor);
             List<object> parameters = descriptor.Parameters.Count > 0
                 ? new List<object>()
@@ -324,18 +323,20 @@ namespace Neo.SmartContract
             var currentBlock = NativeContract.Ledger.GetBlock(snapshot, hash);
             return new Block
             {
-                Version = 0,
-                PrevHash = hash,
-                MerkleRoot = new UInt256(),
-                Timestamp = currentBlock.Timestamp + Blockchain.MillisecondsPerBlock,
-                Index = currentBlock.Index + 1,
-                NextConsensus = currentBlock.NextConsensus,
-                Witness = new Witness
+                Header = new Header
                 {
-                    InvocationScript = Array.Empty<byte>(),
-                    VerificationScript = Array.Empty<byte>()
+                    Version = 0,
+                    PrevHash = hash,
+                    MerkleRoot = new UInt256(),
+                    Timestamp = currentBlock.Timestamp + Blockchain.MillisecondsPerBlock,
+                    Index = currentBlock.Index + 1,
+                    NextConsensus = currentBlock.NextConsensus,
+                    Witness = new Witness
+                    {
+                        InvocationScript = Array.Empty<byte>(),
+                        VerificationScript = Array.Empty<byte>()
+                    },
                 },
-                ConsensusData = new ConsensusData(),
                 Transactions = new Transaction[0]
             };
         }

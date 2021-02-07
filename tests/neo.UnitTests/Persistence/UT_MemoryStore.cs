@@ -1,5 +1,4 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO.Caching;
 using Neo.Persistence;
 using System.Linq;
 

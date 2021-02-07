@@ -281,7 +281,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestRuntime_GetTime()
         {
-            Block block = new Block();
+            Block block = new Block { Header = new Header() };
             var engine = GetEngine(true, true, hasBlock: true);
             engine.GetTime().Should().Be(block.Timestamp);
         }
@@ -379,11 +379,9 @@ namespace Neo.UnitTests.SmartContract
                 Transaction = TestUtils.CreateRandomHashTransaction()
             };
             UT_SmartContractHelper.TransactionAdd(engine.Snapshot, state);
-            engine.LoadScript(NativeContract.Ledger.Script, configureState: p => p.ScriptHash = NativeContract.Ledger.Hash);
 
-            var script = new ScriptBuilder();
-            script.EmitPush(state.Transaction.Hash.ToArray());
-            script.EmitPush("getTransactionHeight");
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.Ledger.Hash, "getTransactionHeight", state.Transaction.Hash);
             engine.LoadScript(script.ToArray());
             engine.Execute();
             Assert.AreEqual(engine.State, VMState.HALT);
@@ -671,7 +669,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var tx = hasContainer ? TestUtils.GetTransaction(UInt160.Zero) : null;
             var snapshot = hasSnapshot ? Blockchain.Singleton.GetSnapshot() : null;
-            var block = hasBlock ? new Block() : null;
+            var block = hasBlock ? new Block { Header = new Header() } : null;
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, gas);
             if (addScript) engine.LoadScript(new byte[] { 0x01 });
             return engine;

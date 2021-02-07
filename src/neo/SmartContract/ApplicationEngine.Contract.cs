@@ -10,7 +10,7 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 1 << 15, CallFlags.AllowCall);
+        public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 1 << 15, CallFlags.ReadStates | CallFlags.AllowCall);
         public static readonly InteropDescriptor System_Contract_CallNative = Register("System.Contract.CallNative", nameof(CallNativeContract), 0, CallFlags.None);
         public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 1 << 10, CallFlags.ReadStates);
         public static readonly InteropDescriptor System_Contract_GetCallFlags = Register("System.Contract.GetCallFlags", nameof(GetCallFlags), 1 << 10, CallFlags.None);
@@ -38,12 +38,12 @@ namespace Neo.SmartContract
             CallContractInternal(contract, md, callFlags, hasReturnValue, args);
         }
 
-        protected internal void CallNativeContract(int id)
+        protected internal void CallNativeContract(byte version)
         {
-            NativeContract contract = NativeContract.GetContract(id);
-            if (contract is null || contract.ActiveBlockIndex > NativeContract.Ledger.CurrentIndex(Snapshot))
-                throw new InvalidOperationException();
-            contract.Invoke(this);
+            NativeContract contract = NativeContract.GetContract(CurrentScriptHash);
+            if (contract is null)
+                throw new InvalidOperationException("It is not allowed to use \"System.Contract.CallNative\" directly.");
+            contract.Invoke(this, version);
         }
 
         protected internal bool IsStandardContract(UInt160 hash)

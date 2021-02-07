@@ -28,7 +28,7 @@ namespace Neo.SmartContract.Native
                 totalNetworkFee += tx.NetworkFee;
             }
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot);
-            UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.ConsensusData.PrimaryIndex]).ToScriptHash();
+            UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
             Mint(engine, primary, totalNetworkFee, false);
         }
     }

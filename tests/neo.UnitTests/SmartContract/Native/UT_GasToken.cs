@@ -7,7 +7,6 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
-using Neo.VM;
 using System;
 using System.Linq;
 using System.Numerics;
@@ -26,7 +25,7 @@ namespace Neo.UnitTests.SmartContract.Native
             TestBlockchain.InitializeMockNeoSystem();
 
             _snapshot = Blockchain.Singleton.GetSnapshot();
-            _persistingBlock = new Block() { Index = 0 };
+            _persistingBlock = new Block { Header = new Header() };
         }
 
         [TestMethod]
@@ -42,7 +41,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_BalanceOfTransferAndBurn()
         {
             var snapshot = _snapshot.CreateSnapshot();
-            var persistingBlock = new Block() { Index = 1000 };
+            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
             byte[] to = new byte[20];
             var keyCount = snapshot.GetChangeSet().Count();
@@ -122,18 +121,6 @@ namespace Neo.UnitTests.SmartContract.Native
             NativeContract.GAS.Transfer(snapshot, from, to, BigInteger.MinusOne, true, persistingBlock).Should().BeFalse();
             NativeContract.GAS.Transfer(snapshot, new byte[19], to, BigInteger.One, false, persistingBlock).Should().BeFalse();
             NativeContract.GAS.Transfer(snapshot, from, new byte[19], BigInteger.One, false, persistingBlock).Should().BeFalse();
-        }
-
-        [TestMethod]
-        public void Check_BadScript()
-        {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, Blockchain.Singleton.GetSnapshot(), _persistingBlock, 0);
-
-            using var script = new ScriptBuilder();
-            script.Emit(OpCode.NOP);
-            engine.LoadScript(script.ToArray());
-
-            Assert.ThrowsException<InvalidOperationException>(() => NativeContract.GAS.Invoke(engine));
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, uint key)

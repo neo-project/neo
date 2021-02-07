@@ -34,8 +34,6 @@ namespace Neo.Network.P2P
         private BloomFilter bloom_filter;
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
-        private static readonly TimeSpan PendingTimeout = TimeSpan.FromMinutes(1);
-
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
 
         private void OnMessage(Message msg)
@@ -90,6 +88,9 @@ namespace Neo.Network.P2P
                 case MessageCommand.GetHeaders:
                     OnGetHeadersMessageReceived((GetBlockByIndexPayload)msg.Payload);
                     break;
+                case MessageCommand.Headers:
+                    OnHeadersMessageReceived((HeadersPayload)msg.Payload);
+                    break;
                 case MessageCommand.Inv:
                     OnInvMessageReceived((InvPayload)msg.Payload);
                     break;
@@ -110,7 +111,6 @@ namespace Neo.Network.P2P
                 case MessageCommand.Version:
                     throw new ProtocolViolationException();
                 case MessageCommand.Alert:
-                case MessageCommand.Headers:
                 case MessageCommand.MerkleBlock:
                 case MessageCommand.NotFound:
                 case MessageCommand.Reject:
@@ -269,7 +269,7 @@ namespace Neo.Network.P2P
         /// Tell the specified number of blocks' headers starting with the requested IndexStart to RemoteNode actor.
         /// A limit set by HeadersPayload.MaxHeadersCount is also applied to the number of requested Headers, namely payload.Count.
         /// </summary>
-        /// <param name="payload">A GetBlocksPayload including start block index and number of blocks' headers requested.</param>
+        /// <param name="payload">A GetBlockByIndexPayload including start block index and number of blocks' headers requested.</param>
         private void OnGetHeadersMessageReceived(GetBlockByIndexPayload payload)
         {
             DataCache snapshot = Blockchain.Singleton.View;
@@ -286,13 +286,20 @@ namespace Neo.Network.P2P
             EnqueueMessage(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers.ToArray())));
         }
 
+        private void OnHeadersMessageReceived(HeadersPayload payload)
+        {
+            UpdateLastBlockIndex(payload.Headers[^1].Index);
+            system.TaskManager.Tell(payload.Headers);
+            system.Blockchain.Tell(payload.Headers);
+        }
+
         private void OnInventoryReceived(IInventory inventory)
         {
             pendingKnownHashes.Remove(inventory.Hash);
             if (inventory is Block block)
             {
+                UpdateLastBlockIndex(block.Index);
                 if (block.Index > NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View) + InvPayload.MaxHashesCount) return;
-                UpdateLastBlockIndex(block.Index, false);
             }
             knownHashes.Add(inventory.Hash);
             system.TaskManager.Tell(inventory);
@@ -332,13 +339,13 @@ namespace Neo.Network.P2P
 
         private void OnPingMessageReceived(PingPayload payload)
         {
-            UpdateLastBlockIndex(payload.LastBlockIndex, true);
+            UpdateLastBlockIndex(payload.LastBlockIndex);
             EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View), payload.Nonce)));
         }
 
         private void OnPongMessageReceived(PingPayload payload)
         {
-            UpdateLastBlockIndex(payload.LastBlockIndex, true);
+            UpdateLastBlockIndex(payload.LastBlockIndex);
         }
 
         private void OnVerackMessageReceived()
@@ -373,23 +380,25 @@ namespace Neo.Network.P2P
             SendMessage(Message.Create(MessageCommand.Verack));
         }
 
-        private void RefreshPendingKnownHashes()
+        private void OnTimer()
         {
+            DateTime oneMinuteAgo = TimeProvider.Current.UtcNow.AddMinutes(-1);
             while (pendingKnownHashes.Count > 0)
             {
                 var (_, time) = pendingKnownHashes[0];
-                if (TimeProvider.Current.UtcNow - time <= PendingTimeout)
-                    break;
+                if (oneMinuteAgo <= time) break;
                 pendingKnownHashes.RemoveAt(0);
             }
+            if (oneMinuteAgo > lastSent)
+                EnqueueMessage(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View))));
         }
 
-        private void UpdateLastBlockIndex(uint lastBlockIndex, bool requestTasks)
+        private void UpdateLastBlockIndex(uint lastBlockIndex)
         {
             if (lastBlockIndex > LastBlockIndex)
             {
                 LastBlockIndex = lastBlockIndex;
-                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex, RequestTasks = requestTasks });
+                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex });
             }
         }
     }

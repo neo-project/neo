@@ -13,25 +13,19 @@ namespace Neo.UnitTests.Network.P2P
         [TestMethod]
         public void CreateTest()
         {
-            Assert.ThrowsException<NullReferenceException>(() => new TaskSession(null));
-
             var ses = new TaskSession(new VersionPayload() { Capabilities = new NodeCapability[] { new FullNodeCapability(123) } });
 
-            Assert.IsTrue(ses.IsFullNode);
+            Assert.IsFalse(ses.HasTooManyTasks);
             Assert.AreEqual((uint)123, ses.LastBlockIndex);
             Assert.AreEqual(0, ses.IndexTasks.Count);
-            Assert.AreEqual(0, ses.InvTasks.Count);
-            Assert.AreEqual((uint)0, ses.TimeoutTimes);
-            Assert.AreEqual((uint)0, ses.InvalidBlockCount);
+            Assert.IsTrue(ses.IsFullNode);
 
-            ses = new TaskSession(new VersionPayload() { Capabilities = new NodeCapability[0] });
+            ses = new TaskSession(new VersionPayload() { Capabilities = Array.Empty<NodeCapability>() });
 
-            Assert.IsFalse(ses.IsFullNode);
+            Assert.IsFalse(ses.HasTooManyTasks);
             Assert.AreEqual((uint)0, ses.LastBlockIndex);
             Assert.AreEqual(0, ses.IndexTasks.Count);
-            Assert.AreEqual(0, ses.InvTasks.Count);
-            Assert.AreEqual((uint)0, ses.TimeoutTimes);
-            Assert.AreEqual((uint)0, ses.InvalidBlockCount);
+            Assert.IsFalse(ses.IsFullNode);
         }
     }
 }
