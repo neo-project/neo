@@ -10,6 +10,7 @@ namespace Neo
 {
     public class NeoSystem : IDisposable
     {
+        public ProtocolSettings Settings { get; }
         public ActorSystem ActorSystem { get; } = ActorSystem.Create(nameof(NeoSystem),
             $"akka {{ log-dead-letters = off , loglevel = warning, loggers = [ \"{typeof(Utility.Logger).AssemblyQualifiedName}\" ] }}" +
             $"blockchain-mailbox {{ mailbox-type: \"{typeof(BlockchainMailbox).AssemblyQualifiedName}\" }}" +
@@ -40,8 +41,9 @@ namespace Neo
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         }
 
-        public NeoSystem(string storageEngine = null, string storagePath = null)
+        public NeoSystem(ProtocolSettings settings, string storageEngine = null, string storagePath = null)
         {
+            this.Settings = settings;
             Plugin.LoadPlugins(this);
             this.storage_engine = storageEngine;
             this.store = LoadStore(storagePath);

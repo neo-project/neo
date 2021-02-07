@@ -19,7 +19,7 @@ namespace Neo.Network.P2P
 
         public const uint ProtocolVersion = 0;
         private const int MaxCountFromSeedList = 5;
-        private readonly IPEndPoint[] SeedList = new IPEndPoint[ProtocolSettings.Default.SeedList.Length];
+        private readonly IPEndPoint[] SeedList;
 
         private readonly NeoSystem system;
         internal readonly ConcurrentDictionary<IActorRef, RemoteNode> RemoteNodes = new ConcurrentDictionary<IActorRef, RemoteNode>();
@@ -39,9 +39,10 @@ namespace Neo.Network.P2P
         public LocalNode(NeoSystem system)
         {
             this.system = system;
+            this.SeedList = new IPEndPoint[system.Settings.SeedList.Length];
 
             // Start dns resolution in parallel
-            string[] seedList = ProtocolSettings.Default.SeedList;
+            string[] seedList = system.Settings.SeedList;
             for (int i = 0; i < seedList.Length; i++)
             {
                 int index = i;
@@ -117,7 +118,7 @@ namespace Neo.Network.P2P
         /// <param name="node">Remote node</param>
         public bool AllowNewConnection(IActorRef actor, RemoteNode node)
         {
-            if (node.Version.Magic != ProtocolSettings.Default.Magic) return false;
+            if (node.Version.Magic != system.Settings.Magic) return false;
             if (node.Version.Nonce == Nonce) return false;
 
             // filter duplicate connections

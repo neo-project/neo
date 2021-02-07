@@ -27,8 +27,8 @@ namespace Neo.Network.P2P
         }
 
         private readonly PendingKnownHashesCollection pendingKnownHashes = new PendingKnownHashesCollection();
-        private readonly HashSetCache<UInt256> knownHashes = new HashSetCache<UInt256>(ProtocolSettings.Default.MemoryPoolMaxTransactions * 2 / 5);
-        private readonly HashSetCache<UInt256> sentHashes = new HashSetCache<UInt256>(ProtocolSettings.Default.MemoryPoolMaxTransactions * 2 / 5);
+        private readonly HashSetCache<UInt256> knownHashes;
+        private readonly HashSetCache<UInt256> sentHashes;
         private bool verack = false;
         private BloomFilter bloom_filter;
 

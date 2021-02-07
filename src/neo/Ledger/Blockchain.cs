@@ -30,10 +30,8 @@ namespace Neo.Ledger
         public class RelayResult { public IInventory Inventory; public VerifyResult Result; }
         private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new LinkedList<Block>(); public HashSet<IActorRef> Nodes = new HashSet<IActorRef>(); }
 
-        public static readonly uint MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock;
-        public static readonly TimeSpan TimePerBlock = TimeSpan.FromMilliseconds(MillisecondsPerBlock);
-        public static readonly ECPoint[] StandbyCommittee = ProtocolSettings.Default.StandbyCommittee.Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
-        public static readonly ECPoint[] StandbyValidators = StandbyCommittee[0..ProtocolSettings.Default.ValidatorsCount];
+        public static readonly ECPoint[] StandbyCommittee = ProtocolSettings.Default.StandbyCommittee;
+        public static readonly ECPoint[] StandbyValidators = ProtocolSettings.Default.StandbyValidators;
 
         public static readonly Block GenesisBlock = new Block
         {
@@ -211,7 +209,7 @@ namespace Neo.Ledger
 
                 int blocksPersisted = 0;
                 // 15000 is the default among of seconds per block, while MilliSecondsPerBlock is the current
-                uint extraBlocks = (15000 - MillisecondsPerBlock) / 1000;
+                uint extraBlocks = (15000 - system.Settings.MillisecondsPerBlock) / 1000;
                 foreach (Block blockToPersist in blocksToPersistList)
                 {
                     block_cache_unverified.Remove(blockToPersist.Index);

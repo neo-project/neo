@@ -1,6 +1,5 @@
 using Neo.IO;
 using Neo.IO.Json;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
@@ -328,7 +327,7 @@ namespace Neo.SmartContract
                     Version = 0,
                     PrevHash = hash,
                     MerkleRoot = new UInt256(),
-                    Timestamp = currentBlock.Timestamp + Blockchain.MillisecondsPerBlock,
+                    Timestamp = currentBlock.Timestamp + 1,
                     Index = currentBlock.Index + 1,
                     NextConsensus = currentBlock.NextConsensus,
                     Witness = new Witness

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Neo.Cryptography.ECC;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,11 +11,13 @@ namespace Neo
     {
         public uint Magic { get; }
         public byte AddressVersion { get; }
-        public string[] StandbyCommittee { get; }
+        public ECPoint[] StandbyCommittee { get; }
+        public ECPoint[] StandbyValidators { get; }
         public int CommitteeMembersCount { get; }
         public int ValidatorsCount { get; }
         public string[] SeedList { get; }
         public uint MillisecondsPerBlock { get; }
+        public TimeSpan TimePerBlock { get; }
         public int MemoryPoolMaxTransactions { get; }
         public uint MaxTraceableBlocks { get; }
         public IReadOnlyDictionary<string, uint> NativeActivations { get; }
@@ -51,10 +54,9 @@ namespace Neo
             this.Magic = section.GetValue("Magic", 0x4F454Eu);
             this.AddressVersion = section.GetValue("AddressVersion", (byte)0x35);
             IConfigurationSection section_sc = section.GetSection("StandbyCommittee");
-            if (section_sc.Exists())
-                this.StandbyCommittee = section_sc.GetChildren().Select(p => p.Get<string>()).ToArray();
-            else
-                this.StandbyCommittee = new[]
+            string[] s = section_sc.Exists()
+                ? section_sc.GetChildren().Select(p => p.Get<string>()).ToArray()
+                : new[]
                 {
                     //Validators
                     "03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c",
@@ -81,8 +83,10 @@ namespace Neo
                     "03cdcea66032b82f5c30450e381e5295cae85c5e6943af716cc6b646352a6067dc",
                     "02cd5a5547119e24feaa7c2a0f37b8c9366216bab7054de0065c9be42084003c8a"
                 };
+            this.StandbyCommittee = s.Select(p => ECPoint.Parse(p, ECCurve.Secp256r1)).ToArray();
             this.CommitteeMembersCount = StandbyCommittee.Length;
             this.ValidatorsCount = section.GetValue("ValidatorsCount", (byte)7);
+            this.StandbyValidators = StandbyCommittee[0..ValidatorsCount];
             IConfigurationSection section_sl = section.GetSection("SeedList");
             if (section_sl.Exists())
                 this.SeedList = section_sl.GetChildren().Select(p => p.Get<string>()).ToArray();
@@ -96,6 +100,7 @@ namespace Neo
                     "seed5.neo.org:10333"
                 };
             this.MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", 15000u);
+            this.TimePerBlock = TimeSpan.FromMilliseconds(MillisecondsPerBlock);
             this.MemoryPoolMaxTransactions = Math.Max(1, section.GetValue("MemoryPoolMaxTransactions", 50_000));
             this.MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", 2_102_400u);// 365 days
             IConfigurationSection section_na = section.GetSection("NativeActivations");
@@ -103,7 +108,6 @@ namespace Neo
                 this.NativeActivations = section_na.GetChildren().ToDictionary((a) => a.Key, b => uint.Parse(b.Value));
             else
                 this.NativeActivations = new Dictionary<string, uint>();
-
         }
     }
 }

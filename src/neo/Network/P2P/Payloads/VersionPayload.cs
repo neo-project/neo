@@ -25,11 +25,11 @@ namespace Neo.Network.P2P.Payloads
             UserAgent.GetVarSize() +    // UserAgent
             Capabilities.GetVarSize();  // Capabilities
 
-        public static VersionPayload Create(uint nonce, string userAgent, params NodeCapability[] capabilities)
+        public static VersionPayload Create(uint magic, uint nonce, string userAgent, params NodeCapability[] capabilities)
         {
             return new VersionPayload
             {
-                Magic = ProtocolSettings.Default.Magic,
+                Magic = magic,
                 Version = LocalNode.ProtocolVersion,
                 Timestamp = DateTime.Now.ToTimestamp(),
                 Nonce = nonce,

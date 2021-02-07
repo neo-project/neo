@@ -4,6 +4,7 @@ using Akka.IO;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Actors;
+using Neo.IO.Caching;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
@@ -41,6 +42,8 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             this.localNode = localNode;
+            this.knownHashes = new HashSetCache<UInt256>(system.MemPool.Capacity * 2 / 5);
+            this.sentHashes = new HashSetCache<UInt256>(system.MemPool.Capacity * 2 / 5);
             localNode.RemoteNodes.TryAdd(Self, this);
         }
 
@@ -186,7 +189,7 @@ namespace Neo.Network.P2P
             if (localNode.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)localNode.ListenerTcpPort));
             if (localNode.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)localNode.ListenerWsPort));
 
-            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
+            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(system.Settings.Magic, LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
         }
 
         protected override void PostStop()
