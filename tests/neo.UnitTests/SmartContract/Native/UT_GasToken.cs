@@ -90,7 +90,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Burn
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, gas: 0);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 0);
             keyCount = snapshot.GetChangeSet().Count();
 
             Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
