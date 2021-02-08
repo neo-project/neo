@@ -23,7 +23,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestInitialize()
         {
-            ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, null, gas: 0);
+            ApplicationEngine ae = ApplicationEngine.Create(TriggerType.Application, null, null, settings: TestBlockchain.TheNeoSystem.Settings, gas: 0);
             testNativeContract.Initialize(ae);
         }
 
@@ -100,7 +100,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Manifest = testNativeContract.Manifest
             }));
 
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, gas: 20_00000000))
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 20_00000000))
             {
                 using ScriptBuilder script = new ScriptBuilder();
                 script.EmitDynamicCall(testNativeContract.Hash, "wrongMethod");
@@ -108,7 +108,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 engine.Execute().Should().Be(VMState.FAULT);
             }
 
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, gas: 20_00000000))
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 20_00000000))
             {
                 using ScriptBuilder script = new ScriptBuilder();
                 script.EmitDynamicCall(testNativeContract.Hash, "helloWorld");
@@ -122,10 +122,10 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
 
-            ApplicationEngine engine1 = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: 0);
+            ApplicationEngine engine1 = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 0);
             Assert.ThrowsException<InvalidOperationException>(() => testNativeContract.TestTrigger(engine1));
 
-            ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, gas: 0);
+            ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 0);
             testNativeContract.TestTrigger(engine2);
         }
 

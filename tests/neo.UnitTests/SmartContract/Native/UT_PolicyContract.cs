@@ -22,7 +22,7 @@ namespace Neo.UnitTests.SmartContract.Native
             TestBlockchain.InitializeMockNeoSystem();
             _snapshot = TestBlockchain.GetTestSnapshot();
 
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, _snapshot, new Block { Header = new Header() }, gas: 0);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, _snapshot, new Block { Header = new Header() }, settings: TestBlockchain.TheNeoSystem.Settings, gas: 0);
             NativeContract.ContractManagement.OnPersist(engine);
         }
 

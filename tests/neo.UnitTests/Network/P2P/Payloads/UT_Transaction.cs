@@ -163,7 +163,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, gas: tx.NetworkFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -245,7 +245,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, gas: tx.NetworkFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -357,7 +357,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, gas: tx.NetworkFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -444,7 +444,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, gas: tx.NetworkFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -534,7 +534,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, gas: tx.NetworkFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -676,7 +676,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, gas: tx.NetworkFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -1025,7 +1025,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, gas: tx.NetworkFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
