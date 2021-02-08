@@ -1,6 +1,5 @@
 using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Network.P2P;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -12,17 +11,13 @@ using System.Threading;
 namespace Neo.UnitTests.SmartContract.Native
 {
     [TestClass]
-    public class UT_StdLib : TestKit
+    public class UT_StdLib
     {
         [TestInitialize]
         public void Init()
         {
             TestBlockchain.InitializeMockNeoSystem();
-            // We need Blockchain started
-            //var senderProbe = CreateTestProbe();
-            //senderProbe.Send(TestBlockchain.TheNeoSystem.LocalNode, new LocalNode.GetInstance());
-            //_ = senderProbe.ExpectMsg<LocalNode>();
-            //Thread.Sleep(1000); // TODO: We should not wait
+            Thread.Sleep(1000); // TODO: We should not wait
         }
 
         [TestMethod]
@@ -143,7 +138,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "{\"key\":\"value\"}");
                     Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "null");
                     Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "\"test\"");
-                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "true"); // TODO: It return 1
+                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "1");
                     Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "5");
                 }
             }
