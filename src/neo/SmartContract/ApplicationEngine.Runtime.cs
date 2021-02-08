@@ -1,5 +1,6 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using System;
@@ -19,6 +20,7 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_GetTrigger = Register("System.Runtime.GetTrigger", nameof(Trigger), 1 << 3, CallFlags.None);
         public static readonly InteropDescriptor System_Runtime_GetTime = Register("System.Runtime.GetTime", nameof(GetTime), 1 << 3, CallFlags.None);
         public static readonly InteropDescriptor System_Runtime_GetScriptContainer = Register("System.Runtime.GetScriptContainer", nameof(GetScriptContainer), 1 << 3, CallFlags.None);
+        public static readonly InteropDescriptor System_Runtime_GetScriptContainerHashData = Register("System.Runtime.GetScriptContainerHashData", nameof(GetScriptContainerHashData), 1 << 3, CallFlags.None);
         public static readonly InteropDescriptor System_Runtime_GetExecutingScriptHash = Register("System.Runtime.GetExecutingScriptHash", nameof(CurrentScriptHash), 1 << 4, CallFlags.None);
         public static readonly InteropDescriptor System_Runtime_GetCallingScriptHash = Register("System.Runtime.GetCallingScriptHash", nameof(CallingScriptHash), 1 << 4, CallFlags.None);
         public static readonly InteropDescriptor System_Runtime_GetEntryScriptHash = Register("System.Runtime.GetEntryScriptHash", nameof(EntryScriptHash), 1 << 4, CallFlags.None);
@@ -42,6 +44,11 @@ namespace Neo.SmartContract
         protected internal IInteroperable GetScriptContainer()
         {
             return ScriptContainer as IInteroperable;
+        }
+
+        protected internal byte[] GetScriptContainerHashData()
+        {
+            return ScriptContainer.GetHashData();
         }
 
         protected internal bool CheckWitness(byte[] hashOrPubkey)
