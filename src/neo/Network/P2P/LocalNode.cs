@@ -14,6 +14,8 @@ namespace Neo.Network.P2P
 {
     public class LocalNode : Peer
     {
+        public class GetSnapshot { }
+        public class Snapshot { public IReadOnlyDictionary<IActorRef, RemoteNode> RemoteNodes { get; init; } public IReadOnlyCollection<IPEndPoint> UnconnectedPeers { get; init; } }
         public class RelayDirectly { public IInventory Inventory; }
         public class SendDirectly { public IInventory Inventory; }
 
@@ -24,8 +26,6 @@ namespace Neo.Network.P2P
         private readonly NeoSystem system;
         internal readonly ConcurrentDictionary<IActorRef, RemoteNode> RemoteNodes = new ConcurrentDictionary<IActorRef, RemoteNode>();
 
-        public int ConnectedCount => RemoteNodes.Count;
-        public int UnconnectedCount => UnconnectedPeers.Count;
         public static readonly uint Nonce;
         public static string UserAgent { get; set; }
 
@@ -116,7 +116,7 @@ namespace Neo.Network.P2P
         /// </summary>
         /// <param name="actor">Remote node actor</param>
         /// <param name="node">Remote node</param>
-        public bool AllowNewConnection(IActorRef actor, RemoteNode node)
+        internal bool AllowNewConnection(IActorRef actor, RemoteNode node)
         {
             if (node.Version.Magic != system.Settings.Magic) return false;
             if (node.Version.Nonce == Nonce) return false;
@@ -132,16 +132,6 @@ namespace Neo.Network.P2P
             return true;
         }
 
-        public IEnumerable<RemoteNode> GetRemoteNodes()
-        {
-            return RemoteNodes.Values;
-        }
-
-        public IEnumerable<IPEndPoint> GetUnconnectedPeers()
-        {
-            return UnconnectedPeers;
-        }
-
         /// <summary>
         /// Override of abstract class that is triggered when <see cref="UnconnectedPeers"/> is empty.
         /// Performs a BroadcastMessage with the command `MessageCommand.GetAddr`, which, eventually, tells all known connections.
@@ -151,7 +141,7 @@ namespace Neo.Network.P2P
         protected override void NeedMorePeers(int count)
         {
             count = Math.Max(count, MaxCountFromSeedList);
-            if (ConnectedPeers.Count > 0)
+            if (!ConnectedPeers.IsEmpty)
             {
                 BroadcastMessage(MessageCommand.GetAddr);
             }
@@ -170,6 +160,13 @@ namespace Neo.Network.P2P
             base.OnReceive(message);
             switch (message)
             {
+                case GetSnapshot _:
+                    Sender.Tell(new Snapshot
+                    {
+                        RemoteNodes = RemoteNodes,
+                        UnconnectedPeers = UnconnectedPeers
+                    });
+                    break;
                 case Message msg:
                     BroadcastMessage(msg);
                     break;
