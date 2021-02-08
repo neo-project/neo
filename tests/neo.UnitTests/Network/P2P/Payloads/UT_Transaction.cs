@@ -156,14 +156,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // Fast check
 
-                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
+                Assert.IsTrue(tx.VerifyWitnesses(ProtocolSettings.Default, snapshot, tx.NetworkFee));
 
                 // Check
 
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, null, tx.NetworkFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, gas: tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -238,14 +238,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
                 // Fast check
 
-                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
+                Assert.IsTrue(tx.VerifyWitnesses(ProtocolSettings.Default, snapshot, tx.NetworkFee));
 
                 // Check
 
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, null, tx.NetworkFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, gas: tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -351,13 +351,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 tx.Witnesses.Length.Should().Be(1);
 
                 // Fast check
-                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
+                Assert.IsTrue(tx.VerifyWitnesses(ProtocolSettings.Default, snapshot, tx.NetworkFee));
 
                 // Check
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, null, tx.NetworkFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, gas: tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -438,13 +438,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 tx.Witnesses.Length.Should().Be(1);
 
                 // Fast check
-                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
+                Assert.IsTrue(tx.VerifyWitnesses(ProtocolSettings.Default, snapshot, tx.NetworkFee));
 
                 // Check
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, null, tx.NetworkFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, gas: tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -528,13 +528,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 tx.Witnesses.Length.Should().Be(1);
 
                 // Fast check
-                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
+                Assert.IsTrue(tx.VerifyWitnesses(ProtocolSettings.Default, snapshot, tx.NetworkFee));
 
                 // Check
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, null, tx.NetworkFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, gas: tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -670,13 +670,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 tx.Signers.Length.Should().Be(1);
 
                 // Fast check
-                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
+                Assert.IsTrue(tx.VerifyWitnesses(ProtocolSettings.Default, snapshot, tx.NetworkFee));
 
                 // Check
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, null, tx.NetworkFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, gas: tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -771,7 +771,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
             UInt160[] hashes = txSimple.GetScriptHashesForVerifying(snapshot);
             Assert.AreEqual(1, hashes.Length);
-            Assert.AreNotEqual(VerifyResult.Succeed, txSimple.VerifyStateDependent(snapshot, new TransactionVerificationContext()));
+            Assert.AreNotEqual(VerifyResult.Succeed, txSimple.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext()));
         }
 
         [TestMethod]
@@ -1019,13 +1019,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 tx.Witnesses.Length.Should().Be(1);
 
                 // Fast check
-                Assert.IsTrue(tx.VerifyWitnesses(snapshot, tx.NetworkFee));
+                Assert.IsTrue(tx.VerifyWitnesses(ProtocolSettings.Default, snapshot, tx.NetworkFee));
 
                 // Check
                 long verificationGas = 0;
                 foreach (var witness in tx.Witnesses)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, null, tx.NetworkFee))
+                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, gas: tx.NetworkFee))
                     {
                         engine.LoadScript(witness.VerificationScript);
                         engine.LoadScript(witness.InvocationScript);
@@ -1118,9 +1118,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     }
                 }
             };
-            tx.VerifyStateIndependent().Should().Be(VerifyResult.Invalid);
+            tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Invalid);
             tx.Script = new byte[0];
-            tx.VerifyStateIndependent().Should().Be(VerifyResult.Succeed);
+            tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Succeed);
 
             var walletA = TestUtils.GenerateTestWallet();
             var walletB = TestUtils.GenerateTestWallet();
@@ -1171,7 +1171,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.IsTrue(data.Completed);
 
                 tx.Witnesses = data.GetWitnesses();
-                tx.VerifyStateIndependent().Should().Be(VerifyResult.Succeed);
+                tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Succeed);
             }
         }
 
@@ -1202,10 +1202,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var balance = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             balance.GetInteroperable<AccountState>().Balance = tx.NetworkFee;
 
-            tx.VerifyStateDependent(snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.Invalid);
+            tx.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.Invalid);
             balance.GetInteroperable<AccountState>().Balance = 0;
             tx.SystemFee = 10;
-            tx.VerifyStateDependent(snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.InsufficientFunds);
+            tx.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.InsufficientFunds);
 
             var walletA = TestUtils.GenerateTestWallet();
             var walletB = TestUtils.GenerateTestWallet();
@@ -1254,77 +1254,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Assert.IsTrue(data.Completed);
 
                 tx.Witnesses = data.GetWitnesses();
-                tx.VerifyStateDependent(snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.Succeed);
-            }
-        }
-
-        [TestMethod]
-        public void Test_Verify()
-        {
-            var snapshot = TestBlockchain.GetTestSnapshot();
-            var tx = new Transaction()
-            {
-                Attributes = Array.Empty<TransactionAttribute>(),
-                NetworkFee = 0,
-                Nonce = (uint)Environment.TickCount,
-                Script = new byte[Transaction.MaxTransactionSize],
-                Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
-                SystemFee = 0,
-                ValidUntilBlock = 0,
-                Version = 0,
-                Witnesses = new Witness[0],
-            };
-            tx.Verify(snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.Invalid);
-
-            var walletA = TestUtils.GenerateTestWallet();
-            var walletB = TestUtils.GenerateTestWallet();
-
-            using (var unlockA = walletA.Unlock("123"))
-            using (var unlockB = walletB.Unlock("123"))
-            {
-                var a = walletA.CreateAccount();
-                var b = walletB.CreateAccount();
-
-                var multiSignContract = Contract.CreateMultiSigContract(2,
-                    new ECPoint[]
-                    {
-                        a.GetKey().PublicKey,
-                        b.GetKey().PublicKey
-                    });
-
-                walletA.CreateAccount(multiSignContract, a.GetKey());
-                var acc = walletB.CreateAccount(multiSignContract, b.GetKey());
-
-                // Fake balance
-
-                var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
-                var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
-
-                entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
-
-                snapshot.Commit();
-
-                // Make transaction
-
-                tx = walletA.MakeTransaction(snapshot, new TransferOutput[]
-                {
-                    new TransferOutput()
-                    {
-                         AssetId = NativeContract.GAS.Hash,
-                         ScriptHash = acc.ScriptHash,
-                         Value = new BigDecimal(BigInteger.One,8)
-                    }
-                }, acc.ScriptHash);
-
-                // Sign
-
-                var data = new ContractParametersContext(snapshot, tx);
-                Assert.IsTrue(walletA.Sign(data));
-                Assert.IsTrue(walletB.Sign(data));
-                Assert.IsTrue(data.Completed);
-
-                tx.Witnesses = data.GetWitnesses();
-                tx.Verify(snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.Succeed);
+                tx.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.Succeed);
             }
         }
     }

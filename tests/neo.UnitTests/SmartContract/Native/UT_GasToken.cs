@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -42,7 +41,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
-            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             byte[] to = new byte[20];
             var keyCount = snapshot.GetChangeSet().Count();
             var supply = NativeContract.GAS.TotalSupply(snapshot);
@@ -91,7 +90,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Burn
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, 0);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, gas: 0);
             keyCount = snapshot.GetChangeSet().Count();
 
             Assert.ThrowsException<ArgumentOutOfRangeException>(() =>

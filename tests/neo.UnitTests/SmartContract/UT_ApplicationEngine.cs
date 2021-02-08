@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.VM.Types;
 using System.Numerics;
@@ -97,7 +96,7 @@ namespace Neo.UnitTests.SmartContract
             byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
             ApplicationEngine engine = ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshot);
             engine.PersistingBlock.Version.Should().Be(0);
-            engine.PersistingBlock.PrevHash.Should().Be(Blockchain.GenesisBlock.Hash);
+            engine.PersistingBlock.PrevHash.Should().Be(TestBlockchain.TheNeoSystem.GenesisBlock.Hash);
             engine.PersistingBlock.MerkleRoot.Should().Be(new UInt256());
         }
     }

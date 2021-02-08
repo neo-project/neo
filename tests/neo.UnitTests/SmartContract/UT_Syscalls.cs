@@ -1,6 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -281,7 +280,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Execute
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, 100_000_000);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: 100_000_000);
                 engine.LoadScript(script.ToArray());
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
 

@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -67,7 +66,7 @@ namespace Neo.UnitTests.SmartContract.Native
             checkAvail_ret.Result.Should().BeTrue();
             checkAvail_ret.State.Should().BeTrue();
 
-            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             var register_ret = Check_Register(snapshot, domain, from, persistingBlock);
             register_ret.Result.Should().BeTrue();
             register_ret.State.Should().BeTrue();
@@ -150,7 +149,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             string domain = name + "." + validroot;
 
-            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             var register_ret = Check_Register(snapshot, domain, from, persistingBlock);
             register_ret.Result.Should().BeTrue();
             register_ret.State.Should().BeTrue();
@@ -231,7 +230,7 @@ namespace Neo.UnitTests.SmartContract.Native
             checkAvail_ret.Result.Should().BeTrue();
             checkAvail_ret.State.Should().BeTrue();
 
-            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             var register_ret = Check_Register(snapshot, domain, from, persistingBlock);
             register_ret.Result.Should().BeTrue();
             register_ret.State.Should().BeTrue();
@@ -322,7 +321,7 @@ namespace Neo.UnitTests.SmartContract.Native
             checkAvail_ret.Result.Should().BeTrue();
             checkAvail_ret.State.Should().BeTrue();
 
-            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             var register_ret = Check_Register(snapshot, domain, from, persistingBlock);
             register_ret.Result.Should().BeTrue();
             register_ret.State.Should().BeTrue();
@@ -395,7 +394,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var persistingBlock = _persistingBlock;
             //non-committee member
             string validroot = "testroot";
-            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             var ret = Check_AddRoot(snapshot, new UInt160(from), validroot, persistingBlock);
             ret.Should().BeFalse();
 
@@ -454,7 +453,7 @@ namespace Neo.UnitTests.SmartContract.Native
             checkAvail_ret.Result.Should().BeTrue();
             checkAvail_ret.State.Should().BeTrue();
 
-            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             var register_ret = Check_Register(snapshot, domain, from, persistingBlock);
             register_ret.Result.Should().BeTrue();
             register_ret.State.Should().BeTrue();

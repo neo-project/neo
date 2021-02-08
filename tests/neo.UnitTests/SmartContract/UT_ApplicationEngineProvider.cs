@@ -28,14 +28,14 @@ namespace Neo.UnitTests.SmartContract
             var provider = new TestProvider();
             ApplicationEngine.SetApplicationEngineProvider(provider).Should().BeTrue();
 
-            using var appEngine = ApplicationEngine.Create(TriggerType.Application, null, null, null, 0);
+            using var appEngine = ApplicationEngine.Create(TriggerType.Application, null, null, gas: 0);
             (appEngine is TestEngine).Should().BeTrue();
         }
 
         [TestMethod]
         public void TestDefaultAppEngineProvider()
         {
-            using var appEngine = ApplicationEngine.Create(TriggerType.Application, null, null, null, 0);
+            using var appEngine = ApplicationEngine.Create(TriggerType.Application, null, null, gas: 0);
             (appEngine is ApplicationEngine).Should().BeTrue();
         }
 
@@ -63,16 +63,16 @@ namespace Neo.UnitTests.SmartContract
 
         class TestProvider : IApplicationEngineProvider
         {
-            public ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, long gas)
+            public ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas)
             {
-                return new TestEngine(trigger, container, snapshot, persistingBlock, gas);
+                return new TestEngine(trigger, container, snapshot, persistingBlock, settings, gas);
             }
         }
 
         class TestEngine : ApplicationEngine
         {
-            public TestEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, long gas)
-                : base(trigger, container, snapshot, persistingBlock, gas)
+            public TestEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas)
+                : base(trigger, container, snapshot, persistingBlock, settings, gas)
             {
             }
         }

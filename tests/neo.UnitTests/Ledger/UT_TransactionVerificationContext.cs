@@ -28,9 +28,8 @@ namespace Neo.UnitTests.Ledger
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new Mock<Transaction>();
-            mock.Setup(p => p.Verify(It.IsAny<ClonedCache>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
-            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ClonedCache>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
-            mock.Setup(p => p.VerifyStateIndependent()).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<ClonedCache>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = networkFee;
             mock.Object.SystemFee = systemFee;
@@ -53,7 +52,7 @@ namespace Neo.UnitTests.Ledger
             // Fake balance
             var snapshot = TestBlockchain.GetTestSnapshot();
 
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, long.MaxValue);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: long.MaxValue);
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
             NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             NativeContract.GAS.Mint(engine, UInt160.Zero, 8, false);
@@ -74,7 +73,7 @@ namespace Neo.UnitTests.Ledger
         public void TestTransactionSenderFee()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, long.MaxValue);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: long.MaxValue);
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
             NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             NativeContract.GAS.Mint(engine, UInt160.Zero, 8, true);
