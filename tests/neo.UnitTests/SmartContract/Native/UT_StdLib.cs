@@ -158,5 +158,55 @@ namespace Neo.UnitTests.SmartContract.Native
                 }
             }
         }
+
+        [TestMethod]
+        public void TestRuntime_Serialize()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshot();
+
+            // Good
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "serialize", 100);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "serialize", "test");
+
+                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings))
+                {
+                    engine.LoadScript(script.ToArray());
+
+                    Assert.AreEqual(engine.Execute(), VMState.HALT);
+                    Assert.AreEqual(2, engine.ResultStack.Count);
+
+                    Assert.AreEqual(engine.ResultStack.Pop<ByteString>().GetSpan().ToHexString(), "280474657374");
+                    Assert.AreEqual(engine.ResultStack.Pop<ByteString>().GetSpan().ToHexString(), "210164");
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestRuntime_Deserialize()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshot();
+
+            // Good
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "deserialize", "280474657374".HexToBytes());
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "deserialize", "210164".HexToBytes());
+
+                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings))
+                {
+                    engine.LoadScript(script.ToArray());
+
+                    Assert.AreEqual(engine.Execute(), VMState.HALT);
+                    Assert.AreEqual(2, engine.ResultStack.Count);
+
+                    Assert.AreEqual(engine.ResultStack.Pop<Integer>().GetInteger(), 100);
+                    Assert.AreEqual(engine.ResultStack.Pop<ByteString>().GetString(), "test");
+                }
+            }
+        }
     }
 }
