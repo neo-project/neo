@@ -35,7 +35,6 @@ namespace Neo.SmartContract.Native
         public UInt160 Hash { get; }
         public int Id { get; } = --id_counter;
         public ContractManifest Manifest { get; }
-        public uint ActiveBlockIndex { get; }
 
         protected NativeContract()
         {
@@ -82,8 +81,6 @@ namespace Neo.SmartContract.Native
                 Trusts = WildcardContainer<UInt160>.Create(),
                 Extra = null
             };
-            if (ProtocolSettings.Default.NativeActivations.TryGetValue(Name, out uint activationIndex))
-                this.ActiveBlockIndex = activationIndex;
             contractsList.Add(this);
             contractsDictionary.Add(Hash, this);
         }
@@ -107,7 +104,7 @@ namespace Neo.SmartContract.Native
 
         internal void Invoke(ApplicationEngine engine, byte version)
         {
-            if (ActiveBlockIndex > Ledger.CurrentIndex(engine.Snapshot))
+            if (engine.ProtocolSettings.GetNativeActivation(Name) > Ledger.CurrentIndex(engine.Snapshot))
                 throw new InvalidOperationException($"The native contract {Name} is not active.");
             if (version != 0)
                 throw new InvalidOperationException($"The native contract of version {version} is not active.");

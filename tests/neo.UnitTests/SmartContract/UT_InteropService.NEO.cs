@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
@@ -121,7 +120,7 @@ namespace Neo.UnitTests.SmartContract
             engine.LoadScript(new byte[] { 0x01 });
             engine.IsStandardContract(state.Hash).Should().BeFalse();
 
-            state.Nef.Script = Contract.CreateSignatureRedeemScript(Blockchain.StandbyValidators[0]);
+            state.Nef.Script = Contract.CreateSignatureRedeemScript(ProtocolSettings.Default.StandbyValidators[0]);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
             engine.IsStandardContract(state.Hash).Should().BeTrue();
