@@ -1,5 +1,4 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using System.Linq;
