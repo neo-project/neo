@@ -8,6 +8,8 @@ using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.VM;
 using System;
+using System.Linq;
+using static Neo.Ledger.Blockchain;
 
 namespace Neo
 {
@@ -75,6 +77,7 @@ namespace Neo
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnPluginsLoaded();
+            Blockchain.Ask<FillCompleted>(new FillMemoryPool { Transactions = Enumerable.Empty<Transaction>() }).Wait();
         }
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)

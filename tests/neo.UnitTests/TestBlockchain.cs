@@ -1,9 +1,5 @@
-using Akka.Actor;
-using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using System;
-using System.Linq;
-using static Neo.Ledger.Blockchain;
 
 namespace Neo.UnitTests
 {
@@ -18,10 +14,7 @@ namespace Neo.UnitTests
             TheNeoSystem = new NeoSystem(ProtocolSettings.Default, null, null);
         }
 
-        public static void InitializeMockNeoSystem()
-        {
-            TheNeoSystem.Blockchain.Ask<FillCompleted>(new FillMemoryPool { Transactions = Enumerable.Empty<Transaction>() }).Wait();
-        }
+        public static void InitializeMockNeoSystem() { }
 
         internal static DataCache GetTestSnapshot()
         {
