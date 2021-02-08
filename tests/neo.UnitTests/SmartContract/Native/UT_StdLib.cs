@@ -5,7 +5,6 @@ using Neo.VM;
 using Neo.VM.Types;
 using System.Collections.Generic;
 using System.Numerics;
-using System.Threading;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -16,7 +15,6 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Init()
         {
             TestBlockchain.InitializeMockNeoSystem();
-            Thread.Sleep(1000); // TODO: We should not wait
         }
 
         [TestMethod]

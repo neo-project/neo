@@ -55,8 +55,7 @@ namespace Neo.Ledger
         {
             this.system = system;
             this.txrouter = Context.ActorOf(TransactionRouter.Props(system));
-            DataCache snapshot = system.StoreView;
-            if (!NativeContract.Ledger.Initialized(snapshot))
+            if (!NativeContract.Ledger.Initialized(system.StoreView))
                 Persist(system.GenesisBlock);
         }
 
