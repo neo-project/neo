@@ -40,10 +40,13 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual("1", StdLib.Itoa(BigInteger.One, 16));
             Assert.AreEqual("-1", StdLib.Itoa(BigInteger.MinusOne, 10));
             Assert.AreEqual("f", StdLib.Itoa(BigInteger.MinusOne, 16));
+            Assert.AreEqual("3b9aca00", StdLib.Itoa(1_000_000_000, 16));
             Assert.AreEqual(-1, StdLib.Atoi("-1", 10));
             Assert.AreEqual(1, StdLib.Atoi("+1", 10));
             Assert.AreEqual(-1, StdLib.Atoi("ff", 16));
+            Assert.AreEqual(-1, StdLib.Atoi("FF", 16));
             Assert.ThrowsException<System.FormatException>(() => StdLib.Atoi("a", 10));
+            Assert.ThrowsException<System.FormatException>(() => StdLib.Atoi("g", 16));
             Assert.ThrowsException<System.ArgumentOutOfRangeException>(() => StdLib.Atoi("a", 11));
         }
 
