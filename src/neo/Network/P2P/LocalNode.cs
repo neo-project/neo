@@ -16,6 +16,7 @@ namespace Neo.Network.P2P
     {
         public class RelayDirectly { public IInventory Inventory; }
         public class SendDirectly { public IInventory Inventory; }
+        public class GetInstance { }
 
         public const uint ProtocolVersion = 0;
         private const int MaxCountFromSeedList = 5;
@@ -178,6 +179,9 @@ namespace Neo.Network.P2P
                     break;
                 case SendDirectly send:
                     OnSendDirectly(send.Inventory);
+                    break;
+                case GetInstance _:
+                    Sender.Tell(this);
                     break;
             }
         }
