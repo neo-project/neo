@@ -115,7 +115,7 @@ namespace Neo.UnitTests.SmartContract
                                     0x01, 0x01, 0x01, 0x01, 0x01 };
             engine.IsStandardContract(new UInt160(hash)).Should().BeFalse();
 
-            var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
             var state = TestUtils.GetContract();
             snapshot.AddContract(state.Hash, state);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
@@ -131,7 +131,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestContract_Create()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
             var nef = new NefFile()
             {
                 Script = Enumerable.Repeat((byte)OpCode.RET, byte.MaxValue).ToArray(),
@@ -174,7 +174,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestContract_Update()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
             var nef = new NefFile()
             {
                 Script = new[] { (byte)OpCode.RET },
@@ -234,7 +234,7 @@ namespace Neo.UnitTests.SmartContract
             };
             nefFile.CheckSum = NefFile.ComputeChecksum(nefFile);
 
-            var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
 
             Assert.ThrowsException<InvalidOperationException>(() => snapshot.UpdateContract(null, null, new byte[] { 0x01 }));
             Assert.ThrowsException<InvalidOperationException>(() => snapshot.UpdateContract(null, nefFile.ToArray(), null));
@@ -255,7 +255,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestStorage_Find()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
             var state = TestUtils.GetContract();
 
             var storageItem = new StorageItem

@@ -1,6 +1,5 @@
 using Neo.Cryptography;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -124,13 +123,13 @@ namespace Neo.Wallets
             return GetAccount(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash());
         }
 
-        public BigDecimal GetAvailable(UInt160 asset_id)
+        public BigDecimal GetAvailable(DataCache snapshot, UInt160 asset_id)
         {
             UInt160[] accounts = GetAccounts().Where(p => !p.WatchOnly).Select(p => p.ScriptHash).ToArray();
-            return GetBalance(asset_id, accounts);
+            return GetBalance(snapshot, asset_id, accounts);
         }
 
-        public BigDecimal GetBalance(UInt160 asset_id, params UInt160[] accounts)
+        public BigDecimal GetBalance(DataCache snapshot, UInt160 asset_id, params UInt160[] accounts)
         {
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
@@ -144,8 +143,8 @@ namespace Neo.Wallets
                 sb.EmitDynamicCall(asset_id, "decimals");
                 script = sb.ToArray();
             }
-            using ApplicationEngine engine = ApplicationEngine.Run(script, gas: 20000000L * accounts.Length);
-            if (engine.State.HasFlag(VMState.FAULT))
+            using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, gas: 20000000L * accounts.Length);
+            if (engine.State == VMState.FAULT)
                 return new BigDecimal(BigInteger.Zero, 0);
             byte decimals = (byte)engine.ResultStack.Pop().GetInteger();
             BigInteger amount = engine.ResultStack.Pop().GetInteger();
@@ -241,7 +240,7 @@ namespace Neo.Wallets
             return account;
         }
 
-        public Transaction MakeTransaction(TransferOutput[] outputs, UInt160 from = null, Signer[] cosigners = null)
+        public Transaction MakeTransaction(DataCache snapshot, TransferOutput[] outputs, UInt160 from = null, Signer[] cosigners = null)
         {
             UInt160[] accounts;
             if (from is null)
@@ -252,7 +251,6 @@ namespace Neo.Wallets
             {
                 accounts = new[] { from };
             }
-            DataCache snapshot = Blockchain.Singleton.View;
             Dictionary<UInt160, Signer> cosignerList = cosigners?.ToDictionary(p => p.Account) ?? new Dictionary<UInt160, Signer>();
             byte[] script;
             List<(UInt160 Account, BigInteger Value)> balances_gas = null;
@@ -310,7 +308,7 @@ namespace Neo.Wallets
             return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), Array.Empty<TransactionAttribute>(), balances_gas);
         }
 
-        public Transaction MakeTransaction(byte[] script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null, long maxGas = ApplicationEngine.TestModeGas)
+        public Transaction MakeTransaction(DataCache snapshot, byte[] script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null, long maxGas = ApplicationEngine.TestModeGas)
         {
             UInt160[] accounts;
             if (sender is null)
@@ -321,7 +319,6 @@ namespace Neo.Wallets
             {
                 accounts = new[] { sender };
             }
-            DataCache snapshot = Blockchain.Singleton.View;
             var balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
             return MakeTransaction(snapshot, script, cosigners ?? Array.Empty<Signer>(), attributes ?? Array.Empty<TransactionAttribute>(), balances_gas, maxGas);
         }
@@ -470,7 +467,7 @@ namespace Neo.Wallets
 
                 // Try Smart contract verification
 
-                var contract = NativeContract.ContractManagement.GetContract(Blockchain.Singleton.View, scriptHash);
+                var contract = NativeContract.ContractManagement.GetContract(context.Snapshot, scriptHash);
 
                 if (contract != null)
                 {

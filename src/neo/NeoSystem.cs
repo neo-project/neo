@@ -1,4 +1,5 @@
 using Akka.Actor;
+using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Persistence;
@@ -9,6 +10,7 @@ namespace Neo
 {
     public class NeoSystem : IDisposable
     {
+        public ProtocolSettings Settings { get; }
         public ActorSystem ActorSystem { get; } = ActorSystem.Create(nameof(NeoSystem),
             $"akka {{ log-dead-letters = off , loglevel = warning, loggers = [ \"{typeof(Utility.Logger).AssemblyQualifiedName}\" ] }}" +
             $"blockchain-mailbox {{ mailbox-type: \"{typeof(BlockchainMailbox).AssemblyQualifiedName}\" }}" +
@@ -17,6 +19,16 @@ namespace Neo
         public IActorRef Blockchain { get; }
         public IActorRef LocalNode { get; }
         public IActorRef TaskManager { get; }
+        /// <summary>
+        /// A readonly view of the store.
+        /// </summary>
+        /// <remarks>
+        /// It doesn't need to be disposed because the <see cref="ISnapshot"/> inside it is null.
+        /// </remarks>
+        public DataCache StoreView => new SnapshotCache(store);
+        public MemoryPool MemPool { get; }
+        public HeaderCache HeaderCache { get; } = new HeaderCache();
+        internal RelayCache RelayCache { get; } = new RelayCache(100);
 
         private readonly string storage_engine;
         private readonly IStore store;
@@ -29,12 +41,14 @@ namespace Neo
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         }
 
-        public NeoSystem(string storageEngine = null, string storagePath = null)
+        public NeoSystem(ProtocolSettings settings, string storageEngine = null, string storagePath = null)
         {
+            this.Settings = settings;
             Plugin.LoadPlugins(this);
             this.storage_engine = storageEngine;
             this.store = LoadStore(storagePath);
-            this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
+            this.MemPool = new MemoryPool(this);
+            this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
             foreach (var plugin in Plugin.Plugins)
@@ -54,6 +68,7 @@ namespace Neo
             // Dispose will call ActorSystem.Terminate()
             ActorSystem.Dispose();
             ActorSystem.WhenTerminated.Wait();
+            HeaderCache.Dispose();
             store.Dispose();
         }
 
@@ -96,6 +111,11 @@ namespace Neo
         internal void SuspendNodeStartup()
         {
             suspend = true;
+        }
+
+        public SnapshotCache GetSnapshot()
+        {
+            return new SnapshotCache(store.GetSnapshot());
         }
     }
 }
