@@ -1,6 +1,7 @@
+using Akka.TestKit;
+using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -13,12 +14,17 @@ using Array = System.Array;
 namespace Neo.UnitTests.SmartContract
 {
     [TestClass]
-    public partial class UT_Syscalls
+    public partial class UT_Syscalls : TestKit
     {
+        private TestProbe senderProbe;
+
         [TestInitialize]
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
+            senderProbe = CreateTestProbe();
+            senderProbe.Send(TestBlockchain.TheNeoSystem.Blockchain, new object());
+            senderProbe.ExpectNoMsg(); // Ensure blockchain it's created
         }
 
         [TestMethod]
@@ -64,7 +70,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Without block
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -86,7 +92,7 @@ namespace Neo.UnitTests.SmartContract
                     Transaction = tx
                 }, true));
 
-                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -97,7 +103,7 @@ namespace Neo.UnitTests.SmartContract
 
                 height.Index = block.Index;
 
-                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -281,7 +287,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Execute
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, 100_000_000);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: 100_000_000);
                 engine.LoadScript(script.ToArray());
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
 

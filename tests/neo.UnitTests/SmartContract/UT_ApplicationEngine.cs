@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.VM.Types;
 using System.Numerics;
@@ -22,7 +21,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestBinary()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
 
             var data = new byte[0];
             CollectionAssert.AreEqual(data, engine.Base64Decode(engine.Base64Encode(data)));
@@ -42,7 +41,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestItoaAtoi()
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null, settings: TestBlockchain.TheNeoSystem.Settings);
 
             Assert.AreEqual("1", engine.Itoa(BigInteger.One, 10));
             Assert.AreEqual("1", engine.Itoa(BigInteger.One, 16));
@@ -59,7 +58,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestNotify()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
             ApplicationEngine.Notify += Test_Notify1;
             const string notifyEvent = "TestEvent";
 
@@ -97,7 +96,7 @@ namespace Neo.UnitTests.SmartContract
             byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
             ApplicationEngine engine = ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshot);
             engine.PersistingBlock.Version.Should().Be(0);
-            engine.PersistingBlock.PrevHash.Should().Be(Blockchain.GenesisBlock.Hash);
+            engine.PersistingBlock.PrevHash.Should().Be(TestBlockchain.TheNeoSystem.GenesisBlock.Hash);
             engine.PersistingBlock.MerkleRoot.Should().Be(new UInt256());
         }
     }

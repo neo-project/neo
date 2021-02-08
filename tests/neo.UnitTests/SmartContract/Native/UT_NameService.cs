@@ -2,7 +2,6 @@ using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -109,7 +108,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // good register
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             Assert.IsTrue(NativeContract.NameService.IsAvailable(snapshot, "neo.com"));
             result = Check_Register(snapshot, "neo.com", UInt160.Zero, persistingBlock);
@@ -160,7 +159,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static bool Check_DeleteRecord(DataCache snapshot, string name, RecordType type, UInt160 signedBy, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.NameService.Hash, "deleteRecord", new ContractParameter[] {
                 new ContractParameter(ContractParameterType.String) { Value = name },
@@ -178,7 +177,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static bool Check_SetRecord(DataCache snapshot, string name, RecordType type, string data, UInt160 signedBy, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.NameService.Hash, "setRecord", new ContractParameter[] {
                 new ContractParameter(ContractParameterType.String) { Value = name },
@@ -197,7 +196,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static BigInteger Check_Renew(DataCache snapshot, string name, UInt160 signedBy, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.NameService.Hash, "renew", new ContractParameter[] {
                 new ContractParameter(ContractParameterType.String) { Value = name }
@@ -217,7 +216,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static bool Check_SetAdmin(DataCache snapshot, string name, UInt160 admin, UInt160 signedBy, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(admin, signedBy), snapshot, persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(admin, signedBy), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.NameService.Hash, "setAdmin", new ContractParameter[] {
                 new ContractParameter(ContractParameterType.String) { Value = name },
@@ -235,7 +234,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static bool Check_Register(DataCache snapshot, string name, UInt160 owner, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(owner), snapshot, persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(owner), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.NameService.Hash, "register", new ContractParameter[] {
                 new ContractParameter(ContractParameterType.String) { Value = name },
@@ -256,7 +255,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static bool Check_SetPrice(DataCache snapshot, UInt160 signedBy, long price, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.NameService.Hash, "setPrice", new ContractParameter[] { new ContractParameter(ContractParameterType.Integer) { Value = price } });
             engine.LoadScript(script.ToArray());
@@ -271,7 +270,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static bool Check_AddRoot(DataCache snapshot, UInt160 signedBy, string root, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(signedBy), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.NameService.Hash, "addRoot", new ContractParameter[] { new ContractParameter(ContractParameterType.String) { Value = root } });
             engine.LoadScript(script.ToArray());

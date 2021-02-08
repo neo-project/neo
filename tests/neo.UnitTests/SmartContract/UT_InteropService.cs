@@ -1,9 +1,10 @@
+using Akka.TestKit;
+using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
@@ -20,12 +21,17 @@ using System.Text;
 namespace Neo.UnitTests.SmartContract
 {
     [TestClass]
-    public partial class UT_InteropService
+    public partial class UT_InteropService : TestKit
     {
+        private TestProbe senderProbe;
+
         [TestInitialize]
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
+            senderProbe = CreateTestProbe();
+            senderProbe.Send(TestBlockchain.TheNeoSystem.Blockchain, new object());
+            senderProbe.ExpectNoMsg(); // Ensure blockchain it's created
         }
 
         [TestMethod]
@@ -670,7 +676,7 @@ namespace Neo.UnitTests.SmartContract
             var tx = hasContainer ? TestUtils.GetTransaction(UInt160.Zero) : null;
             var snapshot = hasSnapshot ? TestBlockchain.GetTestSnapshot() : null;
             var block = hasBlock ? new Block { Header = new Header() } : null;
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, gas);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, TestBlockchain.TheNeoSystem.Settings, gas: gas);
             if (addScript) engine.LoadScript(new byte[] { 0x01 });
             return engine;
         }
