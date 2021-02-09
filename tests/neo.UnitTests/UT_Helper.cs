@@ -17,11 +17,11 @@ namespace Neo.UnitTests
     public class UT_Helper
     {
         [TestMethod]
-        public void GetHashData()
+        public void GetSignData()
         {
             TestVerifiable verifiable = new TestVerifiable();
-            byte[] res = verifiable.GetHashData();
-            res.ToHexString().Should().Be("0774657374537472");
+            byte[] res = verifiable.GetSignData(ProtocolSettings.Default.Magic);
+            res.ToHexString().Should().Be("4e454f0050b51da6bb366be3ea50140cda45ba7df575287c0371000b2037ed3898ff8bf5");
         }
 
         [TestMethod]

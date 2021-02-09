@@ -1,8 +1,8 @@
 using Neo.Cryptography;
 using Neo.IO;
+using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using System;
-using System.IO;
 
 namespace Neo.Wallets
 {
@@ -10,12 +10,7 @@ namespace Neo.Wallets
     {
         public static byte[] Sign(this IVerifiable verifiable, KeyPair key, uint magic)
         {
-            using MemoryStream ms = new MemoryStream();
-            using BinaryWriter writer = new BinaryWriter(ms);
-            writer.Write(magic);
-            verifiable.SerializeUnsigned(writer);
-            writer.Flush();
-            return Crypto.Sign(ms.ToArray(), key.PrivateKey, key.PublicKey.EncodePoint(false)[1..]);
+            return Crypto.Sign(verifiable.GetSignData(magic), key.PrivateKey, key.PublicKey.EncodePoint(false)[1..]);
         }
 
         public static string ToAddress(this UInt160 scriptHash, byte version)

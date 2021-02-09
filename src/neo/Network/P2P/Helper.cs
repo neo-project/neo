@@ -1,4 +1,5 @@
 using Neo.Cryptography;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using System.IO;
 
@@ -6,18 +7,24 @@ namespace Neo.Network.P2P
 {
     public static class Helper
     {
-        public static byte[] GetHashData(this IVerifiable verifiable)
+        public static UInt256 CalculateHash(this IVerifiable verifiable)
         {
             using MemoryStream ms = new MemoryStream();
             using BinaryWriter writer = new BinaryWriter(ms);
             verifiable.SerializeUnsigned(writer);
             writer.Flush();
-            return ms.ToArray();
+            return new UInt256(ms.ToArray().Sha256());
         }
 
-        public static UInt256 CalculateHash(this IVerifiable verifiable)
+        public static byte[] GetSignData(this IVerifiable verifiable, uint magic)
         {
-            return new UInt256(Crypto.Hash256(verifiable.GetHashData()));
+            UInt256 hash = verifiable.CalculateHash();
+            using MemoryStream ms = new MemoryStream();
+            using BinaryWriter writer = new BinaryWriter(ms);
+            writer.Write(magic);
+            writer.Write(hash);
+            writer.Flush();
+            return ms.ToArray();
         }
     }
 }

@@ -84,7 +84,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, 1);
 
-            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000005f92f6f16e21dee9d8619648c8aa04dab23c4987e9dc747da5745465fd537959e913ff854c0000000000000000000000000000000000000000000000000000000001000111010000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000001000112010000";
+            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000006c23be5d32679baa9c5c2aa0d329fd2a2441d7875d0f34d42f58f70428fbbbb9e913ff854c0000000000000000000000000000000000000000000000000000000001000111010000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000001000112010000";
             uut.ToArray().ToHexString().Should().Be(hex);
         }
 
@@ -94,7 +94,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(new Block(), val256, out var merkRoot, out var val160, out var timestampVal, out var indexVal, out var scriptVal, out var transactionsVal, 1);
 
-            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000005f92f6f16e21dee9d8619648c8aa04dab23c4987e9dc747da5745465fd537959e913ff854c0000000000000000000000000000000000000000000000000000000001000111010000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000001000112010000";
+            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000006c23be5d32679baa9c5c2aa0d329fd2a2441d7875d0f34d42f58f70428fbbbb9e913ff854c0000000000000000000000000000000000000000000000000000000001000111010000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000001000112010000";
 
             using (MemoryStream ms = new MemoryStream(hex.HexToBytes(), false))
             using (BinaryReader reader = new BinaryReader(ms))
@@ -166,11 +166,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             JObject jObj = uut.ToJson(ProtocolSettings.Default);
             jObj.Should().NotBeNull();
-            jObj["hash"].AsString().Should().Be("0x50e77cfc27ba738052de583c596c743e62af0fca8ddeab57c882b37f601a1bc4");
+            jObj["hash"].AsString().Should().Be("0x54b3a829333d9bb352eef69942317fe011251370c2212ad0d20d7c2a3974b26e");
             jObj["size"].AsNumber().Should().Be(159);
             jObj["version"].AsNumber().Should().Be(0);
             jObj["previousblockhash"].AsString().Should().Be("0x0000000000000000000000000000000000000000000000000000000000000000");
-            jObj["merkleroot"].AsString().Should().Be("0x597953fd655474a57d74dce987493cb2da04aac8489661d8e9de216ef1f6925f");
+            jObj["merkleroot"].AsString().Should().Be("0xb9bbfb2804f7582fd4340f5d87d741242afd29d3a02a5c9caa9b67325dbe236c");
             jObj["time"].AsNumber().Should().Be(328665601001);
             jObj["index"].AsNumber().Should().Be(0);
             jObj["nextconsensus"].AsString().Should().Be("NKuyBkoGdZZSLyPbJEetheRhMjeznFZszf");
@@ -181,7 +181,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             jObj["tx"].Should().NotBeNull();
             JArray txObj = (JArray)jObj["tx"];
-            txObj[0]["hash"].AsString().Should().Be("0x597953fd655474a57d74dce987493cb2da04aac8489661d8e9de216ef1f6925f");
+            txObj[0]["hash"].AsString().Should().Be("0xb9bbfb2804f7582fd4340f5d87d741242afd29d3a02a5c9caa9b67325dbe236c");
             txObj[0]["size"].AsNumber().Should().Be(53);
             txObj[0]["version"].AsNumber().Should().Be(0);
             ((JArray)txObj[0]["attributes"]).Count.Should().Be(0);
