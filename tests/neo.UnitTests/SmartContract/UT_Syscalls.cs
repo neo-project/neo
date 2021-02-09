@@ -127,9 +127,8 @@ namespace Neo.UnitTests.SmartContract
                 var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
                 engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.IsTrue(engine.ResultStack.Peek().IsNull);
+                Assert.AreEqual(engine.Execute(), VMState.FAULT);
+                Assert.AreEqual(0, engine.ResultStack.Count);
 
                 // With tx
 
