@@ -142,7 +142,7 @@ namespace Neo.Wallets
                 sb.EmitDynamicCall(asset_id, "decimals");
                 script = sb.ToArray();
             }
-            using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, gas: 20000000L * accounts.Length);
+            using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, settings: ProtocolSettings, gas: 20000000L * accounts.Length);
             if (engine.State == VMState.FAULT)
                 return new BigDecimal(BigInteger.Zero, 0);
             byte decimals = (byte)engine.ResultStack.Pop().GetInteger();
@@ -262,7 +262,7 @@ namespace Neo.Wallets
                         using (ScriptBuilder sb2 = new ScriptBuilder())
                         {
                             sb2.EmitDynamicCall(assetId, "balanceOf", account);
-                            using (ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot))
+                            using (ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot, settings: ProtocolSettings))
                             {
                                 if (engine.State.HasFlag(VMState.FAULT))
                                     throw new InvalidOperationException($"Execution for {assetId}.balanceOf('{account}' fault");
@@ -338,7 +338,7 @@ namespace Neo.Wallets
                 };
 
                 // will try to execute 'transfer' script to check if it works 
-                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.CreateSnapshot(), tx, gas: maxGas))
+                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.CreateSnapshot(), tx, settings: ProtocolSettings, gas: maxGas))
                 {
                     if (engine.State == VMState.FAULT)
                     {
@@ -393,7 +393,7 @@ namespace Neo.Wallets
                     size += Array.Empty<byte>().GetVarSize() * 2;
 
                     // Check verify cost
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot());
+                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: ProtocolSettings);
                     engine.LoadContract(contract, md, CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
                     if (!engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.Hash} returns false.");

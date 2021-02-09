@@ -1,34 +1,12 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Wallets;
-using System.Reflection;
 
 namespace Neo.UnitTests
 {
     [TestClass]
     public class UT_ProtocolSettings
     {
-        // since ProtocolSettings.Default is designed to be writable only once, use reflection to 
-        // reset the underlying _default field to null before and after running tests in this class.
-        static void ResetProtocolSettings()
-        {
-            var defaultField = typeof(ProtocolSettings)
-                .GetField("_default", BindingFlags.Static | BindingFlags.NonPublic);
-            defaultField.SetValue(null, null);
-        }
-
-        [TestInitialize]
-        public void Initialize()
-        {
-            ResetProtocolSettings();
-        }
-
-        [TestCleanup]
-        public void Cleanup()
-        {
-            ResetProtocolSettings();
-        }
-
         [TestMethod]
         public void CheckFirstLetterOfAddresses()
         {
@@ -54,7 +32,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestGetMillisecondsPerBlock()
         {
-            ProtocolSettings.Default.MillisecondsPerBlock.Should().Be(200);
+            ProtocolSettings.Default.MillisecondsPerBlock.Should().Be(15000);
         }
 
         [TestMethod]

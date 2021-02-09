@@ -9,12 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="protocol.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Akka.TestKit" Version="1.4.16" />
     <PackageReference Include="Akka.TestKit.Xunit2" Version="1.4.16" />
     <PackageReference Include="FluentAssertions" Version="5.10.3" />
