@@ -17,6 +17,7 @@ namespace Neo.UnitTests.Extensions
 
             public int Size => 0;
 
+            public UInt256 Hash => throw new System.NotImplementedException();
             public Witness[] Witnesses { get; set; }
 
             public ManualWitness(params UInt160[] hashForVerify)
