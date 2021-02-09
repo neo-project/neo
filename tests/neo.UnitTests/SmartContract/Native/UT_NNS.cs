@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -67,7 +66,7 @@ namespace Neo.UnitTests.SmartContract.Native
             checkAvail_ret.Result.Should().BeTrue();
             checkAvail_ret.State.Should().BeTrue();
 
-            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             var register_ret = Check_Register(snapshot, domain, from, persistingBlock);
             register_ret.Result.Should().BeTrue();
             register_ret.State.Should().BeTrue();
@@ -150,7 +149,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             string domain = name + "." + validroot;
 
-            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             var register_ret = Check_Register(snapshot, domain, from, persistingBlock);
             register_ret.Result.Should().BeTrue();
             register_ret.State.Should().BeTrue();
@@ -231,7 +230,7 @@ namespace Neo.UnitTests.SmartContract.Native
             checkAvail_ret.Result.Should().BeTrue();
             checkAvail_ret.State.Should().BeTrue();
 
-            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             var register_ret = Check_Register(snapshot, domain, from, persistingBlock);
             register_ret.Result.Should().BeTrue();
             register_ret.State.Should().BeTrue();
@@ -322,7 +321,7 @@ namespace Neo.UnitTests.SmartContract.Native
             checkAvail_ret.Result.Should().BeTrue();
             checkAvail_ret.State.Should().BeTrue();
 
-            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             var register_ret = Check_Register(snapshot, domain, from, persistingBlock);
             register_ret.Result.Should().BeTrue();
             register_ret.State.Should().BeTrue();
@@ -395,7 +394,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var persistingBlock = _persistingBlock;
             //non-committee member
             string validroot = "testroot";
-            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             var ret = Check_AddRoot(snapshot, new UInt160(from), validroot, persistingBlock);
             ret.Should().BeFalse();
 
@@ -454,7 +453,7 @@ namespace Neo.UnitTests.SmartContract.Native
             checkAvail_ret.Result.Should().BeTrue();
             checkAvail_ret.State.Should().BeTrue();
 
-            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             var register_ret = Check_Register(snapshot, domain, from, persistingBlock);
             register_ret.Result.Should().BeTrue();
             register_ret.State.Should().BeTrue();
@@ -498,7 +497,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static bool Check_AddRoot(DataCache snapshot, UInt160 account, string root, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(account), snapshot, persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(account), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.NameService.Hash, "addRoot", root);
@@ -514,7 +513,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static bool Check_Transfer(DataCache snapshot, UInt160 to, string domain, UInt160 owner, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(owner), snapshot, persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(owner), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.NameService.Hash, "transfer", to, domain);
@@ -530,7 +529,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static (bool State, bool Result) Check_IsAvailable(DataCache snapshot, UInt160 account, string name, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(account), snapshot, persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(account), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.NameService.Hash, "isAvailable", name);
@@ -550,7 +549,7 @@ namespace Neo.UnitTests.SmartContract.Native
         internal static (bool State, bool Result) Check_SetPrice(DataCache snapshot, byte[] pubkey, long price, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep17NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot, persistingBlock);
+                new Nep17NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.NameService.Hash, "setPrice", price);
@@ -569,7 +568,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static BigDecimal Check_GetPrice(DataCache snapshot, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.NameService.Hash, "getPrice");
@@ -586,7 +585,7 @@ namespace Neo.UnitTests.SmartContract.Native
         internal static (bool State, bool Result) Check_Register(DataCache snapshot, string name, byte[] owner, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep17NativeContractExtensions.ManualWitness(new UInt160(owner)), snapshot, persistingBlock);
+                new Nep17NativeContractExtensions.ManualWitness(new UInt160(owner)), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.NameService.Hash, "register", name, owner);
@@ -606,7 +605,7 @@ namespace Neo.UnitTests.SmartContract.Native
         internal static bool Check_SetRecord(DataCache snapshot, string name, RecordType type, string data, byte[] pubkey, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep17NativeContractExtensions.ManualWitness(new UInt160(pubkey)), snapshot, persistingBlock);
+                new Nep17NativeContractExtensions.ManualWitness(new UInt160(pubkey)), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.NameService.Hash, "setRecord", name, type, data);
@@ -623,7 +622,7 @@ namespace Neo.UnitTests.SmartContract.Native
         internal static (bool State, string Result) Check_GetRecord(DataCache snapshot, string name, RecordType type, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), snapshot, persistingBlock);
+                new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.NameService.Hash, "getRecord", name, type);
@@ -643,7 +642,7 @@ namespace Neo.UnitTests.SmartContract.Native
         internal static bool Check_SetAdmin(DataCache snapshot, string name, UInt160 admin, byte[] pubkey, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep17NativeContractExtensions.ManualWitness(new UInt160[] { admin, new UInt160(pubkey) }), snapshot, persistingBlock);
+                new Nep17NativeContractExtensions.ManualWitness(new UInt160[] { admin, new UInt160(pubkey) }), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.NameService.Hash, "setAdmin", name, admin);

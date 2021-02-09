@@ -13,6 +13,7 @@ using System.Numerics;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using static Neo.SmartContract.Helper;
 using static Neo.Wallets.Helper;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
@@ -404,19 +405,13 @@ namespace Neo.Wallets
                 else if (witness_script.IsSignatureContract())
                 {
                     size += 67 + witness_script.GetVarSize();
-                    networkFee += exec_fee_factor * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice);
+                    networkFee += exec_fee_factor * SignatureContractCost();
                 }
                 else if (witness_script.IsMultiSigContract(out int m, out int n))
                 {
                     int size_inv = 66 * m;
                     size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
-                    networkFee += exec_fee_factor * ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * m;
-                    using (ScriptBuilder sb = new ScriptBuilder())
-                        networkFee += exec_fee_factor * ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
-                    networkFee += exec_fee_factor * ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * n;
-                    using (ScriptBuilder sb = new ScriptBuilder())
-                        networkFee += exec_fee_factor * ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
-                    networkFee += exec_fee_factor * (ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice * n);
+                    networkFee += exec_fee_factor * MultiSignatureContractCost(m, n);
                 }
                 else
                 {

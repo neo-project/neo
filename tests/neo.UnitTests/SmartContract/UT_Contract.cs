@@ -22,13 +22,12 @@ namespace Neo.UnitTests.SmartContract
             rng.GetBytes(privateKey);
             KeyPair key = new KeyPair(privateKey);
             Contract contract = Contract.CreateSignatureContract(key.PublicKey);
-            byte[] expectedArray = new byte[41];
+            byte[] expectedArray = new byte[40];
             expectedArray[0] = (byte)OpCode.PUSHDATA1;
             expectedArray[1] = 0x21;
             Array.Copy(key.PublicKey.EncodePoint(true), 0, expectedArray, 2, 33);
-            expectedArray[35] = (byte)OpCode.PUSHNULL;
-            expectedArray[36] = (byte)OpCode.SYSCALL;
-            Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_VerifyWithECDsaSecp256r1), 0, expectedArray, 37, 4);
+            expectedArray[35] = (byte)OpCode.SYSCALL;
+            Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_CheckSig), 0, expectedArray, 36, 4);
             Assert.AreEqual(expectedArray.ToScriptHash().ToAddress(), contract.Address);
         }
 
@@ -40,13 +39,12 @@ namespace Neo.UnitTests.SmartContract
             rng.GetBytes(privateKey);
             KeyPair key = new KeyPair(privateKey);
             Contract contract = Contract.CreateSignatureContract(key.PublicKey);
-            byte[] expectedArray = new byte[41];
+            byte[] expectedArray = new byte[40];
             expectedArray[0] = (byte)OpCode.PUSHDATA1;
             expectedArray[1] = 0x21;
             Array.Copy(key.PublicKey.EncodePoint(true), 0, expectedArray, 2, 33);
-            expectedArray[35] = (byte)OpCode.PUSHNULL;
-            expectedArray[36] = (byte)OpCode.SYSCALL;
-            Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_VerifyWithECDsaSecp256r1), 0, expectedArray, 37, 4);
+            expectedArray[35] = (byte)OpCode.SYSCALL;
+            Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_CheckSig), 0, expectedArray, 36, 4);
             Assert.AreEqual(expectedArray.ToScriptHash(), contract.ScriptHash);
         }
 
@@ -77,7 +75,7 @@ namespace Neo.UnitTests.SmartContract
             publicKeys[1] = key2.PublicKey;
             publicKeys = publicKeys.OrderBy(p => p).ToArray();
             Contract contract = Contract.CreateMultiSigContract(2, publicKeys);
-            byte[] expectedArray = new byte[78];
+            byte[] expectedArray = new byte[77];
             expectedArray[0] = (byte)OpCode.PUSH2;
             expectedArray[1] = (byte)OpCode.PUSHDATA1;
             expectedArray[2] = 0x21;
@@ -86,9 +84,8 @@ namespace Neo.UnitTests.SmartContract
             expectedArray[37] = 0x21;
             Array.Copy(publicKeys[1].EncodePoint(true), 0, expectedArray, 38, 33);
             expectedArray[71] = (byte)OpCode.PUSH2;
-            expectedArray[72] = (byte)OpCode.PUSHNULL;
-            expectedArray[73] = (byte)OpCode.SYSCALL;
-            Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_CheckMultisigWithECDsaSecp256r1), 0, expectedArray, 74, 4);
+            expectedArray[72] = (byte)OpCode.SYSCALL;
+            Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_CheckMultisig), 0, expectedArray, 73, 4);
             CollectionAssert.AreEqual(expectedArray, contract.Script);
             Assert.AreEqual(2, contract.ParameterList.Length);
             Assert.AreEqual(ContractParameterType.Signature, contract.ParameterList[0]);
@@ -113,7 +110,7 @@ namespace Neo.UnitTests.SmartContract
             Action action = () => Contract.CreateMultiSigRedeemScript(0, publicKeys);
             action.Should().Throw<ArgumentException>();
             byte[] script = Contract.CreateMultiSigRedeemScript(2, publicKeys);
-            byte[] expectedArray = new byte[78];
+            byte[] expectedArray = new byte[77];
             expectedArray[0] = (byte)OpCode.PUSH2;
             expectedArray[1] = (byte)OpCode.PUSHDATA1;
             expectedArray[2] = 0x21;
@@ -122,9 +119,8 @@ namespace Neo.UnitTests.SmartContract
             expectedArray[37] = 0x21;
             Array.Copy(publicKeys[1].EncodePoint(true), 0, expectedArray, 38, 33);
             expectedArray[71] = (byte)OpCode.PUSH2;
-            expectedArray[72] = (byte)OpCode.PUSHNULL;
-            expectedArray[73] = (byte)OpCode.SYSCALL;
-            Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_CheckMultisigWithECDsaSecp256r1), 0, expectedArray, 74, 4);
+            expectedArray[72] = (byte)OpCode.SYSCALL;
+            Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_CheckMultisig), 0, expectedArray, 73, 4);
             CollectionAssert.AreEqual(expectedArray, script);
         }
 
@@ -136,13 +132,12 @@ namespace Neo.UnitTests.SmartContract
             rng.GetBytes(privateKey);
             KeyPair key = new KeyPair(privateKey);
             Contract contract = Contract.CreateSignatureContract(key.PublicKey);
-            byte[] expectedArray = new byte[41];
+            byte[] expectedArray = new byte[40];
             expectedArray[0] = (byte)OpCode.PUSHDATA1;
             expectedArray[1] = 0x21;
             Array.Copy(key.PublicKey.EncodePoint(true), 0, expectedArray, 2, 33);
-            expectedArray[35] = (byte)OpCode.PUSHNULL;
-            expectedArray[36] = (byte)OpCode.SYSCALL;
-            Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_VerifyWithECDsaSecp256r1), 0, expectedArray, 37, 4);
+            expectedArray[35] = (byte)OpCode.SYSCALL;
+            Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_CheckSig), 0, expectedArray, 36, 4);
             CollectionAssert.AreEqual(expectedArray, contract.Script);
             Assert.AreEqual(1, contract.ParameterList.Length);
             Assert.AreEqual(ContractParameterType.Signature, contract.ParameterList[0]);
@@ -156,13 +151,12 @@ namespace Neo.UnitTests.SmartContract
             rng.GetBytes(privateKey);
             KeyPair key = new KeyPair(privateKey);
             byte[] script = Contract.CreateSignatureRedeemScript(key.PublicKey);
-            byte[] expectedArray = new byte[41];
+            byte[] expectedArray = new byte[40];
             expectedArray[0] = (byte)OpCode.PUSHDATA1;
             expectedArray[1] = 0x21;
             Array.Copy(key.PublicKey.EncodePoint(true), 0, expectedArray, 2, 33);
-            expectedArray[35] = (byte)OpCode.PUSHNULL;
-            expectedArray[36] = (byte)OpCode.SYSCALL;
-            Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_VerifyWithECDsaSecp256r1), 0, expectedArray, 37, 4);
+            expectedArray[35] = (byte)OpCode.SYSCALL;
+            Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_CheckSig), 0, expectedArray, 36, 4);
             CollectionAssert.AreEqual(expectedArray, script);
         }
 
@@ -176,9 +170,9 @@ namespace Neo.UnitTests.SmartContract
             byte[] verification = Contract.CreateSignatureRedeemScript(key.PublicKey);
             byte[] invocation = new ScriptBuilder().EmitPush(UInt160.Zero).ToArray();
 
-            var fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.OpCodePrices[OpCode.SYSCALL] + ApplicationEngine.ECDsaVerifyPrice);
+            var fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 + ApplicationEngine.OpCodePrices[OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice);
 
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, null))
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, null, settings: TestBlockchain.TheNeoSystem.Settings))
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();
@@ -204,9 +198,9 @@ namespace Neo.UnitTests.SmartContract
             byte[] verification = Contract.CreateMultiSigRedeemScript(2, publicKeys);
             byte[] invocation = new ScriptBuilder().EmitPush(UInt160.Zero).EmitPush(UInt160.Zero).ToArray();
 
-            long fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (2 + 2) + ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.OpCodePrices[OpCode.SYSCALL] + ApplicationEngine.ECDsaVerifyPrice * 2);
+            long fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (2 + 2) + ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 + ApplicationEngine.OpCodePrices[OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice * 2);
 
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, null))
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, null, settings: TestBlockchain.TheNeoSystem.Settings))
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();

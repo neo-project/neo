@@ -88,7 +88,7 @@ namespace Neo.SmartContract
             if (Trigger != TriggerType.OnPersist)
                 throw new InvalidOperationException();
             foreach (NativeContract contract in NativeContract.Contracts)
-                if (contract.ActiveBlockIndex <= PersistingBlock.Index)
+                if (ProtocolSettings.GetNativeActivation(contract.Name) <= PersistingBlock.Index)
                     contract.OnPersist(this);
         }
 
@@ -97,7 +97,7 @@ namespace Neo.SmartContract
             if (Trigger != TriggerType.PostPersist)
                 throw new InvalidOperationException();
             foreach (NativeContract contract in NativeContract.Contracts)
-                if (contract.ActiveBlockIndex <= PersistingBlock.Index)
+                if (ProtocolSettings.GetNativeActivation(contract.Name) <= PersistingBlock.Index)
                     contract.PostPersist(this);
         }
     }

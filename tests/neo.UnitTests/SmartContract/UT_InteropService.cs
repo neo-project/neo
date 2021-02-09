@@ -1,9 +1,10 @@
+using Akka.TestKit;
+using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
@@ -20,12 +21,17 @@ using System.Text;
 namespace Neo.UnitTests.SmartContract
 {
     [TestClass]
-    public partial class UT_InteropService
+    public partial class UT_InteropService : TestKit
     {
+        private TestProbe senderProbe;
+
         [TestInitialize]
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
+            senderProbe = CreateTestProbe();
+            senderProbe.Send(TestBlockchain.TheNeoSystem.Blockchain, new object());
+            senderProbe.ExpectNoMsg(); // Ensure blockchain it's created
         }
 
         [TestMethod]
@@ -287,29 +293,6 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void TestRuntime_Serialize()
-        {
-            var engine = GetEngine();
-            engine.BinarySerialize(100).ToHexString().Should().Be(new byte[] { 0x21, 0x01, 0x64 }.ToHexString());
-
-            //Larger than MaxItemSize
-            Assert.ThrowsException<InvalidOperationException>(() => engine.BinarySerialize(new byte[1024 * 1024 * 2]));
-
-            //NotSupportedException
-            Assert.ThrowsException<NotSupportedException>(() => engine.BinarySerialize(new InteropInterface(new object())));
-        }
-
-        [TestMethod]
-        public void TestRuntime_Deserialize()
-        {
-            var engine = GetEngine();
-            engine.BinaryDeserialize(engine.BinarySerialize(100)).GetInteger().Should().Be(100);
-
-            //FormatException
-            Assert.ThrowsException<FormatException>(() => engine.BinaryDeserialize(new byte[] { 0xfa, 0x01 }));
-        }
-
-        [TestMethod]
         public void TestRuntime_GetInvocationCounter()
         {
             var engine = GetEngine();
@@ -327,11 +310,11 @@ namespace Neo.UnitTests.SmartContract
             KeyPair keyPair = new KeyPair(privateKey);
             ECPoint pubkey = keyPair.PublicKey;
             byte[] signature = Crypto.Sign(message, privateKey, pubkey.EncodePoint(false).Skip(1).ToArray());
-            engine.VerifyWithECDsaSecp256r1(message, pubkey.EncodePoint(false), signature).Should().BeTrue();
+            engine.CheckSig(pubkey.EncodePoint(false), signature).Should().BeTrue();
 
             byte[] wrongkey = pubkey.EncodePoint(false);
             wrongkey[0] = 5;
-            engine.VerifyWithECDsaSecp256r1(new InteropInterface(engine.ScriptContainer), wrongkey, signature).Should().BeFalse();
+            engine.CheckSig(wrongkey, signature).Should().BeFalse();
         }
 
         [TestMethod]
@@ -656,7 +639,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(true, true);
             ECPoint pubkey = ECPoint.Parse("024b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e", ECCurve.Secp256r1);
-            engine.CreateStandardAccount(pubkey).ToArray().ToHexString().Should().Be("a17e91aff4bb5e0ad54d7ce8de8472e17ce88bf1");
+            engine.CreateStandardAccount(pubkey).ToArray().ToHexString().Should().Be("a78796ab56598585c80dbe95059324eabde764db");
         }
 
         public static void LogEvent(object sender, LogEventArgs args)
@@ -670,7 +653,7 @@ namespace Neo.UnitTests.SmartContract
             var tx = hasContainer ? TestUtils.GetTransaction(UInt160.Zero) : null;
             var snapshot = hasSnapshot ? TestBlockchain.GetTestSnapshot() : null;
             var block = hasBlock ? new Block { Header = new Header() } : null;
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, gas);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, TestBlockchain.TheNeoSystem.Settings, gas: gas);
             if (addScript) engine.LoadScript(new byte[] { 0x01 });
             return engine;
         }

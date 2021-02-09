@@ -18,6 +18,8 @@ namespace Neo.SmartContract.Native
 
         #region Named Native Contracts
         public static ContractManagement ContractManagement { get; } = new ContractManagement();
+        public static StdLib StdLib { get; } = new StdLib();
+        public static CryptoLib CryptoLib { get; } = new CryptoLib();
         public static LedgerContract Ledger { get; } = new LedgerContract();
         public static NeoToken NEO { get; } = new NeoToken();
         public static GasToken GAS { get; } = new GasToken();
@@ -33,12 +35,11 @@ namespace Neo.SmartContract.Native
         public UInt160 Hash { get; }
         public int Id { get; } = --id_counter;
         public ContractManifest Manifest { get; }
-        public uint ActiveBlockIndex { get; }
 
         protected NativeContract()
         {
             List<ContractMethodMetadata> descriptors = new List<ContractMethodMetadata>();
-            foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+            foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
             {
                 ContractMethodAttribute attribute = member.GetCustomAttribute<ContractMethodAttribute>();
                 if (attribute is null) continue;
@@ -80,8 +81,6 @@ namespace Neo.SmartContract.Native
                 Trusts = WildcardContainer<UInt160>.Create(),
                 Extra = null
             };
-            if (ProtocolSettings.Default.NativeActivations.TryGetValue(Name, out uint activationIndex))
-                this.ActiveBlockIndex = activationIndex;
             contractsList.Add(this);
             contractsDictionary.Add(Hash, this);
         }
@@ -105,7 +104,7 @@ namespace Neo.SmartContract.Native
 
         internal void Invoke(ApplicationEngine engine, byte version)
         {
-            if (ActiveBlockIndex > Ledger.CurrentIndex(engine.Snapshot))
+            if (engine.ProtocolSettings.GetNativeActivation(Name) > Ledger.CurrentIndex(engine.Snapshot))
                 throw new InvalidOperationException($"The native contract {Name} is not active.");
             if (version != 0)
                 throw new InvalidOperationException($"The native contract of version {version} is not active.");

@@ -16,7 +16,7 @@ namespace Neo.UnitTests.Extensions
             script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nefFile, manifest, null);
 
             var engine = ApplicationEngine.Create(TriggerType.Application,
-                sender != null ? new Transaction() { Signers = new Signer[] { new Signer() { Account = sender } } } : null, snapshot, null, gas);
+                sender != null ? new Transaction() { Signers = new Signer[] { new Signer() { Account = sender } } } : null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: gas);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() != VMState.HALT)
@@ -36,7 +36,7 @@ namespace Neo.UnitTests.Extensions
             var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "update", nefFile, manifest, null);
 
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
             engine.LoadScript(script.ToArray());
 
             // Fake calling script hash
@@ -59,7 +59,7 @@ namespace Neo.UnitTests.Extensions
             var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "destroy");
 
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
             engine.LoadScript(script.ToArray());
 
             // Fake calling script hash
@@ -96,7 +96,7 @@ namespace Neo.UnitTests.Extensions
 
         public static StackItem Call(this NativeContract contract, DataCache snapshot, IVerifiable container, Block persistingBlock, string method, params ContractParameter[] args)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot, persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, container, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(contract.Hash, method, args);
             engine.LoadScript(script.ToArray());
