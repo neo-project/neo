@@ -15,23 +15,6 @@ namespace Neo.UnitTests.SmartContract
     public class UT_Contract
     {
         [TestMethod]
-        public void TestGetAddress()
-        {
-            byte[] privateKey = new byte[32];
-            RandomNumberGenerator rng = RandomNumberGenerator.Create();
-            rng.GetBytes(privateKey);
-            KeyPair key = new KeyPair(privateKey);
-            Contract contract = Contract.CreateSignatureContract(key.PublicKey);
-            byte[] expectedArray = new byte[40];
-            expectedArray[0] = (byte)OpCode.PUSHDATA1;
-            expectedArray[1] = 0x21;
-            Array.Copy(key.PublicKey.EncodePoint(true), 0, expectedArray, 2, 33);
-            expectedArray[35] = (byte)OpCode.SYSCALL;
-            Array.Copy(BitConverter.GetBytes(ApplicationEngine.Neo_Crypto_CheckSig), 0, expectedArray, 36, 4);
-            Assert.AreEqual(expectedArray.ToScriptHash().ToAddress(), contract.Address);
-        }
-
-        [TestMethod]
         public void TestGetScriptHash()
         {
             byte[] privateKey = new byte[32];

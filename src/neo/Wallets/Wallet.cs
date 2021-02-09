@@ -21,6 +21,7 @@ namespace Neo.Wallets
 {
     public abstract class Wallet
     {
+        public ProtocolSettings ProtocolSettings { get; }
         public abstract string Name { get; }
         public string Path { get; }
         public abstract Version Version { get; }
@@ -34,12 +35,9 @@ namespace Neo.Wallets
         public abstract WalletAccount GetAccount(UInt160 scriptHash);
         public abstract IEnumerable<WalletAccount> GetAccounts();
 
-        internal Wallet()
+        protected Wallet(string path, ProtocolSettings settings)
         {
-        }
-
-        protected Wallet(string path)
-        {
+            this.ProtocolSettings = settings;
             this.Path = path;
         }
 
@@ -152,7 +150,7 @@ namespace Neo.Wallets
             return new BigDecimal(amount, decimals);
         }
 
-        public static byte[] GetPrivateKeyFromNEP2(string nep2, string passphrase, int N = 16384, int r = 8, int p = 8)
+        public static byte[] GetPrivateKeyFromNEP2(string nep2, string passphrase, byte version, int N = 16384, int r = 8, int p = 8)
         {
             if (nep2 == null) throw new ArgumentNullException(nameof(nep2));
             if (passphrase == null) throw new ArgumentNullException(nameof(passphrase));
@@ -175,7 +173,7 @@ namespace Neo.Wallets
             Array.Clear(derivedhalf2, 0, derivedhalf2.Length);
             ECPoint pubkey = Cryptography.ECC.ECCurve.Secp256r1.G * prikey;
             UInt160 script_hash = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
-            string address = script_hash.ToAddress();
+            string address = script_hash.ToAddress(version);
             if (!Encoding.ASCII.GetBytes(address).Sha256().Sha256().AsSpan(0, 4).SequenceEqual(addresshash))
                 throw new FormatException();
             return prikey;
@@ -235,7 +233,7 @@ namespace Neo.Wallets
 
         public virtual WalletAccount Import(string nep2, string passphrase, int N = 16384, int r = 8, int p = 8)
         {
-            byte[] privateKey = GetPrivateKeyFromNEP2(nep2, passphrase, N, r, p);
+            byte[] privateKey = GetPrivateKeyFromNEP2(nep2, passphrase, ProtocolSettings.AddressVersion, N, r, p);
             WalletAccount account = CreateAccount(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
             return account;

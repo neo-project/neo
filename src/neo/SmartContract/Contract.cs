@@ -1,6 +1,5 @@
 using Neo.Cryptography.ECC;
 using Neo.VM;
-using Neo.Wallets;
 using System;
 using System.Linq;
 
@@ -10,19 +9,6 @@ namespace Neo.SmartContract
     {
         public byte[] Script;
         public ContractParameterType[] ParameterList;
-
-        private string _address;
-        public string Address
-        {
-            get
-            {
-                if (_address == null)
-                {
-                    _address = ScriptHash.ToAddress();
-                }
-                return _address;
-            }
-        }
 
         private UInt160 _scriptHash;
         public virtual UInt160 ScriptHash

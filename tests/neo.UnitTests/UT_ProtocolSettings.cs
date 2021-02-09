@@ -36,9 +36,9 @@ namespace Neo.UnitTests
         public void CheckFirstLetterOfAddresses()
         {
             UInt160 min = UInt160.Parse("0x0000000000000000000000000000000000000000");
-            min.ToAddress()[0].Should().Be('N');
+            min.ToAddress(ProtocolSettings.Default.AddressVersion)[0].Should().Be('N');
             UInt160 max = UInt160.Parse("0xffffffffffffffffffffffffffffffffffffffff");
-            max.ToAddress()[0].Should().Be('N');
+            max.ToAddress(ProtocolSettings.Default.AddressVersion)[0].Should().Be('N');
         }
 
         [TestMethod]

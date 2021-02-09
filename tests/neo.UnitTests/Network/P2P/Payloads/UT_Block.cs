@@ -164,7 +164,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(uut, val256, out var merkRoot, out var val160, out var timestampVal, out var indexVal, out var scriptVal, out var transactionsVal, 1);
 
-            JObject jObj = uut.ToJson();
+            JObject jObj = uut.ToJson(ProtocolSettings.Default);
             jObj.Should().NotBeNull();
             jObj["hash"].AsString().Should().Be("0x0ffaf8fc7eeb34959e7220d316e3294290e84b6a183b4bdb5c7c14a8f80239ee");
             jObj["size"].AsNumber().Should().Be(159);
