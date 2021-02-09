@@ -203,7 +203,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestExecutionEngine_GetScriptContainer()
         {
-            GetEngine(true).GetScriptContainer().Should().BeOfType<Transaction>();
+            GetEngine(true).GetScriptContainer().Should().BeOfType<VM.Types.Array>();
         }
 
         [TestMethod]
