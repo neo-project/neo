@@ -305,7 +305,7 @@ namespace Neo.Network.P2P.Payloads
                     net_fee -= execFeeFactor * SmartContract.Helper.MultiSignatureContractCost(m, n);
                 else
                 {
-                    if (!this.VerifyWitness(settings, snapshot, hashes[i], witnesses[i], net_fee, out long fee))
+                    if (!this.VerifyWitness(settings, snapshot, hashes[i], witnesses[i], Math.Min(SmartContract.Helper.MaxVerificationGas * 2, net_fee), out long fee))
                         return VerifyResult.Invalid;
                     net_fee -= fee;
                 }
