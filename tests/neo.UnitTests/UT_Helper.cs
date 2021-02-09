@@ -21,14 +21,14 @@ namespace Neo.UnitTests
         {
             TestVerifiable verifiable = new TestVerifiable();
             byte[] res = verifiable.GetHashData();
-            res.ToHexString().Should().Be("4e454f000774657374537472");
+            res.ToHexString().Should().Be("0774657374537472");
         }
 
         [TestMethod]
         public void Sign()
         {
             TestVerifiable verifiable = new TestVerifiable();
-            byte[] res = verifiable.Sign(new KeyPair(TestUtils.GetByteArray(32, 0x42)));
+            byte[] res = verifiable.Sign(new KeyPair(TestUtils.GetByteArray(32, 0x42)), ProtocolSettings.Default.Magic);
             res.Length.Should().Be(64);
         }
 

@@ -1062,7 +1062,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             JObject jObj = uut.ToJson(ProtocolSettings.Default);
             jObj.Should().NotBeNull();
-            jObj["hash"].AsString().Should().Be("0xe17382d26702bde77b00a9f23ea156b77c418764cbc45b2692088b5fde0336e3");
+            jObj["hash"].AsString().Should().Be("0x4b7ce3ffca61426002ce83d88d2012c5ecef44db7b94eedf08d3b39d65a05e49");
             jObj["size"].AsNumber().Should().Be(84);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["attributes"]).Count.Should().Be(0);

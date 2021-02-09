@@ -1,7 +1,7 @@
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
-using Neo.Network.P2P;
 using System;
+using System.IO;
 
 namespace Neo.SmartContract
 {
@@ -14,9 +14,14 @@ namespace Neo.SmartContract
 
         protected internal bool CheckSig(byte[] pubkey, byte[] signature)
         {
+            using MemoryStream ms = new MemoryStream();
+            using BinaryWriter writer = new BinaryWriter(ms);
+            writer.Write(ProtocolSettings.Magic);
+            ScriptContainer.SerializeUnsigned(writer);
+            writer.Flush();
             try
             {
-                return Crypto.VerifySignature(ScriptContainer.GetHashData(), signature, pubkey, ECCurve.Secp256r1);
+                return Crypto.VerifySignature(ms.ToArray(), signature, pubkey, ECCurve.Secp256r1);
             }
             catch (ArgumentException)
             {
@@ -26,7 +31,12 @@ namespace Neo.SmartContract
 
         protected internal bool CheckMultisig(byte[][] pubkeys, byte[][] signatures)
         {
-            byte[] message = ScriptContainer.GetHashData();
+            using MemoryStream ms = new MemoryStream();
+            using BinaryWriter writer = new BinaryWriter(ms);
+            writer.Write(ProtocolSettings.Magic);
+            ScriptContainer.SerializeUnsigned(writer);
+            writer.Flush();
+            byte[] message = ms.ToArray();
             int m = signatures.Length, n = pubkeys.Length;
             if (n == 0 || m == 0 || m > n) throw new ArgumentException();
             AddGas(CheckSigPrice * n * exec_fee_factor);

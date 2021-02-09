@@ -1,21 +1,21 @@
 using Neo.Cryptography;
 using Neo.IO;
-using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using System;
+using System.IO;
 
 namespace Neo.Wallets
 {
     public static class Helper
     {
-        public static byte[] Sign(this IVerifiable verifiable, KeyPair key)
-        {
-            return Sign(verifiable, key, ProtocolSettings.Default.Magic);
-        }
-
         public static byte[] Sign(this IVerifiable verifiable, KeyPair key, uint magic)
         {
-            return Crypto.Sign(verifiable.GetHashData(magic), key.PrivateKey, key.PublicKey.EncodePoint(false)[1..]);
+            using MemoryStream ms = new MemoryStream();
+            using BinaryWriter writer = new BinaryWriter(ms);
+            writer.Write(magic);
+            verifiable.SerializeUnsigned(writer);
+            writer.Flush();
+            return Crypto.Sign(ms.ToArray(), key.PrivateKey, key.PublicKey.EncodePoint(false)[1..]);
         }
 
         public static string ToAddress(this UInt160 scriptHash, byte version)
