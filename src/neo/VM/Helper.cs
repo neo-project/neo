@@ -1,7 +1,9 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
+using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -46,36 +48,41 @@ namespace Neo.VM
             return sb;
         }
 
-        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation)
-        {
-            sb.Emit(OpCode.NEWARRAY0);
-            sb.EmitPush(CallFlags.All);
-            sb.EmitPush(operation);
-            sb.EmitPush(scriptHash);
-            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
-            return sb;
-        }
-
-        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params ContractParameter[] args)
-        {
-            for (int i = args.Length - 1; i >= 0; i--)
-                sb.EmitPush(args[i]);
-            sb.EmitPush(args.Length);
-            sb.Emit(OpCode.PACK);
-            sb.EmitPush(CallFlags.All);
-            sb.EmitPush(operation);
-            sb.EmitPush(scriptHash);
-            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
-            return sb;
-        }
-
         public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params object[] args)
         {
-            for (int i = args.Length - 1; i >= 0; i--)
-                sb.EmitPush(args[i]);
-            sb.EmitPush(args.Length);
-            sb.Emit(OpCode.PACK);
-            sb.EmitPush(CallFlags.All);
+            return EmitDynamicCall(sb, null, scriptHash, operation, args);
+        }
+
+        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, DataCache snapshot, UInt160 scriptHash, string operation, params object[] args)
+        {
+            if (args.Length == 0)
+            {
+                sb.Emit(OpCode.NEWARRAY0);
+            }
+            else
+            {
+                for (int i = args.Length - 1; i >= 0; i--)
+                    sb.EmitPush(args[i]);
+                sb.EmitPush(args.Length);
+                sb.Emit(OpCode.PACK);
+            }
+            if (snapshot != null)
+            {
+                // check safe execution
+                var contract = NativeContract.ContractManagement.GetContract(snapshot, scriptHash);
+                if (contract?.Manifest.Abi.GetMethod(operation, args.Length)?.Safe == true)
+                {
+                    sb.EmitPush(CallFlags.ReadOnly | CallFlags.AllowNotify);
+                }
+                else
+                {
+                    sb.EmitPush(CallFlags.All);
+                }
+            }
+            else
+            {
+                sb.EmitPush(CallFlags.All);
+            }
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
             sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
