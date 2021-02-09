@@ -306,7 +306,68 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction()
         {
             if (CurrentContext.InstructionPointer < CurrentContext.Script.Length)
-                AddGas(exec_fee_factor * OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
+            {
+                var instruction = CurrentContext.CurrentInstruction;
+                AddGas(exec_fee_factor * OpCodePrices[instruction.OpCode]);
+
+                if (Trigger == TriggerType.Verification)
+                {
+                    // no backwards jump in verification mode
+
+                    switch (instruction.OpCode)
+                    {
+                        case OpCode.JMP:
+                        case OpCode.JMPEQ:
+                        case OpCode.JMPGE:
+                        case OpCode.JMPGT:
+                        case OpCode.JMPLE:
+                        case OpCode.JMPLT:
+                        case OpCode.JMPNE:
+                        case OpCode.JMPIF:
+                        case OpCode.JMPIFNOT:
+                            {
+                                if (instruction.TokenI16 <= 0)
+                                {
+                                    throw new InvalidOperationException("no backwards jump in verification mode");
+                                }
+                                break;
+                            }
+                        case OpCode.JMP_L:
+                        case OpCode.JMPEQ_L:
+                        case OpCode.JMPGE_L:
+                        case OpCode.JMPGT_L:
+                        case OpCode.JMPLE_L:
+                        case OpCode.JMPLT_L:
+                        case OpCode.JMPNE_L:
+                        case OpCode.JMPIF_L:
+                        case OpCode.JMPIFNOT_L:
+                            {
+                                if (instruction.TokenI32 <= 0)
+                                {
+                                    throw new InvalidOperationException("no backwards jump in verification mode");
+                                }
+                                break;
+                            }
+                        case OpCode.CALL:
+                            {
+                                if (instruction.TokenI8 <= 0)
+                                {
+                                    throw new InvalidOperationException("no backwards jump in verification mode");
+                                }
+                                break;
+                            }
+                        case OpCode.CALL_L:
+                            {
+                                if (instruction.TokenI32 <= 0)
+                                {
+                                    throw new InvalidOperationException("no backwards jump in verification mode");
+                                }
+                                break;
+                            }
+                        case OpCode.CALLA: throw new InvalidOperationException("no backwards jump in verification mode");
+                    }
+                }
+            }
         }
 
         internal void StepOut()
