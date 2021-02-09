@@ -259,7 +259,7 @@ namespace Neo.Ledger
             _txRwLock.EnterWriteLock();
             try
             {
-                VerifyResult result = tx.VerifyStateDependent(snapshot, VerificationContext);
+                VerifyResult result = tx.VerifyStateDependent(_system.Settings, snapshot, VerificationContext);
                 if (result != VerifyResult.Succeed) return result;
 
                 _unsortedTransactions.Add(tx.Hash, poolItem);
@@ -396,7 +396,7 @@ namespace Neo.Ledger
                 // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
                 foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
                 {
-                    if (item.Tx.VerifyStateDependent(snapshot, VerificationContext) == VerifyResult.Succeed)
+                    if (item.Tx.VerifyStateDependent(_system.Settings, snapshot, VerificationContext) == VerifyResult.Succeed)
                     {
                         reverifiedItems.Add(item);
                         VerificationContext.AddTransaction(item.Tx);

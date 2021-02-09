@@ -111,5 +111,12 @@ namespace Neo
             else
                 this.NativeActivations = new Dictionary<string, uint>();
         }
+
+        public uint GetNativeActivation(string name)
+        {
+            if (NativeActivations.TryGetValue(name, out uint index))
+                return index;
+            return 0;
+        }
     }
 }

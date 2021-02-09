@@ -74,8 +74,6 @@ namespace Neo.Network.P2P.Payloads
             Timestamp = reader.ReadUInt64();
             Index = reader.ReadUInt32();
             PrimaryIndex = reader.ReadByte();
-            if (PrimaryIndex >= ProtocolSettings.Default.ValidatorsCount)
-                throw new FormatException();
             NextConsensus = reader.ReadSerializable<UInt160>();
         }
 
@@ -137,24 +135,28 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        internal bool Verify(DataCache snapshot)
+        internal bool Verify(ProtocolSettings settings, DataCache snapshot)
         {
+            if (PrimaryIndex >= settings.ValidatorsCount)
+                return false;
             TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, PrevHash);
             if (prev is null) return false;
             if (prev.Index + 1 != Index) return false;
             if (prev.Header.Timestamp >= Timestamp) return false;
-            if (!this.VerifyWitnesses(snapshot, 1_00000000)) return false;
+            if (!this.VerifyWitnesses(settings, snapshot, 1_00000000)) return false;
             return true;
         }
 
-        internal bool Verify(DataCache snapshot, HeaderCache headerCache)
+        internal bool Verify(ProtocolSettings settings, DataCache snapshot, HeaderCache headerCache)
         {
             Header prev = headerCache.Last;
-            if (prev is null) return Verify(snapshot);
+            if (prev is null) return Verify(settings, snapshot);
+            if (PrimaryIndex >= settings.ValidatorsCount)
+                return false;
             if (prev.Hash != PrevHash) return false;
             if (prev.Index + 1 != Index) return false;
             if (prev.Timestamp >= Timestamp) return false;
-            return this.VerifyWitness(snapshot, prev.NextConsensus, Witness, 1_00000000, out _);
+            return this.VerifyWitness(settings, snapshot, prev.NextConsensus, Witness, 1_00000000, out _);
         }
     }
 }

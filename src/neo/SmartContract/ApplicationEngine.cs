@@ -43,6 +43,7 @@ namespace Neo.SmartContract
         public IVerifiable ScriptContainer { get; }
         public DataCache Snapshot { get; }
         public Block PersistingBlock { get; }
+        public ProtocolSettings ProtocolSettings { get; }
         public long GasConsumed { get; private set; } = 0;
         public long GasLeft => gas_amount - GasConsumed;
         public Exception FaultException { get; private set; }
@@ -51,12 +52,13 @@ namespace Neo.SmartContract
         public UInt160 EntryScriptHash => EntryContext?.GetScriptHash();
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
 
-        protected ApplicationEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, long gas)
+        protected ApplicationEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
             this.Snapshot = snapshot;
             this.PersistingBlock = persistingBlock;
+            this.ProtocolSettings = settings;
             this.gas_amount = gas;
             this.exec_fee_factor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(Snapshot);
             this.StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(Snapshot);
@@ -143,10 +145,10 @@ namespace Neo.SmartContract
             return (T)Convert(Pop(), new InteropParameterDescriptor(typeof(T)));
         }
 
-        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, long gas = TestModeGas)
+        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas)
         {
-            return applicationEngineProvider?.Create(trigger, container, snapshot, persistingBlock, gas)
-                  ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, gas);
+            return applicationEngineProvider?.Create(trigger, container, snapshot, persistingBlock, settings, gas)
+                  ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas);
         }
 
         protected override void LoadContext(ExecutionContext context)
@@ -355,10 +357,11 @@ namespace Neo.SmartContract
             Exchange(ref applicationEngineProvider, null);
         }
 
-        public static ApplicationEngine Run(byte[] script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, int offset = 0, long gas = TestModeGas)
+        public static ApplicationEngine Run(byte[] script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, ProtocolSettings settings = null, int offset = 0, long gas = TestModeGas)
         {
             persistingBlock ??= CreateDummyBlock(snapshot);
-            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, persistingBlock, gas);
+            settings ??= ProtocolSettings.Default;
+            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, persistingBlock, settings, gas);
             engine.LoadScript(script, initialPosition: offset);
             engine.Execute();
             return engine;

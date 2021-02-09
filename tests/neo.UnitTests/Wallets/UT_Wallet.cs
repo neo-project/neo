@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -171,9 +170,9 @@ namespace Neo.UnitTests.Wallets
         public void TestGetAccount1()
         {
             MyWallet wallet = new MyWallet();
-            wallet.CreateAccount(UInt160.Parse("0xf55f6873ae944cf4ec9626e8855b8554e798a7d1"));
+            wallet.CreateAccount(UInt160.Parse("0xd92defaf95bf5307ffbc3ab1c5cdf7ddfc1b89b3"));
             WalletAccount account = wallet.GetAccount(ECCurve.Secp256r1.G);
-            account.ScriptHash.Should().Be(UInt160.Parse("0xf55f6873ae944cf4ec9626e8855b8554e798a7d1"));
+            account.ScriptHash.Should().Be(UInt160.Parse("0xd92defaf95bf5307ffbc3ab1c5cdf7ddfc1b89b3"));
         }
 
         [TestMethod]

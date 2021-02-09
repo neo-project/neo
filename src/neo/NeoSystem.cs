@@ -2,9 +2,14 @@ using Akka.Actor;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P;
+using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
+using Neo.SmartContract;
+using Neo.VM;
 using System;
+using System.Linq;
+using static Neo.Ledger.Blockchain;
 
 namespace Neo
 {
@@ -16,6 +21,7 @@ namespace Neo
             $"blockchain-mailbox {{ mailbox-type: \"{typeof(BlockchainMailbox).AssemblyQualifiedName}\" }}" +
             $"task-manager-mailbox {{ mailbox-type: \"{typeof(TaskManagerMailbox).AssemblyQualifiedName}\" }}" +
             $"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}");
+        public Block GenesisBlock { get; }
         public IActorRef Blockchain { get; }
         public IActorRef LocalNode { get; }
         public IActorRef TaskManager { get; }
@@ -44,6 +50,24 @@ namespace Neo
         public NeoSystem(ProtocolSettings settings, string storageEngine = null, string storagePath = null)
         {
             this.Settings = settings;
+            this.GenesisBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Timestamp = (new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc)).ToTimestampMS(),
+                    Index = 0,
+                    PrimaryIndex = 0,
+                    NextConsensus = Contract.GetBFTAddress(settings.StandbyValidators),
+                    Witness = new Witness
+                    {
+                        InvocationScript = Array.Empty<byte>(),
+                        VerificationScript = new[] { (byte)OpCode.PUSH1 }
+                    },
+                },
+                Transactions = Array.Empty<Transaction>()
+            };
             Plugin.LoadPlugins(this);
             this.storage_engine = storageEngine;
             this.store = LoadStore(storagePath);
@@ -53,6 +77,7 @@ namespace Neo
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnPluginsLoaded();
+            Blockchain.Ask<FillCompleted>(new FillMemoryPool { Transactions = Enumerable.Empty<Transaction>() }).Wait();
         }
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)

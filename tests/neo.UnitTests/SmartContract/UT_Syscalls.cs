@@ -1,6 +1,7 @@
+using Akka.TestKit;
+using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -13,12 +14,17 @@ using Array = System.Array;
 namespace Neo.UnitTests.SmartContract
 {
     [TestClass]
-    public partial class UT_Syscalls
+    public partial class UT_Syscalls : TestKit
     {
+        private TestProbe senderProbe;
+
         [TestInitialize]
         public void TestSetup()
         {
             TestBlockchain.InitializeMockNeoSystem();
+            senderProbe = CreateTestProbe();
+            senderProbe.Send(TestBlockchain.TheNeoSystem.Blockchain, new object());
+            senderProbe.ExpectNoMsg(); // Ensure blockchain it's created
         }
 
         [TestMethod]
@@ -64,7 +70,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Without block
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -86,7 +92,7 @@ namespace Neo.UnitTests.SmartContract
                     Transaction = tx
                 }, true));
 
-                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -97,7 +103,7 @@ namespace Neo.UnitTests.SmartContract
 
                 height.Index = block.Index;
 
-                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
@@ -105,118 +111,6 @@ namespace Neo.UnitTests.SmartContract
 
                 var array = engine.ResultStack.Pop<VM.Types.Array>();
                 Assert.AreEqual(block.Hash, new UInt256(array[0].GetSpan()));
-            }
-        }
-
-        [TestMethod]
-        public void Json_Deserialize()
-        {
-            // Good
-
-            using (var script = new ScriptBuilder())
-            {
-                script.EmitPush("123");
-                script.EmitSysCall(ApplicationEngine.System_Json_Deserialize);
-                script.EmitPush("null");
-                script.EmitSysCall(ApplicationEngine.System_Json_Deserialize);
-
-                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null))
-                {
-                    engine.LoadScript(script.ToArray());
-
-                    Assert.AreEqual(engine.Execute(), VMState.HALT);
-                    Assert.AreEqual(2, engine.ResultStack.Count);
-
-                    engine.ResultStack.Pop<Null>();
-                    Assert.IsTrue(engine.ResultStack.Pop().GetInteger() == 123);
-                }
-            }
-
-            // Error 1 - Wrong Json
-
-            using (var script = new ScriptBuilder())
-            {
-                script.EmitPush("***");
-                script.EmitSysCall(ApplicationEngine.System_Json_Deserialize);
-
-                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null))
-                {
-                    engine.LoadScript(script.ToArray());
-
-                    Assert.AreEqual(engine.Execute(), VMState.FAULT);
-                    Assert.AreEqual(0, engine.ResultStack.Count);
-                }
-            }
-
-            // Error 2 - No decimals
-
-            using (var script = new ScriptBuilder())
-            {
-                script.EmitPush("123.45");
-                script.EmitSysCall(ApplicationEngine.System_Json_Deserialize);
-
-                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null))
-                {
-                    engine.LoadScript(script.ToArray());
-
-                    Assert.AreEqual(engine.Execute(), VMState.FAULT);
-                    Assert.AreEqual(0, engine.ResultStack.Count);
-                }
-            }
-        }
-
-        [TestMethod]
-        public void Json_Serialize()
-        {
-            // Good
-
-            using (var script = new ScriptBuilder())
-            {
-                script.EmitPush(5);
-                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
-                script.Emit(OpCode.PUSH0);
-                script.Emit(OpCode.NOT);
-                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
-                script.EmitPush("test");
-                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
-                script.Emit(OpCode.PUSHNULL);
-                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
-                script.Emit(OpCode.NEWMAP);
-                script.Emit(OpCode.DUP);
-                script.EmitPush("key");
-                script.EmitPush("value");
-                script.Emit(OpCode.SETITEM);
-                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
-
-                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null))
-                {
-                    engine.LoadScript(script.ToArray());
-
-                    Assert.AreEqual(engine.Execute(), VMState.HALT);
-                    Assert.AreEqual(5, engine.ResultStack.Count);
-
-                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "{\"key\":\"value\"}");
-                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "null");
-                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "\"test\"");
-                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "true");
-                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "5");
-                }
-            }
-
-            // Error
-
-            using (var script = new ScriptBuilder())
-            {
-                script.EmitSysCall(ApplicationEngine.System_Storage_GetContext);
-                script.EmitSysCall(ApplicationEngine.System_Json_Serialize);
-
-                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, null))
-                {
-                    engine.LoadScript(script.ToArray());
-
-                    Assert.AreEqual(engine.Execute(), VMState.FAULT);
-                    Assert.AreEqual(0, engine.ResultStack.Count);
-                }
             }
         }
 
@@ -233,9 +127,8 @@ namespace Neo.UnitTests.SmartContract
                 var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
                 engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.IsTrue(engine.ResultStack.Peek().IsNull);
+                Assert.AreEqual(engine.Execute(), VMState.FAULT);
+                Assert.AreEqual(0, engine.ResultStack.Count);
 
                 // With tx
 
@@ -281,7 +174,7 @@ namespace Neo.UnitTests.SmartContract
 
                 // Execute
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, 100_000_000);
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, gas: 100_000_000);
                 engine.LoadScript(script.ToArray());
                 Assert.AreEqual(engine.Execute(), VMState.HALT);
 

@@ -1,3 +1,5 @@
+using Akka.TestKit;
+using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -25,7 +27,7 @@ namespace Neo.UnitTests.Ledger
     }
 
     [TestClass]
-    public class UT_MemoryPool
+    public class UT_MemoryPool : TestKit
     {
         private static NeoSystem testBlockchain;
 
@@ -35,6 +37,8 @@ namespace Neo.UnitTests.Ledger
         private MemoryPool _unit;
         private MemoryPool _unit2;
         private TestIMemoryPoolTxObserverPlugin plugin;
+        private TestProbe senderProbe;
+        private bool hasChecked = false;
 
         [ClassInitialize]
         public static void TestSetup(TestContext ctx)
@@ -50,6 +54,14 @@ namespace Neo.UnitTests.Ledger
         [TestInitialize]
         public void TestSetup()
         {
+            if (!hasChecked)
+            {
+                senderProbe = CreateTestProbe();
+                senderProbe.Send(testBlockchain.Blockchain, new object());
+                senderProbe.ExpectNoMsg(); // Ensure blockchain it's created
+                hasChecked = true;
+            }
+
             // protect against external changes on TimeProvider
             TimeProvider.ResetToDefault();
 
@@ -87,9 +99,8 @@ namespace Neo.UnitTests.Ledger
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new Mock<Transaction>();
-            mock.Setup(p => p.Verify(It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
-            mock.Setup(p => p.VerifyStateDependent(It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
-            mock.Setup(p => p.VerifyStateIndependent()).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
             mock.Object.Attributes = Array.Empty<TransactionAttribute>();
@@ -112,9 +123,8 @@ namespace Neo.UnitTests.Ledger
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new Mock<Transaction>();
             UInt160 sender = senderAccount;
-            mock.Setup(p => p.Verify(It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
-            mock.Setup(p => p.VerifyStateDependent(It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>())).Returns((DataCache snapshot, TransactionVerificationContext context) => context.CheckTransaction(mock.Object, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
-            mock.Setup(p => p.VerifyStateIndependent()).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>())).Returns((ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context) => context.CheckTransaction(mock.Object, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
+            mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
             mock.Object.Attributes = Array.Empty<TransactionAttribute>();
@@ -228,7 +238,7 @@ namespace Neo.UnitTests.Ledger
         {
             var snapshot = GetSnapshot();
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, long.MaxValue);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             NativeContract.GAS.Mint(engine, UInt160.Zero, 70, true);
 
@@ -246,7 +256,7 @@ namespace Neo.UnitTests.Ledger
             // Simulate the transfer process in tx by burning the balance
             UInt160 sender = block.Transactions[0].Sender;
 
-            ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.All, block, snapshot, block, (long)balance);
+            ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.All, block, snapshot, block, settings: TestBlockchain.TheNeoSystem.Settings, gas: (long)balance);
             NativeContract.GAS.Burn(applicationEngine, sender, NativeContract.GAS.BalanceOf(snapshot, sender));
             NativeContract.GAS.Mint(applicationEngine, sender, txFee * 30, true); // Set the balance to meet 30 txs only
 

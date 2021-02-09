@@ -75,14 +75,14 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        internal bool Verify(DataCache snapshot)
+        internal bool Verify(ProtocolSettings settings, DataCache snapshot)
         {
-            return Header.Verify(snapshot);
+            return Header.Verify(settings, snapshot);
         }
 
-        internal bool Verify(DataCache snapshot, HeaderCache headerCache)
+        internal bool Verify(ProtocolSettings settings, DataCache snapshot, HeaderCache headerCache)
         {
-            return Header.Verify(snapshot, headerCache);
+            return Header.Verify(settings, snapshot, headerCache);
         }
     }
 }

@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
@@ -16,7 +15,6 @@ using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Linq;
-using System.Text;
 using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract
@@ -34,8 +32,8 @@ namespace Neo.UnitTests.SmartContract
             KeyPair keyPair = new KeyPair(privateKey);
             ECPoint pubkey = keyPair.PublicKey;
             byte[] signature = Crypto.Sign(message, privateKey, pubkey.EncodePoint(false).Skip(1).ToArray());
-            engine.VerifyWithECDsaSecp256r1(StackItem.Null, pubkey.EncodePoint(false), signature).Should().BeTrue();
-            engine.VerifyWithECDsaSecp256r1(StackItem.Null, new byte[70], signature).Should().BeFalse();
+            engine.CheckSig(pubkey.EncodePoint(false), signature).Should().BeTrue();
+            engine.CheckSig(new byte[70], signature).Should().BeFalse();
         }
 
         [TestMethod]
@@ -67,10 +65,10 @@ namespace Neo.UnitTests.SmartContract
                 signature1,
                 signature2
             };
-            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures).Should().BeTrue();
+            engine.CheckMultisig(pubkeys, signatures).Should().BeTrue();
 
             pubkeys = new byte[0][];
-            Assert.ThrowsException<ArgumentException>(() => engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures));
+            Assert.ThrowsException<ArgumentException>(() => engine.CheckMultisig(pubkeys, signatures));
 
             pubkeys = new[]
             {
@@ -78,7 +76,7 @@ namespace Neo.UnitTests.SmartContract
                 pubkey2.EncodePoint(false)
             };
             signatures = new byte[0][];
-            Assert.ThrowsException<ArgumentException>(() => engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures));
+            Assert.ThrowsException<ArgumentException>(() => engine.CheckMultisig(pubkeys, signatures));
 
             pubkeys = new[]
             {
@@ -90,7 +88,7 @@ namespace Neo.UnitTests.SmartContract
                 signature1,
                 new byte[64]
             };
-            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures).Should().BeFalse();
+            engine.CheckMultisig(pubkeys, signatures).Should().BeFalse();
 
             pubkeys = new[]
             {
@@ -102,7 +100,7 @@ namespace Neo.UnitTests.SmartContract
                 signature1,
                 signature2
             };
-            engine.CheckMultisigWithECDsaSecp256r1(StackItem.Null, pubkeys, signatures).Should().BeFalse();
+            engine.CheckMultisig(pubkeys, signatures).Should().BeFalse();
         }
 
         [TestMethod]
@@ -122,7 +120,7 @@ namespace Neo.UnitTests.SmartContract
             engine.LoadScript(new byte[] { 0x01 });
             engine.IsStandardContract(state.Hash).Should().BeFalse();
 
-            state.Nef.Script = Contract.CreateSignatureRedeemScript(Blockchain.StandbyValidators[0]);
+            state.Nef.Script = Contract.CreateSignatureRedeemScript(ProtocolSettings.Default.StandbyValidators[0]);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
             engine.IsStandardContract(state.Hash).Should().BeTrue();
@@ -332,18 +330,6 @@ namespace Neo.UnitTests.SmartContract
             Struct @struct = (Struct)ret.Value();
             @struct[0].GetInteger().Should().Be(1);
             @struct[1].GetInteger().Should().Be(2);
-        }
-
-        [TestMethod]
-        public void TestJson_Deserialize()
-        {
-            GetEngine().JsonDeserialize(new byte[] { (byte)'1' }).GetInteger().Should().Be(1);
-        }
-
-        [TestMethod]
-        public void TestJson_Serialize()
-        {
-            Encoding.UTF8.GetString(GetEngine().JsonSerialize(1)).Should().Be("1");
         }
     }
 }

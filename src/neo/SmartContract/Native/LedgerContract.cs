@@ -46,11 +46,11 @@ namespace Neo.SmartContract.Native
             return snapshot.Find(CreateStorageKey(Prefix_Block).ToArray()).Any();
         }
 
-        private bool IsTraceableBlock(DataCache snapshot, uint index)
+        private bool IsTraceableBlock(DataCache snapshot, uint index, uint maxTraceableBlocks)
         {
             uint currentIndex = CurrentIndex(snapshot);
             if (index > currentIndex) return false;
-            return index + ProtocolSettings.Default.MaxTraceableBlocks > currentIndex;
+            return index + maxTraceableBlocks > currentIndex;
         }
 
         public UInt256 GetBlockHash(DataCache snapshot, uint index)
@@ -90,18 +90,18 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        private TrimmedBlock GetBlock(DataCache snapshot, byte[] indexOrHash)
+        private TrimmedBlock GetBlock(ApplicationEngine engine, byte[] indexOrHash)
         {
             UInt256 hash;
             if (indexOrHash.Length < UInt256.Length)
-                hash = GetBlockHash(snapshot, (uint)new BigInteger(indexOrHash));
+                hash = GetBlockHash(engine.Snapshot, (uint)new BigInteger(indexOrHash));
             else if (indexOrHash.Length == UInt256.Length)
                 hash = new UInt256(indexOrHash);
             else
                 throw new ArgumentException(null, nameof(indexOrHash));
             if (hash is null) return null;
-            TrimmedBlock block = GetTrimmedBlock(snapshot, hash);
-            if (block is null || !IsTraceableBlock(snapshot, block.Index)) return null;
+            TrimmedBlock block = GetTrimmedBlock(engine.Snapshot, hash);
+            if (block is null || !IsTraceableBlock(engine.Snapshot, block.Index, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
             return block;
         }
 
@@ -146,37 +146,37 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates, Name = "getTransaction")]
-        private Transaction GetTransactionForContract(DataCache snapshot, UInt256 hash)
+        private Transaction GetTransactionForContract(ApplicationEngine engine, UInt256 hash)
         {
-            TransactionState state = GetTransactionState(snapshot, hash);
-            if (state is null || !IsTraceableBlock(snapshot, state.BlockIndex)) return null;
+            TransactionState state = GetTransactionState(engine.Snapshot, hash);
+            if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
             return state.Transaction;
         }
 
         [ContractMethod(0_01000000, CallFlags.ReadStates)]
-        private int GetTransactionHeight(DataCache snapshot, UInt256 hash)
+        private int GetTransactionHeight(ApplicationEngine engine, UInt256 hash)
         {
-            TransactionState state = GetTransactionState(snapshot, hash);
-            if (state is null || !IsTraceableBlock(snapshot, state.BlockIndex)) return -1;
+            TransactionState state = GetTransactionState(engine.Snapshot, hash);
+            if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return -1;
             return (int)state.BlockIndex;
         }
 
         [ContractMethod(0_02000000, CallFlags.ReadStates)]
-        private Transaction GetTransactionFromBlock(DataCache snapshot, byte[] blockIndexOrHash, int txIndex)
+        private Transaction GetTransactionFromBlock(ApplicationEngine engine, byte[] blockIndexOrHash, int txIndex)
         {
             UInt256 hash;
             if (blockIndexOrHash.Length < UInt256.Length)
-                hash = GetBlockHash(snapshot, (uint)new BigInteger(blockIndexOrHash));
+                hash = GetBlockHash(engine.Snapshot, (uint)new BigInteger(blockIndexOrHash));
             else if (blockIndexOrHash.Length == UInt256.Length)
                 hash = new UInt256(blockIndexOrHash);
             else
                 throw new ArgumentException(null, nameof(blockIndexOrHash));
             if (hash is null) return null;
-            TrimmedBlock block = GetTrimmedBlock(snapshot, hash);
-            if (block is null || !IsTraceableBlock(snapshot, block.Index)) return null;
+            TrimmedBlock block = GetTrimmedBlock(engine.Snapshot, hash);
+            if (block is null || !IsTraceableBlock(engine.Snapshot, block.Index, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
             if (txIndex < 0 || txIndex >= block.Hashes.Length)
                 throw new ArgumentOutOfRangeException(nameof(txIndex));
-            return GetTransaction(snapshot, block.Hashes[txIndex]);
+            return GetTransaction(engine.Snapshot, block.Hashes[txIndex]);
         }
 
         private static TrimmedBlock Trim(Block block)
