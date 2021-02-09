@@ -1,9 +1,6 @@
 using FluentAssertions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Wallets;
-using System.Collections.Generic;
-using System.IO;
 using System.Reflection;
 
 namespace Neo.UnitTests
@@ -46,80 +43,6 @@ namespace Neo.UnitTests
         {
             var mainNetMagic = 0x4F454Eu;
             ProtocolSettings.Default.Magic.Should().Be(mainNetMagic);
-        }
-
-        [TestMethod]
-        public void Can_initialize_ProtocolSettings()
-        {
-            var expectedMagic = 12345u;
-
-            var dict = new Dictionary<string, string>()
-            {
-                { "ProtocolConfiguration:Magic", $"{expectedMagic}" }
-            };
-
-            var config = new ConfigurationBuilder().AddInMemoryCollection(dict).Build();
-            ProtocolSettings.Initialize(config).Should().BeTrue();
-            ProtocolSettings.Default.Magic.Should().Be(expectedMagic);
-        }
-
-        [TestMethod]
-        public void Initialize_ProtocolSettings_NativeBlockIndex()
-        {
-            var tempFile = Path.GetTempFileName();
-            File.WriteAllText(tempFile, @"
-{
- ""ProtocolConfiguration"":
-    {
-    ""NativeActivations"":{ ""test"":123 }
-    }
-}
-");
-            var config = new ConfigurationBuilder().AddJsonFile(tempFile).Build();
-            File.Delete(tempFile);
-
-            ProtocolSettings.Initialize(config).Should().BeTrue();
-            ProtocolSettings.Default.NativeActivations.Count.Should().Be(1);
-            ProtocolSettings.Default.NativeActivations["test"].Should().Be(123);
-        }
-
-        [TestMethod]
-        public void Cant_initialize_ProtocolSettings_after_default_settings_used()
-        {
-            var mainNetMagic = 0x4F454Eu;
-            ProtocolSettings.Default.Magic.Should().Be(mainNetMagic);
-
-            var updatedMagic = 54321u;
-            var dict = new Dictionary<string, string>()
-            {
-                { "ProtocolConfiguration:Magic", $"{updatedMagic}" }
-            };
-
-            var config = new ConfigurationBuilder().AddInMemoryCollection(dict).Build();
-            ProtocolSettings.Initialize(config).Should().BeFalse();
-            ProtocolSettings.Default.Magic.Should().Be(mainNetMagic);
-        }
-
-        [TestMethod]
-        public void Cant_initialize_ProtocolSettings_twice()
-        {
-            var expectedMagic = 12345u;
-            var dict = new Dictionary<string, string>()
-            {
-                { "ProtocolConfiguration:Magic", $"{expectedMagic}" }
-            };
-
-            var config = new ConfigurationBuilder().AddInMemoryCollection(dict).Build();
-            ProtocolSettings.Initialize(config).Should().BeTrue();
-
-            var updatedMagic = 54321u;
-            dict = new Dictionary<string, string>()
-            {
-                { "ProtocolConfiguration:Magic", $"{updatedMagic}" }
-            };
-            config = new ConfigurationBuilder().AddInMemoryCollection(dict).Build();
-            ProtocolSettings.Initialize(config).Should().BeFalse();
-            ProtocolSettings.Default.Magic.Should().Be(expectedMagic);
         }
 
         [TestMethod]

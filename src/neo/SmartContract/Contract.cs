@@ -1,6 +1,7 @@
 using Neo.Cryptography.ECC;
 using Neo.VM;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.SmartContract
@@ -46,7 +47,7 @@ namespace Neo.SmartContract
             };
         }
 
-        public static Contract CreateMultiSigContract(int m, params ECPoint[] publicKeys)
+        public static Contract CreateMultiSigContract(int m, IReadOnlyCollection<ECPoint> publicKeys)
         {
             return new Contract
             {
@@ -55,9 +56,9 @@ namespace Neo.SmartContract
             };
         }
 
-        public static byte[] CreateMultiSigRedeemScript(int m, params ECPoint[] publicKeys)
+        public static byte[] CreateMultiSigRedeemScript(int m, IReadOnlyCollection<ECPoint> publicKeys)
         {
-            if (!(1 <= m && m <= publicKeys.Length && publicKeys.Length <= 1024))
+            if (!(1 <= m && m <= publicKeys.Count && publicKeys.Count <= 1024))
                 throw new ArgumentException();
             using (ScriptBuilder sb = new ScriptBuilder())
             {
@@ -66,7 +67,7 @@ namespace Neo.SmartContract
                 {
                     sb.EmitPush(publicKey.EncodePoint(true));
                 }
-                sb.EmitPush(publicKeys.Length);
+                sb.EmitPush(publicKeys.Count);
                 sb.EmitSysCall(ApplicationEngine.Neo_Crypto_CheckMultisig);
                 return sb.ToArray();
             }
@@ -91,9 +92,9 @@ namespace Neo.SmartContract
             }
         }
 
-        public static UInt160 GetBFTAddress(ECPoint[] pubkeys)
+        public static UInt160 GetBFTAddress(IReadOnlyCollection<ECPoint> pubkeys)
         {
-            return CreateMultiSigRedeemScript(pubkeys.Length - (pubkeys.Length - 1) / 3, pubkeys).ToScriptHash();
+            return CreateMultiSigRedeemScript(pubkeys.Count - (pubkeys.Count - 1) / 3, pubkeys).ToScriptHash();
         }
     }
 }
