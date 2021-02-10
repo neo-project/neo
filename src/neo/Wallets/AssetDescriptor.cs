@@ -26,7 +26,7 @@ namespace Neo.Wallets
                 script = sb.ToArray();
             }
             using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, settings: settings, gas: 0_10000000);
-            if (engine.State != VMState.HALT) throw new ArgumentException();
+            if (engine.State != VMState.HALT) throw new ArgumentException(null, nameof(asset_id));
             this.AssetId = asset_id;
             this.AssetName = contract.Manifest.Name;
             this.Symbol = engine.ResultStack.Pop().GetString();
