@@ -90,7 +90,7 @@ namespace Neo.Network.P2P.Payloads
             writer.WriteVarBytes(Data);
         }
 
-        internal bool Verify(ProtocolSettings settings, DataCache snapshot, ISet<UInt160> extensibleWitnessWhiteList)
+        public bool Verify(ProtocolSettings settings, DataCache snapshot, ISet<UInt160> extensibleWitnessWhiteList)
         {
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);
             if (height < ValidBlockStart || height >= ValidBlockEnd) return false;

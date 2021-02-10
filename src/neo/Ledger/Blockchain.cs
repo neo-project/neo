@@ -233,7 +233,7 @@ namespace Neo.Ledger
         private VerifyResult OnNewExtensiblePayload(ExtensiblePayload payload)
         {
             DataCache snapshot = system.StoreView;
-            extensibleWitnessWhiteList ??= UpdateExtensibleWitnessWhiteList(system.Settings, snapshot);
+            extensibleWitnessWhiteList ??= GetWitnessWhiteList(system.Settings, snapshot);
             if (!payload.Verify(system.Settings, snapshot, extensibleWitnessWhiteList)) return VerifyResult.Invalid;
             system.RelayCache.Add(payload);
             return VerifyResult.Succeed;
@@ -381,7 +381,7 @@ namespace Neo.Ledger
             Context.System.EventStream.Publish(rr);
         }
 
-        private static ImmutableHashSet<UInt160> UpdateExtensibleWitnessWhiteList(ProtocolSettings settings, DataCache snapshot)
+        public static ImmutableHashSet<UInt160> GetWitnessWhiteList(ProtocolSettings settings, DataCache snapshot)
         {
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             var builder = ImmutableHashSet.CreateBuilder<UInt160>();
