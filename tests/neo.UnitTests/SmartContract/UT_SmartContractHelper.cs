@@ -20,12 +20,6 @@ namespace Neo.UnitTests.SmartContract
         const byte Prefix_BlockHash = 9;
         const byte Prefix_Transaction = 11;
 
-        [TestInitialize]
-        public void TestSetup()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-        }
-
         [TestMethod]
         public void TestIsMultiSigContract()
         {
