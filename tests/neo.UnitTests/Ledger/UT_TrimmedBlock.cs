@@ -105,7 +105,7 @@ namespace Neo.UnitTests.Ledger
                 newBlock.Deserialize(reader);
             }
             tblock.Hashes.Length.Should().Be(newBlock.Hashes.Length);
-            tblock.Header.ToJson().ToString().Should().Be(newBlock.Header.ToJson().ToString());
+            tblock.Header.ToJson(ProtocolSettings.Default).ToString().Should().Be(newBlock.Header.ToJson(ProtocolSettings.Default).ToString());
         }
     }
 }

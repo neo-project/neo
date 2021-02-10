@@ -45,7 +45,7 @@ namespace Neo.Wallets.SQLite
         /// </summary>
         /// <param name="path">Path</param>
         /// <param name="passwordKey">Password Key</param>
-        private UserWallet(string path, byte[] passwordKey) : base(path)
+        private UserWallet(string path, byte[] passwordKey, ProtocolSettings settings) : base(path, settings)
         {
             this.salt = LoadStoredData("Salt");
             byte[] passwordHash = LoadStoredData("PasswordHash");
@@ -68,7 +68,7 @@ namespace Neo.Wallets.SQLite
         /// <param name="path">Path</param>
         /// <param name="passwordKey">Password Key</param>
         /// <param name="scrypt">Scrypt initialization value</param>
-        private UserWallet(string path, byte[] passwordKey, ScryptParameters scrypt) : base(path)
+        private UserWallet(string path, byte[] passwordKey, ProtocolSettings settings, ScryptParameters scrypt) : base(path, settings)
         {
             this.iv = new byte[16];
             this.salt = new byte[20];
@@ -117,13 +117,13 @@ namespace Neo.Wallets.SQLite
                         {
                             db_account = ctx.Accounts.Add(new Account
                             {
-                                Nep2key = account.Key.Export(passphrase, scrypt.N, scrypt.R, scrypt.P),
+                                Nep2key = account.Key.Export(passphrase, ProtocolSettings.AddressVersion, scrypt.N, scrypt.R, scrypt.P),
                                 PublicKeyHash = account.Key.PublicKeyHash.ToArray()
                             }).Entity;
                         }
                         else
                         {
-                            db_account.Nep2key = account.Key.Export(passphrase, scrypt.N, scrypt.R, scrypt.P);
+                            db_account.Nep2key = account.Key.Export(passphrase, ProtocolSettings.AddressVersion, scrypt.N, scrypt.R, scrypt.P);
                         }
                     }
                     if (account.Contract != null)
@@ -191,14 +191,14 @@ namespace Neo.Wallets.SQLite
             }
         }
 
-        public static UserWallet Create(string path, string password, ScryptParameters scrypt = null)
+        public static UserWallet Create(string path, string password, ProtocolSettings settings, ScryptParameters scrypt = null)
         {
-            return new UserWallet(path, password.ToAesKey(), scrypt ?? ScryptParameters.Default);
+            return new UserWallet(path, password.ToAesKey(), settings, scrypt ?? ScryptParameters.Default);
         }
 
-        public static UserWallet Create(string path, SecureString password, ScryptParameters scrypt = null)
+        public static UserWallet Create(string path, SecureString password, ProtocolSettings settings, ScryptParameters scrypt = null)
         {
-            return new UserWallet(path, password.ToAesKey(), scrypt ?? ScryptParameters.Default);
+            return new UserWallet(path, password.ToAesKey(), settings, scrypt ?? ScryptParameters.Default);
         }
 
         public override WalletAccount CreateAccount(byte[] privateKey)
@@ -209,7 +209,7 @@ namespace Neo.Wallets.SQLite
                 Script = SmartContract.Contract.CreateSignatureRedeemScript(key.PublicKey),
                 ParameterList = new[] { ContractParameterType.Signature }
             };
-            UserWalletAccount account = new UserWalletAccount(contract.ScriptHash)
+            UserWalletAccount account = new UserWalletAccount(contract.ScriptHash, ProtocolSettings)
             {
                 Key = key,
                 Contract = contract
@@ -229,7 +229,7 @@ namespace Neo.Wallets.SQLite
                     ParameterList = contract.ParameterList
                 };
             }
-            UserWalletAccount account = new UserWalletAccount(verification_contract.ScriptHash)
+            UserWalletAccount account = new UserWalletAccount(verification_contract.ScriptHash, ProtocolSettings)
             {
                 Key = key,
                 Contract = verification_contract
@@ -240,7 +240,7 @@ namespace Neo.Wallets.SQLite
 
         public override WalletAccount CreateAccount(UInt160 scriptHash)
         {
-            UserWalletAccount account = new UserWalletAccount(scriptHash);
+            UserWalletAccount account = new UserWalletAccount(scriptHash, ProtocolSettings);
             AddAccount(account);
             return account;
         }
@@ -303,13 +303,13 @@ namespace Neo.Wallets.SQLite
             using (WalletDataContext ctx = new WalletDataContext(Path))
             {
                 string passphrase = Encoding.UTF8.GetString(masterKey);
-                Dictionary<UInt160, UserWalletAccount> accounts = ctx.Addresses.Select(p => p.ScriptHash).AsEnumerable().Select(p => new UserWalletAccount(new UInt160(p))).ToDictionary(p => p.ScriptHash);
+                Dictionary<UInt160, UserWalletAccount> accounts = ctx.Addresses.Select(p => p.ScriptHash).AsEnumerable().Select(p => new UserWalletAccount(new UInt160(p), ProtocolSettings)).ToDictionary(p => p.ScriptHash);
                 foreach (Contract db_contract in ctx.Contracts.Include(p => p.Account))
                 {
                     VerificationContract contract = db_contract.RawData.AsSerializable<VerificationContract>();
                     UserWalletAccount account = accounts[contract.ScriptHash];
                     account.Contract = contract;
-                    account.Key = new KeyPair(GetPrivateKeyFromNEP2(db_contract.Account.Nep2key, passphrase, scrypt.N, scrypt.R, scrypt.P));
+                    account.Key = new KeyPair(GetPrivateKeyFromNEP2(db_contract.Account.Nep2key, passphrase, ProtocolSettings.AddressVersion, scrypt.N, scrypt.R, scrypt.P));
                 }
                 return accounts;
             }
@@ -323,14 +323,14 @@ namespace Neo.Wallets.SQLite
             }
         }
 
-        public static UserWallet Open(string path, string password)
+        public static UserWallet Open(string path, string password, ProtocolSettings settings)
         {
-            return new UserWallet(path, password.ToAesKey());
+            return new UserWallet(path, password.ToAesKey(), settings);
         }
 
-        public static UserWallet Open(string path, SecureString password)
+        public static UserWallet Open(string path, SecureString password, ProtocolSettings settings)
         {
-            return new UserWallet(path, password.ToAesKey());
+            return new UserWallet(path, password.ToAesKey(), settings);
         }
 
         private void SaveStoredData(string name, byte[] value)

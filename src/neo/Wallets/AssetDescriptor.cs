@@ -13,7 +13,7 @@ namespace Neo.Wallets
         public string Symbol { get; }
         public byte Decimals { get; }
 
-        public AssetDescriptor(DataCache snapshot, UInt160 asset_id)
+        public AssetDescriptor(DataCache snapshot, ProtocolSettings settings, UInt160 asset_id)
         {
             var contract = NativeContract.ContractManagement.GetContract(snapshot, asset_id);
             if (contract is null) throw new ArgumentException(null, nameof(asset_id));
@@ -25,7 +25,7 @@ namespace Neo.Wallets
                 sb.EmitDynamicCall(asset_id, "symbol", CallFlags.ReadOnly);
                 script = sb.ToArray();
             }
-            using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, gas: 0_10000000);
+            using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, settings: settings, gas: 0_10000000);
             if (engine.State != VMState.HALT) throw new ArgumentException();
             this.AssetId = asset_id;
             this.AssetName = contract.Manifest.Name;
