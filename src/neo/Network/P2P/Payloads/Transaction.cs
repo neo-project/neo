@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using static Neo.SmartContract.Helper;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads
@@ -296,13 +297,14 @@ namespace Neo.Network.P2P.Payloads
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
             if (net_fee < 0) return VerifyResult.InsufficientFunds;
 
+            if (net_fee > MaxVerificationGas) net_fee = MaxVerificationGas;
             uint execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (witnesses[i].VerificationScript.IsSignatureContract())
-                    net_fee -= execFeeFactor * SmartContract.Helper.SignatureContractCost();
+                    net_fee -= execFeeFactor * SignatureContractCost();
                 else if (witnesses[i].VerificationScript.IsMultiSigContract(out int m, out int n))
-                    net_fee -= execFeeFactor * SmartContract.Helper.MultiSignatureContractCost(m, n);
+                    net_fee -= execFeeFactor * MultiSignatureContractCost(m, n);
                 else
                 {
                     if (!this.VerifyWitness(settings, snapshot, hashes[i], witnesses[i], net_fee, out long fee))
@@ -325,11 +327,17 @@ namespace Neo.Network.P2P.Payloads
             {
                 return VerifyResult.Invalid;
             }
+            long net_fee = Math.Min(NetworkFee, MaxVerificationGas);
             UInt160[] hashes = GetScriptHashesForVerifying(null);
             for (int i = 0; i < hashes.Length; i++)
                 if (witnesses[i].VerificationScript.IsStandardContract())
-                    if (!this.VerifyWitness(settings, null, hashes[i], witnesses[i], SmartContract.Helper.MaxVerificationGas, out _))
+                    if (!this.VerifyWitness(settings, null, hashes[i], witnesses[i], net_fee, out long fee))
                         return VerifyResult.Invalid;
+                    else
+                    {
+                        net_fee -= fee;
+                        if (net_fee < 0) return VerifyResult.InsufficientFunds;
+                    }
             return VerifyResult.Succeed;
         }
 
