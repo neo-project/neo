@@ -8,7 +8,7 @@ namespace Neo.UnitTests.SmartContract
     public class UT_DeployedContract
     {
         [TestMethod]
-        public void TestGetAddress()
+        public void TestGetScriptHash()
         {
             var contract = new DeployedContract(new ContractState()
             {
@@ -31,7 +31,6 @@ namespace Neo.UnitTests.SmartContract
             });
 
             Assert.AreEqual("0xb2e3fe334830b4741fa5d762f2ab36b90b86c49b", contract.ScriptHash.ToString());
-            Assert.AreEqual("Na7bMBy8KWZKSFBWTxeSKth1Je9AcWTpQM", contract.Address);
         }
 
         [TestMethod]

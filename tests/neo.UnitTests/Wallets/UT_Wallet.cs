@@ -20,6 +20,10 @@ namespace Neo.UnitTests.Wallets
 
         Dictionary<UInt160, WalletAccount> accounts = new Dictionary<UInt160, WalletAccount>();
 
+        public MyWallet() : base(null, ProtocolSettings.Default)
+        {
+        }
+
         public override bool ChangePassword(string oldPassword, string newPassword)
         {
             throw new NotImplementedException();
@@ -100,7 +104,7 @@ namespace Neo.UnitTests.Wallets
         public static void ClassInit(TestContext context)
         {
             glkey = UT_Crypto.generateCertainKey(32);
-            nep2Key = glkey.Export("pwd", 2, 1, 1);
+            nep2Key = glkey.Export("pwd", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
         }
 
         [TestMethod]
@@ -233,19 +237,19 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestGetPrivateKeyFromNEP2()
         {
-            Action action = () => Wallet.GetPrivateKeyFromNEP2(null, null, 2, 1, 1);
+            Action action = () => Wallet.GetPrivateKeyFromNEP2(null, null, ProtocolSettings.Default.AddressVersion, 2, 1, 1);
             action.Should().Throw<ArgumentNullException>();
 
-            action = () => Wallet.GetPrivateKeyFromNEP2("TestGetPrivateKeyFromNEP2", null, 2, 1, 1);
+            action = () => Wallet.GetPrivateKeyFromNEP2("TestGetPrivateKeyFromNEP2", null, ProtocolSettings.Default.AddressVersion, 2, 1, 1);
             action.Should().Throw<ArgumentNullException>();
 
-            action = () => Wallet.GetPrivateKeyFromNEP2("3vQB7B6MrGQZaxCuFg4oh", "TestGetPrivateKeyFromNEP2", 2, 1, 1);
+            action = () => Wallet.GetPrivateKeyFromNEP2("3vQB7B6MrGQZaxCuFg4oh", "TestGetPrivateKeyFromNEP2", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
             action.Should().Throw<FormatException>();
 
-            action = () => Wallet.GetPrivateKeyFromNEP2(nep2Key, "Test", 2, 1, 1);
+            action = () => Wallet.GetPrivateKeyFromNEP2(nep2Key, "Test", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
             action.Should().Throw<FormatException>();
 
-            Wallet.GetPrivateKeyFromNEP2(nep2Key, "pwd", 2, 1, 1).Should().BeEquivalentTo(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 });
+            Wallet.GetPrivateKeyFromNEP2(nep2Key, "pwd", ProtocolSettings.Default.AddressVersion, 2, 1, 1).Should().BeEquivalentTo(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 });
         }
 
         [TestMethod]

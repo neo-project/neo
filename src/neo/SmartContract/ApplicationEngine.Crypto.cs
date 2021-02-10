@@ -16,7 +16,7 @@ namespace Neo.SmartContract
         {
             try
             {
-                return Crypto.VerifySignature(ScriptContainer.GetHashData(), signature, pubkey, ECCurve.Secp256r1);
+                return Crypto.VerifySignature(ScriptContainer.GetSignData(ProtocolSettings.Magic), signature, pubkey, ECCurve.Secp256r1);
             }
             catch (ArgumentException)
             {
@@ -26,7 +26,7 @@ namespace Neo.SmartContract
 
         protected internal bool CheckMultisig(byte[][] pubkeys, byte[][] signatures)
         {
-            byte[] message = ScriptContainer.GetHashData();
+            byte[] message = ScriptContainer.GetSignData(ProtocolSettings.Magic);
             int m = signatures.Length, n = pubkeys.Length;
             if (n == 0 || m == 0 || m > n) throw new ArgumentException();
             AddGas(CheckSigPrice * n * exec_fee_factor);

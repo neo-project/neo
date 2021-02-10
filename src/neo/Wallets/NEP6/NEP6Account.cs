@@ -4,7 +4,7 @@ using System.Threading;
 
 namespace Neo.Wallets.NEP6
 {
-    internal class NEP6Account : WalletAccount
+    sealed class NEP6Account : WalletAccount
     {
         private readonly NEP6Wallet wallet;
         private string nep2key;
@@ -16,21 +16,21 @@ namespace Neo.Wallets.NEP6
         public override bool HasKey => nep2key != null;
 
         public NEP6Account(NEP6Wallet wallet, UInt160 scriptHash, string nep2key = null)
-            : base(scriptHash)
+            : base(scriptHash, wallet.ProtocolSettings)
         {
             this.wallet = wallet;
             this.nep2key = nep2key;
         }
 
         public NEP6Account(NEP6Wallet wallet, UInt160 scriptHash, KeyPair key, string password)
-            : this(wallet, scriptHash, key.Export(password, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P))
+            : this(wallet, scriptHash, key.Export(password, wallet.ProtocolSettings.AddressVersion, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P))
         {
             this.key = key;
         }
 
         public static NEP6Account FromJson(JObject json, NEP6Wallet wallet)
         {
-            return new NEP6Account(wallet, json["address"].AsString().ToScriptHash(), json["key"]?.AsString())
+            return new NEP6Account(wallet, json["address"].AsString().ToScriptHash(wallet.ProtocolSettings.AddressVersion), json["key"]?.AsString())
             {
                 Label = json["label"]?.AsString(),
                 IsDefault = json["isdefault"].AsBoolean(),
@@ -55,7 +55,7 @@ namespace Neo.Wallets.NEP6
             if (nep2key == null) return null;
             if (key == null)
             {
-                key = new KeyPair(Wallet.GetPrivateKeyFromNEP2(nep2key, password, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P));
+                key = new KeyPair(Wallet.GetPrivateKeyFromNEP2(nep2key, password, ProtocolSettings.AddressVersion, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P));
             }
             return key;
         }
@@ -63,7 +63,7 @@ namespace Neo.Wallets.NEP6
         public JObject ToJson()
         {
             JObject account = new JObject();
-            account["address"] = ScriptHash.ToAddress();
+            account["address"] = ScriptHash.ToAddress(ProtocolSettings.AddressVersion);
             account["label"] = Label;
             account["isdefault"] = IsDefault;
             account["lock"] = Lock;
@@ -77,7 +77,7 @@ namespace Neo.Wallets.NEP6
         {
             try
             {
-                Wallet.GetPrivateKeyFromNEP2(nep2key, password, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P);
+                Wallet.GetPrivateKeyFromNEP2(nep2key, password, ProtocolSettings.AddressVersion, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P);
                 return true;
             }
             catch (FormatException)
@@ -104,14 +104,14 @@ namespace Neo.Wallets.NEP6
             {
                 try
                 {
-                    keyTemplate = new KeyPair(Wallet.GetPrivateKeyFromNEP2(nep2key, password_old, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P));
+                    keyTemplate = new KeyPair(Wallet.GetPrivateKeyFromNEP2(nep2key, password_old, ProtocolSettings.AddressVersion, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P));
                 }
                 catch
                 {
                     return false;
                 }
             }
-            nep2KeyNew = keyTemplate.Export(password_new, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P);
+            nep2KeyNew = keyTemplate.Export(password_new, ProtocolSettings.AddressVersion, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P);
             return true;
         }
 

@@ -220,9 +220,9 @@ namespace Neo.UnitTests.SmartContract
                 snapshot.DeleteContract(contractA.Hash);
                 snapshot.DeleteContract(contractB.Hash);
                 snapshot.DeleteContract(contractC.Hash);
-                contractA.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
-                contractB.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
-                contractC.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
+                contractA.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.String, ContractParameterType.Integer);
+                contractB.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.String, ContractParameterType.Integer);
+                contractC.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.String, ContractParameterType.Integer);
                 snapshot.AddContract(contractA.Hash, contractA);
                 snapshot.AddContract(contractB.Hash, contractB);
                 snapshot.AddContract(contractC.Hash, contractC);
@@ -232,10 +232,10 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitDynamicCall(contractA.Hash, "dummyMain", 0, 1);
-                script.EmitDynamicCall(contractB.Hash, "dummyMain", 0, 1);
-                script.EmitDynamicCall(contractB.Hash, "dummyMain", 0, 1);
-                script.EmitDynamicCall(contractC.Hash, "dummyMain", 0, 1);
+                script.EmitDynamicCall(contractA.Hash, "dummyMain", "0", 1);
+                script.EmitDynamicCall(contractB.Hash, "dummyMain", "0", 1);
+                script.EmitDynamicCall(contractB.Hash, "dummyMain", "0", 1);
+                script.EmitDynamicCall(contractC.Hash, "dummyMain", "0", 1);
 
                 // Execute
 
