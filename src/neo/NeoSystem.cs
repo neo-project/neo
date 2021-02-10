@@ -8,7 +8,10 @@ using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.VM;
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using static Neo.Ledger.Blockchain;
 
 namespace Neo
@@ -36,15 +39,18 @@ namespace Neo
         public HeaderCache HeaderCache { get; } = new HeaderCache();
         internal RelayCache RelayCache { get; } = new RelayCache(100);
 
+        private ImmutableList<object> services = ImmutableList<object>.Empty;
         private readonly string storage_engine;
         private readonly IStore store;
         private ChannelsConfig start_message = null;
-        private bool suspend = false;
+        private int suspend = 0;
 
         static NeoSystem()
         {
             // Unify unhandled exceptions
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
+            Plugin.LoadPlugins();
         }
 
         public NeoSystem(ProtocolSettings settings, string storageEngine = null, string storagePath = null)
@@ -68,16 +74,15 @@ namespace Neo
                 },
                 Transactions = Array.Empty<Transaction>()
             };
-            Plugin.LoadPlugins(this);
             this.storage_engine = storageEngine;
             this.store = LoadStore(storagePath);
             this.MemPool = new MemoryPool(this);
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
-            foreach (var plugin in Plugin.Plugins)
-                plugin.OnPluginsLoaded();
             Blockchain.Ask<FillCompleted>(new FillMemoryPool { Transactions = Enumerable.Empty<Transaction>() }).Wait();
+            foreach (var plugin in Plugin.Plugins)
+                plugin.OnSystemLoaded(this);
         }
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -97,6 +102,20 @@ namespace Neo
             store.Dispose();
         }
 
+        public void AddService(object service)
+        {
+            ImmutableInterlocked.Update(ref services, p => p.Add(service));
+        }
+
+        public T GetService<T>(Func<T, bool> filter = null)
+        {
+            IEnumerable<T> result = services.OfType<T>();
+            if (filter is null)
+                return result.FirstOrDefault();
+            else
+                return result.FirstOrDefault(filter);
+        }
+
         public void EnsureStoped(IActorRef actor)
         {
             using Inbox inbox = Inbox.Create(ActorSystem);
@@ -112,30 +131,32 @@ namespace Neo
                 : Plugin.Storages[storage_engine].GetStore(path);
         }
 
-        internal void ResumeNodeStartup()
+        public bool ResumeNodeStartup()
         {
-            suspend = false;
+            if (Interlocked.Decrement(ref suspend) != 0)
+                return false;
             if (start_message != null)
             {
                 LocalNode.Tell(start_message);
                 start_message = null;
             }
+            return true;
         }
 
         public void StartNode(ChannelsConfig config)
         {
             start_message = config;
 
-            if (!suspend)
+            if (suspend == 0)
             {
                 LocalNode.Tell(start_message);
                 start_message = null;
             }
         }
 
-        internal void SuspendNodeStartup()
+        public void SuspendNodeStartup()
         {
-            suspend = true;
+            Interlocked.Increment(ref suspend);
         }
 
         public SnapshotCache GetSnapshot()

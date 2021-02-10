@@ -335,14 +335,14 @@ namespace Neo.Ledger
                     all_application_executed.Add(application_executed);
                 }
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
-                    plugin.OnPersist(block, snapshot, all_application_executed);
+                    plugin.OnPersist(system, block, snapshot, all_application_executed);
                 snapshot.Commit();
                 List<Exception> commitExceptions = null;
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                 {
                     try
                     {
-                        plugin.OnCommit(block, snapshot);
+                        plugin.OnCommit(system, block, snapshot);
                     }
                     catch (Exception ex)
                     {
