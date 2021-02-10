@@ -136,10 +136,10 @@ namespace Neo.Wallets
                 sb.EmitPush(0);
                 foreach (UInt160 account in accounts)
                 {
-                    sb.EmitDynamicCall(asset_id, "balanceOf", account);
+                    sb.EmitDynamicCall(asset_id, "balanceOf", CallFlags.ReadOnly, account);
                     sb.Emit(OpCode.ADD);
                 }
-                sb.EmitDynamicCall(asset_id, "decimals");
+                sb.EmitDynamicCall(asset_id, "decimals", CallFlags.ReadOnly);
                 script = sb.ToArray();
             }
             using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, settings: ProtocolSettings, gas: 20000000L * accounts.Length);
@@ -261,10 +261,10 @@ namespace Neo.Wallets
                     foreach (UInt160 account in accounts)
                         using (ScriptBuilder sb2 = new ScriptBuilder())
                         {
-                            sb2.EmitDynamicCall(assetId, "balanceOf", account);
+                            sb2.EmitDynamicCall(assetId, "balanceOf", CallFlags.ReadOnly, account);
                             using (ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot, settings: ProtocolSettings))
                             {
-                                if (engine.State.HasFlag(VMState.FAULT))
+                                if (engine.State != VMState.HALT)
                                     throw new InvalidOperationException($"Execution for {assetId}.balanceOf('{account}' fault");
                                 BigInteger value = engine.ResultStack.Pop().GetInteger();
                                 if (value.Sign > 0) balances.Add((account, value));
