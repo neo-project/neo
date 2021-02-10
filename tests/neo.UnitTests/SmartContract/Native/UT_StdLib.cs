@@ -11,12 +11,6 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_StdLib
     {
-        [TestInitialize]
-        public void Init()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-        }
-
         [TestMethod]
         public void TestBinary()
         {

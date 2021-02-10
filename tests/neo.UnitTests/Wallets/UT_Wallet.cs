@@ -107,12 +107,6 @@ namespace Neo.UnitTests.Wallets
             nep2Key = glkey.Export("pwd", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
         }
 
-        [TestInitialize]
-        public void TestSetup()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-        }
-
         [TestMethod]
         public void TestContains()
         {

@@ -10,12 +10,6 @@ namespace Neo.UnitTests.SmartContract
     {
         private string eventName = null;
 
-        [TestInitialize]
-        public void TestSetup()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-        }
-
         [TestMethod]
         public void TestNotify()
         {
