@@ -348,6 +348,7 @@ namespace Neo.Wallets
                 }
 
                 tx.NetworkFee = CalculateNetworkFee(snapshot, tx);
+                if (tx.NetworkFee > MaxVerificationGas) throw new InvalidOperationException("Required GAS it's higher than maximum allowed");
                 if (value >= tx.SystemFee + tx.NetworkFee) return tx;
             }
             throw new InvalidOperationException("Insufficient GAS");
