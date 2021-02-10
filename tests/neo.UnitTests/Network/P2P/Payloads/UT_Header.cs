@@ -17,7 +17,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestInitialize]
         public void TestSetup()
         {
-            TestBlockchain.InitializeMockNeoSystem();
             uut = new Header();
         }
 

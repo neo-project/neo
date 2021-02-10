@@ -30,7 +30,6 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestInitialize]
         public void TestSetup()
         {
-            TestBlockchain.InitializeMockNeoSystem();
             _snapshot = TestBlockchain.GetTestSnapshot();
             _persistingBlock = new Block
             {

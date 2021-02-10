@@ -8,12 +8,6 @@ namespace Neo.UnitTests.Wallets
     [TestClass]
     public class UT_AssetDescriptor
     {
-        [TestInitialize]
-        public void TestSetup()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-        }
-
         [TestMethod]
         public void TestConstructorWithNonexistAssetId()
         {

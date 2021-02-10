@@ -1,4 +1,3 @@
-using Akka.TestKit;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -23,17 +22,6 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public partial class UT_InteropService : TestKit
     {
-        private TestProbe senderProbe;
-
-        [TestInitialize]
-        public void TestSetup()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-            senderProbe = CreateTestProbe();
-            senderProbe.Send(TestBlockchain.TheNeoSystem.Blockchain, new object());
-            senderProbe.ExpectNoMsg(); // Ensure blockchain it's created
-        }
-
         [TestMethod]
         public void Runtime_GetNotifications_Test()
         {

@@ -20,7 +20,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void TestSetup()
         {
             uut = new Witness();
-            TestBlockchain.InitializeMockNeoSystem();
         }
 
         [TestMethod]

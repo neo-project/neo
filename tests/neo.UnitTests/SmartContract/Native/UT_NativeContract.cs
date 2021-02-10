@@ -12,12 +12,6 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_NativeContract
     {
-        [TestInitialize]
-        public void TestSetup()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-        }
-
         private static readonly TestNativeContract testNativeContract = new TestNativeContract();
 
         [TestMethod]
