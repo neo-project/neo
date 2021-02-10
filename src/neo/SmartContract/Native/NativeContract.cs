@@ -50,9 +50,9 @@ namespace Neo.SmartContract.Native
             {
                 foreach (ContractMethodMetadata method in descriptors)
                 {
-                    method.Descriptor.Offset = sb.Offset;
+                    method.Descriptor.Offset = sb.Length;
                     sb.EmitPush(0); //version
-                    methods.Add(sb.Offset, method);
+                    methods.Add(sb.Length, method);
                     sb.EmitSysCall(ApplicationEngine.System_Contract_CallNative);
                     sb.Emit(OpCode.RET);
                 }
