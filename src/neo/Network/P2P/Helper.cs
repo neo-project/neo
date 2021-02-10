@@ -18,10 +18,11 @@ namespace Neo.Network.P2P
 
         public static byte[] GetSignData(this IVerifiable verifiable, uint magic)
         {
+            UInt256 hash = verifiable.CalculateHash();
             using MemoryStream ms = new MemoryStream();
             using BinaryWriter writer = new BinaryWriter(ms);
             writer.Write(magic);
-            writer.Write(verifiable.Hash);
+            writer.Write(hash);
             writer.Flush();
             return ms.ToArray();
         }

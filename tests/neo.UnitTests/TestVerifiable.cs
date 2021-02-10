@@ -9,7 +9,6 @@ namespace Neo.UnitTests
     {
         private readonly string testStr = "testStr";
 
-        public UInt256 Hash => Neo.Network.P2P.Helper.CalculateHash(this);
         public Witness[] Witnesses
         {
             get => throw new NotImplementedException();
