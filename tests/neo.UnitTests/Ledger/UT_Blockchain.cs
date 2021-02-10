@@ -24,11 +24,7 @@ namespace Neo.UnitTests.Ledger
         public void Initialize()
         {
             system = TestBlockchain.TheNeoSystem;
-
             senderProbe = CreateTestProbe();
-            senderProbe.Send(system.Blockchain, new object());
-            senderProbe.ExpectNoMsg(); // Ensure blockchain it's created
-
             txSample = new Transaction()
             {
                 Attributes = Array.Empty<TransactionAttribute>(),
