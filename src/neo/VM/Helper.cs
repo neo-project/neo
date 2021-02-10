@@ -1,9 +1,7 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
-using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.SmartContract.Native;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -50,10 +48,10 @@ namespace Neo.VM
 
         public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params object[] args)
         {
-            return EmitDynamicCall(sb, null, scriptHash, operation, args);
+            return EmitDynamicCall(sb, scriptHash, operation, CallFlags.All, args);
         }
 
-        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, DataCache snapshot, UInt160 scriptHash, string operation, params object[] args)
+        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, CallFlags flags, params object[] args)
         {
             if (args.Length == 0)
             {
@@ -66,23 +64,7 @@ namespace Neo.VM
                 sb.EmitPush(args.Length);
                 sb.Emit(OpCode.PACK);
             }
-            if (snapshot != null)
-            {
-                // check safe execution
-                var contract = NativeContract.ContractManagement.GetContract(snapshot, scriptHash);
-                if (contract?.Manifest.Abi.GetMethod(operation, args.Length)?.Safe == true)
-                {
-                    sb.EmitPush(CallFlags.ReadOnly | CallFlags.AllowNotify);
-                }
-                else
-                {
-                    sb.EmitPush(CallFlags.All);
-                }
-            }
-            else
-            {
-                sb.EmitPush(CallFlags.All);
-            }
+            sb.EmitPush(flags);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
             sb.EmitSysCall(ApplicationEngine.System_Contract_Call);

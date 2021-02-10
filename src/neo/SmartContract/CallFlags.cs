@@ -14,6 +14,7 @@ namespace Neo.SmartContract
 
         States = ReadStates | WriteStates,
         ReadOnly = ReadStates | AllowCall,
+        Safe = ReadStates | AllowCall | AllowNotify,
         All = States | AllowCall | AllowNotify
     }
 }
