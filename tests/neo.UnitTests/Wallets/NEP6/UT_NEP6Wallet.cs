@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
+using Neo.SmartContract;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using Neo.Wallets.SQLite;
@@ -10,6 +11,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
+using Contract = Neo.SmartContract.Contract;
 
 namespace Neo.UnitTests.Wallets.NEP6
 {
@@ -39,7 +41,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             }
             keyPair = new KeyPair(privateKey);
             testScriptHash = Neo.SmartContract.Contract.CreateSignatureContract(keyPair.PublicKey).ScriptHash;
-            nep2key = keyPair.Export("123", 2, 1, 1);
+            nep2key = keyPair.Export("123", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
         }
 
         private NEP6Wallet CreateWallet()
@@ -80,7 +82,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             wallet["accounts"] = new JArray();
             wallet["extra"] = new JObject();
             File.WriteAllText(wPath, wallet.ToString());
-            uut = new NEP6Wallet(wPath);
+            uut = new NEP6Wallet(wPath, ProtocolSettings.Default);
             uut.Unlock("123");
             uut.CreateAccount(keyPair.PrivateKey);
             uut.ChangePassword("456", "123").Should().BeFalse();
@@ -93,11 +95,11 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestConstructorWithPathAndName()
         {
-            NEP6Wallet wallet = new NEP6Wallet(wPath);
+            NEP6Wallet wallet = new NEP6Wallet(wPath, ProtocolSettings.Default);
             Assert.AreEqual("name", wallet.Name);
             Assert.AreEqual(new ScryptParameters(2, 1, 1).ToJson().ToString(), wallet.Scrypt.ToJson().ToString());
             Assert.AreEqual(new Version("3.0").ToString(), wallet.Version.ToString());
-            wallet = new NEP6Wallet("", "test");
+            wallet = new NEP6Wallet("", ProtocolSettings.Default, "test");
             Assert.AreEqual("test", wallet.Name);
             Assert.AreEqual(ScryptParameters.Default.ToJson().ToString(), wallet.Scrypt.ToJson().ToString());
             Assert.AreEqual(Version.Parse("3.0"), wallet.Version);
@@ -113,7 +115,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             wallet["accounts"] = new JArray();
             wallet["extra"] = new JObject();
             wallet.ToString().Should().Be("{\"name\":\"test\",\"version\":\"3.0\",\"scrypt\":{\"n\":16384,\"r\":8,\"p\":8},\"accounts\":[],\"extra\":{}}");
-            NEP6Wallet w = new NEP6Wallet(wallet);
+            NEP6Wallet w = new NEP6Wallet(null, ProtocolSettings.Default, wallet);
             Assert.AreEqual("test", w.Name);
             Assert.AreEqual(Version.Parse("3.0").ToString(), w.Version.ToString());
         }
@@ -205,7 +207,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestDecryptKey()
         {
-            string nep2key = keyPair.Export("123", 2, 1, 1);
+            string nep2key = keyPair.Export("123", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
             uut.Unlock("123");
             KeyPair key1 = uut.DecryptKey(nep2key);
             bool result = key1.Equals(keyPair);
@@ -235,13 +237,13 @@ namespace Neo.UnitTests.Wallets.NEP6
             result = uut.Contains(testScriptHash);
             Assert.AreEqual(true, result);
             WalletAccount account = uut.GetAccount(testScriptHash);
-            Assert.AreEqual(Neo.SmartContract.Contract.CreateSignatureContract(keyPair.PublicKey).Address, account.Address);
+            Assert.AreEqual(Contract.CreateSignatureRedeemScript(keyPair.PublicKey).ToScriptHash().ToAddress(ProtocolSettings.Default.AddressVersion), account.Address);
         }
 
         [TestMethod]
         public void TestGetAccounts()
         {
-            Dictionary<string, KeyPair> keys = new Dictionary<string, KeyPair>();
+            Dictionary<UInt160, KeyPair> keys = new Dictionary<UInt160, KeyPair>();
             uut.Unlock("123");
             byte[] privateKey = new byte[32];
             using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
@@ -249,14 +251,13 @@ namespace Neo.UnitTests.Wallets.NEP6
                 rng.GetBytes(privateKey);
             }
             KeyPair key = new KeyPair(privateKey);
-            Neo.SmartContract.Contract contract = Neo.SmartContract.Contract.CreateSignatureContract(key.PublicKey);
-            keys.Add(contract.Address, key);
-            keys.Add(Neo.SmartContract.Contract.CreateSignatureContract(keyPair.PublicKey).Address, keyPair);
+            keys.Add(Contract.CreateSignatureRedeemScript(key.PublicKey).ToScriptHash(), key);
+            keys.Add(Contract.CreateSignatureRedeemScript(keyPair.PublicKey).ToScriptHash(), keyPair);
             uut.CreateAccount(key.PrivateKey);
             uut.CreateAccount(keyPair.PrivateKey);
             foreach (var account in uut.GetAccounts())
             {
-                if (!keys.TryGetValue(account.Address, out KeyPair k))
+                if (!keys.ContainsKey(account.ScriptHash))
                 {
                     Assert.Fail();
                 }
@@ -319,7 +320,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             wallet["scrypt"] = new ScryptParameters(2, 1, 1).ToJson();
             wallet["accounts"] = new JArray();
             wallet["extra"] = new JObject();
-            uut = new NEP6Wallet(wallet);
+            uut = new NEP6Wallet(null, ProtocolSettings.Default, wallet);
             result = uut.Contains(testScriptHash);
             Assert.AreEqual(false, result);
             uut.Import(nep2key, "123", 2, 1, 1);
@@ -344,10 +345,10 @@ namespace Neo.UnitTests.Wallets.NEP6
         public void TestMigrate()
         {
             string path = GetRandomPath();
-            UserWallet uw = UserWallet.Create(path, "123");
+            UserWallet uw = UserWallet.Create(path, "123", ProtocolSettings.Default);
             uw.CreateAccount(keyPair.PrivateKey);
             string npath = CreateWalletFile();  // Scrypt test values
-            NEP6Wallet nw = NEP6Wallet.Migrate(npath, path, "123");
+            NEP6Wallet nw = NEP6Wallet.Migrate(npath, path, "123", ProtocolSettings.Default);
             bool result = nw.Contains(testScriptHash);
             Assert.AreEqual(true, result);
             if (File.Exists(path)) File.Delete(path);
@@ -364,7 +365,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             wallet["accounts"] = new JArray();
             wallet["extra"] = new JObject();
             File.WriteAllText(wPath, wallet.ToString());
-            uut = new NEP6Wallet(wPath);
+            uut = new NEP6Wallet(wPath, ProtocolSettings.Default);
             uut.Unlock("123");
             uut.CreateAccount(keyPair.PrivateKey);
             bool result = uut.Contains(testScriptHash);
@@ -405,8 +406,8 @@ namespace Neo.UnitTests.Wallets.NEP6
             wallet["scrypt"] = new ScryptParameters(2, 1, 1).ToJson();
             wallet["accounts"] = new JArray();
             wallet["extra"] = new JObject();
-            uut = new NEP6Wallet(wallet);
-            nep2key = keyPair.Export("123", 2, 1, 1);
+            uut = new NEP6Wallet(null, ProtocolSettings.Default, wallet);
+            nep2key = keyPair.Export("123", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
             uut.Import(nep2key, "123", 2, 1, 1);
             Assert.IsFalse(uut.VerifyPassword("1"));
             Assert.IsTrue(uut.VerifyPassword("123"));

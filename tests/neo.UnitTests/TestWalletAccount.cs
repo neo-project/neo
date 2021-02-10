@@ -13,7 +13,7 @@ namespace Neo.UnitTests
         public override KeyPair GetKey() => key;
 
         public TestWalletAccount(UInt160 hash)
-            : base(hash)
+            : base(hash, ProtocolSettings.Default)
         {
             var mock = new Mock<Contract>();
             mock.SetupGet(p => p.ScriptHash).Returns(hash);

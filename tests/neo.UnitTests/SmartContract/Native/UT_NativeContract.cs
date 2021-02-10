@@ -122,14 +122,6 @@ namespace Neo.UnitTests.SmartContract.Native
             ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 0);
             testNativeContract.TestTrigger(engine2);
         }
-
-        [TestMethod]
-        public void TestTestCall()
-        {
-            var snapshot = TestBlockchain.GetTestSnapshot();
-            ApplicationEngine engine = testNativeContract.TestCall(snapshot, "System.Blockchain.GetHeight", 0);
-            engine.ResultStack.Should().BeEmpty();
-        }
     }
 
     public class TestNativeContract : NativeContract
