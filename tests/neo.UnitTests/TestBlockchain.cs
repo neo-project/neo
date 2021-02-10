@@ -14,8 +14,6 @@ namespace Neo.UnitTests
             TheNeoSystem = new NeoSystem(ProtocolSettings.Default, null, null);
         }
 
-        public static void InitializeMockNeoSystem() { }
-
         internal static DataCache GetTestSnapshot()
         {
             return TheNeoSystem.GetSnapshot().CreateSnapshot();

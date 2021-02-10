@@ -9,12 +9,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     [TestClass]
     public class UT_MerkleBlockPayload
     {
-        [TestInitialize]
-        public void TestSetup()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-        }
-
         [TestMethod]
         public void Size_Get()
         {

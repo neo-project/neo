@@ -23,7 +23,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestInitialize]
         public void TestSetup()
         {
-            TestBlockchain.InitializeMockNeoSystem();
             uut = new Transaction();
         }
 
@@ -1060,9 +1059,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }
             };
 
-            JObject jObj = uut.ToJson();
+            JObject jObj = uut.ToJson(ProtocolSettings.Default);
             jObj.Should().NotBeNull();
-            jObj["hash"].AsString().Should().Be("0xe17382d26702bde77b00a9f23ea156b77c418764cbc45b2692088b5fde0336e3");
+            jObj["hash"].AsString().Should().Be("0x0ab073429086d9e48fc87386122917989705d1c81fe4a60bf90e2fc228de3146");
             jObj["size"].AsNumber().Should().Be(84);
             jObj["version"].AsNumber().Should().Be(0);
             ((JArray)jObj["attributes"]).Count.Should().Be(0);

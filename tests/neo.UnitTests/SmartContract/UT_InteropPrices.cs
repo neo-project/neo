@@ -9,12 +9,6 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_InteropPrices
     {
-        [TestInitialize]
-        public void Initialize()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-        }
-
         [TestMethod]
         public void ApplicationEngineFixedPrices()
         {
