@@ -327,7 +327,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 return VerifyResult.Invalid;
             }
-            long net_fee = MaxVerificationGas;
+            long net_fee = Math.Min(NetworkFee, MaxVerificationGas);
             UInt160[] hashes = GetScriptHashesForVerifying(null);
             for (int i = 0; i < hashes.Length; i++)
                 if (witnesses[i].VerificationScript.IsStandardContract())
