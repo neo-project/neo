@@ -260,14 +260,14 @@ namespace Neo.Network.P2P.Payloads
             writer.WriteVarBytes(Script);
         }
 
-        public JObject ToJson()
+        public JObject ToJson(ProtocolSettings settings)
         {
             JObject json = new JObject();
             json["hash"] = Hash.ToString();
             json["size"] = Size;
             json["version"] = Version;
             json["nonce"] = Nonce;
-            json["sender"] = Sender.ToAddress();
+            json["sender"] = Sender.ToAddress(settings.AddressVersion);
             json["sysfee"] = SystemFee.ToString();
             json["netfee"] = NetworkFee.ToString();
             json["validuntilblock"] = ValidUntilBlock;

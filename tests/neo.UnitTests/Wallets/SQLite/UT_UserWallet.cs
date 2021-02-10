@@ -29,7 +29,7 @@ namespace Neo.UnitTests.Wallets.SQLite
         public static void Setup(TestContext ctx)
         {
             path = GetRandomPath();
-            wallet = UserWallet.Create(path, "123456", new ScryptParameters(2, 1, 1));
+            wallet = UserWallet.Create(path, "123456", ProtocolSettings.Default, new ScryptParameters(2, 1, 1));
             byte[] privateKey = new byte[32];
             using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
             {
@@ -131,14 +131,14 @@ namespace Neo.UnitTests.Wallets.SQLite
             ss.AppendChar('b');
             ss.AppendChar('c');
 
-            var w1 = UserWallet.Create(myPath, ss, new ScryptParameters(0, 0, 0));
+            var w1 = UserWallet.Create(myPath, ss, ProtocolSettings.Default, new ScryptParameters(0, 0, 0));
             w1.Should().NotBeNull();
 
-            var w2 = UserWallet.Open(myPath, ss);
+            var w2 = UserWallet.Open(myPath, ss, ProtocolSettings.Default);
             w2.Should().NotBeNull();
 
             ss.AppendChar('d');
-            Action action = () => UserWallet.Open(myPath, ss);
+            Action action = () => UserWallet.Open(myPath, ss, ProtocolSettings.Default);
             action.Should().Throw<CryptographicException>();
 
             TestUtils.DeleteFile(myPath);
@@ -171,10 +171,10 @@ namespace Neo.UnitTests.Wallets.SQLite
         [TestMethod]
         public void TestOpen()
         {
-            var w1 = UserWallet.Open(path, "123456");
+            var w1 = UserWallet.Open(path, "123456", ProtocolSettings.Default);
             w1.Should().NotBeNull();
 
-            Action action = () => UserWallet.Open(path, "123");
+            Action action = () => UserWallet.Open(path, "123", ProtocolSettings.Default);
             action.Should().Throw<CryptographicException>();
         }
 

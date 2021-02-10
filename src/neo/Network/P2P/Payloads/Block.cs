@@ -67,11 +67,11 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer) => ((IVerifiable)Header).SerializeUnsigned(writer);
 
-        public JObject ToJson()
+        public JObject ToJson(ProtocolSettings settings)
         {
-            JObject json = Header.ToJson();
+            JObject json = Header.ToJson(settings);
             json["size"] = Size;
-            json["tx"] = Transactions.Select(p => p.ToJson()).ToArray();
+            json["tx"] = Transactions.Select(p => p.ToJson(settings)).ToArray();
             return json;
         }
 

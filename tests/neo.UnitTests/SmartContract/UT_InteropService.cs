@@ -1,4 +1,3 @@
-using Akka.TestKit;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -23,17 +22,6 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public partial class UT_InteropService : TestKit
     {
-        private TestProbe senderProbe;
-
-        [TestInitialize]
-        public void TestSetup()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-            senderProbe = CreateTestProbe();
-            senderProbe.Send(TestBlockchain.TheNeoSystem.Blockchain, new object());
-            senderProbe.ExpectNoMsg(); // Ensure blockchain it's created
-        }
-
         [TestMethod]
         public void Runtime_GetNotifications_Test()
         {
@@ -304,7 +292,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(true);
             IVerifiable iv = engine.ScriptContainer;
-            byte[] message = iv.GetHashData();
+            byte[] message = iv.GetSignData(ProtocolSettings.Default.Magic);
             byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair keyPair = new KeyPair(privateKey);

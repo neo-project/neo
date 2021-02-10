@@ -11,12 +11,6 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_FungibleToken : TestKit
     {
-        [TestInitialize]
-        public void TestSetup()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-        }
-
         protected const byte Prefix_TotalSupply = 11;
         private static readonly TestNep17Token test = new TestNep17Token();
 

@@ -119,7 +119,7 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(NextConsensus);
         }
 
-        public JObject ToJson()
+        public JObject ToJson(ProtocolSettings settings)
         {
             JObject json = new JObject();
             json["hash"] = Hash.ToString();
@@ -130,7 +130,7 @@ namespace Neo.Network.P2P.Payloads
             json["time"] = Timestamp;
             json["index"] = Index;
             json["primary"] = PrimaryIndex;
-            json["nextconsensus"] = NextConsensus.ToAddress();
+            json["nextconsensus"] = NextConsensus.ToAddress(settings.AddressVersion);
             json["witnesses"] = new JArray(Witness.ToJson());
             return json;
         }
