@@ -1,13 +1,13 @@
 namespace Neo.Wallets.SQLite
 {
-    internal class UserWalletAccount : WalletAccount
+    sealed class UserWalletAccount : WalletAccount
     {
         public KeyPair Key;
 
         public override bool HasKey => Key != null;
 
-        public UserWalletAccount(UInt160 scriptHash)
-            : base(scriptHash)
+        public UserWalletAccount(UInt160 scriptHash, ProtocolSettings settings)
+            : base(scriptHash, settings)
         {
         }
 

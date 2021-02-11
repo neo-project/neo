@@ -1,5 +1,4 @@
 using Neo.IO;
-using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
@@ -51,9 +50,9 @@ namespace Neo.SmartContract.Native
             {
                 foreach (ContractMethodMetadata method in descriptors)
                 {
-                    method.Descriptor.Offset = sb.Offset;
+                    method.Descriptor.Offset = sb.Length;
                     sb.EmitPush(0); //version
-                    methods.Add(sb.Offset, method);
+                    methods.Add(sb.Length, method);
                     sb.EmitSysCall(ApplicationEngine.System_Contract_CallNative);
                     sb.Emit(OpCode.RET);
                 }
@@ -139,13 +138,6 @@ namespace Neo.SmartContract.Native
 
         internal virtual void PostPersist(ApplicationEngine engine)
         {
-        }
-
-        public ApplicationEngine TestCall(DataCache snapshot, string operation, params object[] args)
-        {
-            using ScriptBuilder sb = new ScriptBuilder();
-            sb.EmitDynamicCall(Hash, operation, args);
-            return ApplicationEngine.Run(sb.ToArray(), snapshot);
         }
     }
 }

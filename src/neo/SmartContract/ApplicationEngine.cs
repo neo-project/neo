@@ -360,7 +360,6 @@ namespace Neo.SmartContract
         public static ApplicationEngine Run(byte[] script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, ProtocolSettings settings = null, int offset = 0, long gas = TestModeGas)
         {
             persistingBlock ??= CreateDummyBlock(snapshot);
-            settings ??= ProtocolSettings.Default;
             ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, persistingBlock, settings, gas);
             engine.LoadScript(script, initialPosition: offset);
             engine.Execute();
