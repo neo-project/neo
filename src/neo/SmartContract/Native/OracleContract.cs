@@ -143,6 +143,7 @@ namespace Neo.SmartContract.Native
         internal override void Initialize(ApplicationEngine engine)
         {
             engine.Snapshot.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BigInteger.Zero));
+            engine.Snapshot.Add(CreateStorageKey(Prefix_Price), new StorageItem(0_50000000));
         }
 
         internal override void PostPersist(ApplicationEngine engine)
