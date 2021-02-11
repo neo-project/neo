@@ -65,7 +65,7 @@ namespace Neo.SmartContract.Native
             return Crypto.Hash160(tokenId);
         }
 
-        [ContractMethod(0_03000000, CallFlags.WriteStates)]
+        [ContractMethod(RequiredCallFlags = CallFlags.WriteStates)]
         private void AddRoot(ApplicationEngine engine, string root)
         {
             if (!rootRegex.IsMatch(root)) throw new ArgumentException(null, nameof(root));
@@ -81,7 +81,7 @@ namespace Neo.SmartContract.Native
             return snapshot[CreateStorageKey(Prefix_Roots)].GetInteroperable<StringList>();
         }
 
-        [ContractMethod(0_03000000, CallFlags.WriteStates)]
+        [ContractMethod(RequiredCallFlags = CallFlags.WriteStates)]
         private void SetPrice(ApplicationEngine engine, long price)
         {
             if (price <= 0 || price > 10000_00000000) throw new ArgumentOutOfRangeException(nameof(price));
@@ -89,13 +89,13 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_DomainPrice)).Set(price);
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public long GetPrice(DataCache snapshot)
         {
             return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_DomainPrice)];
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public bool IsAvailable(DataCache snapshot, string name)
         {
             if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
@@ -108,7 +108,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_01000000, CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
         private bool Register(ApplicationEngine engine, string name, UInt160 owner)
         {
             if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
@@ -132,7 +132,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0, CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
         private uint Renew(ApplicationEngine engine, string name)
         {
             if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
@@ -147,7 +147,7 @@ namespace Neo.SmartContract.Native
             return state.Expiration;
         }
 
-        [ContractMethod(0_03000000, CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 15, StorageFee = 20, RequiredCallFlags = CallFlags.WriteStates)]
         private void SetAdmin(ApplicationEngine engine, string name, UInt160 admin)
         {
             if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
@@ -166,7 +166,7 @@ namespace Neo.SmartContract.Native
             return engine.CheckWitnessInternal(state.Admin);
         }
 
-        [ContractMethod(0_30000000, CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 15, StorageFee = 200, RequiredCallFlags = CallFlags.WriteStates)]
         private void SetRecord(ApplicationEngine engine, string name, RecordType type, string data)
         {
             if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
@@ -199,7 +199,7 @@ namespace Neo.SmartContract.Native
             item.Value = Utility.StrictUTF8.GetBytes(data);
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public string GetRecord(DataCache snapshot, string name, RecordType type)
         {
             if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
@@ -219,7 +219,7 @@ namespace Neo.SmartContract.Native
                 yield return ((RecordType)key.Key[^1], Utility.StrictUTF8.GetString(value.Value));
         }
 
-        [ContractMethod(0_01000000, CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
         private void DeleteRecord(ApplicationEngine engine, string name, RecordType type)
         {
             if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
@@ -230,7 +230,7 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.Delete(CreateStorageKey(Prefix_Record).Add(hash_domain).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).Add(type));
         }
 
-        [ContractMethod(0_03000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.ReadStates)]
         public string Resolve(DataCache snapshot, string name, RecordType type)
         {
             return Resolve(snapshot, name, type, 2);

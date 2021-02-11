@@ -16,7 +16,7 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public ECPoint[] GetDesignatedByRole(DataCache snapshot, Role role, uint index)
         {
             if (!Enum.IsDefined(typeof(Role), role))
@@ -30,7 +30,7 @@ namespace Neo.SmartContract.Native
                 .FirstOrDefault() ?? System.Array.Empty<ECPoint>();
         }
 
-        [ContractMethod(0, CallFlags.WriteStates)]
+        [ContractMethod(RequiredCallFlags = CallFlags.WriteStates)]
         private void DesignateAsRole(ApplicationEngine engine, Role role, ECPoint[] nodes)
         {
             if (nodes.Length == 0 || nodes.Length > 32)
