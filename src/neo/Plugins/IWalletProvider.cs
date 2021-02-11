@@ -5,7 +5,7 @@ namespace Neo.Plugins
 {
     public interface IWalletProvider
     {
-        event EventHandler<Wallet> WalletOpened;
+        event EventHandler<Wallet> WalletChanged;
 
         Wallet GetWallet();
     }
