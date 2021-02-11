@@ -103,7 +103,8 @@ namespace Neo.SmartContract.Native
 
         internal void Invoke(ApplicationEngine engine, byte version)
         {
-            if (engine.ProtocolSettings.GetNativeActivation(Name) > Ledger.CurrentIndex(engine.Snapshot))
+            uint activeIndex = engine.ProtocolSettings.NativeUpdateHistory[Name][0];
+            if (activeIndex > Ledger.CurrentIndex(engine.Snapshot))
                 throw new InvalidOperationException($"The native contract {Name} is not active.");
             if (version != 0)
                 throw new InvalidOperationException($"The native contract of version {version} is not active.");
