@@ -1,4 +1,3 @@
-using Akka.TestKit;
 using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
@@ -16,17 +15,6 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public partial class UT_Syscalls : TestKit
     {
-        private TestProbe senderProbe;
-
-        [TestInitialize]
-        public void TestSetup()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-            senderProbe = CreateTestProbe();
-            senderProbe.Send(TestBlockchain.TheNeoSystem.Blockchain, new object());
-            senderProbe.ExpectNoMsg(); // Ensure blockchain it's created
-        }
-
         [TestMethod]
         public void System_Blockchain_GetBlock()
         {
@@ -127,9 +115,8 @@ namespace Neo.UnitTests.SmartContract
                 var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
                 engine.LoadScript(script.ToArray());
 
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.IsTrue(engine.ResultStack.Peek().IsNull);
+                Assert.AreEqual(engine.Execute(), VMState.FAULT);
+                Assert.AreEqual(0, engine.ResultStack.Count);
 
                 // With tx
 
@@ -233,9 +220,9 @@ namespace Neo.UnitTests.SmartContract
                 snapshot.DeleteContract(contractA.Hash);
                 snapshot.DeleteContract(contractB.Hash);
                 snapshot.DeleteContract(contractC.Hash);
-                contractA.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
-                contractB.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
-                contractC.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer);
+                contractA.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.String, ContractParameterType.Integer);
+                contractB.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.String, ContractParameterType.Integer);
+                contractC.Manifest = TestUtils.CreateManifest("dummyMain", ContractParameterType.Any, ContractParameterType.String, ContractParameterType.Integer);
                 snapshot.AddContract(contractA.Hash, contractA);
                 snapshot.AddContract(contractB.Hash, contractB);
                 snapshot.AddContract(contractC.Hash, contractC);
@@ -245,10 +232,10 @@ namespace Neo.UnitTests.SmartContract
 
             using (var script = new ScriptBuilder())
             {
-                script.EmitDynamicCall(contractA.Hash, "dummyMain", 0, 1);
-                script.EmitDynamicCall(contractB.Hash, "dummyMain", 0, 1);
-                script.EmitDynamicCall(contractB.Hash, "dummyMain", 0, 1);
-                script.EmitDynamicCall(contractC.Hash, "dummyMain", 0, 1);
+                script.EmitDynamicCall(contractA.Hash, "dummyMain", "0", 1);
+                script.EmitDynamicCall(contractB.Hash, "dummyMain", "0", 1);
+                script.EmitDynamicCall(contractB.Hash, "dummyMain", "0", 1);
+                script.EmitDynamicCall(contractC.Hash, "dummyMain", "0", 1);
 
                 // Execute
 

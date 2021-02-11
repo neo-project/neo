@@ -1,5 +1,4 @@
 using Neo.IO;
-using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
@@ -139,13 +138,6 @@ namespace Neo.SmartContract.Native
 
         internal virtual void PostPersist(ApplicationEngine engine)
         {
-        }
-
-        public ApplicationEngine TestCall(DataCache snapshot, string operation, params object[] args)
-        {
-            using ScriptBuilder sb = new ScriptBuilder();
-            sb.EmitDynamicCall(Hash, operation, args);
-            return ApplicationEngine.Run(sb.ToArray(), snapshot);
         }
     }
 }

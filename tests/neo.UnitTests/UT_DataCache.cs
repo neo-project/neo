@@ -8,12 +8,6 @@ namespace Neo.UnitTests
     [TestClass]
     public class UT_DataCache
     {
-        [TestInitialize]
-        public void TestSetup()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-        }
-
         [TestMethod]
         public void TestCachedFind_Between()
         {

@@ -27,7 +27,6 @@ namespace Neo.UnitTests.SmartContract
                 key = new KeyPair(privateKey);
                 contract = Contract.CreateSignatureContract(key.PublicKey);
             }
-            TestBlockchain.InitializeMockNeoSystem();
         }
 
         [TestMethod]

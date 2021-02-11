@@ -1,4 +1,3 @@
-using Akka.TestKit;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -23,17 +22,6 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public partial class UT_InteropService : TestKit
     {
-        private TestProbe senderProbe;
-
-        [TestInitialize]
-        public void TestSetup()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-            senderProbe = CreateTestProbe();
-            senderProbe.Send(TestBlockchain.TheNeoSystem.Blockchain, new object());
-            senderProbe.ExpectNoMsg(); // Ensure blockchain it's created
-        }
-
         [TestMethod]
         public void Runtime_GetNotifications_Test()
         {
@@ -203,7 +191,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestExecutionEngine_GetScriptContainer()
         {
-            GetEngine(true).GetScriptContainer().Should().BeOfType<Transaction>();
+            GetEngine(true).GetScriptContainer().Should().BeOfType<VM.Types.Array>();
         }
 
         [TestMethod]
@@ -223,7 +211,7 @@ namespace Neo.UnitTests.SmartContract
 
             var contract = new ContractState()
             {
-                Manifest = TestUtils.CreateManifest("test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer),
+                Manifest = TestUtils.CreateManifest("test", ContractParameterType.Any, ContractParameterType.String, ContractParameterType.Integer),
                 Nef = new NefFile { Script = scriptA.ToArray() },
                 Hash = scriptA.ToArray().ToScriptHash()
             };
@@ -231,7 +219,7 @@ namespace Neo.UnitTests.SmartContract
             engine.Snapshot.AddContract(contract.Hash, contract);
 
             using ScriptBuilder scriptB = new ScriptBuilder();
-            scriptB.EmitDynamicCall(contract.Hash, "test", 0, 1);
+            scriptB.EmitDynamicCall(contract.Hash, "test", "0", 1);
             engine.LoadScript(scriptB.ToArray());
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -304,7 +292,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(true);
             IVerifiable iv = engine.ScriptContainer;
-            byte[] message = iv.GetHashData();
+            byte[] message = iv.GetSignData(ProtocolSettings.Default.Magic);
             byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair keyPair = new KeyPair(privateKey);

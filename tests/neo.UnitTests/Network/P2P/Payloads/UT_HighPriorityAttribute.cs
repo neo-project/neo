@@ -11,12 +11,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     [TestClass]
     public class UT_HighPriorityAttribute
     {
-        [TestInitialize]
-        public void Init()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-        }
-
         [TestMethod]
         public void Size_Get()
         {

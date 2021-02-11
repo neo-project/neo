@@ -1,4 +1,3 @@
-using Akka.TestKit;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -37,8 +36,6 @@ namespace Neo.UnitTests.Ledger
         private MemoryPool _unit;
         private MemoryPool _unit2;
         private TestIMemoryPoolTxObserverPlugin plugin;
-        private TestProbe senderProbe;
-        private bool hasChecked = false;
 
         [ClassInitialize]
         public static void TestSetup(TestContext ctx)
@@ -54,18 +51,8 @@ namespace Neo.UnitTests.Ledger
         [TestInitialize]
         public void TestSetup()
         {
-            if (!hasChecked)
-            {
-                senderProbe = CreateTestProbe();
-                senderProbe.Send(testBlockchain.Blockchain, new object());
-                senderProbe.ExpectNoMsg(); // Ensure blockchain it's created
-                hasChecked = true;
-            }
-
             // protect against external changes on TimeProvider
             TimeProvider.ResetToDefault();
-
-            TestBlockchain.InitializeMockNeoSystem();
 
             // Create a MemoryPool with capacity of 100
             _unit = new MemoryPool(new NeoSystem(ProtocolSettings.Default with { MemoryPoolMaxTransactions = 100 }));

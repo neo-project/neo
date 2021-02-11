@@ -84,7 +84,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, 1);
 
-            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000003c92d2d37b91caa73ab056d0676d9bd78752a5e2e79e3ae27936e9b3a330e80ee913ff854c0000000000000000000000000000000000000000000000000000000001000111010000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000001000112010000";
+            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000006c23be5d32679baa9c5c2aa0d329fd2a2441d7875d0f34d42f58f70428fbbbb9e913ff854c0000000000000000000000000000000000000000000000000000000001000111010000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000001000112010000";
             uut.ToArray().ToHexString().Should().Be(hex);
         }
 
@@ -94,7 +94,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(new Block(), val256, out var merkRoot, out var val160, out var timestampVal, out var indexVal, out var scriptVal, out var transactionsVal, 1);
 
-            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000003c92d2d37b91caa73ab056d0676d9bd78752a5e2e79e3ae27936e9b3a330e80ee913ff854c0000000000000000000000000000000000000000000000000000000001000111010000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000001000112010000";
+            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000006c23be5d32679baa9c5c2aa0d329fd2a2441d7875d0f34d42f58f70428fbbbb9e913ff854c0000000000000000000000000000000000000000000000000000000001000111010000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000001000112010000";
 
             using (MemoryStream ms = new MemoryStream(hex.HexToBytes(), false))
             using (BinaryReader reader = new BinaryReader(ms))
@@ -164,13 +164,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(uut, val256, out var merkRoot, out var val160, out var timestampVal, out var indexVal, out var scriptVal, out var transactionsVal, 1);
 
-            JObject jObj = uut.ToJson();
+            JObject jObj = uut.ToJson(ProtocolSettings.Default);
             jObj.Should().NotBeNull();
-            jObj["hash"].AsString().Should().Be("0x0ffaf8fc7eeb34959e7220d316e3294290e84b6a183b4bdb5c7c14a8f80239ee");
+            jObj["hash"].AsString().Should().Be("0x54b3a829333d9bb352eef69942317fe011251370c2212ad0d20d7c2a3974b26e");
             jObj["size"].AsNumber().Should().Be(159);
             jObj["version"].AsNumber().Should().Be(0);
             jObj["previousblockhash"].AsString().Should().Be("0x0000000000000000000000000000000000000000000000000000000000000000");
-            jObj["merkleroot"].AsString().Should().Be("0x0ee830a3b3e93679e23a9ee7e2a55287d79b6d67d056b03aa7ca917bd3d2923c");
+            jObj["merkleroot"].AsString().Should().Be("0xb9bbfb2804f7582fd4340f5d87d741242afd29d3a02a5c9caa9b67325dbe236c");
             jObj["time"].AsNumber().Should().Be(328665601001);
             jObj["index"].AsNumber().Should().Be(0);
             jObj["nextconsensus"].AsString().Should().Be("NKuyBkoGdZZSLyPbJEetheRhMjeznFZszf");
@@ -181,7 +181,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             jObj["tx"].Should().NotBeNull();
             JArray txObj = (JArray)jObj["tx"];
-            txObj[0]["hash"].AsString().Should().Be("0x0ee830a3b3e93679e23a9ee7e2a55287d79b6d67d056b03aa7ca917bd3d2923c");
+            txObj[0]["hash"].AsString().Should().Be("0xb9bbfb2804f7582fd4340f5d87d741242afd29d3a02a5c9caa9b67325dbe236c");
             txObj[0]["size"].AsNumber().Should().Be(53);
             txObj[0]["version"].AsNumber().Should().Be(0);
             ((JArray)txObj[0]["attributes"]).Count.Should().Be(0);
