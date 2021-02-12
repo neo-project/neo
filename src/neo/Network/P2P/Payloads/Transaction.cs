@@ -288,8 +288,6 @@ namespace Neo.Network.P2P.Payloads
             foreach (UInt160 hash in hashes)
                 if (NativeContract.Policy.IsBlocked(snapshot, hash))
                     return VerifyResult.PolicyFail;
-            if (NativeContract.Policy.GetMaxBlockSystemFee(snapshot) < SystemFee)
-                return VerifyResult.PolicyFail;
             if (!(context?.CheckTransaction(this, snapshot) ?? true)) return VerifyResult.InsufficientFunds;
             foreach (TransactionAttribute attribute in Attributes)
                 if (!attribute.Verify(snapshot, this))
