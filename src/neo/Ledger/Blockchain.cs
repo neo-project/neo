@@ -25,7 +25,7 @@ namespace Neo.Ledger
         public class ImportCompleted { }
         public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
         public class FillCompleted { }
-        internal class PreverifyCompleted { public Transaction Transaction; public VerifyResult Result; }
+        public class Reverify { public IInventory[] Inventories; }
         public class RelayResult { public IInventory Inventory; public VerifyResult Result; }
         private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new LinkedList<Block>(); public HashSet<IActorRef> Nodes = new HashSet<IActorRef>(); }
 
@@ -245,10 +245,10 @@ namespace Neo.Ledger
             return system.MemPool.TryAdd(transaction, system.StoreView);
         }
 
-        private void OnPreverifyCompleted(PreverifyCompleted task)
+        private void OnPreverifyCompleted(TransactionRouter.PreverifyCompleted task)
         {
             if (task.Result == VerifyResult.Succeed)
-                OnInventory(task.Transaction, true);
+                OnInventory(task.Transaction, task.Relay);
             else
                 SendRelayResult(task.Transaction, task.Result);
         }
@@ -275,8 +275,12 @@ namespace Neo.Ledger
                 case IInventory inventory:
                     OnInventory(inventory);
                     break;
-                case PreverifyCompleted task:
+                case TransactionRouter.PreverifyCompleted task:
                     OnPreverifyCompleted(task);
+                    break;
+                case Reverify reverify:
+                    foreach (IInventory inventory in reverify.Inventories)
+                        OnInventory(inventory, false);
                     break;
                 case Idle _:
                     if (system.MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, system.StoreView))
@@ -290,7 +294,7 @@ namespace Neo.Ledger
             if (ContainsTransaction(tx.Hash))
                 SendRelayResult(tx, VerifyResult.AlreadyExists);
             else
-                txrouter.Tell(tx, Sender);
+                txrouter.Forward(new TransactionRouter.Preverify(tx, true));
         }
 
         private void Persist(Block block)
@@ -335,14 +339,14 @@ namespace Neo.Ledger
                     all_application_executed.Add(application_executed);
                 }
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
-                    plugin.OnPersist(block, snapshot, all_application_executed);
+                    plugin.OnPersist(system, block, snapshot, all_application_executed);
                 snapshot.Commit();
                 List<Exception> commitExceptions = null;
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                 {
                     try
                     {
-                        plugin.OnCommit(block, snapshot);
+                        plugin.OnCommit(system, block, snapshot);
                     }
                     catch (Exception ex)
                     {

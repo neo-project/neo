@@ -276,9 +276,9 @@ namespace Neo.Ledger
 
             foreach (IMemoryPoolTxObserverPlugin plugin in Plugin.TxObserverPlugins)
             {
-                plugin.TransactionAdded(poolItem.Tx);
+                plugin.TransactionAdded(_system, poolItem.Tx);
                 if (removedTransactions != null)
-                    plugin.TransactionsRemoved(MemoryPoolTxRemovalReason.CapacityExceeded, removedTransactions);
+                    plugin.TransactionsRemoved(_system, MemoryPoolTxRemovalReason.CapacityExceeded, removedTransactions);
             }
 
             if (!_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.OutOfMemory;
@@ -445,7 +445,7 @@ namespace Neo.Ledger
 
             var invalidTransactions = invalidItems.Select(p => p.Tx).ToArray();
             foreach (IMemoryPoolTxObserverPlugin plugin in Plugin.TxObserverPlugins)
-                plugin.TransactionsRemoved(MemoryPoolTxRemovalReason.NoLongerValid, invalidTransactions);
+                plugin.TransactionsRemoved(_system, MemoryPoolTxRemovalReason.NoLongerValid, invalidTransactions);
 
             return reverifiedItems.Count;
         }

@@ -2,11 +2,9 @@ using Microsoft.Extensions.Configuration;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using static System.IO.Path;
 
 namespace Neo.Plugins
@@ -20,16 +18,13 @@ namespace Neo.Plugins
         internal static readonly List<IP2PPlugin> P2PPlugins = new List<IP2PPlugin>();
         internal static readonly List<IMemoryPoolTxObserverPlugin> TxObserverPlugins = new List<IMemoryPoolTxObserverPlugin>();
 
-        private static ImmutableList<object> services = ImmutableList<object>.Empty;
         public static readonly string PluginsDirectory = Combine(GetDirectoryName(Assembly.GetEntryAssembly().Location), "Plugins");
         private static readonly FileSystemWatcher configWatcher;
-        private static int suspend = 0;
 
         public virtual string ConfigFile => Combine(PluginsDirectory, GetType().Assembly.GetName().Name, "config.json");
         public virtual string Name => GetType().Name;
         public virtual string Description => "";
         public virtual string Path => Combine(PluginsDirectory, GetType().Assembly.ManifestModule.ScopeName);
-        protected static NeoSystem System { get; private set; }
         public virtual Version Version => GetType().Assembly.GetName().Version;
 
         static Plugin()
@@ -60,21 +55,6 @@ namespace Neo.Plugins
             if (this is IApplicationEngineProvider provider) ApplicationEngine.SetApplicationEngineProvider(provider);
 
             Configure();
-        }
-
-        public static void AddService(object service)
-        {
-            ImmutableInterlocked.Update(ref services, p => p.Add(service));
-        }
-
-        private static bool CheckRequiredServices(Type type)
-        {
-            RequiredServicesAttribute attribute = type.GetCustomAttribute<RequiredServicesAttribute>();
-            if (attribute is null) return true;
-            foreach (Type rt in attribute.RequiredServices)
-                if (services.All(p => !rt.IsAssignableFrom(p.GetType())))
-                    return false;
-            return true;
         }
 
         protected virtual void Configure()
@@ -143,18 +123,12 @@ namespace Neo.Plugins
             return new ConfigurationBuilder().AddJsonFile(ConfigFile, optional: true).Build().GetSection("PluginConfiguration");
         }
 
-        protected static T GetService<T>()
-        {
-            return services.OfType<T>().FirstOrDefault();
-        }
-
         private static void LoadPlugin(Assembly assembly)
         {
             foreach (Type type in assembly.ExportedTypes)
             {
                 if (!type.IsSubclassOf(typeof(Plugin))) continue;
                 if (type.IsAbstract) continue;
-                if (!CheckRequiredServices(type)) continue;
 
                 ConstructorInfo constructor = type.GetConstructor(Type.EmptyTypes);
                 try
@@ -168,9 +142,8 @@ namespace Neo.Plugins
             }
         }
 
-        internal static void LoadPlugins(NeoSystem system)
+        internal static void LoadPlugins()
         {
-            System = system;
             if (!Directory.Exists(PluginsDirectory)) return;
             List<Assembly> assemblies = new List<Assembly>();
             foreach (string filename in Directory.EnumerateFiles(PluginsDirectory, "*.dll", SearchOption.TopDirectoryOnly))
@@ -197,16 +170,8 @@ namespace Neo.Plugins
             return false;
         }
 
-        internal protected virtual void OnPluginsLoaded()
+        internal protected virtual void OnSystemLoaded(NeoSystem system)
         {
-        }
-
-        protected static bool ResumeNodeStartup()
-        {
-            if (Interlocked.Decrement(ref suspend) != 0)
-                return false;
-            System.ResumeNodeStartup();
-            return true;
         }
 
         public static bool SendMessage(object message)
@@ -215,12 +180,6 @@ namespace Neo.Plugins
                 if (plugin.OnMessage(message))
                     return true;
             return false;
-        }
-
-        protected static void SuspendNodeStartup()
-        {
-            Interlocked.Increment(ref suspend);
-            System.SuspendNodeStartup();
         }
     }
 }

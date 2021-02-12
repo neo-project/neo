@@ -71,9 +71,10 @@ namespace Neo
             NativeActivations = ImmutableDictionary<string, uint>.Empty
         };
 
-        public static ProtocolSettings Load(string config)
+        public static ProtocolSettings Load(string path, bool optional = true)
         {
-            IConfigurationSection section = Utility.LoadConfig(config).GetSection("ProtocolConfiguration");
+            IConfigurationRoot config = new ConfigurationBuilder().AddJsonFile(path, optional).Build();
+            IConfigurationSection section = config.GetSection("ProtocolConfiguration");
             return new ProtocolSettings
             {
                 Magic = section.GetValue("Magic", Default.Magic),
