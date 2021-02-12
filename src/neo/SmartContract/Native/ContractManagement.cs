@@ -110,7 +110,7 @@ namespace Neo.SmartContract.Native
             return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_MinimumDeploymentFee)];
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
         private void SetMinimumDeploymentFee(ApplicationEngine engine, BigInteger value)
         {
             if (value < 0) throw new ArgumentOutOfRangeException(nameof(value));

@@ -80,7 +80,7 @@ namespace Neo.SmartContract.Native
             Manifest.Abi.Events = events.ToArray();
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
         private void SetPrice(ApplicationEngine engine, long price)
         {
             if (price <= 0)

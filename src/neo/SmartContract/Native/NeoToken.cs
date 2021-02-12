@@ -172,7 +172,7 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
         private void SetGasPerBlock(ApplicationEngine engine, BigInteger gasPerBlock)
         {
             if (gasPerBlock < 0 || gasPerBlock > 10 * GAS.Factor)
@@ -190,7 +190,7 @@ namespace Neo.SmartContract.Native
             return GetSortedGasRecords(snapshot, Ledger.CurrentIndex(snapshot) + 1).First().GasPerBlock;
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
         private void SetRegisterPrice(ApplicationEngine engine, long registerPrice)
         {
             if (registerPrice <= 0)

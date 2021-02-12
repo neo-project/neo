@@ -65,7 +65,7 @@ namespace Neo.SmartContract.Native
             return Crypto.Hash160(tokenId);
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
         private void AddRoot(ApplicationEngine engine, string root)
         {
             if (!rootRegex.IsMatch(root)) throw new ArgumentException(null, nameof(root));
@@ -81,7 +81,7 @@ namespace Neo.SmartContract.Native
             return snapshot[CreateStorageKey(Prefix_Roots)].GetInteroperable<StringList>();
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
         private void SetPrice(ApplicationEngine engine, long price)
         {
             if (price <= 0 || price > 10000_00000000) throw new ArgumentOutOfRangeException(nameof(price));
