@@ -124,7 +124,6 @@ namespace Neo.SmartContract.Native
             {
                 Owner = owner,
                 Name = name,
-                Description = "",
                 Expiration = (uint)(engine.PersistingBlock.Timestamp / 1000) + OneYear
             };
             Mint(engine, state);
@@ -263,8 +262,8 @@ namespace Neo.SmartContract.Native
             {
                 base.FromStackItem(stackItem);
                 Struct @struct = (Struct)stackItem;
-                Expiration = (uint)@struct[3].GetInteger();
-                Admin = @struct[4].IsNull ? null : new UInt160(@struct[4].GetSpan());
+                Expiration = (uint)@struct[2].GetInteger();
+                Admin = @struct[3].IsNull ? null : new UInt160(@struct[3].GetSpan());
             }
 
             public override StackItem ToStackItem(ReferenceCounter referenceCounter)
