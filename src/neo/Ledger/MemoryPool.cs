@@ -3,7 +3,6 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
-using Neo.SmartContract.Native;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -368,8 +367,7 @@ namespace Neo.Ledger
             if (block.Index > 0 && _system.HeaderCache.Count > 0)
                 return;
 
-            uint _maxTxPerBlock = NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot);
-            ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions, (int)_maxTxPerBlock, MaxMillisecondsToReverifyTx, snapshot);
+            ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions, (int)ProtocolSettings.Default.MaxTransactionsPerBlock, MaxMillisecondsToReverifyTx, snapshot);
         }
 
         internal void InvalidateAllTransactions()
@@ -468,8 +466,7 @@ namespace Neo.Ledger
 
             if (_unverifiedSortedTransactions.Count > 0)
             {
-                uint _maxTxPerBlock = NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot);
-                int verifyCount = _sortedTransactions.Count > _maxTxPerBlock ? 1 : maxToVerify;
+                int verifyCount = _sortedTransactions.Count > ProtocolSettings.Default.MaxTransactionsPerBlock ? 1 : maxToVerify;
                 ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions,
                     verifyCount, MaxMillisecondsToReverifyTxPerIdle, snapshot);
             }
