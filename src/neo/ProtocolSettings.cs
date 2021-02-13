@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 
 namespace Neo
 {
@@ -21,6 +22,7 @@ namespace Neo
         public int MemoryPoolMaxTransactions { get; init; }
         public uint MaxTraceableBlocks { get; init; }
         public IReadOnlyDictionary<string, uint> NativeActivations { get; init; }
+        private static ProtocolSettings _instance;
 
         private IReadOnlyList<ECPoint> _standbyValidators;
         public IReadOnlyList<ECPoint> StandbyValidators => _standbyValidators ??= StandbyCommittee.Take(ValidatorsCount).ToArray();
@@ -70,6 +72,19 @@ namespace Neo
             MaxTraceableBlocks = 2_102_400,
             NativeActivations = ImmutableDictionary<string, uint>.Empty
         };
+
+        public static ProtocolSettings Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    var settings = Load("protocol.json");
+                    Interlocked.CompareExchange(ref _instance, settings, null);
+                }
+                return _instance;
+            }
+        }
 
         public static ProtocolSettings Load(string path, bool optional = true)
         {
