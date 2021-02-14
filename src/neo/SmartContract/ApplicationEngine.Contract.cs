@@ -43,6 +43,9 @@ namespace Neo.SmartContract
             NativeContract contract = NativeContract.GetContract(CurrentScriptHash);
             if (contract is null)
                 throw new InvalidOperationException("It is not allowed to use \"System.Contract.CallNative\" directly.");
+            uint activeIndex = ProtocolSettings.NativeUpdateHistory[contract.Name][0];
+            if (activeIndex > NativeContract.Ledger.CurrentIndex(Snapshot))
+                throw new InvalidOperationException($"The native contract {contract.Name} is not active.");
             contract.Invoke(this, version);
         }
 
