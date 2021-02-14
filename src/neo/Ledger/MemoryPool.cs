@@ -367,7 +367,7 @@ namespace Neo.Ledger
             if (block.Index > 0 && _system.HeaderCache.Count > 0)
                 return;
 
-            ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions, (int)ProtocolSettings.Default.MaxTransactionsPerBlock, MaxMillisecondsToReverifyTx, snapshot);
+            ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions, (int)_system.Settings.MaxTransactionsPerBlock, MaxMillisecondsToReverifyTx, snapshot);
         }
 
         internal void InvalidateAllTransactions()
@@ -466,7 +466,7 @@ namespace Neo.Ledger
 
             if (_unverifiedSortedTransactions.Count > 0)
             {
-                int verifyCount = _sortedTransactions.Count > ProtocolSettings.Default.MaxTransactionsPerBlock ? 1 : maxToVerify;
+                int verifyCount = _sortedTransactions.Count > _system.Settings.MaxTransactionsPerBlock ? 1 : maxToVerify;
                 ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions,
                     verifyCount, MaxMillisecondsToReverifyTxPerIdle, snapshot);
             }
