@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.SmartContract.Native;
 using Neo.Wallets;
 
 namespace Neo.UnitTests
@@ -42,9 +43,9 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void TestNativeActivations()
+        public void TestNativeUpdateHistory()
         {
-            ProtocolSettings.Default.NativeActivations.Count.Should().Be(0);
+            ProtocolSettings.Default.NativeUpdateHistory.Count.Should().Be(NativeContract.Contracts.Count);
         }
     }
 }
