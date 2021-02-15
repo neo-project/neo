@@ -279,6 +279,14 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
+        public bool Verify(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context)
+        {
+            VerifyResult result = VerifyStateIndependent(settings);
+            if (result != VerifyResult.Succeed) return false;
+            result = VerifyStateDependent(settings, snapshot, context);
+            return result == VerifyResult.Succeed;
+        }
+
         public virtual VerifyResult VerifyStateDependent(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context)
         {
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);
