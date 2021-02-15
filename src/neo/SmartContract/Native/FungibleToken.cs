@@ -12,9 +12,9 @@ namespace Neo.SmartContract.Native
     public abstract class FungibleToken<TState> : NativeContract
         where TState : AccountState, new()
     {
-        [ContractMethod(0, CallFlags.None)]
+        [ContractMethod]
         public abstract string Symbol { get; }
-        [ContractMethod(0, CallFlags.None)]
+        [ContractMethod]
         public abstract byte Decimals { get; }
         public BigInteger Factor { get; }
 
@@ -87,7 +87,7 @@ namespace Neo.SmartContract.Native
             PostTransfer(engine, account, null, amount, StackItem.Null, false);
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public virtual BigInteger TotalSupply(DataCache snapshot)
         {
             StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_TotalSupply));
@@ -95,7 +95,7 @@ namespace Neo.SmartContract.Native
             return storage;
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public virtual BigInteger BalanceOf(DataCache snapshot, UInt160 account)
         {
             StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account));
@@ -103,7 +103,7 @@ namespace Neo.SmartContract.Native
             return storage.GetInteroperable<TState>().Balance;
         }
 
-        [ContractMethod(0_09000000, CallFlags.WriteStates | CallFlags.AllowCall | CallFlags.AllowNotify)]
+        [ContractMethod(CpuFee = 1 << 17, StorageFee = 50, RequiredCallFlags = CallFlags.WriteStates | CallFlags.AllowCall | CallFlags.AllowNotify)]
         protected virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));

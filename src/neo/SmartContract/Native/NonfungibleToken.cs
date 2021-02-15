@@ -17,9 +17,9 @@ namespace Neo.SmartContract.Native
     public abstract class NonfungibleToken<TokenState> : NativeContract
         where TokenState : NFTState, new()
     {
-        [ContractMethod(0, CallFlags.None)]
+        [ContractMethod]
         public abstract string Symbol { get; }
-        [ContractMethod(0, CallFlags.None)]
+        [ContractMethod]
         public byte Decimals => 0;
 
         private const byte Prefix_TotalSupply = 11;
@@ -97,39 +97,39 @@ namespace Neo.SmartContract.Native
             PostTransfer(engine, token.Owner, null, token.Id);
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger TotalSupply(DataCache snapshot)
         {
             return snapshot[CreateStorageKey(Prefix_TotalSupply)];
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public UInt160 OwnerOf(DataCache snapshot, byte[] tokenId)
         {
             return snapshot[CreateStorageKey(Prefix_Token).Add(GetKey(tokenId))].GetInteroperable<TokenState>().Owner;
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public Map Properties(ApplicationEngine engine, byte[] tokenId)
         {
             return engine.Snapshot[CreateStorageKey(Prefix_Token).Add(GetKey(tokenId))].GetInteroperable<TokenState>().ToMap(engine.ReferenceCounter);
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger BalanceOf(DataCache snapshot, UInt160 owner)
         {
             if (owner is null) throw new ArgumentNullException(nameof(owner));
             return snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(owner))?.GetInteroperable<NFTAccountState>().Balance ?? BigInteger.Zero;
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         protected IIterator Tokens(DataCache snapshot)
         {
             var results = snapshot.Find(CreateStorageKey(Prefix_Token).ToArray()).GetEnumerator();
             return new StorageIterator(results, FindOptions.ValuesOnly | FindOptions.DeserializeValues | FindOptions.PickField1, null);
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         protected IIterator TokensOf(DataCache snapshot, UInt160 owner)
         {
             NFTAccountState account = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(owner))?.GetInteroperable<NFTAccountState>();
@@ -137,7 +137,7 @@ namespace Neo.SmartContract.Native
             return new ArrayWrapper(tokens.Select(p => (StackItem)p).ToArray());
         }
 
-        [ContractMethod(0_09000000, CallFlags.WriteStates | CallFlags.AllowNotify)]
+        [ContractMethod(CpuFee = 1 << 17, StorageFee = 50, RequiredCallFlags = CallFlags.WriteStates | CallFlags.AllowNotify)]
         protected bool Transfer(ApplicationEngine engine, UInt160 to, byte[] tokenId)
         {
             if (to is null) throw new ArgumentNullException(nameof(to));

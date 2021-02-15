@@ -23,14 +23,14 @@ namespace Neo.UnitTests.SmartContract.Native
 
         private class DummyNative : NativeContract
         {
-            [ContractMethod(0, CallFlags.None)]
+            [ContractMethod]
             public void NetTypes(
                     bool p1, sbyte p2, byte p3, short p4, ushort p5, int p6, uint p7, long p8, ulong p9, BigInteger p10,
                     byte[] p11, string p12, IInteroperable p13, ISerializable p14, int[] p15, ContractParameterType p16,
                     object p17)
             { }
 
-            [ContractMethod(0, CallFlags.None)]
+            [ContractMethod]
             public void VMTypes(
                     VM.Types.Boolean p1, VM.Types.Integer p2, VM.Types.ByteString p3, VM.Types.Buffer p4,
                     VM.Types.Array p5, VM.Types.Struct p6, VM.Types.Map p7, VM.Types.StackItem p8
@@ -126,7 +126,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
     public class TestNativeContract : NativeContract
     {
-        [ContractMethod(0, CallFlags.None)]
+        [ContractMethod]
         public string HelloWorld => "hello world";
 
         public void TestTrigger(ApplicationEngine engine)

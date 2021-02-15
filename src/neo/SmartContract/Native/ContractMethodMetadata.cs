@@ -17,7 +17,8 @@ namespace Neo.SmartContract.Native
         public InteropParameterDescriptor[] Parameters { get; }
         public bool NeedApplicationEngine { get; }
         public bool NeedSnapshot { get; }
-        public long Price { get; }
+        public long CpuFee { get; }
+        public long StorageFee { get; }
         public CallFlags RequiredCallFlags { get; }
         public ContractMethodDescriptor Descriptor { get; }
 
@@ -40,7 +41,8 @@ namespace Neo.SmartContract.Native
                 this.Parameters = parameterInfos.Skip(1).Select(p => new InteropParameterDescriptor(p)).ToArray();
             else
                 this.Parameters = parameterInfos.Select(p => new InteropParameterDescriptor(p)).ToArray();
-            this.Price = attribute.Price;
+            this.CpuFee = attribute.CpuFee;
+            this.StorageFee = attribute.StorageFee;
             this.RequiredCallFlags = attribute.RequiredCallFlags;
             this.Descriptor = new ContractMethodDescriptor
             {

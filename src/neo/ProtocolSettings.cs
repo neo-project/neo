@@ -17,6 +17,7 @@ namespace Neo
         public string[] SeedList { get; init; }
         public uint MillisecondsPerBlock { get; init; }
         public TimeSpan TimePerBlock => TimeSpan.FromMilliseconds(MillisecondsPerBlock);
+        public uint MaxTransactionsPerBlock { get; init; }
         public int MemoryPoolMaxTransactions { get; init; }
         public uint MaxTraceableBlocks { get; init; }
         public IReadOnlyDictionary<string, uint> NativeActivations { get; init; }
@@ -64,6 +65,7 @@ namespace Neo
                 "seed5.neo.org:10333"
             },
             MillisecondsPerBlock = 15000,
+            MaxTransactionsPerBlock = 512,
             MemoryPoolMaxTransactions = 50_000,
             MaxTraceableBlocks = 2_102_400,
             NativeActivations = ImmutableDictionary<string, uint>.Empty
@@ -85,6 +87,7 @@ namespace Neo
                     ? section.GetSection("SeedList").GetChildren().Select(p => p.Get<string>()).ToArray()
                     : Default.SeedList,
                 MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", Default.MillisecondsPerBlock),
+                MaxTransactionsPerBlock = section.GetValue("MaxTransactionsPerBlock", Default.MaxTransactionsPerBlock),
                 MemoryPoolMaxTransactions = section.GetValue("MemoryPoolMaxTransactions", Default.MemoryPoolMaxTransactions),
                 MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", Default.MaxTraceableBlocks),
                 NativeActivations = section.GetSection("NativeActivations").Exists()
