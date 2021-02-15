@@ -21,7 +21,7 @@ namespace Neo.SmartContract.Native
         public void Deserialize(BinaryReader reader)
         {
             Header = reader.ReadSerializable<Header>();
-            Hashes = reader.ReadSerializableArray<UInt256>(Block.MaxTransactionsPerBlock);
+            Hashes = reader.ReadSerializableArray<UInt256>(ushort.MaxValue);
         }
 
         public void Serialize(BinaryWriter writer)

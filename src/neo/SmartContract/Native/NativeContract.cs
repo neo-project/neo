@@ -110,7 +110,7 @@ namespace Neo.SmartContract.Native
             ExecutionContextState state = context.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
-            engine.AddGas(method.Price);
+            engine.AddGas(method.CpuFee * Policy.GetExecFeeFactor(engine.Snapshot) + method.StorageFee * Policy.GetStoragePrice(engine.Snapshot));
             List<object> parameters = new List<object>();
             if (method.NeedApplicationEngine) parameters.Add(engine);
             if (method.NeedSnapshot) parameters.Add(engine.Snapshot);

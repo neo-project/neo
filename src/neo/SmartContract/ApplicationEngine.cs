@@ -318,10 +318,10 @@ namespace Neo.SmartContract
                 throw new InvalidOperationException("StepOut failed.", FaultException);
         }
 
-        private static Block CreateDummyBlock(DataCache snapshot)
+        private static Block CreateDummyBlock(DataCache snapshot, ProtocolSettings settings)
         {
             UInt256 hash = NativeContract.Ledger.CurrentHash(snapshot);
-            var currentBlock = NativeContract.Ledger.GetBlock(snapshot, hash);
+            Block currentBlock = NativeContract.Ledger.GetBlock(snapshot, hash);
             return new Block
             {
                 Header = new Header
@@ -329,7 +329,7 @@ namespace Neo.SmartContract
                     Version = 0,
                     PrevHash = hash,
                     MerkleRoot = new UInt256(),
-                    Timestamp = currentBlock.Timestamp + 1,
+                    Timestamp = currentBlock.Timestamp + settings.MillisecondsPerBlock,
                     Index = currentBlock.Index + 1,
                     NextConsensus = currentBlock.NextConsensus,
                     Witness = new Witness
@@ -338,7 +338,7 @@ namespace Neo.SmartContract
                         VerificationScript = Array.Empty<byte>()
                     },
                 },
-                Transactions = new Transaction[0]
+                Transactions = Array.Empty<Transaction>()
             };
         }
 
@@ -359,7 +359,7 @@ namespace Neo.SmartContract
 
         public static ApplicationEngine Run(byte[] script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, ProtocolSettings settings = null, int offset = 0, long gas = TestModeGas)
         {
-            persistingBlock ??= CreateDummyBlock(snapshot);
+            persistingBlock ??= CreateDummyBlock(snapshot, settings ?? ProtocolSettings.Default);
             ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, persistingBlock, settings, gas);
             engine.LoadScript(script, initialPosition: offset);
             engine.Execute();
