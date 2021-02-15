@@ -90,7 +90,7 @@ namespace Neo.SmartContract
         {
             if (method.Safe)
             {
-                flags &= ~CallFlags.WriteStates;
+                flags &= ~(CallFlags.WriteStates | CallFlags.AllowNotify);
             }
             else
             {

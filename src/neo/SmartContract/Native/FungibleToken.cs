@@ -103,7 +103,7 @@ namespace Neo.SmartContract.Native
             return storage.GetInteroperable<TState>().Balance;
         }
 
-        [ContractMethod(CpuFee = 1 << 17, StorageFee = 50, RequiredCallFlags = CallFlags.WriteStates | CallFlags.AllowCall | CallFlags.AllowNotify)]
+        [ContractMethod(CpuFee = 1 << 17, StorageFee = 50, RequiredCallFlags = CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify)]
         protected virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));

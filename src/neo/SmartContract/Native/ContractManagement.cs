@@ -111,7 +111,7 @@ namespace Neo.SmartContract.Native
             return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_MinimumDeploymentFee)];
         }
 
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetMinimumDeploymentFee(ApplicationEngine engine, BigInteger value)
         {
             if (value < 0) throw new ArgumentOutOfRangeException(nameof(value));
@@ -131,13 +131,13 @@ namespace Neo.SmartContract.Native
             return snapshot.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>());
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.WriteStates | CallFlags.AllowNotify)]
+        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             return Deploy(engine, nefFile, manifest, StackItem.Null);
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.WriteStates | CallFlags.AllowNotify)]
+        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
             if (engine.ScriptContainer is not Transaction tx)
@@ -183,13 +183,13 @@ namespace Neo.SmartContract.Native
             return contract;
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.WriteStates | CallFlags.AllowNotify)]
+        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private void Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             Update(engine, nefFile, manifest, StackItem.Null);
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.WriteStates | CallFlags.AllowNotify)]
+        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private void Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
             if (nefFile is null && manifest is null) throw new ArgumentException();

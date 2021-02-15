@@ -137,7 +137,7 @@ namespace Neo.SmartContract.Native
             return new ArrayWrapper(tokens.Select(p => (StackItem)p).ToArray());
         }
 
-        [ContractMethod(CpuFee = 1 << 17, StorageFee = 50, RequiredCallFlags = CallFlags.WriteStates | CallFlags.AllowNotify)]
+        [ContractMethod(CpuFee = 1 << 17, StorageFee = 50, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         protected bool Transfer(ApplicationEngine engine, UInt160 to, byte[] tokenId)
         {
             if (to is null) throw new ArgumentNullException(nameof(to));
