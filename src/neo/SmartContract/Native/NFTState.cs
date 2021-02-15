@@ -9,17 +9,12 @@ namespace Neo.SmartContract.Native
     {
         public UInt160 Owner;
         public string Name;
-        public string Description;
 
         public abstract byte[] Id { get; }
 
         public virtual Map ToMap(ReferenceCounter referenceCounter)
         {
-            return new Map(referenceCounter)
-            {
-                ["name"] = Name,
-                ["description"] = Description
-            };
+            return new Map(referenceCounter) { ["name"] = Name };
         }
 
         public virtual void FromStackItem(StackItem stackItem)
@@ -27,12 +22,11 @@ namespace Neo.SmartContract.Native
             Struct @struct = (Struct)stackItem;
             Owner = new UInt160(@struct[0].GetSpan());
             Name = @struct[1].GetString();
-            Description = @struct[2].GetString();
         }
 
         public virtual StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Struct(referenceCounter) { Owner.ToArray(), Name, Description };
+            return new Struct(referenceCounter) { Owner.ToArray(), Name };
         }
     }
 }
