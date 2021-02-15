@@ -15,19 +15,19 @@ namespace Neo.SmartContract.Native
 
         internal CryptoLib() { }
 
-        [ContractMethod(1 << 15, CallFlags.None, Name = "ripemd160")]
+        [ContractMethod(CpuFee = 1 << 15, Name = "ripemd160")]
         public static byte[] RIPEMD160(byte[] data)
         {
             return data.RIPEMD160();
         }
 
-        [ContractMethod(1 << 15, CallFlags.None)]
+        [ContractMethod(CpuFee = 1 << 15)]
         public static byte[] Sha256(byte[] data)
         {
             return data.Sha256();
         }
 
-        [ContractMethod(1 << 15, CallFlags.None)]
+        [ContractMethod(CpuFee = 1 << 15)]
         public static bool VerifyWithECDsa(byte[] message, byte[] pubkey, byte[] signature, NamedCurve curve)
         {
             try

@@ -60,13 +60,13 @@ namespace Neo.SmartContract.Native
             return new UInt256(item.Value);
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public UInt256 CurrentHash(DataCache snapshot)
         {
             return snapshot[CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>().Hash;
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint CurrentIndex(DataCache snapshot)
         {
             return snapshot[CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>().Index;
@@ -89,7 +89,7 @@ namespace Neo.SmartContract.Native
             return item.Value.AsSerializable<TrimmedBlock>();
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private TrimmedBlock GetBlock(ApplicationEngine engine, byte[] indexOrHash)
         {
             UInt256 hash;
@@ -145,7 +145,7 @@ namespace Neo.SmartContract.Native
             return GetTransactionState(snapshot, hash)?.Transaction;
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates, Name = "getTransaction")]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getTransaction")]
         private Transaction GetTransactionForContract(ApplicationEngine engine, UInt256 hash)
         {
             TransactionState state = GetTransactionState(engine.Snapshot, hash);
@@ -153,7 +153,7 @@ namespace Neo.SmartContract.Native
             return state.Transaction;
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private int GetTransactionHeight(ApplicationEngine engine, UInt256 hash)
         {
             TransactionState state = GetTransactionState(engine.Snapshot, hash);
@@ -161,7 +161,7 @@ namespace Neo.SmartContract.Native
             return (int)state.BlockIndex;
         }
 
-        [ContractMethod(0_02000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
         private Transaction GetTransactionFromBlock(ApplicationEngine engine, byte[] blockIndexOrHash, int txIndex)
         {
             UInt256 hash;

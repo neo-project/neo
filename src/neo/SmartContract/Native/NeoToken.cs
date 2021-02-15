@@ -25,6 +25,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_Candidate = 33;
         private const byte Prefix_Committee = 14;
         private const byte Prefix_GasPerBlock = 29;
+        private const byte Prefix_RegisterPrice = 13;
         private const byte Prefix_VoterRewardPerCommittee = 23;
 
         private const byte NeoHolderRewardRatio = 10;
@@ -119,10 +120,8 @@ namespace Neo.SmartContract.Native
             var cachedCommittee = new CachedCommittee(engine.ProtocolSettings.StandbyCommittee.Select(p => (p, BigInteger.Zero)));
             engine.Snapshot.Add(CreateStorageKey(Prefix_Committee), new StorageItem(cachedCommittee));
             engine.Snapshot.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(new byte[0]));
-
-            // Initialize economic parameters
-
             engine.Snapshot.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u), new StorageItem(5 * GAS.Factor));
+            engine.Snapshot.Add(CreateStorageKey(Prefix_RegisterPrice), new StorageItem(1000 * GAS.Factor));
             Mint(engine, Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators), TotalAmount, false);
         }
 
@@ -173,7 +172,7 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        [ContractMethod(0_05000000, CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
         private void SetGasPerBlock(ApplicationEngine engine, BigInteger gasPerBlock)
         {
             if (gasPerBlock < 0 || gasPerBlock > 10 * GAS.Factor)
@@ -185,10 +184,25 @@ namespace Neo.SmartContract.Native
             entry.Set(gasPerBlock);
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger GetGasPerBlock(DataCache snapshot)
         {
             return GetSortedGasRecords(snapshot, Ledger.CurrentIndex(snapshot) + 1).First().GasPerBlock;
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
+        private void SetRegisterPrice(ApplicationEngine engine, long registerPrice)
+        {
+            if (registerPrice <= 0)
+                throw new ArgumentOutOfRangeException(nameof(registerPrice));
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_RegisterPrice)).Set(registerPrice);
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public long GetRegisterPrice(DataCache snapshot)
+        {
+            return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_RegisterPrice)];
         }
 
         private IEnumerable<(uint Index, BigInteger GasPerBlock)> GetSortedGasRecords(DataCache snapshot, uint end)
@@ -199,7 +213,7 @@ namespace Neo.SmartContract.Native
                 .Select(u => (BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.AsSpan(^sizeof(uint))), (BigInteger)u.Value));
         }
 
-        [ContractMethod(0_03000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger UnclaimedGas(DataCache snapshot, UInt160 account, uint end)
         {
             StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account));
@@ -208,11 +222,12 @@ namespace Neo.SmartContract.Native
             return CalculateBonus(snapshot, state.VoteTo, state.Balance, state.BalanceHeight, end);
         }
 
-        [ContractMethod(1000_00000000, CallFlags.WriteStates)]
+        [ContractMethod(RequiredCallFlags = CallFlags.WriteStates)]
         private bool RegisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
+            engine.AddGas(GetRegisterPrice(engine.Snapshot));
             StorageKey key = CreateStorageKey(Prefix_Candidate).Add(pubkey);
             StorageItem item = engine.Snapshot.GetAndChange(key, () => new StorageItem(new CandidateState()));
             CandidateState state = item.GetInteroperable<CandidateState>();
@@ -220,7 +235,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_05000000, CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.WriteStates)]
         private bool UnregisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
@@ -234,7 +249,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_05000000, CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.WriteStates)]
         private bool Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
         {
             if (!engine.CheckWitnessInternal(account)) return false;
@@ -272,7 +287,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(1_00000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
         public (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(DataCache snapshot)
         {
             byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
@@ -283,7 +298,7 @@ namespace Neo.SmartContract.Native
             )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes)).ToArray();
         }
 
-        [ContractMethod(1_00000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
         public ECPoint[] GetCommittee(DataCache snapshot)
         {
             return GetCommitteeFromCache(snapshot).Select(p => p.PublicKey).OrderBy(p => p).ToArray();
@@ -315,7 +330,7 @@ namespace Neo.SmartContract.Native
             return candidates.OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Take(settings.CommitteeMembersCount);
         }
 
-        [ContractMethod(1_00000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
         private ECPoint[] GetNextBlockValidators(ApplicationEngine engine)
         {
             return GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings.ValidatorsCount);

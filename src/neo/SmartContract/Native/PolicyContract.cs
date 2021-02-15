@@ -29,31 +29,31 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.Add(CreateStorageKey(Prefix_StoragePrice), new StorageItem(DefaultStoragePrice));
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public long GetFeePerByte(DataCache snapshot)
         {
             return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_FeePerByte)];
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint GetExecFeeFactor(DataCache snapshot)
         {
             return (uint)(BigInteger)snapshot[CreateStorageKey(Prefix_ExecFeeFactor)];
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint GetStoragePrice(DataCache snapshot)
         {
             return (uint)(BigInteger)snapshot[CreateStorageKey(Prefix_StoragePrice)];
         }
 
-        [ContractMethod(0_01000000, CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public bool IsBlocked(DataCache snapshot, UInt160 account)
         {
             return snapshot.Contains(CreateStorageKey(Prefix_BlockedAccount).Add(account));
         }
 
-        [ContractMethod(0_03000000, CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
         private void SetFeePerByte(ApplicationEngine engine, long value)
         {
             if (value < 0 || value > 1_00000000) throw new ArgumentOutOfRangeException(nameof(value));
@@ -61,7 +61,7 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_FeePerByte)).Set(value);
         }
 
-        [ContractMethod(0_03000000, CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
         private void SetExecFeeFactor(ApplicationEngine engine, uint value)
         {
             if (value == 0 || value > MaxExecFeeFactor) throw new ArgumentOutOfRangeException(nameof(value));
@@ -69,7 +69,7 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_ExecFeeFactor)).Set(value);
         }
 
-        [ContractMethod(0_03000000, CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
         private void SetStoragePrice(ApplicationEngine engine, uint value)
         {
             if (value == 0 || value > MaxStoragePrice) throw new ArgumentOutOfRangeException(nameof(value));
@@ -77,7 +77,7 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_StoragePrice)).Set(value);
         }
 
-        [ContractMethod(0_03000000, CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
         private bool BlockAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
@@ -89,7 +89,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(0_03000000, CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
         private bool UnblockAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
