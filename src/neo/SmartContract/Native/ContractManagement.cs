@@ -229,7 +229,7 @@ namespace Neo.SmartContract.Native
             engine.SendNotification(Hash, "Update", new VM.Types.Array { contract.Hash.ToArray() });
         }
 
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates | CallFlags.AllowNotify)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private void Destroy(ApplicationEngine engine)
         {
             UInt160 hash = engine.CallingScriptHash;
