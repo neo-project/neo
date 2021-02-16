@@ -237,7 +237,7 @@ namespace Neo.SmartContract.Native
             ContractState contract = engine.Snapshot.TryGet(ckey)?.GetInteroperable<ContractState>();
             if (contract is null) return;
             engine.Snapshot.Delete(ckey);
-            foreach (var (key, _) in engine.Snapshot.Find(BitConverter.GetBytes(contract.Id)))
+            foreach (var (key, _) in engine.Snapshot.Find(StorageKey.CreateSearchPrefix(contract.Id, ReadOnlySpan<byte>.Empty)))
                 engine.Snapshot.Delete(key);
             engine.SendNotification(Hash, "Destroy", new VM.Types.Array { hash.ToArray() });
         }
