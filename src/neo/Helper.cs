@@ -7,7 +7,6 @@ using System.Net;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace Neo
@@ -162,21 +161,6 @@ namespace Neo
                 return 0;
             Span<byte> b = stackalloc byte[sizeInBits / 8 + 1];
             rand.NextBytes(b);
-            if (sizeInBits % 8 == 0)
-                b[b.Length - 1] = 0;
-            else
-                b[b.Length - 1] &= (byte)((1 << sizeInBits % 8) - 1);
-            return new BigInteger(b);
-        }
-
-        internal static BigInteger NextBigInteger(this RandomNumberGenerator rng, int sizeInBits)
-        {
-            if (sizeInBits < 0)
-                throw new ArgumentException("sizeInBits must be non-negative");
-            if (sizeInBits == 0)
-                return 0;
-            Span<byte> b = stackalloc byte[sizeInBits / 8 + 1];
-            rng.GetBytes(b);
             if (sizeInBits % 8 == 0)
                 b[b.Length - 1] = 0;
             else
