@@ -2,6 +2,7 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Linq;
 
@@ -107,7 +108,7 @@ namespace Neo.SmartContract
         /// <returns>Return checksum</returns>
         public static uint ComputeChecksum(NefFile file)
         {
-            return BitConverter.ToUInt32(Crypto.Hash256(file.ToArray().AsSpan(..^sizeof(int))));
+            return BinaryPrimitives.ReadUInt32LittleEndian(Crypto.Hash256(file.ToArray().AsSpan(..^sizeof(uint))));
         }
 
         public JObject ToJson()

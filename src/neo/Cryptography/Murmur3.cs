@@ -65,7 +65,10 @@ namespace Neo.Cryptography
             hash ^= hash >> 13;
             hash *= 0xc2b2ae35;
             hash ^= hash >> 16;
-            return BitConverter.GetBytes(hash);
+
+            byte[] buffer = new byte[sizeof(uint)];
+            BinaryPrimitives.WriteUInt32LittleEndian(buffer, hash);
+            return buffer;
         }
 
         public override void Initialize()
