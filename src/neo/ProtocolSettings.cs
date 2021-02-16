@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using Neo.Cryptography.ECC;
+using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 
 namespace Neo
@@ -20,7 +20,7 @@ namespace Neo
         public uint MaxTransactionsPerBlock { get; init; }
         public int MemoryPoolMaxTransactions { get; init; }
         public uint MaxTraceableBlocks { get; init; }
-        public IReadOnlyDictionary<string, uint> NativeActivations { get; init; }
+        public IReadOnlyDictionary<string, uint[]> NativeUpdateHistory { get; init; }
 
         private IReadOnlyList<ECPoint> _standbyValidators;
         public IReadOnlyList<ECPoint> StandbyValidators => _standbyValidators ??= StandbyCommittee.Take(ValidatorsCount).ToArray();
@@ -68,7 +68,19 @@ namespace Neo
             MaxTransactionsPerBlock = 512,
             MemoryPoolMaxTransactions = 50_000,
             MaxTraceableBlocks = 2_102_400,
-            NativeActivations = ImmutableDictionary<string, uint>.Empty
+            NativeUpdateHistory = new Dictionary<string, uint[]>
+            {
+                [nameof(ContractManagement)] = new[] { 0u },
+                [nameof(StdLib)] = new[] { 0u },
+                [nameof(CryptoLib)] = new[] { 0u },
+                [nameof(LedgerContract)] = new[] { 0u },
+                [nameof(NeoToken)] = new[] { 0u },
+                [nameof(GasToken)] = new[] { 0u },
+                [nameof(PolicyContract)] = new[] { 0u },
+                [nameof(RoleManagement)] = new[] { 0u },
+                [nameof(OracleContract)] = new[] { 0u },
+                [nameof(NameService)] = new[] { 0u }
+            }
         };
 
         public static ProtocolSettings Load(string path, bool optional = true)
@@ -90,17 +102,10 @@ namespace Neo
                 MaxTransactionsPerBlock = section.GetValue("MaxTransactionsPerBlock", Default.MaxTransactionsPerBlock),
                 MemoryPoolMaxTransactions = section.GetValue("MemoryPoolMaxTransactions", Default.MemoryPoolMaxTransactions),
                 MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", Default.MaxTraceableBlocks),
-                NativeActivations = section.GetSection("NativeActivations").Exists()
-                    ? section.GetSection("NativeActivations").GetChildren().ToDictionary((a) => a.Key, b => uint.Parse(b.Value))
-                    : Default.NativeActivations
+                NativeUpdateHistory = section.GetSection("NativeUpdateHistory").Exists()
+                    ? section.GetSection("NativeUpdateHistory").GetChildren().ToDictionary(p => p.Key, p => p.GetChildren().Select(q => uint.Parse(q.Value)).ToArray())
+                    : Default.NativeUpdateHistory
             };
-        }
-
-        public uint GetNativeActivation(string name)
-        {
-            if (NativeActivations.TryGetValue(name, out uint index))
-                return index;
-            return 0;
         }
     }
 }
