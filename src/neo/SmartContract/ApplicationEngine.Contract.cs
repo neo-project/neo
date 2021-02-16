@@ -19,6 +19,7 @@ namespace Neo.SmartContract
         /// Warning: check first that input public key is valid, before creating the script.
         /// </summary>
         public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 1 << 8, CallFlags.None);
+        public static readonly InteropDescriptor System_Contract_CreateStandardMultisigAccount = Register("System.Contract.CreateStandardMultisigAccount", nameof(CreateStandardMultisigAccount), 1 << 8, CallFlags.None);
         public static readonly InteropDescriptor System_Contract_NativeOnPersist = Register("System.Contract.NativeOnPersist", nameof(NativeOnPersist), 0, CallFlags.WriteStates);
         public static readonly InteropDescriptor System_Contract_NativePostPersist = Register("System.Contract.NativePostPersist", nameof(NativePostPersist), 0, CallFlags.WriteStates);
 
@@ -84,6 +85,11 @@ namespace Neo.SmartContract
         protected internal UInt160 CreateStandardAccount(ECPoint pubKey)
         {
             return Contract.CreateSignatureRedeemScript(pubKey).ToScriptHash();
+        }
+
+        protected internal UInt160 CreateStandardMultisigAccount(int m, ECPoint[] pubKey)
+        {
+            return Contract.CreateMultiSigRedeemScript(m, pubKey).ToScriptHash();
         }
 
         protected internal void NativeOnPersist()
