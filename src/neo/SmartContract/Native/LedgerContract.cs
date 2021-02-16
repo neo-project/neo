@@ -69,7 +69,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint CurrentIndex(DataCache snapshot)
         {
-            return snapshot[CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>().Index;
+            return snapshot.TryGet(CreateStorageKey(Prefix_CurrentBlock))?.GetInteroperable<HashIndexState>().Index ?? 0;
         }
 
         public bool ContainsBlock(DataCache snapshot, UInt256 hash)
