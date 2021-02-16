@@ -87,9 +87,9 @@ namespace Neo.SmartContract
             return Contract.CreateSignatureRedeemScript(pubKey).ToScriptHash();
         }
 
-        protected internal UInt160 CreateStandardMultisigAccount(int m, ECPoint[] pubKey)
+        protected internal UInt160 CreateStandardMultisigAccount(int m, ECPoint[] pubKeys)
         {
-            return Contract.CreateMultiSigRedeemScript(m, pubKey).ToScriptHash();
+            return Contract.CreateMultiSigRedeemScript(m, pubKeys).ToScriptHash();
         }
 
         protected internal void NativeOnPersist()
