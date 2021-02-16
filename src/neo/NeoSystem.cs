@@ -18,6 +18,7 @@ namespace Neo
 {
     public class NeoSystem : IDisposable
     {
+        public event EventHandler<object> ServiceAdded;
         public ProtocolSettings Settings { get; }
         public ActorSystem ActorSystem { get; } = ActorSystem.Create(nameof(NeoSystem),
             $"akka {{ log-dead-letters = off , loglevel = warning, loggers = [ \"{typeof(Utility.Logger).AssemblyQualifiedName}\" ] }}" +
@@ -105,6 +106,7 @@ namespace Neo
         public void AddService(object service)
         {
             ImmutableInterlocked.Update(ref services, p => p.Add(service));
+            ServiceAdded?.Invoke(this, service);
         }
 
         public T GetService<T>(Func<T, bool> filter = null)
