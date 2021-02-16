@@ -82,18 +82,17 @@ namespace Neo.Wallets.SQLite
                 rng.GetBytes(masterKey);
             }
             Version version = Assembly.GetExecutingAssembly().GetName().Version;
+            byte[] versionBuffer = new byte[sizeof(int) * 4];
+            BinaryPrimitives.WriteInt32LittleEndian(versionBuffer, version.Major);
+            BinaryPrimitives.WriteInt32LittleEndian(versionBuffer.AsSpan(4), version.Minor);
+            BinaryPrimitives.WriteInt32LittleEndian(versionBuffer.AsSpan(8), version.Build);
+            BinaryPrimitives.WriteInt32LittleEndian(versionBuffer.AsSpan(12), version.Revision);
             BuildDatabase();
             SaveStoredData("IV", iv);
             SaveStoredData("Salt", salt);
             SaveStoredData("PasswordHash", passwordKey.Concat(salt).ToArray().Sha256());
             SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
-            SaveStoredData("Version", new[] { version.Major, version.Minor, version.Build, version.Revision }
-                .Select(p =>
-                {
-                    byte[] data = new byte[sizeof(int)];
-                    BinaryPrimitives.WriteInt32LittleEndian(data, p);
-                    return data;
-                }).SelectMany(p => p).ToArray());
+            SaveStoredData("Version", versionBuffer);
             SaveStoredData("ScryptN", this.scrypt.N);
             SaveStoredData("ScryptR", this.scrypt.R);
             SaveStoredData("ScryptP", this.scrypt.P);
