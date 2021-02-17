@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Numerics;
-using System.Security.Cryptography;
 
 namespace Neo.UnitTests
 {
@@ -197,18 +196,6 @@ namespace Neo.UnitTests
         public void TestNextBigIntegerForRandom()
         {
             Random ran = new Random();
-            Action action1 = () => ran.NextBigInteger(-1);
-            action1.Should().Throw<ArgumentException>();
-
-            ran.NextBigInteger(0).Should().Be(0);
-            ran.NextBigInteger(8).Should().NotBeNull();
-            ran.NextBigInteger(9).Should().NotBeNull();
-        }
-
-        [TestMethod]
-        public void TestNextBigIntegerForRandomNumberGenerator()
-        {
-            var ran = RandomNumberGenerator.Create();
             Action action1 = () => ran.NextBigInteger(-1);
             action1.Should().Throw<ArgumentException>();
 
