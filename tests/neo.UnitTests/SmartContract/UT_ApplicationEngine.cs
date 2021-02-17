@@ -6,7 +6,7 @@ using Neo.VM.Types;
 namespace Neo.UnitTests.SmartContract
 {
     [TestClass]
-    public class UT_ApplicationEngine
+    public partial class UT_ApplicationEngine
     {
         private string eventName = null;
 
