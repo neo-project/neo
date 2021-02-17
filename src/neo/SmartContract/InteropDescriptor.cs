@@ -1,5 +1,5 @@
 using Neo.Cryptography;
-using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -19,7 +19,7 @@ namespace Neo.SmartContract
         internal InteropDescriptor(string name, MethodInfo handler, long fixedPrice, CallFlags requiredCallFlags)
         {
             this.Name = name;
-            this.Hash = BitConverter.ToUInt32(Encoding.ASCII.GetBytes(name).Sha256(), 0);
+            this.Hash = BinaryPrimitives.ReadUInt32LittleEndian(Encoding.ASCII.GetBytes(name).Sha256());
             this.Handler = handler;
             this.Parameters = handler.GetParameters().Select(p => new InteropParameterDescriptor(p)).ToList().AsReadOnly();
             this.FixedPrice = fixedPrice;
