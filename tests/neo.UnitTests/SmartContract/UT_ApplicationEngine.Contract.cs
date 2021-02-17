@@ -31,12 +31,13 @@ namespace Neo.UnitTests.SmartContract
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, null, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             using var script = new ScriptBuilder();
-            script.EmitSysCall(ApplicationEngine.System_Contract_CreateMultisigAccount, new object[] { 2,
-                new object[] {
-                    settings.StandbyCommittee[0].EncodePoint(true) ,
-                    settings.StandbyCommittee[1].EncodePoint(true),
-                    settings.StandbyCommittee[2].EncodePoint(true)
-                }
+            script.EmitSysCall(ApplicationEngine.System_Contract_CreateMultisigAccount, new object[]
+            {
+                2,
+                3,
+                settings.StandbyCommittee[0].EncodePoint(true),
+                settings.StandbyCommittee[1].EncodePoint(true),
+                settings.StandbyCommittee[2].EncodePoint(true)
             });
             engine.LoadScript(script.ToArray());
 
