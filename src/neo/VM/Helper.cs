@@ -53,17 +53,7 @@ namespace Neo.VM
 
         public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, CallFlags flags, params object[] args)
         {
-            if (args.Length == 0)
-            {
-                sb.Emit(OpCode.NEWARRAY0);
-            }
-            else
-            {
-                for (int i = args.Length - 1; i >= 0; i--)
-                    sb.EmitPush(args[i]);
-                sb.EmitPush(args.Length);
-                sb.Emit(OpCode.PACK);
-            }
+            sb.CreateArray(args);
             sb.EmitPush(flags);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
