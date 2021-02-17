@@ -30,11 +30,11 @@ namespace Neo.Wallets.NEP6
 
         public static NEP6Account FromJson(JObject json, NEP6Wallet wallet)
         {
-            return new NEP6Account(wallet, json["address"].AsString().ToScriptHash(wallet.ProtocolSettings.AddressVersion), json["key"]?.AsString())
+            return new NEP6Account(wallet, json["address"].GetString().ToScriptHash(wallet.ProtocolSettings.AddressVersion), json["key"]?.GetString())
             {
-                Label = json["label"]?.AsString(),
-                IsDefault = json["isdefault"].AsBoolean(),
-                Lock = json["lock"].AsBoolean(),
+                Label = json["label"]?.GetString(),
+                IsDefault = json["isdefault"].GetBoolean(),
+                Lock = json["lock"].GetBoolean(),
                 Contract = NEP6Contract.FromJson(json["contract"]),
                 Extra = json["extra"]
             };

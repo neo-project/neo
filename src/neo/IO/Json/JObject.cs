@@ -45,17 +45,20 @@ namespace Neo.IO.Json
             return Properties.ContainsKey(key);
         }
 
-        private static string GetString(ref Utf8JsonReader reader)
+        public virtual JArray GetArray() => throw new InvalidCastException();
+
+        public virtual bool GetBoolean() => throw new InvalidCastException();
+
+        public int GetInt32()
         {
-            try
-            {
-                return reader.GetString();
-            }
-            catch (InvalidOperationException ex)
-            {
-                throw new FormatException(ex.Message, ex);
-            }
+            double d = GetNumber();
+            if (d % 1 != 0) throw new InvalidCastException();
+            return checked((int)d);
         }
+
+        public virtual double GetNumber() => throw new InvalidCastException();
+
+        public virtual string GetString() => throw new InvalidCastException();
 
         public static JObject Parse(ReadOnlySpan<byte> value, int max_nest = 100)
         {
@@ -92,7 +95,7 @@ namespace Neo.IO.Json
                 JsonTokenType.Number => reader.GetDouble(),
                 JsonTokenType.StartArray => ReadArray(ref reader),
                 JsonTokenType.StartObject => ReadObject(ref reader),
-                JsonTokenType.String => GetString(ref reader),
+                JsonTokenType.String => ReadString(ref reader),
                 JsonTokenType.True => true,
                 _ => throw new FormatException(),
             };
@@ -125,7 +128,7 @@ namespace Neo.IO.Json
                     case JsonTokenType.EndObject:
                         return obj;
                     case JsonTokenType.PropertyName:
-                        string name = GetString(ref reader);
+                        string name = ReadString(ref reader);
                         if (obj.Properties.ContainsKey(name)) throw new FormatException();
                         JObject value = Read(ref reader);
                         obj.Properties.Add(name, value);
@@ -135,6 +138,18 @@ namespace Neo.IO.Json
                 }
             }
             throw new FormatException();
+        }
+
+        private static string ReadString(ref Utf8JsonReader reader)
+        {
+            try
+            {
+                return reader.GetString();
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new FormatException(ex.Message, ex);
+            }
         }
 
         public byte[] ToByteArray(bool indented)

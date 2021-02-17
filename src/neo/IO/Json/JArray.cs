@@ -71,6 +71,8 @@ namespace Neo.IO.Json
             items.CopyTo(array, arrayIndex);
         }
 
+        public override JArray GetArray() => this;
+
         public IEnumerator<JObject> GetEnumerator()
         {
             return items.GetEnumerator();

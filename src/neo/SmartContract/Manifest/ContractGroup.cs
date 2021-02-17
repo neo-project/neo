@@ -45,8 +45,8 @@ namespace Neo.SmartContract.Manifest
         {
             ContractGroup group = new ContractGroup
             {
-                PubKey = ECPoint.Parse(json["pubkey"].AsString(), ECCurve.Secp256r1),
-                Signature = Convert.FromBase64String(json["signature"].AsString()),
+                PubKey = ECPoint.Parse(json["pubkey"].GetString(), ECCurve.Secp256r1),
+                Signature = Convert.FromBase64String(json["signature"].GetString()),
             };
             if (group.Signature.Length != 64) throw new FormatException();
             return group;

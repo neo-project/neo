@@ -32,6 +32,8 @@ namespace Neo.IO.Json
             return Value.ToString(CultureInfo.InvariantCulture);
         }
 
+        public override double GetNumber() => Value;
+
         public override string ToString()
         {
             return AsString();
