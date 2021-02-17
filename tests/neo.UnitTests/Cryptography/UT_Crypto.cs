@@ -52,11 +52,12 @@ namespace Neo.UnitTests.Cryptography
 
             wrongKey[0] = 0x03;
             for (int i = 1; i < 33; i++) wrongKey[i] = byte.MaxValue;
-            Crypto.VerifySignature(message, signature, wrongKey, Neo.Cryptography.ECC.ECCurve.Secp256r1).Should().BeFalse();
-
-            wrongKey = new byte[36];
             Action action = () => Crypto.VerifySignature(message, signature, wrongKey, Neo.Cryptography.ECC.ECCurve.Secp256r1);
             action.Should().Throw<ArgumentException>();
+
+            wrongKey = new byte[36];
+            action = () => Crypto.VerifySignature(message, signature, wrongKey, Neo.Cryptography.ECC.ECCurve.Secp256r1);
+            action.Should().Throw<FormatException>();
         }
 
         [TestMethod]

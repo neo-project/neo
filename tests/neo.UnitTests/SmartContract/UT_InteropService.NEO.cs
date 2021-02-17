@@ -33,7 +33,8 @@ namespace Neo.UnitTests.SmartContract
             ECPoint pubkey = keyPair.PublicKey;
             byte[] signature = Crypto.Sign(message, privateKey, pubkey.EncodePoint(false).Skip(1).ToArray());
             engine.CheckSig(pubkey.EncodePoint(false), signature).Should().BeTrue();
-            engine.CheckSig(new byte[70], signature).Should().BeFalse();
+            Action action = () => engine.CheckSig(new byte[70], signature);
+            action.Should().Throw<FormatException>();
         }
 
         [TestMethod]
@@ -100,7 +101,7 @@ namespace Neo.UnitTests.SmartContract
                 signature1,
                 signature2
             };
-            engine.CheckMultisig(pubkeys, signatures).Should().BeFalse();
+            Assert.ThrowsException<FormatException>(() => engine.CheckMultisig(pubkeys, signatures));
         }
 
         [TestMethod]
