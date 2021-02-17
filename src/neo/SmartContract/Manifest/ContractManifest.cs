@@ -53,7 +53,7 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// Custom user data
         /// </summary>
-        public JObject Extra { get; set; }
+        public string Extra { get; set; }
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
@@ -69,7 +69,7 @@ namespace Neo.SmartContract.Manifest
                 Array array => WildcardContainer<UInt160>.Create(array.Select(p => new UInt160(p.GetSpan())).ToArray()),
                 _ => throw new ArgumentException(null, nameof(stackItem))
             };
-            Extra = JObject.Parse(@struct[6].GetSpan());
+            Extra = @struct[6].GetString();
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
@@ -82,7 +82,7 @@ namespace Neo.SmartContract.Manifest
                 Abi.ToStackItem(referenceCounter),
                 new Array(referenceCounter, Permissions.Select(p => p.ToStackItem(referenceCounter))),
                 Trusts.IsWildcard ? StackItem.Null : new Array(referenceCounter, Trusts.Select(p => (StackItem)p.ToArray())),
-                Extra is null ? "null" : Extra.ToByteArray(false)
+                Extra
             };
         }
 
@@ -101,7 +101,7 @@ namespace Neo.SmartContract.Manifest
                 Abi = ContractAbi.FromJson(json["abi"]),
                 Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u)).ToArray(),
                 Trusts = WildcardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString())),
-                Extra = json["extra"]
+                Extra = json["extra"]?.ToString() ?? "null"
             };
             if (string.IsNullOrEmpty(manifest.Name))
                 throw new FormatException();
@@ -140,7 +140,7 @@ namespace Neo.SmartContract.Manifest
                 ["abi"] = Abi.ToJson(),
                 ["permissions"] = Permissions.Select(p => p.ToJson()).ToArray(),
                 ["trusts"] = Trusts.ToJson(),
-                ["extra"] = Extra
+                ["extra"] = JObject.Parse(Extra)
             };
         }
 
