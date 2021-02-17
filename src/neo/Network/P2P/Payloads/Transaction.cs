@@ -279,12 +279,11 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        public bool Verify(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context)
+        public VerifyResult Verify(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context)
         {
             VerifyResult result = VerifyStateIndependent(settings);
-            if (result != VerifyResult.Succeed) return false;
-            result = VerifyStateDependent(settings, snapshot, context);
-            return result == VerifyResult.Succeed;
+            if (result != VerifyResult.Succeed) return result;
+            return VerifyStateDependent(settings, snapshot, context);
         }
 
         public virtual VerifyResult VerifyStateDependent(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context)
