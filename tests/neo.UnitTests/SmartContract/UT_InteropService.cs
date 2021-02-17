@@ -302,7 +302,7 @@ namespace Neo.UnitTests.SmartContract
 
             byte[] wrongkey = pubkey.EncodePoint(false);
             wrongkey[0] = 5;
-            engine.CheckSig(wrongkey, signature).Should().BeFalse();
+            Assert.ThrowsException<FormatException>(() => engine.CheckSig(wrongkey, signature));
         }
 
         [TestMethod]
