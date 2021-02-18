@@ -10,6 +10,7 @@ namespace Neo.SmartContract.Native
     {
         public const uint DefaultExecFeeFactor = 30;
         public const uint DefaultStoragePrice = 100000;
+        public const uint DefaultFeePerByte = 1000;
         public const uint MaxExecFeeFactor = 1000;
         public const uint MaxStoragePrice = 10000000;
 
@@ -24,7 +25,7 @@ namespace Neo.SmartContract.Native
 
         internal override void Initialize(ApplicationEngine engine)
         {
-            engine.Snapshot.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem(1000));
+            engine.Snapshot.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem(DefaultFeePerByte));
             engine.Snapshot.Add(CreateStorageKey(Prefix_ExecFeeFactor), new StorageItem(DefaultExecFeeFactor));
             engine.Snapshot.Add(CreateStorageKey(Prefix_StoragePrice), new StorageItem(DefaultStoragePrice));
         }
