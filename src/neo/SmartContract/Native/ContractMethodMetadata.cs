@@ -1,3 +1,4 @@
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
@@ -70,6 +71,7 @@ namespace Neo.SmartContract.Native
             if (type == typeof(string)) return ContractParameterType.String;
             if (type == typeof(UInt160)) return ContractParameterType.Hash160;
             if (type == typeof(UInt256)) return ContractParameterType.Hash256;
+            if (type == typeof(ECPoint)) return ContractParameterType.PublicKey;
             if (type == typeof(VM.Types.Boolean)) return ContractParameterType.Boolean;
             if (type == typeof(Integer)) return ContractParameterType.Integer;
             if (type == typeof(ByteString)) return ContractParameterType.ByteArray;
@@ -77,11 +79,14 @@ namespace Neo.SmartContract.Native
             if (type == typeof(Array)) return ContractParameterType.Array;
             if (type == typeof(Struct)) return ContractParameterType.Array;
             if (type == typeof(Map)) return ContractParameterType.Map;
+            if (type == typeof(StackItem)) return ContractParameterType.Any;
+            if (type == typeof(object)) return ContractParameterType.Any;
             if (typeof(IInteroperable).IsAssignableFrom(type)) return ContractParameterType.Array;
             if (typeof(ISerializable).IsAssignableFrom(type)) return ContractParameterType.ByteArray;
             if (type.IsArray) return ContractParameterType.Array;
             if (type.IsEnum) return ContractParameterType.Integer;
-            return ContractParameterType.Any;
+            if (type.IsValueType) return ContractParameterType.Array;
+            return ContractParameterType.InteropInterface;
         }
     }
 }
