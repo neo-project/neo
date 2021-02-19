@@ -1030,7 +1030,6 @@ namespace Neo.UnitTests.SmartContract.Native
             st.Should().Be(0);
 
             trackable.Key.Key.Should().BeEquivalentTo(new byte[] { 33 }.Concat(eCPoint.EncodePoint(true)));
-            trackable.Item.IsConstant.Should().Be(false);
         }
 
         internal static void CheckBalance(byte[] account, DataCache.Trackable trackable, BigInteger balance, BigInteger height, ECPoint voteTo)
@@ -1045,7 +1044,6 @@ namespace Neo.UnitTests.SmartContract.Native
             st[2].GetSpan().AsSerializable<ECPoint>().Should().BeEquivalentTo(voteTo);  // Votes
 
             trackable.Key.Key.Should().BeEquivalentTo(new byte[] { 20 }.Concat(account));
-            trackable.Item.IsConstant.Should().Be(false);
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
