@@ -11,9 +11,8 @@ namespace Neo.SmartContract
     {
         private byte[] value;
         private object cache;
-        public bool IsConstant;
 
-        public int Size => Value.GetVarSize() + sizeof(bool);
+        public int Size => Value.GetVarSize();
 
         public byte[] Value
         {
@@ -37,22 +36,19 @@ namespace Neo.SmartContract
 
         public StorageItem() { }
 
-        public StorageItem(byte[] value, bool isConstant = false)
+        public StorageItem(byte[] value)
         {
             this.value = value;
-            this.IsConstant = isConstant;
         }
 
-        public StorageItem(BigInteger value, bool isConstant = false)
+        public StorageItem(BigInteger value)
         {
             this.cache = value;
-            this.IsConstant = isConstant;
         }
 
-        public StorageItem(IInteroperable interoperable, bool isConstant = false)
+        public StorageItem(IInteroperable interoperable)
         {
             this.cache = interoperable;
-            this.IsConstant = isConstant;
         }
 
         public void Add(BigInteger integer)
@@ -64,21 +60,18 @@ namespace Neo.SmartContract
         {
             return new StorageItem
             {
-                Value = Value,
-                IsConstant = IsConstant
+                Value = Value
             };
         }
 
         public void Deserialize(BinaryReader reader)
         {
             Value = reader.ReadVarBytes();
-            IsConstant = reader.ReadBoolean();
         }
 
         public void FromReplica(StorageItem replica)
         {
             Value = replica.Value;
-            IsConstant = replica.IsConstant;
         }
 
         public T GetInteroperable<T>() where T : IInteroperable, new()
@@ -103,7 +96,6 @@ namespace Neo.SmartContract
         public void Serialize(BinaryWriter writer)
         {
             writer.WriteVarBytes(Value);
-            writer.Write(IsConstant);
         }
 
         public void Set(BigInteger integer)
