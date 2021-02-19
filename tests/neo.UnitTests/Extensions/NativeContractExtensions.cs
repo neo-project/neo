@@ -80,7 +80,7 @@ namespace Neo.UnitTests.Extensions
         public static void AddContract(this DataCache snapshot, UInt160 hash, ContractState state)
         {
             var key = new KeyBuilder(NativeContract.ContractManagement.Id, 8).Add(hash);
-            snapshot.Add(key, new StorageItem(state, false));
+            snapshot.Add(key, new StorageItem(state));
         }
 
         public static void DeleteContract(this DataCache snapshot, UInt160 hash)

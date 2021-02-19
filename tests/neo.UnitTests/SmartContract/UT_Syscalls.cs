@@ -78,7 +78,7 @@ namespace Neo.UnitTests.SmartContract
                 {
                     BlockIndex = block.Index,
                     Transaction = tx
-                }, true));
+                }));
 
                 engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
                 engine.LoadScript(script.ToArray());
