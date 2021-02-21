@@ -33,6 +33,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var address = new WalletAccount[pubKeys];
             var wallets = new NEP6Wallet[pubKeys];
             var walletsUnlocks = new IDisposable[pubKeys];
+            var snapshot = TestBlockchain.GetTestSnapshot();
 
             for (int x = 0; x < pubKeys; x++)
             {
@@ -52,7 +53,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Sign
 
-            var data = new ContractParametersContext(new Transaction()
+            var data = new ContractParametersContext(snapshot, new Transaction()
             {
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Signers = new[] {new Signer()
@@ -85,11 +86,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Check max size
 
-            witness.Size.Should().Be(1024);
+            witness.Size.Should().Be(1023);
             witness.InvocationScript.GetVarSize().Should().Be(663);
-            witness.VerificationScript.GetVarSize().Should().Be(361);
-
-            Assert.IsTrue(witness.Size <= 1024);
+            witness.VerificationScript.GetVarSize().Should().Be(360);
 
             var copy = witness.ToArray().AsSerializable<Witness>();
 

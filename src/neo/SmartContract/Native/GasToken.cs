@@ -1,5 +1,4 @@
 using Neo.Cryptography.ECC;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 
 namespace Neo.SmartContract.Native
@@ -15,7 +14,7 @@ namespace Neo.SmartContract.Native
 
         internal override void Initialize(ApplicationEngine engine)
         {
-            UInt160 account = Contract.GetBFTAddress(Blockchain.StandbyValidators);
+            UInt160 account = Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators);
             Mint(engine, account, 30_000_000 * Factor, false);
         }
 
@@ -27,8 +26,8 @@ namespace Neo.SmartContract.Native
                 Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
                 totalNetworkFee += tx.NetworkFee;
             }
-            ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot);
-            UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.ConsensusData.PrimaryIndex]).ToScriptHash();
+            ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings.ValidatorsCount);
+            UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
             Mint(engine, primary, totalNetworkFee, false);
         }
     }

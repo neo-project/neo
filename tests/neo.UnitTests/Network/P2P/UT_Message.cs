@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.VM;
 using System;
 using System.Linq;
 
@@ -130,22 +131,23 @@ namespace Neo.UnitTests.Network.P2P
             {
                 Nonce = 1,
                 Version = 0,
-                Attributes = new TransactionAttribute[0],
-                Script = new byte[75],
+                Attributes = Array.Empty<TransactionAttribute>(),
+                Script = new byte[] { (byte)OpCode.PUSH1 },
                 Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
-                Witnesses = new Witness[0],
+                Witnesses = new Witness[] { new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = new byte[0] } },
             };
 
             var msg = Message.Create(MessageCommand.Transaction, payload);
             var buffer = msg.ToArray();
 
-            buffer.Length.Should().Be(128);
+            buffer.Length.Should().Be(56);
 
-            payload.Script = new byte[payload.Script.Length + 10];
+            payload.Script = new byte[100];
+            for (int i = 0; i < payload.Script.Length; i++) payload.Script[i] = (byte)OpCode.PUSH2;
             msg = Message.Create(MessageCommand.Transaction, payload);
             buffer = msg.ToArray();
 
-            buffer.Length.Should().Be(33);
+            buffer.Length.Should().Be(30);
 
             var copy = buffer.AsSerializable<Message>();
             var payloadCopy = (Transaction)copy.Payload;

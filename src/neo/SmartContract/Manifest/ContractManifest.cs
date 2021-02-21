@@ -95,12 +95,12 @@ namespace Neo.SmartContract.Manifest
         {
             ContractManifest manifest = new ContractManifest
             {
-                Name = json["name"].AsString(),
+                Name = json["name"].GetString(),
                 Groups = ((JArray)json["groups"]).Select(u => ContractGroup.FromJson(u)).ToArray(),
-                SupportedStandards = ((JArray)json["supportedstandards"]).Select(u => u.AsString()).ToArray(),
+                SupportedStandards = ((JArray)json["supportedstandards"]).Select(u => u.GetString()).ToArray(),
                 Abi = ContractAbi.FromJson(json["abi"]),
                 Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u)).ToArray(),
-                Trusts = WildcardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.AsString())),
+                Trusts = WildcardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.GetString())),
                 Extra = json["extra"]
             };
             if (string.IsNullOrEmpty(manifest.Name))

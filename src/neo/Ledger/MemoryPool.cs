@@ -3,7 +3,6 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
-using Neo.SmartContract.Native;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -19,10 +18,10 @@ namespace Neo.Ledger
         private const int BlocksTillRebroadcast = 10;
         private int RebroadcastMultiplierThreshold => Capacity / 10;
 
-        private static readonly double MaxMillisecondsToReverifyTx = (double)Blockchain.MillisecondsPerBlock / 3;
+        private readonly double MaxMillisecondsToReverifyTx;
 
         // These two are not expected to be hit, they are just safegaurds.
-        private static readonly double MaxMillisecondsToReverifyTxPerIdle = (double)Blockchain.MillisecondsPerBlock / 15;
+        private readonly double MaxMillisecondsToReverifyTxPerIdle;
 
         private readonly NeoSystem _system;
 
@@ -58,8 +57,6 @@ namespace Neo.Ledger
         // Internal methods to aid in unit testing
         internal int SortedTxCount => _sortedTransactions.Count;
         internal int UnverifiedSortedTxCount => _unverifiedSortedTransactions.Count;
-
-        private int _maxTxPerBlock;
 
         /// <summary>
         /// Total maximum capacity of transactions the pool can hold.
@@ -97,15 +94,12 @@ namespace Neo.Ledger
 
         public int UnVerifiedCount => _unverifiedTransactions.Count;
 
-        public MemoryPool(NeoSystem system, int capacity)
+        public MemoryPool(NeoSystem system)
         {
             _system = system;
-            Capacity = capacity;
-        }
-
-        internal void LoadPolicy(DataCache snapshot)
-        {
-            _maxTxPerBlock = (int)NativeContract.Policy.GetMaxTransactionsPerBlock(snapshot);
+            Capacity = system.Settings.MemoryPoolMaxTransactions;
+            MaxMillisecondsToReverifyTx = (double)system.Settings.MillisecondsPerBlock / 3;
+            MaxMillisecondsToReverifyTxPerIdle = (double)system.Settings.MillisecondsPerBlock / 15;
         }
 
         /// <summary>
@@ -265,7 +259,7 @@ namespace Neo.Ledger
             _txRwLock.EnterWriteLock();
             try
             {
-                VerifyResult result = tx.VerifyStateDependent(snapshot, VerificationContext);
+                VerifyResult result = tx.VerifyStateDependent(_system.Settings, snapshot, VerificationContext);
                 if (result != VerifyResult.Succeed) return result;
 
                 _unsortedTransactions.Add(tx.Hash, poolItem);
@@ -282,9 +276,9 @@ namespace Neo.Ledger
 
             foreach (IMemoryPoolTxObserverPlugin plugin in Plugin.TxObserverPlugins)
             {
-                plugin.TransactionAdded(poolItem.Tx);
+                plugin.TransactionAdded(_system, poolItem.Tx);
                 if (removedTransactions != null)
-                    plugin.TransactionsRemoved(MemoryPoolTxRemovalReason.CapacityExceeded, removedTransactions);
+                    plugin.TransactionsRemoved(_system, MemoryPoolTxRemovalReason.CapacityExceeded, removedTransactions);
             }
 
             if (!_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.OutOfMemory;
@@ -350,8 +344,6 @@ namespace Neo.Ledger
         // Note: this must only be called from a single thread (the Blockchain actor)
         internal void UpdatePoolForBlockPersisted(Block block, DataCache snapshot)
         {
-            LoadPolicy(snapshot);
-
             _txRwLock.EnterWriteLock();
             try
             {
@@ -370,8 +362,12 @@ namespace Neo.Ledger
                 _txRwLock.ExitWriteLock();
             }
 
-            ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions,
-                _maxTxPerBlock, MaxMillisecondsToReverifyTx, snapshot);
+            // If we know about headers of future blocks, no point in verifying transactions from the unverified tx pool
+            // until we get caught up.
+            if (block.Index > 0 && _system.HeaderCache.Count > 0)
+                return;
+
+            ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions, (int)_system.Settings.MaxTransactionsPerBlock, MaxMillisecondsToReverifyTx, snapshot);
         }
 
         internal void InvalidateAllTransactions()
@@ -400,7 +396,7 @@ namespace Neo.Ledger
                 // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
                 foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
                 {
-                    if (item.Tx.VerifyStateDependent(snapshot, VerificationContext) == VerifyResult.Succeed)
+                    if (item.Tx.VerifyStateDependent(_system.Settings, snapshot, VerificationContext) == VerifyResult.Succeed)
                     {
                         reverifiedItems.Add(item);
                         VerificationContext.AddTransaction(item.Tx);
@@ -416,8 +412,7 @@ namespace Neo.Ledger
                 if (Count > RebroadcastMultiplierThreshold)
                     blocksTillRebroadcast = blocksTillRebroadcast * Count / RebroadcastMultiplierThreshold;
 
-                var rebroadcastCutOffTime = TimeProvider.Current.UtcNow.AddMilliseconds(
-                    -Blockchain.MillisecondsPerBlock * blocksTillRebroadcast);
+                var rebroadcastCutOffTime = TimeProvider.Current.UtcNow.AddMilliseconds(-_system.Settings.MillisecondsPerBlock * blocksTillRebroadcast);
                 foreach (PoolItem item in reverifiedItems)
                 {
                     if (_unsortedTransactions.TryAdd(item.Tx.Hash, item))
@@ -450,7 +445,7 @@ namespace Neo.Ledger
 
             var invalidTransactions = invalidItems.Select(p => p.Tx).ToArray();
             foreach (IMemoryPoolTxObserverPlugin plugin in Plugin.TxObserverPlugins)
-                plugin.TransactionsRemoved(MemoryPoolTxRemovalReason.NoLongerValid, invalidTransactions);
+                plugin.TransactionsRemoved(_system, MemoryPoolTxRemovalReason.NoLongerValid, invalidTransactions);
 
             return reverifiedItems.Count;
         }
@@ -466,9 +461,12 @@ namespace Neo.Ledger
         /// <returns>true if more unsorted messages exist, otherwise false</returns>
         internal bool ReVerifyTopUnverifiedTransactionsIfNeeded(int maxToVerify, DataCache snapshot)
         {
+            if (_system.HeaderCache.Count > 0)
+                return false;
+
             if (_unverifiedSortedTransactions.Count > 0)
             {
-                int verifyCount = _sortedTransactions.Count > _maxTxPerBlock ? 1 : maxToVerify;
+                int verifyCount = _sortedTransactions.Count > _system.Settings.MaxTransactionsPerBlock ? 1 : maxToVerify;
                 ReverifyTransactions(_sortedTransactions, _unverifiedSortedTransactions,
                     verifyCount, MaxMillisecondsToReverifyTxPerIdle, snapshot);
             }

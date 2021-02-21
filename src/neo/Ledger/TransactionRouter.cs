@@ -7,21 +7,20 @@ namespace Neo.Ledger
 {
     internal class TransactionRouter : UntypedActor
     {
-        private readonly IActorRef blockchain;
+        public record Preverify(Transaction Transaction, bool Relay);
+        public record PreverifyCompleted(Transaction Transaction, bool Relay, VerifyResult Result);
+
+        private readonly NeoSystem system;
 
         public TransactionRouter(NeoSystem system)
         {
-            this.blockchain = system.Blockchain;
+            this.system = system;
         }
 
         protected override void OnReceive(object message)
         {
-            if (!(message is Transaction tx)) return;
-            blockchain.Tell(new Blockchain.PreverifyCompleted
-            {
-                Transaction = tx,
-                Result = tx.VerifyStateIndependent()
-            }, Sender);
+            if (message is not Preverify preverify) return;
+            system.Blockchain.Tell(new PreverifyCompleted(preverify.Transaction, preverify.Relay, preverify.Transaction.VerifyStateIndependent(system.Settings)), Sender);
         }
 
         internal static Props Props(NeoSystem system)

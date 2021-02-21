@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
 using System;
 using System.IO;
 
@@ -22,7 +23,7 @@ namespace Neo.UnitTests.Ledger
                 Transaction = new Transaction()
                 {
                     Attributes = Array.Empty<TransactionAttribute>(),
-                    Script = new byte[] { 0x01 },
+                    Script = new byte[] { (byte)OpCode.PUSH1 },
                     Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
                     Witnesses = new Witness[] { new Witness() {
                         InvocationScript=Array.Empty<byte>(),

@@ -72,7 +72,7 @@ namespace Neo.SmartContract.Manifest
 
         public static ContractPermissionDescriptor FromJson(JObject json)
         {
-            string str = json.AsString();
+            string str = json.GetString();
             if (str.Length == 42)
                 return Create(UInt160.Parse(str));
             if (str.Length == 66)

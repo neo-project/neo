@@ -1,6 +1,5 @@
 using Neo.Cryptography.ECC;
 using Neo.IO.Json;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
@@ -59,6 +58,7 @@ namespace Neo.SmartContract
         }
 
         public readonly IVerifiable Verifiable;
+        public readonly DataCache Snapshot;
         private readonly Dictionary<UInt160, ContextItem> ContextItems;
 
         public bool Completed
@@ -80,31 +80,12 @@ namespace Neo.SmartContract
         /// ScriptHashes are the verifiable ScriptHashes from Verifiable element
         /// Equivalent to: Verifiable.GetScriptHashesForVerifying(Blockchain.Singleton.GetSnapshot())
         /// </summary>
-        public IReadOnlyList<UInt160> ScriptHashes
-        {
-            get
-            {
-                if (_ScriptHashes == null)
-                {
-                    // snapshot is not necessary for Transaction
-                    if (Verifiable is Transaction)
-                    {
-                        _ScriptHashes = Verifiable.GetScriptHashesForVerifying(null);
-                        return _ScriptHashes;
-                    }
+        public IReadOnlyList<UInt160> ScriptHashes => _ScriptHashes ??= Verifiable.GetScriptHashesForVerifying(Snapshot);
 
-                    using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
-                    {
-                        _ScriptHashes = Verifiable.GetScriptHashesForVerifying(snapshot);
-                    }
-                }
-                return _ScriptHashes;
-            }
-        }
-
-        public ContractParametersContext(IVerifiable verifiable)
+        public ContractParametersContext(DataCache snapshot, IVerifiable verifiable)
         {
             this.Verifiable = verifiable;
+            this.Snapshot = snapshot;
             this.ContextItems = new Dictionary<UInt160, ContextItem>();
         }
 
@@ -190,7 +171,7 @@ namespace Neo.SmartContract
             return item;
         }
 
-        public static ContractParametersContext FromJson(JObject json)
+        public static ContractParametersContext FromJson(JObject json, DataCache snapshot)
         {
             var type = typeof(ContractParametersContext).GetTypeInfo().Assembly.GetType(json["type"].AsString());
             if (!typeof(IVerifiable).IsAssignableFrom(type)) throw new FormatException();
@@ -201,7 +182,7 @@ namespace Neo.SmartContract
             {
                 verifiable.DeserializeUnsigned(reader);
             }
-            ContractParametersContext context = new ContractParametersContext(verifiable);
+            ContractParametersContext context = new ContractParametersContext(snapshot, verifiable);
             foreach (var property in json["items"].Properties)
             {
                 context.ContextItems.Add(UInt160.Parse(property.Key), ContextItem.FromJson(property.Value));
@@ -251,9 +232,9 @@ namespace Neo.SmartContract
             return witnesses;
         }
 
-        public static ContractParametersContext Parse(string value)
+        public static ContractParametersContext Parse(string value, DataCache snapshot)
         {
-            return FromJson(JObject.Parse(value));
+            return FromJson(JObject.Parse(value), snapshot);
         }
 
         public JObject ToJson()

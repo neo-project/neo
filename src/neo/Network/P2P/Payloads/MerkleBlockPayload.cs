@@ -1,51 +1,48 @@
 using Neo.Cryptography;
 using Neo.IO;
+using System;
 using System.Collections;
 using System.IO;
 using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class MerkleBlockPayload : BlockBase
+    public class MerkleBlockPayload : ISerializable
     {
-        public int ContentCount;
+        public Header Header;
+        public int TxCount;
         public UInt256[] Hashes;
         public byte[] Flags;
 
-        public override int Size => base.Size + sizeof(int) + Hashes.GetVarSize() + Flags.GetVarSize();
+        public int Size => Header.Size + sizeof(int) + Hashes.GetVarSize() + Flags.GetVarSize();
 
         public static MerkleBlockPayload Create(Block block, BitArray flags)
         {
-            MerkleTree tree = new MerkleTree(block.Transactions.Select(p => p.Hash).Prepend(block.ConsensusData.Hash).ToArray());
+            MerkleTree tree = new MerkleTree(block.Transactions.Select(p => p.Hash).ToArray());
+            tree.Trim(flags);
             byte[] buffer = new byte[(flags.Length + 7) / 8];
             flags.CopyTo(buffer, 0);
             return new MerkleBlockPayload
             {
-                Version = block.Version,
-                PrevHash = block.PrevHash,
-                MerkleRoot = block.MerkleRoot,
-                Timestamp = block.Timestamp,
-                Index = block.Index,
-                NextConsensus = block.NextConsensus,
-                Witness = block.Witness,
-                ContentCount = block.Transactions.Length + 1,
+                Header = block.Header,
+                TxCount = block.Transactions.Length,
                 Hashes = tree.ToHashArray(),
                 Flags = buffer
             };
         }
 
-        public override void Deserialize(BinaryReader reader)
+        public void Deserialize(BinaryReader reader)
         {
-            base.Deserialize(reader);
-            ContentCount = (int)reader.ReadVarInt(Block.MaxTransactionsPerBlock + 1);
-            Hashes = reader.ReadSerializableArray<UInt256>(ContentCount);
-            Flags = reader.ReadVarBytes((ContentCount + 7) / 8);
+            Header = reader.ReadSerializable<Header>();
+            TxCount = (int)reader.ReadVarInt(ushort.MaxValue);
+            Hashes = reader.ReadSerializableArray<UInt256>(TxCount);
+            Flags = reader.ReadVarBytes((Math.Max(TxCount, 1) + 7) / 8);
         }
 
-        public override void Serialize(BinaryWriter writer)
+        public void Serialize(BinaryWriter writer)
         {
-            base.Serialize(writer);
-            writer.WriteVarInt(ContentCount);
+            writer.Write(Header);
+            writer.WriteVarInt(TxCount);
             writer.Write(Hashes);
             writer.WriteVarBytes(Flags);
         }

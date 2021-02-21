@@ -2,6 +2,7 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
+using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -39,9 +40,10 @@ namespace Neo.SmartContract
             return PersistingBlock.Timestamp;
         }
 
-        protected internal IInteroperable GetScriptContainer()
+        protected internal StackItem GetScriptContainer()
         {
-            return ScriptContainer as IInteroperable;
+            if (ScriptContainer is not IInteroperable interop) throw new InvalidOperationException();
+            return interop.ToStackItem(ReferenceCounter);
         }
 
         protected internal bool CheckWitness(byte[] hashOrPubkey)
@@ -89,8 +91,7 @@ namespace Neo.SmartContract
                 {
                     // Check allow state callflag
 
-                    if (!CurrentContext.GetState<ExecutionContextState>().CallFlags.HasFlag(CallFlags.ReadStates))
-                        throw new InvalidOperationException($"Cannot call this SYSCALL without the flag AllowStates.");
+                    ValidateCallFlags(CallFlags.ReadStates);
 
                     var contract = NativeContract.ContractManagement.GetContract(Snapshot, CallingScriptHash);
                     // check if current group is the required one
@@ -102,8 +103,7 @@ namespace Neo.SmartContract
 
             // Check allow state callflag
 
-            if (!CurrentContext.GetState<ExecutionContextState>().CallFlags.HasFlag(CallFlags.ReadStates))
-                throw new InvalidOperationException($"Cannot call this SYSCALL without the flag AllowStates.");
+            ValidateCallFlags(CallFlags.ReadStates);
 
             // only for non-Transaction types (Block, etc)
 

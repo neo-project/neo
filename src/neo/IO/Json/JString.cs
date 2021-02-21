@@ -29,6 +29,8 @@ namespace Neo.IO.Json
             return Value;
         }
 
+        public override string GetString() => Value;
+
         public override T TryGetEnum<T>(T defaultValue = default, bool ignoreCase = false)
         {
             try

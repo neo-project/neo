@@ -9,7 +9,6 @@ using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Neo.SmartContract
 {
@@ -19,98 +18,19 @@ namespace Neo.SmartContract
 
         public static long SignatureContractCost() =>
             ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
-            ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
             ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
-            ApplicationEngine.ECDsaVerifyPrice;
+            ApplicationEngine.CheckSigPrice;
 
-        public static long MultiSignatureContractCost(int m, int n) =>
-            ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n) +
-            ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 +
-            ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
-            ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
-            ApplicationEngine.ECDsaVerifyPrice * n;
-
-        public static bool Check(Script script, ContractAbi abi = null)
+        public static long MultiSignatureContractCost(int m, int n)
         {
-            Dictionary<int, Instruction> instructions = new Dictionary<int, Instruction>();
-            for (int ip = 0; ip < script.Length;)
-            {
-                Instruction instruction = script.GetInstruction(ip);
-                instructions.Add(ip, instruction);
-                ip += instruction.Size;
-            }
-            foreach (var (ip, instruction) in instructions)
-            {
-                switch (instruction.OpCode)
-                {
-                    case OpCode.JMP:
-                    case OpCode.JMPIF:
-                    case OpCode.JMPIFNOT:
-                    case OpCode.JMPEQ:
-                    case OpCode.JMPNE:
-                    case OpCode.JMPGT:
-                    case OpCode.JMPGE:
-                    case OpCode.JMPLT:
-                    case OpCode.JMPLE:
-                    case OpCode.CALL:
-                    case OpCode.ENDTRY:
-                        if (!instructions.ContainsKey(checked(ip + instruction.TokenI8)))
-                            return false;
-                        break;
-                    case OpCode.PUSHA:
-                    case OpCode.JMP_L:
-                    case OpCode.JMPIF_L:
-                    case OpCode.JMPIFNOT_L:
-                    case OpCode.JMPEQ_L:
-                    case OpCode.JMPNE_L:
-                    case OpCode.JMPGT_L:
-                    case OpCode.JMPGE_L:
-                    case OpCode.JMPLT_L:
-                    case OpCode.JMPLE_L:
-                    case OpCode.CALL_L:
-                    case OpCode.ENDTRY_L:
-                        if (!instructions.ContainsKey(checked(ip + instruction.TokenI32)))
-                            return false;
-                        break;
-                    case OpCode.TRY:
-                        if (!instructions.ContainsKey(checked(ip + instruction.TokenI8)))
-                            return false;
-                        if (!instructions.ContainsKey(checked(ip + instruction.TokenI8_1)))
-                            return false;
-                        break;
-                    case OpCode.TRY_L:
-                        if (!instructions.ContainsKey(checked(ip + instruction.TokenI32)))
-                            return false;
-                        if (!instructions.ContainsKey(checked(ip + instruction.TokenI32_1)))
-                            return false;
-                        break;
-                    case OpCode.NEWARRAY_T:
-                    case OpCode.ISTYPE:
-                    case OpCode.CONVERT:
-                        StackItemType type = (StackItemType)instruction.TokenU8;
-                        if (!Enum.IsDefined(typeof(StackItemType), type))
-                            return false;
-                        if (instruction.OpCode != OpCode.NEWARRAY_T && type == StackItemType.Any)
-                            return false;
-                        break;
-                }
-            }
-            if (abi is null) return true;
-            foreach (ContractMethodDescriptor method in abi.Methods)
-            {
-                if (!instructions.ContainsKey(method.Offset))
-                    return false;
-            }
-            try
-            {
-                abi.GetMethod(string.Empty, 0); // Trigger the construction of ContractAbi.methodDictionary to check the uniqueness of the method names.
-                _ = abi.Events.ToDictionary(p => p.Name); // Check the uniqueness of the event names.
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
-            return true;
+            long fee = ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n);
+            using (ScriptBuilder sb = new ScriptBuilder())
+                fee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
+            using (ScriptBuilder sb = new ScriptBuilder())
+                fee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
+            fee += ApplicationEngine.OpCodePrices[OpCode.SYSCALL];
+            fee += ApplicationEngine.CheckSigPrice * n;
+            return fee;
         }
 
         public static UInt160 GetContractHash(UInt160 sender, uint nefCheckSum, string name)
@@ -158,7 +78,7 @@ namespace Neo.SmartContract
         {
             m = 0; n = 0;
             int i = 0;
-            if (script.Length < 43) return false;
+            if (script.Length < 42) return false;
             switch (script[i])
             {
                 case (byte)OpCode.PUSHINT8:
@@ -203,22 +123,20 @@ namespace Neo.SmartContract
                 default:
                     return false;
             }
-            if (script.Length != i + 6) return false;
-            if (script[i++] != (byte)OpCode.PUSHNULL) return false;
+            if (script.Length != i + 5) return false;
             if (script[i++] != (byte)OpCode.SYSCALL) return false;
-            if (BitConverter.ToUInt32(script, i) != ApplicationEngine.Neo_Crypto_CheckMultisigWithECDsaSecp256r1)
+            if (BinaryPrimitives.ReadUInt32LittleEndian(script.AsSpan(i)) != ApplicationEngine.Neo_Crypto_CheckMultisig)
                 return false;
             return true;
         }
 
         public static bool IsSignatureContract(this byte[] script)
         {
-            if (script.Length != 41) return false;
+            if (script.Length != 40) return false;
             if (script[0] != (byte)OpCode.PUSHDATA1
                 || script[1] != 33
-                || script[35] != (byte)OpCode.PUSHNULL
-                || script[36] != (byte)OpCode.SYSCALL
-                || BitConverter.ToUInt32(script, 37) != ApplicationEngine.Neo_Crypto_VerifyWithECDsaSecp256r1)
+                || script[35] != (byte)OpCode.SYSCALL
+                || BinaryPrimitives.ReadUInt32LittleEndian(script.AsSpan(36)) != ApplicationEngine.Neo_Crypto_CheckSig)
                 return false;
             return true;
         }
@@ -245,7 +163,7 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
-        public static bool VerifyWitnesses(this IVerifiable verifiable, DataCache snapshot, long gas)
+        public static bool VerifyWitnesses(this IVerifiable verifiable, ProtocolSettings settings, DataCache snapshot, long gas)
         {
             if (gas < 0) return false;
             if (gas > MaxVerificationGas) gas = MaxVerificationGas;
@@ -262,51 +180,56 @@ namespace Neo.SmartContract
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (!verifiable.VerifyWitness(snapshot, hashes[i], verifiable.Witnesses[i], gas, out long fee))
+                if (!verifiable.VerifyWitness(settings, snapshot, hashes[i], verifiable.Witnesses[i], gas, out long fee))
                     return false;
                 gas -= fee;
             }
             return true;
         }
 
-        internal static bool VerifyWitness(this IVerifiable verifiable, DataCache snapshot, UInt160 hash, Witness witness, long gas, out long fee)
+        internal static bool VerifyWitness(this IVerifiable verifiable, ProtocolSettings settings, DataCache snapshot, UInt160 hash, Witness witness, long gas, out long fee)
         {
             fee = 0;
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CreateSnapshot(), null, gas))
+            Script invocationScript;
+            try
             {
-                CallFlags callFlags = !witness.VerificationScript.IsStandardContract() ? CallFlags.ReadStates : CallFlags.None;
-                byte[] verification = witness.VerificationScript;
-
-                if (verification.Length == 0)
+                invocationScript = new Script(witness.InvocationScript, true);
+            }
+            catch (BadScriptException)
+            {
+                return false;
+            }
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CreateSnapshot(), null, settings, gas))
+            {
+                if (witness.VerificationScript.Length == 0)
                 {
                     ContractState cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (cs is null) return false;
                     ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify", -1);
                     if (md?.ReturnType != ContractParameterType.Boolean) return false;
-                    engine.LoadContract(cs, md, callFlags);
+                    engine.LoadContract(cs, md, CallFlags.ReadOnly);
                 }
                 else
                 {
                     if (NativeContract.IsNative(hash)) return false;
                     if (hash != witness.ScriptHash) return false;
-                    engine.LoadScript(verification, initialPosition: 0, configureState: p =>
+                    Script verificationScript;
+                    try
                     {
-                        p.CallFlags = callFlags;
+                        verificationScript = new Script(witness.VerificationScript, true);
+                    }
+                    catch (BadScriptException)
+                    {
+                        return false;
+                    }
+                    engine.LoadScript(verificationScript, initialPosition: 0, configureState: p =>
+                    {
+                        p.CallFlags = CallFlags.ReadOnly;
                         p.ScriptHash = hash;
                     });
                 }
 
-                engine.LoadScript(witness.InvocationScript, configureState: p => p.CallFlags = CallFlags.None);
-
-                if (NativeContract.IsNative(hash))
-                {
-                    try
-                    {
-                        engine.StepOut();
-                        engine.Push("verify");
-                    }
-                    catch { }
-                }
+                engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
 
                 if (engine.Execute() == VMState.FAULT) return false;
                 if (!engine.ResultStack.Peek().GetBoolean()) return false;

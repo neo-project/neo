@@ -1,7 +1,6 @@
 using Akka.Actor;
 using Neo.Cryptography;
 using Neo.IO.Caching;
-using Neo.Ledger;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -28,20 +27,18 @@ namespace Neo.Network.P2P
         }
 
         private readonly PendingKnownHashesCollection pendingKnownHashes = new PendingKnownHashesCollection();
-        private readonly HashSetCache<UInt256> knownHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
-        private readonly HashSetCache<UInt256> sentHashes = new HashSetCache<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2 / 5);
+        private readonly HashSetCache<UInt256> knownHashes;
+        private readonly HashSetCache<UInt256> sentHashes;
         private bool verack = false;
         private BloomFilter bloom_filter;
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
-        private static readonly TimeSpan PendingTimeout = TimeSpan.FromMinutes(1);
-
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
 
         private void OnMessage(Message msg)
         {
             foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
-                if (!plugin.OnP2PMessage(msg))
+                if (!plugin.OnP2PMessage(system, msg))
                     return;
             if (Version == null)
             {
@@ -90,6 +87,9 @@ namespace Neo.Network.P2P
                 case MessageCommand.GetHeaders:
                     OnGetHeadersMessageReceived((GetBlockByIndexPayload)msg.Payload);
                     break;
+                case MessageCommand.Headers:
+                    OnHeadersMessageReceived((HeadersPayload)msg.Payload);
+                    break;
                 case MessageCommand.Inv:
                     OnInvMessageReceived((InvPayload)msg.Payload);
                     break;
@@ -110,7 +110,6 @@ namespace Neo.Network.P2P
                 case MessageCommand.Version:
                     throw new ProtocolViolationException();
                 case MessageCommand.Alert:
-                case MessageCommand.Headers:
                 case MessageCommand.MerkleBlock:
                 case MessageCommand.NotFound:
                 case MessageCommand.Reject:
@@ -152,7 +151,7 @@ namespace Neo.Network.P2P
         private void OnGetAddrMessageReceived()
         {
             Random rand = new Random();
-            IEnumerable<RemoteNode> peers = LocalNode.Singleton.RemoteNodes.Values
+            IEnumerable<RemoteNode> peers = localNode.RemoteNodes.Values
                 .Where(p => p.ListenerTcpPort > 0)
                 .GroupBy(p => p.Remote.Address, (k, g) => g.First())
                 .OrderBy(p => rand.Next())
@@ -170,23 +169,22 @@ namespace Neo.Network.P2P
         /// <param name="payload">A GetBlocksPayload including start block Hash and number of blocks requested.</param>
         private void OnGetBlocksMessageReceived(GetBlocksPayload payload)
         {
+            // The default value of payload.Count is -1
+            int count = payload.Count < 0 || payload.Count > InvPayload.MaxHashesCount ? InvPayload.MaxHashesCount : payload.Count;
+            DataCache snapshot = system.StoreView;
+            UInt256 hash = payload.HashStart;
+            TrimmedBlock state = NativeContract.Ledger.GetTrimmedBlock(snapshot, hash);
+            if (state == null) return;
+            uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             List<UInt256> hashes = new List<UInt256>();
-            using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
+            for (uint i = 1; i <= count; i++)
             {
-                UInt256 hash = payload.HashStart;
-                // The default value of payload.Count is -1
-                int count = payload.Count < 0 || payload.Count > InvPayload.MaxHashesCount ? InvPayload.MaxHashesCount : payload.Count;
-                TrimmedBlock state = NativeContract.Ledger.GetTrimmedBlock(snapshot, hash);
-                if (state == null) return;
-                for (uint i = 1; i <= count; i++)
-                {
-                    uint index = state.Index + i;
-                    if (index > Blockchain.Singleton.Height)
-                        break;
-                    hash = NativeContract.Ledger.GetBlockHash(snapshot, index);
-                    if (hash == null) break;
-                    hashes.Add(hash);
-                }
+                uint index = state.Index + i;
+                if (index > currentHeight)
+                    break;
+                hash = NativeContract.Ledger.GetBlockHash(snapshot, index);
+                if (hash == null) break;
+                hashes.Add(hash);
             }
             if (hashes.Count == 0) return;
             EnqueueMessage(Message.Create(MessageCommand.Inv, InvPayload.Create(InventoryType.Block, hashes.ToArray())));
@@ -197,7 +195,7 @@ namespace Neo.Network.P2P
             uint count = payload.Count == -1 ? InvPayload.MaxHashesCount : Math.Min((uint)payload.Count, InvPayload.MaxHashesCount);
             for (uint i = payload.IndexStart, max = payload.IndexStart + count; i < max; i++)
             {
-                Block block = NativeContract.Ledger.GetBlock(Blockchain.Singleton.View, i);
+                Block block = NativeContract.Ledger.GetBlock(system.StoreView, i);
                 if (block == null)
                     break;
 
@@ -227,13 +225,13 @@ namespace Neo.Network.P2P
                 switch (payload.Type)
                 {
                     case InventoryType.TX:
-                        if (Blockchain.Singleton.MemPool.TryGetValue(hash, out Transaction tx))
+                        if (system.MemPool.TryGetValue(hash, out Transaction tx))
                             EnqueueMessage(Message.Create(MessageCommand.Transaction, tx));
                         else
                             notFound.Add(hash);
                         break;
                     case InventoryType.Block:
-                        Block block = NativeContract.Ledger.GetBlock(Blockchain.Singleton.View, hash);
+                        Block block = NativeContract.Ledger.GetBlock(system.StoreView, hash);
                         if (block != null)
                         {
                             if (bloom_filter == null)
@@ -252,7 +250,7 @@ namespace Neo.Network.P2P
                         }
                         break;
                     default:
-                        if (Blockchain.Singleton.RelayCache.TryGet(hash, out IInventory inventory))
+                        if (system.RelayCache.TryGet(hash, out IInventory inventory))
                             EnqueueMessage(Message.Create((MessageCommand)payload.Type, inventory));
                         break;
                 }
@@ -270,24 +268,28 @@ namespace Neo.Network.P2P
         /// Tell the specified number of blocks' headers starting with the requested IndexStart to RemoteNode actor.
         /// A limit set by HeadersPayload.MaxHeadersCount is also applied to the number of requested Headers, namely payload.Count.
         /// </summary>
-        /// <param name="payload">A GetBlocksPayload including start block index and number of blocks' headers requested.</param>
+        /// <param name="payload">A GetBlockByIndexPayload including start block index and number of blocks' headers requested.</param>
         private void OnGetHeadersMessageReceived(GetBlockByIndexPayload payload)
         {
-            uint index = payload.IndexStart;
-            if (index > Blockchain.Singleton.Height) return;
+            DataCache snapshot = system.StoreView;
+            if (payload.IndexStart > NativeContract.Ledger.CurrentIndex(snapshot)) return;
             List<Header> headers = new List<Header>();
-            using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
+            uint count = payload.Count == -1 ? HeadersPayload.MaxHeadersCount : (uint)payload.Count;
+            for (uint i = 0; i < count; i++)
             {
-                uint count = payload.Count == -1 ? HeadersPayload.MaxHeadersCount : (uint)payload.Count;
-                for (uint i = 0; i < count; i++)
-                {
-                    var header = NativeContract.Ledger.GetHeader(snapshot, index + i);
-                    if (header == null) break;
-                    headers.Add(header);
-                }
+                var header = NativeContract.Ledger.GetHeader(snapshot, payload.IndexStart + i);
+                if (header == null) break;
+                headers.Add(header);
             }
             if (headers.Count == 0) return;
             EnqueueMessage(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers.ToArray())));
+        }
+
+        private void OnHeadersMessageReceived(HeadersPayload payload)
+        {
+            UpdateLastBlockIndex(payload.Headers[^1].Index);
+            system.TaskManager.Tell(payload.Headers);
+            system.Blockchain.Tell(payload.Headers);
         }
 
         private void OnInventoryReceived(IInventory inventory)
@@ -295,8 +297,8 @@ namespace Neo.Network.P2P
             pendingKnownHashes.Remove(inventory.Hash);
             if (inventory is Block block)
             {
-                if (block.Index > Blockchain.Singleton.Height + InvPayload.MaxHashesCount) return;
-                UpdateLastBlockIndex(block.Index, false);
+                UpdateLastBlockIndex(block.Index);
+                if (block.Index > NativeContract.Ledger.CurrentIndex(system.StoreView) + InvPayload.MaxHashesCount) return;
             }
             knownHashes.Add(inventory.Hash);
             system.TaskManager.Tell(inventory);
@@ -310,12 +312,16 @@ namespace Neo.Network.P2P
             switch (payload.Type)
             {
                 case InventoryType.Block:
-                    using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
+                    {
+                        DataCache snapshot = system.StoreView;
                         hashes = hashes.Where(p => !NativeContract.Ledger.ContainsBlock(snapshot, p)).ToArray();
+                    }
                     break;
                 case InventoryType.TX:
-                    using (SnapshotCache snapshot = Blockchain.Singleton.GetSnapshot())
+                    {
+                        DataCache snapshot = system.StoreView;
                         hashes = hashes.Where(p => !NativeContract.Ledger.ContainsTransaction(snapshot, p)).ToArray();
+                    }
                     break;
             }
             if (hashes.Length == 0) return;
@@ -326,19 +332,19 @@ namespace Neo.Network.P2P
 
         private void OnMemPoolMessageReceived()
         {
-            foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => p.Hash).ToArray()))
+            foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, system.MemPool.GetVerifiedTransactions().Select(p => p.Hash).ToArray()))
                 EnqueueMessage(Message.Create(MessageCommand.Inv, payload));
         }
 
         private void OnPingMessageReceived(PingPayload payload)
         {
-            UpdateLastBlockIndex(payload.LastBlockIndex, true);
-            EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce)));
+            UpdateLastBlockIndex(payload.LastBlockIndex);
+            EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(NativeContract.Ledger.CurrentIndex(system.StoreView), payload.Nonce)));
         }
 
         private void OnPongMessageReceived(PingPayload payload)
         {
-            UpdateLastBlockIndex(payload.LastBlockIndex, true);
+            UpdateLastBlockIndex(payload.LastBlockIndex);
         }
 
         private void OnVerackMessageReceived()
@@ -365,7 +371,7 @@ namespace Neo.Network.P2P
                         break;
                 }
             }
-            if (!LocalNode.Singleton.AllowNewConnection(Self, this))
+            if (!localNode.AllowNewConnection(Self, this))
             {
                 Disconnect(true);
                 return;
@@ -373,23 +379,25 @@ namespace Neo.Network.P2P
             SendMessage(Message.Create(MessageCommand.Verack));
         }
 
-        private void RefreshPendingKnownHashes()
+        private void OnTimer()
         {
+            DateTime oneMinuteAgo = TimeProvider.Current.UtcNow.AddMinutes(-1);
             while (pendingKnownHashes.Count > 0)
             {
                 var (_, time) = pendingKnownHashes[0];
-                if (TimeProvider.Current.UtcNow - time <= PendingTimeout)
-                    break;
+                if (oneMinuteAgo <= time) break;
                 pendingKnownHashes.RemoveAt(0);
             }
+            if (oneMinuteAgo > lastSent)
+                EnqueueMessage(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(system.StoreView))));
         }
 
-        private void UpdateLastBlockIndex(uint lastBlockIndex, bool requestTasks)
+        private void UpdateLastBlockIndex(uint lastBlockIndex)
         {
             if (lastBlockIndex > LastBlockIndex)
             {
                 LastBlockIndex = lastBlockIndex;
-                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex, RequestTasks = requestTasks });
+                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex });
             }
         }
     }

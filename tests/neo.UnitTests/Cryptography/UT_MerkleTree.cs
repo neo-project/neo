@@ -21,10 +21,6 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestBuildAndDepthFirstSearch()
         {
-            UInt256[] hashNull = new UInt256[0];
-            Action action = () => new MerkleTree(hashNull);
-            action.Should().Throw<ArgumentException>();
-
             byte[] array1 = { 0x01 };
             var hash1 = GetByteArrayHash(array1);
 

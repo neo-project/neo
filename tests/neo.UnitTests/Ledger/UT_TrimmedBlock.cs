@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.SmartContract;
@@ -17,31 +16,27 @@ namespace Neo.UnitTests.Ledger
         {
             return new TrimmedBlock
             {
-                ConsensusData = new ConsensusData(),
-                MerkleRoot = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"),
-                PrevHash = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
-                Timestamp = new DateTime(1988, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp(),
-                Index = 1,
-                NextConsensus = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
-                Witness = new Witness
+                Header = new Header
                 {
-                    InvocationScript = Array.Empty<byte>(),
-                    VerificationScript = new[] { (byte)OpCode.PUSH1 }
+                    MerkleRoot = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"),
+                    PrevHash = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
+                    Timestamp = new DateTime(1988, 06, 01, 0, 0, 0, DateTimeKind.Utc).ToTimestamp(),
+                    Index = 1,
+                    NextConsensus = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"),
+                    Witness = new Witness
+                    {
+                        InvocationScript = Array.Empty<byte>(),
+                        VerificationScript = new[] { (byte)OpCode.PUSH1 }
+                    },
                 },
                 Hashes = Array.Empty<UInt256>()
             };
         }
 
-        [TestInitialize]
-        public void Init()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-        }
-
         [TestMethod]
         public void TestGetBlock()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
             var tx1 = TestUtils.GetTransaction(UInt160.Zero);
             tx1.Script = new byte[] { 0x01,0x01,0x01,0x01,
                                       0x01,0x01,0x01,0x01,
@@ -72,10 +67,10 @@ namespace Neo.UnitTests.Ledger
 
             block.Index.Should().Be(1);
             block.MerkleRoot.Should().Be(UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"));
-            block.Transactions.Length.Should().Be(1);
-            block.Transactions[0].Hash.Should().Be(tx2.Hash);
-            block.Witness.InvocationScript.ToHexString().Should().Be(tblock.Witness.InvocationScript.ToHexString());
-            block.Witness.VerificationScript.ToHexString().Should().Be(tblock.Witness.VerificationScript.ToHexString());
+            block.Transactions.Length.Should().Be(2);
+            block.Transactions[0].Hash.Should().Be(tx1.Hash);
+            block.Witness.InvocationScript.ToHexString().Should().Be(tblock.Header.Witness.InvocationScript.ToHexString());
+            block.Witness.VerificationScript.ToHexString().Should().Be(tblock.Header.Witness.VerificationScript.ToHexString());
         }
 
         [TestMethod]
@@ -92,7 +87,7 @@ namespace Neo.UnitTests.Ledger
         {
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
             tblock.Hashes = new UInt256[] { TestUtils.GetTransaction(UInt160.Zero).Hash };
-            tblock.Size.Should().Be(146);
+            tblock.Size.Should().Be(138);
         }
 
         [TestMethod]
@@ -109,12 +104,8 @@ namespace Neo.UnitTests.Ledger
                 ms.Seek(0, SeekOrigin.Begin);
                 newBlock.Deserialize(reader);
             }
-            tblock.MerkleRoot.Should().Be(newBlock.MerkleRoot);
-            tblock.PrevHash.Should().Be(newBlock.PrevHash);
-            tblock.Timestamp.Should().Be(newBlock.Timestamp);
             tblock.Hashes.Length.Should().Be(newBlock.Hashes.Length);
-            tblock.Witness.ScriptHash.Should().Be(newBlock.Witness.ScriptHash);
-            tblock.ToJson().ToString().Should().Be(newBlock.ToJson().ToString());
+            tblock.Header.ToJson(ProtocolSettings.Default).ToString().Should().Be(newBlock.Header.ToJson(ProtocolSettings.Default).ToString());
         }
     }
 }

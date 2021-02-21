@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
@@ -96,14 +97,14 @@ namespace Neo.UnitTests
             wallet["accounts"] = new JArray();
             wallet["extra"] = null;
             wallet.ToString().Should().Be("{\"name\":\"noname\",\"version\":\"3.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}");
-            return new NEP6Wallet(wallet);
+            return new NEP6Wallet(null, ProtocolSettings.Default, wallet);
         }
 
         public static Transaction GetTransaction(UInt160 sender)
         {
             return new Transaction
             {
-                Script = new byte[1],
+                Script = new byte[] { (byte)OpCode.PUSH2 },
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Signers = new[]{ new Signer()
                 {
@@ -158,44 +159,36 @@ namespace Neo.UnitTests
 
         public static void SetupHeaderWithValues(Header header, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal)
         {
-            setupBlockBaseWithValues(header, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal);
+            header.PrevHash = val256;
+            header.MerkleRoot = merkRootVal = UInt256.Parse("0x6226416a0e5aca42b5566f5a19ab467692688ba9d47986f6981a7f747bba2772");
+            header.Timestamp = timestampVal = new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc).ToTimestampMS(); // GMT: Sunday, June 1, 1980 12:00:01.001 AM
+            header.Index = indexVal = 0;
+            header.NextConsensus = val160 = UInt160.Zero;
+            header.Witness = scriptVal = new Witness
+            {
+                InvocationScript = new byte[0],
+                VerificationScript = new[] { (byte)OpCode.PUSH1 }
+            };
         }
 
         public static void SetupBlockWithValues(Block block, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal, out Transaction[] transactionsVal, int numberOfTransactions)
         {
-            setupBlockBaseWithValues(block, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal);
+            Header header = new Header();
+            SetupHeaderWithValues(header, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal);
 
             transactionsVal = new Transaction[numberOfTransactions];
             if (numberOfTransactions > 0)
             {
                 for (int i = 0; i < numberOfTransactions; i++)
                 {
-                    transactionsVal[i] = TestUtils.GetTransaction(UInt160.Zero);
+                    transactionsVal[i] = GetTransaction(UInt160.Zero);
                 }
             }
 
-            block.ConsensusData = new ConsensusData();
+            block.Header = header;
             block.Transactions = transactionsVal;
-            block.MerkleRoot = merkRootVal = Block.CalculateMerkleRoot(block.ConsensusData.Hash, block.Transactions.Select(p => p.Hash));
-        }
 
-        private static void setupBlockBaseWithValues(BlockBase bb, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal)
-        {
-            bb.PrevHash = val256;
-            merkRootVal = UInt256.Parse("0x6226416a0e5aca42b5566f5a19ab467692688ba9d47986f6981a7f747bba2772");
-            bb.MerkleRoot = merkRootVal;
-            timestampVal = new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc).ToTimestampMS(); // GMT: Sunday, June 1, 1980 12:00:01.001 AM
-            bb.Timestamp = timestampVal;
-            indexVal = 0;
-            bb.Index = indexVal;
-            val160 = UInt160.Zero;
-            bb.NextConsensus = val160;
-            scriptVal = new Witness
-            {
-                InvocationScript = new byte[0],
-                VerificationScript = new[] { (byte)OpCode.PUSH1 }
-            };
-            bb.Witness = scriptVal;
+            header.MerkleRoot = merkRootVal = MerkleTree.ComputeRoot(block.Transactions.Select(p => p.Hash).ToArray());
         }
 
         public static Transaction CreateRandomHashTransaction()

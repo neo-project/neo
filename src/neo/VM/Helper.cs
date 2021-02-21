@@ -46,36 +46,15 @@ namespace Neo.VM
             return sb;
         }
 
-        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation)
-        {
-            sb.Emit(OpCode.NEWARRAY0);
-            sb.EmitPush(CallFlags.All);
-            sb.EmitPush(operation);
-            sb.EmitPush(scriptHash);
-            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
-            return sb;
-        }
-
-        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params ContractParameter[] args)
-        {
-            for (int i = args.Length - 1; i >= 0; i--)
-                sb.EmitPush(args[i]);
-            sb.EmitPush(args.Length);
-            sb.Emit(OpCode.PACK);
-            sb.EmitPush(CallFlags.All);
-            sb.EmitPush(operation);
-            sb.EmitPush(scriptHash);
-            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
-            return sb;
-        }
-
         public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params object[] args)
         {
-            for (int i = args.Length - 1; i >= 0; i--)
-                sb.EmitPush(args[i]);
-            sb.EmitPush(args.Length);
-            sb.Emit(OpCode.PACK);
-            sb.EmitPush(CallFlags.All);
+            return EmitDynamicCall(sb, scriptHash, operation, CallFlags.All, args);
+        }
+
+        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, CallFlags flags, params object[] args)
+        {
+            sb.CreateArray(args);
+            sb.EmitPush(flags);
             sb.EmitPush(operation);
             sb.EmitPush(scriptHash);
             sb.EmitSysCall(ApplicationEngine.System_Contract_Call);

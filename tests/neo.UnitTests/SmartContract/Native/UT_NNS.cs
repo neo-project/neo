@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -31,9 +30,12 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestInitialize]
         public void TestSetup()
         {
-            TestBlockchain.InitializeMockNeoSystem();
-            _snapshot = Blockchain.Singleton.GetSnapshot();
-            _persistingBlock = new Block() { Index = 0, Transactions = Array.Empty<Transaction>(), ConsensusData = new ConsensusData() };
+            _snapshot = TestBlockchain.GetTestSnapshot();
+            _persistingBlock = new Block
+            {
+                Header = new Header(),
+                Transactions = Array.Empty<Transaction>()
+            };
         }
 
         [TestMethod]
@@ -43,17 +45,17 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_Symbol() => NativeContract.NameService.Symbol(_snapshot).Should().Be("NNS");
 
         [TestMethod]
-        public void Test_SetRecord_IPV4()
+        public void Test_SetRecord_A_AAAA()
         {
             var snapshot = _snapshot.CreateSnapshot();
             // Fake blockchain
 
-            var persistingBlock = new Block() { Index = 1000 };
+            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             UInt160 committeeAddress = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             // committee member,add a new root and then register, setrecord
             string validroot = "testroot";
-            var ret = Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock);
+            Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock).Should().BeTrue();
 
             string name = "testname";
             string domain = name + "." + validroot;
@@ -63,82 +65,70 @@ namespace Neo.UnitTests.SmartContract.Native
             checkAvail_ret.Result.Should().BeTrue();
             checkAvail_ret.State.Should().BeTrue();
 
-            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             var register_ret = Check_Register(snapshot, domain, from, persistingBlock);
             register_ret.Result.Should().BeTrue();
             register_ret.State.Should().BeTrue();
 
             //check NFT token
-            Assert.AreEqual(NativeContract.NameService.BalanceOf(snapshot, from), (BigInteger)1);
+            Assert.AreEqual(NativeContract.NameService.BalanceOf(snapshot, from), 1);
 
             //after register
             checkAvail_ret = Check_IsAvailable(snapshot, UInt160.Zero, domain, persistingBlock);
             checkAvail_ret.Result.Should().BeTrue();
             checkAvail_ret.State.Should().BeFalse();
 
-            //set As IPv4 Address
-            string testA = "10.10.10.10";
-            var setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, testA, from, persistingBlock);
-            setRecord_ret.Should().BeTrue();
+            //test As IPv4 Address
+            bool setRecord_ret;
+            (bool State, string Result) getRecord_ret;
 
-            var getRecord_ret = Check_GetRecord(snapshot, domain, RecordType.A, persistingBlock);
-            getRecord_ret.State.Should().BeTrue();
-            getRecord_ret.Result.Should().Equals(testA);
+            foreach (var testTrue in new string[] {
+                "0.0.0.0", "10.10.10.10", "255.255.255.255","192.168.1.1"
+            })
+            {
+                setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, testTrue, from, persistingBlock);
+                setRecord_ret.Should().BeTrue();
+                getRecord_ret = Check_GetRecord(snapshot, domain, RecordType.A, persistingBlock);
+                getRecord_ret.State.Should().BeTrue();
+                getRecord_ret.Result.Should().Equals(testTrue);
+            }
 
-            testA = "0.0.0.0";
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, testA, from, persistingBlock);
-            setRecord_ret.Should().BeTrue();
-            getRecord_ret = Check_GetRecord(snapshot, domain, RecordType.A, persistingBlock);
-            getRecord_ret.State.Should().BeTrue();
-            getRecord_ret.Result.Should().Equals(testA);
+            //test As IPv6 Address
+            foreach (var testTrue in new string[] {
+                "2001:db8::8:800:200c:417a", "ff01::101", "ff01::101", "::1", "::",
+                "2001:db8:0:0:8:800:200c:417a", "ff01:0:0:0:0:0:0:101", "0:0:0:0:0:0:0:1", "0:0:0:0:0:0:0:0"
+            })
+            {
+                setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.AAAA, testTrue, from, persistingBlock);
+                setRecord_ret.Should().BeTrue();
+                getRecord_ret = Check_GetRecord(snapshot, domain, RecordType.AAAA, persistingBlock);
+                getRecord_ret.State.Should().BeTrue();
+                getRecord_ret.Result.Should().Equals(testTrue);
+            }
 
-            testA = "255.255.255.255";
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, testA, from, persistingBlock);
-            setRecord_ret.Should().BeTrue();
-            getRecord_ret = Check_GetRecord(snapshot, domain, RecordType.A, persistingBlock);
-            getRecord_ret.State.Should().BeTrue();
-            getRecord_ret.Result.Should().Equals(testA);
+            //invalid A case
+            foreach (var testFalse in new string[] {
+                "1a", "256.0.0.0", "01.01.01.01", "00.0.0.0", "0.0.0.-1",
+                "0.0.0.0.1", "11111111.11111111.11111111.11111111",
+                "11111111.11111111.11111111.11111111", "ff.ff.ff.ff", "0.0.256",
+                "0.0.0", "0.257", "1.1", "257",
+                "1"
+            })
+            {
+                setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, testFalse, from, persistingBlock);
+                setRecord_ret.Should().BeFalse();
+            }
 
-            //invalid case
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "1a", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "256.0.0.0", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "0.0.0.-1", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "0.0.0.0.1", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "11111111.11111111.11111111.11111111", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "11111111.11111111.11111111.11111111", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "ff.ff.ff.ff", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "0.0.256", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "0.0.0", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "0.257", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "1.1", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "257", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
-            setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.A, "1", from, persistingBlock);
-            setRecord_ret.Should().BeFalse();
-
+            //invalid AAAA case
+            foreach (var testFalse in new string[] {
+                "2001:DB8::8:800:200C:417A", "FF01::101", "fF01::101",
+                "2001:DB8:0:0:8:800:200C:417A", "FF01:0:0:0:0:0:0:101",
+                "::ffff:1.01.1.01", "2001:DB8:0:0:8:800:200C:4Z", "::13.1.68.3",
+            })
+            {
+                setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.AAAA, testFalse, from, persistingBlock);
+                setRecord_ret.Should().BeFalse();
+            }
         }
 
         [TestMethod]
@@ -147,18 +137,18 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
             // Fake blockchain
 
-            var persistingBlock = new Block() { Index = 1000 };
+            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             UInt160 committeeAddress = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             // committee member,add a new root and then register, setrecord
             string validroot = "testroot";
-            var ret = Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock);
+            Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock).Should().BeTrue();
 
             string name = "testname";
 
             string domain = name + "." + validroot;
 
-            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             var register_ret = Check_Register(snapshot, domain, from, persistingBlock);
             register_ret.Result.Should().BeTrue();
             register_ret.State.Should().BeTrue();
@@ -224,12 +214,12 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
             // Fake blockchain
 
-            var persistingBlock = new Block() { Index = 1000 };
+            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             UInt160 committeeAddress = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             // committee member,add a new root and then register, setrecord
             string validroot = "testroot";
-            var ret = Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock);
+            Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock).Should().BeTrue();
 
             string name = "testname";
             string domain = name + "." + validroot;
@@ -239,7 +229,7 @@ namespace Neo.UnitTests.SmartContract.Native
             checkAvail_ret.Result.Should().BeTrue();
             checkAvail_ret.State.Should().BeTrue();
 
-            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             var register_ret = Check_Register(snapshot, domain, from, persistingBlock);
             register_ret.Result.Should().BeTrue();
             register_ret.State.Should().BeTrue();
@@ -315,12 +305,12 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
             // Fake blockchain
 
-            var persistingBlock = new Block() { Index = 1000 };
+            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             UInt160 committeeAddress = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             // committee member,add a new root and then register, setrecord
             string validroot = "testroot";
-            var ret = Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock);
+            Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock).Should().BeTrue();
 
             string name = "testname";
             string domain = name + "." + validroot;
@@ -330,13 +320,13 @@ namespace Neo.UnitTests.SmartContract.Native
             checkAvail_ret.Result.Should().BeTrue();
             checkAvail_ret.State.Should().BeTrue();
 
-            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             var register_ret = Check_Register(snapshot, domain, from, persistingBlock);
             register_ret.Result.Should().BeTrue();
             register_ret.State.Should().BeTrue();
 
             //set as IPV6 address
-            string testAAAA = "2001:0000:1F1F:0000:0000:0100:11A0:ADDF";
+            string testAAAA = "2001:0000:1f1f:0000:0000:0100:11a0:addf";
             var setRecord_ret = Check_SetRecord(snapshot, domain, RecordType.AAAA, testAAAA, from, persistingBlock);
             setRecord_ret.Should().BeTrue();
 
@@ -403,7 +393,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var persistingBlock = _persistingBlock;
             //non-committee member
             string validroot = "testroot";
-            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             var ret = Check_AddRoot(snapshot, new UInt160(from), validroot, persistingBlock);
             ret.Should().BeFalse();
 
@@ -447,12 +437,12 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
             // Fake blockchain
 
-            var persistingBlock = new Block() { Index = 1000 };
+            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             UInt160 committeeAddress = NativeContract.NEO.GetCommitteeAddress(snapshot);
 
             // committee member,add a new root and then register, setrecord
             string validroot = "testroot";
-            var ret = Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock);
+            Check_AddRoot(snapshot, committeeAddress, validroot, persistingBlock).Should().BeTrue();
 
             string name = "testname";
             string domain = name + "." + validroot;
@@ -462,7 +452,7 @@ namespace Neo.UnitTests.SmartContract.Native
             checkAvail_ret.Result.Should().BeTrue();
             checkAvail_ret.State.Should().BeTrue();
 
-            byte[] from = Contract.GetBFTAddress(Blockchain.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             var register_ret = Check_Register(snapshot, domain, from, persistingBlock);
             register_ret.Result.Should().BeTrue();
             register_ret.State.Should().BeTrue();
@@ -506,12 +496,10 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static bool Check_AddRoot(DataCache snapshot, UInt160 account, string root, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(account), snapshot, persistingBlock);
-            engine.LoadScript(NativeContract.NameService.Script, configureState: p => p.ScriptHash = NativeContract.NameService.Hash);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(account), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
-            var script = new ScriptBuilder();
-            script.EmitPush(root);
-            script.EmitPush("addRoot");
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "addRoot", root);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -524,13 +512,10 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static bool Check_Transfer(DataCache snapshot, UInt160 to, string domain, UInt160 owner, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(owner), snapshot, persistingBlock);
-            engine.LoadScript(NativeContract.NameService.Script, configureState: p => p.ScriptHash = NativeContract.NameService.Hash);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(owner), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
-            var script = new ScriptBuilder();
-            script.EmitPush(domain);
-            script.EmitPush(to);
-            script.EmitPush("transfer");
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "transfer", to, domain);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -543,13 +528,10 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static (bool State, bool Result) Check_IsAvailable(DataCache snapshot, UInt160 account, string name, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(account), snapshot, persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(account), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
-            engine.LoadScript(NativeContract.NameService.Script, configureState: p => p.ScriptHash = NativeContract.NameService.Hash);
-
-            var script = new ScriptBuilder();
-            script.EmitPush(name);
-            script.EmitPush("isAvailable");
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "isAvailable", name);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -566,13 +548,10 @@ namespace Neo.UnitTests.SmartContract.Native
         internal static (bool State, bool Result) Check_SetPrice(DataCache snapshot, byte[] pubkey, long price, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep17NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot, persistingBlock);
-
-            engine.LoadScript(NativeContract.NameService.Script, configureState: p => p.ScriptHash = NativeContract.NameService.Hash);
+                new Nep17NativeContractExtensions.ManualWitness(Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1)).ToScriptHash()), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
-            script.EmitPush(price);
-            script.EmitPush("setPrice");
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "setPrice", price);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -588,12 +567,10 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static BigDecimal Check_GetPrice(DataCache snapshot, Block persistingBlock)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock);
-
-            engine.LoadScript(NativeContract.NameService.Script, configureState: p => p.ScriptHash = NativeContract.NameService.Hash);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
-            script.EmitPush("getPrice");
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "getPrice");
             engine.LoadScript(script.ToArray());
 
             engine.Execute().Should().Be(VMState.HALT);
@@ -607,14 +584,10 @@ namespace Neo.UnitTests.SmartContract.Native
         internal static (bool State, bool Result) Check_Register(DataCache snapshot, string name, byte[] owner, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep17NativeContractExtensions.ManualWitness(new UInt160(owner)), snapshot, persistingBlock);
-
-            engine.LoadScript(NativeContract.NameService.Script, configureState: p => p.ScriptHash = NativeContract.NameService.Hash);
+                new Nep17NativeContractExtensions.ManualWitness(new UInt160(owner)), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
-            script.EmitPush(new UInt160(owner));
-            script.EmitPush(name);
-            script.EmitPush("register");
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "register", name, owner);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -631,15 +604,10 @@ namespace Neo.UnitTests.SmartContract.Native
         internal static bool Check_SetRecord(DataCache snapshot, string name, RecordType type, string data, byte[] pubkey, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep17NativeContractExtensions.ManualWitness(new UInt160(pubkey)), snapshot, persistingBlock);
-
-            engine.LoadScript(NativeContract.NameService.Script, configureState: p => p.ScriptHash = NativeContract.NameService.Hash);
+                new Nep17NativeContractExtensions.ManualWitness(new UInt160(pubkey)), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
-            script.EmitPush(data);
-            script.EmitPush(type);
-            script.EmitPush(name);
-            script.EmitPush("setRecord");
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "setRecord", name, type, data);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -653,14 +621,10 @@ namespace Neo.UnitTests.SmartContract.Native
         internal static (bool State, string Result) Check_GetRecord(DataCache snapshot, string name, RecordType type, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), snapshot, persistingBlock);
-
-            engine.LoadScript(NativeContract.NameService.Script, configureState: p => p.ScriptHash = NativeContract.NameService.Hash);
+                new Nep17NativeContractExtensions.ManualWitness(UInt160.Zero), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
-            script.EmitPush(type);
-            script.EmitPush(name);
-            script.EmitPush("getRecord");
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "getRecord", name, type);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -677,14 +641,10 @@ namespace Neo.UnitTests.SmartContract.Native
         internal static bool Check_SetAdmin(DataCache snapshot, string name, UInt160 admin, byte[] pubkey, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application,
-                new Nep17NativeContractExtensions.ManualWitness(new UInt160[] { admin, new UInt160(pubkey) }), snapshot, persistingBlock);
-
-            engine.LoadScript(NativeContract.NameService.Script, configureState: p => p.ScriptHash = NativeContract.NameService.Hash);
+                new Nep17NativeContractExtensions.ManualWitness(new UInt160[] { admin, new UInt160(pubkey) }), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
-            script.EmitPush(admin);
-            script.EmitPush(name);
-            script.EmitPush("setAdmin");
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "setAdmin", name, admin);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
