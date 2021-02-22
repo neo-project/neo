@@ -18,7 +18,7 @@ namespace Neo.UnitTests.Cryptography
         {
             byte[] block = Encoding.ASCII.GetBytes("00000000000000000000000000000000");
             byte[] key = Encoding.ASCII.GetBytes("1234567812345678");
-            byte[] result = block.AESEncryptNoPadding(key, true);
+            byte[] result = block.AESEncryptNoPadding(key, CypherMode.Ecb);
             string encryptString = result.ToHexString();
             encryptString.Should().Be("f69e0923d8247eef417d6a78944a4b39f69e0923d8247eef417d6a78944a4b39");
         }
@@ -31,7 +31,7 @@ namespace Neo.UnitTests.Cryptography
             string decryptString = "f69e0923d8247eef417d6a78944a4b39f69e0923d8247eef417d6a78944a4b399ae8fd02b340288a0e7bbff0f0ba54d6";
             for (int i = 0; i < 32; i++)
                 block[i] = Convert.ToByte(decryptString.Substring(i * 2, 2), 16);
-            string str = System.Text.Encoding.Default.GetString(block.AESDecryptNoPadding(key, true));
+            string str = System.Text.Encoding.Default.GetString(block.AESDecryptNoPadding(key, CypherMode.Ecb));
             str.Should().Be("00000000000000000000000000000000");
         }
 
@@ -41,33 +41,33 @@ namespace Neo.UnitTests.Cryptography
             byte[] data = Encoding.ASCII.GetBytes("00000000000000000000000000000000");
             byte[] key = Encoding.ASCII.GetBytes("12345678123456781234567812345678");
             byte[] iv = Encoding.ASCII.GetBytes("1234567812345678");
-            byte[] result = data.AESEncryptNoPadding(key, false, iv);
+            byte[] result = data.AESEncryptNoPadding(key, CypherMode.Cbc, iv);
 
             string encryptString = result.ToHexString();
             encryptString.Should().Be("07c748cf7d326782f82e60ebe60e2fac289e84e9ce91c1bc41565d14ecb53640");
 
             byte[] nullData = null;
-            Action action = () => nullData.AESEncryptNoPadding(key, false, iv);
+            Action action = () => nullData.AESEncryptNoPadding(key, CypherMode.Cbc, iv);
             action.Should().Throw<ArgumentNullException>();
 
             byte[] nullKey = null;
-            action = () => data.AESEncryptNoPadding(nullKey, false, iv);
+            action = () => data.AESEncryptNoPadding(nullKey, CypherMode.Cbc, iv);
             action.Should().Throw<ArgumentNullException>();
 
             byte[] nullIv = null;
-            action = () => data.AESEncryptNoPadding(key, false, nullIv);
+            action = () => data.AESEncryptNoPadding(key, CypherMode.Cbc, nullIv);
             action.Should().Throw<ArgumentNullException>();
 
             byte[] wrongData = Encoding.ASCII.GetBytes("000000000000000000000000000000001"); ;
-            action = () => wrongData.AESEncryptNoPadding(key, false, iv);
+            action = () => wrongData.AESEncryptNoPadding(key, CypherMode.Cbc, iv);
             action.Should().Throw<ArgumentException>();
 
             byte[] wrongKey = Encoding.ASCII.GetBytes("123456781234567812345678123456780"); ;
-            action = () => data.AESEncryptNoPadding(wrongKey, false, iv);
+            action = () => data.AESEncryptNoPadding(wrongKey, CypherMode.Cbc, iv);
             action.Should().Throw<ArgumentException>();
 
             byte[] wrongIv = Encoding.ASCII.GetBytes("12345678123456780"); ;
-            action = () => data.AESEncryptNoPadding(key, false, wrongIv);
+            action = () => data.AESEncryptNoPadding(key, CypherMode.Cbc, wrongIv);
             action.Should().Throw<ArgumentException>();
         }
 
@@ -80,31 +80,31 @@ namespace Neo.UnitTests.Cryptography
             string decryptString = "07c748cf7d326782f82e60ebe60e2fac289e84e9ce91c1bc41565d14ecb5364073f28c9aa7bd6b069e44d8a97beb2b58";
             for (int i = 0; i < 32; i++)
                 data[i] = Convert.ToByte(decryptString.Substring(i * 2, 2), 16);
-            string str = System.Text.Encoding.Default.GetString(data.AESDecryptNoPadding(key, false, iv));
+            string str = System.Text.Encoding.Default.GetString(data.AESDecryptNoPadding(key, CypherMode.Cbc, iv));
             str.Should().Be("00000000000000000000000000000000");
 
             byte[] nullData = null;
-            Action action = () => nullData.AESDecryptNoPadding(key, false, iv);
+            Action action = () => nullData.AESDecryptNoPadding(key, CypherMode.Cbc, iv);
             action.Should().Throw<ArgumentNullException>();
 
             byte[] nullKey = null;
-            action = () => data.AESDecryptNoPadding(nullKey, false, iv);
+            action = () => data.AESDecryptNoPadding(nullKey, CypherMode.Cbc, iv);
             action.Should().Throw<ArgumentNullException>();
 
             byte[] nullIv = null;
-            action = () => data.AESDecryptNoPadding(key, false, nullIv);
+            action = () => data.AESDecryptNoPadding(key, CypherMode.Cbc, nullIv);
             action.Should().Throw<ArgumentNullException>();
 
             byte[] wrongData = Encoding.ASCII.GetBytes("00000000000000001"); ;
-            action = () => wrongData.AESDecryptNoPadding(key, false, iv);
+            action = () => wrongData.AESDecryptNoPadding(key, CypherMode.Cbc, iv);
             action.Should().Throw<ArgumentException>();
 
             byte[] wrongKey = Encoding.ASCII.GetBytes("123456781234567812345678123456780"); ;
-            action = () => data.AESDecryptNoPadding(wrongKey, false, iv);
+            action = () => data.AESDecryptNoPadding(wrongKey, CypherMode.Cbc, iv);
             action.Should().Throw<ArgumentException>();
 
             byte[] wrongIv = Encoding.ASCII.GetBytes("12345678123456780"); ;
-            action = () => data.AESDecryptNoPadding(key, false, wrongIv);
+            action = () => data.AESDecryptNoPadding(key, CypherMode.Cbc, wrongIv);
             action.Should().Throw<ArgumentException>();
         }
 

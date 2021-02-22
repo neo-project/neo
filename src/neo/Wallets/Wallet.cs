@@ -168,7 +168,7 @@ namespace Neo.Wallets
             byte[] encryptedkey = new byte[32];
             Buffer.BlockCopy(data, 7, encryptedkey, 0, 32);
             Array.Clear(data, 0, data.Length);
-            byte[] prikey = XOR(encryptedkey.AESDecryptNoPadding(derivedhalf2, true), derivedhalf1);
+            byte[] prikey = XOR(encryptedkey.AESDecryptNoPadding(derivedhalf2, CypherMode.Ecb), derivedhalf1);
             Array.Clear(derivedhalf1, 0, derivedhalf1.Length);
             Array.Clear(derivedhalf2, 0, derivedhalf2.Length);
             ECPoint pubkey = Cryptography.ECC.ECCurve.Secp256r1.G * prikey;

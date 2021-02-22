@@ -60,7 +60,7 @@ namespace Neo.Wallets
             byte[] derivedkey = SCrypt.Generate(Encoding.UTF8.GetBytes(passphrase), addresshash, N, r, p, 64);
             byte[] derivedhalf1 = derivedkey[..32];
             byte[] derivedhalf2 = derivedkey[32..];
-            byte[] encryptedkey = XOR(PrivateKey, derivedhalf1).AESEncryptNoPadding(derivedhalf2, true);
+            byte[] encryptedkey = XOR(PrivateKey, derivedhalf1).AESEncryptNoPadding(derivedhalf2, CypherMode.Ecb);
             Span<byte> buffer = stackalloc byte[39];
             buffer[0] = 0x01;
             buffer[1] = 0x42;

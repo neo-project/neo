@@ -13,9 +13,14 @@ namespace Neo.Cryptography
 {
     public static class Helper
     {
-        internal static byte[] AESDecryptNoPadding(this byte[] data, byte[] key, bool ecb, byte[] iv = null)
+        public enum CypherMode
         {
-            if (!ecb)
+            Ecb,
+            Cbc
+        }
+        internal static byte[] AESDecryptNoPadding(this byte[] data, byte[] key, CypherMode cypher, byte[] iv = null)
+        {
+            if (cypher == CypherMode.Cbc)
             {
                 if (data == null || key == null || iv == null) throw new ArgumentNullException();
                 if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentNullException();
@@ -24,9 +29,9 @@ namespace Neo.Cryptography
             {
                 aes.Key = key;
                 aes.Padding = PaddingMode.None;
-                if (ecb)
+                if (cypher == CypherMode.Ecb)
                     aes.Mode = CipherMode.ECB;
-                else
+                else if (cypher == CypherMode.Cbc)
                     aes.IV = iv;
                 using (ICryptoTransform decryptor = aes.CreateDecryptor())
                 {
@@ -35,9 +40,9 @@ namespace Neo.Cryptography
             }
         }
 
-        internal static byte[] AESEncryptNoPadding(this byte[] data, byte[] key, bool ecb, byte[] iv = null)
+        internal static byte[] AESEncryptNoPadding(this byte[] data, byte[] key, CypherMode cypher, byte[] iv = null)
         {
-            if (!ecb)
+            if (cypher == CypherMode.Cbc)
             {
                 if (data == null || key == null || iv == null) throw new ArgumentNullException();
                 if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentNullException();
@@ -46,9 +51,9 @@ namespace Neo.Cryptography
             {
                 aes.Key = key;
                 aes.Padding = PaddingMode.None;
-                if (ecb)
+                if (cypher == CypherMode.Ecb)
                     aes.Mode = CipherMode.ECB;
-                else
+                else if (cypher == CypherMode.Cbc)
                     aes.IV = iv;
                 using (ICryptoTransform encryptor = aes.CreateEncryptor())
                 {

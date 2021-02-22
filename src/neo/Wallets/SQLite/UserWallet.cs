@@ -52,7 +52,7 @@ namespace Neo.Wallets.SQLite
             if (passwordHash != null && !passwordHash.SequenceEqual(passwordKey.Concat(salt).ToArray().Sha256()))
                 throw new CryptographicException();
             this.iv = LoadStoredData("IV");
-            this.masterKey = LoadStoredData("MasterKey").AESDecryptNoPadding(passwordKey, false, iv);
+            this.masterKey = LoadStoredData("MasterKey").AESDecryptNoPadding(passwordKey, CypherMode.Cbc, iv);
             this.scrypt = new ScryptParameters
                 (
                 BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData("ScryptN")),
@@ -91,7 +91,7 @@ namespace Neo.Wallets.SQLite
             SaveStoredData("IV", iv);
             SaveStoredData("Salt", salt);
             SaveStoredData("PasswordHash", passwordKey.Concat(salt).ToArray().Sha256());
-            SaveStoredData("MasterKey", masterKey.AESEncryptNoPadding(passwordKey, false, iv));
+            SaveStoredData("MasterKey", masterKey.AESEncryptNoPadding(passwordKey, CypherMode.Cbc, iv));
             SaveStoredData("Version", versionBuffer);
             SaveStoredData("ScryptN", this.scrypt.N);
             SaveStoredData("ScryptR", this.scrypt.R);
@@ -179,7 +179,7 @@ namespace Neo.Wallets.SQLite
             try
             {
                 SaveStoredData("PasswordHash", passwordKey.Concat(salt).ToArray().Sha256());
-                SaveStoredData("MasterKey", masterKey.AESEncryptNoPadding(passwordKey, false, iv));
+                SaveStoredData("MasterKey", masterKey.AESEncryptNoPadding(passwordKey, CypherMode.Cbc, iv));
                 return true;
             }
             finally
