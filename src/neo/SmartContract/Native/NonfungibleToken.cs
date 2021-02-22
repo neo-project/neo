@@ -168,13 +168,13 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        private void PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, byte[] tokenId)
+        private async void PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, byte[] tokenId)
         {
             engine.SendNotification(Hash, "Transfer",
                 new Array { from?.ToArray() ?? StackItem.Null, to?.ToArray() ?? StackItem.Null, 1, tokenId });
 
             if (to is not null && ContractManagement.GetContract(engine.Snapshot, to) is not null)
-                engine.CallFromNativeContract(Hash, to, "onNEP11Payment", from?.ToArray() ?? StackItem.Null, 1, tokenId);
+                await engine.CallFromNativeContract(Hash, to, "onNEP11Payment", from?.ToArray() ?? StackItem.Null, 1, tokenId);
         }
 
         class NFTAccountState : AccountState

@@ -87,6 +87,14 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.Add(CreateStorageKey(Prefix_NextAvailableId), new StorageItem(1));
         }
 
+        private async void OnDeploy(ApplicationEngine engine, ContractState contract, StackItem data, bool update)
+        {
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy", 2);
+            if (md is not null)
+                await engine.CallFromNativeContract(Hash, contract.Hash, md.Name, data, update);
+            engine.SendNotification(Hash, update ? "Update" : "Deploy", new VM.Types.Array { contract.Hash.ToArray() });
+        }
+
         internal override void OnPersist(ApplicationEngine engine)
         {
             foreach (NativeContract contract in Contracts)
@@ -172,13 +180,7 @@ namespace Neo.SmartContract.Native
 
             engine.Snapshot.Add(key, new StorageItem(contract));
 
-            // Execute _deploy
-
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy", 2);
-            if (md != null)
-                engine.CallFromNativeContract(Hash, hash, md.Name, data, false);
-
-            engine.SendNotification(Hash, "Deploy", new VM.Types.Array { contract.Hash.ToArray() });
+            OnDeploy(engine, contract, data, false);
 
             return contract;
         }
@@ -220,13 +222,7 @@ namespace Neo.SmartContract.Native
             }
             Check(contract.Nef.Script, contract.Manifest.Abi);
             contract.UpdateCounter++; // Increase update counter
-            if (nefFile != null)
-            {
-                ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy", 2);
-                if (md != null)
-                    engine.CallFromNativeContract(Hash, contract.Hash, md.Name, data, true);
-            }
-            engine.SendNotification(Hash, "Update", new VM.Types.Array { contract.Hash.ToArray() });
+            OnDeploy(engine, contract, data, true);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]

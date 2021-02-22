@@ -150,7 +150,7 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        private void PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data, bool callOnPayment)
+        private async void PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data, bool callOnPayment)
         {
             // Send notification
 
@@ -163,7 +163,7 @@ namespace Neo.SmartContract.Native
 
             // Call onNEP17Payment method
 
-            engine.CallFromNativeContract(Hash, to, "onNEP17Payment", from?.ToArray() ?? StackItem.Null, amount, data);
+            await engine.CallFromNativeContract(Hash, to, "onNEP17Payment", from?.ToArray() ?? StackItem.Null, amount, data);
         }
     }
 }
