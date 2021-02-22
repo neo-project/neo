@@ -13,11 +13,6 @@ namespace Neo.Cryptography
 {
     public static class Helper
     {
-        public enum CypherMode
-        {
-            Ecb,
-            Cbc
-        }
         internal static byte[] AESDecryptNoPadding(this byte[] data, byte[] key, CypherMode cypher, byte[] iv = null)
         {
             if (cypher == CypherMode.Cbc)

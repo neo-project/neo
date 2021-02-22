@@ -31,7 +31,7 @@ namespace Neo.UnitTests.Cryptography
             string decryptString = "f69e0923d8247eef417d6a78944a4b39f69e0923d8247eef417d6a78944a4b399ae8fd02b340288a0e7bbff0f0ba54d6";
             for (int i = 0; i < 32; i++)
                 block[i] = Convert.ToByte(decryptString.Substring(i * 2, 2), 16);
-            string str = System.Text.Encoding.Default.GetString(block.AESDecryptNoPadding(key, CypherMode.Ecb));
+            string str = Encoding.Default.GetString(block.AESDecryptNoPadding(key, CypherMode.Ecb));
             str.Should().Be("00000000000000000000000000000000");
         }
 
@@ -160,8 +160,8 @@ namespace Neo.UnitTests.Cryptography
                 {
                     new Witness
                     {
-                        InvocationScript = new byte[0],
-                        VerificationScript = new byte[0]
+                        InvocationScript = Array.Empty<byte>(),
+                        VerificationScript = Array.Empty<byte>()
                     }
                 }
             };
@@ -179,8 +179,7 @@ namespace Neo.UnitTests.Cryptography
         {
             string password = "hello world";
             string string1 = "bc62d4b80d9e36da29c16c5d4d9f11731f36052c72401a76c23c0fb5a9b74423";
-            byte[] byteArray = new byte[string1.Length / 2];
-            byteArray = string1.HexToBytes();
+            byte[] byteArray = string1.HexToBytes();
             password.ToAesKey().Should().Equal(byteArray);
         }
 
@@ -200,8 +199,7 @@ namespace Neo.UnitTests.Cryptography
             password.AppendChar('l');
             password.AppendChar('d');
             string string1 = "bc62d4b80d9e36da29c16c5d4d9f11731f36052c72401a76c23c0fb5a9b74423";
-            byte[] byteArray = new byte[string1.Length / 2];
-            byteArray = string1.HexToBytes();
+            byte[] byteArray= string1.HexToBytes();
             password.ToAesKey().Should().Equal(byteArray);
         }
 
@@ -229,7 +227,7 @@ namespace Neo.UnitTests.Cryptography
 
             var zeroString = new SecureString();
             var result = zeroString.ToArray();
-            byteArray = new byte[0];
+            byteArray = Array.Empty<byte>();
             result.Should().Equal(byteArray);
         }
     }
