@@ -199,7 +199,7 @@ namespace Neo.UnitTests.Cryptography
             password.AppendChar('l');
             password.AppendChar('d');
             string string1 = "bc62d4b80d9e36da29c16c5d4d9f11731f36052c72401a76c23c0fb5a9b74423";
-            byte[] byteArray= string1.HexToBytes();
+            byte[] byteArray = string1.HexToBytes();
             password.ToAesKey().Should().Equal(byteArray);
         }
 
