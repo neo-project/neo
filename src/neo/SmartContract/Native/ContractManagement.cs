@@ -91,8 +91,9 @@ namespace Neo.SmartContract.Native
         {
             foreach (NativeContract contract in Contracts)
             {
-                uint activeIndex = engine.ProtocolSettings.NativeUpdateHistory[contract.Name][0];
-                if (activeIndex != engine.PersistingBlock.Index)
+                if (!engine.ProtocolSettings.NativeUpdateHistory.TryGetValue(contract.Name, out uint[] updates))
+                    continue;
+                if (updates[0] != engine.PersistingBlock.Index)
                     continue;
                 engine.Snapshot.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
                 {
