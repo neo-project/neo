@@ -28,8 +28,8 @@
     <PackageReference Include="Akka" Version="1.4.16" />
     <PackageReference Include="BouncyCastle.NetCore" Version="1.8.8" />
     <PackageReference Include="K4os.Compression.LZ4" Version="1.2.6" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.2" />
-    <PackageReference Include="Neo.VM" Version="3.0.0-CI00268" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.3" />
+    <PackageReference Include="Neo.VM" Version="3.0.0-CI00269" />
   </ItemGroup>
 
 </Project>
