@@ -1,4 +1,3 @@
-using Neo.IO.Caching;
 using System.Collections.Generic;
 
 namespace Neo.Persistence

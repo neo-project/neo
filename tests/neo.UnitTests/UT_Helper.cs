@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Numerics;
-using System.Security.Cryptography;
 
 namespace Neo.UnitTests
 {
@@ -17,18 +16,18 @@ namespace Neo.UnitTests
     public class UT_Helper
     {
         [TestMethod]
-        public void GetHashData()
+        public void GetSignData()
         {
             TestVerifiable verifiable = new TestVerifiable();
-            byte[] res = verifiable.GetHashData();
-            res.ToHexString().Should().Be("4e454f000774657374537472");
+            byte[] res = verifiable.GetSignData(ProtocolSettings.Default.Magic);
+            res.ToHexString().Should().Be("4e454f0050b51da6bb366be3ea50140cda45ba7df575287c0371000b2037ed3898ff8bf5");
         }
 
         [TestMethod]
         public void Sign()
         {
             TestVerifiable verifiable = new TestVerifiable();
-            byte[] res = verifiable.Sign(new KeyPair(TestUtils.GetByteArray(32, 0x42)));
+            byte[] res = verifiable.Sign(new KeyPair(TestUtils.GetByteArray(32, 0x42)), ProtocolSettings.Default.Magic);
             res.Length.Should().Be(64);
         }
 
@@ -197,18 +196,6 @@ namespace Neo.UnitTests
         public void TestNextBigIntegerForRandom()
         {
             Random ran = new Random();
-            Action action1 = () => ran.NextBigInteger(-1);
-            action1.Should().Throw<ArgumentException>();
-
-            ran.NextBigInteger(0).Should().Be(0);
-            ran.NextBigInteger(8).Should().NotBeNull();
-            ran.NextBigInteger(9).Should().NotBeNull();
-        }
-
-        [TestMethod]
-        public void TestNextBigIntegerForRandomNumberGenerator()
-        {
-            var ran = RandomNumberGenerator.Create();
             Action action1 = () => ran.NextBigInteger(-1);
             action1.Should().Throw<ArgumentException>();
 

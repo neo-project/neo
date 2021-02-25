@@ -16,14 +16,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var test = new VersionPayload() { Capabilities = new NodeCapability[0], UserAgent = "neo3" };
             test.Size.Should().Be(22);
 
-            test = VersionPayload.Create(123, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) });
+            test = VersionPayload.Create(123, 456, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) });
             test.Size.Should().Be(25);
         }
 
         [TestMethod]
         public void DeserializeAndSerialize()
         {
-            var test = VersionPayload.Create(123, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) });
+            var test = VersionPayload.Create(123, 456, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) });
             var clone = test.ToArray().AsSerializable<VersionPayload>();
 
             CollectionAssert.AreEqual(test.Capabilities.ToByteArray(), clone.Capabilities.ToByteArray());
@@ -32,7 +32,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(test.Timestamp, clone.Timestamp);
             CollectionAssert.AreEqual(test.Capabilities.ToByteArray(), clone.Capabilities.ToByteArray());
 
-            Assert.ThrowsException<FormatException>(() => VersionPayload.Create(123, "neo3",
+            Assert.ThrowsException<FormatException>(() => VersionPayload.Create(123, 456, "neo3",
                 new NodeCapability[] {
                     new ServerCapability(NodeCapabilityType.TcpServer, 22) ,
                     new ServerCapability(NodeCapabilityType.TcpServer, 22)

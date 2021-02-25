@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using System;
@@ -12,12 +11,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     [TestClass]
     public class UT_HighPriorityAttribute
     {
-        [TestInitialize]
-        public void Init()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-        }
-
         [TestMethod]
         public void Size_Get()
         {
@@ -70,7 +63,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Verify()
         {
             var test = new HighPriorityAttribute();
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
 
             Assert.IsFalse(test.Verify(snapshot, new Transaction() { Signers = new Signer[] { } }));
             Assert.IsFalse(test.Verify(snapshot, new Transaction() { Signers = new Signer[] { new Signer() { Account = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01") } } }));

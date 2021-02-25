@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using static Neo.SmartContract.Helper;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads
@@ -153,7 +154,8 @@ namespace Neo.Network.P2P.Payloads
             if (reader.BaseStream.CanSeek)
                 startPosition = (int)reader.BaseStream.Position;
             DeserializeUnsigned(reader);
-            Witnesses = reader.ReadSerializableArray<Witness>();
+            Witnesses = reader.ReadSerializableArray<Witness>(Signers.Length);
+            if (Witnesses.Length != Signers.Length) throw new FormatException();
             if (startPosition >= 0)
                 _size = (int)reader.BaseStream.Position - startPosition;
         }
@@ -259,14 +261,14 @@ namespace Neo.Network.P2P.Payloads
             writer.WriteVarBytes(Script);
         }
 
-        public JObject ToJson()
+        public JObject ToJson(ProtocolSettings settings)
         {
             JObject json = new JObject();
             json["hash"] = Hash.ToString();
             json["size"] = Size;
             json["version"] = Version;
             json["nonce"] = Nonce;
-            json["sender"] = Sender.ToAddress();
+            json["sender"] = Sender.ToAddress(settings.AddressVersion);
             json["sysfee"] = SystemFee.ToString();
             json["netfee"] = NetworkFee.ToString();
             json["validuntilblock"] = ValidUntilBlock;
@@ -277,40 +279,40 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        bool IInventory.Verify(DataCache snapshot)
+        public VerifyResult Verify(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context)
         {
-            return Verify(snapshot, null) == VerifyResult.Succeed;
+            VerifyResult result = VerifyStateIndependent(settings);
+            if (result != VerifyResult.Succeed) return result;
+            return VerifyStateDependent(settings, snapshot, context);
         }
 
-        public virtual VerifyResult VerifyStateDependent(DataCache snapshot, TransactionVerificationContext context)
+        public virtual VerifyResult VerifyStateDependent(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context)
         {
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);
             if (ValidUntilBlock <= height || ValidUntilBlock > height + MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
-            foreach (UInt160 hash in GetScriptHashesForVerifying(snapshot))
+            UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
+            foreach (UInt160 hash in hashes)
                 if (NativeContract.Policy.IsBlocked(snapshot, hash))
                     return VerifyResult.PolicyFail;
-            if (NativeContract.Policy.GetMaxBlockSystemFee(snapshot) < SystemFee)
-                return VerifyResult.PolicyFail;
             if (!(context?.CheckTransaction(this, snapshot) ?? true)) return VerifyResult.InsufficientFunds;
             foreach (TransactionAttribute attribute in Attributes)
                 if (!attribute.Verify(snapshot, this))
                     return VerifyResult.Invalid;
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
+            if (net_fee < 0) return VerifyResult.InsufficientFunds;
 
-            UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
-            if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
-
+            if (net_fee > MaxVerificationGas) net_fee = MaxVerificationGas;
             uint execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (witnesses[i].VerificationScript.IsSignatureContract())
-                    net_fee -= execFeeFactor * SmartContract.Helper.SignatureContractCost();
+                    net_fee -= execFeeFactor * SignatureContractCost();
                 else if (witnesses[i].VerificationScript.IsMultiSigContract(out int m, out int n))
-                    net_fee -= execFeeFactor * SmartContract.Helper.MultiSignatureContractCost(m, n);
+                    net_fee -= execFeeFactor * MultiSignatureContractCost(m, n);
                 else
                 {
-                    if (!this.VerifyWitness(snapshot, hashes[i], witnesses[i], net_fee, out long fee))
+                    if (!this.VerifyWitness(settings, snapshot, hashes[i], witnesses[i], net_fee, out long fee))
                         return VerifyResult.Invalid;
                     net_fee -= fee;
                 }
@@ -319,7 +321,7 @@ namespace Neo.Network.P2P.Payloads
             return VerifyResult.Succeed;
         }
 
-        public virtual VerifyResult VerifyStateIndependent()
+        public virtual VerifyResult VerifyStateIndependent(ProtocolSettings settings)
         {
             if (Size > MaxTransactionSize) return VerifyResult.Invalid;
             try
@@ -330,21 +332,18 @@ namespace Neo.Network.P2P.Payloads
             {
                 return VerifyResult.Invalid;
             }
+            long net_fee = Math.Min(NetworkFee, MaxVerificationGas);
             UInt160[] hashes = GetScriptHashesForVerifying(null);
-            if (hashes.Length != witnesses.Length) return VerifyResult.Invalid;
             for (int i = 0; i < hashes.Length; i++)
                 if (witnesses[i].VerificationScript.IsStandardContract())
-                    if (!this.VerifyWitness(null, hashes[i], witnesses[i], SmartContract.Helper.MaxVerificationGas, out _))
+                    if (!this.VerifyWitness(settings, null, hashes[i], witnesses[i], net_fee, out long fee))
                         return VerifyResult.Invalid;
+                    else
+                    {
+                        net_fee -= fee;
+                        if (net_fee < 0) return VerifyResult.InsufficientFunds;
+                    }
             return VerifyResult.Succeed;
-        }
-
-        public virtual VerifyResult Verify(DataCache snapshot, TransactionVerificationContext context)
-        {
-            VerifyResult result = VerifyStateIndependent();
-            if (result != VerifyResult.Succeed) return result;
-            result = VerifyStateDependent(snapshot, context);
-            return result;
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)

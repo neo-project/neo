@@ -22,11 +22,10 @@ namespace Neo.SmartContract.Native
         private const int MaxCallbackLength = 32;
         private const int MaxUserDataLength = 512;
 
+        private const byte Prefix_Price = 5;
         private const byte Prefix_RequestId = 9;
         private const byte Prefix_Request = 7;
         private const byte Prefix_IdList = 6;
-
-        private const long OracleRequestPrice = 0_50000000;
 
         internal OracleContract()
         {
@@ -81,7 +80,22 @@ namespace Neo.SmartContract.Native
             Manifest.Abi.Events = events.ToArray();
         }
 
-        [ContractMethod(0, CallFlags.WriteStates | CallFlags.AllowCall | CallFlags.AllowNotify)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private void SetPrice(ApplicationEngine engine, long price)
+        {
+            if (price <= 0)
+                throw new ArgumentOutOfRangeException(nameof(price));
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Price)).Set(price);
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public long GetPrice(DataCache snapshot)
+        {
+            return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_Price)];
+        }
+
+        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify)]
         private void Finish(ApplicationEngine engine)
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
@@ -90,7 +104,7 @@ namespace Neo.SmartContract.Native
             OracleRequest request = GetRequest(engine.Snapshot, response.Id);
             if (request == null) throw new ArgumentException("Oracle request was not found");
             engine.SendNotification(Hash, "OracleResponse", new VM.Types.Array { response.Id, request.OriginalTxid.ToArray() });
-            StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.Limits.MaxStackSize, engine.Limits.MaxItemSize, engine.ReferenceCounter);
+            StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.Limits.MaxStackSize, engine.ReferenceCounter);
             engine.CallFromNativeContract(Hash, request.CallbackContract, request.CallbackMethod, request.Url, userData, (int)response.Code, response.Result);
         }
 
@@ -129,6 +143,7 @@ namespace Neo.SmartContract.Native
         internal override void Initialize(ApplicationEngine engine)
         {
             engine.Snapshot.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BigInteger.Zero));
+            engine.Snapshot.Add(CreateStorageKey(Prefix_Price), new StorageItem(0_50000000));
         }
 
         internal override void PostPersist(ApplicationEngine engine)
@@ -157,7 +172,7 @@ namespace Neo.SmartContract.Native
                 if (nodes.Length > 0)
                 {
                     int index = (int)(response.Id % (ulong)nodes.Length);
-                    nodes[index].GAS += OracleRequestPrice;
+                    nodes[index].GAS += GetPrice(engine.Snapshot);
                 }
             }
             if (nodes != null)
@@ -169,7 +184,7 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        [ContractMethod(OracleRequestPrice, CallFlags.WriteStates | CallFlags.AllowNotify)]
+        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private void Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForResponse)
         {
             //Check the arguments
@@ -178,6 +193,8 @@ namespace Neo.SmartContract.Native
                 || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength || callback.StartsWith('_')
                 || gasForResponse < 0_10000000)
                 throw new ArgumentException();
+
+            engine.AddGas(GetPrice(engine.Snapshot));
 
             //Mint gas for the response
             engine.AddGas(gasForResponse);
@@ -211,7 +228,7 @@ namespace Neo.SmartContract.Native
             engine.SendNotification(Hash, "OracleRequest", new VM.Types.Array { id, engine.CallingScriptHash.ToArray(), url, filter ?? StackItem.Null });
         }
 
-        [ContractMethod(0_01000000, CallFlags.None)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.None)]
         private bool Verify(ApplicationEngine engine)
         {
             Transaction tx = (Transaction)engine.ScriptContainer;

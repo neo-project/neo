@@ -18,16 +18,20 @@ namespace Neo.SmartContract
 
         public static long SignatureContractCost() =>
             ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
-            ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
             ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
-            ApplicationEngine.ECDsaVerifyPrice;
+            ApplicationEngine.CheckSigPrice;
 
-        public static long MultiSignatureContractCost(int m, int n) =>
-            ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n) +
-            ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 +
-            ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] +
-            ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
-            ApplicationEngine.ECDsaVerifyPrice * n;
+        public static long MultiSignatureContractCost(int m, int n)
+        {
+            long fee = ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n);
+            using (ScriptBuilder sb = new ScriptBuilder())
+                fee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
+            using (ScriptBuilder sb = new ScriptBuilder())
+                fee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
+            fee += ApplicationEngine.OpCodePrices[OpCode.SYSCALL];
+            fee += ApplicationEngine.CheckSigPrice * n;
+            return fee;
+        }
 
         public static UInt160 GetContractHash(UInt160 sender, uint nefCheckSum, string name)
         {
@@ -74,7 +78,7 @@ namespace Neo.SmartContract
         {
             m = 0; n = 0;
             int i = 0;
-            if (script.Length < 43) return false;
+            if (script.Length < 42) return false;
             switch (script[i])
             {
                 case (byte)OpCode.PUSHINT8:
@@ -119,22 +123,20 @@ namespace Neo.SmartContract
                 default:
                     return false;
             }
-            if (script.Length != i + 6) return false;
-            if (script[i++] != (byte)OpCode.PUSHNULL) return false;
+            if (script.Length != i + 5) return false;
             if (script[i++] != (byte)OpCode.SYSCALL) return false;
-            if (BitConverter.ToUInt32(script, i) != ApplicationEngine.Neo_Crypto_CheckMultisigWithECDsaSecp256r1)
+            if (BinaryPrimitives.ReadUInt32LittleEndian(script.AsSpan(i)) != ApplicationEngine.Neo_Crypto_CheckMultisig)
                 return false;
             return true;
         }
 
         public static bool IsSignatureContract(this byte[] script)
         {
-            if (script.Length != 41) return false;
+            if (script.Length != 40) return false;
             if (script[0] != (byte)OpCode.PUSHDATA1
                 || script[1] != 33
-                || script[35] != (byte)OpCode.PUSHNULL
-                || script[36] != (byte)OpCode.SYSCALL
-                || BitConverter.ToUInt32(script, 37) != ApplicationEngine.Neo_Crypto_VerifyWithECDsaSecp256r1)
+                || script[35] != (byte)OpCode.SYSCALL
+                || BinaryPrimitives.ReadUInt32LittleEndian(script.AsSpan(36)) != ApplicationEngine.Neo_Crypto_CheckSig)
                 return false;
             return true;
         }
@@ -161,7 +163,7 @@ namespace Neo.SmartContract
             return new UInt160(Crypto.Hash160(script));
         }
 
-        public static bool VerifyWitnesses(this IVerifiable verifiable, DataCache snapshot, long gas)
+        public static bool VerifyWitnesses(this IVerifiable verifiable, ProtocolSettings settings, DataCache snapshot, long gas)
         {
             if (gas < 0) return false;
             if (gas > MaxVerificationGas) gas = MaxVerificationGas;
@@ -178,14 +180,14 @@ namespace Neo.SmartContract
             if (hashes.Length != verifiable.Witnesses.Length) return false;
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (!verifiable.VerifyWitness(snapshot, hashes[i], verifiable.Witnesses[i], gas, out long fee))
+                if (!verifiable.VerifyWitness(settings, snapshot, hashes[i], verifiable.Witnesses[i], gas, out long fee))
                     return false;
                 gas -= fee;
             }
             return true;
         }
 
-        internal static bool VerifyWitness(this IVerifiable verifiable, DataCache snapshot, UInt160 hash, Witness witness, long gas, out long fee)
+        internal static bool VerifyWitness(this IVerifiable verifiable, ProtocolSettings settings, DataCache snapshot, UInt160 hash, Witness witness, long gas, out long fee)
         {
             fee = 0;
             Script invocationScript;
@@ -197,17 +199,15 @@ namespace Neo.SmartContract
             {
                 return false;
             }
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CreateSnapshot(), null, gas))
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CreateSnapshot(), null, settings, gas))
             {
-                CallFlags callFlags = !witness.VerificationScript.IsStandardContract() ? CallFlags.ReadStates : CallFlags.None;
-
                 if (witness.VerificationScript.Length == 0)
                 {
                     ContractState cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (cs is null) return false;
                     ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify", -1);
                     if (md?.ReturnType != ContractParameterType.Boolean) return false;
-                    engine.LoadContract(cs, md, callFlags);
+                    engine.LoadContract(cs, md, CallFlags.ReadOnly);
                 }
                 else
                 {
@@ -224,22 +224,12 @@ namespace Neo.SmartContract
                     }
                     engine.LoadScript(verificationScript, initialPosition: 0, configureState: p =>
                     {
-                        p.CallFlags = callFlags;
+                        p.CallFlags = CallFlags.ReadOnly;
                         p.ScriptHash = hash;
                     });
                 }
 
                 engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
-
-                if (NativeContract.IsNative(hash))
-                {
-                    try
-                    {
-                        engine.StepOut();
-                        engine.Push("verify");
-                    }
-                    catch { }
-                }
 
                 if (engine.Execute() == VMState.FAULT) return false;
                 if (!engine.ResultStack.Peek().GetBoolean()) return false;

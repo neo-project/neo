@@ -10,7 +10,7 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 1 << 15, CallFlags.AllowCall);
+        public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 1 << 15, CallFlags.ReadStates | CallFlags.AllowCall);
         public static readonly InteropDescriptor System_Contract_CallNative = Register("System.Contract.CallNative", nameof(CallNativeContract), 0, CallFlags.None);
         public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 1 << 10, CallFlags.ReadStates);
         public static readonly InteropDescriptor System_Contract_GetCallFlags = Register("System.Contract.GetCallFlags", nameof(GetCallFlags), 1 << 10, CallFlags.None);
@@ -19,8 +19,9 @@ namespace Neo.SmartContract
         /// Warning: check first that input public key is valid, before creating the script.
         /// </summary>
         public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 1 << 8, CallFlags.None);
-        public static readonly InteropDescriptor System_Contract_NativeOnPersist = Register("System.Contract.NativeOnPersist", nameof(NativeOnPersist), 0, CallFlags.WriteStates);
-        public static readonly InteropDescriptor System_Contract_NativePostPersist = Register("System.Contract.NativePostPersist", nameof(NativePostPersist), 0, CallFlags.WriteStates);
+        public static readonly InteropDescriptor System_Contract_CreateMultisigAccount = Register("System.Contract.CreateMultisigAccount", nameof(CreateMultisigAccount), 1 << 8, CallFlags.None);
+        public static readonly InteropDescriptor System_Contract_NativeOnPersist = Register("System.Contract.NativeOnPersist", nameof(NativeOnPersist), 0, CallFlags.States);
+        public static readonly InteropDescriptor System_Contract_NativePostPersist = Register("System.Contract.NativePostPersist", nameof(NativePostPersist), 0, CallFlags.States);
 
         protected internal void CallContract(UInt160 contractHash, string method, CallFlags callFlags, Array args)
         {
@@ -38,12 +39,16 @@ namespace Neo.SmartContract
             CallContractInternal(contract, md, callFlags, hasReturnValue, args);
         }
 
-        protected internal void CallNativeContract(int id)
+        protected internal void CallNativeContract(byte version)
         {
-            NativeContract contract = NativeContract.GetContract(id);
-            if (contract is null || contract.ActiveBlockIndex > NativeContract.Ledger.CurrentIndex(Snapshot))
-                throw new InvalidOperationException();
-            contract.Invoke(this);
+            NativeContract contract = NativeContract.GetContract(CurrentScriptHash);
+            if (contract is null)
+                throw new InvalidOperationException("It is not allowed to use \"System.Contract.CallNative\" directly.");
+            if (!ProtocolSettings.NativeUpdateHistory.TryGetValue(contract.Name, out uint[] updates))
+                throw new InvalidOperationException($"The native contract {contract.Name} is not active.");
+            if (updates[0] > NativeContract.Ledger.CurrentIndex(Snapshot))
+                throw new InvalidOperationException($"The native contract {contract.Name} is not active.");
+            contract.Invoke(this, version);
         }
 
         protected internal bool IsStandardContract(UInt160 hash)
@@ -83,13 +88,22 @@ namespace Neo.SmartContract
             return Contract.CreateSignatureRedeemScript(pubKey).ToScriptHash();
         }
 
+        protected internal UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
+        {
+            return Contract.CreateMultiSigRedeemScript(m, pubKeys).ToScriptHash();
+        }
+
         protected internal void NativeOnPersist()
         {
             if (Trigger != TriggerType.OnPersist)
                 throw new InvalidOperationException();
             foreach (NativeContract contract in NativeContract.Contracts)
-                if (contract.ActiveBlockIndex <= PersistingBlock.Index)
+            {
+                if (!ProtocolSettings.NativeUpdateHistory.TryGetValue(contract.Name, out uint[] updates))
+                    continue;
+                if (updates[0] <= PersistingBlock.Index)
                     contract.OnPersist(this);
+            }
         }
 
         protected internal void NativePostPersist()
@@ -97,8 +111,12 @@ namespace Neo.SmartContract
             if (Trigger != TriggerType.PostPersist)
                 throw new InvalidOperationException();
             foreach (NativeContract contract in NativeContract.Contracts)
-                if (contract.ActiveBlockIndex <= PersistingBlock.Index)
+            {
+                if (!ProtocolSettings.NativeUpdateHistory.TryGetValue(contract.Name, out uint[] updates))
+                    continue;
+                if (updates[0] <= PersistingBlock.Index)
                     contract.PostPersist(this);
+            }
         }
     }
 }

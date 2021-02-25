@@ -1,4 +1,5 @@
 using Neo.IO;
+using System;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads
@@ -22,6 +23,7 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Headers = reader.ReadSerializableArray<Header>(MaxHeadersCount);
+            if (Headers.Length == 0) throw new FormatException();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

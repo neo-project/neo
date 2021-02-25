@@ -37,14 +37,14 @@ namespace Neo.UnitTests.Ledger
         public void Size_Get()
         {
             uut.Value = TestUtils.GetByteArray(10, 0x42);
-            uut.Size.Should().Be(12); // 2 + 10
+            uut.Size.Should().Be(11); // 1 + 10
         }
 
         [TestMethod]
         public void Size_Get_Larger()
         {
             uut.Value = TestUtils.GetByteArray(88, 0x42);
-            uut.Size.Should().Be(90); // 2 + 88
+            uut.Size.Should().Be(89); // 1 + 88
         }
 
         [TestMethod]
@@ -96,7 +96,7 @@ namespace Neo.UnitTests.Ledger
                 }
             }
 
-            byte[] requiredData = new byte[] { 10, 66, 32, 32, 32, 32, 32, 32, 32, 32, 32, 0 };
+            byte[] requiredData = new byte[] { 10, 66, 32, 32, 32, 32, 32, 32, 32, 32, 32 };
 
             data.Length.Should().Be(requiredData.Length);
             for (int i = 0; i < requiredData.Length; i++)
@@ -109,11 +109,9 @@ namespace Neo.UnitTests.Ledger
         public void TestFromReplica()
         {
             uut.Value = TestUtils.GetByteArray(10, 0x42);
-            uut.IsConstant = true;
             StorageItem dest = new StorageItem();
             dest.FromReplica(uut);
             dest.Value.Should().BeEquivalentTo(uut.Value);
-            dest.IsConstant.Should().Be(uut.IsConstant);
         }
     }
 }

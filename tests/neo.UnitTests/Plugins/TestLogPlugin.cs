@@ -32,20 +32,5 @@ namespace Neo.UnitTests.Plugins
         }
 
         protected override bool OnMessage(object message) => true;
-
-        public static bool TestResumeNodeStartup()
-        {
-            return ResumeNodeStartup();
-        }
-
-        public static void TestSuspendNodeStartup()
-        {
-            SuspendNodeStartup();
-        }
-
-        public static void TestLoadPlugins(NeoSystem system)
-        {
-            LoadPlugins(system);
-        }
     }
 }

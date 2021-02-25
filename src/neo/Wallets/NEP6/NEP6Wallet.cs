@@ -23,7 +23,7 @@ namespace Neo.Wallets.NEP6
         public override string Name => name;
         public override Version Version => version;
 
-        public NEP6Wallet(string path, string name = null) : base(path)
+        public NEP6Wallet(string path, ProtocolSettings settings, string name = null) : base(path, settings)
         {
             if (File.Exists(path))
             {
@@ -40,9 +40,9 @@ namespace Neo.Wallets.NEP6
             }
         }
 
-        internal NEP6Wallet(JObject wallet) : base(null)
+        public NEP6Wallet(string path, ProtocolSettings settings, JObject json) : base(path, settings)
         {
-            LoadFromJson(wallet, out Scrypt, out accounts, out extra);
+            LoadFromJson(json, out Scrypt, out accounts, out extra);
         }
 
         private void LoadFromJson(JObject wallet, out ScryptParameters scrypt, out Dictionary<UInt160, NEP6Account> accounts, out JObject extra)
@@ -143,7 +143,7 @@ namespace Neo.Wallets.NEP6
 
         public KeyPair DecryptKey(string nep2key)
         {
-            return new KeyPair(GetPrivateKeyFromNEP2(nep2key, password, Scrypt.N, Scrypt.R, Scrypt.P));
+            return new KeyPair(GetPrivateKeyFromNEP2(nep2key, password, ProtocolSettings.AddressVersion, Scrypt.N, Scrypt.R, Scrypt.P));
         }
 
         public override bool DeleteAccount(UInt160 scriptHash)
@@ -214,7 +214,7 @@ namespace Neo.Wallets.NEP6
 
         public override WalletAccount Import(string nep2, string passphrase, int N = 16384, int r = 8, int p = 8)
         {
-            KeyPair key = new KeyPair(GetPrivateKeyFromNEP2(nep2, passphrase, N, r, p));
+            KeyPair key = new KeyPair(GetPrivateKeyFromNEP2(nep2, passphrase, ProtocolSettings.AddressVersion, N, r, p));
             NEP6Contract contract = new NEP6Contract
             {
                 Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
@@ -237,10 +237,10 @@ namespace Neo.Wallets.NEP6
             password = null;
         }
 
-        public static NEP6Wallet Migrate(string path, string db3path, string password)
+        public static NEP6Wallet Migrate(string path, string db3path, string password, ProtocolSettings settings)
         {
-            UserWallet wallet_old = UserWallet.Open(db3path, password);
-            NEP6Wallet wallet_new = new NEP6Wallet(path, wallet_old.Name);
+            UserWallet wallet_old = UserWallet.Open(db3path, password, settings);
+            NEP6Wallet wallet_new = new NEP6Wallet(path, settings, wallet_old.Name);
             using (wallet_new.Unlock(password))
             {
                 foreach (WalletAccount account in wallet_old.GetAccounts())

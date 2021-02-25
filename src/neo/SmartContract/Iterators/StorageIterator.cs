@@ -1,4 +1,3 @@
-using Neo.Ledger;
 using Neo.VM;
 using Neo.VM.Types;
 using System.Collections.Generic;
@@ -37,7 +36,7 @@ namespace Neo.SmartContract.Iterators
                 key = key[1..];
 
             StackItem item = options.HasFlag(FindOptions.DeserializeValues)
-                ? BinarySerializer.Deserialize(value, 1024, (uint)value.Length, referenceCounter)
+                ? BinarySerializer.Deserialize(value, 1024, referenceCounter)
                 : value;
 
             if (options.HasFlag(FindOptions.PickField0))

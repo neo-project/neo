@@ -1,65 +1,20 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.VM.Types;
-using System.Numerics;
 
 namespace Neo.UnitTests.SmartContract
 {
     [TestClass]
-    public class UT_ApplicationEngine
+    public partial class UT_ApplicationEngine
     {
         private string eventName = null;
-
-        [TestInitialize]
-        public void TestSetup()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-        }
-
-        [TestMethod]
-        public void TestBinary()
-        {
-            using var snapshot = Blockchain.Singleton.GetSnapshot();
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
-
-            var data = new byte[0];
-            CollectionAssert.AreEqual(data, engine.Base64Decode(engine.Base64Encode(data)));
-
-            CollectionAssert.AreEqual(data, engine.Base58Decode(engine.Base58Encode(data)));
-
-            data = new byte[] { 1, 2, 3 };
-            CollectionAssert.AreEqual(data, engine.Base64Decode(engine.Base64Encode(data)));
-
-            CollectionAssert.AreEqual(data, engine.Base58Decode(engine.Base58Encode(data)));
-
-            Assert.AreEqual("AQIDBA==", engine.Base64Encode(new byte[] { 1, 2, 3, 4 }));
-
-            Assert.AreEqual("2VfUX", engine.Base58Encode(new byte[] { 1, 2, 3, 4 }));
-        }
-
-        [TestMethod]
-        public void TestItoaAtoi()
-        {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null);
-
-            Assert.AreEqual("1", engine.Itoa(BigInteger.One, 10));
-            Assert.AreEqual("1", engine.Itoa(BigInteger.One, 16));
-            Assert.AreEqual("-1", engine.Itoa(BigInteger.MinusOne, 10));
-            Assert.AreEqual("f", engine.Itoa(BigInteger.MinusOne, 16));
-            Assert.AreEqual(-1, engine.Atoi("-1", 10));
-            Assert.AreEqual(1, engine.Atoi("+1", 10));
-            Assert.AreEqual(-1, engine.Atoi("ff", 16));
-            Assert.ThrowsException<System.FormatException>(() => engine.Atoi("a", 10));
-            Assert.ThrowsException<System.ArgumentOutOfRangeException>(() => engine.Atoi("a", 11));
-        }
 
         [TestMethod]
         public void TestNotify()
         {
-            using var snapshot = Blockchain.Singleton.GetSnapshot();
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            var snapshot = TestBlockchain.GetTestSnapshot();
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
             ApplicationEngine.Notify += Test_Notify1;
             const string notifyEvent = "TestEvent";
 
@@ -93,11 +48,11 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestCreateDummyBlock()
         {
-            var snapshot = Blockchain.Singleton.GetSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot();
             byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
             ApplicationEngine engine = ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshot);
             engine.PersistingBlock.Version.Should().Be(0);
-            engine.PersistingBlock.PrevHash.Should().Be(Blockchain.GenesisBlock.Hash);
+            engine.PersistingBlock.PrevHash.Should().Be(TestBlockchain.TheNeoSystem.GenesisBlock.Hash);
             engine.PersistingBlock.MerkleRoot.Should().Be(new UInt256());
         }
     }

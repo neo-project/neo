@@ -8,14 +8,14 @@ namespace Neo.Network.P2P
 {
     internal class TaskSession
     {
-        public readonly Dictionary<UInt256, DateTime> InvTasks = new Dictionary<UInt256, DateTime>();
-        public readonly Dictionary<uint, DateTime> IndexTasks = new Dictionary<uint, DateTime>();
-
+        public Dictionary<UInt256, DateTime> InvTasks { get; } = new Dictionary<UInt256, DateTime>();
+        public Dictionary<uint, DateTime> IndexTasks { get; } = new Dictionary<uint, DateTime>();
+        public HashSet<UInt256> AvailableTasks { get; } = new HashSet<UInt256>();
+        public Dictionary<uint, Block> ReceivedBlock { get; } = new Dictionary<uint, Block>();
+        public bool HasTooManyTasks => InvTasks.Count + IndexTasks.Count >= 100;
         public bool IsFullNode { get; }
         public uint LastBlockIndex { get; set; }
-        public uint TimeoutTimes = 0;
-        public uint InvalidBlockCount = 0;
-        public DateTime ExpireTime = DateTime.MinValue;
+        public bool MempoolSent { get; set; }
 
         public TaskSession(VersionPayload version)
         {
