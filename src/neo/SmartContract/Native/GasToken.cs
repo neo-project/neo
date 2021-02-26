@@ -25,7 +25,7 @@ namespace Neo.SmartContract.Native
             HashSet<UInt160> distributed = new HashSet<UInt160>();
             foreach (Transaction tx in engine.PersistingBlock.Transactions)
             {
-                if (distributed.Add(tx.Sender)) NEO.DistributeGas(engine, tx.Sender);
+                if (distributed.Add(tx.Sender)) NEO.DistributeGas(engine, tx.Sender, false);
                 Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
                 totalNetworkFee += tx.NetworkFee;
             }

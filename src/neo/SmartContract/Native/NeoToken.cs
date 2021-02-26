@@ -44,7 +44,7 @@ namespace Neo.SmartContract.Native
 
         protected override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
         {
-            DistributeGas(engine, account, state);
+            DistributeGas(engine, account, state, true);
             if (amount.IsZero) return;
             if (state.VoteTo is null) return;
             engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_VotersCount)).Add(amount);
@@ -54,7 +54,7 @@ namespace Neo.SmartContract.Native
             CheckCandidate(engine.Snapshot, state.VoteTo, candidate);
         }
 
-        internal void DistributeGas(ApplicationEngine engine, UInt160 account)
+        internal void DistributeGas(ApplicationEngine engine, UInt160 account, bool callOnPayment)
         {
             StorageItem storage = engine.Snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account));
             if (storage is null) return;
@@ -62,14 +62,14 @@ namespace Neo.SmartContract.Native
             // PersistingBlock is null when running under the debugger
             if (engine.PersistingBlock is null) return;
 
-            DistributeGas(engine, account, storage.GetInteroperable<NeoAccountState>());
+            DistributeGas(engine, account, storage.GetInteroperable<NeoAccountState>(), callOnPayment);
         }
 
-        private void DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
+        private void DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state, bool callOnPayment)
         {
             BigInteger gas = CalculateBonus(engine.Snapshot, state.VoteTo, state.Balance, state.BalanceHeight, engine.PersistingBlock.Index);
             state.BalanceHeight = engine.PersistingBlock.Index;
-            GAS.Mint(engine, account, gas, true);
+            GAS.Mint(engine, account, gas, callOnPayment);
         }
 
         private BigInteger CalculateBonus(DataCache snapshot, ECPoint vote, BigInteger value, uint start, uint end)
@@ -278,7 +278,7 @@ namespace Neo.SmartContract.Native
                 else
                     item.Add(-state_account.Balance);
             }
-            DistributeGas(engine, account, state_account);
+            DistributeGas(engine, account, state_account, true);
             if (state_account.VoteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate).Add(state_account.VoteTo);

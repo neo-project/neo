@@ -142,7 +142,7 @@ namespace Neo.Wallets
                     if (isGas)
                     {
                         // add unclaimed gas
-                        sb.EmitDynamicCall(NativeContract.NEO.Hash, "unclaimedGas", account, NativeContract.Ledger.CurrentIndex(Blockchain.Singleton.View));
+                        sb.EmitDynamicCall(NativeContract.NEO.Hash, "unclaimedGas", account, NativeContract.Ledger.CurrentIndex(snapshot));
                         sb.Emit(OpCode.ADD);
                     }
                 }
@@ -336,7 +336,6 @@ namespace Neo.Wallets
             {
                 accounts = new[] { sender };
             }
-            DataCache snapshot = Blockchain.Singleton.View;
             var balances_gas = accounts.Select(p => (
                 Account: p,
                 Value: NativeContract.GAS.BalanceOf(snapshot, p) + NativeContract.NEO.UnclaimedGas(snapshot, p, NativeContract.Ledger.CurrentIndex(snapshot))
