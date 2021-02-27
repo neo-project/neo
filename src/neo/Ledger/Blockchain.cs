@@ -321,7 +321,7 @@ namespace Neo.Ledger
                         if (engine.Execute() == VMState.HALT)
                         {
                             clonedSnapshot.Commit();
-                            if (!isGasCalled && engine.TouchedContracts.Contains(NativeContract.GAS.Hash)) isGasCalled = true;
+                            if (!isGasCalled && engine.InvokedContracts.Contains(NativeContract.GAS.Hash)) isGasCalled = true;
                         }
                         else
                         {
