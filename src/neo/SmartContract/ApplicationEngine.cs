@@ -72,10 +72,15 @@ namespace Neo.SmartContract
                 throw new InvalidOperationException("Insufficient GAS.");
         }
 
-        protected override void OnFault(Exception e)
+        protected override void OnFault(Exception ex)
         {
-            FaultException = e;
-            base.OnFault(e);
+            FaultException = ex;
+            base.OnFault(ex);
+        }
+
+        internal void Throw(Exception ex)
+        {
+            OnFault(ex);
         }
 
         private ExecutionContext CallContractInternal(UInt160 contractHash, string method, CallFlags flags, bool hasReturnValue, StackItem[] args)

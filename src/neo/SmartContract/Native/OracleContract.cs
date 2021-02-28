@@ -12,6 +12,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace Neo.SmartContract.Native
 {
@@ -96,7 +97,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify)]
-        private async void Finish(ApplicationEngine engine)
+        private async Task Finish(ApplicationEngine engine)
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
             OracleResponse response = tx.GetAttribute<OracleResponse>();
@@ -179,7 +180,8 @@ namespace Neo.SmartContract.Native
             {
                 foreach (var (account, gas) in nodes)
                 {
-                    if (gas.Sign > 0) GAS.Mint(engine, account, gas, false);
+                    if (gas.Sign > 0)
+                        _ = GAS.Mint(engine, account, gas, false);
                 }
             }
         }
@@ -198,7 +200,7 @@ namespace Neo.SmartContract.Native
 
             //Mint gas for the response
             engine.AddGas(gasForResponse);
-            GAS.Mint(engine, Hash, gasForResponse, false);
+            _ = GAS.Mint(engine, Hash, gasForResponse, false);
 
             //Increase the request id
             StorageItem item_id = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_RequestId));

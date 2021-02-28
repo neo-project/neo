@@ -12,6 +12,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Numerics;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Neo.SmartContract.Native
 {
@@ -109,7 +110,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private bool Register(ApplicationEngine engine, string name, UInt160 owner)
+        private async Task<bool> Register(ApplicationEngine engine, string name, UInt160 owner)
         {
             if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
             string[] names = name.Split('.');
@@ -126,7 +127,7 @@ namespace Neo.SmartContract.Native
                 Name = name,
                 Expiration = (uint)(engine.PersistingBlock.Timestamp / 1000) + OneYear
             };
-            Mint(engine, state);
+            await Mint(engine, state);
             engine.Snapshot.Add(CreateStorageKey(Prefix_Expiration).AddBigEndian(state.Expiration).Add(hash), new StorageItem(new byte[] { 0 }));
             return true;
         }

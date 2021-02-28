@@ -55,7 +55,7 @@ namespace Neo.UnitTests.Ledger
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
             NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
-            NativeContract.GAS.Mint(engine, UInt160.Zero, 8, false);
+            _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 8, false);
 
             // Test
             TransactionVerificationContext verificationContext = new TransactionVerificationContext();
@@ -76,7 +76,7 @@ namespace Neo.UnitTests.Ledger
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
             NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
-            NativeContract.GAS.Mint(engine, UInt160.Zero, 8, true);
+            _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 8, true);
 
             TransactionVerificationContext verificationContext = new TransactionVerificationContext();
             var tx = CreateTransactionWithFee(1, 2);

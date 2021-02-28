@@ -5,6 +5,7 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Threading.Tasks;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
@@ -56,20 +57,20 @@ namespace Neo.SmartContract.Native
             Manifest.Abi.Events = events.ToArray();
         }
 
-        internal protected virtual void Mint(ApplicationEngine engine, UInt160 account, BigInteger amount, bool callOnPayment)
+        internal protected async Task Mint(ApplicationEngine engine, UInt160 account, BigInteger amount, bool callOnPayment)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
             StorageItem storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Account).Add(account), () => new StorageItem(new TState()));
             TState state = storage.GetInteroperable<TState>();
-            OnBalanceChanging(engine, account, state, amount);
+            await OnBalanceChanging(engine, account, state, amount);
             state.Balance += amount;
             storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem(BigInteger.Zero));
             storage.Add(amount);
-            PostTransfer(engine, null, account, amount, StackItem.Null, callOnPayment);
+            await PostTransfer(engine, null, account, amount, StackItem.Null, callOnPayment);
         }
 
-        internal protected virtual void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
+        internal protected void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
@@ -77,14 +78,15 @@ namespace Neo.SmartContract.Native
             StorageItem storage = engine.Snapshot.GetAndChange(key);
             TState state = storage.GetInteroperable<TState>();
             if (state.Balance < amount) throw new InvalidOperationException();
-            OnBalanceChanging(engine, account, state, -amount);
+            //This method is onlt called in GAS, so OnBalanceChanging() does nothing.
+            _ = OnBalanceChanging(engine, account, state, -amount);
             if (state.Balance == amount)
                 engine.Snapshot.Delete(key);
             else
                 state.Balance -= amount;
             storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
             storage.Add(-amount);
-            PostTransfer(engine, account, null, amount, StackItem.Null, false);
+            _ = PostTransfer(engine, account, null, amount, StackItem.Null, false);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
@@ -104,7 +106,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 17, StorageFee = 50, RequiredCallFlags = CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify)]
-        protected virtual bool Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
+        protected async Task<bool> Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (!from.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(from))
@@ -116,7 +118,7 @@ namespace Neo.SmartContract.Native
                 if (storage_from != null)
                 {
                     TState state_from = storage_from.GetInteroperable<TState>();
-                    OnBalanceChanging(engine, from, state_from, amount);
+                    await OnBalanceChanging(engine, from, state_from, amount);
                 }
             }
             else
@@ -126,11 +128,11 @@ namespace Neo.SmartContract.Native
                 if (state_from.Balance < amount) return false;
                 if (from.Equals(to))
                 {
-                    OnBalanceChanging(engine, from, state_from, BigInteger.Zero);
+                    await OnBalanceChanging(engine, from, state_from, BigInteger.Zero);
                 }
                 else
                 {
-                    OnBalanceChanging(engine, from, state_from, -amount);
+                    await OnBalanceChanging(engine, from, state_from, -amount);
                     if (state_from.Balance == amount)
                         engine.Snapshot.Delete(key_from);
                     else
@@ -138,19 +140,20 @@ namespace Neo.SmartContract.Native
                     StorageKey key_to = CreateStorageKey(Prefix_Account).Add(to);
                     StorageItem storage_to = engine.Snapshot.GetAndChange(key_to, () => new StorageItem(new TState()));
                     TState state_to = storage_to.GetInteroperable<TState>();
-                    OnBalanceChanging(engine, to, state_to, amount);
+                    await OnBalanceChanging(engine, to, state_to, amount);
                     state_to.Balance += amount;
                 }
             }
-            PostTransfer(engine, from, to, amount, data, true);
+            await PostTransfer(engine, from, to, amount, data, true);
             return true;
         }
 
-        protected virtual void OnBalanceChanging(ApplicationEngine engine, UInt160 account, TState state, BigInteger amount)
+        protected virtual Task OnBalanceChanging(ApplicationEngine engine, UInt160 account, TState state, BigInteger amount)
         {
+            return Task.CompletedTask;
         }
 
-        private async void PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data, bool callOnPayment)
+        private async Task PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data, bool callOnPayment)
         {
             // Send notification
 

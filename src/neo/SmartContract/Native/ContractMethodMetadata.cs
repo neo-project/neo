@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using System.Threading.Tasks;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
@@ -56,6 +57,8 @@ namespace Neo.SmartContract.Native
 
         private static ContractParameterType ToParameterType(Type type)
         {
+            if (type.IsSubclassOf(typeof(Task))) return ToParameterType(type.GenericTypeArguments[0]);
+            if (type == typeof(Task)) return ContractParameterType.Void;
             if (type == typeof(void)) return ContractParameterType.Void;
             if (type == typeof(bool)) return ContractParameterType.Boolean;
             if (type == typeof(sbyte)) return ContractParameterType.Integer;

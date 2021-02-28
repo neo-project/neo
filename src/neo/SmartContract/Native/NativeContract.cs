@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Neo.SmartContract.Native
 {
@@ -101,24 +102,39 @@ namespace Neo.SmartContract.Native
             return contract;
         }
 
-        internal void Invoke(ApplicationEngine engine, byte version)
+        internal async void Invoke(ApplicationEngine engine, byte version)
         {
-            if (version != 0)
-                throw new InvalidOperationException($"The native contract of version {version} is not active.");
-            ExecutionContext context = engine.CurrentContext;
-            ContractMethodMetadata method = methods[context.InstructionPointer];
-            ExecutionContextState state = context.GetState<ExecutionContextState>();
-            if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
-                throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
-            engine.AddGas(method.CpuFee * Policy.GetExecFeeFactor(engine.Snapshot) + method.StorageFee * Policy.GetStoragePrice(engine.Snapshot));
-            List<object> parameters = new List<object>();
-            if (method.NeedApplicationEngine) parameters.Add(engine);
-            if (method.NeedSnapshot) parameters.Add(engine.Snapshot);
-            for (int i = 0; i < method.Parameters.Length; i++)
-                parameters.Add(engine.Convert(context.EvaluationStack.Pop(), method.Parameters[i]));
-            object returnValue = method.Handler.Invoke(this, parameters.ToArray());
-            if (method.Handler.ReturnType != typeof(void))
-                context.EvaluationStack.Push(engine.Convert(returnValue));
+            try
+            {
+                if (version != 0)
+                    throw new InvalidOperationException($"The native contract of version {version} is not active.");
+                ExecutionContext context = engine.CurrentContext;
+                ContractMethodMetadata method = methods[context.InstructionPointer];
+                ExecutionContextState state = context.GetState<ExecutionContextState>();
+                if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
+                    throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
+                engine.AddGas(method.CpuFee * Policy.GetExecFeeFactor(engine.Snapshot) + method.StorageFee * Policy.GetStoragePrice(engine.Snapshot));
+                List<object> parameters = new List<object>();
+                if (method.NeedApplicationEngine) parameters.Add(engine);
+                if (method.NeedSnapshot) parameters.Add(engine.Snapshot);
+                for (int i = 0; i < method.Parameters.Length; i++)
+                    parameters.Add(engine.Convert(context.EvaluationStack.Pop(), method.Parameters[i]));
+                object returnValue = method.Handler.Invoke(this, parameters.ToArray());
+                if (returnValue is Task task)
+                {
+                    await task;
+                    if (method.Handler.ReturnType.IsGenericType)
+                        returnValue = method.Handler.ReturnType.GetProperty("Result").GetMethod.Invoke(returnValue, null);
+                }
+                if (method.Handler.ReturnType != typeof(void) && method.Handler.ReturnType != typeof(Task))
+                {
+                    context.EvaluationStack.Push(engine.Convert(returnValue));
+                }
+            }
+            catch (Exception ex)
+            {
+                engine.Throw(ex);
+            }
         }
 
         public static bool IsNative(UInt160 hash)

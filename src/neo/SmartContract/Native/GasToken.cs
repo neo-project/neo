@@ -15,7 +15,7 @@ namespace Neo.SmartContract.Native
         internal override void Initialize(ApplicationEngine engine)
         {
             UInt160 account = Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators);
-            Mint(engine, account, 30_000_000 * Factor, false);
+            _ = Mint(engine, account, 30_000_000 * Factor, false);
         }
 
         internal override void OnPersist(ApplicationEngine engine)
@@ -28,7 +28,7 @@ namespace Neo.SmartContract.Native
             }
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings.ValidatorsCount);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
-            Mint(engine, primary, totalNetworkFee, false);
+            _ = Mint(engine, primary, totalNetworkFee, false);
         }
     }
 }
