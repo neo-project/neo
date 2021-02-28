@@ -78,7 +78,7 @@ namespace Neo.SmartContract.Native
             StorageItem storage = engine.Snapshot.GetAndChange(key);
             TState state = storage.GetInteroperable<TState>();
             if (state.Balance < amount) throw new InvalidOperationException();
-            //This method is onlt called in GAS, so OnBalanceChanging() does nothing.
+            //This method is only called in GAS, so OnBalanceChanging() does nothing.
             _ = OnBalanceChanging(engine, account, state, -amount);
             if (state.Balance == amount)
                 engine.Snapshot.Delete(key);
