@@ -16,6 +16,7 @@ namespace Neo.SmartContract.Native
     {
         public string Name { get; }
         public MethodInfo Handler { get; }
+        public MethodInfo AsyncResultHandler { get; }
         public InteropParameterDescriptor[] Parameters { get; }
         public bool NeedApplicationEngine { get; }
         public bool NeedSnapshot { get; }
@@ -33,6 +34,10 @@ namespace Neo.SmartContract.Native
                 PropertyInfo p => p.GetMethod,
                 _ => throw new ArgumentException(null, nameof(member))
             };
+
+            if (this.Handler.ReturnType.BaseType == typeof(Task) && this.Handler.ReturnType.IsGenericType)
+                this.AsyncResultHandler = this.Handler.ReturnType.GetProperty("Result").GetMethod;
+
             ParameterInfo[] parameterInfos = this.Handler.GetParameters();
             if (parameterInfos.Length > 0)
             {

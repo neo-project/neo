@@ -123,8 +123,8 @@ namespace Neo.SmartContract.Native
                 if (returnValue is Task task)
                 {
                     await task;
-                    if (method.Handler.ReturnType.IsGenericType)
-                        returnValue = method.Handler.ReturnType.GetProperty("Result").GetMethod.Invoke(returnValue, null);
+                    if (method.AsyncResultHandler is not null)
+                        returnValue = method.AsyncResultHandler.Invoke(returnValue, null);
                 }
                 if (method.Handler.ReturnType != typeof(void) && method.Handler.ReturnType != typeof(Task))
                 {
