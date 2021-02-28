@@ -44,7 +44,8 @@ namespace Neo.SmartContract
             NativeContract contract = NativeContract.GetContract(CurrentScriptHash);
             if (contract is null)
                 throw new InvalidOperationException("It is not allowed to use \"System.Contract.CallNative\" directly.");
-            if (!ProtocolSettings.NativeUpdateHistory.TryGetValue(contract.Name, out uint[] updates))
+            uint[] updates = ProtocolSettings.NativeUpdateHistory[contract.Name];
+            if (updates.Length == 0)
                 throw new InvalidOperationException($"The native contract {contract.Name} is not active.");
             if (updates[0] > NativeContract.Ledger.CurrentIndex(Snapshot))
                 throw new InvalidOperationException($"The native contract {contract.Name} is not active.");
@@ -99,8 +100,8 @@ namespace Neo.SmartContract
                 throw new InvalidOperationException();
             foreach (NativeContract contract in NativeContract.Contracts)
             {
-                if (!ProtocolSettings.NativeUpdateHistory.TryGetValue(contract.Name, out uint[] updates))
-                    continue;
+                uint[] updates = ProtocolSettings.NativeUpdateHistory[contract.Name];
+                if (updates.Length == 0) continue;
                 if (updates[0] <= PersistingBlock.Index)
                     contract.OnPersist(this);
             }
@@ -112,8 +113,8 @@ namespace Neo.SmartContract
                 throw new InvalidOperationException();
             foreach (NativeContract contract in NativeContract.Contracts)
             {
-                if (!ProtocolSettings.NativeUpdateHistory.TryGetValue(contract.Name, out uint[] updates))
-                    continue;
+                uint[] updates = ProtocolSettings.NativeUpdateHistory[contract.Name];
+                if (updates.Length == 0) continue;
                 if (updates[0] <= PersistingBlock.Index)
                     contract.PostPersist(this);
             }
