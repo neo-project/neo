@@ -26,6 +26,8 @@ namespace Neo.IO.Json
             return Value.ToString().ToLowerInvariant();
         }
 
+        public override bool GetBoolean() => Value;
+
         public override string ToString()
         {
             return AsString();

@@ -201,8 +201,7 @@ namespace Neo.UnitTests.SmartContract
 
             var storageItem = new StorageItem
             {
-                Value = new byte[] { 0x01 },
-                IsConstant = false
+                Value = new byte[] { 0x01 }
             };
 
             var storageKey = new StorageKey
@@ -259,8 +258,7 @@ namespace Neo.UnitTests.SmartContract
 
             var storageItem = new StorageItem
             {
-                Value = new byte[] { 0x01, 0x02, 0x03, 0x04 },
-                IsConstant = true
+                Value = new byte[] { 0x01, 0x02, 0x03, 0x04 }
             };
             var storageKey = new StorageKey
             {

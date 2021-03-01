@@ -414,8 +414,7 @@ namespace Neo.UnitTests.SmartContract
 
             var storageItem = new StorageItem
             {
-                Value = new byte[] { 0x01, 0x02, 0x03, 0x04 },
-                IsConstant = true
+                Value = new byte[] { 0x01, 0x02, 0x03, 0x04 }
             };
             snapshot.AddContract(state.Hash, state);
             snapshot.Add(storageKey, storageItem);
@@ -471,8 +470,7 @@ namespace Neo.UnitTests.SmartContract
             };
             var storageItem = new StorageItem
             {
-                Value = new byte[] { 0x01, 0x02, 0x03, 0x04 },
-                IsConstant = true
+                Value = new byte[] { 0x01, 0x02, 0x03, 0x04 }
             };
             snapshot.AddContract(state.Hash, state);
             snapshot.Add(storageKey, storageItem);
@@ -481,45 +479,12 @@ namespace Neo.UnitTests.SmartContract
             key = new byte[] { 0x01 };
             value = new byte[] { 0x02 };
             storageContext.IsReadOnly = false;
-            Assert.ThrowsException<InvalidOperationException>(() => engine.Put(storageContext, key, value));
-
-            //success
-            storageItem.IsConstant = false;
             engine.Put(storageContext, key, value);
 
             //value length == 0
             key = new byte[] { 0x01 };
             value = System.Array.Empty<byte>();
             engine.Put(storageContext, key, value);
-        }
-
-        [TestMethod]
-        public void TestStorage_PutEx()
-        {
-            var snapshot = TestBlockchain.GetTestSnapshot();
-            var state = TestUtils.GetContract();
-            var storageKey = new StorageKey
-            {
-                Id = 0x42000000,
-                Key = new byte[] { 0x01 }
-            };
-            var storageItem = new StorageItem
-            {
-                Value = new byte[] { 0x01, 0x02, 0x03, 0x04 },
-                IsConstant = false
-            };
-            snapshot.AddContract(state.Hash, state);
-            snapshot.Add(storageKey, storageItem);
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
-            engine.LoadScript(new byte[] { 0x01 });
-            var key = new byte[] { 0x01 };
-            var value = new byte[] { 0x02 };
-            var storageContext = new StorageContext
-            {
-                Id = state.Id,
-                IsReadOnly = false
-            };
-            engine.PutEx(storageContext, key, value, StorageFlags.None);
         }
 
         [TestMethod]
@@ -535,8 +500,7 @@ namespace Neo.UnitTests.SmartContract
             };
             var storageItem = new StorageItem
             {
-                Value = new byte[] { 0x01, 0x02, 0x03, 0x04 },
-                IsConstant = false
+                Value = new byte[] { 0x01, 0x02, 0x03, 0x04 }
             };
             snapshot.AddContract(state.Hash, state);
             snapshot.Add(storageKey, storageItem);
@@ -601,8 +565,7 @@ namespace Neo.UnitTests.SmartContract
             var scriptHash = UInt160.Parse("0xcb9f3b7c6fb1cf2c13a40637c189bdd066a272b4");
             var storageItem = new StorageItem
             {
-                Value = new byte[] { 0x01, 0x02, 0x03, 0x04 },
-                IsConstant = false
+                Value = new byte[] { 0x01, 0x02, 0x03, 0x04 }
             };
 
             var storageKey = new StorageKey

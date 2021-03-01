@@ -12,14 +12,56 @@ namespace Neo.Network.P2P.Payloads
 {
     public sealed class Header : IEquatable<Header>, IVerifiable
     {
-        public uint Version;
-        public UInt256 PrevHash;
-        public UInt256 MerkleRoot;
-        public ulong Timestamp;
-        public uint Index;
-        public byte PrimaryIndex;
-        public UInt160 NextConsensus;
+        private uint version;
+        private UInt256 prevHash;
+        private UInt256 merkleRoot;
+        private ulong timestamp;
+        private uint index;
+        private byte primaryIndex;
+        private UInt160 nextConsensus;
         public Witness Witness;
+
+        public uint Version
+        {
+            get => version;
+            set { version = value; _hash = null; }
+        }
+
+        public UInt256 PrevHash
+        {
+            get => prevHash;
+            set { prevHash = value; _hash = null; }
+        }
+
+        public UInt256 MerkleRoot
+        {
+            get => merkleRoot;
+            set { merkleRoot = value; _hash = null; }
+        }
+
+        public ulong Timestamp
+        {
+            get => timestamp;
+            set { timestamp = value; _hash = null; }
+        }
+
+        public uint Index
+        {
+            get => index;
+            set { index = value; _hash = null; }
+        }
+
+        public byte PrimaryIndex
+        {
+            get => primaryIndex;
+            set { primaryIndex = value; _hash = null; }
+        }
+
+        public UInt160 NextConsensus
+        {
+            get => nextConsensus;
+            set { nextConsensus = value; _hash = null; }
+        }
 
         private UInt256 _hash = null;
         public UInt256 Hash
@@ -67,14 +109,15 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.DeserializeUnsigned(BinaryReader reader)
         {
-            Version = reader.ReadUInt32();
-            if (Version > 0) throw new FormatException();
-            PrevHash = reader.ReadSerializable<UInt256>();
-            MerkleRoot = reader.ReadSerializable<UInt256>();
-            Timestamp = reader.ReadUInt64();
-            Index = reader.ReadUInt32();
-            PrimaryIndex = reader.ReadByte();
-            NextConsensus = reader.ReadSerializable<UInt160>();
+            _hash = null;
+            version = reader.ReadUInt32();
+            if (version > 0) throw new FormatException();
+            prevHash = reader.ReadSerializable<UInt256>();
+            merkleRoot = reader.ReadSerializable<UInt256>();
+            timestamp = reader.ReadUInt64();
+            index = reader.ReadUInt32();
+            primaryIndex = reader.ReadByte();
+            nextConsensus = reader.ReadSerializable<UInt160>();
         }
 
         public bool Equals(Header other)
@@ -96,10 +139,10 @@ namespace Neo.Network.P2P.Payloads
 
         UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
         {
-            if (PrevHash == UInt256.Zero) return new[] { Witness.ScriptHash };
-            TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, PrevHash);
+            if (prevHash == UInt256.Zero) return new[] { Witness.ScriptHash };
+            TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
             if (prev is null) throw new InvalidOperationException();
-            return new[] { prev.Header.NextConsensus };
+            return new[] { prev.Header.nextConsensus };
         }
 
         public void Serialize(BinaryWriter writer)
@@ -110,13 +153,13 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
         {
-            writer.Write(Version);
-            writer.Write(PrevHash);
-            writer.Write(MerkleRoot);
-            writer.Write(Timestamp);
-            writer.Write(Index);
-            writer.Write(PrimaryIndex);
-            writer.Write(NextConsensus);
+            writer.Write(version);
+            writer.Write(prevHash);
+            writer.Write(merkleRoot);
+            writer.Write(timestamp);
+            writer.Write(index);
+            writer.Write(primaryIndex);
+            writer.Write(nextConsensus);
         }
 
         public JObject ToJson(ProtocolSettings settings)
@@ -124,25 +167,25 @@ namespace Neo.Network.P2P.Payloads
             JObject json = new JObject();
             json["hash"] = Hash.ToString();
             json["size"] = Size;
-            json["version"] = Version;
-            json["previousblockhash"] = PrevHash.ToString();
-            json["merkleroot"] = MerkleRoot.ToString();
-            json["time"] = Timestamp;
-            json["index"] = Index;
-            json["primary"] = PrimaryIndex;
-            json["nextconsensus"] = NextConsensus.ToAddress(settings.AddressVersion);
+            json["version"] = version;
+            json["previousblockhash"] = prevHash.ToString();
+            json["merkleroot"] = merkleRoot.ToString();
+            json["time"] = timestamp;
+            json["index"] = index;
+            json["primary"] = primaryIndex;
+            json["nextconsensus"] = nextConsensus.ToAddress(settings.AddressVersion);
             json["witnesses"] = new JArray(Witness.ToJson());
             return json;
         }
 
         internal bool Verify(ProtocolSettings settings, DataCache snapshot)
         {
-            if (PrimaryIndex >= settings.ValidatorsCount)
+            if (primaryIndex >= settings.ValidatorsCount)
                 return false;
-            TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, PrevHash);
+            TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
             if (prev is null) return false;
-            if (prev.Index + 1 != Index) return false;
-            if (prev.Header.Timestamp >= Timestamp) return false;
+            if (prev.Index + 1 != index) return false;
+            if (prev.Header.timestamp >= timestamp) return false;
             if (!this.VerifyWitnesses(settings, snapshot, 1_00000000)) return false;
             return true;
         }
@@ -151,12 +194,12 @@ namespace Neo.Network.P2P.Payloads
         {
             Header prev = headerCache.Last;
             if (prev is null) return Verify(settings, snapshot);
-            if (PrimaryIndex >= settings.ValidatorsCount)
+            if (primaryIndex >= settings.ValidatorsCount)
                 return false;
-            if (prev.Hash != PrevHash) return false;
-            if (prev.Index + 1 != Index) return false;
-            if (prev.Timestamp >= Timestamp) return false;
-            return this.VerifyWitness(settings, snapshot, prev.NextConsensus, Witness, 1_00000000, out _);
+            if (prev.Hash != prevHash) return false;
+            if (prev.index + 1 != index) return false;
+            if (prev.timestamp >= timestamp) return false;
+            return this.VerifyWitness(settings, snapshot, prev.nextConsensus, Witness, 1_00000000, out _);
         }
     }
 }

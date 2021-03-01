@@ -39,8 +39,8 @@ namespace Neo.SmartContract.Manifest
         {
             ContractParameterDefinition parameter = new ContractParameterDefinition
             {
-                Name = json["name"].AsString(),
-                Type = (ContractParameterType)Enum.Parse(typeof(ContractParameterType), json["type"].AsString()),
+                Name = json["name"].GetString(),
+                Type = Enum.Parse<ContractParameterType>(json["type"].GetString())
             };
             if (string.IsNullOrEmpty(parameter.Name))
                 throw new FormatException();

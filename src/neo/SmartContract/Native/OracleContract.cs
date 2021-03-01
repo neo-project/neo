@@ -80,7 +80,7 @@ namespace Neo.SmartContract.Native
             Manifest.Abi.Events = events.ToArray();
         }
 
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.WriteStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetPrice(ApplicationEngine engine, long price)
         {
             if (price <= 0)
@@ -95,7 +95,7 @@ namespace Neo.SmartContract.Native
             return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_Price)];
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.WriteStates | CallFlags.AllowCall | CallFlags.AllowNotify)]
+        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify)]
         private void Finish(ApplicationEngine engine)
         {
             Transaction tx = (Transaction)engine.ScriptContainer;
@@ -184,7 +184,7 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.WriteStates | CallFlags.AllowNotify)]
+        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private void Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForResponse)
         {
             //Check the arguments
