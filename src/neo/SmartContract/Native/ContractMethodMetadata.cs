@@ -5,6 +5,7 @@ using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
 using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Numerics;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -16,7 +17,7 @@ namespace Neo.SmartContract.Native
     {
         public string Name { get; }
         public MethodInfo Handler { get; }
-        public MethodInfo AsyncResultHandler { get; }
+        public Func<Task, object> AsyncResultHandler { get; }
         public InteropParameterDescriptor[] Parameters { get; }
         public bool NeedApplicationEngine { get; }
         public bool NeedSnapshot { get; }
@@ -34,10 +35,18 @@ namespace Neo.SmartContract.Native
                 PropertyInfo p => p.GetMethod,
                 _ => throw new ArgumentException(null, nameof(member))
             };
-
-            if (this.Handler.ReturnType.BaseType == typeof(Task) && this.Handler.ReturnType.IsGenericType)
-                this.AsyncResultHandler = this.Handler.ReturnType.GetProperty("Result").GetMethod;
-
+            if (Handler.ReturnType.BaseType == typeof(Task))
+            {
+                Type taskType = Handler.ReturnType;
+                Type resultType = taskType.GenericTypeArguments[0];
+                MethodInfo getResult = taskType.GetProperty("Result").GetMethod;
+                var instExpr = Expression.Parameter(typeof(Task));
+                var convertExprInst = Expression.Convert(instExpr, taskType);
+                var callExpr = Expression.Call(convertExprInst, getResult);
+                var convertExprResult = Expression.Convert(callExpr, typeof(object));
+                var funcExpr = Expression.Lambda<Func<Task, object>>(convertExprResult, instExpr);
+                this.AsyncResultHandler = funcExpr.Compile();
+            }
             ParameterInfo[] parameterInfos = this.Handler.GetParameters();
             if (parameterInfos.Length > 0)
             {
