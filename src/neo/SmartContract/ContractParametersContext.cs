@@ -232,6 +232,17 @@ namespace Neo.SmartContract
             return witnesses;
         }
 
+        public IEnumerable<UInt160> GetPendingWitnesses()
+        {
+            for (int i = 0; i < ScriptHashes.Count; i++)
+            {
+                if (ContextItems.ContainsKey(ScriptHashes[i]))
+                    continue;
+
+                yield return ScriptHashes[i];
+            }
+        }
+
         public static ContractParametersContext Parse(string value, DataCache snapshot)
         {
             return FromJson(JObject.Parse(value), snapshot);
