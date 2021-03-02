@@ -34,7 +34,7 @@ namespace Neo.SmartContract
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new Dictionary<UInt160, int>();
-        private readonly Dictionary<ExecutionContext, ContractTask> contractTasks = new Dictionary<ExecutionContext, ContractTask>();
+        private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new Dictionary<ExecutionContext, ContractTaskAwaiter>();
         private readonly uint exec_fee_factor;
         internal readonly uint StoragePrice;
 
@@ -136,7 +136,7 @@ namespace Neo.SmartContract
             ExecutionContextState state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
             ContractTask task = new ContractTask();
-            contractTasks.Add(context_new, task);
+            contractTasks.Add(context_new, task.GetAwaiter());
             return task;
         }
 
@@ -145,18 +145,18 @@ namespace Neo.SmartContract
             ExecutionContext context_new = CallContractInternal(hash, method, CallFlags.All, true, args);
             ExecutionContextState state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
-            ContractTask<T> task = new ContractTask<T>(this);
-            contractTasks.Add(context_new, task);
+            ContractTask<T> task = new ContractTask<T>();
+            contractTasks.Add(context_new, task.GetAwaiter());
             return task;
         }
 
         protected override void ContextUnloaded(ExecutionContext context)
         {
             base.ContextUnloaded(context);
-            if (!contractTasks.Remove(context, out var task)) return;
+            if (!contractTasks.Remove(context, out var awaiter)) return;
             if (UncaughtException is not null)
                 throw new VMUnhandledException(UncaughtException);
-            task.RunContinuation();
+            awaiter.SetResult(this);
         }
 
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas)

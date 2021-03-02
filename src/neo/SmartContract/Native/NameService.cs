@@ -12,7 +12,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Numerics;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace Neo.SmartContract.Native
 {
@@ -110,7 +109,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private async Task<bool> Register(ApplicationEngine engine, string name, UInt160 owner)
+        private async ContractTask<bool> Register(ApplicationEngine engine, string name, UInt160 owner)
         {
             if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
             string[] names = name.Split('.');

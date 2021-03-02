@@ -10,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
@@ -70,7 +69,7 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.Add(CreateStorageKey(Prefix_TotalSupply), new StorageItem(BigInteger.Zero));
         }
 
-        protected Task Mint(ApplicationEngine engine, TokenState token)
+        private protected ContractTask Mint(ApplicationEngine engine, TokenState token)
         {
             engine.Snapshot.Add(CreateStorageKey(Prefix_Token).Add(GetKey(token.Id)), new StorageItem(token));
             NFTAccountState account = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Account).Add(token.Owner), () => new StorageItem(new NFTAccountState())).GetInteroperable<NFTAccountState>();
@@ -139,7 +138,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 17, StorageFee = 50, RequiredCallFlags = CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify)]
-        protected async Task<bool> Transfer(ApplicationEngine engine, UInt160 to, byte[] tokenId)
+        private protected async ContractTask<bool> Transfer(ApplicationEngine engine, UInt160 to, byte[] tokenId)
         {
             if (to is null) throw new ArgumentNullException(nameof(to));
             StorageKey key_token = CreateStorageKey(Prefix_Token).Add(GetKey(tokenId));
@@ -169,7 +168,7 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        private async Task PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, byte[] tokenId)
+        private async ContractTask PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, byte[] tokenId)
         {
             engine.SendNotification(Hash, "Transfer",
                 new Array { from?.ToArray() ?? StackItem.Null, to?.ToArray() ?? StackItem.Null, 1, tokenId });

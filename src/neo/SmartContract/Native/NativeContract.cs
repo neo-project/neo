@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 
 namespace Neo.SmartContract.Native
 {
@@ -120,12 +119,12 @@ namespace Neo.SmartContract.Native
                 for (int i = 0; i < method.Parameters.Length; i++)
                     parameters.Add(engine.Convert(context.EvaluationStack.Pop(), method.Parameters[i]));
                 object returnValue = method.Handler.Invoke(this, parameters.ToArray());
-                if (returnValue is Task task)
+                if (returnValue is ContractTask task)
                 {
                     await task;
-                    returnValue = method.AsyncResultHandler?.Invoke(task);
+                    returnValue = task.GetResult();
                 }
-                if (method.Handler.ReturnType != typeof(void) && method.Handler.ReturnType != typeof(Task))
+                if (method.Handler.ReturnType != typeof(void) && method.Handler.ReturnType != typeof(ContractTask))
                 {
                     context.EvaluationStack.Push(engine.Convert(returnValue));
                 }

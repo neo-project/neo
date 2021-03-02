@@ -5,10 +5,8 @@ using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
 using System;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Numerics;
 using System.Reflection;
-using System.Threading.Tasks;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
@@ -17,7 +15,6 @@ namespace Neo.SmartContract.Native
     {
         public string Name { get; }
         public MethodInfo Handler { get; }
-        public Func<Task, object> AsyncResultHandler { get; }
         public InteropParameterDescriptor[] Parameters { get; }
         public bool NeedApplicationEngine { get; }
         public bool NeedSnapshot { get; }
@@ -35,18 +32,6 @@ namespace Neo.SmartContract.Native
                 PropertyInfo p => p.GetMethod,
                 _ => throw new ArgumentException(null, nameof(member))
             };
-            if (Handler.ReturnType.BaseType == typeof(Task))
-            {
-                Type taskType = Handler.ReturnType;
-                Type resultType = taskType.GenericTypeArguments[0];
-                MethodInfo getResult = taskType.GetProperty("Result").GetMethod;
-                var instExpr = Expression.Parameter(typeof(Task));
-                var convertExprInst = Expression.Convert(instExpr, taskType);
-                var callExpr = Expression.Call(convertExprInst, getResult);
-                var convertExprResult = Expression.Convert(callExpr, typeof(object));
-                var funcExpr = Expression.Lambda<Func<Task, object>>(convertExprResult, instExpr);
-                this.AsyncResultHandler = funcExpr.Compile();
-            }
             ParameterInfo[] parameterInfos = this.Handler.GetParameters();
             if (parameterInfos.Length > 0)
             {
@@ -71,8 +56,8 @@ namespace Neo.SmartContract.Native
 
         private static ContractParameterType ToParameterType(Type type)
         {
-            if (type.IsSubclassOf(typeof(Task))) return ToParameterType(type.GenericTypeArguments[0]);
-            if (type == typeof(Task)) return ContractParameterType.Void;
+            if (type.BaseType == typeof(ContractTask)) return ToParameterType(type.GenericTypeArguments[0]);
+            if (type == typeof(ContractTask)) return ContractParameterType.Void;
             if (type == typeof(void)) return ContractParameterType.Void;
             if (type == typeof(bool)) return ContractParameterType.Boolean;
             if (type == typeof(sbyte)) return ContractParameterType.Integer;

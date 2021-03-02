@@ -1,42 +1,39 @@
-using System;
 using System.Runtime.CompilerServices;
-using System.Threading;
 
 namespace Neo.SmartContract
 {
-    class ContractTask : INotifyCompletion
+    [AsyncMethodBuilder(typeof(ContractTaskMethodBuilder))]
+    class ContractTask
     {
-        private Action continuation;
+        private readonly ContractTaskAwaiter awaiter;
 
-        public bool IsCompleted => false;
+        public static ContractTask CompletedTask { get; }
 
-        public ContractTask GetAwaiter() => this;
-
-        public void GetResult() { }
-
-        public void OnCompleted(Action continuation)
+        static ContractTask()
         {
-            Interlocked.CompareExchange(ref this.continuation, continuation, null);
+            CompletedTask = new ContractTask();
+            CompletedTask.GetAwaiter().SetResult();
         }
 
-        public void RunContinuation()
+        public ContractTask()
         {
-            continuation();
+            awaiter = CreateAwaiter();
         }
+
+        protected virtual ContractTaskAwaiter CreateAwaiter() => new ContractTaskAwaiter();
+
+        public virtual ContractTaskAwaiter GetAwaiter() => awaiter;
+
+        public virtual object GetResult() => null;
     }
 
+    [AsyncMethodBuilder(typeof(ContractTaskMethodBuilder<>))]
     class ContractTask<T> : ContractTask
     {
-        private readonly ApplicationEngine engine;
+        protected override ContractTaskAwaiter<T> CreateAwaiter() => new ContractTaskAwaiter<T>();
 
-        public ContractTask(ApplicationEngine engine)
-        {
-            this.engine = engine;
-        }
+        public override ContractTaskAwaiter<T> GetAwaiter() => (ContractTaskAwaiter<T>)base.GetAwaiter();
 
-        public new T GetResult()
-        {
-            return (T)engine.Convert(engine.Pop(), new InteropParameterDescriptor(typeof(T)));
-        }
+        public override object GetResult() => GetAwaiter().GetResult();
     }
 }
