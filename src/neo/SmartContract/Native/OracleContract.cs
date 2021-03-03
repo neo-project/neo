@@ -140,13 +140,14 @@ namespace Neo.SmartContract.Native
             return Crypto.Hash160(Utility.StrictUTF8.GetBytes(url));
         }
 
-        internal override void Initialize(ApplicationEngine engine)
+        internal override ContractTask Initialize(ApplicationEngine engine)
         {
             engine.Snapshot.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BigInteger.Zero));
             engine.Snapshot.Add(CreateStorageKey(Prefix_Price), new StorageItem(0_50000000));
+            return ContractTask.CompletedTask;
         }
 
-        internal override void PostPersist(ApplicationEngine engine)
+        internal override async ContractTask PostPersist(ApplicationEngine engine)
         {
             (UInt160 Account, BigInteger GAS)[] nodes = null;
             foreach (Transaction tx in engine.PersistingBlock.Transactions)
@@ -180,13 +181,13 @@ namespace Neo.SmartContract.Native
                 foreach (var (account, gas) in nodes)
                 {
                     if (gas.Sign > 0)
-                        _ = GAS.Mint(engine, account, gas, false);
+                        await GAS.Mint(engine, account, gas, false);
                 }
             }
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private void Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForResponse)
+        private async ContractTask Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForResponse)
         {
             //Check the arguments
             if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength
@@ -199,7 +200,7 @@ namespace Neo.SmartContract.Native
 
             //Mint gas for the response
             engine.AddGas(gasForResponse);
-            _ = GAS.Mint(engine, Hash, gasForResponse, false);
+            await GAS.Mint(engine, Hash, gasForResponse, false);
 
             //Increase the request id
             StorageItem item_id = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_RequestId));

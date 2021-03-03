@@ -69,7 +69,7 @@ namespace Neo.SmartContract.Native
             await PostTransfer(engine, null, account, amount, StackItem.Null, callOnPayment);
         }
 
-        internal protected void Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
+        internal async ContractTask Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
@@ -77,15 +77,14 @@ namespace Neo.SmartContract.Native
             StorageItem storage = engine.Snapshot.GetAndChange(key);
             TState state = storage.GetInteroperable<TState>();
             if (state.Balance < amount) throw new InvalidOperationException();
-            //This method is only called in GAS, so OnBalanceChanging() does nothing.
-            _ = OnBalanceChanging(engine, account, state, -amount);
+            await OnBalanceChanging(engine, account, state, -amount);
             if (state.Balance == amount)
                 engine.Snapshot.Delete(key);
             else
                 state.Balance -= amount;
             storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
             storage.Add(-amount);
-            _ = PostTransfer(engine, account, null, amount, StackItem.Null, false);
+            await PostTransfer(engine, account, null, amount, StackItem.Null, false);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]

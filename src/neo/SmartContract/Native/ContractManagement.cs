@@ -81,10 +81,11 @@ namespace Neo.SmartContract.Native
             return value;
         }
 
-        internal override void Initialize(ApplicationEngine engine)
+        internal override ContractTask Initialize(ApplicationEngine engine)
         {
             engine.Snapshot.Add(CreateStorageKey(Prefix_MinimumDeploymentFee), new StorageItem(10_00000000));
             engine.Snapshot.Add(CreateStorageKey(Prefix_NextAvailableId), new StorageItem(1));
+            return ContractTask.CompletedTask;
         }
 
         private async ContractTask OnDeploy(ApplicationEngine engine, ContractState contract, StackItem data, bool update)
@@ -95,7 +96,7 @@ namespace Neo.SmartContract.Native
             engine.SendNotification(Hash, update ? "Update" : "Deploy", new VM.Types.Array { contract.Hash.ToArray() });
         }
 
-        internal override void OnPersist(ApplicationEngine engine)
+        internal override async ContractTask OnPersist(ApplicationEngine engine)
         {
             foreach (NativeContract contract in Contracts)
             {
@@ -109,7 +110,7 @@ namespace Neo.SmartContract.Native
                     Hash = contract.Hash,
                     Manifest = contract.Manifest
                 }));
-                contract.Initialize(engine);
+                await contract.Initialize(engine);
             }
         }
 

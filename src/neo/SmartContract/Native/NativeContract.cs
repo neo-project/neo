@@ -140,16 +140,19 @@ namespace Neo.SmartContract.Native
             return contractsDictionary.ContainsKey(hash);
         }
 
-        internal virtual void Initialize(ApplicationEngine engine)
+        internal virtual ContractTask Initialize(ApplicationEngine engine)
         {
+            return ContractTask.CompletedTask;
         }
 
-        internal virtual void OnPersist(ApplicationEngine engine)
+        internal virtual ContractTask OnPersist(ApplicationEngine engine)
         {
+            return ContractTask.CompletedTask;
         }
 
-        internal virtual void PostPersist(ApplicationEngine engine)
+        internal virtual ContractTask PostPersist(ApplicationEngine engine)
         {
+            return ContractTask.CompletedTask;
         }
     }
 }

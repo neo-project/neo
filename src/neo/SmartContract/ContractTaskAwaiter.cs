@@ -14,7 +14,7 @@ namespace Neo.SmartContract
         public void GetResult()
         {
             if (exception is not null)
-                throw new AggregateException(exception);
+                throw exception;
         }
 
         public void SetResult() => RunContinuation();

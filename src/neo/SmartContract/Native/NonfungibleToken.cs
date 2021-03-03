@@ -64,9 +64,10 @@ namespace Neo.SmartContract.Native
 
         protected virtual byte[] GetKey(byte[] tokenId) => tokenId;
 
-        internal override void Initialize(ApplicationEngine engine)
+        internal override ContractTask Initialize(ApplicationEngine engine)
         {
             engine.Snapshot.Add(CreateStorageKey(Prefix_TotalSupply), new StorageItem(BigInteger.Zero));
+            return ContractTask.CompletedTask;
         }
 
         private protected ContractTask Mint(ApplicationEngine engine, TokenState token)
@@ -78,12 +79,12 @@ namespace Neo.SmartContract.Native
             return PostTransfer(engine, null, token.Owner, token.Id);
         }
 
-        protected void Burn(ApplicationEngine engine, byte[] tokenId)
+        private protected ContractTask Burn(ApplicationEngine engine, byte[] tokenId)
         {
-            Burn(engine, CreateStorageKey(Prefix_Token).Add(GetKey(tokenId)));
+            return Burn(engine, CreateStorageKey(Prefix_Token).Add(GetKey(tokenId)));
         }
 
-        private protected void Burn(ApplicationEngine engine, StorageKey key)
+        private protected ContractTask Burn(ApplicationEngine engine, StorageKey key)
         {
             TokenState token = engine.Snapshot.TryGet(key)?.GetInteroperable<TokenState>();
             if (token is null) throw new InvalidOperationException();
@@ -94,7 +95,7 @@ namespace Neo.SmartContract.Native
             if (account.Balance.IsZero)
                 engine.Snapshot.Delete(key_account);
             engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_TotalSupply)).Add(-1);
-            _ = PostTransfer(engine, token.Owner, null, token.Id);
+            return PostTransfer(engine, token.Owner, null, token.Id);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
