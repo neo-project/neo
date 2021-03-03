@@ -91,10 +91,10 @@ namespace Neo.UnitTests.Ledger
             tx.Nonce = nonce;
 
             var data = new ContractParametersContext(snapshot, tx);
-            CollectionAssert.AreEqual(new UInt160[] { tx.Sender }, data.GetPendingWitnesses().ToArray());
+            Assert.IsNull(data.GetSignatures(tx.Sender));
             Assert.IsTrue(wallet.Sign(data));
             Assert.IsTrue(data.Completed);
-            CollectionAssert.AreEqual(Array.Empty<UInt160>(), data.GetPendingWitnesses().ToArray());
+            Assert.AreEqual(1, data.GetSignatures(tx.Sender).Count());
 
             tx.Witnesses = data.GetWitnesses();
             return tx;

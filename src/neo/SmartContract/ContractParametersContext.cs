@@ -202,6 +202,13 @@ namespace Neo.SmartContract
             return item.Parameters;
         }
 
+        public IEnumerable<(ECPoint pubKey, byte[] signature)> GetSignatures(UInt160 scriptHash)
+        {
+            if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
+                return null;
+            return item.Signatures?.Select(u => (u.Key, u.Value));
+        }
+
         public byte[] GetScript(UInt160 scriptHash)
         {
             if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
@@ -230,17 +237,6 @@ namespace Neo.SmartContract
                 }
             }
             return witnesses;
-        }
-
-        public IEnumerable<UInt160> GetPendingWitnesses()
-        {
-            for (int i = 0; i < ScriptHashes.Count; i++)
-            {
-                if (ContextItems.ContainsKey(ScriptHashes[i]))
-                    continue;
-
-                yield return ScriptHashes[i];
-            }
         }
 
         public static ContractParametersContext Parse(string value, DataCache snapshot)
