@@ -136,7 +136,6 @@ namespace Neo.SmartContract
                     for (int i = 0; i < sigs.Length; i++)
                         if (!Add(contract, i, sigs[i]))
                             throw new InvalidOperationException();
-                    item.Signatures = null;
                 }
                 return true;
             }
