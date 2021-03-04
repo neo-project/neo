@@ -112,15 +112,14 @@ namespace Neo.SmartContract
         {
             if (contract.Script.IsMultiSigContract(out _, out ECPoint[] points))
             {
+                if (!points.Contains(pubkey)) return false;
                 ContextItem item = CreateItem(contract);
                 if (item == null) return false;
                 if (item.Parameters.All(p => p.Value != null)) return false;
                 if (item.Signatures == null)
                     item.Signatures = new Dictionary<ECPoint, byte[]>();
-                else if (item.Signatures.ContainsKey(pubkey))
+                if (!item.Signatures.TryAdd(pubkey, signature))
                     return false;
-                if (!points.Contains(pubkey)) return false;
-                item.Signatures.Add(pubkey, signature);
                 if (item.Signatures.Count == contract.ParameterList.Length)
                 {
                     Dictionary<ECPoint, int> dic = points.Select((p, i) => new
@@ -155,6 +154,12 @@ namespace Neo.SmartContract
                     // return now to prevent array index out of bounds exception
                     return false;
                 }
+                ContextItem item = CreateItem(contract);
+                if (item == null) return false;
+                if (item.Signatures == null)
+                    item.Signatures = new Dictionary<ECPoint, byte[]>();
+                if (!item.Signatures.TryAdd(pubkey, signature))
+                    return false;
                 return Add(contract, index, signature);
             }
         }
