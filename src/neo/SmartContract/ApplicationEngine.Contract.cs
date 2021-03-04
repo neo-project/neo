@@ -94,29 +94,43 @@ namespace Neo.SmartContract
             return Contract.CreateMultiSigRedeemScript(m, pubKeys).ToScriptHash();
         }
 
-        protected internal void NativeOnPersist()
+        protected internal async void NativeOnPersist()
         {
-            if (Trigger != TriggerType.OnPersist)
-                throw new InvalidOperationException();
-            foreach (NativeContract contract in NativeContract.Contracts)
+            try
             {
-                uint[] updates = ProtocolSettings.NativeUpdateHistory[contract.Name];
-                if (updates.Length == 0) continue;
-                if (updates[0] <= PersistingBlock.Index)
-                    contract.OnPersist(this);
+                if (Trigger != TriggerType.OnPersist)
+                    throw new InvalidOperationException();
+                foreach (NativeContract contract in NativeContract.Contracts)
+                {
+                    uint[] updates = ProtocolSettings.NativeUpdateHistory[contract.Name];
+                    if (updates.Length == 0) continue;
+                    if (updates[0] <= PersistingBlock.Index)
+                        await contract.OnPersist(this);
+                }
+            }
+            catch (Exception ex)
+            {
+                Throw(ex);
             }
         }
 
-        protected internal void NativePostPersist()
+        protected internal async void NativePostPersist()
         {
-            if (Trigger != TriggerType.PostPersist)
-                throw new InvalidOperationException();
-            foreach (NativeContract contract in NativeContract.Contracts)
+            try
             {
-                uint[] updates = ProtocolSettings.NativeUpdateHistory[contract.Name];
-                if (updates.Length == 0) continue;
-                if (updates[0] <= PersistingBlock.Index)
-                    contract.PostPersist(this);
+                if (Trigger != TriggerType.PostPersist)
+                    throw new InvalidOperationException();
+                foreach (NativeContract contract in NativeContract.Contracts)
+                {
+                    uint[] updates = ProtocolSettings.NativeUpdateHistory[contract.Name];
+                    if (updates.Length == 0) continue;
+                    if (updates[0] <= PersistingBlock.Index)
+                        await contract.PostPersist(this);
+                }
+            }
+            catch (Exception ex)
+            {
+                Throw(ex);
             }
         }
     }

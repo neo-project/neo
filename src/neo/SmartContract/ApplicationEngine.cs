@@ -34,6 +34,7 @@ namespace Neo.SmartContract
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new Dictionary<UInt160, int>();
+        private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new Dictionary<ExecutionContext, ContractTaskAwaiter>();
         private readonly uint exec_fee_factor;
         internal readonly uint StoragePrice;
 
@@ -71,10 +72,15 @@ namespace Neo.SmartContract
                 throw new InvalidOperationException("Insufficient GAS.");
         }
 
-        protected override void OnFault(Exception e)
+        protected override void OnFault(Exception ex)
         {
-            FaultException = e;
-            base.OnFault(e);
+            FaultException = ex;
+            base.OnFault(ex);
+        }
+
+        internal void Throw(Exception ex)
+        {
+            OnFault(ex);
         }
 
         private ExecutionContext CallContractInternal(UInt160 contractHash, string method, CallFlags flags, bool hasReturnValue, StackItem[] args)
@@ -124,25 +130,33 @@ namespace Neo.SmartContract
             return context_new;
         }
 
-        internal void CallFromNativeContract(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
+        internal ContractTask CallFromNativeContract(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
         {
-            ExecutionContext context_current = CurrentContext;
             ExecutionContext context_new = CallContractInternal(hash, method, CallFlags.All, false, args);
             ExecutionContextState state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
-            while (CurrentContext != context_current)
-                StepOut();
+            ContractTask task = new ContractTask();
+            contractTasks.Add(context_new, task.GetAwaiter());
+            return task;
         }
 
-        internal T CallFromNativeContract<T>(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
+        internal ContractTask<T> CallFromNativeContract<T>(UInt160 callingScriptHash, UInt160 hash, string method, params StackItem[] args)
         {
-            ExecutionContext context_current = CurrentContext;
             ExecutionContext context_new = CallContractInternal(hash, method, CallFlags.All, true, args);
             ExecutionContextState state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
-            while (CurrentContext != context_current)
-                StepOut();
-            return (T)Convert(Pop(), new InteropParameterDescriptor(typeof(T)));
+            ContractTask<T> task = new ContractTask<T>();
+            contractTasks.Add(context_new, task.GetAwaiter());
+            return task;
+        }
+
+        protected override void ContextUnloaded(ExecutionContext context)
+        {
+            base.ContextUnloaded(context);
+            if (!contractTasks.Remove(context, out var awaiter)) return;
+            if (UncaughtException is not null)
+                throw new VMUnhandledException(UncaughtException);
+            awaiter.SetResult(this);
         }
 
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas)
@@ -307,15 +321,6 @@ namespace Neo.SmartContract
         {
             if (CurrentContext.InstructionPointer < CurrentContext.Script.Length)
                 AddGas(exec_fee_factor * OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
-        }
-
-        internal void StepOut()
-        {
-            int c = InvocationStack.Count;
-            while (State != VMState.HALT && State != VMState.FAULT && InvocationStack.Count >= c)
-                ExecuteNext();
-            if (State == VMState.FAULT)
-                throw new InvalidOperationException("StepOut failed.", FaultException);
         }
 
         private static Block CreateDummyBlock(DataCache snapshot, ProtocolSettings settings)

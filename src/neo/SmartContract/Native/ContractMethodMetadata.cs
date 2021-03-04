@@ -56,6 +56,8 @@ namespace Neo.SmartContract.Native
 
         private static ContractParameterType ToParameterType(Type type)
         {
+            if (type.BaseType == typeof(ContractTask)) return ToParameterType(type.GenericTypeArguments[0]);
+            if (type == typeof(ContractTask)) return ContractParameterType.Void;
             if (type == typeof(void)) return ContractParameterType.Void;
             if (type == typeof(bool)) return ContractParameterType.Boolean;
             if (type == typeof(sbyte)) return ContractParameterType.Integer;
