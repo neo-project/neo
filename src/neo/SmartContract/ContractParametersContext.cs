@@ -19,9 +19,12 @@ namespace Neo.SmartContract
             public ContractParameter[] Parameters;
             public Dictionary<ECPoint, byte[]> Signatures;
 
-            private ContextItem() { }
+            private ContextItem()
+            {
+                this.Signatures = new Dictionary<ECPoint, byte[]>();
+            }
 
-            public ContextItem(Contract contract)
+            public ContextItem(Contract contract) : this()
             {
                 this.Script = contract.Script;
                 this.Parameters = contract.ParameterList.Select(p => new ContractParameter { Type = p }).ToArray();
@@ -116,8 +119,6 @@ namespace Neo.SmartContract
                 ContextItem item = CreateItem(contract);
                 if (item == null) return false;
                 if (item.Parameters.All(p => p.Value != null)) return false;
-                if (item.Signatures == null)
-                    item.Signatures = new Dictionary<ECPoint, byte[]>();
                 if (!item.Signatures.TryAdd(pubkey, signature))
                     return false;
                 if (item.Signatures.Count == contract.ParameterList.Length)
@@ -156,8 +157,6 @@ namespace Neo.SmartContract
                 }
                 ContextItem item = CreateItem(contract);
                 if (item == null) return false;
-                if (item.Signatures == null)
-                    item.Signatures = new Dictionary<ECPoint, byte[]>();
                 if (!item.Signatures.TryAdd(pubkey, signature))
                     return false;
                 return Add(contract, index, signature);
