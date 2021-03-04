@@ -9,6 +9,7 @@ using Neo.UnitTests.Extensions;
 using System;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -35,7 +36,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_Decimals() => NativeContract.GAS.Decimals(_snapshot).Should().Be(8);
 
         [TestMethod]
-        public void Check_BalanceOfTransferAndBurn()
+        public async Task Check_BalanceOfTransferAndBurn()
         {
             var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
@@ -91,17 +92,17 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 0);
             keyCount = snapshot.GetChangeSet().Count();
 
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
-                NativeContract.GAS.Burn(engine, new UInt160(to), BigInteger.MinusOne));
+            await Assert.ThrowsExceptionAsync<ArgumentOutOfRangeException>(async () =>
+                await NativeContract.GAS.Burn(engine, new UInt160(to), BigInteger.MinusOne));
 
             // Burn more than expected
 
-            Assert.ThrowsException<InvalidOperationException>(() =>
-                NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(30000500_00000001)));
+            await Assert.ThrowsExceptionAsync<InvalidOperationException>(async () =>
+                await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(30000500_00000001)));
 
             // Real burn
 
-            NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(1));
+            await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(1));
 
             NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(3000049999999999);
 
@@ -109,7 +110,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Burn all
 
-            NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(3000049999999999));
+            await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(3000049999999999));
 
             (keyCount - 1).Should().Be(snapshot.GetChangeSet().Count());
 

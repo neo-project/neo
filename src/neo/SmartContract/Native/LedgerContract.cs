@@ -20,7 +20,7 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        internal override void OnPersist(ApplicationEngine engine)
+        internal override ContractTask OnPersist(ApplicationEngine engine)
         {
             engine.Snapshot.Add(CreateStorageKey(Prefix_BlockHash).AddBigEndian(engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray()));
             engine.Snapshot.Add(CreateStorageKey(Prefix_Block).Add(engine.PersistingBlock.Hash), new StorageItem(Trim(engine.PersistingBlock).ToArray()));
@@ -32,13 +32,15 @@ namespace Neo.SmartContract.Native
                     Transaction = tx
                 }));
             }
+            return ContractTask.CompletedTask;
         }
 
-        internal override void PostPersist(ApplicationEngine engine)
+        internal override ContractTask PostPersist(ApplicationEngine engine)
         {
             HashIndexState state = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_CurrentBlock), () => new StorageItem(new HashIndexState())).GetInteroperable<HashIndexState>();
             state.Hash = engine.PersistingBlock.Hash;
             state.Index = engine.PersistingBlock.Index;
+            return ContractTask.CompletedTask;
         }
 
         internal bool Initialized(DataCache snapshot)
