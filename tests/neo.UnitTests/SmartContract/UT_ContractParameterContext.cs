@@ -53,7 +53,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestParse()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
-            var ret = ContractParametersContext.Parse("{\"type\":\"Neo.Network.P2P.Payloads.Transaction\",\"hex\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFmUJDLobcPtqo9vZKIdjXsd8fVGwEAARI=\",\"items\":{\"0xbecaad15c0ea585211faf99738a4354014f177f2\":{\"script\":\"IQJv8DuUkkHOHa3UNRnmlg4KhbQaaaBcMoEDqivOFZTKFmh0dHaq\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"AQ==\"}]}}}", snapshot);
+            var ret = ContractParametersContext.Parse("{\"type\":\"Neo.Network.P2P.Payloads.Transaction\",\"hex\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFmUJDLobcPtqo9vZKIdjXsd8fVGwEAARI=\",\"items\":{\"0xbecaad15c0ea585211faf99738a4354014f177f2\":{\"script\":\"IQJv8DuUkkHOHa3UNRnmlg4KhbQaaaBcMoEDqivOFZTKFmh0dHaq\",\"parameters\":[{\"type\":\"Signature\",\"value\":\"AQ==\"}],\"signatures\":{\"03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c\":\"AQ==\"}}}}", snapshot);
             ret.ScriptHashes[0].ToString().Should().Be("0x1bd5c777ec35768892bd3daab60fb7a1cb905066");
             ((Transaction)ret.Verifiable).Script.ToHexString().Should().Be(new byte[] { 18 }.ToHexString());
         }
