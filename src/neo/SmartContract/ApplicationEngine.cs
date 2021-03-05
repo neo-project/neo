@@ -302,19 +302,31 @@ namespace Neo.SmartContract
                 throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
         }
 
+        protected void OnSysCall(InteropDescriptor descriptor, Func<object, object[], object> handler)
+        {
+            ValidateCallFlags(descriptor.RequiredCallFlags);
+            AddGas(descriptor.FixedPrice * exec_fee_factor);
+
+            object[] parameters = descriptor.Parameters.Count > 0
+                 ? new object[descriptor.Parameters.Count] 
+                 : Array.Empty<object>();
+
+            for (int i = 0; i < descriptor.Parameters.Count; i++)
+            {
+                parameters[i] = Convert(Pop(), descriptor.Parameters[i]);
+            }
+
+            object returnValue = handler(this, parameters);
+            if (descriptor.Handler.ReturnType != typeof(void))
+            {
+                Push(Convert(returnValue));
+            }
+        }
+
         protected override void OnSysCall(uint method)
         {
             InteropDescriptor descriptor = services[method];
-            ValidateCallFlags(descriptor.RequiredCallFlags);
-            AddGas(descriptor.FixedPrice * exec_fee_factor);
-            List<object> parameters = descriptor.Parameters.Count > 0
-                ? new List<object>()
-                : null;
-            foreach (var pd in descriptor.Parameters)
-                parameters.Add(Convert(Pop(), pd));
-            object returnValue = descriptor.Handler.Invoke(this, parameters?.ToArray());
-            if (descriptor.Handler.ReturnType != typeof(void))
-                Push(Convert(returnValue));
+            OnSysCall(descriptor, descriptor.Handler.Invoke);
         }
 
         protected override void PreExecuteInstruction()
