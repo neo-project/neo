@@ -81,19 +81,27 @@ namespace Neo.SmartContract.Native
             return value;
         }
 
-        internal override void Initialize(ApplicationEngine engine)
+        internal override ContractTask Initialize(ApplicationEngine engine)
         {
             engine.Snapshot.Add(CreateStorageKey(Prefix_MinimumDeploymentFee), new StorageItem(10_00000000));
             engine.Snapshot.Add(CreateStorageKey(Prefix_NextAvailableId), new StorageItem(1));
+            return ContractTask.CompletedTask;
         }
 
-        internal override void OnPersist(ApplicationEngine engine)
+        private async ContractTask OnDeploy(ApplicationEngine engine, ContractState contract, StackItem data, bool update)
+        {
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy", 2);
+            if (md is not null)
+                await engine.CallFromNativeContract(Hash, contract.Hash, md.Name, data, update);
+            engine.SendNotification(Hash, update ? "Update" : "Deploy", new VM.Types.Array { contract.Hash.ToArray() });
+        }
+
+        internal override async ContractTask OnPersist(ApplicationEngine engine)
         {
             foreach (NativeContract contract in Contracts)
             {
-                if (!engine.ProtocolSettings.NativeUpdateHistory.TryGetValue(contract.Name, out uint[] updates))
-                    continue;
-                if (updates[0] != engine.PersistingBlock.Index)
+                uint[] updates = engine.ProtocolSettings.NativeUpdateHistory[contract.Name];
+                if (updates.Length == 0 || updates[0] != engine.PersistingBlock.Index)
                     continue;
                 engine.Snapshot.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
                 {
@@ -102,7 +110,7 @@ namespace Neo.SmartContract.Native
                     Hash = contract.Hash,
                     Manifest = contract.Manifest
                 }));
-                contract.Initialize(engine);
+                await contract.Initialize(engine);
             }
         }
 
@@ -133,13 +141,13 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
+        private ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             return Deploy(engine, nefFile, manifest, StackItem.Null);
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private ContractState Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
+        private async ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
             if (engine.ScriptContainer is not Transaction tx)
                 throw new InvalidOperationException();
@@ -173,25 +181,19 @@ namespace Neo.SmartContract.Native
 
             engine.Snapshot.Add(key, new StorageItem(contract));
 
-            // Execute _deploy
-
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy", 2);
-            if (md != null)
-                engine.CallFromNativeContract(Hash, hash, md.Name, data, false);
-
-            engine.SendNotification(Hash, "Deploy", new VM.Types.Array { contract.Hash.ToArray() });
+            await OnDeploy(engine, contract, data, false);
 
             return contract;
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private void Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
+        private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
-            Update(engine, nefFile, manifest, StackItem.Null);
+            return Update(engine, nefFile, manifest, StackItem.Null);
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private void Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
+        private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
             if (nefFile is null && manifest is null) throw new ArgumentException();
 
@@ -221,13 +223,7 @@ namespace Neo.SmartContract.Native
             }
             Check(contract.Nef.Script, contract.Manifest.Abi);
             contract.UpdateCounter++; // Increase update counter
-            if (nefFile != null)
-            {
-                ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy", 2);
-                if (md != null)
-                    engine.CallFromNativeContract(Hash, contract.Hash, md.Name, data, true);
-            }
-            engine.SendNotification(Hash, "Update", new VM.Types.Array { contract.Hash.ToArray() });
+            return OnDeploy(engine, contract, data, true);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]

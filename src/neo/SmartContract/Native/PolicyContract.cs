@@ -23,11 +23,12 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        internal override void Initialize(ApplicationEngine engine)
+        internal override ContractTask Initialize(ApplicationEngine engine)
         {
             engine.Snapshot.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem(DefaultFeePerByte));
             engine.Snapshot.Add(CreateStorageKey(Prefix_ExecFeeFactor), new StorageItem(DefaultExecFeeFactor));
             engine.Snapshot.Add(CreateStorageKey(Prefix_StoragePrice), new StorageItem(DefaultStoragePrice));
+            return ContractTask.CompletedTask;
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]

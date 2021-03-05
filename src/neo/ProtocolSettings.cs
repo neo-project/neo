@@ -87,6 +87,11 @@ namespace Neo
         {
             IConfigurationRoot config = new ConfigurationBuilder().AddJsonFile(path, optional).Build();
             IConfigurationSection section = config.GetSection("ProtocolConfiguration");
+            return Load(section);
+        }
+
+        public static ProtocolSettings Load(IConfigurationSection section)
+        {
             return new ProtocolSettings
             {
                 Magic = section.GetValue("Magic", Default.Magic),
