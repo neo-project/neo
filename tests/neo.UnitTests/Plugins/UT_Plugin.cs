@@ -21,7 +21,7 @@ namespace Neo.UnitTests.Plugins
         public void TestIP2PPlugin()
         {
             var pp = new DummyP2PPlugin() as IP2PPlugin;
-            Assert.IsTrue(pp.OnP2PMessage(null));
+            Assert.IsTrue(pp.OnP2PMessage(null, null));
         }
 
         [TestMethod]
@@ -33,8 +33,8 @@ namespace Neo.UnitTests.Plugins
 
             // With empty default implementation
 
-            pp.OnCommit(null, null);
-            pp.OnPersist(null, null, null);
+            pp.OnCommit(null, null, null);
+            pp.OnPersist(null, null, null, null);
         }
 
         [TestMethod]
@@ -79,16 +79,6 @@ namespace Neo.UnitTests.Plugins
                 var lp = new TestLogPlugin();
                 Plugin.SendMessage("hey2").Should().BeTrue();
             }
-        }
-
-        [TestMethod]
-        public void TestResumeNodeStartupAndSuspendNodeStartup()
-        {
-            TestLogPlugin.TestLoadPlugins(TestBlockchain.TheNeoSystem);
-            TestLogPlugin.TestSuspendNodeStartup();
-            TestLogPlugin.TestSuspendNodeStartup();
-            TestLogPlugin.TestResumeNodeStartup().Should().BeFalse();
-            TestLogPlugin.TestResumeNodeStartup().Should().BeTrue();
         }
 
         [TestMethod]

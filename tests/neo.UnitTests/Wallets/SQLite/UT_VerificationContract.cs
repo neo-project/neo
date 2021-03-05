@@ -116,11 +116,11 @@ namespace Neo.UnitTests
             };
             byte[] byteArray = contract1.ToArray();
             byte[] script = Neo.SmartContract.Contract.CreateSignatureRedeemScript(key.PublicKey);
-            byte[] result = new byte[44];
+            byte[] result = new byte[43];
             result[0] = 0x01;
             result[1] = (byte)ContractParameterType.Signature;
-            result[2] = 0x29;
-            Array.Copy(script, 0, result, 3, 41);
+            result[2] = 0x28;
+            Array.Copy(script, 0, result, 3, 40);
             CollectionAssert.AreEqual(result, byteArray);
         }
 
@@ -138,7 +138,7 @@ namespace Neo.UnitTests
                 Script = Neo.SmartContract.Contract.CreateSignatureRedeemScript(key.PublicKey),
                 ParameterList = new[] { ContractParameterType.Signature }
             };
-            Assert.AreEqual(44, contract1.Size);
+            Assert.AreEqual(43, contract1.Size);
         }
     }
 }

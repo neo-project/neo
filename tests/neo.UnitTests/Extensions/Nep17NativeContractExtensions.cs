@@ -37,17 +37,11 @@ namespace Neo.UnitTests.Extensions
 
         public static bool Transfer(this NativeContract contract, DataCache snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom, Block persistingBlock)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application,
-                new ManualWitness(signFrom ? new UInt160(from) : null), snapshot, persistingBlock);
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new ManualWitness(signFrom ? new UInt160(from) : null), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
-            engine.LoadScript(contract.Script, configureState: p => p.ScriptHash = contract.Hash);
-
-            var script = new ScriptBuilder();
-            script.Emit(OpCode.PUSHNULL);
-            script.EmitPush(amount);
-            script.EmitPush(to);
-            script.EmitPush(from);
-            script.EmitPush("transfer");
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(contract.Hash, "transfer", from, to, amount, null);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
@@ -63,12 +57,10 @@ namespace Neo.UnitTests.Extensions
 
         public static BigInteger TotalSupply(this NativeContract contract, DataCache snapshot)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
 
-            engine.LoadScript(contract.Script, configureState: p => p.ScriptHash = contract.Hash);
-
-            var script = new ScriptBuilder();
-            script.EmitPush("totalSupply");
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(contract.Hash, "totalSupply");
             engine.LoadScript(script.ToArray());
 
             engine.Execute().Should().Be(VMState.HALT);
@@ -81,13 +73,10 @@ namespace Neo.UnitTests.Extensions
 
         public static BigInteger BalanceOf(this NativeContract contract, DataCache snapshot, byte[] account)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
 
-            engine.LoadScript(contract.Script, configureState: p => p.ScriptHash = contract.Hash);
-
-            var script = new ScriptBuilder();
-            script.EmitPush(account);
-            script.EmitPush("balanceOf");
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(contract.Hash, "balanceOf", account);
             engine.LoadScript(script.ToArray());
 
             engine.Execute().Should().Be(VMState.HALT);
@@ -100,12 +89,10 @@ namespace Neo.UnitTests.Extensions
 
         public static BigInteger Decimals(this NativeContract contract, DataCache snapshot)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
 
-            engine.LoadScript(contract.Script, configureState: p => p.ScriptHash = contract.Hash);
-
-            var script = new ScriptBuilder();
-            script.EmitPush("decimals");
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(contract.Hash, "decimals");
             engine.LoadScript(script.ToArray());
 
             engine.Execute().Should().Be(VMState.HALT);
@@ -118,12 +105,10 @@ namespace Neo.UnitTests.Extensions
 
         public static string Symbol(this NativeContract contract, DataCache snapshot)
         {
-            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
 
-            engine.LoadScript(contract.Script, configureState: p => p.ScriptHash = contract.Hash);
-
-            var script = new ScriptBuilder();
-            script.EmitPush("symbol");
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(contract.Hash, "symbol");
             engine.LoadScript(script.ToArray());
 
             engine.Execute().Should().Be(VMState.HALT);

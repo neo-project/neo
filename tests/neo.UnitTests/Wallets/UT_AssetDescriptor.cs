@@ -8,18 +8,13 @@ namespace Neo.UnitTests.Wallets
     [TestClass]
     public class UT_AssetDescriptor
     {
-        [TestInitialize]
-        public void TestSetup()
-        {
-            TestBlockchain.InitializeMockNeoSystem();
-        }
-
         [TestMethod]
         public void TestConstructorWithNonexistAssetId()
         {
+            var snapshot = TestBlockchain.GetTestSnapshot();
             Action action = () =>
             {
-                var descriptor = new Neo.Wallets.AssetDescriptor(UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4"));
+                var descriptor = new Neo.Wallets.AssetDescriptor(snapshot, ProtocolSettings.Default, UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4"));
             };
             action.Should().Throw<ArgumentException>();
         }
@@ -27,7 +22,8 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void Check_GAS()
         {
-            var descriptor = new Neo.Wallets.AssetDescriptor(NativeContract.GAS.Hash);
+            var snapshot = TestBlockchain.GetTestSnapshot();
+            var descriptor = new Neo.Wallets.AssetDescriptor(snapshot, ProtocolSettings.Default, NativeContract.GAS.Hash);
             descriptor.AssetId.Should().Be(NativeContract.GAS.Hash);
             descriptor.AssetName.Should().Be(nameof(GasToken));
             descriptor.ToString().Should().Be(nameof(GasToken));
@@ -38,7 +34,8 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void Check_NEO()
         {
-            var descriptor = new Neo.Wallets.AssetDescriptor(NativeContract.NEO.Hash);
+            var snapshot = TestBlockchain.GetTestSnapshot();
+            var descriptor = new Neo.Wallets.AssetDescriptor(snapshot, ProtocolSettings.Default, NativeContract.NEO.Hash);
             descriptor.AssetId.Should().Be(NativeContract.NEO.Hash);
             descriptor.AssetName.Should().Be(nameof(NeoToken));
             descriptor.ToString().Should().Be(nameof(NeoToken));

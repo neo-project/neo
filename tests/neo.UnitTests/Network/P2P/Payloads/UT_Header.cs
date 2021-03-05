@@ -1,10 +1,10 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.SmartContract;
+using System;
 using System.IO;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
@@ -17,7 +17,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestInitialize]
         public void TestSetup()
         {
-            TestBlockchain.InitializeMockNeoSystem();
             uut = new Header();
         }
 
@@ -43,30 +42,33 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void TrimTest()
         {
             UInt256 val256 = UInt256.Zero;
-            var snapshot = Blockchain.Singleton.GetSnapshot().CreateSnapshot();
+            var snapshot = TestBlockchain.GetTestSnapshot().CreateSnapshot();
             TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _);
             uut.Witness = new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] };
 
             UT_SmartContractHelper.BlocksAdd(snapshot, uut.Hash, new TrimmedBlock()
             {
-                Timestamp = uut.Timestamp,
-                PrevHash = uut.PrevHash,
-                MerkleRoot = uut.MerkleRoot,
-                ConsensusData = new ConsensusData(),
-                Hashes = new UInt256[0],
-                NextConsensus = uut.NextConsensus,
-                Witness = uut.Witness
+                Header = new Header
+                {
+                    Timestamp = uut.Timestamp,
+                    PrevHash = uut.PrevHash,
+                    MerkleRoot = uut.MerkleRoot,
+                    NextConsensus = uut.NextConsensus,
+                    Witness = uut.Witness
+                },
+                Hashes = Array.Empty<UInt256>()
             });
 
             var trim = NativeContract.Ledger.GetTrimmedBlock(snapshot, uut.Hash);
+            var header = trim.Header;
 
-            trim.Version.Should().Be(uut.Version);
-            trim.PrevHash.Should().Be(uut.PrevHash);
-            trim.MerkleRoot.Should().Be(uut.MerkleRoot);
-            trim.Timestamp.Should().Be(uut.Timestamp);
-            trim.Index.Should().Be(uut.Index);
-            trim.NextConsensus.Should().Be(uut.NextConsensus);
-            trim.Witness.Should().BeEquivalentTo(uut.Witness);
+            header.Version.Should().Be(uut.Version);
+            header.PrevHash.Should().Be(uut.PrevHash);
+            header.MerkleRoot.Should().Be(uut.MerkleRoot);
+            header.Timestamp.Should().Be(uut.Timestamp);
+            header.Index.Should().Be(uut.Index);
+            header.NextConsensus.Should().Be(uut.NextConsensus);
+            header.Witness.Should().BeEquivalentTo(uut.Witness);
             trim.Hashes.Length.Should().Be(0);
         }
 
@@ -78,7 +80,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             uut.MerkleRoot = merkRoot; // need to set for deserialise to be valid
 
-            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000007227ba7b747f1a98f68679d4a98b68927646ab195a6f56b542ca5a0e6a412662e913ff854c0000000000000000000000000000000000000000000000000000000100011100";
+            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000007227ba7b747f1a98f68679d4a98b68927646ab195a6f56b542ca5a0e6a412662e913ff854c0000000000000000000000000000000000000000000000000000000001000111";
 
             using (MemoryStream ms = new MemoryStream(hex.HexToBytes(), false))
             {
@@ -137,7 +139,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _);
 
-            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000007227ba7b747f1a98f68679d4a98b68927646ab195a6f56b542ca5a0e6a412662e913ff854c0000000000000000000000000000000000000000000000000000000100011100";
+            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000007227ba7b747f1a98f68679d4a98b68927646ab195a6f56b542ca5a0e6a412662e913ff854c0000000000000000000000000000000000000000000000000000000001000111";
             uut.ToArray().ToHexString().Should().Be(hex);
         }
     }

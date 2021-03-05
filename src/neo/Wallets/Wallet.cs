@@ -1,6 +1,5 @@
 using Neo.Cryptography;
 using Neo.IO;
-using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -14,6 +13,7 @@ using System.Numerics;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using static Neo.SmartContract.Helper;
 using static Neo.Wallets.Helper;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
@@ -21,6 +21,7 @@ namespace Neo.Wallets
 {
     public abstract class Wallet
     {
+        public ProtocolSettings ProtocolSettings { get; }
         public abstract string Name { get; }
         public string Path { get; }
         public abstract Version Version { get; }
@@ -34,12 +35,9 @@ namespace Neo.Wallets
         public abstract WalletAccount GetAccount(UInt160 scriptHash);
         public abstract IEnumerable<WalletAccount> GetAccounts();
 
-        internal Wallet()
+        protected Wallet(string path, ProtocolSettings settings)
         {
-        }
-
-        protected Wallet(string path)
-        {
+            this.ProtocolSettings = settings;
             this.Path = path;
         }
 
@@ -124,13 +122,13 @@ namespace Neo.Wallets
             return GetAccount(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash());
         }
 
-        public BigDecimal GetAvailable(UInt160 asset_id)
+        public BigDecimal GetAvailable(DataCache snapshot, UInt160 asset_id)
         {
             UInt160[] accounts = GetAccounts().Where(p => !p.WatchOnly).Select(p => p.ScriptHash).ToArray();
-            return GetBalance(asset_id, accounts);
+            return GetBalance(snapshot, asset_id, accounts);
         }
 
-        public BigDecimal GetBalance(UInt160 asset_id, params UInt160[] accounts)
+        public BigDecimal GetBalance(DataCache snapshot, UInt160 asset_id, params UInt160[] accounts)
         {
             byte[] script;
             using (ScriptBuilder sb = new ScriptBuilder())
@@ -138,21 +136,21 @@ namespace Neo.Wallets
                 sb.EmitPush(0);
                 foreach (UInt160 account in accounts)
                 {
-                    sb.EmitDynamicCall(asset_id, "balanceOf", account);
+                    sb.EmitDynamicCall(asset_id, "balanceOf", CallFlags.ReadOnly, account);
                     sb.Emit(OpCode.ADD);
                 }
-                sb.EmitDynamicCall(asset_id, "decimals");
+                sb.EmitDynamicCall(asset_id, "decimals", CallFlags.ReadOnly);
                 script = sb.ToArray();
             }
-            using ApplicationEngine engine = ApplicationEngine.Run(script, gas: 20000000L * accounts.Length);
-            if (engine.State.HasFlag(VMState.FAULT))
+            using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, settings: ProtocolSettings, gas: 20000000L * accounts.Length);
+            if (engine.State == VMState.FAULT)
                 return new BigDecimal(BigInteger.Zero, 0);
             byte decimals = (byte)engine.ResultStack.Pop().GetInteger();
             BigInteger amount = engine.ResultStack.Pop().GetInteger();
             return new BigDecimal(amount, decimals);
         }
 
-        public static byte[] GetPrivateKeyFromNEP2(string nep2, string passphrase, int N = 16384, int r = 8, int p = 8)
+        public static byte[] GetPrivateKeyFromNEP2(string nep2, string passphrase, byte version, int N = 16384, int r = 8, int p = 8)
         {
             if (nep2 == null) throw new ArgumentNullException(nameof(nep2));
             if (passphrase == null) throw new ArgumentNullException(nameof(passphrase));
@@ -175,7 +173,7 @@ namespace Neo.Wallets
             Array.Clear(derivedhalf2, 0, derivedhalf2.Length);
             ECPoint pubkey = Cryptography.ECC.ECCurve.Secp256r1.G * prikey;
             UInt160 script_hash = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
-            string address = script_hash.ToAddress();
+            string address = script_hash.ToAddress(version);
             if (!Encoding.ASCII.GetBytes(address).Sha256().Sha256().AsSpan(0, 4).SequenceEqual(addresshash))
                 throw new FormatException();
             return prikey;
@@ -235,13 +233,13 @@ namespace Neo.Wallets
 
         public virtual WalletAccount Import(string nep2, string passphrase, int N = 16384, int r = 8, int p = 8)
         {
-            byte[] privateKey = GetPrivateKeyFromNEP2(nep2, passphrase, N, r, p);
+            byte[] privateKey = GetPrivateKeyFromNEP2(nep2, passphrase, ProtocolSettings.AddressVersion, N, r, p);
             WalletAccount account = CreateAccount(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
             return account;
         }
 
-        public Transaction MakeTransaction(TransferOutput[] outputs, UInt160 from = null, Signer[] cosigners = null)
+        public Transaction MakeTransaction(DataCache snapshot, TransferOutput[] outputs, UInt160 from = null, Signer[] cosigners = null)
         {
             UInt160[] accounts;
             if (from is null)
@@ -252,7 +250,6 @@ namespace Neo.Wallets
             {
                 accounts = new[] { from };
             }
-            DataCache snapshot = Blockchain.Singleton.View;
             Dictionary<UInt160, Signer> cosignerList = cosigners?.ToDictionary(p => p.Account) ?? new Dictionary<UInt160, Signer>();
             byte[] script;
             List<(UInt160 Account, BigInteger Value)> balances_gas = null;
@@ -264,10 +261,10 @@ namespace Neo.Wallets
                     foreach (UInt160 account in accounts)
                         using (ScriptBuilder sb2 = new ScriptBuilder())
                         {
-                            sb2.EmitDynamicCall(assetId, "balanceOf", account);
-                            using (ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot))
+                            sb2.EmitDynamicCall(assetId, "balanceOf", CallFlags.ReadOnly, account);
+                            using (ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot, settings: ProtocolSettings))
                             {
-                                if (engine.State.HasFlag(VMState.FAULT))
+                                if (engine.State != VMState.HALT)
                                     throw new InvalidOperationException($"Execution for {assetId}.balanceOf('{account}' fault");
                                 BigInteger value = engine.ResultStack.Pop().GetInteger();
                                 if (value.Sign > 0) balances.Add((account, value));
@@ -310,7 +307,7 @@ namespace Neo.Wallets
             return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), Array.Empty<TransactionAttribute>(), balances_gas);
         }
 
-        public Transaction MakeTransaction(byte[] script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null, long maxGas = ApplicationEngine.TestModeGas)
+        public Transaction MakeTransaction(DataCache snapshot, byte[] script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null, long maxGas = ApplicationEngine.TestModeGas)
         {
             UInt160[] accounts;
             if (sender is null)
@@ -321,7 +318,6 @@ namespace Neo.Wallets
             {
                 accounts = new[] { sender };
             }
-            DataCache snapshot = Blockchain.Singleton.View;
             var balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
             return MakeTransaction(snapshot, script, cosigners ?? Array.Empty<Signer>(), attributes ?? Array.Empty<TransactionAttribute>(), balances_gas, maxGas);
         }
@@ -342,7 +338,7 @@ namespace Neo.Wallets
                 };
 
                 // will try to execute 'transfer' script to check if it works 
-                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.CreateSnapshot(), tx, gas: maxGas))
+                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.CreateSnapshot(), tx, settings: ProtocolSettings, gas: maxGas))
                 {
                     if (engine.State == VMState.FAULT)
                     {
@@ -397,9 +393,8 @@ namespace Neo.Wallets
                     size += Array.Empty<byte>().GetVarSize() * 2;
 
                     // Check verify cost
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot());
-                    engine.LoadContract(contract, md, CallFlags.None);
-                    if (NativeContract.IsNative(hash)) engine.Push("verify");
+                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: ProtocolSettings);
+                    engine.LoadContract(contract, md, CallFlags.ReadOnly);
                     if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
                     if (!engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.Hash} returns false.");
 
@@ -408,19 +403,13 @@ namespace Neo.Wallets
                 else if (witness_script.IsSignatureContract())
                 {
                     size += 67 + witness_script.GetVarSize();
-                    networkFee += exec_fee_factor * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] + ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice);
+                    networkFee += exec_fee_factor * SignatureContractCost();
                 }
                 else if (witness_script.IsMultiSigContract(out int m, out int n))
                 {
                     int size_inv = 66 * m;
                     size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
-                    networkFee += exec_fee_factor * ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * m;
-                    using (ScriptBuilder sb = new ScriptBuilder())
-                        networkFee += exec_fee_factor * ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
-                    networkFee += exec_fee_factor * ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * n;
-                    using (ScriptBuilder sb = new ScriptBuilder())
-                        networkFee += exec_fee_factor * ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
-                    networkFee += exec_fee_factor * (ApplicationEngine.OpCodePrices[OpCode.PUSHNULL] + ApplicationEngine.ECDsaVerifyPrice * n);
+                    networkFee += exec_fee_factor * MultiSignatureContractCost(m, n);
                 }
                 else
                 {
@@ -452,7 +441,7 @@ namespace Neo.Wallets
                             account = GetAccount(point);
                             if (account?.HasKey != true) continue;
                             KeyPair key = account.GetKey();
-                            byte[] signature = context.Verifiable.Sign(key);
+                            byte[] signature = context.Verifiable.Sign(key, ProtocolSettings.Magic);
                             fSuccess |= context.AddSignature(multiSigContract, key.PublicKey, signature);
                             if (fSuccess) m--;
                             if (context.Completed || m <= 0) break;
@@ -463,7 +452,7 @@ namespace Neo.Wallets
                     {
                         // Try to sign with regular accounts
                         KeyPair key = account.GetKey();
-                        byte[] signature = context.Verifiable.Sign(key);
+                        byte[] signature = context.Verifiable.Sign(key, ProtocolSettings.Magic);
                         fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
                         continue;
                     }
@@ -471,7 +460,7 @@ namespace Neo.Wallets
 
                 // Try Smart contract verification
 
-                var contract = NativeContract.ContractManagement.GetContract(Blockchain.Singleton.View, scriptHash);
+                var contract = NativeContract.ContractManagement.GetContract(context.Snapshot, scriptHash);
 
                 if (contract != null)
                 {

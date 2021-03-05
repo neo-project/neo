@@ -49,11 +49,11 @@ namespace Neo.SmartContract.Manifest
         {
             ContractMethodDescriptor descriptor = new ContractMethodDescriptor
             {
-                Name = json["name"].AsString(),
+                Name = json["name"].GetString(),
                 Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson(u)).ToArray(),
-                ReturnType = (ContractParameterType)Enum.Parse(typeof(ContractParameterType), json["returntype"].AsString()),
-                Offset = (int)json["offset"].AsNumber(),
-                Safe = json["safe"].AsBoolean(),
+                ReturnType = Enum.Parse<ContractParameterType>(json["returntype"].GetString()),
+                Offset = json["offset"].GetInt32(),
+                Safe = json["safe"].GetBoolean()
             };
             if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException();
             _ = descriptor.Parameters.ToDictionary(p => p.Name);

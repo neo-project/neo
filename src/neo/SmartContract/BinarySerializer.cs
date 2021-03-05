@@ -32,21 +32,21 @@ namespace Neo.SmartContract
             public override bool GetBoolean() => throw new NotSupportedException();
         }
 
-        public static StackItem Deserialize(byte[] data, uint maxArraySize, uint maxItemSize, ReferenceCounter referenceCounter = null)
+        public static StackItem Deserialize(byte[] data, uint maxArraySize, ReferenceCounter referenceCounter = null)
         {
             using MemoryStream ms = new MemoryStream(data, false);
             using BinaryReader reader = new BinaryReader(ms);
-            return Deserialize(reader, maxArraySize, maxItemSize, referenceCounter);
+            return Deserialize(reader, maxArraySize, (uint)data.Length, referenceCounter);
         }
 
-        public static unsafe StackItem Deserialize(ReadOnlySpan<byte> data, uint maxArraySize, uint maxItemSize, ReferenceCounter referenceCounter = null)
+        public static unsafe StackItem Deserialize(ReadOnlySpan<byte> data, uint maxArraySize, ReferenceCounter referenceCounter = null)
         {
             if (data.IsEmpty) throw new FormatException();
             fixed (byte* pointer = data)
             {
                 using UnmanagedMemoryStream ms = new UnmanagedMemoryStream(pointer, data.Length);
                 using BinaryReader reader = new BinaryReader(ms);
-                return Deserialize(reader, maxArraySize, maxItemSize, referenceCounter);
+                return Deserialize(reader, maxArraySize, (uint)data.Length, referenceCounter);
             }
         }
 

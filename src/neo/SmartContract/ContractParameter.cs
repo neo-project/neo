@@ -39,7 +39,7 @@ namespace Neo.SmartContract
         {
             ContractParameter parameter = new ContractParameter
             {
-                Type = json["type"].TryGetEnum<ContractParameterType>()
+                Type = Enum.Parse<ContractParameterType>(json["type"].GetString())
             };
             if (json["value"] != null)
                 switch (parameter.Type)
