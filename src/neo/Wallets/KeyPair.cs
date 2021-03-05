@@ -2,6 +2,7 @@ using Neo.Cryptography;
 using Neo.SmartContract;
 using Org.BouncyCastle.Crypto.Generators;
 using System;
+using System.Security.Cryptography;
 using System.Text;
 using static Neo.Wallets.Helper;
 
@@ -60,7 +61,7 @@ namespace Neo.Wallets
             byte[] derivedkey = SCrypt.Generate(Encoding.UTF8.GetBytes(passphrase), addresshash, N, r, p, 64);
             byte[] derivedhalf1 = derivedkey[..32];
             byte[] derivedhalf2 = derivedkey[32..];
-            byte[] encryptedkey = XOR(PrivateKey, derivedhalf1).AES256Encrypt(derivedhalf2);
+            byte[] encryptedkey = Encrypt(XOR(PrivateKey, derivedhalf1), derivedhalf2);
             Span<byte> buffer = stackalloc byte[39];
             buffer[0] = 0x01;
             buffer[1] = 0x42;
@@ -68,6 +69,16 @@ namespace Neo.Wallets
             addresshash.CopyTo(buffer[3..]);
             encryptedkey.CopyTo(buffer[7..]);
             return Base58.Base58CheckEncode(buffer);
+        }
+
+        private static byte[] Encrypt(byte[] data, byte[] key)
+        {
+            using Aes aes = Aes.Create();
+            aes.Key = key;
+            aes.Mode = CipherMode.ECB;
+            aes.Padding = PaddingMode.None;
+            using ICryptoTransform encryptor = aes.CreateEncryptor();
+            return encryptor.TransformFinalBlock(data, 0, data.Length);
         }
 
         public override int GetHashCode()
