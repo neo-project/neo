@@ -148,7 +148,8 @@ namespace Neo.SmartContract
                 if (item == null) return false;
                 if (!item.Signatures.TryAdd(pubkey, signature))
                     return false;
-                return Add(contract, index, signature);
+                item.Parameters[index].Value = signature;
+                return true;
             }
         }
 
