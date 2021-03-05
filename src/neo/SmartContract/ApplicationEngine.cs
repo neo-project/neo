@@ -308,7 +308,7 @@ namespace Neo.SmartContract
             AddGas(descriptor.FixedPrice * exec_fee_factor);
 
             object[] parameters = descriptor.Parameters.Count > 0
-                 ? new object[descriptor.Parameters.Count] 
+                 ? new object[descriptor.Parameters.Count]
                  : Array.Empty<object>();
 
             for (int i = 0; i < descriptor.Parameters.Count; i++)
