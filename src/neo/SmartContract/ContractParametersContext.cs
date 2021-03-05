@@ -195,11 +195,11 @@ namespace Neo.SmartContract
             return item.Parameters;
         }
 
-        public IEnumerable<(ECPoint pubKey, byte[] signature)> GetSignatures(UInt160 scriptHash)
+        public IReadOnlyDictionary<ECPoint, byte[]> GetSignatures(UInt160 scriptHash)
         {
             if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
                 return null;
-            return item.Signatures.Select(u => (u.Key, u.Value));
+            return item.Signatures;
         }
 
         public byte[] GetScript(UInt160 scriptHash)
