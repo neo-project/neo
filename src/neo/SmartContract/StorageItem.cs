@@ -66,7 +66,7 @@ namespace Neo.SmartContract
 
         public void Deserialize(BinaryReader reader)
         {
-            Value = reader.ReadBytes((int)(reader.BaseStream.Length - reader.BaseStream.Position));
+            Value = reader.ReadBytes((int)(reader.BaseStream.Length));
         }
 
         public void FromReplica(StorageItem replica)
