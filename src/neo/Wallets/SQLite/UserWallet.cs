@@ -52,7 +52,7 @@ namespace Neo.Wallets.SQLite
             if (passwordHash != null && !passwordHash.SequenceEqual(passwordKey.Concat(salt).ToArray().Sha256()))
                 throw new CryptographicException();
             this.iv = LoadStoredData("IV");
-            this.masterKey = LoadStoredData("MasterKey").AesDecrypt(passwordKey, iv);
+            this.masterKey = Decrypt(LoadStoredData("MasterKey"), passwordKey, iv);
             this.scrypt = new ScryptParameters
                 (
                 BinaryPrimitives.ReadInt32LittleEndian(LoadStoredData("ScryptN")),
@@ -91,7 +91,7 @@ namespace Neo.Wallets.SQLite
             SaveStoredData("IV", iv);
             SaveStoredData("Salt", salt);
             SaveStoredData("PasswordHash", passwordKey.Concat(salt).ToArray().Sha256());
-            SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
+            SaveStoredData("MasterKey", Encrypt(masterKey, passwordKey, iv));
             SaveStoredData("Version", versionBuffer);
             SaveStoredData("ScryptN", this.scrypt.N);
             SaveStoredData("ScryptR", this.scrypt.R);
@@ -179,7 +179,7 @@ namespace Neo.Wallets.SQLite
             try
             {
                 SaveStoredData("PasswordHash", passwordKey.Concat(salt).ToArray().Sha256());
-                SaveStoredData("MasterKey", masterKey.AesEncrypt(passwordKey, iv));
+                SaveStoredData("MasterKey", Encrypt(masterKey, passwordKey, iv));
                 return true;
             }
             finally
@@ -375,6 +375,26 @@ namespace Neo.Wallets.SQLite
         public override bool VerifyPassword(string password)
         {
             return password.ToAesKey().Concat(salt).ToArray().Sha256().SequenceEqual(LoadStoredData("PasswordHash"));
+        }
+
+        private static byte[] Encrypt(byte[] data, byte[] key, byte[] iv)
+        {
+            if (data == null || key == null || iv == null) throw new ArgumentNullException();
+            if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentException();
+            using Aes aes = Aes.Create();
+            aes.Padding = PaddingMode.None;
+            using ICryptoTransform encryptor = aes.CreateEncryptor(key, iv);
+            return encryptor.TransformFinalBlock(data, 0, data.Length);
+        }
+
+        private static byte[] Decrypt(byte[] data, byte[] key, byte[] iv)
+        {
+            if (data == null || key == null || iv == null) throw new ArgumentNullException();
+            if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentException();
+            using Aes aes = Aes.Create();
+            aes.Padding = PaddingMode.None;
+            using ICryptoTransform decryptor = aes.CreateDecryptor(key, iv);
+            return decryptor.TransformFinalBlock(data, 0, data.Length);
         }
     }
 }

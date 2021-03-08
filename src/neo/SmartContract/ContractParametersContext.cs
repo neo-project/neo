@@ -15,44 +15,36 @@ namespace Neo.SmartContract
     {
         private class ContextItem
         {
-            public byte[] Script;
-            public ContractParameter[] Parameters;
-            public Dictionary<ECPoint, byte[]> Signatures;
-
-            private ContextItem() { }
+            public readonly byte[] Script;
+            public readonly ContractParameter[] Parameters;
+            public readonly Dictionary<ECPoint, byte[]> Signatures;
 
             public ContextItem(Contract contract)
             {
                 this.Script = contract.Script;
                 this.Parameters = contract.ParameterList.Select(p => new ContractParameter { Type = p }).ToArray();
+                this.Signatures = new Dictionary<ECPoint, byte[]>();
             }
 
-            public static ContextItem FromJson(JObject json)
+            public ContextItem(JObject json)
             {
-                return new ContextItem
+                this.Script = Convert.FromBase64String(json["script"].AsString());
+                this.Parameters = ((JArray)json["parameters"]).Select(p => ContractParameter.FromJson(p)).ToArray();
+                this.Signatures = json["signatures"].Properties.Select(p => new
                 {
-                    Script = Convert.FromBase64String(json["script"]?.AsString()),
-                    Parameters = ((JArray)json["parameters"]).Select(p => ContractParameter.FromJson(p)).ToArray(),
-                    Signatures = json["signatures"]?.Properties.Select(p => new
-                    {
-                        PublicKey = ECPoint.Parse(p.Key, ECCurve.Secp256r1),
-                        Signature = Convert.FromBase64String(p.Value.AsString())
-                    }).ToDictionary(p => p.PublicKey, p => p.Signature)
-                };
+                    PublicKey = ECPoint.Parse(p.Key, ECCurve.Secp256r1),
+                    Signature = Convert.FromBase64String(p.Value.AsString())
+                }).ToDictionary(p => p.PublicKey, p => p.Signature);
             }
 
             public JObject ToJson()
             {
-                JObject json = new JObject();
-                if (Script != null)
-                    json["script"] = Convert.ToBase64String(Script);
+                JObject json = new();
+                json["script"] = Convert.ToBase64String(Script);
                 json["parameters"] = new JArray(Parameters.Select(p => p.ToJson()));
-                if (Signatures != null)
-                {
-                    json["signatures"] = new JObject();
-                    foreach (var signature in Signatures)
-                        json["signatures"][signature.Key.ToString()] = Convert.ToBase64String(signature.Value);
-                }
+                json["signatures"] = new JObject();
+                foreach (var signature in Signatures)
+                    json["signatures"][signature.Key.ToString()] = Convert.ToBase64String(signature.Value);
                 return json;
             }
         }
@@ -112,15 +104,12 @@ namespace Neo.SmartContract
         {
             if (contract.Script.IsMultiSigContract(out _, out ECPoint[] points))
             {
+                if (!points.Contains(pubkey)) return false;
                 ContextItem item = CreateItem(contract);
                 if (item == null) return false;
                 if (item.Parameters.All(p => p.Value != null)) return false;
-                if (item.Signatures == null)
-                    item.Signatures = new Dictionary<ECPoint, byte[]>();
-                else if (item.Signatures.ContainsKey(pubkey))
+                if (!item.Signatures.TryAdd(pubkey, signature))
                     return false;
-                if (!points.Contains(pubkey)) return false;
-                item.Signatures.Add(pubkey, signature);
                 if (item.Signatures.Count == contract.ParameterList.Length)
                 {
                     Dictionary<ECPoint, int> dic = points.Select((p, i) => new
@@ -136,7 +125,6 @@ namespace Neo.SmartContract
                     for (int i = 0; i < sigs.Length; i++)
                         if (!Add(contract, i, sigs[i]))
                             throw new InvalidOperationException();
-                    item.Signatures = null;
                 }
                 return true;
             }
@@ -156,7 +144,12 @@ namespace Neo.SmartContract
                     // return now to prevent array index out of bounds exception
                     return false;
                 }
-                return Add(contract, index, signature);
+                ContextItem item = CreateItem(contract);
+                if (item == null) return false;
+                if (!item.Signatures.TryAdd(pubkey, signature))
+                    return false;
+                item.Parameters[index].Value = signature;
+                return true;
             }
         }
 
@@ -185,7 +178,7 @@ namespace Neo.SmartContract
             ContractParametersContext context = new ContractParametersContext(snapshot, verifiable);
             foreach (var property in json["items"].Properties)
             {
-                context.ContextItems.Add(UInt160.Parse(property.Key), ContextItem.FromJson(property.Value));
+                context.ContextItems.Add(UInt160.Parse(property.Key), new ContextItem(property.Value));
             }
             return context;
         }
@@ -200,6 +193,13 @@ namespace Neo.SmartContract
             if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
                 return null;
             return item.Parameters;
+        }
+
+        public IReadOnlyDictionary<ECPoint, byte[]> GetSignatures(UInt160 scriptHash)
+        {
+            if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
+                return null;
+            return item.Signatures;
         }
 
         public byte[] GetScript(UInt160 scriptHash)

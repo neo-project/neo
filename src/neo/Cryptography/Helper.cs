@@ -13,62 +13,6 @@ namespace Neo.Cryptography
 {
     public static class Helper
     {
-        internal static byte[] AES256Decrypt(this byte[] block, byte[] key)
-        {
-            using (Aes aes = Aes.Create())
-            {
-                aes.Key = key;
-                aes.Mode = CipherMode.ECB;
-                aes.Padding = PaddingMode.None;
-                using (ICryptoTransform decryptor = aes.CreateDecryptor())
-                {
-                    return decryptor.TransformFinalBlock(block, 0, block.Length);
-                }
-            }
-        }
-
-        internal static byte[] AES256Encrypt(this byte[] block, byte[] key)
-        {
-            using (Aes aes = Aes.Create())
-            {
-                aes.Key = key;
-                aes.Mode = CipherMode.ECB;
-                aes.Padding = PaddingMode.None;
-                using (ICryptoTransform encryptor = aes.CreateEncryptor())
-                {
-                    return encryptor.TransformFinalBlock(block, 0, block.Length);
-                }
-            }
-        }
-
-        internal static byte[] AesDecrypt(this byte[] data, byte[] key, byte[] iv)
-        {
-            if (data == null || key == null || iv == null) throw new ArgumentNullException();
-            if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentException();
-            using (Aes aes = Aes.Create())
-            {
-                aes.Padding = PaddingMode.None;
-                using (ICryptoTransform decryptor = aes.CreateDecryptor(key, iv))
-                {
-                    return decryptor.TransformFinalBlock(data, 0, data.Length);
-                }
-            }
-        }
-
-        internal static byte[] AesEncrypt(this byte[] data, byte[] key, byte[] iv)
-        {
-            if (data == null || key == null || iv == null) throw new ArgumentNullException();
-            if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentException();
-            using (Aes aes = Aes.Create())
-            {
-                aes.Padding = PaddingMode.None;
-                using (ICryptoTransform encryptor = aes.CreateEncryptor(key, iv))
-                {
-                    return encryptor.TransformFinalBlock(data, 0, data.Length);
-                }
-            }
-        }
-
         public static byte[] RIPEMD160(this byte[] value)
         {
             using var ripemd160 = new RIPEMD160Managed();
