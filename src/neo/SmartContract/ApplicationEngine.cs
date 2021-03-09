@@ -312,14 +312,9 @@ namespace Neo.SmartContract
             ValidateCallFlags(descriptor.RequiredCallFlags);
             AddGas(descriptor.FixedPrice * exec_fee_factor);
 
-            object[] parameters = descriptor.Parameters.Count > 0
-                 ? new object[descriptor.Parameters.Count]
-                 : Array.Empty<object>();
-
-            for (int i = 0; i < descriptor.Parameters.Count; i++)
-            {
+            object[] parameters = new object[descriptor.Parameters.Count];
+            for (int i = 0; i < parameters.Length; i++)
                 parameters[i] = Convert(Pop(), descriptor.Parameters[i]);
-            }
 
             object returnValue = descriptor.Handler.Invoke(this, parameters);
             if (descriptor.Handler.ReturnType != typeof(void))
