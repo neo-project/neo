@@ -304,15 +304,19 @@ namespace Neo.SmartContract
 
         protected override void OnSysCall(uint method)
         {
-            InteropDescriptor descriptor = services[method];
+            OnSysCall(services[method]);
+        }
+
+        protected virtual void OnSysCall(InteropDescriptor descriptor)
+        {
             ValidateCallFlags(descriptor.RequiredCallFlags);
             AddGas(descriptor.FixedPrice * exec_fee_factor);
-            List<object> parameters = descriptor.Parameters.Count > 0
-                ? new List<object>()
-                : null;
-            foreach (var pd in descriptor.Parameters)
-                parameters.Add(Convert(Pop(), pd));
-            object returnValue = descriptor.Handler.Invoke(this, parameters?.ToArray());
+
+            object[] parameters = new object[descriptor.Parameters.Count];
+            for (int i = 0; i < parameters.Length; i++)
+                parameters[i] = Convert(Pop(), descriptor.Parameters[i]);
+
+            object returnValue = descriptor.Handler.Invoke(this, parameters);
             if (descriptor.Handler.ReturnType != typeof(void))
                 Push(Convert(returnValue));
         }
@@ -351,7 +355,13 @@ namespace Neo.SmartContract
         {
             MethodInfo method = typeof(ApplicationEngine).GetMethod(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                 ?? typeof(ApplicationEngine).GetProperty(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).GetMethod;
-            InteropDescriptor descriptor = new InteropDescriptor(name, method, fixedPrice, requiredCallFlags);
+            InteropDescriptor descriptor = new()
+            {
+                Name = name,
+                Handler = method,
+                FixedPrice = fixedPrice,
+                RequiredCallFlags = requiredCallFlags
+            };
             services ??= new Dictionary<uint, InteropDescriptor>();
             services.Add(descriptor.Hash, descriptor);
             return descriptor;
