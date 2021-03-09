@@ -304,7 +304,11 @@ namespace Neo.SmartContract
 
         protected override void OnSysCall(uint method)
         {
-            InteropDescriptor descriptor = services[method];
+            OnSysCall(services[method]);
+        }
+
+        protected virtual void OnSysCall(InteropDescriptor descriptor)
+        {
             ValidateCallFlags(descriptor.RequiredCallFlags);
             AddGas(descriptor.FixedPrice * exec_fee_factor);
             List<object> parameters = descriptor.Parameters.Count > 0
@@ -351,7 +355,13 @@ namespace Neo.SmartContract
         {
             MethodInfo method = typeof(ApplicationEngine).GetMethod(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                 ?? typeof(ApplicationEngine).GetProperty(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).GetMethod;
-            InteropDescriptor descriptor = new InteropDescriptor(name, method, fixedPrice, requiredCallFlags);
+            InteropDescriptor descriptor = new()
+            {
+                Name = name,
+                Handler = method,
+                FixedPrice = fixedPrice,
+                RequiredCallFlags = requiredCallFlags
+            };
             services ??= new Dictionary<uint, InteropDescriptor>();
             services.Add(descriptor.Hash, descriptor);
             return descriptor;
