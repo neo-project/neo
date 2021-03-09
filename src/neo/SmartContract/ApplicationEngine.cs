@@ -321,7 +321,7 @@ namespace Neo.SmartContract
                 parameters[i] = Convert(Pop(), descriptor.Parameters[i]);
             }
 
-            object returnValue = descriptor.Handler.Invoke(this, parameters?.ToArray());
+            object returnValue = descriptor.Handler.Invoke(this, parameters);
             if (descriptor.Handler.ReturnType != typeof(void))
                 Push(Convert(returnValue));
         }
