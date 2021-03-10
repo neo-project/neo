@@ -66,7 +66,7 @@ namespace Neo.SmartContract
 
         public void Deserialize(BinaryReader reader)
         {
-            Value = reader.ReadVarBytes();
+            Value = reader.ReadBytes((int)(reader.BaseStream.Length));
         }
 
         public void FromReplica(StorageItem replica)
@@ -95,7 +95,7 @@ namespace Neo.SmartContract
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.WriteVarBytes(Value);
+            writer.Write(Value);
         }
 
         public void Set(BigInteger integer)

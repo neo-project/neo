@@ -64,7 +64,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Deserialize()
         {
-            byte[] data = new byte[] { 10, 66, 32, 32, 32, 32, 32, 32, 32, 32, 32, 0 };
+            byte[] data = new byte[] { 66, 32, 32, 32, 32, 32, 32, 32, 32, 32 };
             int index = 0;
             using (MemoryStream ms = new MemoryStream(data, index, data.Length - index, false))
             {
@@ -96,7 +96,7 @@ namespace Neo.UnitTests.Ledger
                 }
             }
 
-            byte[] requiredData = new byte[] { 10, 66, 32, 32, 32, 32, 32, 32, 32, 32, 32 };
+            byte[] requiredData = new byte[] { 66, 32, 32, 32, 32, 32, 32, 32, 32, 32 };
 
             data.Length.Should().Be(requiredData.Length);
             for (int i = 0; i < requiredData.Length; i++)
