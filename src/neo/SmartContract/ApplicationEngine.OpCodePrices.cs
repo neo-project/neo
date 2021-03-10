@@ -194,7 +194,7 @@ namespace Neo.SmartContract
             [OpCode.POPITEM] = 1 << 4,
             [OpCode.ISNULL] = 1 << 1,
             [OpCode.ISTYPE] = 1 << 1,
-            [OpCode.CONVERT] = 1 << 12,
+            [OpCode.CONVERT] = 1 << 13,
         };
     }
 }
