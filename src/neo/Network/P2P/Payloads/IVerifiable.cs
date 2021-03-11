@@ -6,6 +6,9 @@ namespace Neo.Network.P2P.Payloads
 {
     public interface IVerifiable : ISerializable
     {
+        /// <summary>
+        /// The hash of the <see cref="IVerifiable"/> object.
+        /// </summary>
         UInt256 Hash => this.CalculateHash();
 
         Witness[] Witnesses { get; set; }

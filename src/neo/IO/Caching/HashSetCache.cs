@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Neo.IO.Caching
 {
-    public class HashSetCache<T> : IReadOnlyCollection<T> where T : IEquatable<T>
+    class HashSetCache<T> : IReadOnlyCollection<T> where T : IEquatable<T>
     {
         /// <summary>
         /// Sets where the Hashes are stored

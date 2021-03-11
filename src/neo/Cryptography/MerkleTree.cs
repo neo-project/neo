@@ -7,10 +7,16 @@ using System.Runtime.CompilerServices;
 
 namespace Neo.Cryptography
 {
+    /// <summary>
+    /// Represents a merkle tree.
+    /// </summary>
     public class MerkleTree
     {
         private readonly MerkleTreeNode root;
 
+        /// <summary>
+        /// The depth of the tree.
+        /// </summary>
         public int Depth { get; }
 
         internal MerkleTree(UInt256[] hashes)
@@ -32,8 +38,10 @@ namespace Neo.Cryptography
             MerkleTreeNode[] parents = new MerkleTreeNode[(leaves.Length + 1) / 2];
             for (int i = 0; i < parents.Length; i++)
             {
-                parents[i] = new MerkleTreeNode();
-                parents[i].LeftChild = leaves[i * 2];
+                parents[i] = new MerkleTreeNode
+                {
+                    LeftChild = leaves[i * 2]
+                };
                 leaves[i * 2].Parent = parents[i];
                 if (i * 2 + 1 == leaves.Length)
                 {
@@ -58,11 +66,16 @@ namespace Neo.Cryptography
             return new UInt256(Crypto.Hash256(buffer));
         }
 
+        /// <summary>
+        /// Computes the root of the hash tree.
+        /// </summary>
+        /// <param name="hashes">The leaves of the hash tree.</param>
+        /// <returns>The root of the hash tree.</returns>
         public static UInt256 ComputeRoot(UInt256[] hashes)
         {
             if (hashes.Length == 0) return UInt256.Zero;
             if (hashes.Length == 1) return hashes[0];
-            MerkleTree tree = new MerkleTree(hashes);
+            MerkleTree tree = new(hashes);
             return tree.root.Hash;
         }
 
@@ -80,20 +93,29 @@ namespace Neo.Cryptography
             }
         }
 
-        // depth-first order
+        /// <summary>
+        /// Gets all nodes of the hash tree in depth-first order.
+        /// </summary>
+        /// <returns></returns>
         public UInt256[] ToHashArray()
         {
             if (root is null) return Array.Empty<UInt256>();
-            List<UInt256> hashes = new List<UInt256>();
+            List<UInt256> hashes = new();
             DepthFirstSearch(root, hashes);
             return hashes.ToArray();
         }
 
+        /// <summary>
+        /// Trims the hash tree using the specified bit array.
+        /// </summary>
+        /// <param name="flags">The bit array to be used.</param>
         public void Trim(BitArray flags)
         {
             if (root is null) return;
-            flags = new BitArray(flags);
-            flags.Length = 1 << (Depth - 1);
+            flags = new BitArray(flags)
+            {
+                Length = 1 << (Depth - 1)
+            };
             Trim(root, 0, Depth, flags);
         }
 

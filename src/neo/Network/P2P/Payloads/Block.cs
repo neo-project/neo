@@ -9,19 +9,61 @@ using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
+    /// <summary>
+    /// Represents a block.
+    /// </summary>
     public sealed class Block : IEquatable<Block>, IInventory
     {
+        /// <summary>
+        /// The head of the block.
+        /// </summary>
         public Header Header;
+
+        /// <summary>
+        /// The transaction list of the block.
+        /// </summary>
         public Transaction[] Transactions;
 
         public UInt256 Hash => Header.Hash;
+
+        /// <summary>
+        /// The version of the block.
+        /// </summary>
         public uint Version => Header.Version;
+
+        /// <summary>
+        /// The hash of the previous block.
+        /// </summary>
         public UInt256 PrevHash => Header.PrevHash;
+
+        /// <summary>
+        /// The merkle root of the transactions.
+        /// </summary>
         public UInt256 MerkleRoot => Header.MerkleRoot;
+
+        /// <summary>
+        /// The timestamp of the block.
+        /// </summary>
         public ulong Timestamp => Header.Timestamp;
+
+        /// <summary>
+        /// The index of the block.
+        /// </summary>
         public uint Index => Header.Index;
+
+        /// <summary>
+        /// The primary index of the consensus nodes that generates the block.
+        /// </summary>
         public byte PrimaryIndex => Header.PrimaryIndex;
+
+        /// <summary>
+        /// The address of the consensus nodes that generates the next block.
+        /// </summary>
         public UInt160 NextConsensus => Header.NextConsensus;
+
+        /// <summary>
+        /// The witness of the block.
+        /// </summary>
         public Witness Witness => Header.Witness;
 
         InventoryType IInventory.InventoryType => InventoryType.Block;
@@ -67,6 +109,11 @@ namespace Neo.Network.P2P.Payloads
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer) => ((IVerifiable)Header).SerializeUnsigned(writer);
 
+        /// <summary>
+        /// Converts the block to a JSON object.
+        /// </summary>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> used during the conversion.</param>
+        /// <returns>The block represented by a JSON object.</returns>
         public JObject ToJson(ProtocolSettings settings)
         {
             JObject json = Header.ToJson(settings);

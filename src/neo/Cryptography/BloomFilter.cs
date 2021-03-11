@@ -4,17 +4,36 @@ using System.Linq;
 
 namespace Neo.Cryptography
 {
+    /// <summary>
+    /// Represents a bloom filter.
+    /// </summary>
     public class BloomFilter
     {
         private readonly uint[] seeds;
         private readonly BitArray bits;
 
+        /// <summary>
+        /// The number of hash functions used by the bloom filter.
+        /// </summary>
         public int K => seeds.Length;
 
+        /// <summary>
+        /// The size of the bit array used by the bloom filter.
+        /// </summary>
         public int M => bits.Length;
 
+        /// <summary>
+        /// Used to generate the seeds of the murmur hash functions.
+        /// </summary>
         public uint Tweak { get; private set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BloomFilter"/> class.
+        /// </summary>
+        /// <param name="m">The size of the bit array used by the bloom filter.</param>
+        /// <param name="k">The number of hash functions used by the bloom filter.</param>
+        /// <param name="nTweak">Used to generate the seeds of the murmur hash functions.</param>
+        /// <param name="elements">The initial elements contained in this <see cref="BloomFilter"/> object.</param>
         public BloomFilter(int m, int k, uint nTweak, byte[] elements = null)
         {
             if (k < 0 || m < 0) throw new ArgumentOutOfRangeException();
@@ -24,12 +43,21 @@ namespace Neo.Cryptography
             this.Tweak = nTweak;
         }
 
+        /// <summary>
+        /// Adds an element to the <see cref="BloomFilter"/>.
+        /// </summary>
+        /// <param name="element">The object to add to the <see cref="BloomFilter"/>.</param>
         public void Add(byte[] element)
         {
             foreach (uint i in seeds.AsParallel().Select(s => element.Murmur32(s)))
                 bits.Set((int)(i % (uint)bits.Length), true);
         }
 
+        /// <summary>
+        /// Determines whether the <see cref="BloomFilter"/> contains a specific element.
+        /// </summary>
+        /// <param name="element">The object to locate in the <see cref="BloomFilter"/>.</param>
+        /// <returns><see langword="true"/> if <paramref name="element"/> is found in the <see cref="BloomFilter"/>; otherwise, <see langword="false"/>.</returns>
         public bool Check(byte[] element)
         {
             foreach (uint i in seeds.AsParallel().Select(s => element.Murmur32(s)))
@@ -38,6 +66,10 @@ namespace Neo.Cryptography
             return true;
         }
 
+        /// <summary>
+        /// Gets the bit array in this <see cref="BloomFilter"/>.
+        /// </summary>
+        /// <param name="newBits">The byte array to store the bits.</param>
         public void GetBits(byte[] newBits)
         {
             bits.CopyTo(newBits, 0);
