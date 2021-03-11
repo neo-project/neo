@@ -288,7 +288,7 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
         public (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(DataCache snapshot)
         {
             byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
@@ -302,7 +302,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
         public ECPoint[] GetCommittee(DataCache snapshot)
         {
-            return GetCommitteeFromCache(snapshot).Select(p => p.PublicKey).ToArray();
+            return GetCommitteeFromCache(snapshot).Select(p => p.PublicKey).OrderBy(p => p).ToArray();
         }
 
         public UInt160 GetCommitteeAddress(DataCache snapshot)
