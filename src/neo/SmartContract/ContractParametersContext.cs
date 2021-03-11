@@ -170,7 +170,7 @@ namespace Neo.SmartContract
             if (!typeof(IVerifiable).IsAssignableFrom(type)) throw new FormatException();
 
             var verifiable = (IVerifiable)Activator.CreateInstance(type);
-            using (MemoryStream ms = new MemoryStream(Convert.FromBase64String(json["hex"].AsString()), false))
+            using (MemoryStream ms = new MemoryStream(Convert.FromBase64String(json["document"].AsString()), false))
             using (BinaryReader reader = new BinaryReader(ms, Utility.StrictUTF8))
             {
                 verifiable.DeserializeUnsigned(reader);
@@ -246,7 +246,7 @@ namespace Neo.SmartContract
             {
                 Verifiable.SerializeUnsigned(writer);
                 writer.Flush();
-                json["hex"] = Convert.ToBase64String(ms.ToArray());
+                json["document"] = Convert.ToBase64String(ms.ToArray());
             }
             json["items"] = new JObject();
             foreach (var item in ContextItems)
