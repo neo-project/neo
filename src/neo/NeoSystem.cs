@@ -57,34 +57,36 @@ namespace Neo
         public NeoSystem(ProtocolSettings settings, string storageEngine = null, string storagePath = null)
         {
             this.Settings = settings;
-            this.GenesisBlock = new Block
-            {
-                Header = new Header
-                {
-                    PrevHash = UInt256.Zero,
-                    MerkleRoot = UInt256.Zero,
-                    Timestamp = (new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc)).ToTimestampMS(),
-                    Index = 0,
-                    PrimaryIndex = 0,
-                    NextConsensus = Contract.GetBFTAddress(settings.StandbyValidators),
-                    Witness = new Witness
-                    {
-                        InvocationScript = Array.Empty<byte>(),
-                        VerificationScript = new[] { (byte)OpCode.PUSH1 }
-                    },
-                },
-                Transactions = Array.Empty<Transaction>()
-            };
+            this.GenesisBlock = CreateGenesisBlock(settings);
             this.storage_engine = storageEngine;
             this.store = LoadStore(storagePath);
             this.MemPool = new MemoryPool(this);
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
-            Blockchain.Ask<FillCompleted>(new FillMemoryPool { Transactions = Enumerable.Empty<Transaction>() }).Wait();
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnSystemLoaded(this);
+            Blockchain.Ask<FillCompleted>(new FillMemoryPool { Transactions = Enumerable.Empty<Transaction>() }).Wait();
         }
+
+        public static Block CreateGenesisBlock(ProtocolSettings settings) => new Block
+        {
+            Header = new Header
+            {
+                PrevHash = UInt256.Zero,
+                MerkleRoot = UInt256.Zero,
+                Timestamp = (new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc)).ToTimestampMS(),
+                Index = 0,
+                PrimaryIndex = 0,
+                NextConsensus = Contract.GetBFTAddress(settings.StandbyValidators),
+                Witness = new Witness
+                {
+                    InvocationScript = Array.Empty<byte>(),
+                    VerificationScript = new[] { (byte)OpCode.PUSH1 }
+                },
+            },
+            Transactions = Array.Empty<Transaction>()
+        };
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {

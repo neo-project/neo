@@ -9,6 +9,7 @@ using Neo.SmartContract.Native;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.UnitTests.Ledger
@@ -90,8 +91,10 @@ namespace Neo.UnitTests.Ledger
             tx.Nonce = nonce;
 
             var data = new ContractParametersContext(snapshot, tx);
+            Assert.IsNull(data.GetSignatures(tx.Sender));
             Assert.IsTrue(wallet.Sign(data));
             Assert.IsTrue(data.Completed);
+            Assert.AreEqual(1, data.GetSignatures(tx.Sender).Count());
 
             tx.Witnesses = data.GetWitnesses();
             return tx;

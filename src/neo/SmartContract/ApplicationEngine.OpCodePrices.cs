@@ -173,8 +173,8 @@ namespace Neo.SmartContract
             [OpCode.MIN] = 1 << 3,
             [OpCode.MAX] = 1 << 3,
             [OpCode.WITHIN] = 1 << 3,
-            [OpCode.PACK] = 1 << 9,
-            [OpCode.UNPACK] = 1 << 9,
+            [OpCode.PACK] = 1 << 11,
+            [OpCode.UNPACK] = 1 << 11,
             [OpCode.NEWARRAY0] = 1 << 4,
             [OpCode.NEWARRAY] = 1 << 9,
             [OpCode.NEWARRAY_T] = 1 << 9,
@@ -194,7 +194,7 @@ namespace Neo.SmartContract
             [OpCode.POPITEM] = 1 << 4,
             [OpCode.ISNULL] = 1 << 1,
             [OpCode.ISTYPE] = 1 << 1,
-            [OpCode.CONVERT] = 1 << 11,
+            [OpCode.CONVERT] = 1 << 13,
         };
     }
 }

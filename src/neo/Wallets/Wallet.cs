@@ -150,6 +150,16 @@ namespace Neo.Wallets
             return new BigDecimal(amount, decimals);
         }
 
+        private static byte[] Decrypt(byte[] data, byte[] key)
+        {
+            using Aes aes = Aes.Create();
+            aes.Key = key;
+            aes.Mode = CipherMode.ECB;
+            aes.Padding = PaddingMode.None;
+            using ICryptoTransform decryptor = aes.CreateDecryptor();
+            return decryptor.TransformFinalBlock(data, 0, data.Length);
+        }
+
         public static byte[] GetPrivateKeyFromNEP2(string nep2, string passphrase, byte version, int N = 16384, int r = 8, int p = 8)
         {
             if (nep2 == null) throw new ArgumentNullException(nameof(nep2));
@@ -168,7 +178,7 @@ namespace Neo.Wallets
             byte[] encryptedkey = new byte[32];
             Buffer.BlockCopy(data, 7, encryptedkey, 0, 32);
             Array.Clear(data, 0, data.Length);
-            byte[] prikey = XOR(encryptedkey.AES256Decrypt(derivedhalf2), derivedhalf1);
+            byte[] prikey = XOR(Decrypt(encryptedkey, derivedhalf2), derivedhalf1);
             Array.Clear(derivedhalf1, 0, derivedhalf1.Length);
             Array.Clear(derivedhalf2, 0, derivedhalf2.Length);
             ECPoint pubkey = Cryptography.ECC.ECCurve.Secp256r1.G * prikey;
@@ -394,7 +404,7 @@ namespace Neo.Wallets
 
                     // Check verify cost
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: ProtocolSettings);
-                    engine.LoadContract(contract, md, CallFlags.None);
+                    engine.LoadContract(contract, md, CallFlags.ReadOnly);
                     if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
                     if (!engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.Hash} returns false.");
 

@@ -34,14 +34,14 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        internal override void Initialize(ApplicationEngine engine)
+        internal override ContractTask Initialize(ApplicationEngine engine)
         {
-            base.Initialize(engine);
             engine.Snapshot.Add(CreateStorageKey(Prefix_Roots), new StorageItem(new StringList()));
             engine.Snapshot.Add(CreateStorageKey(Prefix_DomainPrice), new StorageItem(10_00000000));
+            return base.Initialize(engine);
         }
 
-        internal override void OnPersist(ApplicationEngine engine)
+        internal override async ContractTask OnPersist(ApplicationEngine engine)
         {
             uint now = (uint)(engine.PersistingBlock.Timestamp / 1000) + 1;
             byte[] start = CreateStorageKey(Prefix_Expiration).AddBigEndian(0).ToArray();
@@ -51,7 +51,7 @@ namespace Neo.SmartContract.Native
                 engine.Snapshot.Delete(key);
                 foreach (var (key2, _) in engine.Snapshot.Find(CreateStorageKey(Prefix_Record).Add(key.Key.AsSpan(5)).ToArray()))
                     engine.Snapshot.Delete(key2);
-                Burn(engine, CreateStorageKey(Prefix_Token).Add(key.Key.AsSpan(5)));
+                await Burn(engine, CreateStorageKey(Prefix_Token).Add(key.Key.AsSpan(5)));
             }
         }
 
@@ -109,7 +109,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private bool Register(ApplicationEngine engine, string name, UInt160 owner)
+        private async ContractTask<bool> Register(ApplicationEngine engine, string name, UInt160 owner)
         {
             if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
             string[] names = name.Split('.');
@@ -126,7 +126,7 @@ namespace Neo.SmartContract.Native
                 Name = name,
                 Expiration = (uint)(engine.PersistingBlock.Timestamp / 1000) + OneYear
             };
-            Mint(engine, state);
+            await Mint(engine, state);
             engine.Snapshot.Add(CreateStorageKey(Prefix_Expiration).AddBigEndian(state.Expiration).Add(hash), new StorageItem(new byte[] { 0 }));
             return true;
         }

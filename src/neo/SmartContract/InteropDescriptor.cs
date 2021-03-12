@@ -7,24 +7,29 @@ using System.Text;
 
 namespace Neo.SmartContract
 {
-    public class InteropDescriptor
+    public record InteropDescriptor
     {
-        public string Name { get; }
-        public uint Hash { get; }
-        public MethodInfo Handler { get; }
-        public IReadOnlyList<InteropParameterDescriptor> Parameters { get; }
-        public long FixedPrice { get; }
-        public CallFlags RequiredCallFlags { get; }
+        public string Name { get; init; }
 
-        internal InteropDescriptor(string name, MethodInfo handler, long fixedPrice, CallFlags requiredCallFlags)
+        private uint _hash;
+        public uint Hash
         {
-            this.Name = name;
-            this.Hash = BinaryPrimitives.ReadUInt32LittleEndian(Encoding.ASCII.GetBytes(name).Sha256());
-            this.Handler = handler;
-            this.Parameters = handler.GetParameters().Select(p => new InteropParameterDescriptor(p)).ToList().AsReadOnly();
-            this.FixedPrice = fixedPrice;
-            this.RequiredCallFlags = requiredCallFlags;
+            get
+            {
+                if (_hash == 0)
+                    _hash = BinaryPrimitives.ReadUInt32LittleEndian(Encoding.ASCII.GetBytes(Name).Sha256());
+                return _hash;
+            }
         }
+
+        public MethodInfo Handler { get; init; }
+
+        private IReadOnlyList<InteropParameterDescriptor> _parameters;
+        public IReadOnlyList<InteropParameterDescriptor> Parameters => _parameters ??= Handler.GetParameters().Select(p => new InteropParameterDescriptor(p)).ToList().AsReadOnly();
+
+        public long FixedPrice { get; init; }
+
+        public CallFlags RequiredCallFlags { get; init; }
 
         public static implicit operator uint(InteropDescriptor descriptor)
         {

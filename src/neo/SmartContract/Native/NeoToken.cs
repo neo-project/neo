@@ -42,9 +42,9 @@ namespace Neo.SmartContract.Native
             return TotalAmount;
         }
 
-        protected override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
+        internal override async ContractTask OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
         {
-            DistributeGas(engine, account, state);
+            await DistributeGas(engine, account, state);
             if (amount.IsZero) return;
             if (state.VoteTo is null) return;
             engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_VotersCount)).Add(amount);
@@ -54,14 +54,14 @@ namespace Neo.SmartContract.Native
             CheckCandidate(engine.Snapshot, state.VoteTo, candidate);
         }
 
-        private void DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
+        private async ContractTask DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
         {
             // PersistingBlock is null when running under the debugger
             if (engine.PersistingBlock is null) return;
 
             BigInteger gas = CalculateBonus(engine.Snapshot, state.VoteTo, state.Balance, state.BalanceHeight, engine.PersistingBlock.Index);
             state.BalanceHeight = engine.PersistingBlock.Index;
-            GAS.Mint(engine, account, gas, true);
+            await GAS.Mint(engine, account, gas, true);
         }
 
         private BigInteger CalculateBonus(DataCache snapshot, ECPoint vote, BigInteger value, uint start, uint end)
@@ -115,17 +115,17 @@ namespace Neo.SmartContract.Native
 
         public static bool ShouldRefreshCommittee(uint height, int committeeMembersCount) => height % committeeMembersCount == 0;
 
-        internal override void Initialize(ApplicationEngine engine)
+        internal override ContractTask Initialize(ApplicationEngine engine)
         {
             var cachedCommittee = new CachedCommittee(engine.ProtocolSettings.StandbyCommittee.Select(p => (p, BigInteger.Zero)));
             engine.Snapshot.Add(CreateStorageKey(Prefix_Committee), new StorageItem(cachedCommittee));
             engine.Snapshot.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(new byte[0]));
             engine.Snapshot.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u), new StorageItem(5 * GAS.Factor));
             engine.Snapshot.Add(CreateStorageKey(Prefix_RegisterPrice), new StorageItem(1000 * GAS.Factor));
-            Mint(engine, Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators), TotalAmount, false);
+            return Mint(engine, Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators), TotalAmount, false);
         }
 
-        internal override void OnPersist(ApplicationEngine engine)
+        internal override ContractTask OnPersist(ApplicationEngine engine)
         {
             // Set next committee
             if (ShouldRefreshCommittee(engine.PersistingBlock.Index, engine.ProtocolSettings.CommitteeMembersCount))
@@ -135,9 +135,10 @@ namespace Neo.SmartContract.Native
                 cachedCommittee.Clear();
                 cachedCommittee.AddRange(ComputeCommitteeMembers(engine.Snapshot, engine.ProtocolSettings));
             }
+            return ContractTask.CompletedTask;
         }
 
-        internal override void PostPersist(ApplicationEngine engine)
+        internal override async ContractTask PostPersist(ApplicationEngine engine)
         {
             // Distribute GAS for committee
 
@@ -148,7 +149,7 @@ namespace Neo.SmartContract.Native
             var committee = GetCommitteeFromCache(engine.Snapshot);
             var pubkey = committee.ElementAt(index).PublicKey;
             var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
-            GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100, false);
+            await GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100, false);
 
             // Record the cumulative reward of the voters of committee
 
@@ -250,7 +251,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
-        private bool Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
+        private async ContractTask<bool> Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
         {
             if (!engine.CheckWitnessInternal(account)) return false;
             NeoAccountState state_account = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Account).Add(account))?.GetInteroperable<NeoAccountState>();
@@ -270,7 +271,7 @@ namespace Neo.SmartContract.Native
                 else
                     item.Add(-state_account.Balance);
             }
-            DistributeGas(engine, account, state_account);
+            await DistributeGas(engine, account, state_account);
             if (state_account.VoteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate).Add(state_account.VoteTo);
