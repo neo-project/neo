@@ -64,7 +64,7 @@ namespace Neo.SmartContract.Native
             Manifest.Abi.Events = events.ToArray();
         }
 
-        private static void Check(byte[] script, ContractAbi abi)
+        public static void Check(byte[] script, ContractAbi abi)
         {
             Script s = new Script(script, true);
             foreach (ContractMethodDescriptor method in abi.Methods)
