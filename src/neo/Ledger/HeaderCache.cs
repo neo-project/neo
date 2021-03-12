@@ -19,7 +19,7 @@ namespace Neo.Ledger
         /// Gets the <see cref="Header"/> at the specified index in the cache.
         /// </summary>
         /// <param name="index">The zero-based index of the <see cref="Header"/> to get.</param>
-        /// <returns></returns>
+        /// <returns>The <see cref="Header"/> at the specified index in the cache.</returns>
         public Header this[uint index]
         {
             get

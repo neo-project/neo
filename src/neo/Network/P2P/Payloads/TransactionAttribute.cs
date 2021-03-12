@@ -7,10 +7,21 @@ using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
+    /// <summary>
+    /// Represents an attribute of a transaction.
+    /// </summary>
     public abstract class TransactionAttribute : ISerializable
     {
+        /// <summary>
+        /// The type of the attribute.
+        /// </summary>
         public abstract TransactionAttributeType Type { get; }
+
+        /// <summary>
+        /// Indicates whether multiple of this attribute is allowed.
+        /// </summary>
         public abstract bool AllowMultiple { get; }
+
         public virtual int Size => sizeof(TransactionAttributeType);
 
         public void Deserialize(BinaryReader reader)
@@ -20,6 +31,11 @@ namespace Neo.Network.P2P.Payloads
             DeserializeWithoutType(reader);
         }
 
+        /// <summary>
+        /// Deserializes an <see cref="TransactionAttribute"/> object from a <see cref="BinaryReader"/>.
+        /// </summary>
+        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
+        /// <returns>The deserialized attribute.</returns>
         public static TransactionAttribute DeserializeFrom(BinaryReader reader)
         {
             TransactionAttributeType type = (TransactionAttributeType)reader.ReadByte();
@@ -29,8 +45,16 @@ namespace Neo.Network.P2P.Payloads
             return attribute;
         }
 
+        /// <summary>
+        /// Deserializes the <see cref="TransactionAttribute"/> object from a <see cref="BinaryReader"/>.
+        /// </summary>
+        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
         protected abstract void DeserializeWithoutType(BinaryReader reader);
 
+        /// <summary>
+        /// Converts the attribute to a JSON object.
+        /// </summary>
+        /// <returns>The attribute represented by a JSON object.</returns>
         public virtual JObject ToJson()
         {
             return new JObject
@@ -45,8 +69,18 @@ namespace Neo.Network.P2P.Payloads
             SerializeWithoutType(writer);
         }
 
+        /// <summary>
+        /// Serializes the <see cref="TransactionAttribute"/> object to a <see cref="BinaryWriter"/>.
+        /// </summary>
+        /// <param name="writer">The <see cref="BinaryWriter"/> for writing data.</param>
         protected abstract void SerializeWithoutType(BinaryWriter writer);
 
+        /// <summary>
+        /// Verifies the attribute with the transaction.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to verify the attribute.</param>
+        /// <param name="tx">The <see cref="Transaction"/> that contains the attribute.</param>
+        /// <returns><see langword="true"/> if the verification passes; otherwise, <see langword="false"/>.</returns>
         public virtual bool Verify(DataCache snapshot, Transaction tx) => true;
     }
 }

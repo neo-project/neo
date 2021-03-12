@@ -5,7 +5,7 @@ using System.IO;
 namespace Neo.Network.P2P.Payloads
 {
     /// <summary>
-    /// Represents a group of NEO nodes. Used to respond to <see cref="MessageCommand.GetAddr"/> messages.
+    /// This message is sent to respond to <see cref="MessageCommand.GetAddr"/> messages.
     /// </summary>
     public class AddrPayload : ISerializable
     {
