@@ -96,7 +96,7 @@ namespace Neo.Cryptography
         /// <summary>
         /// Gets all nodes of the hash tree in depth-first order.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>All nodes of the hash tree.</returns>
         public UInt256[] ToHashArray()
         {
             if (root is null) return Array.Empty<UInt256>();
