@@ -55,8 +55,6 @@ namespace Neo.Ledger
         {
             this.system = system;
             this.txrouter = Context.ActorOf(TransactionRouter.Props(system));
-            if (!NativeContract.Ledger.Initialized(system.StoreView))
-                Persist(system.GenesisBlock);
         }
 
         private bool ContainsTransaction(UInt256 hash)
@@ -130,6 +128,13 @@ namespace Neo.Ledger
             // Transactions originally in the pool will automatically be reverified based on their priority.
 
             Sender.Tell(new FillCompleted());
+        }
+
+        private void OnGenesisBlock(Block block)
+        {
+            if (!NativeContract.Ledger.Initialized(system.StoreView))
+                Persist(block);
+            Sender.Tell(new object());
         }
 
         private void OnInventory(IInventory inventory, bool relay = true)
@@ -267,7 +272,10 @@ namespace Neo.Ledger
                     OnNewHeaders(headers);
                     break;
                 case Block block:
-                    OnInventory(block, false);
+                    if (block.Index == 0)
+                        OnGenesisBlock(block);
+                    else
+                        OnInventory(block, false);
                     break;
                 case Transaction tx:
                     OnTransaction(tx);
