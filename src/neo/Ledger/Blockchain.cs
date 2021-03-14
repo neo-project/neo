@@ -27,6 +27,7 @@ namespace Neo.Ledger
         public class FillCompleted { }
         public class Reverify { public IInventory[] Inventories; }
         public class RelayResult { public IInventory Inventory; public VerifyResult Result; }
+        internal class Initialize { }
         private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new LinkedList<Block>(); public HashSet<IActorRef> Nodes = new HashSet<IActorRef>(); }
 
         private readonly static Script onPersistScript, postPersistScript;
@@ -130,10 +131,10 @@ namespace Neo.Ledger
             Sender.Tell(new FillCompleted());
         }
 
-        private void OnGenesisBlock(Block block)
+        private void OnInitialize()
         {
             if (!NativeContract.Ledger.Initialized(system.StoreView))
-                Persist(block);
+                Persist(system.GenesisBlock);
             Sender.Tell(new object());
         }
 
@@ -262,6 +263,9 @@ namespace Neo.Ledger
         {
             switch (message)
             {
+                case Initialize:
+                    OnInitialize();
+                    break;
                 case Import import:
                     OnImport(import.Blocks, import.Verify);
                     break;
@@ -272,10 +276,7 @@ namespace Neo.Ledger
                     OnNewHeaders(headers);
                     break;
                 case Block block:
-                    if (block.Index == 0)
-                        OnGenesisBlock(block);
-                    else
-                        OnInventory(block, false);
+                    OnInventory(block, false);
                     break;
                 case Transaction tx:
                     OnTransaction(tx);

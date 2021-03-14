@@ -65,7 +65,7 @@ namespace Neo
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnSystemLoaded(this);
-            Blockchain.Ask(GenesisBlock).Wait();
+            Blockchain.Ask(new Blockchain.Initialize()).Wait();
         }
 
         public static Block CreateGenesisBlock(ProtocolSettings settings) => new Block
