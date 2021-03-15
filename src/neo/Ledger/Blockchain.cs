@@ -33,7 +33,6 @@ namespace Neo.Ledger
         private readonly static Script onPersistScript, postPersistScript;
         private const int MaxTxToReverifyPerIdle = 10;
         private readonly NeoSystem system;
-        private readonly IActorRef txrouter;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
         private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new Dictionary<uint, UnverifiedBlocksList>();
         private ImmutableHashSet<UInt160> extensibleWitnessWhiteList;
@@ -55,13 +54,6 @@ namespace Neo.Ledger
         public Blockchain(NeoSystem system)
         {
             this.system = system;
-            this.txrouter = Context.ActorOf(TransactionRouter.Props(system));
-        }
-
-        private bool ContainsTransaction(UInt256 hash)
-        {
-            if (system.MemPool.ContainsKey(hash)) return true;
-            return NativeContract.Ledger.ContainsTransaction(system.StoreView, hash);
         }
 
         private void OnImport(IEnumerable<Block> blocks, bool verify)
@@ -247,7 +239,7 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewTransaction(Transaction transaction)
         {
-            if (ContainsTransaction(transaction.Hash)) return VerifyResult.AlreadyExists;
+            if (system.ContainsTransaction(transaction.Hash)) return VerifyResult.AlreadyExists;
             return system.MemPool.TryAdd(transaction, system.StoreView);
         }
 
@@ -300,10 +292,10 @@ namespace Neo.Ledger
 
         private void OnTransaction(Transaction tx)
         {
-            if (ContainsTransaction(tx.Hash))
+            if (system.ContainsTransaction(tx.Hash))
                 SendRelayResult(tx, VerifyResult.AlreadyExists);
             else
-                txrouter.Forward(new TransactionRouter.Preverify(tx, true));
+                system.TxRouter.Forward(new TransactionRouter.Preverify(tx, true));
         }
 
         private void Persist(Block block)

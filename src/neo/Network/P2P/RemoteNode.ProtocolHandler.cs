@@ -1,6 +1,7 @@
 using Akka.Actor;
 using Neo.Cryptography;
 using Neo.IO.Caching;
+using Neo.Ledger;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -294,15 +295,24 @@ namespace Neo.Network.P2P
 
         private void OnInventoryReceived(IInventory inventory)
         {
-            pendingKnownHashes.Remove(inventory.Hash);
-            if (inventory is Block block)
-            {
-                UpdateLastBlockIndex(block.Index);
-                if (block.Index > NativeContract.Ledger.CurrentIndex(system.StoreView) + InvPayload.MaxHashesCount) return;
-            }
             knownHashes.Add(inventory.Hash);
+            pendingKnownHashes.Remove(inventory.Hash);
+            switch (inventory)
+            {
+                case Transaction transaction:
+                    if (!system.ContainsTransaction(transaction.Hash))
+                        system.TxRouter.Tell(new TransactionRouter.Preverify(transaction, true));
+                    break;
+                case Block block:
+                    UpdateLastBlockIndex(block.Index);
+                    if (block.Index > NativeContract.Ledger.CurrentIndex(system.StoreView) + InvPayload.MaxHashesCount) return;
+                    system.Blockchain.Tell(inventory);
+                    break;
+                default:
+                    system.Blockchain.Tell(inventory);
+                    break;
+            }
             system.TaskManager.Tell(inventory);
-            system.Blockchain.Tell(inventory);
         }
 
         private void OnInvMessageReceived(InvPayload payload)

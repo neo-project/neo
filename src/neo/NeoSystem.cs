@@ -6,6 +6,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
@@ -28,6 +29,7 @@ namespace Neo
         public IActorRef Blockchain { get; }
         public IActorRef LocalNode { get; }
         public IActorRef TaskManager { get; }
+        public IActorRef TxRouter;
         /// <summary>
         /// A readonly view of the store.
         /// </summary>
@@ -63,6 +65,7 @@ namespace Neo
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
+            this.TxRouter = ActorSystem.ActorOf(TransactionRouter.Props(this));
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnSystemLoaded(this);
             Blockchain.Ask(new Blockchain.Initialize()).Wait();
@@ -165,6 +168,12 @@ namespace Neo
         public SnapshotCache GetSnapshot()
         {
             return new SnapshotCache(store.GetSnapshot());
+        }
+
+        public bool ContainsTransaction(UInt256 hash)
+        {
+            if (MemPool.ContainsKey(hash)) return true;
+            return NativeContract.Ledger.ContainsTransaction(StoreView, hash);
         }
     }
 }
