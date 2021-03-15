@@ -101,6 +101,7 @@ namespace Neo.Ledger
             public VerifyResult Result { get; init; }
         }
 
+        internal class Initialize { }
         private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new(); public HashSet<IActorRef> Nodes = new(); }
 
         private readonly static Script onPersistScript, postPersistScript;
@@ -133,8 +134,6 @@ namespace Neo.Ledger
         {
             this.system = system;
             this.txrouter = Context.ActorOf(TransactionRouter.Props(system));
-            if (!NativeContract.Ledger.Initialized(system.StoreView))
-                Persist(system.GenesisBlock);
         }
 
         private bool ContainsTransaction(UInt256 hash)
@@ -208,6 +207,13 @@ namespace Neo.Ledger
             // Transactions originally in the pool will automatically be reverified based on their priority.
 
             Sender.Tell(new FillCompleted());
+        }
+
+        private void OnInitialize()
+        {
+            if (!NativeContract.Ledger.Initialized(system.StoreView))
+                Persist(system.GenesisBlock);
+            Sender.Tell(new object());
         }
 
         private void OnInventory(IInventory inventory, bool relay = true)
@@ -335,6 +341,9 @@ namespace Neo.Ledger
         {
             switch (message)
             {
+                case Initialize:
+                    OnInitialize();
+                    break;
                 case Import import:
                     OnImport(import.Blocks, import.Verify);
                     break;

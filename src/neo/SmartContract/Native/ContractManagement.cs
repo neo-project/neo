@@ -4,7 +4,6 @@ using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -62,15 +61,6 @@ namespace Neo.SmartContract.Native
             };
 
             Manifest.Abi.Events = events.ToArray();
-        }
-
-        private static void Check(byte[] script, ContractAbi abi)
-        {
-            Script s = new Script(script, true);
-            foreach (ContractMethodDescriptor method in abi.Methods)
-                s.GetInstruction(method.Offset);
-            abi.GetMethod(string.Empty, 0); // Trigger the construction of ContractAbi.methodDictionary to check the uniqueness of the method names.
-            _ = abi.Events.ToDictionary(p => p.Name); // Check the uniqueness of the event names.
         }
 
         private int GetNextAvailableId(DataCache snapshot)
@@ -163,7 +153,7 @@ namespace Neo.SmartContract.Native
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
             ContractManifest parsedManifest = ContractManifest.Parse(manifest);
-            Check(nef.Script, parsedManifest.Abi);
+            Helper.Check(nef.Script, parsedManifest.Abi);
             UInt160 hash = Helper.GetContractHash(tx.Sender, nef.CheckSum, parsedManifest.Name);
             StorageKey key = CreateStorageKey(Prefix_Contract).Add(hash);
             if (engine.Snapshot.Contains(key))
@@ -221,7 +211,7 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.Hash}");
                 contract.Manifest = manifest_new;
             }
-            Check(contract.Nef.Script, contract.Manifest.Abi);
+            Helper.Check(contract.Nef.Script, contract.Manifest.Abi);
             contract.UpdateCounter++; // Increase update counter
             return OnDeploy(engine, contract, data, true);
         }
