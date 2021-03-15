@@ -300,7 +300,8 @@ namespace Neo.Network.P2P
             switch (inventory)
             {
                 case Transaction transaction:
-                    system.TxRouter.Tell(new TransactionRouter.Preverify(transaction, true));
+                    if (!system.ContainsTransaction(transaction.Hash))
+                        system.TxRouter.Tell(new TransactionRouter.Preverify(transaction, true));
                     break;
                 case Block block:
                     UpdateLastBlockIndex(block.Index);

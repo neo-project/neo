@@ -6,6 +6,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
@@ -167,6 +168,12 @@ namespace Neo
         public SnapshotCache GetSnapshot()
         {
             return new SnapshotCache(store.GetSnapshot());
+        }
+
+        public bool ContainsTransaction(UInt256 hash)
+        {
+            if (MemPool.ContainsKey(hash)) return true;
+            return NativeContract.Ledger.ContainsTransaction(StoreView, hash);
         }
     }
 }

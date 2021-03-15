@@ -56,12 +56,6 @@ namespace Neo.Ledger
             this.system = system;
         }
 
-        private bool ContainsTransaction(UInt256 hash)
-        {
-            if (system.MemPool.ContainsKey(hash)) return true;
-            return NativeContract.Ledger.ContainsTransaction(system.StoreView, hash);
-        }
-
         private void OnImport(IEnumerable<Block> blocks, bool verify)
         {
             uint currentHeight = NativeContract.Ledger.CurrentIndex(system.StoreView);
@@ -245,7 +239,7 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewTransaction(Transaction transaction)
         {
-            if (ContainsTransaction(transaction.Hash)) return VerifyResult.AlreadyExists;
+            if (system.ContainsTransaction(transaction.Hash)) return VerifyResult.AlreadyExists;
             return system.MemPool.TryAdd(transaction, system.StoreView);
         }
 
