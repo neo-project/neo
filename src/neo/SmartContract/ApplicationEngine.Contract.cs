@@ -62,7 +62,7 @@ namespace Neo.SmartContract
 
             // Try to find it in the transaction
 
-            if (ScriptContainer is Transaction tx)
+            if (ScriptContainer is Transaction tx && tx.Witnesses is not null)
             {
                 foreach (var witness in tx.Witnesses)
                 {
