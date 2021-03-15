@@ -9,6 +9,9 @@ using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
+    /// <summary>
+    /// A native contract for storing all blocks and transactions.
+    /// </summary>
     public sealed class LedgerContract : NativeContract
     {
         private const byte Prefix_BlockHash = 9;
@@ -55,6 +58,12 @@ namespace Neo.SmartContract.Native
             return index + maxTraceableBlocks > currentIndex;
         }
 
+        /// <summary>
+        /// Gets the hash of the specified block.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="index">The index of the block.</param>
+        /// <returns>The hash of the block.</returns>
         public UInt256 GetBlockHash(DataCache snapshot, uint index)
         {
             StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_BlockHash).AddBigEndian(index));
@@ -62,28 +71,56 @@ namespace Neo.SmartContract.Native
             return new UInt256(item.Value);
         }
 
+        /// <summary>
+        /// Gets the hash of the current block.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The hash of the current block.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public UInt256 CurrentHash(DataCache snapshot)
         {
             return snapshot[CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>().Hash;
         }
 
+        /// <summary>
+        /// Gets the index of the current block.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The index of the current block.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint CurrentIndex(DataCache snapshot)
         {
             return snapshot[CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>().Index;
         }
 
+        /// <summary>
+        /// Determine whether the specified block is contained in the blockchain.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="hash">The hash of the block.</param>
+        /// <returns><see langword="true"/> if the blockchain contains the block; otherwise, <see langword="false"/>.</returns>
         public bool ContainsBlock(DataCache snapshot, UInt256 hash)
         {
             return snapshot.Contains(CreateStorageKey(Prefix_Block).Add(hash));
         }
 
+        /// <summary>
+        /// Determine whether the specified transaction is contained in the blockchain.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="hash">The hash of the transaction.</param>
+        /// <returns><see langword="true"/> if the blockchain contains the transaction; otherwise, <see langword="false"/>.</returns>
         public bool ContainsTransaction(DataCache snapshot, UInt256 hash)
         {
             return snapshot.Contains(CreateStorageKey(Prefix_Transaction).Add(hash));
         }
 
+        /// <summary>
+        /// Gets a <see cref="TrimmedBlock"/> with the specified hash.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="hash">The hash of the block.</param>
+        /// <returns>The trimmed block.</returns>
         public TrimmedBlock GetTrimmedBlock(DataCache snapshot, UInt256 hash)
         {
             StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_Block).Add(hash));
@@ -107,6 +144,12 @@ namespace Neo.SmartContract.Native
             return block;
         }
 
+        /// <summary>
+        /// Gets a block with the specified hash.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="hash">The hash of the block.</param>
+        /// <returns>The block with the specified hash.</returns>
         public Block GetBlock(DataCache snapshot, UInt256 hash)
         {
             TrimmedBlock state = GetTrimmedBlock(snapshot, hash);
@@ -118,6 +161,12 @@ namespace Neo.SmartContract.Native
             };
         }
 
+        /// <summary>
+        /// Gets a block with the specified index.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="index">The index of the block.</param>
+        /// <returns>The block with the specified index.</returns>
         public Block GetBlock(DataCache snapshot, uint index)
         {
             UInt256 hash = GetBlockHash(snapshot, index);
@@ -125,11 +174,23 @@ namespace Neo.SmartContract.Native
             return GetBlock(snapshot, hash);
         }
 
+        /// <summary>
+        /// Gets a block header with the specified hash.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="hash">The hash of the block.</param>
+        /// <returns>The block header with the specified hash.</returns>
         public Header GetHeader(DataCache snapshot, UInt256 hash)
         {
             return GetTrimmedBlock(snapshot, hash)?.Header;
         }
 
+        /// <summary>
+        /// Gets a block header with the specified index.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="index">The index of the block.</param>
+        /// <returns>The block header with the specified index.</returns>
         public Header GetHeader(DataCache snapshot, uint index)
         {
             UInt256 hash = GetBlockHash(snapshot, index);
@@ -137,11 +198,23 @@ namespace Neo.SmartContract.Native
             return GetHeader(snapshot, hash);
         }
 
+        /// <summary>
+        /// Gets a <see cref="TransactionState"/> with the specified hash.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="hash">The hash of the transaction.</param>
+        /// <returns>The <see cref="TransactionState"/> with the specified hash.</returns>
         public TransactionState GetTransactionState(DataCache snapshot, UInt256 hash)
         {
             return snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
         }
 
+        /// <summary>
+        /// Gets a transaction with the specified hash.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="hash">The hash of the transaction.</param>
+        /// <returns>The transaction with the specified hash.</returns>
         public Transaction GetTransaction(DataCache snapshot, UInt256 hash)
         {
             return GetTransactionState(snapshot, hash)?.Transaction;

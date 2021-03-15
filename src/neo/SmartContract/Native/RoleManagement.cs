@@ -10,12 +10,22 @@ using System.Linq;
 
 namespace Neo.SmartContract.Native
 {
+    /// <summary>
+    /// A native contract for managing roles in NEO system.
+    /// </summary>
     public sealed class RoleManagement : NativeContract
     {
         internal RoleManagement()
         {
         }
 
+        /// <summary>
+        /// Gets the list of specified role.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="role">The type of the role.</param>
+        /// <param name="index">The index of the block to be queried.</param>
+        /// <returns>The public keys of the nodes.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public ECPoint[] GetDesignatedByRole(DataCache snapshot, Role role, uint index)
         {
@@ -34,7 +44,7 @@ namespace Neo.SmartContract.Native
         private void DesignateAsRole(ApplicationEngine engine, Role role, ECPoint[] nodes)
         {
             if (nodes.Length == 0 || nodes.Length > 32)
-                throw new ArgumentException();
+                throw new ArgumentException(null, nameof(nodes));
             if (!Enum.IsDefined(typeof(Role), role))
                 throw new ArgumentOutOfRangeException(nameof(role));
             if (!CheckCommittee(engine))
@@ -45,7 +55,7 @@ namespace Neo.SmartContract.Native
             var key = CreateStorageKey((byte)role).AddBigEndian(index);
             if (engine.Snapshot.Contains(key))
                 throw new InvalidOperationException();
-            NodeList list = new NodeList();
+            NodeList list = new();
             list.AddRange(nodes);
             list.Sort();
             engine.Snapshot.Add(key, new StorageItem(list));

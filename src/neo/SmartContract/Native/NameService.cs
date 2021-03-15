@@ -15,6 +15,9 @@ using System.Text.RegularExpressions;
 
 namespace Neo.SmartContract.Native
 {
+    /// <summary>
+    /// A native name service for NEO system.
+    /// </summary>
     public sealed class NameService : NonfungibleToken<NameService.NameState>
     {
         public override string Symbol => "NNS";
@@ -25,10 +28,10 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_Record = 12;
 
         private const uint OneYear = 365 * 24 * 3600;
-        private static readonly Regex rootRegex = new Regex("^[a-z][a-z0-9]{0,15}$", RegexOptions.Singleline);
-        private static readonly Regex nameRegex = new Regex("^(?=.{3,255}$)([a-z0-9]{1,62}\\.)+[a-z][a-z0-9]{0,15}$", RegexOptions.Singleline);
-        private static readonly Regex ipv4Regex = new Regex("^(?=\\d+\\.\\d+\\.\\d+\\.\\d+$)(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]|[0-9])\\.?){4}$", RegexOptions.Singleline);
-        private static readonly Regex ipv6Regex = new Regex("(?:^)(([0-9a-f]{1,4}:){7,7}[0-9a-f]{1,4}|([0-9a-f]{1,4}:){1,7}:|([0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}|([0-9a-f]{1,4}:){1,5}(:[0-9a-f]{1,4}){1,2}|([0-9a-f]{1,4}:){1,4}(:[0-9a-f]{1,4}){1,3}|([0-9a-f]{1,4}:){1,3}(:[0-9a-f]{1,4}){1,4}|([0-9a-f]{1,4}:){1,2}(:[0-9a-f]{1,4}){1,5}|[0-9a-f]{1,4}:((:[0-9a-f]{1,4}){1,6})|:((:[0-9a-f]{1,4}){1,7}|:))(?=$)", RegexOptions.Singleline);
+        private static readonly Regex rootRegex = new("^[a-z][a-z0-9]{0,15}$", RegexOptions.Singleline);
+        private static readonly Regex nameRegex = new("^(?=.{3,255}$)([a-z0-9]{1,62}\\.)+[a-z][a-z0-9]{0,15}$", RegexOptions.Singleline);
+        private static readonly Regex ipv4Regex = new("^(?=\\d+\\.\\d+\\.\\d+\\.\\d+$)(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]|[0-9])\\.?){4}$", RegexOptions.Singleline);
+        private static readonly Regex ipv6Regex = new("(?:^)(([0-9a-f]{1,4}:){7,7}[0-9a-f]{1,4}|([0-9a-f]{1,4}:){1,7}:|([0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}|([0-9a-f]{1,4}:){1,5}(:[0-9a-f]{1,4}){1,2}|([0-9a-f]{1,4}:){1,4}(:[0-9a-f]{1,4}){1,3}|([0-9a-f]{1,4}:){1,3}(:[0-9a-f]{1,4}){1,4}|([0-9a-f]{1,4}:){1,2}(:[0-9a-f]{1,4}){1,5}|[0-9a-f]{1,4}:((:[0-9a-f]{1,4}){1,6})|:((:[0-9a-f]{1,4}){1,7}|:))(?=$)", RegexOptions.Singleline);
 
         internal NameService()
         {
@@ -76,6 +79,11 @@ namespace Neo.SmartContract.Native
             roots.Insert(~index, root);
         }
 
+        /// <summary>
+        /// Gets all the root names in the system.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>All the root names in the system.</returns>
         public IEnumerable<string> GetRoots(DataCache snapshot)
         {
             return snapshot[CreateStorageKey(Prefix_Roots)].GetInteroperable<StringList>();
@@ -89,12 +97,25 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_DomainPrice)).Set(price);
         }
 
+        /// <summary>
+        /// Gets the price for registering a name.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The price for registering a name.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public long GetPrice(DataCache snapshot)
         {
             return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_DomainPrice)];
         }
 
+        /// <summary>
+        /// Determine whether the specified name is available for register.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="name">The name to check.</param>
+        /// <returns><see langword="true"/> if the name is available; otherwise, <see langword="false"/>.</returns>
+        /// <exception cref="ArgumentException">The format of <paramref name="name"/> is incorrect.</exception>
+        /// <exception cref="InvalidOperationException">The root name doesn't exist.</exception>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public bool IsAvailable(DataCache snapshot, string name)
         {
@@ -120,7 +141,7 @@ namespace Neo.SmartContract.Native
             StringList roots = engine.Snapshot[CreateStorageKey(Prefix_Roots)].GetInteroperable<StringList>();
             if (roots.BinarySearch(names[1]) < 0) throw new InvalidOperationException();
             engine.AddGas(GetPrice(engine.Snapshot));
-            NameState state = new NameState
+            NameState state = new()
             {
                 Owner = owner,
                 Name = name,
@@ -198,6 +219,13 @@ namespace Neo.SmartContract.Native
             item.Value = Utility.StrictUTF8.GetBytes(data);
         }
 
+        /// <summary>
+        /// Gets a record for the specified name.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="name">The name for the record.</param>
+        /// <param name="type">The type of the record.</param>
+        /// <returns>The record without resolved. Or <see langword="null"/> if no record is found.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public string GetRecord(DataCache snapshot, string name, RecordType type)
         {
@@ -209,6 +237,12 @@ namespace Neo.SmartContract.Native
             return Utility.StrictUTF8.GetString(item.Value);
         }
 
+        /// <summary>
+        /// Gets all the records for the specified name.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="name">The name for the record.</param>
+        /// <returns>All the records for the name.</returns>
         public IEnumerable<(RecordType Type, string Data)> GetRecords(DataCache snapshot, string name)
         {
             if (!nameRegex.IsMatch(name)) throw new ArgumentException(null, nameof(name));
@@ -229,6 +263,13 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.Delete(CreateStorageKey(Prefix_Record).Add(hash_domain).Add(GetKey(Utility.StrictUTF8.GetBytes(name))).Add(type));
         }
 
+        /// <summary>
+        /// Gets and resolves a record for the specified name.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="name">The name for the record.</param>
+        /// <param name="type">The type of the record.</param>
+        /// <returns>The resolved record.</returns>
         [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.ReadStates)]
         public string Resolve(DataCache snapshot, string name, RecordType type)
         {
@@ -244,9 +285,19 @@ namespace Neo.SmartContract.Native
             return Resolve(snapshot, data, type, redirect - 1);
         }
 
+        /// <summary>
+        /// The token state of <see cref="NameService"/>.
+        /// </summary>
         public class NameState : NFTState
         {
+            /// <summary>
+            /// Indicates when the name expires.
+            /// </summary>
             public uint Expiration;
+
+            /// <summary>
+            /// The administrator of the name.
+            /// </summary>
             public UInt160 Admin;
 
             public override byte[] Id => Utility.StrictUTF8.GetBytes(Name);

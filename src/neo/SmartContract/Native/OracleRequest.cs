@@ -5,14 +5,44 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
 {
+    /// <summary>
+    /// Represents an Oracle request in smart contracts.
+    /// </summary>
     public class OracleRequest : IInteroperable
     {
+        /// <summary>
+        /// The original transaction that sent the related request.
+        /// </summary>
         public UInt256 OriginalTxid;
+
+        /// <summary>
+        /// The most GAS that can be used when executing response callback.
+        /// </summary>
         public long GasForResponse;
+
+        /// <summary>
+        /// The url of the request.
+        /// </summary>
         public string Url;
+
+        /// <summary>
+        /// The filter for the response.
+        /// </summary>
         public string Filter;
+
+        /// <summary>
+        /// The hash of the callback contract.
+        /// </summary>
         public UInt160 CallbackContract;
+
+        /// <summary>
+        /// The name of the callback method.
+        /// </summary>
         public string CallbackMethod;
+
+        /// <summary>
+        /// The user-defined object that will be passed to the callback.
+        /// </summary>
         public byte[] UserData;
 
         public void FromStackItem(StackItem stackItem)

@@ -29,14 +29,14 @@ namespace Neo.SmartContract.Manifest
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="WildcardContainer&lt;T&gt;"/> class with the initial elements.
+        /// Creates a new instance of the <see cref="WildcardContainer{T}"/> class with the initial elements.
         /// </summary>
         /// <param name="data">The initial elements.</param>
         /// <returns>The created list.</returns>
         public static WildcardContainer<T> Create(params T[] data) => new(data);
 
         /// <summary>
-        /// Creates a new instance of the <see cref="WildcardContainer&lt;T&gt;"/> class with wildcard.
+        /// Creates a new instance of the <see cref="WildcardContainer{T}"/> class with wildcard.
         /// </summary>
         /// <returns>The created list.</returns>
         public static WildcardContainer<T> CreateWildcard() => new(null);
