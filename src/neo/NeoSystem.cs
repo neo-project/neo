@@ -12,7 +12,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
-using static Neo.Ledger.Blockchain;
 
 namespace Neo
 {
@@ -66,7 +65,7 @@ namespace Neo
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnSystemLoaded(this);
-            Blockchain.Ask<FillCompleted>(new FillMemoryPool { Transactions = Enumerable.Empty<Transaction>() }).Wait();
+            Blockchain.Ask(new Blockchain.Initialize()).Wait();
         }
 
         public static Block CreateGenesisBlock(ProtocolSettings settings) => new Block
