@@ -1,5 +1,4 @@
 using Neo.Cryptography.ECC;
-using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM.Types;
@@ -21,12 +20,6 @@ namespace Neo.SmartContract
         /// </summary>
         /// <remarks>Note: It is for internal use only. Do not use it directly in smart contracts.</remarks>
         public static readonly InteropDescriptor System_Contract_CallNative = Register("System.Contract.CallNative", nameof(CallNativeContract), 0, CallFlags.None);
-
-        /// <summary>
-        /// The <see cref="InteropDescriptor"/> of System.Contract.IsStandard.
-        /// Checks whether the specified contract is a standard contract.
-        /// </summary>
-        public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 1 << 10, CallFlags.ReadStates);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Contract.GetCallFlags.
@@ -98,38 +91,6 @@ namespace Neo.SmartContract
             if (updates[0] > NativeContract.Ledger.CurrentIndex(Snapshot))
                 throw new InvalidOperationException($"The native contract {contract.Name} is not active.");
             contract.Invoke(this, version);
-        }
-
-        /// <summary>
-        /// The implementation of System.Contract.IsStandard.
-        /// Checks whether the specified contract is a standard contract.
-        /// </summary>
-        /// <param name="hash">The hash of the contract.</param>
-        /// <returns><see langword="true"/> if the contract is standard; otherwise, <see langword="false"/>.</returns>
-        protected internal bool IsStandardContract(UInt160 hash)
-        {
-            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, hash);
-
-            // It's a stored contract
-
-            if (contract != null) return contract.Script.IsStandardContract();
-
-            // Try to find it in the transaction
-
-            if (ScriptContainer is Transaction tx)
-            {
-                foreach (var witness in tx.Witnesses)
-                {
-                    if (witness.ScriptHash == hash)
-                    {
-                        return witness.VerificationScript.IsStandardContract();
-                    }
-                }
-            }
-
-            // It's not possible to determine if it's standard
-
-            return false;
         }
 
         /// <summary>
