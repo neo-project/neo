@@ -13,7 +13,7 @@ namespace Neo.Network.P2P.Payloads
     public class MerkleBlockPayload : ISerializable
     {
         /// <summary>
-        /// The head of the block.
+        /// The header of the block.
         /// </summary>
         public Header Header;
 

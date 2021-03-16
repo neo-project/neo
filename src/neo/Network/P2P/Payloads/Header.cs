@@ -83,7 +83,7 @@ namespace Neo.Network.P2P.Payloads
         }
 
         /// <summary>
-        /// The address of the consensus nodes that generates the next block.
+        /// The multi-signature address of the consensus nodes that generates the next block.
         /// </summary>
         public UInt160 NextConsensus
         {

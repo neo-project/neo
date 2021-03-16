@@ -15,7 +15,7 @@ namespace Neo.Network.P2P.Payloads
     public sealed class Block : IEquatable<Block>, IInventory
     {
         /// <summary>
-        /// The head of the block.
+        /// The header of the block.
         /// </summary>
         public Header Header;
 
@@ -57,7 +57,7 @@ namespace Neo.Network.P2P.Payloads
         public byte PrimaryIndex => Header.PrimaryIndex;
 
         /// <summary>
-        /// The address of the consensus nodes that generates the next block.
+        /// The multi-signature address of the consensus nodes that generates the next block.
         /// </summary>
         public UInt160 NextConsensus => Header.NextConsensus;
 

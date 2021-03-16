@@ -14,7 +14,7 @@ namespace Neo.SmartContract.Native
     public class TrimmedBlock : IInteroperable, ISerializable
     {
         /// <summary>
-        /// The head of the block.
+        /// The header of the block.
         /// </summary>
         public Header Header;
 

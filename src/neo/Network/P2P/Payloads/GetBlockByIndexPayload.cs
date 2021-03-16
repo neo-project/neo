@@ -5,7 +5,7 @@ using System.IO;
 namespace Neo.Network.P2P.Payloads
 {
     /// <summary>
-    /// This message is sent to request for blocks.
+    /// This message is sent to request for blocks by index.
     /// </summary>
     public class GetBlockByIndexPayload : ISerializable
     {
