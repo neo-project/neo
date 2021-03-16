@@ -126,11 +126,11 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets a request with the specified id.
+        /// Gets a pending request with the specified id.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="id">The id of the request.</param>
-        /// <returns>The Oracle request. Or <see langword="null"/> if no request with the specified id is found.</returns>
+        /// <returns>The pending request. Or <see langword="null"/> if no request with the specified id is found.</returns>
         public OracleRequest GetRequest(DataCache snapshot, ulong id)
         {
             return snapshot.TryGet(CreateStorageKey(Prefix_Request).AddBigEndian(id))?.GetInteroperable<OracleRequest>();

@@ -27,7 +27,7 @@ namespace Neo.SmartContract.Native
         public BigInteger TotalAmount { get; }
 
         /// <summary>
-        /// Indicates the effective voting turnout in NEO. Voting is valid only when the voting turnout exceeds this value.
+        /// Indicates the effective voting turnout in NEO. The voted candidates will only be effective when the voting turnout exceeds this value.
         /// </summary>
         public const decimal EffectiveVoterTurnout = 0.2M;
 
@@ -124,11 +124,11 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Determine whether the committee will be refreshed at the specified height.
+        /// Determine whether the votes should be recounted at the specified height.
         /// </summary>
         /// <param name="height">The height to be checked.</param>
         /// <param name="committeeMembersCount">The number of committee members in the system.</param>
-        /// <returns><see langword="true"/> if the committee will be refreshed; otherwise, <see langword="false"/>.</returns>
+        /// <returns><see langword="true"/> if the votes should be recounted; otherwise, <see langword="false"/>.</returns>
         public static bool ShouldRefreshCommittee(uint height, int committeeMembersCount) => height % committeeMembersCount == 0;
 
         internal override ContractTask Initialize(ApplicationEngine engine)
@@ -322,10 +322,10 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets all candidates.
+        /// Gets all registered candidates.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <returns>All the candidates registered.</returns>
+        /// <returns>All the registered candidates.</returns>
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
         public (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(DataCache snapshot)
         {

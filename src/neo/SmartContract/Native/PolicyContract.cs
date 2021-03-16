@@ -27,12 +27,12 @@ namespace Neo.SmartContract.Native
         public const uint DefaultFeePerByte = 1000;
 
         /// <summary>
-        /// The maximum execution fee factor that the committee could set.
+        /// The maximum execution fee factor that the committee can set.
         /// </summary>
         public const uint MaxExecFeeFactor = 1000;
 
         /// <summary>
-        /// The maximum storage price that the committee could set.
+        /// The maximum storage price that the committee can set.
         /// </summary>
         public const uint MaxStoragePrice = 10000000;
 
@@ -54,10 +54,10 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets the network fee per byte of transactions.
+        /// Gets the network fee per transaction byte.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <returns>The network fee per byte of transactions.</returns>
+        /// <returns>The network fee per transaction byte.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public long GetFeePerByte(DataCache snapshot)
         {
@@ -65,7 +65,7 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets the execution fee factor.
+        /// Gets the execution fee factor. This is a multiplier that can be adjusted by the committee to adjust the system fees for transactions.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The execution fee factor.</returns>

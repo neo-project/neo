@@ -20,7 +20,7 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets the list of specified role.
+        /// Gets the list of nodes for the specified role.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="role">The type of the role.</param>

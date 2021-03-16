@@ -6,17 +6,17 @@ namespace Neo.SmartContract.Native
     public enum Role : byte
     {
         /// <summary>
-        /// The validator of state. Used to generate and sign the state root.
+        /// The validators of state. Used to generate and sign the state root.
         /// </summary>
         StateValidator = 4,
 
         /// <summary>
-        /// The node work for the Oracle service.
+        /// The nodes used to process Oracle requests.
         /// </summary>
         Oracle = 8,
 
         /// <summary>
-        /// NeoFS Alphabet node.
+        /// NeoFS Alphabet nodes.
         /// </summary>
         NeoFSAlphabetNode = 16
     }

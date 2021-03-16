@@ -109,7 +109,7 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Determine whether the specified name is available for register.
+        /// Determine whether the specified name is available to be registered.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="name">The name to check.</param>
