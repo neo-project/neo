@@ -1,5 +1,4 @@
 using Neo.Cryptography.ECC;
-using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM.Types;
@@ -12,7 +11,6 @@ namespace Neo.SmartContract
     {
         public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 1 << 15, CallFlags.ReadStates | CallFlags.AllowCall);
         public static readonly InteropDescriptor System_Contract_CallNative = Register("System.Contract.CallNative", nameof(CallNativeContract), 0, CallFlags.None);
-        public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 1 << 10, CallFlags.ReadStates);
         public static readonly InteropDescriptor System_Contract_GetCallFlags = Register("System.Contract.GetCallFlags", nameof(GetCallFlags), 1 << 10, CallFlags.None);
         /// <summary>
         /// Calculate corresponding account scripthash for given public key
@@ -50,32 +48,6 @@ namespace Neo.SmartContract
             if (updates[0] > NativeContract.Ledger.CurrentIndex(Snapshot))
                 throw new InvalidOperationException($"The native contract {contract.Name} is not active.");
             contract.Invoke(this, version);
-        }
-
-        protected internal bool IsStandardContract(UInt160 hash)
-        {
-            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, hash);
-
-            // It's a stored contract
-
-            if (contract != null) return contract.Script.IsStandardContract();
-
-            // Try to find it in the transaction
-
-            if (ScriptContainer is Transaction tx && tx.Witnesses is not null)
-            {
-                foreach (var witness in tx.Witnesses)
-                {
-                    if (witness.ScriptHash == hash)
-                    {
-                        return witness.VerificationScript.IsStandardContract();
-                    }
-                }
-            }
-
-            // It's not possible to determine if it's standard
-
-            return false;
         }
 
         protected internal CallFlags GetCallFlags()
