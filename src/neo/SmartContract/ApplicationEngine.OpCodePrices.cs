@@ -5,6 +5,9 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
+        /// <summary>
+        /// The prices of all the opcodes.
+        /// </summary>
         public static readonly IReadOnlyDictionary<OpCode, long> OpCodePrices = new Dictionary<OpCode, long>
         {
             [OpCode.PUSHINT8] = 1 << 0,

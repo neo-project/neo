@@ -283,25 +283,23 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestIterator_Next()
         {
-            var engine = GetEngine();
             var arr = new VMArray {
                 new byte[]{ 0x01 },
                 new byte[]{ 0x02 }
             };
-            engine.IteratorNext(new ArrayWrapper(arr)).Should().BeTrue();
+            ApplicationEngine.IteratorNext(new ArrayWrapper(arr)).Should().BeTrue();
         }
 
         [TestMethod]
         public void TestIterator_Value()
         {
-            var engine = GetEngine();
             var arr = new VMArray {
                 new byte[]{ 0x01 },
                 new byte[]{ 0x02 }
             };
             var wrapper = new ArrayWrapper(arr);
             wrapper.Next();
-            engine.IteratorValue(wrapper).GetSpan().ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
+            ApplicationEngine.IteratorValue(wrapper).GetSpan().ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
         }
 
         [TestMethod]

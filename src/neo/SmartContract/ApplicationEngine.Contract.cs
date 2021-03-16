@@ -10,19 +10,62 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
-        public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 1 << 15, CallFlags.ReadStates | CallFlags.AllowCall);
-        public static readonly InteropDescriptor System_Contract_CallNative = Register("System.Contract.CallNative", nameof(CallNativeContract), 0, CallFlags.None);
-        public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 1 << 10, CallFlags.ReadStates);
-        public static readonly InteropDescriptor System_Contract_GetCallFlags = Register("System.Contract.GetCallFlags", nameof(GetCallFlags), 1 << 10, CallFlags.None);
         /// <summary>
-        /// Calculate corresponding account scripthash for given public key
-        /// Warning: check first that input public key is valid, before creating the script.
+        /// The <see cref="InteropDescriptor"/> of System.Contract.Call.
+        /// Use it to call another contract dynamically.
+        /// </summary>
+        public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 1 << 15, CallFlags.ReadStates | CallFlags.AllowCall);
+
+        /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Contract.CallNative.
+        /// </summary>
+        /// <remarks>Note: It is for internal use only. Do not use it directly in smart contracts.</remarks>
+        public static readonly InteropDescriptor System_Contract_CallNative = Register("System.Contract.CallNative", nameof(CallNativeContract), 0, CallFlags.None);
+
+        /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Contract.IsStandard.
+        /// Checks whether the specified contract is a standard contract.
+        /// </summary>
+        public static readonly InteropDescriptor System_Contract_IsStandard = Register("System.Contract.IsStandard", nameof(IsStandardContract), 1 << 10, CallFlags.ReadStates);
+
+        /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Contract.GetCallFlags.
+        /// Gets the <see cref="CallFlags"/> of the current context.
+        /// </summary>
+        public static readonly InteropDescriptor System_Contract_GetCallFlags = Register("System.Contract.GetCallFlags", nameof(GetCallFlags), 1 << 10, CallFlags.None);
+
+        /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Contract.CreateStandardAccount.
+        /// Calculates corresponding account scripthash for the given public key.
         /// </summary>
         public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 1 << 8, CallFlags.None);
+
+        /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Contract.CreateMultisigAccount.
+        /// Calculates corresponding multisig account scripthash for the given public keys.
+        /// </summary>
         public static readonly InteropDescriptor System_Contract_CreateMultisigAccount = Register("System.Contract.CreateMultisigAccount", nameof(CreateMultisigAccount), 1 << 8, CallFlags.None);
+
+        /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Contract.NativeOnPersist.
+        /// </summary>
+        /// <remarks>Note: It is for internal use only. Do not use it directly in smart contracts.</remarks>
         public static readonly InteropDescriptor System_Contract_NativeOnPersist = Register("System.Contract.NativeOnPersist", nameof(NativeOnPersist), 0, CallFlags.States);
+
+        /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Contract.NativePostPersist.
+        /// </summary>
+        /// <remarks>Note: It is for internal use only. Do not use it directly in smart contracts.</remarks>
         public static readonly InteropDescriptor System_Contract_NativePostPersist = Register("System.Contract.NativePostPersist", nameof(NativePostPersist), 0, CallFlags.States);
 
+        /// <summary>
+        /// The implementation of System.Contract.Call.
+        /// Use it to call another contract dynamically.
+        /// </summary>
+        /// <param name="contractHash">The hash of the contract to be called.</param>
+        /// <param name="method">The method of the contract to be called.</param>
+        /// <param name="callFlags">The <see cref="CallFlags"/> to be used to call the contract.</param>
+        /// <param name="args">The arguments to be used.</param>
         protected internal void CallContract(UInt160 contractHash, string method, CallFlags callFlags, Array args)
         {
             if (method.StartsWith('_')) throw new ArgumentException($"Invalid Method Name: {method}");
@@ -39,6 +82,11 @@ namespace Neo.SmartContract
             CallContractInternal(contract, md, callFlags, hasReturnValue, args);
         }
 
+        /// <summary>
+        /// The implementation of System.Contract.CallNative.
+        /// Calls to a native contract.
+        /// </summary>
+        /// <param name="version">The version of the native contract to be called.</param>
         protected internal void CallNativeContract(byte version)
         {
             NativeContract contract = NativeContract.GetContract(CurrentScriptHash);
@@ -52,6 +100,12 @@ namespace Neo.SmartContract
             contract.Invoke(this, version);
         }
 
+        /// <summary>
+        /// The implementation of System.Contract.IsStandard.
+        /// Checks whether the specified contract is a standard contract.
+        /// </summary>
+        /// <param name="hash">The hash of the contract.</param>
+        /// <returns><see langword="true"/> if the contract is standard; otherwise, <see langword="false"/>.</returns>
         protected internal bool IsStandardContract(UInt160 hash)
         {
             ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, hash);
@@ -78,22 +132,44 @@ namespace Neo.SmartContract
             return false;
         }
 
+        /// <summary>
+        /// The implementation of System.Contract.GetCallFlags.
+        /// Gets the <see cref="CallFlags"/> of the current context.
+        /// </summary>
+        /// <returns>The <see cref="CallFlags"/> of the current context.</returns>
         protected internal CallFlags GetCallFlags()
         {
             var state = CurrentContext.GetState<ExecutionContextState>();
             return state.CallFlags;
         }
 
-        protected internal UInt160 CreateStandardAccount(ECPoint pubKey)
+        /// <summary>
+        /// The implementation of System.Contract.CreateStandardAccount.
+        /// Calculates corresponding account scripthash for the given public key.
+        /// </summary>
+        /// <param name="pubKey">The public key of the account.</param>
+        /// <returns>The hash of the account.</returns>
+        internal protected static UInt160 CreateStandardAccount(ECPoint pubKey)
         {
             return Contract.CreateSignatureRedeemScript(pubKey).ToScriptHash();
         }
 
-        protected internal UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
+        /// <summary>
+        /// The implementation of System.Contract.CreateMultisigAccount.
+        /// Calculates corresponding multisig account scripthash for the given public keys.
+        /// </summary>
+        /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="pubKeys">The public keys of the account.</param>
+        /// <returns>The hash of the account.</returns>
+        internal protected static UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
         {
             return Contract.CreateMultiSigRedeemScript(m, pubKeys).ToScriptHash();
         }
 
+        /// <summary>
+        /// The implementation of System.Contract.NativeOnPersist.
+        /// Calls to the <see cref="NativeContract.OnPersist"/> of all native contracts.
+        /// </summary>
         protected internal async void NativeOnPersist()
         {
             try
@@ -114,6 +190,10 @@ namespace Neo.SmartContract
             }
         }
 
+        /// <summary>
+        /// The implementation of System.Contract.NativePostPersist.
+        /// Calls to the <see cref="NativeContract.PostPersist"/> of all native contracts.
+        /// </summary>
         protected internal async void NativePostPersist()
         {
             try
