@@ -7,14 +7,20 @@ using System.Runtime.InteropServices;
 namespace Neo
 {
     /// <summary>
-    /// This class stores a 256 bit unsigned int, represented as a 32-byte little-endian byte array
-    /// Composed by ulong(64) + ulong(64) + ulong(64) + ulong(64) = UInt256(256)
+    /// Represents a 256-bit unsigned integer.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public class UInt256 : IComparable<UInt256>, IEquatable<UInt256>, ISerializable
     {
+        /// <summary>
+        /// The length of <see cref="UInt256"/> values.
+        /// </summary>
         public const int Length = 32;
-        public static readonly UInt256 Zero = new UInt256();
+
+        /// <summary>
+        /// Represents 0.
+        /// </summary>
+        public static readonly UInt256 Zero = new();
 
         [FieldOffset(0)] private ulong value1;
         [FieldOffset(8)] private ulong value2;
@@ -23,23 +29,26 @@ namespace Neo
 
         public int Size => Length;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UInt256"/> class.
+        /// </summary>
         public UInt256()
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UInt256"/> class.
+        /// </summary>
+        /// <param name="value">The value of the <see cref="UInt256"/>.</param>
         public unsafe UInt256(ReadOnlySpan<byte> value)
         {
             fixed (ulong* p = &value1)
             {
-                Span<byte> dst = new Span<byte>(p, Length);
+                Span<byte> dst = new(p, Length);
                 value[..Length].CopyTo(dst);
             }
         }
 
-        /// <summary>
-        /// Method CompareTo returns 1 if this UInt256 is bigger than other UInt256; -1 if it's smaller; 0 if it's equals
-        /// Example: assume this is 01ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a4, this.CompareTo(02ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a3) returns 1
-        /// </summary>
         public int CompareTo(UInt256 other)
         {
             int result = value4.CompareTo(other.value4);
@@ -59,18 +68,12 @@ namespace Neo
             value4 = reader.ReadUInt64();
         }
 
-        /// <summary>
-        /// Method Equals returns true if objects are equal, false otherwise
-        /// </summary>
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(obj, this)) return true;
             return Equals(obj as UInt256);
         }
 
-        /// <summary>
-        /// Method Equals returns true if objects are equal, false otherwise
-        /// </summary>
         public bool Equals(UInt256 other)
         {
             if (other is null) return false;
@@ -86,9 +89,11 @@ namespace Neo
         }
 
         /// <summary>
-        /// Method Parse receives a big-endian hex string and stores as a UInt256 little-endian 32-bytes array
-        /// Example: Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01") should create UInt256 01ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a4
+        /// Parses an <see cref="UInt256"/> from the specified <see cref="string"/>.
         /// </summary>
+        /// <param name="value">An <see cref="UInt256"/> represented by a <see cref="string"/>.</param>
+        /// <returns>The parsed <see cref="UInt256"/>.</returns>
+        /// <exception cref="FormatException"><paramref name="value"/> is not in the correct format.</exception>
         public static UInt256 Parse(string value)
         {
             if (!TryParse(value, out var result)) throw new FormatException();
@@ -109,9 +114,11 @@ namespace Neo
         }
 
         /// <summary>
-        /// Method TryParse tries to parse a big-endian hex string and store it as a UInt256 little-endian 32-bytes array
-        /// Example: TryParse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01", result) should create result UInt256 01ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a4
+        /// Parses an <see cref="UInt256"/> from the specified <see cref="string"/>.
         /// </summary>
+        /// <param name="s">An <see cref="UInt256"/> represented by a <see cref="string"/>.</param>
+        /// <param name="result">The parsed <see cref="UInt256"/>.</param>
+        /// <returns><see langword="true"/> if an <see cref="UInt256"/> is successfully parsed; otherwise, <see langword="false"/>.</returns>
         public static bool TryParse(string s, out UInt256 result)
         {
             if (s == null)
@@ -120,7 +127,7 @@ namespace Neo
                 return false;
             }
             if (s.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
-                s = s.Substring(2);
+                s = s[2..];
             if (s.Length != Length * 2)
             {
                 result = null;
@@ -137,9 +144,6 @@ namespace Neo
             return true;
         }
 
-        /// <summary>
-        /// Returns true if left UInt256 is equals to right UInt256
-        /// </summary>
         public static bool operator ==(UInt256 left, UInt256 right)
         {
             if (ReferenceEquals(left, right)) return true;
@@ -147,45 +151,26 @@ namespace Neo
             return left.Equals(right);
         }
 
-        /// <summary>
-        /// Returns true if left UIntBase is not equals to right UIntBase
-        /// </summary>
         public static bool operator !=(UInt256 left, UInt256 right)
         {
             return !(left == right);
         }
 
-        /// <summary>
-        /// Operator > returns true if left UInt256 is bigger than right UInt256
-        /// Example: UInt256(01ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a4) > UInt256(02ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a3) is true
-        /// </summary>
         public static bool operator >(UInt256 left, UInt256 right)
         {
             return left.CompareTo(right) > 0;
         }
 
-        /// <summary>
-        /// Operator >= returns true if left UInt256 is bigger or equals to right UInt256
-        /// Example: UInt256(01ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a4) >= UInt256(02ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a3) is true
-        /// </summary>
         public static bool operator >=(UInt256 left, UInt256 right)
         {
             return left.CompareTo(right) >= 0;
         }
 
-        /// <summary>
-        /// Operator < returns true if left UInt256 is less than right UInt256
-        /// Example: UInt256(02ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a3) < UInt256(01ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a4) is true
-        /// </summary>
         public static bool operator <(UInt256 left, UInt256 right)
         {
             return left.CompareTo(right) < 0;
         }
 
-        /// <summary>
-        /// Operator <= returns true if left UInt256 is less or equals to right UInt256
-        /// Example: UInt256(02ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a3) <= UInt256(01ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a4) is true
-        /// </summary>
         public static bool operator <=(UInt256 left, UInt256 right)
         {
             return left.CompareTo(right) <= 0;

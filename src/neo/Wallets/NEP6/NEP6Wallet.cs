@@ -11,6 +11,10 @@ using UserWallet = Neo.Wallets.SQLite.UserWallet;
 
 namespace Neo.Wallets.NEP6
 {
+    /// <summary>
+    /// An implementation of the NEP-6 wallet standard.
+    /// </summary>
+    /// <remarks>https://github.com/neo-project/proposals/blob/master/nep-6.mediawiki</remarks>
     public class NEP6Wallet : Wallet
     {
         private string password;
@@ -19,10 +23,24 @@ namespace Neo.Wallets.NEP6
         private readonly Dictionary<UInt160, NEP6Account> accounts;
         private readonly JObject extra;
 
+        /// <summary>
+        /// The parameters of the SCrypt algorithm used for encrypting and decrypting the private keys in the wallet.
+        /// </summary>
         public readonly ScryptParameters Scrypt;
+
         public override string Name => name;
+
+        /// <summary>
+        /// The version of the wallet standard. It is currently fixed at 1.0 and will be used for functional upgrades in the future.
+        /// </summary>
         public override Version Version => version;
 
+        /// <summary>
+        /// Loads or creates a wallet at the specified path.
+        /// </summary>
+        /// <param name="path">The path of the wallet file.</param>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
+        /// <param name="name">The name of the wallet. If the wallet is loaded from an existing file, this parameter is ignored.</param>
         public NEP6Wallet(string path, ProtocolSettings settings, string name = null) : base(path, settings)
         {
             if (File.Exists(path))
@@ -33,13 +51,19 @@ namespace Neo.Wallets.NEP6
             else
             {
                 this.name = name;
-                this.version = Version.Parse("3.0");
+                this.version = Version.Parse("1.0");
                 this.Scrypt = ScryptParameters.Default;
                 this.accounts = new Dictionary<UInt160, NEP6Account>();
                 this.extra = JObject.Null;
             }
         }
 
+        /// <summary>
+        /// Loads the wallet with the specified JSON string.
+        /// </summary>
+        /// <param name="path">The path of the wallet.</param>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
+        /// <param name="json">The JSON object representing the wallet.</param>
         public NEP6Wallet(string path, ProtocolSettings settings, JObject json) : base(path, settings)
         {
             LoadFromJson(json, out Scrypt, out accounts, out extra);
@@ -95,15 +119,15 @@ namespace Neo.Wallets.NEP6
 
         public override WalletAccount CreateAccount(byte[] privateKey)
         {
-            KeyPair key = new KeyPair(privateKey);
-            NEP6Contract contract = new NEP6Contract
+            KeyPair key = new(privateKey);
+            NEP6Contract contract = new()
             {
                 Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
                 ParameterList = new[] { ContractParameterType.Signature },
                 ParameterNames = new[] { "signature" },
                 Deployed = false
             };
-            NEP6Account account = new NEP6Account(this, contract.ScriptHash, key, password)
+            NEP6Account account = new(this, contract.ScriptHash, key, password)
             {
                 Contract = contract
             };
@@ -113,8 +137,7 @@ namespace Neo.Wallets.NEP6
 
         public override WalletAccount CreateAccount(Contract contract, KeyPair key = null)
         {
-            NEP6Contract nep6contract = contract as NEP6Contract;
-            if (nep6contract == null)
+            if (contract is not NEP6Contract nep6contract)
             {
                 nep6contract = new NEP6Contract
                 {
@@ -136,11 +159,16 @@ namespace Neo.Wallets.NEP6
 
         public override WalletAccount CreateAccount(UInt160 scriptHash)
         {
-            NEP6Account account = new NEP6Account(this, scriptHash);
+            NEP6Account account = new(this, scriptHash);
             AddAccount(account, true);
             return account;
         }
 
+        /// <summary>
+        /// Decrypts the specified NEP-2 string with the password of the wallet.
+        /// </summary>
+        /// <param name="nep2key">The NEP-2 string to decrypt.</param>
+        /// <returns>The decrypted private key.</returns>
         public KeyPair DecryptKey(string nep2key)
         {
             return new KeyPair(GetPrivateKeyFromNEP2(nep2key, password, ProtocolSettings.AddressVersion, Scrypt.N, Scrypt.R, Scrypt.P));
@@ -179,14 +207,14 @@ namespace Neo.Wallets.NEP6
             {
                 key = new KeyPair(ecdsa.ExportParameters(true).D);
             }
-            NEP6Contract contract = new NEP6Contract
+            NEP6Contract contract = new()
             {
                 Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
                 ParameterList = new[] { ContractParameterType.Signature },
                 ParameterNames = new[] { "signature" },
                 Deployed = false
             };
-            NEP6Account account = new NEP6Account(this, contract.ScriptHash, key, password)
+            NEP6Account account = new(this, contract.ScriptHash, key, password)
             {
                 Contract = contract
             };
@@ -196,15 +224,15 @@ namespace Neo.Wallets.NEP6
 
         public override WalletAccount Import(string wif)
         {
-            KeyPair key = new KeyPair(GetPrivateKeyFromWIF(wif));
-            NEP6Contract contract = new NEP6Contract
+            KeyPair key = new(GetPrivateKeyFromWIF(wif));
+            NEP6Contract contract = new()
             {
                 Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
                 ParameterList = new[] { ContractParameterType.Signature },
                 ParameterNames = new[] { "signature" },
                 Deployed = false
             };
-            NEP6Account account = new NEP6Account(this, contract.ScriptHash, key, password)
+            NEP6Account account = new(this, contract.ScriptHash, key, password)
             {
                 Contract = contract
             };
@@ -214,8 +242,8 @@ namespace Neo.Wallets.NEP6
 
         public override WalletAccount Import(string nep2, string passphrase, int N = 16384, int r = 8, int p = 8)
         {
-            KeyPair key = new KeyPair(GetPrivateKeyFromNEP2(nep2, passphrase, ProtocolSettings.AddressVersion, N, r, p));
-            NEP6Contract contract = new NEP6Contract
+            KeyPair key = new(GetPrivateKeyFromNEP2(nep2, passphrase, ProtocolSettings.AddressVersion, N, r, p));
+            NEP6Contract contract = new()
             {
                 Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
                 ParameterList = new[] { ContractParameterType.Signature },
@@ -237,10 +265,18 @@ namespace Neo.Wallets.NEP6
             password = null;
         }
 
+        /// <summary>
+        /// Migrates the accounts from <see cref="UserWallet"/> to a new <see cref="NEP6Wallet"/>.
+        /// </summary>
+        /// <param name="path">The path of the new wallet file.</param>
+        /// <param name="db3path">The path of the db3 wallet file.</param>
+        /// <param name="password">The password of the wallets.</param>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
+        /// <returns>The created new wallet.</returns>
         public static NEP6Wallet Migrate(string path, string db3path, string password, ProtocolSettings settings)
         {
             UserWallet wallet_old = UserWallet.Open(db3path, password, settings);
-            NEP6Wallet wallet_new = new NEP6Wallet(path, settings, wallet_old.Name);
+            NEP6Wallet wallet_new = new(path, settings, wallet_old.Name);
             using (wallet_new.Unlock(password))
             {
                 foreach (WalletAccount account in wallet_old.GetAccounts())
@@ -251,9 +287,12 @@ namespace Neo.Wallets.NEP6
             return wallet_new;
         }
 
+        /// <summary>
+        /// Saves the wallet to the file.
+        /// </summary>
         public void Save()
         {
-            JObject wallet = new JObject();
+            JObject wallet = new();
             wallet["name"] = name;
             wallet["version"] = version.ToString();
             wallet["scrypt"] = Scrypt.ToJson();
@@ -262,6 +301,11 @@ namespace Neo.Wallets.NEP6
             File.WriteAllText(Path, wallet.ToString());
         }
 
+        /// <summary>
+        /// Unlocks the wallet with the specified password.
+        /// </summary>
+        /// <param name="password">The password of the wallet.</param>
+        /// <returns>The object that can be disposed to lock the wallet again.</returns>
         public IDisposable Unlock(string password)
         {
             if (!VerifyPassword(password))
