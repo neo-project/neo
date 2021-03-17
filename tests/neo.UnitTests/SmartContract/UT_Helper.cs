@@ -1,5 +1,10 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography.ECC;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
+using Neo.VM;
+using Neo.Wallets;
 using System;
 
 namespace Neo.UnitTests.SmartContract
@@ -7,6 +12,16 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_Helper
     {
+        private KeyPair _key;
+
+        [TestInitialize]
+        public void Init()
+        {
+            var pk = new byte[32];
+            new Random().NextBytes(pk);
+            _key = new KeyPair(pk);
+        }
+
         [TestMethod]
         public void TestGetContractHash()
         {
@@ -42,6 +57,47 @@ namespace Neo.UnitTests.SmartContract
                 202, 22, 18
             };
             Assert.IsFalse(case2.IsMultiSigContract());
+        }
+
+        [TestMethod]
+        public void TestSignatureContractCost()
+        {
+            var contract = Contract.CreateSignatureContract(_key.PublicKey);
+
+            var tx = TestUtils.CreateRandomHashTransaction();
+            tx.Signers[0].Account = contract.ScriptHash;
+
+            using ScriptBuilder invocationScript = new();
+            invocationScript.EmitPush(Neo.Wallets.Helper.Sign(tx, _key, ProtocolSettings.Default.Magic));
+            tx.Witnesses = new Witness[] { new Witness() { InvocationScript = invocationScript.ToArray(), VerificationScript = contract.Script } };
+
+            using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, null, null, ProtocolSettings.Default);
+            engine.LoadScript(contract.Script);
+            engine.LoadScript(new Script(invocationScript.ToArray(), true), configureState: p => p.CallFlags = CallFlags.None);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
+
+            Assert.AreEqual(Neo.SmartContract.Helper.SignatureContractCost() * PolicyContract.DefaultExecFeeFactor, engine.GasConsumed);
+        }
+
+        [TestMethod]
+        public void TestMultiSignatureContractCost()
+        {
+            var contract = Contract.CreateMultiSigContract(1, new ECPoint[] { _key.PublicKey });
+
+            var tx = TestUtils.CreateRandomHashTransaction();
+            tx.Signers[0].Account = contract.ScriptHash;
+
+            using ScriptBuilder invocationScript = new();
+            invocationScript.EmitPush(Neo.Wallets.Helper.Sign(tx, _key, ProtocolSettings.Default.Magic));
+
+            using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, null, null, ProtocolSettings.Default);
+            engine.LoadScript(contract.Script);
+            engine.LoadScript(new Script(invocationScript.ToArray(), true), configureState: p => p.CallFlags = CallFlags.None);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
+
+            Assert.AreEqual(Neo.SmartContract.Helper.MultiSignatureContractCost(1, 1) * PolicyContract.DefaultExecFeeFactor, engine.GasConsumed);
         }
     }
 }
