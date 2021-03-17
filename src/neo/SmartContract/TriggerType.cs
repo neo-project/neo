@@ -24,7 +24,6 @@ namespace Neo.SmartContract
         /// </summary>
         Application = 0x40,
 
-        System = OnPersist | PostPersist,
         All = OnPersist | PostPersist | Verification | Application
     }
 }
