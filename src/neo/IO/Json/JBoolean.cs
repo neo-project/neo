@@ -2,10 +2,20 @@ using System.Text.Json;
 
 namespace Neo.IO.Json
 {
+    /// <summary>
+    /// Represents a JSON boolean value.
+    /// </summary>
     public class JBoolean : JObject
     {
-        public bool Value { get; private set; }
+        /// <summary>
+        /// Gets the value of the JSON object.
+        /// </summary>
+        public bool Value { get; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JBoolean"/> class with the specified value.
+        /// </summary>
+        /// <param name="value">The value of the JSON object.</param>
         public JBoolean(bool value = false)
         {
             this.Value = value;
@@ -16,6 +26,10 @@ namespace Neo.IO.Json
             return Value;
         }
 
+        /// <summary>
+        /// Converts the current JSON object to a floating point number.
+        /// </summary>
+        /// <returns>The number 1 if value is <see langword="true"/>; otherwise, 0.</returns>
         public override double AsNumber()
         {
             return Value ? 1 : 0;

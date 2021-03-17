@@ -20,7 +20,7 @@ namespace Neo.Wallets.SQLite
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             base.OnConfiguring(optionsBuilder);
-            SqliteConnectionStringBuilder sb = new SqliteConnectionStringBuilder
+            SqliteConnectionStringBuilder sb = new()
             {
                 DataSource = filename
             };

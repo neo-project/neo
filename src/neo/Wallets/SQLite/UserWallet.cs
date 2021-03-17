@@ -15,9 +15,12 @@ using static System.IO.Path;
 
 namespace Neo.Wallets.SQLite
 {
+    /// <summary>
+    /// A wallet implementation that uses SQLite as the underlying storage.
+    /// </summary>
     public class UserWallet : Wallet
     {
-        private readonly object db_lock = new object();
+        private readonly object db_lock = new();
         private readonly byte[] iv;
         private readonly byte[] salt;
         private readonly byte[] masterKey;
@@ -40,11 +43,6 @@ namespace Neo.Wallets.SQLite
             }
         }
 
-        /// <summary>
-        /// Open an existing wallet
-        /// </summary>
-        /// <param name="path">Path</param>
-        /// <param name="passwordKey">Password Key</param>
         private UserWallet(string path, byte[] passwordKey, ProtocolSettings settings) : base(path, settings)
         {
             this.salt = LoadStoredData("Salt");
@@ -62,12 +60,6 @@ namespace Neo.Wallets.SQLite
             this.accounts = LoadAccounts();
         }
 
-        /// <summary>
-        /// Create a new wallet
-        /// </summary>
-        /// <param name="path">Path</param>
-        /// <param name="passwordKey">Password Key</param>
-        /// <param name="scrypt">Scrypt initialization value</param>
         private UserWallet(string path, byte[] passwordKey, ProtocolSettings settings, ScryptParameters scrypt) : base(path, settings)
         {
             this.iv = new byte[16];
@@ -112,64 +104,62 @@ namespace Neo.Wallets.SQLite
                 accounts[account.ScriptHash] = account;
             }
             lock (db_lock)
-                using (WalletDataContext ctx = new WalletDataContext(Path))
+            {
+                using WalletDataContext ctx = new(Path);
+                if (account.HasKey)
                 {
-                    if (account.HasKey)
+                    string passphrase = Encoding.UTF8.GetString(masterKey);
+                    Account db_account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
+                    if (db_account == null)
                     {
-                        string passphrase = Encoding.UTF8.GetString(masterKey);
-                        Account db_account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
-                        if (db_account == null)
+                        db_account = ctx.Accounts.Add(new Account
                         {
-                            db_account = ctx.Accounts.Add(new Account
-                            {
-                                Nep2key = account.Key.Export(passphrase, ProtocolSettings.AddressVersion, scrypt.N, scrypt.R, scrypt.P),
-                                PublicKeyHash = account.Key.PublicKeyHash.ToArray()
-                            }).Entity;
-                        }
-                        else
-                        {
-                            db_account.Nep2key = account.Key.Export(passphrase, ProtocolSettings.AddressVersion, scrypt.N, scrypt.R, scrypt.P);
-                        }
+                            Nep2key = account.Key.Export(passphrase, ProtocolSettings.AddressVersion, scrypt.N, scrypt.R, scrypt.P),
+                            PublicKeyHash = account.Key.PublicKeyHash.ToArray()
+                        }).Entity;
                     }
-                    if (account.Contract != null)
+                    else
                     {
-                        Contract db_contract = ctx.Contracts.FirstOrDefault(p => p.ScriptHash == account.Contract.ScriptHash.ToArray());
-                        if (db_contract != null)
-                        {
-                            db_contract.PublicKeyHash = account.Key.PublicKeyHash.ToArray();
-                        }
-                        else
-                        {
-                            ctx.Contracts.Add(new Contract
-                            {
-                                RawData = ((VerificationContract)account.Contract).ToArray(),
-                                ScriptHash = account.Contract.ScriptHash.ToArray(),
-                                PublicKeyHash = account.Key.PublicKeyHash.ToArray()
-                            });
-                        }
+                        db_account.Nep2key = account.Key.Export(passphrase, ProtocolSettings.AddressVersion, scrypt.N, scrypt.R, scrypt.P);
                     }
-                    //add address
-                    {
-                        Address db_address = ctx.Addresses.FirstOrDefault(p => p.ScriptHash == account.ScriptHash.ToArray());
-                        if (db_address == null)
-                        {
-                            ctx.Addresses.Add(new Address
-                            {
-                                ScriptHash = account.ScriptHash.ToArray()
-                            });
-                        }
-                    }
-                    ctx.SaveChanges();
                 }
+                if (account.Contract != null)
+                {
+                    Contract db_contract = ctx.Contracts.FirstOrDefault(p => p.ScriptHash == account.Contract.ScriptHash.ToArray());
+                    if (db_contract != null)
+                    {
+                        db_contract.PublicKeyHash = account.Key.PublicKeyHash.ToArray();
+                    }
+                    else
+                    {
+                        ctx.Contracts.Add(new Contract
+                        {
+                            RawData = ((VerificationContract)account.Contract).ToArray(),
+                            ScriptHash = account.Contract.ScriptHash.ToArray(),
+                            PublicKeyHash = account.Key.PublicKeyHash.ToArray()
+                        });
+                    }
+                }
+                //add address
+                {
+                    Address db_address = ctx.Addresses.FirstOrDefault(p => p.ScriptHash == account.ScriptHash.ToArray());
+                    if (db_address == null)
+                    {
+                        ctx.Addresses.Add(new Address
+                        {
+                            ScriptHash = account.ScriptHash.ToArray()
+                        });
+                    }
+                }
+                ctx.SaveChanges();
+            }
         }
 
         private void BuildDatabase()
         {
-            using (WalletDataContext ctx = new WalletDataContext(Path))
-            {
-                ctx.Database.EnsureDeleted();
-                ctx.Database.EnsureCreated();
-            }
+            using WalletDataContext ctx = new(Path);
+            ctx.Database.EnsureDeleted();
+            ctx.Database.EnsureCreated();
         }
 
         public override bool ChangePassword(string oldPassword, string newPassword)
@@ -196,11 +186,27 @@ namespace Neo.Wallets.SQLite
             }
         }
 
+        /// <summary>
+        /// Creates a new wallet at the specified path.
+        /// </summary>
+        /// <param name="path">The path of the wallet.</param>
+        /// <param name="password">The password of the wallet.</param>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
+        /// <param name="scrypt">The parameters of the SCrypt algorithm used for encrypting and decrypting the private keys in the wallet.</param>
+        /// <returns>The created wallet.</returns>
         public static UserWallet Create(string path, string password, ProtocolSettings settings, ScryptParameters scrypt = null)
         {
             return new UserWallet(path, password.ToAesKey(), settings, scrypt ?? ScryptParameters.Default);
         }
 
+        /// <summary>
+        /// Creates a new wallet at the specified path.
+        /// </summary>
+        /// <param name="path">The path of the wallet.</param>
+        /// <param name="password">The password of the wallet.</param>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
+        /// <param name="scrypt">The parameters of the SCrypt algorithm used for encrypting and decrypting the private keys in the wallet.</param>
+        /// <returns>The created wallet.</returns>
         public static UserWallet Create(string path, SecureString password, ProtocolSettings settings, ScryptParameters scrypt = null)
         {
             return new UserWallet(path, password.ToAesKey(), settings, scrypt ?? ScryptParameters.Default);
@@ -208,13 +214,13 @@ namespace Neo.Wallets.SQLite
 
         public override WalletAccount CreateAccount(byte[] privateKey)
         {
-            KeyPair key = new KeyPair(privateKey);
-            VerificationContract contract = new VerificationContract
+            KeyPair key = new(privateKey);
+            VerificationContract contract = new()
             {
                 Script = SmartContract.Contract.CreateSignatureRedeemScript(key.PublicKey),
                 ParameterList = new[] { ContractParameterType.Signature }
             };
-            UserWalletAccount account = new UserWalletAccount(contract.ScriptHash, ProtocolSettings)
+            UserWalletAccount account = new(contract.ScriptHash, ProtocolSettings)
             {
                 Key = key,
                 Contract = contract
@@ -225,8 +231,7 @@ namespace Neo.Wallets.SQLite
 
         public override WalletAccount CreateAccount(SmartContract.Contract contract, KeyPair key = null)
         {
-            VerificationContract verification_contract = contract as VerificationContract;
-            if (verification_contract == null)
+            if (contract is not VerificationContract verification_contract)
             {
                 verification_contract = new VerificationContract
                 {
@@ -234,7 +239,7 @@ namespace Neo.Wallets.SQLite
                     ParameterList = contract.ParameterList
                 };
             }
-            UserWalletAccount account = new UserWalletAccount(verification_contract.ScriptHash, ProtocolSettings)
+            UserWalletAccount account = new(verification_contract.ScriptHash, ProtocolSettings)
             {
                 Key = key,
                 Contract = verification_contract
@@ -245,7 +250,7 @@ namespace Neo.Wallets.SQLite
 
         public override WalletAccount CreateAccount(UInt160 scriptHash)
         {
-            UserWalletAccount account = new UserWalletAccount(scriptHash, ProtocolSettings);
+            UserWalletAccount account = new(scriptHash, ProtocolSettings);
             AddAccount(account);
             return account;
         }
@@ -261,25 +266,25 @@ namespace Neo.Wallets.SQLite
             if (account != null)
             {
                 lock (db_lock)
-                    using (WalletDataContext ctx = new WalletDataContext(Path))
+                {
+                    using WalletDataContext ctx = new(Path);
+                    if (account.HasKey)
                     {
-                        if (account.HasKey)
-                        {
-                            Account db_account = ctx.Accounts.First(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
-                            ctx.Accounts.Remove(db_account);
-                        }
-                        if (account.Contract != null)
-                        {
-                            Contract db_contract = ctx.Contracts.First(p => p.ScriptHash == scriptHash.ToArray());
-                            ctx.Contracts.Remove(db_contract);
-                        }
-                        //delete address
-                        {
-                            Address db_address = ctx.Addresses.First(p => p.ScriptHash == scriptHash.ToArray());
-                            ctx.Addresses.Remove(db_address);
-                        }
-                        ctx.SaveChanges();
+                        Account db_account = ctx.Accounts.First(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
+                        ctx.Accounts.Remove(db_account);
                     }
+                    if (account.Contract != null)
+                    {
+                        Contract db_contract = ctx.Contracts.First(p => p.ScriptHash == scriptHash.ToArray());
+                        ctx.Contracts.Remove(db_contract);
+                    }
+                    //delete address
+                    {
+                        Address db_address = ctx.Addresses.First(p => p.ScriptHash == scriptHash.ToArray());
+                        ctx.Addresses.Remove(db_address);
+                    }
+                    ctx.SaveChanges();
+                }
                 return true;
             }
             return false;
@@ -305,34 +310,44 @@ namespace Neo.Wallets.SQLite
 
         private Dictionary<UInt160, UserWalletAccount> LoadAccounts()
         {
-            using (WalletDataContext ctx = new WalletDataContext(Path))
+            using WalletDataContext ctx = new(Path);
+            string passphrase = Encoding.UTF8.GetString(masterKey);
+            Dictionary<UInt160, UserWalletAccount> accounts = ctx.Addresses.Select(p => p.ScriptHash).AsEnumerable().Select(p => new UserWalletAccount(new UInt160(p), ProtocolSettings)).ToDictionary(p => p.ScriptHash);
+            foreach (Contract db_contract in ctx.Contracts.Include(p => p.Account))
             {
-                string passphrase = Encoding.UTF8.GetString(masterKey);
-                Dictionary<UInt160, UserWalletAccount> accounts = ctx.Addresses.Select(p => p.ScriptHash).AsEnumerable().Select(p => new UserWalletAccount(new UInt160(p), ProtocolSettings)).ToDictionary(p => p.ScriptHash);
-                foreach (Contract db_contract in ctx.Contracts.Include(p => p.Account))
-                {
-                    VerificationContract contract = db_contract.RawData.AsSerializable<VerificationContract>();
-                    UserWalletAccount account = accounts[contract.ScriptHash];
-                    account.Contract = contract;
-                    account.Key = new KeyPair(GetPrivateKeyFromNEP2(db_contract.Account.Nep2key, passphrase, ProtocolSettings.AddressVersion, scrypt.N, scrypt.R, scrypt.P));
-                }
-                return accounts;
+                VerificationContract contract = db_contract.RawData.AsSerializable<VerificationContract>();
+                UserWalletAccount account = accounts[contract.ScriptHash];
+                account.Contract = contract;
+                account.Key = new KeyPair(GetPrivateKeyFromNEP2(db_contract.Account.Nep2key, passphrase, ProtocolSettings.AddressVersion, scrypt.N, scrypt.R, scrypt.P));
             }
+            return accounts;
         }
 
         private byte[] LoadStoredData(string name)
         {
-            using (WalletDataContext ctx = new WalletDataContext(Path))
-            {
-                return ctx.Keys.FirstOrDefault(p => p.Name == name)?.Value;
-            }
+            using WalletDataContext ctx = new(Path);
+            return ctx.Keys.FirstOrDefault(p => p.Name == name)?.Value;
         }
 
+        /// <summary>
+        /// Opens a wallet at the specified path.
+        /// </summary>
+        /// <param name="path">The path of the wallet.</param>
+        /// <param name="password">The password of the wallet.</param>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
+        /// <returns>The opened wallet.</returns>
         public static UserWallet Open(string path, string password, ProtocolSettings settings)
         {
             return new UserWallet(path, password.ToAesKey(), settings);
         }
 
+        /// <summary>
+        /// Opens a wallet at the specified path.
+        /// </summary>
+        /// <param name="path">The path of the wallet.</param>
+        /// <param name="password">The password of the wallet.</param>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
+        /// <returns>The opened wallet.</returns>
         public static UserWallet Open(string path, SecureString password, ProtocolSettings settings)
         {
             return new UserWallet(path, password.ToAesKey(), settings);
@@ -348,11 +363,11 @@ namespace Neo.Wallets.SQLite
         private void SaveStoredData(string name, byte[] value)
         {
             lock (db_lock)
-                using (WalletDataContext ctx = new WalletDataContext(Path))
-                {
-                    SaveStoredData(ctx, name, value);
-                    ctx.SaveChanges();
-                }
+            {
+                using WalletDataContext ctx = new(Path);
+                SaveStoredData(ctx, name, value);
+                ctx.SaveChanges();
+            }
         }
 
         private static void SaveStoredData(WalletDataContext ctx, string name, byte[] value)

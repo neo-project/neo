@@ -9,18 +9,43 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
 {
+    /// <summary>
+    /// The base class of all native tokens that are compatible with NEP-17.
+    /// </summary>
+    /// <typeparam name="TState">The type of account state.</typeparam>
     public abstract class FungibleToken<TState> : NativeContract
         where TState : AccountState, new()
     {
+        /// <summary>
+        /// The symbol of the token.
+        /// </summary>
         [ContractMethod]
         public abstract string Symbol { get; }
+
+        /// <summary>
+        /// The number of decimal places of the token.
+        /// </summary>
         [ContractMethod]
         public abstract byte Decimals { get; }
+
+        /// <summary>
+        /// The factor used when calculating the displayed value of the token value.
+        /// </summary>
         public BigInteger Factor { get; }
 
+        /// <summary>
+        /// The prefix for storing total supply.
+        /// </summary>
         protected const byte Prefix_TotalSupply = 11;
+
+        /// <summary>
+        /// The prefix for storing account states.
+        /// </summary>
         protected const byte Prefix_Account = 20;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FungibleToken{TState}"/> class.
+        /// </summary>
         protected FungibleToken()
         {
             this.Factor = BigInteger.Pow(10, Decimals);
@@ -87,6 +112,11 @@ namespace Neo.SmartContract.Native
             await PostTransfer(engine, account, null, amount, StackItem.Null, false);
         }
 
+        /// <summary>
+        /// Gets the total supply of the token.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The total supply of the token.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public virtual BigInteger TotalSupply(DataCache snapshot)
         {
@@ -95,6 +125,12 @@ namespace Neo.SmartContract.Native
             return storage;
         }
 
+        /// <summary>
+        /// Gets the balance of the specified account.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="account">The owner of the account.</param>
+        /// <returns>The balance of the account. Or 0 if the account doesn't exist.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public virtual BigInteger BalanceOf(DataCache snapshot, UInt160 account)
         {

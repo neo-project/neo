@@ -6,18 +6,41 @@ using System.Linq;
 
 namespace Neo.Persistence
 {
+    /// <summary>
+    /// Represents a cache for the underlying storage of the NEO blockchain.
+    /// </summary>
     public abstract class DataCache
     {
+        /// <summary>
+        /// Represents an entry in the cache.
+        /// </summary>
         public class Trackable
         {
+            /// <summary>
+            /// The key of the entry.
+            /// </summary>
             public StorageKey Key;
+
+            /// <summary>
+            /// The data of the entry.
+            /// </summary>
             public StorageItem Item;
+
+            /// <summary>
+            /// The state of the entry.
+            /// </summary>
             public TrackState State;
         }
 
-        private readonly Dictionary<StorageKey, Trackable> dictionary = new Dictionary<StorageKey, Trackable>();
-        private readonly HashSet<StorageKey> changeSet = new HashSet<StorageKey>();
+        private readonly Dictionary<StorageKey, Trackable> dictionary = new();
+        private readonly HashSet<StorageKey> changeSet = new();
 
+        /// <summary>
+        /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
+        /// </summary>
+        /// <param name="key">The key of the entry.</param>
+        /// <returns>The cached data.</returns>
+        /// <exception cref="KeyNotFoundException">If the entry doesn't exist.</exception>
         public StorageItem this[StorageKey key]
         {
             get
@@ -45,15 +68,12 @@ namespace Neo.Persistence
         }
 
         /// <summary>
-        /// Try to Add a specific key, with associated value, to the current cached dictionary.
-        /// It will not read from internal state.
-        /// However, if previously cached into Dictionary, request may fail.
+        /// Adds a new entry to the cache.
         /// </summary>
-        /// <param name="key">Key to be possible added.
-        /// Key will not be added if value exists cached and the modification was not a Deleted one.
-        /// </param>
-        /// <param name="value">Corresponding value to be added, in the case of sucess.</param>
-        /// <exception cref="ArgumentException">If cached on dictionary, with any state rather than `Deleted`, an Exception will be raised.</exception>
+        /// <param name="key">The key of the entry.</param>
+        /// <param name="value">The data of the entry.</param>
+        /// <exception cref="ArgumentException">The entry has already been cached.</exception>
+        /// <remarks>Note: This method does not read the internal storage to check whether the record already exists.</remarks>
         public void Add(StorageKey key, StorageItem value)
         {
             lock (dictionary)
@@ -70,14 +90,19 @@ namespace Neo.Persistence
             }
         }
 
+        /// <summary>
+        /// Adds a new entry to the underlying storage.
+        /// </summary>
+        /// <param name="key">The key of the entry.</param>
+        /// <param name="value">The data of the entry.</param>
         protected abstract void AddInternal(StorageKey key, StorageItem value);
 
         /// <summary>
-        /// Update internals with all changes cached on Dictionary which are not None.
+        /// Commits all changes in the cache to the underlying storage.
         /// </summary>
         public virtual void Commit()
         {
-            LinkedList<StorageKey> deletedItem = new LinkedList<StorageKey>();
+            LinkedList<StorageKey> deletedItem = new();
             foreach (Trackable trackable in GetChangeSet())
                 switch (trackable.State)
                 {
@@ -101,15 +126,19 @@ namespace Neo.Persistence
             changeSet.Clear();
         }
 
+        /// <summary>
+        /// Creates a snapshot, which uses this instance as the underlying storage.
+        /// </summary>
+        /// <returns>The snapshot of this instance.</returns>
         public DataCache CreateSnapshot()
         {
             return new ClonedCache(this);
         }
 
         /// <summary>
-        /// Delete key from cached Dictionary or search in Internal.
+        /// Deletes an entry from the cache.
         /// </summary>
-        /// <param name="key">Key to be deleted.</param>
+        /// <param name="key">The key of the entry.</param>
         public void Delete(StorageKey key)
         {
             lock (dictionary)
@@ -142,13 +171,17 @@ namespace Neo.Persistence
             }
         }
 
+        /// <summary>
+        /// Deletes an entry from the underlying storage.
+        /// </summary>
+        /// <param name="key">The key of the entry.</param>
         protected abstract void DeleteInternal(StorageKey key);
 
         /// <summary>
-        /// Find the entries that start with the `key_prefix`
+        /// Finds the entries starting with the specified prefix.
         /// </summary>
-        /// <param name="key_prefix">Must maintain the deserialized format of StorageKey</param>
-        /// <returns>Entries found with the desired prefix</returns>
+        /// <param name="key_prefix">The prefix of the key.</param>
+        /// <returns>The entries found with the desired prefix.</returns>
         public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[] key_prefix = null)
         {
             foreach (var (key, value) in Seek(key_prefix, SeekDirection.Forward))
@@ -159,12 +192,12 @@ namespace Neo.Persistence
         }
 
         /// <summary>
-        /// Find the entries that between [start, end)
+        /// Finds the entries that between [start, end).
         /// </summary>
-        /// <param name="start">Start key (inclusive)</param>
-        /// <param name="end">End key (exclusive)</param>
+        /// <param name="start">The start key (inclusive).</param>
+        /// <param name="end">The end key (exclusive).</param>
         /// <param name="direction">The search direction.</param>
-        /// <returns>Entries found with the desired range</returns>
+        /// <returns>The entries found with the desired range.</returns>
         public IEnumerable<(StorageKey Key, StorageItem Value)> FindRange(byte[] start, byte[] end, SeekDirection direction = SeekDirection.Forward)
         {
             ByteArrayComparer comparer = direction == SeekDirection.Forward
@@ -177,6 +210,10 @@ namespace Neo.Persistence
                     yield break;
         }
 
+        /// <summary>
+        /// Gets the change set in the cache.
+        /// </summary>
+        /// <returns>The change set.</returns>
         public IEnumerable<Trackable> GetChangeSet()
         {
             lock (dictionary)
@@ -186,6 +223,11 @@ namespace Neo.Persistence
             }
         }
 
+        /// <summary>
+        /// Determines whether the cache contains the specified entry.
+        /// </summary>
+        /// <param name="key">The key of the entry.</param>
+        /// <returns><see langword="true"/> if the cache contains an entry with the specified key; otherwise, <see langword="false"/>.</returns>
         public bool Contains(StorageKey key)
         {
             lock (dictionary)
@@ -199,18 +241,26 @@ namespace Neo.Persistence
             }
         }
 
+        /// <summary>
+        /// Determines whether the underlying storage contains the specified entry.
+        /// </summary>
+        /// <param name="key">The key of the entry.</param>
+        /// <returns><see langword="true"/> if the underlying storage contains an entry with the specified key; otherwise, <see langword="false"/>.</returns>
         protected abstract bool ContainsInternal(StorageKey key);
 
+        /// <summary>
+        /// Reads a specified entry from the underlying storage.
+        /// </summary>
+        /// <param name="key">The key of the entry.</param>
+        /// <returns>The data of the entry. Or <see langword="null"/> if the entry doesn't exist.</returns>
         protected abstract StorageItem GetInternal(StorageKey key);
 
         /// <summary>
-        /// Try to Get a specific key from current cached dictionary.
-        /// Otherwise, tries to get from internal data with TryGetInternal.
+        /// Reads a specified entry from the cache, and mark it as <see cref="TrackState.Changed"/>. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
         /// </summary>
-        /// <param name="key">Key to be searched.</param>
-        /// <param name="factory">Function that may replace current object stored. 
-        /// If object already exists the factory passed as parameter will not be used.
-        /// </param>
+        /// <param name="key">The key of the entry.</param>
+        /// <param name="factory">A delegate used to create the entry if it doesn't exist. If the entry already exists, the factory will not be used.</param>
+        /// <returns>The cached data. Or <see langword="null"/> if it doesn't exist and the <paramref name="factory"/> is not provided.</returns>
         public StorageItem GetAndChange(StorageKey key, Func<StorageItem> factory = null)
         {
             lock (dictionary)
@@ -253,6 +303,12 @@ namespace Neo.Persistence
             }
         }
 
+        /// <summary>
+        /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage. If the entry doesn't exist, the factory will be used to create a new one.
+        /// </summary>
+        /// <param name="key">The key of the entry.</param>
+        /// <param name="factory">A delegate used to create the entry if it doesn't exist. If the entry already exists, the factory will not be used.</param>
+        /// <returns>The cached data.</returns>
         public StorageItem GetOrAdd(StorageKey key, Func<StorageItem> factory)
         {
             lock (dictionary)
@@ -289,10 +345,10 @@ namespace Neo.Persistence
         }
 
         /// <summary>
-        /// Seek to the entry with specific key
+        /// Seeks to the entry with the specified key.
         /// </summary>
-        /// <param name="keyOrPrefix">The key to be sought</param>
-        /// <param name="direction">The direction of seek</param>
+        /// <param name="keyOrPrefix">The key to be sought.</param>
+        /// <param name="direction">The direction of seek.</param>
         /// <returns>An enumerator containing all the entries after seeking.</returns>
         public IEnumerable<(StorageKey Key, StorageItem Value)> Seek(byte[] keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward)
         {
@@ -321,34 +377,43 @@ namespace Neo.Persistence
                     p.Key,
                     p.Value
                 ));
-            using (var e1 = cached.GetEnumerator())
-            using (var e2 = uncached.GetEnumerator())
+            using var e1 = cached.GetEnumerator();
+            using var e2 = uncached.GetEnumerator();
+            (byte[] KeyBytes, StorageKey Key, StorageItem Item) i1, i2;
+            bool c1 = e1.MoveNext();
+            bool c2 = e2.MoveNext();
+            i1 = c1 ? e1.Current : default;
+            i2 = c2 ? e2.Current : default;
+            while (c1 || c2)
             {
-                (byte[] KeyBytes, StorageKey Key, StorageItem Item) i1, i2;
-                bool c1 = e1.MoveNext();
-                bool c2 = e2.MoveNext();
-                i1 = c1 ? e1.Current : default;
-                i2 = c2 ? e2.Current : default;
-                while (c1 || c2)
+                if (!c2 || (c1 && comparer.Compare(i1.KeyBytes, i2.KeyBytes) < 0))
                 {
-                    if (!c2 || (c1 && comparer.Compare(i1.KeyBytes, i2.KeyBytes) < 0))
-                    {
-                        yield return (i1.Key, i1.Item);
-                        c1 = e1.MoveNext();
-                        i1 = c1 ? e1.Current : default;
-                    }
-                    else
-                    {
-                        yield return (i2.Key, i2.Item);
-                        c2 = e2.MoveNext();
-                        i2 = c2 ? e2.Current : default;
-                    }
+                    yield return (i1.Key, i1.Item);
+                    c1 = e1.MoveNext();
+                    i1 = c1 ? e1.Current : default;
+                }
+                else
+                {
+                    yield return (i2.Key, i2.Item);
+                    c2 = e2.MoveNext();
+                    i2 = c2 ? e2.Current : default;
                 }
             }
         }
 
+        /// <summary>
+        /// Seeks to the entry with the specified key in the underlying storage.
+        /// </summary>
+        /// <param name="keyOrPrefix">The key to be sought.</param>
+        /// <param name="direction">The direction of seek.</param>
+        /// <returns>An enumerator containing all the entries after seeking.</returns>
         protected abstract IEnumerable<(StorageKey Key, StorageItem Value)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction);
 
+        /// <summary>
+        /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
+        /// </summary>
+        /// <param name="key">The key of the entry.</param>
+        /// <returns>The cached data. Or <see langword="null"/> if it is neither in the cache nor in the underlying storage.</returns>
         public StorageItem TryGet(StorageKey key)
         {
             lock (dictionary)
@@ -370,8 +435,18 @@ namespace Neo.Persistence
             }
         }
 
+        /// <summary>
+        /// Reads a specified entry from the underlying storage.
+        /// </summary>
+        /// <param name="key">The key of the entry.</param>
+        /// <returns>The data of the entry. Or <see langword="null"/> if it doesn't exist.</returns>
         protected abstract StorageItem TryGetInternal(StorageKey key);
 
+        /// <summary>
+        /// Updates an entry in the underlying storage.
+        /// </summary>
+        /// <param name="key">The key of the entry.</param>
+        /// <param name="value">The data of the entry.</param>
         protected abstract void UpdateInternal(StorageKey key, StorageItem value);
     }
 }

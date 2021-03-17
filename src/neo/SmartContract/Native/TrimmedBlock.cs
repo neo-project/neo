@@ -8,12 +8,29 @@ using System.Linq;
 
 namespace Neo.SmartContract.Native
 {
+    /// <summary>
+    /// Represents a block which the transactions are trimmed.
+    /// </summary>
     public class TrimmedBlock : IInteroperable, ISerializable
     {
+        /// <summary>
+        /// The header of the block.
+        /// </summary>
         public Header Header;
+
+        /// <summary>
+        /// The hashes of the transactions of the block.
+        /// </summary>
         public UInt256[] Hashes;
 
+        /// <summary>
+        /// The hash of the block.
+        /// </summary>
         public UInt256 Hash => Header.Hash;
+
+        /// <summary>
+        /// The index of the block.
+        /// </summary>
         public uint Index => Header.Index;
 
         public int Size => Header.Size + Hashes.GetVarSize();

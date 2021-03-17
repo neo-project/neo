@@ -6,18 +6,25 @@ using System.Numerics;
 
 namespace Neo.Ledger
 {
+    /// <summary>
+    /// The context used to verify the transaction.
+    /// </summary>
     public class TransactionVerificationContext
     {
         /// <summary>
         /// Store all verified unsorted transactions' senders' fee currently in the memory pool.
         /// </summary>
-        private readonly Dictionary<UInt160, BigInteger> senderFee = new Dictionary<UInt160, BigInteger>();
+        private readonly Dictionary<UInt160, BigInteger> senderFee = new();
 
         /// <summary>
         /// Store oracle responses
         /// </summary>
-        private readonly Dictionary<ulong, UInt256> oracleResponses = new Dictionary<ulong, UInt256>();
+        private readonly Dictionary<ulong, UInt256> oracleResponses = new();
 
+        /// <summary>
+        /// Adds a verified <see cref="Transaction"/> to the context.
+        /// </summary>
+        /// <param name="tx">The verified <see cref="Transaction"/>.</param>
         public void AddTransaction(Transaction tx)
         {
             var oracle = tx.GetAttribute<OracleResponse>();
@@ -29,6 +36,12 @@ namespace Neo.Ledger
                 senderFee.Add(tx.Sender, tx.SystemFee + tx.NetworkFee);
         }
 
+        /// <summary>
+        /// Determine whether the specified <see cref="Transaction"/> conflicts with other transactions.
+        /// </summary>
+        /// <param name="tx">The specified <see cref="Transaction"/>.</param>
+        /// <param name="snapshot">The snapshot used to verify the <see cref="Transaction"/>.</param>
+        /// <returns><see langword="true"/> if the <see cref="Transaction"/> passes the check; otherwise, <see langword="false"/>.</returns>
         public bool CheckTransaction(Transaction tx, DataCache snapshot)
         {
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
@@ -44,6 +57,10 @@ namespace Neo.Ledger
             return true;
         }
 
+        /// <summary>
+        /// Removes a <see cref="Transaction"/> from the context.
+        /// </summary>
+        /// <param name="tx">The <see cref="Transaction"/> to be removed.</param>
         public void RemoveTransaction(Transaction tx)
         {
             if ((senderFee[tx.Sender] -= tx.SystemFee + tx.NetworkFee) == 0) senderFee.Remove(tx.Sender);

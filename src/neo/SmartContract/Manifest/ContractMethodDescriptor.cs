@@ -6,19 +6,24 @@ using System.Linq;
 
 namespace Neo.SmartContract.Manifest
 {
+    /// <summary>
+    /// Represents a method in a smart contract ABI.
+    /// </summary>
     public class ContractMethodDescriptor : ContractEventDescriptor
     {
         /// <summary>
-        /// Returntype indicates the return type of the method. It can be one of the following values: 
-        ///     Any, Signature, Boolean, Integer, Hash160, Hash256, ByteArray, PublicKey, String, Array, Map, InteropInterface, Void.
+        /// Indicates the return type of the method. It can be any value of <see cref="ContractParameterType"/>.
         /// </summary>
         public ContractParameterType ReturnType { get; set; }
 
+        /// <summary>
+        /// The position of the method in the contract script.
+        /// </summary>
         public int Offset { get; set; }
 
         /// <summary>
-        /// Determine if it's safe to call this method
-        /// If a method is marked as safe, the user interface will not give any warnings when it is called by any other contract.
+        /// Indicates whether the method is a safe method.
+        /// If a method is marked as safe, the user interface will not give any warnings when it is called by other contracts.
         /// </summary>
         public bool Safe { get; set; }
 
@@ -41,13 +46,13 @@ namespace Neo.SmartContract.Manifest
         }
 
         /// <summary>
-        /// Parse ContractMethodDescription from json
+        /// Converts the method from a JSON object.
         /// </summary>
-        /// <param name="json">Json</param>
-        /// <returns>Return ContractMethodDescription</returns>
+        /// <param name="json">The method represented by a JSON object.</param>
+        /// <returns>The converted method.</returns>
         public new static ContractMethodDescriptor FromJson(JObject json)
         {
-            ContractMethodDescriptor descriptor = new ContractMethodDescriptor
+            ContractMethodDescriptor descriptor = new()
             {
                 Name = json["name"].GetString(),
                 Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson(u)).ToArray(),
@@ -62,6 +67,10 @@ namespace Neo.SmartContract.Manifest
             return descriptor;
         }
 
+        /// <summary>
+        /// Converts the method to a JSON object.
+        /// </summary>
+        /// <returns>The method represented by a JSON object.</returns>
         public override JObject ToJson()
         {
             var json = base.ToJson();

@@ -2,8 +2,14 @@ using System.IO;
 
 namespace Neo.Network.P2P.Capabilities
 {
+    /// <summary>
+    /// Indicates that a node has complete block data.
+    /// </summary>
     public class FullNodeCapability : NodeCapability
     {
+        /// <summary>
+        /// Indicates the current block height of the node.
+        /// </summary>
         public uint StartHeight;
 
         public override int Size =>
@@ -11,9 +17,9 @@ namespace Neo.Network.P2P.Capabilities
             sizeof(uint);  // Start Height
 
         /// <summary>
-        /// Constructor
+        /// Initializes a new instance of the <see cref="FullNodeCapability"/> class.
         /// </summary>
-        /// <param name="startHeight">Start Height</param>
+        /// <param name="startHeight">The current block height of the node.</param>
         public FullNodeCapability(uint startHeight = 0) : base(NodeCapabilityType.FullNode)
         {
             StartHeight = startHeight;

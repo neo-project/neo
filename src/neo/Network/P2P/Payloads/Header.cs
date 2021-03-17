@@ -10,6 +10,9 @@ using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {
+    /// <summary>
+    /// Represents the header of a block.
+    /// </summary>
     public sealed class Header : IEquatable<Header>, IVerifiable
     {
         private uint version;
@@ -19,44 +22,69 @@ namespace Neo.Network.P2P.Payloads
         private uint index;
         private byte primaryIndex;
         private UInt160 nextConsensus;
+
+        /// <summary>
+        /// The witness of the block.
+        /// </summary>
         public Witness Witness;
 
+        /// <summary>
+        /// The version of the block.
+        /// </summary>
         public uint Version
         {
             get => version;
             set { version = value; _hash = null; }
         }
 
+        /// <summary>
+        /// The hash of the previous block.
+        /// </summary>
         public UInt256 PrevHash
         {
             get => prevHash;
             set { prevHash = value; _hash = null; }
         }
 
+        /// <summary>
+        /// The merkle root of the transactions.
+        /// </summary>
         public UInt256 MerkleRoot
         {
             get => merkleRoot;
             set { merkleRoot = value; _hash = null; }
         }
 
+        /// <summary>
+        /// The timestamp of the block.
+        /// </summary>
         public ulong Timestamp
         {
             get => timestamp;
             set { timestamp = value; _hash = null; }
         }
 
+        /// <summary>
+        /// The index of the block.
+        /// </summary>
         public uint Index
         {
             get => index;
             set { index = value; _hash = null; }
         }
 
+        /// <summary>
+        /// The primary index of the consensus node that generated this block.
+        /// </summary>
         public byte PrimaryIndex
         {
             get => primaryIndex;
             set { primaryIndex = value; _hash = null; }
         }
 
+        /// <summary>
+        /// The multi-signature address of the consensus nodes that generates the next block.
+        /// </summary>
         public UInt160 NextConsensus
         {
             get => nextConsensus;
@@ -94,7 +122,7 @@ namespace Neo.Network.P2P.Payloads
             }
             set
             {
-                if (value.Length != 1) throw new ArgumentException();
+                if (value.Length != 1) throw new ArgumentException(null, nameof(value));
                 Witness = value[0];
             }
         }
@@ -162,9 +190,14 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(nextConsensus);
         }
 
+        /// <summary>
+        /// Converts the header to a JSON object.
+        /// </summary>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> used during the conversion.</param>
+        /// <returns>The header represented by a JSON object.</returns>
         public JObject ToJson(ProtocolSettings settings)
         {
-            JObject json = new JObject();
+            JObject json = new();
             json["hash"] = Hash.ToString();
             json["size"] = Size;
             json["version"] = version;

@@ -9,7 +9,7 @@ namespace Neo.SmartContract
 
         public ContractTask Task => task ??= new ContractTask();
 
-        public static ContractTaskMethodBuilder Create() => new ContractTaskMethodBuilder();
+        public static ContractTaskMethodBuilder Create() => new();
 
         public void SetException(Exception exception)
         {
@@ -51,7 +51,7 @@ namespace Neo.SmartContract
 
         public ContractTask<T> Task => task ??= new ContractTask<T>();
 
-        public static ContractTaskMethodBuilder<T> Create() => new ContractTaskMethodBuilder<T>();
+        public static ContractTaskMethodBuilder<T> Create() => new();
 
         public void SetException(Exception exception)
         {

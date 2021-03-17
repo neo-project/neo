@@ -8,36 +8,106 @@ using System.Reflection;
 
 namespace Neo.SmartContract.Native
 {
+    /// <summary>
+    /// The base class of all native contracts.
+    /// </summary>
     public abstract class NativeContract
     {
-        private static readonly List<NativeContract> contractsList = new List<NativeContract>();
-        private static readonly Dictionary<UInt160, NativeContract> contractsDictionary = new Dictionary<UInt160, NativeContract>();
-        private readonly Dictionary<int, ContractMethodMetadata> methods = new Dictionary<int, ContractMethodMetadata>();
+        private static readonly List<NativeContract> contractsList = new();
+        private static readonly Dictionary<UInt160, NativeContract> contractsDictionary = new();
+        private readonly Dictionary<int, ContractMethodMetadata> methods = new();
         private static int id_counter = 0;
 
         #region Named Native Contracts
-        public static ContractManagement ContractManagement { get; } = new ContractManagement();
-        public static StdLib StdLib { get; } = new StdLib();
-        public static CryptoLib CryptoLib { get; } = new CryptoLib();
-        public static LedgerContract Ledger { get; } = new LedgerContract();
-        public static NeoToken NEO { get; } = new NeoToken();
-        public static GasToken GAS { get; } = new GasToken();
-        public static PolicyContract Policy { get; } = new PolicyContract();
-        public static RoleManagement RoleManagement { get; } = new RoleManagement();
-        public static OracleContract Oracle { get; } = new OracleContract();
-        public static NameService NameService { get; } = new NameService();
+
+        /// <summary>
+        /// Gets the instance of the <see cref="Native.ContractManagement"/> class.
+        /// </summary>
+        public static ContractManagement ContractManagement { get; } = new();
+
+        /// <summary>
+        /// Gets the instance of the <see cref="Native.StdLib"/> class.
+        /// </summary>
+        public static StdLib StdLib { get; } = new();
+
+        /// <summary>
+        /// Gets the instance of the <see cref="Native.CryptoLib"/> class.
+        /// </summary>
+        public static CryptoLib CryptoLib { get; } = new();
+
+        /// <summary>
+        /// Gets the instance of the <see cref="LedgerContract"/> class.
+        /// </summary>
+        public static LedgerContract Ledger { get; } = new();
+
+        /// <summary>
+        /// Gets the instance of the <see cref="NeoToken"/> class.
+        /// </summary>
+        public static NeoToken NEO { get; } = new();
+
+        /// <summary>
+        /// Gets the instance of the <see cref="GasToken"/> class.
+        /// </summary>
+        public static GasToken GAS { get; } = new();
+
+        /// <summary>
+        /// Gets the instance of the <see cref="PolicyContract"/> class.
+        /// </summary>
+        public static PolicyContract Policy { get; } = new();
+
+        /// <summary>
+        /// Gets the instance of the <see cref="Native.RoleManagement"/> class.
+        /// </summary>
+        public static RoleManagement RoleManagement { get; } = new();
+
+        /// <summary>
+        /// Gets the instance of the <see cref="OracleContract"/> class.
+        /// </summary>
+        public static OracleContract Oracle { get; } = new();
+
+        /// <summary>
+        /// Gets the instance of the <see cref="Native.NameService"/> class.
+        /// </summary>
+        public static NameService NameService { get; } = new();
+
         #endregion
 
+        /// <summary>
+        /// Gets all native contracts.
+        /// </summary>
         public static IReadOnlyCollection<NativeContract> Contracts { get; } = contractsList;
+
+        /// <summary>
+        /// The name of the native contract.
+        /// </summary>
         public string Name => GetType().Name;
+
+        /// <summary>
+        /// The nef of the native contract.
+        /// </summary>
         public NefFile Nef { get; }
+
+        /// <summary>
+        /// The hash of the native contract.
+        /// </summary>
         public UInt160 Hash { get; }
+
+        /// <summary>
+        /// The id of the native contract.
+        /// </summary>
         public int Id { get; } = --id_counter;
+
+        /// <summary>
+        /// The manifest of the native contract.
+        /// </summary>
         public ContractManifest Manifest { get; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NativeContract"/> class.
+        /// </summary>
         protected NativeContract()
         {
-            List<ContractMethodMetadata> descriptors = new List<ContractMethodMetadata>();
+            List<ContractMethodMetadata> descriptors = new();
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
             {
                 ContractMethodAttribute attribute = member.GetCustomAttribute<ContractMethodAttribute>();
@@ -46,7 +116,7 @@ namespace Neo.SmartContract.Native
             }
             descriptors = descriptors.OrderBy(p => p.Name).ThenBy(p => p.Parameters.Length).ToList();
             byte[] script;
-            using (ScriptBuilder sb = new ScriptBuilder())
+            using (ScriptBuilder sb = new())
             {
                 foreach (ContractMethodMetadata method in descriptors)
                 {
@@ -84,7 +154,12 @@ namespace Neo.SmartContract.Native
             contractsDictionary.Add(Hash, this);
         }
 
-        protected bool CheckCommittee(ApplicationEngine engine)
+        /// <summary>
+        /// Checks whether the committee has witnessed the current transaction.
+        /// </summary>
+        /// <param name="engine">The <see cref="ApplicationEngine"/> that is executing the contract.</param>
+        /// <returns><see langword="true"/> if the committee has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
+        protected static bool CheckCommittee(ApplicationEngine engine)
         {
             UInt160 committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.Snapshot);
             return engine.CheckWitnessInternal(committeeMultiSigAddr);
@@ -95,6 +170,11 @@ namespace Neo.SmartContract.Native
             return new KeyBuilder(Id, prefix);
         }
 
+        /// <summary>
+        /// Gets the native contract with the specified hash.
+        /// </summary>
+        /// <param name="hash">The hash of the native contract.</param>
+        /// <returns>The native contract with the specified hash.</returns>
         public static NativeContract GetContract(UInt160 hash)
         {
             contractsDictionary.TryGetValue(hash, out var contract);
@@ -113,7 +193,7 @@ namespace Neo.SmartContract.Native
                 if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                     throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
                 engine.AddGas(method.CpuFee * Policy.GetExecFeeFactor(engine.Snapshot) + method.StorageFee * Policy.GetStoragePrice(engine.Snapshot));
-                List<object> parameters = new List<object>();
+                List<object> parameters = new();
                 if (method.NeedApplicationEngine) parameters.Add(engine);
                 if (method.NeedSnapshot) parameters.Add(engine.Snapshot);
                 for (int i = 0; i < method.Parameters.Length; i++)
@@ -135,6 +215,11 @@ namespace Neo.SmartContract.Native
             }
         }
 
+        /// <summary>
+        /// Determine whether the specified contract is a native contract.
+        /// </summary>
+        /// <param name="hash">The hash of the contract.</param>
+        /// <returns><see langword="true"/> if the contract is native; otherwise, <see langword="false"/>.</returns>
         public static bool IsNative(UInt160 hash)
         {
             return contractsDictionary.ContainsKey(hash);

@@ -10,14 +10,34 @@ using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
+    /// <summary>
+    /// Indicates that the transaction is an oracle response.
+    /// </summary>
     public class OracleResponse : TransactionAttribute
     {
+        /// <summary>
+        /// Indicates the maximum size of the <see cref="Result"/> field.
+        /// </summary>
         public const int MaxResultSize = ushort.MaxValue;
 
+        /// <summary>
+        /// Represents the fixed value of the <see cref="Transaction.Script"/> field of the oracle responding transaction.
+        /// </summary>
         public static readonly byte[] FixedScript;
 
+        /// <summary>
+        /// The ID of the oracle request.
+        /// </summary>
         public ulong Id;
+
+        /// <summary>
+        /// The response code for the oracle request.
+        /// </summary>
         public OracleResponseCode Code;
+
+        /// <summary>
+        /// The result for the oracle request.
+        /// </summary>
         public byte[] Result;
 
         public override TransactionAttributeType Type => TransactionAttributeType.OracleResponse;
@@ -30,7 +50,7 @@ namespace Neo.Network.P2P.Payloads
 
         static OracleResponse()
         {
-            using ScriptBuilder sb = new ScriptBuilder();
+            using ScriptBuilder sb = new();
             sb.EmitDynamicCall(NativeContract.Oracle.Hash, "finish");
             FixedScript = sb.ToArray();
         }

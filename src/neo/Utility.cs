@@ -5,6 +5,9 @@ using System.Text;
 
 namespace Neo
 {
+    /// <summary>
+    /// A utility class that provides common functions.
+    /// </summary>
     public static class Utility
     {
         internal class Logger : ReceiveActor
@@ -16,6 +19,9 @@ namespace Neo
             }
         }
 
+        /// <summary>
+        /// A strict UTF8 encoding used in NEO system.
+        /// </summary>
         public static Encoding StrictUTF8 { get; }
 
         static Utility()
@@ -25,6 +31,12 @@ namespace Neo
             StrictUTF8.EncoderFallback = EncoderFallback.ExceptionFallback;
         }
 
+        /// <summary>
+        /// Writes a log.
+        /// </summary>
+        /// <param name="source">The source of the log. Used to identify the producer of the log.</param>
+        /// <param name="level">The level of the log.</param>
+        /// <param name="message">The message of the log.</param>
         public static void Log(string source, LogLevel level, object message)
         {
             foreach (ILogPlugin plugin in Plugin.Loggers)

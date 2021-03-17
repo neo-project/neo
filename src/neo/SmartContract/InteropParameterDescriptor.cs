@@ -7,16 +7,42 @@ using System.Reflection;
 
 namespace Neo.SmartContract
 {
+    /// <summary>
+    /// Represents a descriptor of an interoperable service parameter.
+    /// </summary>
     public class InteropParameterDescriptor
     {
+        /// <summary>
+        /// The name of the parameter.
+        /// </summary>
         public string Name { get; }
+
+        /// <summary>
+        /// The type of the parameter.
+        /// </summary>
         public Type Type { get; }
+
+        /// <summary>
+        /// The converter to convert the parameter from <see cref="StackItem"/> to <see cref="object"/>.
+        /// </summary>
         public Func<StackItem, object> Converter { get; }
+
+        /// <summary>
+        /// Indicates whether the parameter is an enumeration.
+        /// </summary>
         public bool IsEnum => Type.IsEnum;
+
+        /// <summary>
+        /// Indicates whether the parameter is an array.
+        /// </summary>
         public bool IsArray => Type.IsArray && Type.GetElementType() != typeof(byte);
+
+        /// <summary>
+        /// Indicates whether the parameter is an <see cref="InteropInterface"/>.
+        /// </summary>
         public bool IsInterface { get; }
 
-        private static readonly Dictionary<Type, Func<StackItem, object>> converters = new Dictionary<Type, Func<StackItem, object>>
+        private static readonly Dictionary<Type, Func<StackItem, object>> converters = new()
         {
             [typeof(StackItem)] = p => p,
             [typeof(VM.Types.Pointer)] = p => p,

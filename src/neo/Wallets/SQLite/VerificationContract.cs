@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Neo.Wallets.SQLite
 {
-    public class VerificationContract : SmartContract.Contract, IEquatable<VerificationContract>, ISerializable
+    class VerificationContract : SmartContract.Contract, IEquatable<VerificationContract>, ISerializable
     {
         public int Size => ParameterList.GetVarSize() + Script.GetVarSize();
 

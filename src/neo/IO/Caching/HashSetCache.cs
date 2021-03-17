@@ -4,12 +4,12 @@ using System.Collections.Generic;
 
 namespace Neo.IO.Caching
 {
-    public class HashSetCache<T> : IReadOnlyCollection<T> where T : IEquatable<T>
+    class HashSetCache<T> : IReadOnlyCollection<T> where T : IEquatable<T>
     {
         /// <summary>
         /// Sets where the Hashes are stored
         /// </summary>      
-        private readonly LinkedList<HashSet<T>> sets = new LinkedList<HashSet<T>>();
+        private readonly LinkedList<HashSet<T>> sets = new();
 
         /// <summary>
         /// Maximum capacity of each bucket inside each HashSet of <see cref="sets"/>.

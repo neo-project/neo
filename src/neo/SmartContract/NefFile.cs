@@ -8,22 +8,25 @@ using System.Linq;
 
 namespace Neo.SmartContract
 {
+    /*
+    ┌───────────────────────────────────────────────────────────────────────┐
+    │                    NEO Executable Format 3 (NEF3)                     │
+    ├──────────┬───────────────┬────────────────────────────────────────────┤
+    │  Field   │     Type      │                  Comment                   │
+    ├──────────┼───────────────┼────────────────────────────────────────────┤
+    │ Magic    │ uint32        │ Magic header                               │
+    │ Compiler │ byte[64]      │ Compiler name and version                  │
+    ├──────────┼───────────────┼────────────────────────────────────────────┤
+    │ Reserve  │ byte[2]       │ Reserved for future extensions. Must be 0. │
+    │ Tokens   │ MethodToken[] │ Method tokens.                             │
+    │ Reserve  │ byte[2]       │ Reserved for future extensions. Must be 0. │
+    │ Script   │ byte[]        │ Var bytes for the payload                  │
+    ├──────────┼───────────────┼────────────────────────────────────────────┤
+    │ Checksum │ uint32        │ First four bytes of double SHA256 hash     │
+    └──────────┴───────────────┴────────────────────────────────────────────┘
+    */
     /// <summary>
-    /// ┌───────────────────────────────────────────────────────────────────────┐
-    /// │                    NEO Executable Format 3 (NEF3)                     │
-    /// ├──────────┬───────────────┬────────────────────────────────────────────┤
-    /// │  Field   │     Type      │                  Comment                   │
-    /// ├──────────┼───────────────┼────────────────────────────────────────────┤
-    /// │ Magic    │ uint32        │ Magic header                               │
-    /// │ Compiler │ byte[64]      │ Compiler name and version                  │
-    /// ├──────────┼───────────────┼────────────────────────────────────────────┤
-    /// │ Reserve  │ byte[2]       │ Reserved for future extensions. Must be 0. │
-    /// │ Tokens   │ MethodToken[] │ Method tokens.                             │
-    /// │ Reserve  │ byte[2]       │ Reserved for future extensions. Must be 0. │
-    /// │ Script   │ byte[]        │ Var bytes for the payload                  │
-    /// ├──────────┼───────────────┼────────────────────────────────────────────┤
-    /// │ Checksum │ uint32        │ First four bytes of double SHA256 hash     │
-    /// └──────────┴───────────────┴────────────────────────────────────────────┘
+    /// Represents the structure of NEO Executable Format.
     /// </summary>
     public class NefFile : ISerializable
     {
@@ -33,25 +36,28 @@ namespace Neo.SmartContract
         private const uint Magic = 0x3346454E;
 
         /// <summary>
-        /// Compiler name and version
+        /// The name and version of the compiler that generated this nef file.
         /// </summary>
         public string Compiler { get; set; }
 
         /// <summary>
-        /// Method tokens
+        /// The methods that to be called statically.
         /// </summary>
         public MethodToken[] Tokens { get; set; }
 
         /// <summary>
-        /// Script
+        /// The script of the contract.
         /// </summary>
         public byte[] Script { get; set; }
 
         /// <summary>
-        /// Checksum
+        /// The checksum of the nef file.
         /// </summary>
         public uint CheckSum { get; set; }
 
+        /// <summary>
+        /// The maximum length of the script.
+        /// </summary>
         public const int MaxScriptLength = 512 * 1024;
 
         private const int HeaderSize =
@@ -102,15 +108,19 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// Compute checksum for a file
+        /// Computes the checksum for the specified nef file.
         /// </summary>
-        /// <param name="file">File</param>
-        /// <returns>Return checksum</returns>
+        /// <param name="file">The specified nef file.</param>
+        /// <returns>The checksum of the nef file.</returns>
         public static uint ComputeChecksum(NefFile file)
         {
             return BinaryPrimitives.ReadUInt32LittleEndian(Crypto.Hash256(file.ToArray().AsSpan(..^sizeof(uint))));
         }
 
+        /// <summary>
+        /// Converts the nef file to a JSON object.
+        /// </summary>
+        /// <returns>The nef file represented by a JSON object.</returns>
         public JObject ToJson()
         {
             return new JObject

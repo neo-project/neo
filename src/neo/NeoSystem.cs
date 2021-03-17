@@ -16,20 +16,55 @@ using System.Threading;
 
 namespace Neo
 {
+    /// <summary>
+    /// Represents the basic unit that contains all the components required for running of a NEO node.
+    /// </summary>
     public class NeoSystem : IDisposable
     {
+        /// <summary>
+        /// Triggered when a service is added to the <see cref="NeoSystem"/>.
+        /// </summary>
         public event EventHandler<object> ServiceAdded;
+
+        /// <summary>
+        /// The protocol settings of the <see cref="NeoSystem"/>.
+        /// </summary>
         public ProtocolSettings Settings { get; }
+
+        /// <summary>
+        /// The <see cref="Akka.Actor.ActorSystem"/> used to create actors for the <see cref="NeoSystem"/>.
+        /// </summary>
         public ActorSystem ActorSystem { get; } = ActorSystem.Create(nameof(NeoSystem),
             $"akka {{ log-dead-letters = off , loglevel = warning, loggers = [ \"{typeof(Utility.Logger).AssemblyQualifiedName}\" ] }}" +
             $"blockchain-mailbox {{ mailbox-type: \"{typeof(BlockchainMailbox).AssemblyQualifiedName}\" }}" +
             $"task-manager-mailbox {{ mailbox-type: \"{typeof(TaskManagerMailbox).AssemblyQualifiedName}\" }}" +
             $"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}");
+
+        /// <summary>
+        /// The genesis block of the NEO blockchain.
+        /// </summary>
         public Block GenesisBlock { get; }
+
+        /// <summary>
+        /// The <see cref="Ledger.Blockchain"/> actor of the <see cref="NeoSystem"/>.
+        /// </summary>
         public IActorRef Blockchain { get; }
+
+        /// <summary>
+        /// The <see cref="Network.P2P.LocalNode"/> actor of the <see cref="NeoSystem"/>.
+        /// </summary>
         public IActorRef LocalNode { get; }
+
+        /// <summary>
+        /// The <see cref="Network.P2P.TaskManager"/> actor of the <see cref="NeoSystem"/>.
+        /// </summary>
         public IActorRef TaskManager { get; }
+
+        /// <summary>
+        /// The transaction router actor of the <see cref="NeoSystem"/>.
+        /// </summary>
         public IActorRef TxRouter;
+
         /// <summary>
         /// A readonly view of the store.
         /// </summary>
@@ -37,9 +72,18 @@ namespace Neo
         /// It doesn't need to be disposed because the <see cref="ISnapshot"/> inside it is null.
         /// </remarks>
         public DataCache StoreView => new SnapshotCache(store);
+
+        /// <summary>
+        /// The memory pool of the <see cref="NeoSystem"/>.
+        /// </summary>
         public MemoryPool MemPool { get; }
-        public HeaderCache HeaderCache { get; } = new HeaderCache();
-        internal RelayCache RelayCache { get; } = new RelayCache(100);
+
+        /// <summary>
+        /// The header cache of the <see cref="NeoSystem"/>.
+        /// </summary>
+        public HeaderCache HeaderCache { get; } = new();
+
+        internal RelayCache RelayCache { get; } = new(100);
 
         private ImmutableList<object> services = ImmutableList<object>.Empty;
         private readonly string storage_engine;
@@ -55,6 +99,12 @@ namespace Neo
             Plugin.LoadPlugins();
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NeoSystem"/> class.
+        /// </summary>
+        /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
+        /// <param name="storageEngine">The storage engine used to create the <see cref="IStore"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
+        /// <param name="storagePath">The path of the storage. If <paramref name="storageEngine"/> is the default in-memory storage engine, this parameter is ignored.</param>
         public NeoSystem(ProtocolSettings settings, string storageEngine = null, string storagePath = null)
         {
             this.Settings = settings;
@@ -71,7 +121,12 @@ namespace Neo
             Blockchain.Ask(new Blockchain.Initialize()).Wait();
         }
 
-        public static Block CreateGenesisBlock(ProtocolSettings settings) => new Block
+        /// <summary>
+        /// Creates the genesis block for the NEO blockchain.
+        /// </summary>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> of the NEO system.</param>
+        /// <returns>The genesis block.</returns>
+        public static Block CreateGenesisBlock(ProtocolSettings settings) => new()
         {
             Header = new Header
             {
@@ -107,12 +162,22 @@ namespace Neo
             store.Dispose();
         }
 
+        /// <summary>
+        /// Adds a service to the <see cref="NeoSystem"/>.
+        /// </summary>
+        /// <param name="service">The service object to be added.</param>
         public void AddService(object service)
         {
             ImmutableInterlocked.Update(ref services, p => p.Add(service));
             ServiceAdded?.Invoke(this, service);
         }
 
+        /// <summary>
+        /// Gets a specified type of service object from the <see cref="NeoSystem"/>.
+        /// </summary>
+        /// <typeparam name="T">The type of the service object.</typeparam>
+        /// <param name="filter">An action used to filter the service objects. This parameter can be <see langword="null"/>.</param>
+        /// <returns>The service object found.</returns>
         public T GetService<T>(Func<T, bool> filter = null)
         {
             IEnumerable<T> result = services.OfType<T>();
@@ -122,6 +187,10 @@ namespace Neo
                 return result.FirstOrDefault(filter);
         }
 
+        /// <summary>
+        /// Blocks the current thread until the specified actor has stopped.
+        /// </summary>
+        /// <param name="actor">The actor to wait.</param>
         public void EnsureStoped(IActorRef actor)
         {
             using Inbox inbox = Inbox.Create(ActorSystem);
@@ -130,6 +199,11 @@ namespace Neo
             inbox.Receive(TimeSpan.FromMinutes(5));
         }
 
+        /// <summary>
+        /// Loads an <see cref="IStore"/> at the specified path.
+        /// </summary>
+        /// <param name="path">The path of the storage.</param>
+        /// <returns>The loaded <see cref="IStore"/>.</returns>
         public IStore LoadStore(string path)
         {
             return string.IsNullOrEmpty(storage_engine) || storage_engine == nameof(MemoryStore)
@@ -137,6 +211,10 @@ namespace Neo
                 : Plugin.Storages[storage_engine].GetStore(path);
         }
 
+        /// <summary>
+        /// Resumes the startup process of <see cref="LocalNode"/>.
+        /// </summary>
+        /// <returns><see langword="true"/> if the startup process is resumed; otherwise, <see langword="false"/>.</returns>
         public bool ResumeNodeStartup()
         {
             if (Interlocked.Decrement(ref suspend) != 0)
@@ -149,6 +227,10 @@ namespace Neo
             return true;
         }
 
+        /// <summary>
+        /// Starts the <see cref="LocalNode"/> with the specified configuration.
+        /// </summary>
+        /// <param name="config">The configuration used to start the <see cref="LocalNode"/>.</param>
         public void StartNode(ChannelsConfig config)
         {
             start_message = config;
@@ -160,16 +242,28 @@ namespace Neo
             }
         }
 
+        /// <summary>
+        /// Suspends the startup process of <see cref="LocalNode"/>.
+        /// </summary>
         public void SuspendNodeStartup()
         {
             Interlocked.Increment(ref suspend);
         }
 
+        /// <summary>
+        /// Gets a snapshot of the blockchain storage.
+        /// </summary>
+        /// <returns></returns>
         public SnapshotCache GetSnapshot()
         {
             return new SnapshotCache(store.GetSnapshot());
         }
 
+        /// <summary>
+        /// Determines whether the specified transaction exists in the memory pool or storage.
+        /// </summary>
+        /// <param name="hash">The hash of the transaction</param>
+        /// <returns><see langword="true"/> if the transaction exists; otherwise, <see langword="false"/>.</returns>
         public bool ContainsTransaction(UInt256 hash)
         {
             if (MemPool.ContainsKey(hash)) return true;

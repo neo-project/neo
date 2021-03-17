@@ -5,9 +5,12 @@ using System.Linq;
 
 namespace Neo.Persistence
 {
+    /// <summary>
+    /// An in-memory <see cref="IStore"/> implementation that uses ConcurrentDictionary as the underlying storage.
+    /// </summary>
     public class MemoryStore : IStore
     {
-        private readonly ConcurrentDictionary<byte[], byte[]> innerData = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
+        private readonly ConcurrentDictionary<byte[], byte[]> innerData = new(ByteArrayEqualityComparer.Default);
 
         public void Delete(byte[] key)
         {

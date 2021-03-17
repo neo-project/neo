@@ -9,49 +9,51 @@ using Array = Neo.VM.Types.Array;
 namespace Neo.SmartContract.Manifest
 {
     /// <summary>
+    /// Represents the manifest of a smart contract.
     /// When a smart contract is deployed, it must explicitly declare the features and permissions it will use.
     /// When it is running, it will be limited by its declared list of features and permissions, and cannot make any behavior beyond the scope of the list.
     /// </summary>
+    /// <remarks>For more details, see NEP-15.</remarks>
     public class ContractManifest : IInteroperable
     {
         /// <summary>
-        /// Max length for a valid Contract Manifest
+        /// The maximum length of a manifest.
         /// </summary>
         public const int MaxLength = ushort.MaxValue;
 
         /// <summary>
-        /// Contract name
+        /// The name of the contract.
         /// </summary>
         public string Name { get; set; }
 
         /// <summary>
-        /// A group represents a set of mutually trusted contracts. A contract will trust and allow any contract in the same group to invoke it, and the user interface will not give any warnings.
+        /// The groups of the contract.
         /// </summary>
         public ContractGroup[] Groups { get; set; }
 
         /// <summary>
-        /// NEP10 - SupportedStandards
+        /// Indicates which standards the contract supports. It can be a list of NEPs.
         /// </summary>
         public string[] SupportedStandards { get; set; }
 
         /// <summary>
-        /// For technical details of ABI, please refer to NEP-3: NeoContract ABI. (https://github.com/neo-project/proposals/blob/master/nep-3.mediawiki)
+        /// The ABI of the contract.
         /// </summary>
         public ContractAbi Abi { get; set; }
 
         /// <summary>
-        /// The permissions field is an array containing a set of Permission objects. It describes which contracts may be invoked and which methods are called.
+        /// The permissions of the contract.
         /// </summary>
         public ContractPermission[] Permissions { get; set; }
 
         /// <summary>
-        /// The trusts field is an array containing a set of contract hashes or group public keys. It can also be assigned with a wildcard *. If it is a wildcard *, then it means that it trusts any contract.
+        /// The trusted contracts and groups of the contract.
         /// If a contract is trusted, the user interface will not give any warnings when called by the contract.
         /// </summary>
         public WildcardContainer<UInt160> Trusts { get; set; }
 
         /// <summary>
-        /// Custom user data
+        /// Custom user data.
         /// </summary>
         public JObject Extra { get; set; }
 
@@ -87,13 +89,13 @@ namespace Neo.SmartContract.Manifest
         }
 
         /// <summary>
-        /// Parse ContractManifest from json
+        /// Converts the manifest from a JSON object.
         /// </summary>
-        /// <param name="json">Json</param>
-        /// <returns>Return ContractManifest</returns>
+        /// <param name="json">The manifest represented by a JSON object.</param>
+        /// <returns>The converted manifest.</returns>
         public static ContractManifest FromJson(JObject json)
         {
-            ContractManifest manifest = new ContractManifest
+            ContractManifest manifest = new()
             {
                 Name = json["name"].GetString(),
                 Groups = ((JArray)json["groups"]).Select(u => ContractGroup.FromJson(u)).ToArray(),
@@ -115,21 +117,27 @@ namespace Neo.SmartContract.Manifest
         }
 
         /// <summary>
-        /// Parse ContractManifest from json
+        /// Parse the manifest from a byte array containing JSON data.
         /// </summary>
-        /// <param name="json">Json</param>
-        /// <returns>Return ContractManifest</returns>
+        /// <param name="json">The byte array containing JSON data.</param>
+        /// <returns>The parsed manifest.</returns>
         public static ContractManifest Parse(ReadOnlySpan<byte> json)
         {
             if (json.Length > MaxLength) throw new ArgumentException(null, nameof(json));
             return FromJson(JObject.Parse(json));
         }
 
+        /// <summary>
+        /// Parse the manifest from a JSON <see cref="string"/>.
+        /// </summary>
+        /// <param name="json">The JSON <see cref="string"/>.</param>
+        /// <returns>The parsed manifest.</returns>
         public static ContractManifest Parse(string json) => Parse(Utility.StrictUTF8.GetBytes(json));
 
-        /// <summary
-        /// To json
+        /// <summary>
+        /// Converts the manifest to a JSON object.
         /// </summary>
+        /// <returns>The manifest represented by a JSON object.</returns>
         public JObject ToJson()
         {
             return new JObject
@@ -145,9 +153,10 @@ namespace Neo.SmartContract.Manifest
         }
 
         /// <summary>
-        /// Return true if is valid
+        /// Determines whether the manifest is valid.
         /// </summary>
-        /// <returns>Return true or false</returns>
+        /// <param name="hash">The hash of the contract.</param>
+        /// <returns><see langword="true"/> if the manifest is valid; otherwise, <see langword="false"/>.</returns>
         public bool IsValid(UInt160 hash)
         {
             return Groups.All(u => u.IsValid(hash));

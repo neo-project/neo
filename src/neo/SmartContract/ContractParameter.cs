@@ -8,13 +8,30 @@ using System.Text;
 
 namespace Neo.SmartContract
 {
+    /// <summary>
+    /// Represents a parameter of a contract method.
+    /// </summary>
     public class ContractParameter
     {
+        /// <summary>
+        /// The type of the parameter.
+        /// </summary>
         public ContractParameterType Type;
+
+        /// <summary>
+        /// The value of the parameter.
+        /// </summary>
         public object Value;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ContractParameter"/> class.
+        /// </summary>
         public ContractParameter() { }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ContractParameter"/> class with the specified type.
+        /// </summary>
+        /// <param name="type">The type of the parameter.</param>
         public ContractParameter(ContractParameterType type)
         {
             this.Type = type;
@@ -31,53 +48,42 @@ namespace Neo.SmartContract
                 ContractParameterType.String => "",
                 ContractParameterType.Array => new List<ContractParameter>(),
                 ContractParameterType.Map => new List<KeyValuePair<ContractParameter, ContractParameter>>(),
-                _ => throw new ArgumentException(),
+                _ => throw new ArgumentException(null, nameof(type)),
             };
         }
 
+        /// <summary>
+        /// Converts the parameter from a JSON object.
+        /// </summary>
+        /// <param name="json">The parameter represented by a JSON object.</param>
+        /// <returns>The converted parameter.</returns>
         public static ContractParameter FromJson(JObject json)
         {
-            ContractParameter parameter = new ContractParameter
+            ContractParameter parameter = new()
             {
                 Type = Enum.Parse<ContractParameterType>(json["type"].GetString())
             };
             if (json["value"] != null)
-                switch (parameter.Type)
+                parameter.Value = parameter.Type switch
                 {
-                    case ContractParameterType.Signature:
-                    case ContractParameterType.ByteArray:
-                        parameter.Value = Convert.FromBase64String(json["value"].AsString());
-                        break;
-                    case ContractParameterType.Boolean:
-                        parameter.Value = json["value"].AsBoolean();
-                        break;
-                    case ContractParameterType.Integer:
-                        parameter.Value = BigInteger.Parse(json["value"].AsString());
-                        break;
-                    case ContractParameterType.Hash160:
-                        parameter.Value = UInt160.Parse(json["value"].AsString());
-                        break;
-                    case ContractParameterType.Hash256:
-                        parameter.Value = UInt256.Parse(json["value"].AsString());
-                        break;
-                    case ContractParameterType.PublicKey:
-                        parameter.Value = ECPoint.Parse(json["value"].AsString(), ECCurve.Secp256r1);
-                        break;
-                    case ContractParameterType.String:
-                        parameter.Value = json["value"].AsString();
-                        break;
-                    case ContractParameterType.Array:
-                        parameter.Value = ((JArray)json["value"]).Select(p => FromJson(p)).ToList();
-                        break;
-                    case ContractParameterType.Map:
-                        parameter.Value = ((JArray)json["value"]).Select(p => new KeyValuePair<ContractParameter, ContractParameter>(FromJson(p["key"]), FromJson(p["value"]))).ToList();
-                        break;
-                    default:
-                        throw new ArgumentException();
-                }
+                    ContractParameterType.Signature or ContractParameterType.ByteArray => Convert.FromBase64String(json["value"].AsString()),
+                    ContractParameterType.Boolean => json["value"].AsBoolean(),
+                    ContractParameterType.Integer => BigInteger.Parse(json["value"].AsString()),
+                    ContractParameterType.Hash160 => UInt160.Parse(json["value"].AsString()),
+                    ContractParameterType.Hash256 => UInt256.Parse(json["value"].AsString()),
+                    ContractParameterType.PublicKey => ECPoint.Parse(json["value"].AsString(), ECCurve.Secp256r1),
+                    ContractParameterType.String => json["value"].AsString(),
+                    ContractParameterType.Array => ((JArray)json["value"]).Select(p => FromJson(p)).ToList(),
+                    ContractParameterType.Map => ((JArray)json["value"]).Select(p => new KeyValuePair<ContractParameter, ContractParameter>(FromJson(p["key"]), FromJson(p["value"]))).ToList(),
+                    _ => throw new ArgumentException(null, nameof(json)),
+                };
             return parameter;
         }
 
+        /// <summary>
+        /// Sets the value of the parameter.
+        /// </summary>
+        /// <param name="text">The <see cref="string"/> form of the value.</param>
         public void SetValue(string text)
         {
             switch (Type)
@@ -113,6 +119,10 @@ namespace Neo.SmartContract
             }
         }
 
+        /// <summary>
+        /// Converts the parameter to a JSON object.
+        /// </summary>
+        /// <returns>The parameter represented by a JSON object.</returns>
         public JObject ToJson()
         {
             return ToJson(this, null);
@@ -120,7 +130,7 @@ namespace Neo.SmartContract
 
         private static JObject ToJson(ContractParameter parameter, HashSet<ContractParameter> context)
         {
-            JObject json = new JObject();
+            JObject json = new();
             json["type"] = parameter.Type;
             if (parameter.Value != null)
                 switch (parameter.Type)
@@ -155,7 +165,7 @@ namespace Neo.SmartContract
                         context.Add(parameter);
                         json["value"] = new JArray(((IList<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value).Select(p =>
                         {
-                            JObject item = new JObject();
+                            JObject item = new();
                             item["key"] = ToJson(p.Key, context);
                             item["value"] = ToJson(p.Value, context);
                             return item;
@@ -187,7 +197,7 @@ namespace Neo.SmartContract
                     else
                     {
                         context.Add(parameter);
-                        StringBuilder sb = new StringBuilder();
+                        StringBuilder sb = new();
                         sb.Append('[');
                         foreach (ContractParameter item in data)
                         {
@@ -208,7 +218,7 @@ namespace Neo.SmartContract
                     else
                     {
                         context.Add(parameter);
-                        StringBuilder sb = new StringBuilder();
+                        StringBuilder sb = new();
                         sb.Append('[');
                         foreach (var item in data)
                         {

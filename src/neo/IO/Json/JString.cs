@@ -4,15 +4,29 @@ using System.Text.Json;
 
 namespace Neo.IO.Json
 {
+    /// <summary>
+    /// Represents a JSON string.
+    /// </summary>
     public class JString : JObject
     {
-        public string Value { get; private set; }
+        /// <summary>
+        /// Gets the value of the JSON object.
+        /// </summary>
+        public string Value { get; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JString"/> class with the specified value.
+        /// </summary>
+        /// <param name="value">The value of the JSON object.</param>
         public JString(string value)
         {
-            this.Value = value ?? throw new ArgumentNullException();
+            this.Value = value ?? throw new ArgumentNullException(nameof(value));
         }
 
+        /// <summary>
+        /// Converts the current JSON object to a boolean value.
+        /// </summary>
+        /// <returns><see langword="true"/> if value is not empty; otherwise, <see langword="false"/>.</returns>
         public override bool AsBoolean()
         {
             return !string.IsNullOrEmpty(Value);
