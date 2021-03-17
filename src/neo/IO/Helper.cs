@@ -25,7 +25,7 @@ namespace Neo.IO
         public static T AsSerializable<T>(this byte[] value, int start = 0) where T : ISerializable, new()
         {
             using MemoryStream ms = new(value, start, value.Length - start, false);
-            using BinaryReader reader = new(ms, Utility.StrictUTF8);
+            using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
             return reader.ReadSerializable<T>();
         }
 
@@ -41,7 +41,7 @@ namespace Neo.IO
             fixed (byte* pointer = value)
             {
                 using UnmanagedMemoryStream ms = new(pointer, value.Length);
-                using BinaryReader reader = new(ms, Utility.StrictUTF8);
+                using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
                 return reader.ReadSerializable<T>();
             }
         }
@@ -57,11 +57,9 @@ namespace Neo.IO
             if (!typeof(ISerializable).GetTypeInfo().IsAssignableFrom(type))
                 throw new InvalidCastException();
             ISerializable serializable = (ISerializable)Activator.CreateInstance(type);
-            using (MemoryStream ms = new(value, false))
-            using (BinaryReader reader = new(ms, Utility.StrictUTF8))
-            {
-                serializable.Deserialize(reader);
-            }
+            using MemoryStream ms = new(value, false);
+            using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
+            serializable.Deserialize(reader);
             return serializable;
         }
 
@@ -75,7 +73,7 @@ namespace Neo.IO
         public static T[] AsSerializableArray<T>(this byte[] value, int max = 0x1000000) where T : ISerializable, new()
         {
             using MemoryStream ms = new(value, false);
-            using BinaryReader reader = new(ms, Utility.StrictUTF8);
+            using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
             return reader.ReadSerializableArray<T>(max);
         }
 
@@ -92,7 +90,7 @@ namespace Neo.IO
             fixed (byte* pointer = value)
             {
                 using UnmanagedMemoryStream ms = new(pointer, value.Length);
-                using BinaryReader reader = new(ms, Utility.StrictUTF8);
+                using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
                 return reader.ReadSerializableArray<T>(max);
             }
         }
@@ -357,7 +355,7 @@ namespace Neo.IO
         public static byte[] ToByteArray<T>(this IReadOnlyCollection<T> value) where T : ISerializable
         {
             using MemoryStream ms = new();
-            using BinaryWriter writer = new(ms, Utility.StrictUTF8);
+            using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             writer.Write(value);
             writer.Flush();
             return ms.ToArray();

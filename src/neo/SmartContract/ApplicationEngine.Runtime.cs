@@ -243,11 +243,9 @@ namespace Neo.SmartContract
         protected internal void RuntimeNotify(byte[] eventName, Array state)
         {
             if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
-            using (MemoryStream ms = new(MaxNotificationSize))
-            using (BinaryWriter writer = new(ms))
-            {
-                BinarySerializer.Serialize(writer, state, MaxNotificationSize);
-            }
+            using MemoryStream ms = new(MaxNotificationSize);
+            using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
+            BinarySerializer.Serialize(writer, state, MaxNotificationSize);
             SendNotification(CurrentScriptHash, Utility.StrictUTF8.GetString(eventName), state);
         }
 
