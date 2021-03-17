@@ -42,7 +42,7 @@ namespace Neo.SmartContract
         /// </summary>
         public bool IsInterface { get; }
 
-        private static readonly Dictionary<Type, Func<StackItem, object>> converters = new Dictionary<Type, Func<StackItem, object>>
+        private static readonly Dictionary<Type, Func<StackItem, object>> converters = new()
         {
             [typeof(StackItem)] = p => p,
             [typeof(VM.Types.Pointer)] = p => p,

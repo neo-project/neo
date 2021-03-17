@@ -39,7 +39,7 @@ namespace Neo.Network.P2P.Payloads
         public static TransactionAttribute DeserializeFrom(BinaryReader reader)
         {
             TransactionAttributeType type = (TransactionAttributeType)reader.ReadByte();
-            if (!(ReflectionCache<TransactionAttributeType>.CreateInstance(type) is TransactionAttribute attribute))
+            if (ReflectionCache<TransactionAttributeType>.CreateInstance(type) is not TransactionAttribute attribute)
                 throw new FormatException();
             attribute.DeserializeWithoutType(reader);
             return attribute;

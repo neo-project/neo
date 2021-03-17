@@ -4,7 +4,7 @@ namespace Neo.IO
 {
     internal class ByteArrayEqualityComparer : IEqualityComparer<byte[]>
     {
-        public static readonly ByteArrayEqualityComparer Default = new ByteArrayEqualityComparer();
+        public static readonly ByteArrayEqualityComparer Default = new();
 
         public unsafe bool Equals(byte[] x, byte[] y)
         {
