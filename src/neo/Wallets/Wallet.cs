@@ -5,6 +5,7 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.Wallets.NEP6;
 using Org.BouncyCastle.Crypto.Generators;
 using System;
 using System.Collections.Generic;
@@ -19,28 +20,103 @@ using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.Wallets
 {
+    /// <summary>
+    /// The base class of wallets.
+    /// </summary>
     public abstract class Wallet
     {
+        /// <summary>
+        /// The <see cref="Neo.ProtocolSettings"/> to be used by the wallet.
+        /// </summary>
         public ProtocolSettings ProtocolSettings { get; }
+
+        /// <summary>
+        /// The name of the wallet.
+        /// </summary>
         public abstract string Name { get; }
+
+        /// <summary>
+        /// The path of the wallet.
+        /// </summary>
         public string Path { get; }
+
+        /// <summary>
+        /// The version of the wallet.
+        /// </summary>
         public abstract Version Version { get; }
 
+        /// <summary>
+        /// Changes the password of the wallet.
+        /// </summary>
+        /// <param name="oldPassword">The old password of the wallet.</param>
+        /// <param name="newPassword">The new password to be used.</param>
+        /// <returns><see langword="true"/> if the password is changed successfully; otherwise, <see langword="false"/>.</returns>
         public abstract bool ChangePassword(string oldPassword, string newPassword);
+
+        /// <summary>
+        /// Determines whether the specified account is included in the wallet.
+        /// </summary>
+        /// <param name="scriptHash">The hash of the account.</param>
+        /// <returns><see langword="true"/> if the account is included in the wallet; otherwise, <see langword="false"/>.</returns>
         public abstract bool Contains(UInt160 scriptHash);
+
+        /// <summary>
+        /// Creates a standard account with the specified private key.
+        /// </summary>
+        /// <param name="privateKey">The private key of the account.</param>
+        /// <returns>The created account.</returns>
         public abstract WalletAccount CreateAccount(byte[] privateKey);
+
+        /// <summary>
+        /// Creates a contract account for the wallet.
+        /// </summary>
+        /// <param name="contract">The contract of the account.</param>
+        /// <param name="key">The private key of the account.</param>
+        /// <returns>The created account.</returns>
         public abstract WalletAccount CreateAccount(Contract contract, KeyPair key = null);
+
+        /// <summary>
+        /// Creates a watch-only account for the wallet.
+        /// </summary>
+        /// <param name="scriptHash">The hash of the account.</param>
+        /// <returns>The created account.</returns>
         public abstract WalletAccount CreateAccount(UInt160 scriptHash);
+
+        /// <summary>
+        /// Deletes an account from the wallet.
+        /// </summary>
+        /// <param name="scriptHash">The hash of the account.</param>
+        /// <returns><see langword="true"/> if the account is removed; otherwise, <see langword="false"/>.</returns>
         public abstract bool DeleteAccount(UInt160 scriptHash);
+
+        /// <summary>
+        /// Gets the account with the specified hash.
+        /// </summary>
+        /// <param name="scriptHash">The hash of the account.</param>
+        /// <returns>The account with the specified hash.</returns>
         public abstract WalletAccount GetAccount(UInt160 scriptHash);
+
+        /// <summary>
+        /// Gets all the accounts from the wallet.
+        /// </summary>
+        /// <returns>All accounts in the wallet.</returns>
         public abstract IEnumerable<WalletAccount> GetAccounts();
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Wallet"/> class.
+        /// </summary>
+        /// <param name="path">The path of the wallet file.</param>
+        /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> to be used by the wallet.</param>
         protected Wallet(string path, ProtocolSettings settings)
         {
             this.ProtocolSettings = settings;
             this.Path = path;
         }
 
+        /// <summary>
+        /// Creates a standard account for the wallet.
+        /// </summary>
+        /// <returns>The created account.</returns>
         public WalletAccount CreateAccount()
         {
             byte[] privateKey = new byte[32];
@@ -53,13 +129,19 @@ namespace Neo.Wallets
             return account;
         }
 
+        /// <summary>
+        /// Creates a contract account for the wallet.
+        /// </summary>
+        /// <param name="contract">The contract of the account.</param>
+        /// <param name="privateKey">The private key of the account.</param>
+        /// <returns>The created account.</returns>
         public WalletAccount CreateAccount(Contract contract, byte[] privateKey)
         {
             if (privateKey == null) return CreateAccount(contract);
             return CreateAccount(contract, new KeyPair(privateKey));
         }
 
-        private List<(UInt160 Account, BigInteger Value)> FindPayingAccounts(List<(UInt160 Account, BigInteger Value)> orderedAccounts, BigInteger amount)
+        private static List<(UInt160 Account, BigInteger Value)> FindPayingAccounts(List<(UInt160 Account, BigInteger Value)> orderedAccounts, BigInteger amount)
         {
             var result = new List<(UInt160 Account, BigInteger Value)>();
             BigInteger sum_balance = orderedAccounts.Select(p => p.Value).Sum();
@@ -117,21 +199,39 @@ namespace Neo.Wallets
             return result;
         }
 
+        /// <summary>
+        /// Gets the account with the specified public key.
+        /// </summary>
+        /// <param name="pubkey">The public key of the account.</param>
+        /// <returns>The account with the specified public key.</returns>
         public WalletAccount GetAccount(ECPoint pubkey)
         {
             return GetAccount(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash());
         }
 
+        /// <summary>
+        /// Gets the available balance for the specified asset in the wallet.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="asset_id">The id of the asset.</param>
+        /// <returns>The available balance for the specified asset.</returns>
         public BigDecimal GetAvailable(DataCache snapshot, UInt160 asset_id)
         {
             UInt160[] accounts = GetAccounts().Where(p => !p.WatchOnly).Select(p => p.ScriptHash).ToArray();
             return GetBalance(snapshot, asset_id, accounts);
         }
 
+        /// <summary>
+        /// Gets the balance for the specified asset in the wallet.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="asset_id">The id of the asset.</param>
+        /// <param name="accounts">The accounts to be counted.</param>
+        /// <returns>The balance for the specified asset.</returns>
         public BigDecimal GetBalance(DataCache snapshot, UInt160 asset_id, params UInt160[] accounts)
         {
             byte[] script;
-            using (ScriptBuilder sb = new ScriptBuilder())
+            using (ScriptBuilder sb = new())
             {
                 sb.EmitPush(0);
                 foreach (UInt160 account in accounts)
@@ -160,6 +260,16 @@ namespace Neo.Wallets
             return decryptor.TransformFinalBlock(data, 0, data.Length);
         }
 
+        /// <summary>
+        /// Decodes a private key from the specified NEP-2 string.
+        /// </summary>
+        /// <param name="nep2">The NEP-2 string to be decoded.</param>
+        /// <param name="passphrase">The passphrase of the private key.</param>
+        /// <param name="version">The address version of NEO system.</param>
+        /// <param name="N">The N field of the <see cref="ScryptParameters"/> to be used.</param>
+        /// <param name="r">The R field of the <see cref="ScryptParameters"/> to be used.</param>
+        /// <param name="p">The P field of the <see cref="ScryptParameters"/> to be used.</param>
+        /// <returns>The decoded private key.</returns>
         public static byte[] GetPrivateKeyFromNEP2(string nep2, string passphrase, byte version, int N = 16384, int r = 8, int p = 8)
         {
             if (nep2 == null) throw new ArgumentNullException(nameof(nep2));
@@ -189,9 +299,14 @@ namespace Neo.Wallets
             return prikey;
         }
 
+        /// <summary>
+        /// Decodes a private key from the specified WIF string.
+        /// </summary>
+        /// <param name="wif">The WIF string to be decoded.</param>
+        /// <returns>The decoded private key.</returns>
         public static byte[] GetPrivateKeyFromWIF(string wif)
         {
-            if (wif == null) throw new ArgumentNullException();
+            if (wif is null) throw new ArgumentNullException(nameof(wif));
             byte[] data = wif.Base58CheckDecode();
             if (data.Length != 34 || data[0] != 0x80 || data[33] != 0x01)
                 throw new FormatException();
@@ -208,7 +323,7 @@ namespace Neo.Wallets
                 if (cosigners[i].Account.Equals(sender))
                 {
                     if (i == 0) return cosigners;
-                    List<Signer> list = new List<Signer>(cosigners);
+                    List<Signer> list = new(cosigners);
                     list.RemoveAt(i);
                     list.Insert(0, cosigners[i]);
                     return list.ToArray();
@@ -221,6 +336,11 @@ namespace Neo.Wallets
             }).ToArray();
         }
 
+        /// <summary>
+        /// Imports an account from a <see cref="X509Certificate2"/>.
+        /// </summary>
+        /// <param name="cert">The <see cref="X509Certificate2"/> to import.</param>
+        /// <returns>The imported account.</returns>
         public virtual WalletAccount Import(X509Certificate2 cert)
         {
             byte[] privateKey;
@@ -233,6 +353,11 @@ namespace Neo.Wallets
             return account;
         }
 
+        /// <summary>
+        /// Imports an account from the specified WIF string.
+        /// </summary>
+        /// <param name="wif">The WIF string to import.</param>
+        /// <returns>The imported account.</returns>
         public virtual WalletAccount Import(string wif)
         {
             byte[] privateKey = GetPrivateKeyFromWIF(wif);
@@ -241,6 +366,15 @@ namespace Neo.Wallets
             return account;
         }
 
+        /// <summary>
+        /// Imports an account from the specified NEP-2 string.
+        /// </summary>
+        /// <param name="nep2">The NEP-2 string to import.</param>
+        /// <param name="passphrase">The passphrase of the private key.</param>
+        /// <param name="N">The N field of the <see cref="ScryptParameters"/> to be used.</param>
+        /// <param name="r">The R field of the <see cref="ScryptParameters"/> to be used.</param>
+        /// <param name="p">The P field of the <see cref="ScryptParameters"/> to be used.</param>
+        /// <returns>The imported account.</returns>
         public virtual WalletAccount Import(string nep2, string passphrase, int N = 16384, int r = 8, int p = 8)
         {
             byte[] privateKey = GetPrivateKeyFromNEP2(nep2, passphrase, ProtocolSettings.AddressVersion, N, r, p);
@@ -249,6 +383,14 @@ namespace Neo.Wallets
             return account;
         }
 
+        /// <summary>
+        /// Makes a transaction to transfer assets.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="outputs">The array of <see cref="TransferOutput"/> that contain the asset, amount, and targets of the transfer.</param>
+        /// <param name="from">The account to transfer from.</param>
+        /// <param name="cosigners">The cosigners to be added to the transction.</param>
+        /// <returns>The created transction.</returns>
         public Transaction MakeTransaction(DataCache snapshot, TransferOutput[] outputs, UInt160 from = null, Signer[] cosigners = null)
         {
             UInt160[] accounts;
@@ -263,23 +405,21 @@ namespace Neo.Wallets
             Dictionary<UInt160, Signer> cosignerList = cosigners?.ToDictionary(p => p.Account) ?? new Dictionary<UInt160, Signer>();
             byte[] script;
             List<(UInt160 Account, BigInteger Value)> balances_gas = null;
-            using (ScriptBuilder sb = new ScriptBuilder())
+            using (ScriptBuilder sb = new())
             {
                 foreach (var (assetId, group, sum) in outputs.GroupBy(p => p.AssetId, (k, g) => (k, g, g.Select(p => p.Value.Value).Sum())))
                 {
                     var balances = new List<(UInt160 Account, BigInteger Value)>();
                     foreach (UInt160 account in accounts)
-                        using (ScriptBuilder sb2 = new ScriptBuilder())
-                        {
-                            sb2.EmitDynamicCall(assetId, "balanceOf", CallFlags.ReadOnly, account);
-                            using (ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot, settings: ProtocolSettings))
-                            {
-                                if (engine.State != VMState.HALT)
-                                    throw new InvalidOperationException($"Execution for {assetId}.balanceOf('{account}' fault");
-                                BigInteger value = engine.ResultStack.Pop().GetInteger();
-                                if (value.Sign > 0) balances.Add((account, value));
-                            }
-                        }
+                    {
+                        using ScriptBuilder sb2 = new();
+                        sb2.EmitDynamicCall(assetId, "balanceOf", CallFlags.ReadOnly, account);
+                        using ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot, settings: ProtocolSettings);
+                        if (engine.State != VMState.HALT)
+                            throw new InvalidOperationException($"Execution for {assetId}.balanceOf('{account}' fault");
+                        BigInteger value = engine.ResultStack.Pop().GetInteger();
+                        if (value.Sign > 0) balances.Add((account, value));
+                    }
                     BigInteger sum_balance = balances.Select(p => p.Value).Sum();
                     if (sum_balance < sum)
                         throw new InvalidOperationException($"It does not have enough balance, expected: {sum} found: {sum_balance}");
@@ -317,6 +457,16 @@ namespace Neo.Wallets
             return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), Array.Empty<TransactionAttribute>(), balances_gas);
         }
 
+        /// <summary>
+        /// Makes a transaction to run a smart contract.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="script">The script to be loaded in the transaction.</param>
+        /// <param name="sender">The sender of the transaction.</param>
+        /// <param name="cosigners">The cosigners to be added to the transction.</param>
+        /// <param name="attributes">The attributes to be added to the transction.</param>
+        /// <param name="maxGas">The maximum gas that can be spent to execute the script.</param>
+        /// <returns>The created transction.</returns>
         public Transaction MakeTransaction(DataCache snapshot, byte[] script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null, long maxGas = ApplicationEngine.TestModeGas)
         {
             UInt160[] accounts;
@@ -334,10 +484,10 @@ namespace Neo.Wallets
 
         private Transaction MakeTransaction(DataCache snapshot, byte[] script, Signer[] cosigners, TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balances_gas, long maxGas = ApplicationEngine.TestModeGas)
         {
-            Random rand = new Random();
+            Random rand = new();
             foreach (var (account, value) in balances_gas)
             {
-                Transaction tx = new Transaction
+                Transaction tx = new()
                 {
                     Version = 0,
                     Nonce = (uint)rand.Next(),
@@ -363,6 +513,12 @@ namespace Neo.Wallets
             throw new InvalidOperationException("Insufficient GAS");
         }
 
+        /// <summary>
+        /// Calculates the network fee for the specified transaction.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="tx">The transaction to calculate.</param>
+        /// <returns>The network fee of the transaction.</returns>
         public long CalculateNetworkFee(DataCache snapshot, Transaction tx)
         {
             UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
@@ -430,6 +586,11 @@ namespace Neo.Wallets
             return networkFee;
         }
 
+        /// <summary>
+        /// Signs the <see cref="IVerifiable"/> in the specified <see cref="ContractParametersContext"/> with the wallet.
+        /// </summary>
+        /// <param name="context">The <see cref="ContractParametersContext"/> to be used.</param>
+        /// <returns><see langword="true"/> if the signature is successfully added to the context; otherwise, <see langword="false"/>.</returns>
         public bool Sign(ContractParametersContext context)
         {
             bool fSuccess = false;
@@ -488,6 +649,11 @@ namespace Neo.Wallets
             return fSuccess;
         }
 
+        /// <summary>
+        /// Checks that the specified password is correct for the wallet.
+        /// </summary>
+        /// <param name="password">The password to be checked.</param>
+        /// <returns><see langword="true"/> if the password is correct; otherwise, <see langword="false"/>.</returns>
         public abstract bool VerifyPassword(string password);
     }
 }

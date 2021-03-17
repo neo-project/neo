@@ -30,7 +30,7 @@ namespace Neo.Cryptography.ECC
             if (obj == this)
                 return true;
 
-            if (!(obj is ECFieldElement other))
+            if (obj is not ECFieldElement other)
                 return false;
 
             return Equals(other);
@@ -97,7 +97,7 @@ namespace Neo.Cryptography.ECC
         {
             if (curve.Q.TestBit(1))
             {
-                ECFieldElement z = new ECFieldElement(BigInteger.ModPow(Value, (curve.Q >> 2) + 1, curve.Q), curve);
+                ECFieldElement z = new(BigInteger.ModPow(Value, (curve.Q >> 2) + 1, curve.Q), curve);
                 return z.Square().Equals(this) ? z : null;
             }
             BigInteger qMinusOne = curve.Q - 1;
@@ -111,7 +111,7 @@ namespace Neo.Cryptography.ECC
             BigInteger U, V;
             do
             {
-                Random rand = new Random();
+                Random rand = new();
                 BigInteger P;
                 do
                 {

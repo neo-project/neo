@@ -4,10 +4,17 @@ using System.Linq;
 
 namespace Neo.SmartContract
 {
+    /// <summary>
+    /// Represents a deployed contract that can be invoked.
+    /// </summary>
     public class DeployedContract : Contract
     {
         public override UInt160 ScriptHash { get; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DeployedContract"/> class with the specified <see cref="ContractState"/>.
+        /// </summary>
+        /// <param name="contract">The <see cref="ContractState"/> corresponding to the contract.</param>
         public DeployedContract(ContractState contract)
         {
             if (contract is null) throw new ArgumentNullException(nameof(contract));

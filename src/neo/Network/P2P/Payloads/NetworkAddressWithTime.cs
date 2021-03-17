@@ -7,15 +7,40 @@ using System.Net;
 
 namespace Neo.Network.P2P.Payloads
 {
+    /// <summary>
+    /// Sent with an <see cref="AddrPayload"/> to respond to <see cref="MessageCommand.GetAddr"/> messages.
+    /// </summary>
     public class NetworkAddressWithTime : ISerializable
     {
+        /// <summary>
+        /// The time when connected to the node.
+        /// </summary>
         public uint Timestamp;
+
+        /// <summary>
+        /// The address of the node.
+        /// </summary>
         public IPAddress Address;
+
+        /// <summary>
+        /// The capabilities of the node.
+        /// </summary>
         public NodeCapability[] Capabilities;
 
-        public IPEndPoint EndPoint => new IPEndPoint(Address, Capabilities.Where(p => p.Type == NodeCapabilityType.TcpServer).Select(p => (ServerCapability)p).FirstOrDefault()?.Port ?? 0);
+        /// <summary>
+        /// The <see cref="IPEndPoint"/> of the Tcp server.
+        /// </summary>
+        public IPEndPoint EndPoint => new(Address, Capabilities.Where(p => p.Type == NodeCapabilityType.TcpServer).Select(p => (ServerCapability)p).FirstOrDefault()?.Port ?? 0);
+
         public int Size => sizeof(uint) + 16 + Capabilities.GetVarSize();
 
+        /// <summary>
+        /// Creates a new instance of the <see cref="NetworkAddressWithTime"/> class.
+        /// </summary>
+        /// <param name="address">The address of the node.</param>
+        /// <param name="timestamp">The time when connected to the node.</param>
+        /// <param name="capabilities">The capabilities of the node.</param>
+        /// <returns>The created payload.</returns>
         public static NetworkAddressWithTime Create(IPAddress address, uint timestamp, params NodeCapability[] capabilities)
         {
             return new NetworkAddressWithTime

@@ -6,11 +6,26 @@ using System.Text.Json;
 
 namespace Neo.IO.Json
 {
+    /// <summary>
+    /// Represents a JSON object.
+    /// </summary>
     public class JObject
     {
+        /// <summary>
+        /// Represents a <see langword="null"/> object.
+        /// </summary>
         public static readonly JObject Null = null;
+
+        /// <summary>
+        /// Gets or sets the properties of the JSON object.
+        /// </summary>
         public IDictionary<string, JObject> Properties { get; } = new OrderedDictionary<string, JObject>();
 
+        /// <summary>
+        /// Gets or sets the properties of the JSON object.
+        /// </summary>
+        /// <param name="name">The name of the property to get or set.</param>
+        /// <returns>The property with the specified name.</returns>
         public JObject this[string name]
         {
             get
@@ -25,30 +40,64 @@ namespace Neo.IO.Json
             }
         }
 
+        /// <summary>
+        /// Converts the current JSON object to a boolean value.
+        /// </summary>
+        /// <returns>The converted value.</returns>
         public virtual bool AsBoolean()
         {
             return true;
         }
 
+        /// <summary>
+        /// Converts the current JSON object to a floating point number.
+        /// </summary>
+        /// <returns>The converted value.</returns>
         public virtual double AsNumber()
         {
             return double.NaN;
         }
 
+        /// <summary>
+        /// Converts the current JSON object to a <see cref="string"/>.
+        /// </summary>
+        /// <returns>The converted value.</returns>
         public virtual string AsString()
         {
             return ToString();
         }
 
+        /// <summary>
+        /// Determines whether the JSON object contains a property with the specified name.
+        /// </summary>
+        /// <param name="key">The property name to locate in the JSON object.</param>
+        /// <returns><see langword="true"/> if the JSON object contains a property with the name; otherwise, <see langword="false"/>.</returns>
         public bool ContainsProperty(string key)
         {
             return Properties.ContainsKey(key);
         }
 
+        /// <summary>
+        /// Converts the current JSON object to a <see cref="JArray"/> object.
+        /// </summary>
+        /// <returns>The converted value.</returns>
+        /// <exception cref="InvalidCastException">The JSON object is not a <see cref="JArray"/>.</exception>
         public virtual JArray GetArray() => throw new InvalidCastException();
 
+        /// <summary>
+        /// Converts the current JSON object to a boolean value.
+        /// </summary>
+        /// <returns>The converted value.</returns>
+        /// <exception cref="InvalidCastException">The JSON object is not a <see cref="JBoolean"/>.</exception>
         public virtual bool GetBoolean() => throw new InvalidCastException();
 
+        /// <summary>
+        /// Converts the current JSON object to a 32-bit signed integer.
+        /// </summary>
+        /// <returns>The converted value.</returns>
+        /// <exception cref="InvalidCastException">The JSON object is not a <see cref="JNumber"/>.</exception>
+        /// <exception cref="InvalidCastException">The JSON object cannot be converted to an integer.</exception>
+        /// <exception cref="OverflowException">The JSON object cannot be converted to a 32-bit signed integer.</exception>
         public int GetInt32()
         {
             double d = GetNumber();
@@ -56,13 +105,29 @@ namespace Neo.IO.Json
             return checked((int)d);
         }
 
+        /// <summary>
+        /// Converts the current JSON object to a floating point number.
+        /// </summary>
+        /// <returns>The converted value.</returns>
+        /// <exception cref="InvalidCastException">The JSON object is not a <see cref="JNumber"/>.</exception>
         public virtual double GetNumber() => throw new InvalidCastException();
 
+        /// <summary>
+        /// Converts the current JSON object to a <see cref="string"/>.
+        /// </summary>
+        /// <returns>The converted value.</returns>
+        /// <exception cref="InvalidCastException">The JSON object is not a <see cref="JString"/>.</exception>
         public virtual string GetString() => throw new InvalidCastException();
 
+        /// <summary>
+        /// Parses a JSON object from a byte array.
+        /// </summary>
+        /// <param name="value">The byte array that contains the JSON object.</param>
+        /// <param name="max_nest">The maximum nesting depth when parsing the JSON object.</param>
+        /// <returns>The parsed JSON object.</returns>
         public static JObject Parse(ReadOnlySpan<byte> value, int max_nest = 100)
         {
-            Utf8JsonReader reader = new Utf8JsonReader(value, new JsonReaderOptions
+            Utf8JsonReader reader = new(value, new JsonReaderOptions
             {
                 AllowTrailingCommas = false,
                 CommentHandling = JsonCommentHandling.Skip,
@@ -80,6 +145,12 @@ namespace Neo.IO.Json
             }
         }
 
+        /// <summary>
+        /// Parses a JSON object from a <see cref="string"/>.
+        /// </summary>
+        /// <param name="value">The <see cref="string"/> that contains the JSON object.</param>
+        /// <param name="max_nest">The maximum nesting depth when parsing the JSON object.</param>
+        /// <returns>The parsed JSON object.</returns>
         public static JObject Parse(string value, int max_nest = 100)
         {
             return Parse(Utility.StrictUTF8.GetBytes(value), max_nest);
@@ -103,7 +174,7 @@ namespace Neo.IO.Json
 
         private static JArray ReadArray(ref Utf8JsonReader reader)
         {
-            JArray array = new JArray();
+            JArray array = new();
             while (reader.Read())
             {
                 switch (reader.TokenType)
@@ -120,7 +191,7 @@ namespace Neo.IO.Json
 
         private static JObject ReadObject(ref Utf8JsonReader reader)
         {
-            JObject obj = new JObject();
+            JObject obj = new();
             while (reader.Read())
             {
                 switch (reader.TokenType)
@@ -152,10 +223,15 @@ namespace Neo.IO.Json
             }
         }
 
+        /// <summary>
+        /// Encode the current JSON object into a byte array.
+        /// </summary>
+        /// <param name="indented">Indicates whether indentation is required.</param>
+        /// <returns>The encoded JSON object.</returns>
         public byte[] ToByteArray(bool indented)
         {
-            using MemoryStream ms = new MemoryStream();
-            using Utf8JsonWriter writer = new Utf8JsonWriter(ms, new JsonWriterOptions
+            using MemoryStream ms = new();
+            using Utf8JsonWriter writer = new(ms, new JsonWriterOptions
             {
                 Indented = indented,
                 SkipValidation = true
@@ -165,16 +241,32 @@ namespace Neo.IO.Json
             return ms.ToArray();
         }
 
+        /// <summary>
+        /// Encode the current JSON object into a <see cref="string"/>.
+        /// </summary>
+        /// <returns>The encoded JSON object.</returns>
         public override string ToString()
         {
             return ToString(false);
         }
 
+        /// <summary>
+        /// Encode the current JSON object into a <see cref="string"/>.
+        /// </summary>
+        /// <param name="indented">Indicates whether indentation is required.</param>
+        /// <returns>The encoded JSON object.</returns>
         public string ToString(bool indented)
         {
             return Utility.StrictUTF8.GetString(ToByteArray(indented));
         }
 
+        /// <summary>
+        /// Converts the current JSON object to an <see cref="Enum"/>.
+        /// </summary>
+        /// <typeparam name="T">The type of the <see cref="Enum"/>.</typeparam>
+        /// <param name="defaultValue">If the current JSON object cannot be converted to type <typeparamref name="T"/>, then the default value is returned.</param>
+        /// <param name="ignoreCase">Indicates whether case should be ignored during conversion.</param>
+        /// <returns>The converted value.</returns>
         public virtual T TryGetEnum<T>(T defaultValue = default, bool ignoreCase = false) where T : Enum
         {
             return defaultValue;
@@ -219,6 +311,10 @@ namespace Neo.IO.Json
             return (JString)value;
         }
 
+        /// <summary>
+        /// Creates a copy of the current JSON object.
+        /// </summary>
+        /// <returns>A copy of the current JSON object.</returns>
         public virtual JObject Clone()
         {
             var cloned = new JObject();

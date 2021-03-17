@@ -7,15 +7,18 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Manifest
 {
+    /// <summary>
+    /// Represents an event in a smart contract ABI.
+    /// </summary>
     public class ContractEventDescriptor : IInteroperable
     {
         /// <summary>
-        /// Name is the name of the method, which can be any valid identifier.
+        /// The name of the event or method.
         /// </summary>
         public string Name { get; set; }
 
         /// <summary>
-        /// Parameters is an array of Parameter objects which describe the details of each parameter in the method.
+        /// The parameters of the event or method.
         /// </summary>
         public ContractParameterDefinition[] Parameters { get; set; }
 
@@ -36,13 +39,13 @@ namespace Neo.SmartContract.Manifest
         }
 
         /// <summary>
-        /// Parse ContractEventDescriptor from json
+        /// Converts the event from a JSON object.
         /// </summary>
-        /// <param name="json">Json</param>
-        /// <returns>Return ContractEventDescriptor</returns>
+        /// <param name="json">The event represented by a JSON object.</param>
+        /// <returns>The converted event.</returns>
         public static ContractEventDescriptor FromJson(JObject json)
         {
-            ContractEventDescriptor descriptor = new ContractEventDescriptor
+            ContractEventDescriptor descriptor = new()
             {
                 Name = json["name"].GetString(),
                 Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson(u)).ToArray(),
@@ -52,6 +55,10 @@ namespace Neo.SmartContract.Manifest
             return descriptor;
         }
 
+        /// <summary>
+        /// Converts the event to a JSON object.
+        /// </summary>
+        /// <returns>The event represented by a JSON object.</returns>
         public virtual JObject ToJson()
         {
             var json = new JObject();

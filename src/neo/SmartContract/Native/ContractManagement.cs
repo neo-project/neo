@@ -12,6 +12,9 @@ using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
+    /// <summary>
+    /// A native contract used to manage all deployed smart contracts.
+    /// </summary>
     public sealed class ContractManagement : NativeContract
     {
         private const byte Prefix_MinimumDeploymentFee = 20;
@@ -118,12 +121,23 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_MinimumDeploymentFee)).Set(value);
         }
 
+        /// <summary>
+        /// Gets the deployed contract with the specified hash.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="hash">The hash of the deployed contract.</param>
+        /// <returns>The deployed contract.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public ContractState GetContract(DataCache snapshot, UInt160 hash)
         {
             return snapshot.TryGet(CreateStorageKey(Prefix_Contract).Add(hash))?.GetInteroperable<ContractState>();
         }
 
+        /// <summary>
+        /// Gets all deployed contracts.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The deployed contracts.</returns>
         public IEnumerable<ContractState> ListContracts(DataCache snapshot)
         {
             byte[] listContractsPrefix = CreateStorageKey(Prefix_Contract).ToArray();
@@ -158,7 +172,7 @@ namespace Neo.SmartContract.Native
             StorageKey key = CreateStorageKey(Prefix_Contract).Add(hash);
             if (engine.Snapshot.Contains(key))
                 throw new InvalidOperationException($"Contract Already Exists: {hash}");
-            ContractState contract = new ContractState
+            ContractState contract = new()
             {
                 Id = GetNextAvailableId(engine.Snapshot),
                 UpdateCounter = 0,

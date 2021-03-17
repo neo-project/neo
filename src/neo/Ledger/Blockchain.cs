@@ -17,40 +17,118 @@ using System.Linq;
 
 namespace Neo.Ledger
 {
+    /// <summary>
+    /// Actor used to verify and relay <see cref="IInventory"/>.
+    /// </summary>
     public sealed partial class Blockchain : UntypedActor
     {
+        /// <summary>
+        /// Sent by the <see cref="Blockchain"/> when a smart contract is executed.
+        /// </summary>
         public partial class ApplicationExecuted { }
-        public class PersistCompleted { public Block Block; }
-        public class Import { public IEnumerable<Block> Blocks; public bool Verify = true; }
+
+        /// <summary>
+        /// Sent by the <see cref="Blockchain"/> when a <see cref="Network.P2P.Payloads.Block"/> is persisted.
+        /// </summary>
+        public class PersistCompleted
+        {
+            /// <summary>
+            /// The <see cref="Network.P2P.Payloads.Block"/> that is persisted.
+            /// </summary>
+            public Block Block { get; init; }
+        }
+
+        /// <summary>
+        /// Sent to the <see cref="Blockchain"/> when importing blocks.
+        /// </summary>
+        public class Import
+        {
+            /// <summary>
+            /// The blocks to be imported.
+            /// </summary>
+            public IEnumerable<Block> Blocks { get; init; }
+
+            /// <summary>
+            /// Indicates whether the blocks need to be verified when importing.
+            /// </summary>
+            public bool Verify { get; init; } = true;
+        }
+
+        /// <summary>
+        /// Sent by the <see cref="Blockchain"/> when the import is complete.
+        /// </summary>
         public class ImportCompleted { }
-        public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
+
+        /// <summary>
+        /// Sent to the <see cref="Blockchain"/> when the consensus is filling the memory pool.
+        /// </summary>
+        public class FillMemoryPool
+        {
+            /// <summary>
+            /// The transactions to be sent.
+            /// </summary>
+            public IEnumerable<Transaction> Transactions { get; init; }
+        }
+
+        /// <summary>
+        /// Sent by the <see cref="Blockchain"/> when the memory pool is filled.
+        /// </summary>
         public class FillCompleted { }
-        public class Reverify { public IInventory[] Inventories; }
-        public class RelayResult { public IInventory Inventory; public VerifyResult Result; }
+
+        /// <summary>
+        /// Sent to the <see cref="Blockchain"/> when inventories need to be re-verified.
+        /// </summary>
+        public class Reverify
+        {
+            /// <summary>
+            /// The inventories to be re-verified.
+            /// </summary>
+            public IReadOnlyList<IInventory> Inventories { get; init; }
+        }
+
+        /// <summary>
+        /// Sent by the <see cref="Blockchain"/> when an <see cref="IInventory"/> is relayed.
+        /// </summary>
+        public class RelayResult
+        {
+            /// <summary>
+            /// The <see cref="IInventory"/> that is relayed.
+            /// </summary>
+            public IInventory Inventory { get; init; }
+            /// <summary>
+            /// The result.
+            /// </summary>
+            public VerifyResult Result { get; init; }
+        }
+
         internal class Initialize { }
-        private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new LinkedList<Block>(); public HashSet<IActorRef> Nodes = new HashSet<IActorRef>(); }
+        private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new(); public HashSet<IActorRef> Nodes = new(); }
 
         private readonly static Script onPersistScript, postPersistScript;
         private const int MaxTxToReverifyPerIdle = 10;
         private readonly NeoSystem system;
-        private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
-        private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new Dictionary<uint, UnverifiedBlocksList>();
+        private readonly Dictionary<UInt256, Block> block_cache = new();
+        private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new();
         private ImmutableHashSet<UInt160> extensibleWitnessWhiteList;
 
         static Blockchain()
         {
-            using (ScriptBuilder sb = new ScriptBuilder())
+            using (ScriptBuilder sb = new())
             {
                 sb.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
                 onPersistScript = sb.ToArray();
             }
-            using (ScriptBuilder sb = new ScriptBuilder())
+            using (ScriptBuilder sb = new())
             {
                 sb.EmitSysCall(ApplicationEngine.System_Contract_NativePostPersist);
                 postPersistScript = sb.ToArray();
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Blockchain"/> class.
+        /// </summary>
+        /// <param name="system">The <see cref="NeoSystem"/> object that contains the <see cref="Blockchain"/>.</param>
         public Blockchain(NeoSystem system)
         {
             this.system = system;
@@ -172,7 +250,7 @@ namespace Neo.Ledger
             if (block.Index == currentHeight + 1)
             {
                 Block block_persist = block;
-                List<Block> blocksToPersistList = new List<Block>();
+                List<Block> blocksToPersistList = new();
                 while (true)
                 {
                     blocksToPersistList.Add(block_persist);
@@ -302,12 +380,12 @@ namespace Neo.Ledger
         {
             using (SnapshotCache snapshot = system.GetSnapshot())
             {
-                List<ApplicationExecuted> all_application_executed = new List<ApplicationExecuted>();
+                List<ApplicationExecuted> all_application_executed = new();
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, system.Settings, 0))
                 {
                     engine.LoadScript(onPersistScript);
                     if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
-                    ApplicationExecuted application_executed = new ApplicationExecuted(engine);
+                    ApplicationExecuted application_executed = new(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
@@ -315,27 +393,25 @@ namespace Neo.Ledger
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (Transaction tx in block.Transactions)
                 {
-                    using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee))
+                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee);
+                    engine.LoadScript(tx.Script);
+                    if (engine.Execute() == VMState.HALT)
                     {
-                        engine.LoadScript(tx.Script);
-                        if (engine.Execute() == VMState.HALT)
-                        {
-                            clonedSnapshot.Commit();
-                        }
-                        else
-                        {
-                            clonedSnapshot = snapshot.CreateSnapshot();
-                        }
-                        ApplicationExecuted application_executed = new ApplicationExecuted(engine);
-                        Context.System.EventStream.Publish(application_executed);
-                        all_application_executed.Add(application_executed);
+                        clonedSnapshot.Commit();
                     }
+                    else
+                    {
+                        clonedSnapshot = snapshot.CreateSnapshot();
+                    }
+                    ApplicationExecuted application_executed = new(engine);
+                    Context.System.EventStream.Publish(application_executed);
+                    all_application_executed.Add(application_executed);
                 }
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, system.Settings, 0))
                 {
                     engine.LoadScript(postPersistScript);
                     if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
-                    ApplicationExecuted application_executed = new ApplicationExecuted(engine);
+                    ApplicationExecuted application_executed = new(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
@@ -370,6 +446,11 @@ namespace Neo.Ledger
                 Debug.Assert(header.Index == block.Index);
         }
 
+        /// <summary>
+        /// Gets a <see cref="Akka.Actor.Props"/> object used for creating the <see cref="Blockchain"/> actor.
+        /// </summary>
+        /// <param name="system">The <see cref="NeoSystem"/> object that contains the <see cref="Blockchain"/>.</param>
+        /// <returns>The <see cref="Akka.Actor.Props"/> object used for creating the <see cref="Blockchain"/> actor.</returns>
         public static Props Props(NeoSystem system)
         {
             return Akka.Actor.Props.Create(() => new Blockchain(system)).WithMailbox("blockchain-mailbox");
@@ -377,7 +458,7 @@ namespace Neo.Ledger
 
         private void SendRelayResult(IInventory inventory, VerifyResult result)
         {
-            RelayResult rr = new RelayResult
+            RelayResult rr = new()
             {
                 Inventory = inventory,
                 Result = result
@@ -412,23 +493,18 @@ namespace Neo.Ledger
 
     internal class BlockchainMailbox : PriorityMailbox
     {
-        public BlockchainMailbox(Akka.Actor.Settings settings, Config config)
+        public BlockchainMailbox(Settings settings, Config config)
             : base(settings, config)
         {
         }
 
         internal protected override bool IsHighPriority(object message)
         {
-            switch (message)
+            return message switch
             {
-                case Header[] _:
-                case Block _:
-                case ExtensiblePayload _:
-                case Terminated _:
-                    return true;
-                default:
-                    return false;
-            }
+                Header[] or Block or ExtensiblePayload or Terminated => true,
+                _ => false,
+            };
         }
     }
 }

@@ -62,7 +62,7 @@ namespace Neo.Wallets.NEP6
 
         public JObject ToJson()
         {
-            JObject account = new JObject();
+            JObject account = new();
             account["address"] = ScriptHash.ToAddress(ProtocolSettings.AddressVersion);
             account["label"] = Label;
             account["isdefault"] = IsDefault;

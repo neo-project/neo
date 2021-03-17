@@ -5,6 +5,9 @@ using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
+    /// <summary>
+    /// Indicates that the transaction is of high priority.
+    /// </summary>
     public class HighPriorityAttribute : TransactionAttribute
     {
         public override bool AllowMultiple => false;

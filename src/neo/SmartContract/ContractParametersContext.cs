@@ -11,6 +11,9 @@ using System.Reflection;
 
 namespace Neo.SmartContract
 {
+    /// <summary>
+    /// The context used to add witnesses for <see cref="IVerifiable"/>.
+    /// </summary>
     public class ContractParametersContext
     {
         private class ContextItem
@@ -49,10 +52,21 @@ namespace Neo.SmartContract
             }
         }
 
+        /// <summary>
+        /// The <see cref="IVerifiable"/> to add witnesses.
+        /// </summary>
         public readonly IVerifiable Verifiable;
+
+        /// <summary>
+        /// The snapshot used to read data.
+        /// </summary>
         public readonly DataCache Snapshot;
+
         private readonly Dictionary<UInt160, ContextItem> ContextItems;
 
+        /// <summary>
+        /// Determines whether all witnesses are ready to be added.
+        /// </summary>
         public bool Completed
         {
             get
@@ -63,17 +77,17 @@ namespace Neo.SmartContract
             }
         }
 
-        /// <summary>
-        /// Cache for public ScriptHashes field
-        /// </summary>
         private UInt160[] _ScriptHashes = null;
-
         /// <summary>
-        /// ScriptHashes are the verifiable ScriptHashes from Verifiable element
-        /// Equivalent to: Verifiable.GetScriptHashesForVerifying(Blockchain.Singleton.GetSnapshot())
+        /// Gets the script hashes to be verified for the <see cref="Verifiable"/>.
         /// </summary>
         public IReadOnlyList<UInt160> ScriptHashes => _ScriptHashes ??= Verifiable.GetScriptHashesForVerifying(Snapshot);
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ContractParametersContext"/> class.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="verifiable">The <see cref="IVerifiable"/> to add witnesses.</param>
         public ContractParametersContext(DataCache snapshot, IVerifiable verifiable)
         {
             this.Verifiable = verifiable;
@@ -81,6 +95,13 @@ namespace Neo.SmartContract
             this.ContextItems = new Dictionary<UInt160, ContextItem>();
         }
 
+        /// <summary>
+        /// Adds a parameter to the specified witness script.
+        /// </summary>
+        /// <param name="contract">The contract contains the script.</param>
+        /// <param name="index">The index of the parameter.</param>
+        /// <param name="parameter">The value of the parameter.</param>
+        /// <returns><see langword="true"/> if the parameter is added successfully; otherwise, <see langword="false"/>.</returns>
         public bool Add(Contract contract, int index, object parameter)
         {
             ContextItem item = CreateItem(contract);
@@ -89,6 +110,12 @@ namespace Neo.SmartContract
             return true;
         }
 
+        /// <summary>
+        /// Adds parameters to the specified witness script.
+        /// </summary>
+        /// <param name="contract">The contract contains the script.</param>
+        /// <param name="parameters">The values of the parameters.</param>
+        /// <returns><see langword="true"/> if the parameters are added successfully; otherwise, <see langword="false"/>.</returns>
         public bool Add(Contract contract, params object[] parameters)
         {
             ContextItem item = CreateItem(contract);
@@ -100,6 +127,13 @@ namespace Neo.SmartContract
             return true;
         }
 
+        /// <summary>
+        /// Adds a signature to the specified witness script.
+        /// </summary>
+        /// <param name="contract">The contract contains the script.</param>
+        /// <param name="pubkey">The public key for the signature.</param>
+        /// <param name="signature">The signature.</param>
+        /// <returns><see langword="true"/> if the signature is added successfully; otherwise, <see langword="false"/>.</returns>
         public bool AddSignature(Contract contract, ECPoint pubkey, byte[] signature)
         {
             if (contract.Script.IsMultiSigContract(out _, out ECPoint[] points))
@@ -164,18 +198,24 @@ namespace Neo.SmartContract
             return item;
         }
 
+        /// <summary>
+        /// Converts the context from a JSON object.
+        /// </summary>
+        /// <param name="json">The context represented by a JSON object.</param>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The converted context.</returns>
         public static ContractParametersContext FromJson(JObject json, DataCache snapshot)
         {
             var type = typeof(ContractParametersContext).GetTypeInfo().Assembly.GetType(json["type"].AsString());
             if (!typeof(IVerifiable).IsAssignableFrom(type)) throw new FormatException();
 
             var verifiable = (IVerifiable)Activator.CreateInstance(type);
-            using (MemoryStream ms = new MemoryStream(Convert.FromBase64String(json["data"].AsString()), false))
-            using (BinaryReader reader = new BinaryReader(ms, Utility.StrictUTF8))
+            using (MemoryStream ms = new(Convert.FromBase64String(json["data"].AsString()), false))
+            using (BinaryReader reader = new(ms, Utility.StrictUTF8))
             {
                 verifiable.DeserializeUnsigned(reader);
             }
-            ContractParametersContext context = new ContractParametersContext(snapshot, verifiable);
+            ContractParametersContext context = new(snapshot, verifiable);
             foreach (var property in json["items"].Properties)
             {
                 context.ContextItems.Add(UInt160.Parse(property.Key), new ContextItem(property.Value));
@@ -183,11 +223,22 @@ namespace Neo.SmartContract
             return context;
         }
 
+        /// <summary>
+        /// Gets the parameter with the specified index from the witness script.
+        /// </summary>
+        /// <param name="scriptHash">The hash of the witness script.</param>
+        /// <param name="index">The specified index.</param>
+        /// <returns>The parameter with the specified index.</returns>
         public ContractParameter GetParameter(UInt160 scriptHash, int index)
         {
             return GetParameters(scriptHash)?[index];
         }
 
+        /// <summary>
+        /// Gets the parameters from the witness script.
+        /// </summary>
+        /// <param name="scriptHash">The hash of the witness script.</param>
+        /// <returns>The parameters from the witness script.</returns>
         public IReadOnlyList<ContractParameter> GetParameters(UInt160 scriptHash)
         {
             if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
@@ -195,6 +246,11 @@ namespace Neo.SmartContract
             return item.Parameters;
         }
 
+        /// <summary>
+        /// Gets the signatures from the witness script.
+        /// </summary>
+        /// <param name="scriptHash">The hash of the witness script.</param>
+        /// <returns>The signatures from the witness script.</returns>
         public IReadOnlyDictionary<ECPoint, byte[]> GetSignatures(UInt160 scriptHash)
         {
             if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
@@ -202,6 +258,11 @@ namespace Neo.SmartContract
             return item.Signatures;
         }
 
+        /// <summary>
+        /// Gets the witness script with the specified hash.
+        /// </summary>
+        /// <param name="scriptHash">The hash of the witness script.</param>
+        /// <returns>The witness script.</returns>
         public byte[] GetScript(UInt160 scriptHash)
         {
             if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
@@ -209,6 +270,11 @@ namespace Neo.SmartContract
             return item.Script;
         }
 
+        /// <summary>
+        /// Gets the witnesses of the <see cref="Verifiable"/>.
+        /// </summary>
+        /// <returns>The witnesses of the <see cref="Verifiable"/>.</returns>
+        /// <exception cref="InvalidOperationException">The witnesses are not ready to be added.</exception>
         public Witness[] GetWitnesses()
         {
             if (!Completed) throw new InvalidOperationException();
@@ -216,33 +282,41 @@ namespace Neo.SmartContract
             for (int i = 0; i < ScriptHashes.Count; i++)
             {
                 ContextItem item = ContextItems[ScriptHashes[i]];
-                using (ScriptBuilder sb = new ScriptBuilder())
+                using ScriptBuilder sb = new();
+                for (int j = item.Parameters.Length - 1; j >= 0; j--)
                 {
-                    for (int j = item.Parameters.Length - 1; j >= 0; j--)
-                    {
-                        sb.EmitPush(item.Parameters[j]);
-                    }
-                    witnesses[i] = new Witness
-                    {
-                        InvocationScript = sb.ToArray(),
-                        VerificationScript = item.Script ?? Array.Empty<byte>()
-                    };
+                    sb.EmitPush(item.Parameters[j]);
                 }
+                witnesses[i] = new Witness
+                {
+                    InvocationScript = sb.ToArray(),
+                    VerificationScript = item.Script ?? Array.Empty<byte>()
+                };
             }
             return witnesses;
         }
 
+        /// <summary>
+        /// Parses the context from a JSON <see cref="string"/>.
+        /// </summary>
+        /// <param name="value">The JSON <see cref="string"/>.</param>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The parsed context.</returns>
         public static ContractParametersContext Parse(string value, DataCache snapshot)
         {
             return FromJson(JObject.Parse(value), snapshot);
         }
 
+        /// <summary>
+        /// Converts the context to a JSON object.
+        /// </summary>
+        /// <returns>The context represented by a JSON object.</returns>
         public JObject ToJson()
         {
-            JObject json = new JObject();
+            JObject json = new();
             json["type"] = Verifiable.GetType().FullName;
-            using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms, Utility.StrictUTF8))
+            using (MemoryStream ms = new())
+            using (BinaryWriter writer = new(ms, Utility.StrictUTF8))
             {
                 Verifiable.SerializeUnsigned(writer);
                 writer.Flush();

@@ -1,5 +1,3 @@
-#pragma warning disable IDE0051
-
 using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
@@ -14,18 +12,36 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
 {
+    /// <summary>
+    /// The base class of all native tokens that are compatible with NEP-11.
+    /// </summary>
+    /// <typeparam name="TokenState">The type of the token state.</typeparam>
     public abstract class NonfungibleToken<TokenState> : NativeContract
         where TokenState : NFTState, new()
     {
+        /// <summary>
+        /// The symbol of the token.
+        /// </summary>
         [ContractMethod]
         public abstract string Symbol { get; }
+
+        /// <summary>
+        /// The number of decimal places of the token. It always return 0 in native NFT.
+        /// </summary>
         [ContractMethod]
         public byte Decimals => 0;
 
         private const byte Prefix_TotalSupply = 11;
         private const byte Prefix_Account = 7;
+
+        /// <summary>
+        /// The prefix for storing token states.
+        /// </summary>
         protected const byte Prefix_Token = 5;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NonfungibleToken{TokenState}"/> class.
+        /// </summary>
         protected NonfungibleToken()
         {
             var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
@@ -62,6 +78,11 @@ namespace Neo.SmartContract.Native
             Manifest.Abi.Events = events.ToArray();
         }
 
+        /// <summary>
+        /// Gets the storage key of the specified token id.
+        /// </summary>
+        /// <param name="tokenId">The id of the token.</param>
+        /// <returns>The storage key.</returns>
         protected virtual byte[] GetKey(byte[] tokenId) => tokenId;
 
         internal override ContractTask Initialize(ApplicationEngine engine)
@@ -98,24 +119,47 @@ namespace Neo.SmartContract.Native
             return PostTransfer(engine, token.Owner, null, token.Id);
         }
 
+        /// <summary>
+        /// Gets the total supply of the token.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The total supply of the token.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger TotalSupply(DataCache snapshot)
         {
             return snapshot[CreateStorageKey(Prefix_TotalSupply)];
         }
 
+        /// <summary>
+        /// Gets the owner of the token.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="tokenId">The id of the token.</param>
+        /// <returns>The owner of the token.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public UInt160 OwnerOf(DataCache snapshot, byte[] tokenId)
         {
             return snapshot[CreateStorageKey(Prefix_Token).Add(GetKey(tokenId))].GetInteroperable<TokenState>().Owner;
         }
 
+        /// <summary>
+        /// Gets the properties of the token.
+        /// </summary>
+        /// <param name="engine">The <see cref="ApplicationEngine"/> that is executing the contract.</param>
+        /// <param name="tokenId">The id of the token.</param>
+        /// <returns></returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public Map Properties(ApplicationEngine engine, byte[] tokenId)
         {
             return engine.Snapshot[CreateStorageKey(Prefix_Token).Add(GetKey(tokenId))].GetInteroperable<TokenState>().ToMap(engine.ReferenceCounter);
         }
 
+        /// <summary>
+        /// Gets the balance of the specified account.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="owner">The owner of the account.</param>
+        /// <returns>The balance of the account. Or 0 if the account doesn't exist.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger BalanceOf(DataCache snapshot, UInt160 owner)
         {
@@ -123,6 +167,11 @@ namespace Neo.SmartContract.Native
             return snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(owner))?.GetInteroperable<NFTAccountState>().Balance ?? BigInteger.Zero;
         }
 
+        /// <summary>
+        /// Get all the tokens that have been issued in the contract.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>All the tokens that have been issued.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         protected IIterator Tokens(DataCache snapshot)
         {
@@ -130,6 +179,12 @@ namespace Neo.SmartContract.Native
             return new StorageIterator(results, FindOptions.ValuesOnly | FindOptions.DeserializeValues | FindOptions.PickField1, null);
         }
 
+        /// <summary>
+        /// Gets all the tokens owned by the specified account.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="owner">The owner of the account.</param>
+        /// <returns>All the tokens owned by the specified account.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         protected IIterator TokensOf(DataCache snapshot, UInt160 owner)
         {
@@ -165,6 +220,12 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
+        /// <summary>
+        /// Called when a token is transferred.
+        /// </summary>
+        /// <param name="engine">The <see cref="ApplicationEngine"/> that is executing the contract.</param>
+        /// <param name="from">The account where the token is transferred from.</param>
+        /// <param name="token">The token that is transferred.</param>
         protected virtual void OnTransferred(ApplicationEngine engine, UInt160 from, TokenState token)
         {
         }
@@ -180,7 +241,7 @@ namespace Neo.SmartContract.Native
 
         class NFTAccountState : AccountState
         {
-            public readonly List<byte[]> Tokens = new List<byte[]>();
+            public readonly List<byte[]> Tokens = new();
 
             public void Add(byte[] tokenId)
             {

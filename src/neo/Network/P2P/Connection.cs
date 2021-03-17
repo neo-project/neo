@@ -7,27 +7,45 @@ using System.Threading;
 
 namespace Neo.Network.P2P
 {
+    /// <summary>
+    /// Represents a connection of the P2P network.
+    /// </summary>
     public abstract class Connection : UntypedActor
     {
         internal class Close { public bool Abort; }
-        internal class Ack : Tcp.Event { public static Ack Instance = new Ack(); }
+        internal class Ack : Tcp.Event { public static Ack Instance = new(); }
 
         /// <summary>
-        /// connection initial timeout (in seconds) before any package has been accepted
+        /// connection initial timeout (in seconds) before any package has been accepted.
         /// </summary>
         private const int connectionTimeoutLimitStart = 10;
+
         /// <summary>
-        /// connection timeout (in seconds) after every `OnReceived(ByteString data)` event
+        /// connection timeout (in seconds) after every `OnReceived(ByteString data)` event.
         /// </summary>
         private const int connectionTimeoutLimit = 60;
 
+        /// <summary>
+        /// The address of the remote node.
+        /// </summary>
         public IPEndPoint Remote { get; }
+
+        /// <summary>
+        /// The address of the local node.
+        /// </summary>
         public IPEndPoint Local { get; }
 
         private ICancelable timer;
         private readonly IActorRef tcp;
         private readonly WebSocket ws;
         private bool disconnected = false;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Connection"/> class.
+        /// </summary>
+        /// <param name="connection">The underlying connection object.</param>
+        /// <param name="remote">The address of the remote node.</param>
+        /// <param name="local">The address of the local node.</param>
         protected Connection(object connection, IPEndPoint remote, IPEndPoint local)
         {
             this.Remote = remote;
@@ -65,12 +83,16 @@ namespace Neo.Network.P2P
                 failure: ex => new Tcp.ErrorClosed(ex.Message));
         }
 
+        /// <summary>
+        /// Disconnect from the remote node.
+        /// </summary>
+        /// <param name="abort">Indicates whether the TCP ABORT command should be sent.</param>
         public void Disconnect(bool abort = false)
         {
             disconnected = true;
             if (tcp != null)
             {
-                tcp.Tell(abort ? (Tcp.CloseCommand)Tcp.Abort.Instance : Tcp.Close.Instance);
+                tcp.Tell(abort ? Tcp.Abort.Instance : Tcp.Close.Instance);
             }
             else
             {
@@ -79,10 +101,17 @@ namespace Neo.Network.P2P
             Context.Stop(Self);
         }
 
+        /// <summary>
+        /// Called when a TCP ACK message is received.
+        /// </summary>
         protected virtual void OnAck()
         {
         }
 
+        /// <summary>
+        /// Called when data is received.
+        /// </summary>
+        /// <param name="data">The received data.</param>
         protected abstract void OnData(ByteString data);
 
         protected override void OnReceive(object message)
@@ -127,6 +156,10 @@ namespace Neo.Network.P2P
             base.PostStop();
         }
 
+        /// <summary>
+        /// Sends data to the remote node.
+        /// </summary>
+        /// <param name="data"></param>
         protected void SendData(ByteString data)
         {
             if (tcp != null)
@@ -135,7 +168,7 @@ namespace Neo.Network.P2P
             }
             else
             {
-                ArraySegment<byte> segment = new ArraySegment<byte>(data.ToArray());
+                ArraySegment<byte> segment = new(data.ToArray());
                 ws.SendAsync(segment, WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,
                     success: () => Ack.Instance,
                     failure: ex => new Tcp.ErrorClosed(ex.Message));

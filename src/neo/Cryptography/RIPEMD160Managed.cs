@@ -5,20 +5,22 @@ using System.Security.Cryptography;
 
 namespace Neo.Cryptography
 {
+    /// <summary>
+    /// Computes the ripemd160 hash for the input data.
+    /// </summary>
     [ComVisible(true)]
     public class RIPEMD160Managed : HashAlgorithm
     {
-        private byte[] _buffer;
+        private readonly byte[] _buffer;
         private long _count; // Number of bytes in the hashed message
-        private uint[] _stateMD160;
-        private uint[] _blockDWords;
+        private readonly uint[] _stateMD160;
+        private readonly uint[] _blockDWords;
 
         public override int HashSize => 160;
 
-        //
-        // public constructors
-        //
-
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RIPEMD160Managed"/> class.
+        /// </summary>
         public RIPEMD160Managed()
         {
             _stateMD160 = new uint[5];
@@ -27,10 +29,6 @@ namespace Neo.Cryptography
 
             InitializeState();
         }
-
-        //
-        // public methods
-        //
 
         public override void Initialize()
         {
@@ -41,21 +39,17 @@ namespace Neo.Cryptography
             Array.Clear(_buffer, 0, _buffer.Length);
         }
 
-        [System.Security.SecuritySafeCritical]  // auto-generated
+        [SecuritySafeCritical]
         protected override void HashCore(byte[] rgb, int ibStart, int cbSize)
         {
-            _HashData(rgb, ibStart, cbSize);
+            HashData(rgb, ibStart, cbSize);
         }
 
-        [System.Security.SecuritySafeCritical]  // auto-generated
+        [SecuritySafeCritical]
         protected override byte[] HashFinal()
         {
-            return _EndHash();
+            return EndHash();
         }
-
-        //
-        // private methods
-        //
 
         private void InitializeState()
         {
@@ -70,8 +64,8 @@ namespace Neo.Cryptography
             _stateMD160[4] = 0xc3d2e1f0;
         }
 
-        [System.Security.SecurityCritical]  // auto-generated
-        private unsafe void _HashData(byte[] partIn, int ibStart, int cbSize)
+        [SecurityCritical]
+        private unsafe void HashData(byte[] partIn, int ibStart, int cbSize)
         {
             int bufferLen;
             int partInLen = cbSize;
@@ -116,8 +110,8 @@ namespace Neo.Cryptography
             }
         }
 
-        [SecurityCritical]  // auto-generated
-        private byte[] _EndHash()
+        [SecurityCritical]
+        private byte[] EndHash()
         {
             byte[] pad;
             int padLen;
@@ -148,7 +142,7 @@ namespace Neo.Cryptography
             pad[padLen - 8] = (byte)((bitCount >> 0) & 0xff);
 
             /* Digest padding */
-            _HashData(pad, 0, pad.Length);
+            HashData(pad, 0, pad.Length);
 
             /* Store digest */
             DWORDToLittleEndian(hash, _stateMD160, 5);
@@ -156,7 +150,7 @@ namespace Neo.Cryptography
             return hash;
         }
 
-        [System.Security.SecurityCritical]  // auto-generated
+        [SecurityCritical]
         private static unsafe void MDTransform(uint* blockDWords, uint* state, byte* block)
         {
             uint aa = state[0];
@@ -999,7 +993,6 @@ namespace Neo.Cryptography
             state[0] = ddd;
         }
 
-        // The five basic functions
         private static uint F(uint x, uint y, uint z)
         {
             return (x ^ y ^ z);
@@ -1025,7 +1018,7 @@ namespace Neo.Cryptography
             return (x ^ (y | ~z));
         }
 
-        [SecurityCritical]  // auto-generated
+        [SecurityCritical]
         private unsafe static void DWORDFromLittleEndian(uint* x, int digits, byte* block)
         {
             int i;

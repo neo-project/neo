@@ -5,6 +5,9 @@ using System.Security.Cryptography;
 
 namespace Neo.Cryptography
 {
+    /// <summary>
+    /// Computes the murmur hash for the input data.
+    /// </summary>
     public sealed class Murmur3 : HashAlgorithm
     {
         private const uint c1 = 0xcc9e2d51;
@@ -20,6 +23,10 @@ namespace Neo.Cryptography
 
         public override int HashSize => 32;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Murmur3"/> class with the specified seed.
+        /// </summary>
+        /// <param name="seed">The seed to be used.</param>
         public Murmur3(uint seed)
         {
             this.seed = seed;

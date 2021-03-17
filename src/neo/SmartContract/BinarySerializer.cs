@@ -12,6 +12,9 @@ using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.SmartContract
 {
+    /// <summary>
+    /// A binary serializer for <see cref="StackItem"/>.
+    /// </summary>
     public static class BinarySerializer
     {
         private class ContainerPlaceholder : StackItem
@@ -32,27 +35,49 @@ namespace Neo.SmartContract
             public override bool GetBoolean() => throw new NotSupportedException();
         }
 
+        /// <summary>
+        /// Deserializes a <see cref="StackItem"/> from byte array.
+        /// </summary>
+        /// <param name="data">The byte array to parse.</param>
+        /// <param name="maxArraySize">The maximum length of arrays during the deserialization.</param>
+        /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
+        /// <returns>The deserialized <see cref="StackItem"/>.</returns>
         public static StackItem Deserialize(byte[] data, uint maxArraySize, ReferenceCounter referenceCounter = null)
         {
-            using MemoryStream ms = new MemoryStream(data, false);
-            using BinaryReader reader = new BinaryReader(ms);
+            using MemoryStream ms = new(data, false);
+            using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
             return Deserialize(reader, maxArraySize, (uint)data.Length, referenceCounter);
         }
 
+        /// <summary>
+        /// Deserializes a <see cref="StackItem"/> from byte array.
+        /// </summary>
+        /// <param name="data">The byte array to parse.</param>
+        /// <param name="maxArraySize">The maximum length of arrays during the deserialization.</param>
+        /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
+        /// <returns>The deserialized <see cref="StackItem"/>.</returns>
         public static unsafe StackItem Deserialize(ReadOnlySpan<byte> data, uint maxArraySize, ReferenceCounter referenceCounter = null)
         {
             if (data.IsEmpty) throw new FormatException();
             fixed (byte* pointer = data)
             {
-                using UnmanagedMemoryStream ms = new UnmanagedMemoryStream(pointer, data.Length);
-                using BinaryReader reader = new BinaryReader(ms);
+                using UnmanagedMemoryStream ms = new(pointer, data.Length);
+                using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
                 return Deserialize(reader, maxArraySize, (uint)data.Length, referenceCounter);
             }
         }
 
+        /// <summary>
+        /// Deserializes a <see cref="StackItem"/> from <see cref="BinaryReader"/>.
+        /// </summary>
+        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
+        /// <param name="maxArraySize">The maximum length of arrays during the deserialization.</param>
+        /// <param name="maxItemSize">The maximum size of <see cref="StackItem"/> during the deserialization.</param>
+        /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
+        /// <returns>The deserialized <see cref="StackItem"/>.</returns>
         public static StackItem Deserialize(BinaryReader reader, uint maxArraySize, uint maxItemSize, ReferenceCounter referenceCounter)
         {
-            Stack<StackItem> deserialized = new Stack<StackItem>();
+            Stack<StackItem> deserialized = new();
             int undeserialized = 1;
             while (undeserialized-- > 0)
             {
@@ -72,7 +97,7 @@ namespace Neo.SmartContract
                         deserialized.Push(reader.ReadVarBytes((int)maxItemSize));
                         break;
                     case StackItemType.Buffer:
-                        Buffer buffer = new Buffer((int)reader.ReadVarInt(maxItemSize));
+                        Buffer buffer = new((int)reader.ReadVarInt(maxItemSize));
                         reader.FillBuffer(buffer.InnerBuffer);
                         deserialized.Push(buffer);
                         break;
@@ -95,7 +120,7 @@ namespace Neo.SmartContract
                         throw new FormatException();
                 }
             }
-            Stack<StackItem> stack_temp = new Stack<StackItem>();
+            Stack<StackItem> stack_temp = new();
             while (deserialized.Count > 0)
             {
                 StackItem item = deserialized.Pop();
@@ -104,19 +129,19 @@ namespace Neo.SmartContract
                     switch (placeholder.Type)
                     {
                         case StackItemType.Array:
-                            Array array = new Array(referenceCounter);
+                            Array array = new(referenceCounter);
                             for (int i = 0; i < placeholder.ElementCount; i++)
                                 array.Add(stack_temp.Pop());
                             item = array;
                             break;
                         case StackItemType.Struct:
-                            Struct @struct = new Struct(referenceCounter);
+                            Struct @struct = new(referenceCounter);
                             for (int i = 0; i < placeholder.ElementCount; i++)
                                 @struct.Add(stack_temp.Pop());
                             item = @struct;
                             break;
                         case StackItemType.Map:
-                            Map map = new Map(referenceCounter);
+                            Map map = new(referenceCounter);
                             for (int i = 0; i < placeholder.ElementCount; i++)
                             {
                                 StackItem key = stack_temp.Pop();
@@ -132,19 +157,31 @@ namespace Neo.SmartContract
             return stack_temp.Peek();
         }
 
+        /// <summary>
+        /// Serializes a <see cref="StackItem"/> to byte array.
+        /// </summary>
+        /// <param name="item">The <see cref="StackItem"/> to be serialized.</param>
+        /// <param name="maxSize">The maximum size of the result.</param>
+        /// <returns>The serialized byte array.</returns>
         public static byte[] Serialize(StackItem item, uint maxSize)
         {
-            using MemoryStream ms = new MemoryStream();
-            using BinaryWriter writer = new BinaryWriter(ms);
+            using MemoryStream ms = new();
+            using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             Serialize(writer, item, maxSize);
             writer.Flush();
             return ms.ToArray();
         }
 
+        /// <summary>
+        /// Serializes a <see cref="StackItem"/> into <see cref="BinaryWriter"/>.
+        /// </summary>
+        /// <param name="writer">The <see cref="BinaryWriter"/> for writing data.</param>
+        /// <param name="item">The <see cref="StackItem"/> to be serialized.</param>
+        /// <param name="maxSize">The maximum size of the result.</param>
         public static void Serialize(BinaryWriter writer, StackItem item, uint maxSize)
         {
-            HashSet<CompoundType> serialized = new HashSet<CompoundType>(ReferenceEqualityComparer.Instance);
-            Stack<StackItem> unserialized = new Stack<StackItem>();
+            HashSet<CompoundType> serialized = new(ReferenceEqualityComparer.Instance);
+            Stack<StackItem> unserialized = new();
             unserialized.Push(item);
             while (unserialized.Count > 0)
             {
