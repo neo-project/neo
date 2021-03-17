@@ -18,7 +18,7 @@ namespace Neo.Network.P2P.Payloads
         public abstract TransactionAttributeType Type { get; }
 
         /// <summary>
-        /// Indicates whether multiple of this attribute is allowed.
+        /// Indicates whether multiple instances of this attribute are allowed.
         /// </summary>
         public abstract bool AllowMultiple { get; }
 

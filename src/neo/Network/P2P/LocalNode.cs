@@ -256,10 +256,10 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// Gets a <see cref="Akka.Actor.Props"/> object used in creating the <see cref="LocalNode"/> actor.
+        /// Gets a <see cref="Akka.Actor.Props"/> object used for creating the <see cref="LocalNode"/> actor.
         /// </summary>
         /// <param name="system">The <see cref="NeoSystem"/> object that contains the <see cref="LocalNode"/>.</param>
-        /// <returns>The <see cref="Akka.Actor.Props"/> object used in creating the <see cref="LocalNode"/> actor.</returns>
+        /// <returns>The <see cref="Akka.Actor.Props"/> object used for creating the <see cref="LocalNode"/> actor.</returns>
         public static Props Props(NeoSystem system)
         {
             return Akka.Actor.Props.Create(() => new LocalNode(system));

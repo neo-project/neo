@@ -20,7 +20,7 @@ namespace Neo.Cryptography
         /// Converts the specified <see cref="string"/>, which encodes binary data as base-58 digits, to an equivalent byte array. The encoded <see cref="string"/> contains the checksum of the binary data.
         /// </summary>
         /// <param name="input">The <see cref="string"/> to convert.</param>
-        /// <returns>An byte array that is equivalent to <paramref name="input"/>.</returns>
+        /// <returns>A byte array that is equivalent to <paramref name="input"/>.</returns>
         public static byte[] Base58CheckDecode(this string input)
         {
             if (input is null) throw new ArgumentNullException(nameof(input));
@@ -54,7 +54,7 @@ namespace Neo.Cryptography
         /// Converts the specified <see cref="string"/>, which encodes binary data as base-58 digits, to an equivalent byte array.
         /// </summary>
         /// <param name="input">The <see cref="string"/> to convert.</param>
-        /// <returns>An byte array that is equivalent to <paramref name="input"/>.</returns>
+        /// <returns>A byte array that is equivalent to <paramref name="input"/>.</returns>
         public static byte[] Decode(string input)
         {
             // Decode Base58 string to BigInteger 

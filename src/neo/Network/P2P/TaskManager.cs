@@ -323,10 +323,10 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// Gets a <see cref="Akka.Actor.Props"/> object used in creating the <see cref="TaskManager"/> actor.
+        /// Gets a <see cref="Akka.Actor.Props"/> object used for creating the <see cref="TaskManager"/> actor.
         /// </summary>
         /// <param name="system">The <see cref="NeoSystem"/> object that contains the <see cref="TaskManager"/>.</param>
-        /// <returns>The <see cref="Akka.Actor.Props"/> object used in creating the <see cref="TaskManager"/> actor.</returns>
+        /// <returns>The <see cref="Akka.Actor.Props"/> object used for creating the <see cref="TaskManager"/> actor.</returns>
         public static Props Props(NeoSystem system)
         {
             return Akka.Actor.Props.Create(() => new TaskManager(system)).WithMailbox("task-manager-mailbox");

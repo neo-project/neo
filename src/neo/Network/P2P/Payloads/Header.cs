@@ -74,7 +74,7 @@ namespace Neo.Network.P2P.Payloads
         }
 
         /// <summary>
-        /// The primary index of the consensus nodes that generates the block.
+        /// The primary index of the consensus node that generated this block.
         /// </summary>
         public byte PrimaryIndex
         {

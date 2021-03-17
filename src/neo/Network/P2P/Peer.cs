@@ -392,12 +392,12 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// Gets a <see cref="Akka.Actor.Props"/> object used in creating the protocol actor.
+        /// Gets a <see cref="Akka.Actor.Props"/> object used for creating the protocol actor.
         /// </summary>
         /// <param name="connection">The underlying connection object.</param>
         /// <param name="remote">The address of the remote node.</param>
         /// <param name="local">The address of the local node.</param>
-        /// <returns>The <see cref="Akka.Actor.Props"/> object used in creating the protocol actor.</returns>
+        /// <returns>The <see cref="Akka.Actor.Props"/> object used for creating the protocol actor.</returns>
         protected abstract Props ProtocolProps(object connection, IPEndPoint remote, IPEndPoint local);
     }
 }

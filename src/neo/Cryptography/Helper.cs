@@ -12,7 +12,7 @@ using System.Text;
 namespace Neo.Cryptography
 {
     /// <summary>
-    /// A helper class for cryptographic
+    /// A helper class for cryptography
     /// </summary>
     public static class Helper
     {

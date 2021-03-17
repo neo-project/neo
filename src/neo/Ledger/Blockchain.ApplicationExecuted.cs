@@ -12,7 +12,7 @@ namespace Neo.Ledger
         partial class ApplicationExecuted
         {
             /// <summary>
-            /// The transaction that containing the executed script. This field could be <see langword="null"/> if the contract is invoked by system.
+            /// The transaction that contains the executed script. This field could be <see langword="null"/> if the contract is invoked by system.
             /// </summary>
             public Transaction Transaction { get; }
 

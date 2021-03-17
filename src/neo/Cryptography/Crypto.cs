@@ -9,7 +9,7 @@ namespace Neo.Cryptography
     public static class Crypto
     {
         /// <summary>
-        /// Gets a 160-bit hash value of a specified message.
+        /// Calculates the 160-bit hash value of the specified message.
         /// </summary>
         /// <param name="message">The message to be hashed.</param>
         /// <returns>160-bit hash value.</returns>
@@ -19,7 +19,7 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
-        /// Gets a 256-bit hash value of a specified message.
+        /// Calculates the 256-bit hash value of the specified message.
         /// </summary>
         /// <param name="message">The message to be hashed.</param>
         /// <returns>256-bit hash value.</returns>

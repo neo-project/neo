@@ -14,7 +14,7 @@ namespace Neo.Network.P2P.Payloads
     public class ExtensiblePayload : IInventory
     {
         /// <summary>
-        /// The category of the extention.
+        /// The category of the extension.
         /// </summary>
         public string Category;
 

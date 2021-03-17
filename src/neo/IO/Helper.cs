@@ -143,10 +143,10 @@ namespace Neo.IO
         }
 
         /// <summary>
-        /// Gets the size of the size prefix of the data with the specified size.
+        /// Gets the size of variable-length of the data.
         /// </summary>
-        /// <param name="value">The specified size.</param>
-        /// <returns>The size of the size prefix.</returns>
+        /// <param name="value">The length of the data.</param>
+        /// <returns>The size of variable-length of the data.</returns>
         public static int GetVarSize(int value)
         {
             if (value < 0xFD)
@@ -158,7 +158,7 @@ namespace Neo.IO
         }
 
         /// <summary>
-        /// Gets the size of the specified array.
+        /// Gets the size of the specified array encoded in variable-length encoding.
         /// </summary>
         /// <typeparam name="T">The type of the array element.</typeparam>
         /// <param name="value">The specified array.</param>
@@ -193,7 +193,7 @@ namespace Neo.IO
         }
 
         /// <summary>
-        /// Gets the size of the specified <see cref="string"/>.
+        /// Gets the size of the specified <see cref="string"/> encoded in variable-length encoding.
         /// </summary>
         /// <param name="value">The specified <see cref="string"/>.</param>
         /// <returns>The size of the <see cref="string"/>.</returns>
