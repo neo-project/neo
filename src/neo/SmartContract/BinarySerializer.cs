@@ -45,7 +45,7 @@ namespace Neo.SmartContract
         public static StackItem Deserialize(byte[] data, uint maxArraySize, ReferenceCounter referenceCounter = null)
         {
             using MemoryStream ms = new(data, false);
-            using BinaryReader reader = new(ms);
+            using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
             return Deserialize(reader, maxArraySize, (uint)data.Length, referenceCounter);
         }
 
@@ -62,7 +62,7 @@ namespace Neo.SmartContract
             fixed (byte* pointer = data)
             {
                 using UnmanagedMemoryStream ms = new(pointer, data.Length);
-                using BinaryReader reader = new(ms);
+                using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
                 return Deserialize(reader, maxArraySize, (uint)data.Length, referenceCounter);
             }
         }
@@ -166,7 +166,7 @@ namespace Neo.SmartContract
         public static byte[] Serialize(StackItem item, uint maxSize)
         {
             using MemoryStream ms = new();
-            using BinaryWriter writer = new(ms);
+            using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             Serialize(writer, item, maxSize);
             writer.Flush();
             return ms.ToArray();
