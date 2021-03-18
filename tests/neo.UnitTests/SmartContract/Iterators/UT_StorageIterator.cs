@@ -14,7 +14,7 @@ namespace Neo.UnitTests.SmartContract.Iterators
         [TestMethod]
         public void TestGeneratorAndDispose()
         {
-            StorageIterator storageIterator = new StorageIterator(new List<(StorageKey, StorageItem)>().GetEnumerator(), FindOptions.None, null);
+            StorageIterator storageIterator = new(new List<(StorageKey, StorageItem)>().GetEnumerator(), FindOptions.None, null);
             Assert.IsNotNull(storageIterator);
             Action action = () => storageIterator.Dispose();
             action.Should().NotThrow<Exception>();
@@ -23,13 +23,17 @@ namespace Neo.UnitTests.SmartContract.Iterators
         [TestMethod]
         public void TestKeyAndValueAndNext()
         {
-            List<(StorageKey, StorageItem)> list = new List<(StorageKey, StorageItem)>();
-            StorageKey storageKey = new StorageKey();
-            storageKey.Key = new byte[1];
-            StorageItem storageItem = new StorageItem();
-            storageItem.Value = new byte[1];
+            List<(StorageKey, StorageItem)> list = new();
+            StorageKey storageKey = new()
+            {
+                Key = new byte[1]
+            };
+            StorageItem storageItem = new()
+            {
+                Value = new byte[1]
+            };
             list.Add((storageKey, storageItem));
-            StorageIterator storageIterator = new StorageIterator(list.GetEnumerator(), FindOptions.ValuesOnly, null);
+            StorageIterator storageIterator = new(list.GetEnumerator(), FindOptions.ValuesOnly, null);
             storageIterator.Next();
             Assert.AreEqual(new ByteString(new byte[1]), storageIterator.Value());
         }

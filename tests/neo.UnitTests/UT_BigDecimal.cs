@@ -11,7 +11,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestChangeDecimals()
         {
-            BigDecimal originalValue = new BigDecimal(new BigInteger(12300), 5);
+            BigDecimal originalValue = new(new BigInteger(12300), 5);
             BigDecimal result1 = originalValue.ChangeDecimals(7);
             result1.Value.Should().Be(new BigInteger(1230000));
             result1.Decimals.Should().Be(7);
@@ -27,7 +27,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestBigDecimalConstructor()
         {
-            BigDecimal value = new BigDecimal(new BigInteger(45600), 7);
+            BigDecimal value = new(new BigInteger(45600), 7);
             value.Value.Should().Be(new BigInteger(45600));
             value.Decimals.Should().Be(7);
 
@@ -63,7 +63,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestGetDecimals()
         {
-            BigDecimal value = new BigDecimal(new BigInteger(45600), 7);
+            BigDecimal value = new(new BigInteger(45600), 7);
             value.Sign.Should().Be(1);
             value = new BigDecimal(new BigInteger(0), 5);
             value.Sign.Should().Be(0);
@@ -74,7 +74,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestGetSign()
         {
-            BigDecimal value = new BigDecimal(new BigInteger(45600), 7);
+            BigDecimal value = new(new BigInteger(45600), 7);
             value.Sign.Should().Be(1);
             value = new BigDecimal(new BigInteger(0), 5);
             value.Sign.Should().Be(0);
@@ -97,7 +97,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestToString()
         {
-            BigDecimal value = new BigDecimal(new BigInteger(100000), 5);
+            BigDecimal value = new(new BigInteger(100000), 5);
             value.ToString().Should().Be("1");
             value = new BigDecimal(new BigInteger(123456), 5);
             value.ToString().Should().Be("1.23456");
@@ -106,13 +106,9 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestTryParse()
         {
-            string s = "";
+            string s = "12345";
             byte decimals = 0;
-            BigDecimal result;
-
-            s = "12345";
-            decimals = 0;
-            BigDecimal.TryParse(s, decimals, out result).Should().BeTrue();
+            BigDecimal.TryParse(s, decimals, out BigDecimal result).Should().BeTrue();
             result.Should().Be(new BigDecimal(new BigInteger(12345), 0));
 
             s = "12345E-5";

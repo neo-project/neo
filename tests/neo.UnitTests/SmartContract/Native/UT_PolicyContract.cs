@@ -42,7 +42,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Fake blockchain
 
-            Block block = new Block()
+            Block block = new()
             {
                 Header = new Header
                 {
@@ -81,7 +81,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Fake blockchain
 
-            Block block = new Block()
+            Block block = new()
             {
                 Header = new Header
                 {
@@ -131,7 +131,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Fake blockchain
 
-            Block block = new Block()
+            Block block = new()
             {
                 Header = new Header
                 {
@@ -181,7 +181,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Fake blockchain
 
-            Block block = new Block()
+            Block block = new()
             {
                 Header = new Header
                 {
@@ -237,7 +237,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Fake blockchain
 
-            Block block = new Block()
+            Block block = new()
             {
                 Header = new Header
                 {

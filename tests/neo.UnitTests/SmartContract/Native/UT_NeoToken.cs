@@ -118,6 +118,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
             snapshot.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState { Balance = 200 }));
             var secondAccount = snapshot.TryGet(CreateStorageKey(20, G_Account)).GetInteroperable<NeoAccountState>();
+            secondAccount.Balance.Should().Be(200);
             ret = Check_Vote(snapshot, G_Account, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
             ret.Result.Should().BeTrue();
             ret.State.Should().BeTrue();
@@ -247,6 +248,7 @@ namespace Neo.UnitTests.SmartContract.Native
             //register and then unregister
             ret = Check_RegisterValidator(snapshot, point, _persistingBlock);
             StorageItem item = snapshot.GetAndChange(CreateStorageKey(33, point));
+            item.Size.Should().Be(7);
             ret.State.Should().BeTrue();
             ret.Result.Should().BeTrue();
 
@@ -267,6 +269,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             //register with votes, then unregister
             ret = Check_RegisterValidator(snapshot, point, _persistingBlock);
+            ret.State.Should().BeTrue();
             var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
             snapshot.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState()));
             var accountState = snapshot.TryGet(CreateStorageKey(20, G_Account)).GetInteroperable<NeoAccountState>();
@@ -724,7 +727,7 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.Add(CreateStorageKey(1), new StorageItem(new BigInteger(30000000)));
 
             ECPoint[] standbyCommittee = ProtocolSettings.Default.StandbyCommittee.OrderBy(p => p).ToArray();
-            CachedCommittee cachedCommittee = new CachedCommittee();
+            CachedCommittee cachedCommittee = new();
             for (var i = 0; i < ProtocolSettings.Default.CommitteeMembersCount; i++)
             {
                 ECPoint member = standbyCommittee[i];
@@ -865,7 +868,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot = _snapshot.CreateSnapshot();
             var engine = ApplicationEngine.Create(TriggerType.Application, TestBlockchain.TheNeoSystem.GenesisBlock, snapshot, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings);
-            ScriptBuilder sb = new ScriptBuilder();
+            ScriptBuilder sb = new();
             var tmp = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot);
             UInt160 from = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot)[0];
             if (addVotes)
@@ -1048,7 +1051,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
         {
-            StorageKey storageKey = new StorageKey
+            StorageKey storageKey = new()
             {
                 Id = NativeContract.NEO.Id,
                 Key = new byte[sizeof(byte) + (key?.Length ?? 0)]

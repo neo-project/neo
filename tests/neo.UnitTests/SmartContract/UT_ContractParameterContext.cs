@@ -16,7 +16,7 @@ namespace Neo.UnitTests.SmartContract
         private static KeyPair key;
 
         [ClassInitialize]
-        public static void ClassSetUp(TestContext context)
+        public static void ClassSetUp(TestContext ctx)
         {
             if (contract == null)
             {
@@ -120,7 +120,7 @@ namespace Neo.UnitTests.SmartContract
             context.AddSignature(contract, key.PublicKey, new byte[] { 0x01 }).Should().BeTrue();
 
             var contract1 = Contract.CreateSignatureContract(key.PublicKey);
-            contract1.ParameterList = new ContractParameterType[0];
+            contract1.ParameterList = Array.Empty<ContractParameterType>();
             context = new ContractParametersContext(snapshot, tx);
             context.AddSignature(contract1, key.PublicKey, new byte[] { 0x01 }).Should().BeFalse();
 

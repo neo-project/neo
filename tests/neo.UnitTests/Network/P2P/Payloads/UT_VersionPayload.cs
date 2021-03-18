@@ -13,7 +13,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void SizeAndEndPoint_Get()
         {
-            var test = new VersionPayload() { Capabilities = new NodeCapability[0], UserAgent = "neo3" };
+            var test = new VersionPayload() { Capabilities = Array.Empty<NodeCapability>(), UserAgent = "neo3" };
             test.Size.Should().Be(22);
 
             test = VersionPayload.Create(123, 456, "neo3", new NodeCapability[] { new ServerCapability(NodeCapabilityType.TcpServer, 22) });

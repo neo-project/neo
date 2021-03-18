@@ -14,17 +14,17 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestClone()
         {
-            Random random = new Random();
+            Random random = new();
             byte[] privateKey = new byte[32];
             random.NextBytes(privateKey);
-            KeyPair keyPair = new KeyPair(privateKey);
-            ContractGroup contractGroup = new ContractGroup
+            KeyPair keyPair = new(privateKey);
+            ContractGroup contractGroup = new()
             {
                 PubKey = keyPair.PublicKey,
                 Signature = new byte[20]
             };
 
-            var clone = new ContractGroup();
+            ContractGroup clone = new();
             ((IInteroperable)clone).FromStackItem(contractGroup.ToStackItem(null));
             Assert.AreEqual(clone.ToJson().ToString(), contractGroup.ToJson().ToString());
         }
@@ -32,11 +32,11 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestIsValid()
         {
-            Random random = new Random();
+            Random random = new();
             byte[] privateKey = new byte[32];
             random.NextBytes(privateKey);
-            KeyPair keyPair = new KeyPair(privateKey);
-            ContractGroup contractGroup = new ContractGroup
+            KeyPair keyPair = new(privateKey);
+            ContractGroup contractGroup = new()
             {
                 PubKey = keyPair.PublicKey,
                 Signature = new byte[20]
