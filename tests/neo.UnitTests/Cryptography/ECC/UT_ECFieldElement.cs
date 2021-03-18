@@ -15,10 +15,7 @@ namespace Neo.UnitTests.Cryptography.ECC
         public void TestECFieldElementConstructor()
         {
             BigInteger input = new(100);
-            Action action = () =>
-            {
-                ECFieldElement eCFieldElement = new(input, ECCurve.Secp256k1);
-            };
+            Action action = () => new ECFieldElement(input, ECCurve.Secp256k1);
             action.Should().NotThrow();
 
             input = ECCurve.Secp256k1.Q;
