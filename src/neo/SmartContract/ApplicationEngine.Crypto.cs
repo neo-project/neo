@@ -8,24 +8,24 @@ namespace Neo.SmartContract
     partial class ApplicationEngine
     {
         /// <summary>
-        /// The price of Neo.Crypto.CheckSig.
+        /// The price of System.Crypto.CheckSig.
         /// </summary>
         public const long CheckSigPrice = 1 << 15;
 
         /// <summary>
-        /// The <see cref="InteropDescriptor"/> of Neo.Crypto.CheckSig.
+        /// The <see cref="InteropDescriptor"/> of System.Crypto.CheckSig.
         /// Checks the signature for the current script container.
         /// </summary>
-        public static readonly InteropDescriptor Neo_Crypto_CheckSig = Register("Neo.Crypto.CheckSig", nameof(CheckSig), CheckSigPrice, CallFlags.None);
+        public static readonly InteropDescriptor System_Crypto_CheckSig = Register("System.Crypto.CheckSig", nameof(CheckSig), CheckSigPrice, CallFlags.None);
 
         /// <summary>
-        /// The <see cref="InteropDescriptor"/> of Neo.Crypto.CheckMultisig.
+        /// The <see cref="InteropDescriptor"/> of System.Crypto.CheckMultisig.
         /// Checks the signatures for the current script container.
         /// </summary>
-        public static readonly InteropDescriptor Neo_Crypto_CheckMultisig = Register("Neo.Crypto.CheckMultisig", nameof(CheckMultisig), 0, CallFlags.None);
+        public static readonly InteropDescriptor System_Crypto_CheckMultisig = Register("System.Crypto.CheckMultisig", nameof(CheckMultisig), 0, CallFlags.None);
 
         /// <summary>
-        /// The implementation of Neo.Crypto.CheckSig.
+        /// The implementation of System.Crypto.CheckSig.
         /// Checks the signature for the current script container.
         /// </summary>
         /// <param name="pubkey">The public key of the account.</param>
@@ -44,7 +44,7 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// The implementation of Neo.Crypto.CheckMultisig.
+        /// The implementation of System.Crypto.CheckMultisig.
         /// Checks the signatures for the current script container.
         /// </summary>
         /// <param name="pubkeys">The public keys of the account.</param>

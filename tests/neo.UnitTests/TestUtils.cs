@@ -113,8 +113,8 @@ namespace Neo.UnitTests
                 } },
                 Witnesses = new Witness[]{ new Witness
                 {
-                    InvocationScript = new byte[0],
-                    VerificationScript = new byte[0]
+                    InvocationScript = Array.Empty<byte>(),
+                    VerificationScript = Array.Empty<byte>()
                 } }
             };
         }
