@@ -11,9 +11,12 @@ using System.Text;
 
 namespace Neo
 {
+    /// <summary>
+    /// A helper class that provides common functions.
+    /// </summary>
     public static class Helper
     {
-        private static readonly DateTime unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        private static readonly DateTime unixEpoch = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int BitLen(int w)
@@ -33,6 +36,11 @@ namespace Neo
                 : (w < 1 << 29 ? (w < 1 << 28 ? 28 : 29) : (w < 1 << 30 ? 30 : 31)))));
         }
 
+        /// <summary>
+        /// Concatenates the specified byte arrays.
+        /// </summary>
+        /// <param name="buffers">The byte arrays to concatenate.</param>
+        /// <returns>The concatenated byte array.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Concat(params byte[][] buffers)
         {
@@ -49,6 +57,12 @@ namespace Neo
             return dst;
         }
 
+        /// <summary>
+        /// Concatenates two byte arrays.
+        /// </summary>
+        /// <param name="a">The first byte array to concatenate.</param>
+        /// <param name="b">The second byte array to concatenate.</param>
+        /// <returns>The concatenated byte array.</returns>
         public static byte[] Concat(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
         {
             byte[] buffer = new byte[a.Length + b.Length];
@@ -115,6 +129,11 @@ namespace Neo
             return (string)attribute.ConstructorArguments[0].Value;
         }
 
+        /// <summary>
+        /// Converts a hex <see cref="string"/> to byte array.
+        /// </summary>
+        /// <param name="value">The hex <see cref="string"/> to convert.</param>
+        /// <returns>The converted byte array.</returns>
         public static byte[] HexToBytes(this string value)
         {
             if (value == null || value.Length == 0)
@@ -162,12 +181,17 @@ namespace Neo
             Span<byte> b = stackalloc byte[sizeInBits / 8 + 1];
             rand.NextBytes(b);
             if (sizeInBits % 8 == 0)
-                b[b.Length - 1] = 0;
+                b[^1] = 0;
             else
-                b[b.Length - 1] &= (byte)((1 << sizeInBits % 8) - 1);
+                b[^1] &= (byte)((1 << sizeInBits % 8) - 1);
             return new BigInteger(b);
         }
 
+        /// <summary>
+        /// Finds the sum of the specified integers.
+        /// </summary>
+        /// <param name="source">The specified integers.</param>
+        /// <returns>The sum of the integers.</returns>
         public static BigInteger Sum(this IEnumerable<BigInteger> source)
         {
             var sum = BigInteger.Zero;
@@ -181,6 +205,11 @@ namespace Neo
             return (i & (BigInteger.One << index)) > BigInteger.Zero;
         }
 
+        /// <summary>
+        /// Converts a <see cref="BigInteger"/> to byte array and eliminates all the leading zeros.
+        /// </summary>
+        /// <param name="i">The <see cref="BigInteger"/> to convert.</param>
+        /// <returns>The converted byte array.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] ToByteArrayStandard(this BigInteger i)
         {
@@ -188,35 +217,61 @@ namespace Neo
             return i.ToByteArray();
         }
 
+        /// <summary>
+        /// Converts a byte array to hex <see cref="string"/>.
+        /// </summary>
+        /// <param name="value">The byte array to convert.</param>
+        /// <returns>The converted hex <see cref="string"/>.</returns>
         public static string ToHexString(this byte[] value)
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             foreach (byte b in value)
                 sb.AppendFormat("{0:x2}", b);
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Converts a byte array to hex <see cref="string"/>.
+        /// </summary>
+        /// <param name="value">The byte array to convert.</param>
+        /// <param name="reverse">Indicates whether it should be converted in the reversed byte order.</param>
+        /// <returns>The converted hex <see cref="string"/>.</returns>
         public static string ToHexString(this byte[] value, bool reverse = false)
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             for (int i = 0; i < value.Length; i++)
                 sb.AppendFormat("{0:x2}", value[reverse ? value.Length - i - 1 : i]);
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Converts a byte array to hex <see cref="string"/>.
+        /// </summary>
+        /// <param name="value">The byte array to convert.</param>
+        /// <returns>The converted hex <see cref="string"/>.</returns>
         public static string ToHexString(this ReadOnlySpan<byte> value)
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             foreach (byte b in value)
                 sb.AppendFormat("{0:x2}", b);
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Converts a <see cref="DateTime"/> to timestamp.
+        /// </summary>
+        /// <param name="time">The <see cref="DateTime"/> to convert.</param>
+        /// <returns>The converted timestamp.</returns>
         public static uint ToTimestamp(this DateTime time)
         {
             return (uint)(time.ToUniversalTime() - unixEpoch).TotalSeconds;
         }
 
+        /// <summary>
+        /// Converts a <see cref="DateTime"/> to timestamp in milliseconds.
+        /// </summary>
+        /// <param name="time">The <see cref="DateTime"/> to convert.</param>
+        /// <returns>The converted timestamp.</returns>
         public static ulong ToTimestampMS(this DateTime time)
         {
             return (ulong)(time.ToUniversalTime() - unixEpoch).TotalMilliseconds;

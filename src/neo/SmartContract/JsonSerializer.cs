@@ -13,13 +13,16 @@ using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.SmartContract
 {
+    /// <summary>
+    /// A JSON serializer for <see cref="StackItem"/>.
+    /// </summary>
     public static class JsonSerializer
     {
         /// <summary>
-        /// Convert stack item in json
+        /// Serializes a <see cref="StackItem"/> to a <see cref="JObject"/>.
         /// </summary>
-        /// <param name="item">Item</param>
-        /// <returns>Json</returns>
+        /// <param name="item">The <see cref="StackItem"/> to serialize.</param>
+        /// <returns>The serialized object.</returns>
         public static JObject Serialize(StackItem item)
         {
             switch (item)
@@ -68,15 +71,21 @@ namespace Neo.SmartContract
             }
         }
 
+        /// <summary>
+        /// Serializes a <see cref="StackItem"/> to JSON.
+        /// </summary>
+        /// <param name="item">The <see cref="StackItem"/> to convert.</param>
+        /// <param name="maxSize">The maximum size of the JSON output.</param>
+        /// <returns>A byte array containing the JSON output.</returns>
         public static byte[] SerializeToByteArray(StackItem item, uint maxSize)
         {
-            using MemoryStream ms = new MemoryStream();
-            using Utf8JsonWriter writer = new Utf8JsonWriter(ms, new JsonWriterOptions
+            using MemoryStream ms = new();
+            using Utf8JsonWriter writer = new(ms, new JsonWriterOptions
             {
                 Indented = false,
                 SkipValidation = false
             });
-            Stack stack = new Stack();
+            Stack stack = new();
             stack.Push(item);
             while (stack.Count > 0)
             {
@@ -136,10 +145,11 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// Convert json object to stack item
+        /// Deserializes a <see cref="StackItem"/> from <see cref="JObject"/>.
         /// </summary>
-        /// <param name="json">Json</param>
-        /// <returns>Return stack item</returns>
+        /// <param name="json">The <see cref="JObject"/> to deserialize.</param>
+        /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
+        /// <returns>The deserialized <see cref="StackItem"/>.</returns>
         public static StackItem Deserialize(JObject json, ReferenceCounter referenceCounter = null)
         {
             switch (json)

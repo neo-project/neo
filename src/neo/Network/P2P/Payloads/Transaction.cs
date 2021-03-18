@@ -17,12 +17,23 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.Network.P2P.Payloads
 {
+    /// <summary>
+    /// Represents a transaction.
+    /// </summary>
     public class Transaction : IEquatable<Transaction>, IInventory, IInteroperable
     {
-        public const int MaxTransactionSize = 102400;
-        public const uint MaxValidUntilBlockIncrement = 5760; // 24 hour
         /// <summary>
-        /// Maximum number of attributes that can be contained within a transaction
+        /// The maximum size of a transaction.
+        /// </summary>
+        public const int MaxTransactionSize = 102400;
+
+        /// <summary>
+        /// The maximum increment of the <see cref="ValidUntilBlock"/> field.
+        /// </summary>
+        public const uint MaxValidUntilBlockIncrement = 5760; // 24 hour
+
+        /// <summary>
+        /// The maximum number of attributes that can be contained within a transaction.
         /// </summary>
         public const int MaxTransactionAttributes = 16;
 
@@ -36,6 +47,9 @@ namespace Neo.Network.P2P.Payloads
         private byte[] script;
         private Witness[] witnesses;
 
+        /// <summary>
+        /// The size of a transaction header.
+        /// </summary>
         public const int HeaderSize =
             sizeof(byte) +  //Version
             sizeof(uint) +  //Nonce
@@ -44,6 +58,9 @@ namespace Neo.Network.P2P.Payloads
             sizeof(uint);   //ValidUntilBlock
 
         private Dictionary<Type, TransactionAttribute[]> _attributesCache;
+        /// <summary>
+        /// The attributes of the transaction.
+        /// </summary>
         public TransactionAttribute[] Attributes
         {
             get => attributes;
@@ -51,8 +68,7 @@ namespace Neo.Network.P2P.Payloads
         }
 
         /// <summary>
-        /// The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.
-        /// <para>Note that this property must be used with care. Getting the value of this property multiple times will return the same result. The value of this property can only be obtained after the transaction has been completely built (no longer modified).</para>
+        /// The <see cref="NetworkFee"/> for the transaction divided by its <see cref="Size"/>.
         /// </summary>
         public long FeePerByte => NetworkFee / Size;
 
@@ -72,20 +88,26 @@ namespace Neo.Network.P2P.Payloads
         InventoryType IInventory.InventoryType => InventoryType.TX;
 
         /// <summary>
-        /// Distributed to consensus nodes.
+        /// The network fee of the transaction.
         /// </summary>
-        public long NetworkFee
+        public long NetworkFee //Distributed to consensus nodes.
         {
             get => netfee;
             set { netfee = value; _hash = null; }
         }
 
+        /// <summary>
+        /// The nonce of the transaction.
+        /// </summary>
         public uint Nonce
         {
             get => nonce;
             set { nonce = value; _hash = null; }
         }
 
+        /// <summary>
+        /// The script of the transaction.
+        /// </summary>
         public byte[] Script
         {
             get => script;
@@ -93,11 +115,14 @@ namespace Neo.Network.P2P.Payloads
         }
 
         /// <summary>
-        /// The first signer is the sender of the transaction, regardless of its WitnessScope.
-        /// The sender will pay the fees of the transaction.
+        /// The sender is the first signer of the transaction, regardless of its <see cref="WitnessScope"/>.
         /// </summary>
+        /// <remarks>Note: The sender will pay the fees of the transaction.</remarks>
         public UInt160 Sender => _signers[0].Account;
 
+        /// <summary>
+        /// The signers of the transaction.
+        /// </summary>
         public Signer[] Signers
         {
             get => _signers;
@@ -122,20 +147,26 @@ namespace Neo.Network.P2P.Payloads
         }
 
         /// <summary>
-        /// Fee to be burned.
+        /// The system fee of the transaction.
         /// </summary>
-        public long SystemFee
+        public long SystemFee //Fee to be burned.
         {
             get => sysfee;
             set { sysfee = value; _hash = null; }
         }
 
+        /// <summary>
+        /// Indicates that the transaction is only valid before this block height.
+        /// </summary>
         public uint ValidUntilBlock
         {
             get => validUntilBlock;
             set { validUntilBlock = value; _hash = null; }
         }
 
+        /// <summary>
+        /// The version of the transaction.
+        /// </summary>
         public byte Version
         {
             get => version;
@@ -163,7 +194,7 @@ namespace Neo.Network.P2P.Payloads
         private static IEnumerable<TransactionAttribute> DeserializeAttributes(BinaryReader reader, int maxCount)
         {
             int count = (int)reader.ReadVarInt((ulong)maxCount);
-            HashSet<TransactionAttributeType> hashset = new HashSet<TransactionAttributeType>();
+            HashSet<TransactionAttributeType> hashset = new();
             while (count-- > 0)
             {
                 TransactionAttribute attribute = TransactionAttribute.DeserializeFrom(reader);
@@ -177,7 +208,7 @@ namespace Neo.Network.P2P.Payloads
         {
             int count = (int)reader.ReadVarInt((ulong)maxCount);
             if (count == 0) throw new FormatException();
-            HashSet<UInt160> hashset = new HashSet<UInt160>();
+            HashSet<UInt160> hashset = new();
             for (int i = 0; i < count; i++)
             {
                 Signer signer = reader.ReadSerializable<Signer>();
@@ -220,11 +251,21 @@ namespace Neo.Network.P2P.Payloads
             throw new NotSupportedException();
         }
 
+        /// <summary>
+        /// Gets the attribute of the specified type.
+        /// </summary>
+        /// <typeparam name="T">The type of the attribute.</typeparam>
+        /// <returns>The first attribute of this type. Or <see langword="null"/> if there is no attribute of this type.</returns>
         public T GetAttribute<T>() where T : TransactionAttribute
         {
             return GetAttributes<T>().FirstOrDefault();
         }
 
+        /// <summary>
+        /// Gets all attributes of the specified type.
+        /// </summary>
+        /// <typeparam name="T">The type of the attributes.</typeparam>
+        /// <returns>All the attributes of this type.</returns>
         public IEnumerable<T> GetAttributes<T>() where T : TransactionAttribute
         {
             _attributesCache ??= attributes.GroupBy(p => p.GetType()).ToDictionary(p => p.Key, p => p.ToArray());
@@ -261,9 +302,14 @@ namespace Neo.Network.P2P.Payloads
             writer.WriteVarBytes(Script);
         }
 
+        /// <summary>
+        /// Converts the transaction to a JSON object.
+        /// </summary>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> used during the conversion.</param>
+        /// <returns>The transaction represented by a JSON object.</returns>
         public JObject ToJson(ProtocolSettings settings)
         {
-            JObject json = new JObject();
+            JObject json = new();
             json["hash"] = Hash.ToString();
             json["size"] = Size;
             json["version"] = Version;
@@ -279,6 +325,13 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
+        /// <summary>
+        /// Verifies the transaction.
+        /// </summary>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> used to verify the transaction.</param>
+        /// <param name="snapshot">The snapshot used to verify the transaction.</param>
+        /// <param name="context">The <see cref="TransactionVerificationContext"/> used to verify the transaction.</param>
+        /// <returns>The result of the verification.</returns>
         public VerifyResult Verify(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context)
         {
             VerifyResult result = VerifyStateIndependent(settings);
@@ -286,6 +339,13 @@ namespace Neo.Network.P2P.Payloads
             return VerifyStateDependent(settings, snapshot, context);
         }
 
+        /// <summary>
+        /// Verifies the state-dependent part of the transaction.
+        /// </summary>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> used to verify the transaction.</param>
+        /// <param name="snapshot">The snapshot used to verify the transaction.</param>
+        /// <param name="context">The <see cref="TransactionVerificationContext"/> used to verify the transaction.</param>
+        /// <returns>The result of the verification.</returns>
         public virtual VerifyResult VerifyStateDependent(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context)
         {
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);
@@ -321,6 +381,11 @@ namespace Neo.Network.P2P.Payloads
             return VerifyResult.Succeed;
         }
 
+        /// <summary>
+        /// Verifies the state-independent part of the transaction.
+        /// </summary>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> used to verify the transaction.</param>
+        /// <returns>The result of the verification.</returns>
         public virtual VerifyResult VerifyStateIndependent(ProtocolSettings settings)
         {
             if (Size > MaxTransactionSize) return VerifyResult.Invalid;

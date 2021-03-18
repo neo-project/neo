@@ -170,15 +170,12 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestGetVersion()
         {
-            string version = typeof(TestMethodAttribute).Assembly.GetVersion();
-            version.Should().Be("14.0.4908.02");
-
             // assembly without version
 
             var asm = AppDomain.CurrentDomain.GetAssemblies()
                 .Where(u => u.FullName == "Anonymously Hosted DynamicMethods Assembly, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null")
                 .FirstOrDefault();
-            version = asm?.GetVersion() ?? "";
+            string version = asm?.GetVersion() ?? "";
             version.Should().Be("0.0.0");
         }
 

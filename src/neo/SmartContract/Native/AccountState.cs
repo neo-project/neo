@@ -4,8 +4,14 @@ using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
+    /// <summary>
+    /// The base class of account state for all native tokens.
+    /// </summary>
     public class AccountState : IInteroperable
     {
+        /// <summary>
+        /// The balance of the account.
+        /// </summary>
         public BigInteger Balance;
 
         public virtual void FromStackItem(StackItem stackItem)

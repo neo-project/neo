@@ -6,12 +6,18 @@ using static Neo.Helper;
 
 namespace Neo.Cryptography.ECC
 {
+    /// <summary>
+    /// Represents a (X,Y) coordinate pair for elliptic curve cryptography (ECC) structures.
+    /// </summary>
     public class ECPoint : IComparable<ECPoint>, IEquatable<ECPoint>, ISerializable
     {
         internal ECFieldElement X, Y;
         internal readonly ECCurve Curve;
         private byte[] _compressedPoint, _uncompressedPoint;
 
+        /// <summary>
+        /// Indicates whether it is a point at infinity.
+        /// </summary>
         public bool IsInfinity
         {
             get { return X == null && Y == null; }
@@ -19,6 +25,9 @@ namespace Neo.Cryptography.ECC
 
         public int Size => IsInfinity ? 1 : 33;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ECPoint"/> class with the secp256r1 curve.
+        /// </summary>
         public ECPoint() : this(null, null, ECCurve.Secp256r1) { }
 
         internal ECPoint(ECFieldElement x, ECFieldElement y, ECCurve curve)
@@ -39,6 +48,12 @@ namespace Neo.Cryptography.ECC
             return Y.CompareTo(other.Y);
         }
 
+        /// <summary>
+        /// Decode an <see cref="ECPoint"/> object from a sequence of byte.
+        /// </summary>
+        /// <param name="encoded">The sequence of byte to be decoded.</param>
+        /// <param name="curve">The <see cref="ECCurve"/> object used to construct the <see cref="ECPoint"/>.</param>
+        /// <returns>The decoded point.</returns>
         public static ECPoint DecodePoint(ReadOnlySpan<byte> encoded, ECCurve curve)
         {
             ECPoint p = null;
@@ -50,7 +65,7 @@ namespace Neo.Cryptography.ECC
                         if (encoded.Length != (curve.ExpectedECPointLength + 1))
                             throw new FormatException("Incorrect length for compressed encoding");
                         int yTilde = encoded[0] & 1;
-                        BigInteger X1 = new BigInteger(encoded[1..], isUnsigned: true, isBigEndian: true);
+                        BigInteger X1 = new(encoded[1..], isUnsigned: true, isBigEndian: true);
                         p = DecompressPoint(yTilde, X1, curve);
                         p._compressedPoint = encoded.ToArray();
                         break;
@@ -59,8 +74,8 @@ namespace Neo.Cryptography.ECC
                     {
                         if (encoded.Length != (2 * curve.ExpectedECPointLength + 1))
                             throw new FormatException("Incorrect length for uncompressed/hybrid encoding");
-                        BigInteger X1 = new BigInteger(encoded[1..(1 + curve.ExpectedECPointLength)], isUnsigned: true, isBigEndian: true);
-                        BigInteger Y1 = new BigInteger(encoded[(1 + curve.ExpectedECPointLength)..], isUnsigned: true, isBigEndian: true);
+                        BigInteger X1 = new(encoded[1..(1 + curve.ExpectedECPointLength)], isUnsigned: true, isBigEndian: true);
+                        BigInteger Y1 = new(encoded[(1 + curve.ExpectedECPointLength)..], isUnsigned: true, isBigEndian: true);
                         p = new ECPoint(new ECFieldElement(X1, curve), new ECFieldElement(Y1, curve), curve)
                         {
                             _uncompressedPoint = encoded.ToArray()
@@ -75,7 +90,7 @@ namespace Neo.Cryptography.ECC
 
         private static ECPoint DecompressPoint(int yTilde, BigInteger X1, ECCurve curve)
         {
-            ECFieldElement x = new ECFieldElement(X1, curve);
+            ECFieldElement x = new(X1, curve);
             ECFieldElement alpha = x * (x.Square() + curve.A) + curve.B;
             ECFieldElement beta = alpha.Sqrt();
 
@@ -105,6 +120,12 @@ namespace Neo.Cryptography.ECC
             Y = p.Y;
         }
 
+        /// <summary>
+        /// Deserializes an <see cref="ECPoint"/> object from a <see cref="BinaryReader"/>.
+        /// </summary>
+        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
+        /// <param name="curve">The <see cref="ECCurve"/> object used to construct the <see cref="ECPoint"/>.</param>
+        /// <returns>The deserialized point.</returns>
         public static ECPoint DeserializeFrom(BinaryReader reader, ECCurve curve)
         {
             Span<byte> buffer = stackalloc byte[1 + curve.ExpectedECPointLength * 2];
@@ -134,11 +155,11 @@ namespace Neo.Cryptography.ECC
         }
 
         /// <summary>
-        /// Encode ECPoint to byte array
-        ///     Note: The return should't be modified because it could be cached
+        /// Encodes an <see cref="ECPoint"/> object to a byte array.
         /// </summary>
-        /// <param name="commpressed">Compressed</param>
-        /// <returns>Encoded point</returns>
+        /// <param name="commpressed">Indicates whether to encode it in a compressed format.</param>
+        /// <returns>The encoded point.</returns>
+        /// <remarks>Note: The return should't be modified because it could be cached.</remarks>
         public byte[] EncodePoint(bool commpressed)
         {
             if (IsInfinity) return new byte[1];
@@ -166,7 +187,7 @@ namespace Neo.Cryptography.ECC
         public bool Equals(ECPoint other)
         {
             if (ReferenceEquals(this, other)) return true;
-            if (ReferenceEquals(null, other)) return false;
+            if (other is null) return false;
             if (IsInfinity && other.IsInfinity) return true;
             if (IsInfinity || other.IsInfinity) return false;
             return X.Equals(other.X) && Y.Equals(other.Y);
@@ -177,22 +198,21 @@ namespace Neo.Cryptography.ECC
             return Equals(obj as ECPoint);
         }
 
-        public static ECPoint FromBytes(byte[] pubkey, ECCurve curve)
+        /// <summary>
+        /// Constructs an <see cref="ECPoint"/> object from a byte array.
+        /// </summary>
+        /// <param name="bytes">The byte array to be used to construct the object.</param>
+        /// <param name="curve">The <see cref="ECCurve"/> object used to construct the <see cref="ECPoint"/>.</param>
+        /// <returns>The decoded point.</returns>
+        public static ECPoint FromBytes(byte[] bytes, ECCurve curve)
         {
-            switch (pubkey.Length)
+            return bytes.Length switch
             {
-                case 33:
-                case 65:
-                    return DecodePoint(pubkey, curve);
-                case 64:
-                case 72:
-                    return DecodePoint(Concat(new byte[] { 0x04 }, pubkey[^64..]), curve);
-                case 96:
-                case 104:
-                    return DecodePoint(Concat(new byte[] { 0x04 }, pubkey[^96..^32]), curve);
-                default:
-                    throw new FormatException();
-            }
+                33 or 65 => DecodePoint(bytes, curve),
+                64 or 72 => DecodePoint(Concat(new byte[] { 0x04 }, bytes[^64..]), curve),
+                96 or 104 => DecodePoint(Concat(new byte[] { 0x04 }, bytes[^96..^32]), curve),
+                _ => throw new FormatException(),
+            };
         }
 
         public override int GetHashCode()
@@ -299,6 +319,12 @@ namespace Neo.Cryptography.ECC
             return q;
         }
 
+        /// <summary>
+        /// Parse the <see cref="ECPoint"/> object from a <see cref="string"/>.
+        /// </summary>
+        /// <param name="value">The <see cref="string"/> to be parsed.</param>
+        /// <param name="curve">The <see cref="ECCurve"/> object used to construct the <see cref="ECPoint"/>.</param>
+        /// <returns>The parsed point.</returns>
         public static ECPoint Parse(string value, ECCurve curve)
         {
             return DecodePoint(value.HexToBytes(), curve);
@@ -314,6 +340,13 @@ namespace Neo.Cryptography.ECC
             return EncodePoint(true).ToHexString();
         }
 
+        /// <summary>
+        /// Try parse the <see cref="ECPoint"/> object from a <see cref="string"/>.
+        /// </summary>
+        /// <param name="value">The <see cref="string"/> to be parsed.</param>
+        /// <param name="curve">The <see cref="ECCurve"/> object used to construct the <see cref="ECPoint"/>.</param>
+        /// <param name="point">The parsed point.</param>
+        /// <returns><see langword="true"/> if <paramref name="value"/> was converted successfully; otherwise, <see langword="false"/>.</returns>
         public static bool TryParse(string value, ECCurve curve, out ECPoint point)
         {
             try
@@ -334,8 +367,8 @@ namespace Neo.Cryptography.ECC
                 return this;
             if (this.Y.Value.Sign == 0)
                 return Curve.Infinity;
-            ECFieldElement TWO = new ECFieldElement(2, Curve);
-            ECFieldElement THREE = new ECFieldElement(3, Curve);
+            ECFieldElement TWO = new(2, Curve);
+            ECFieldElement THREE = new(3, Curve);
             ECFieldElement gamma = (this.X.Square() * THREE + Curve.A) / (Y * TWO);
             ECFieldElement x3 = gamma.Square() - this.X * TWO;
             ECFieldElement y3 = gamma * (this.X - x3) - this.Y;
@@ -387,10 +420,10 @@ namespace Neo.Cryptography.ECC
             if (p == null || n == null)
                 throw new ArgumentNullException();
             if (n.Length != 32)
-                throw new ArgumentException();
+                throw new ArgumentException(null, nameof(n));
             if (p.IsInfinity)
                 return p;
-            BigInteger k = new BigInteger(n, isUnsigned: true, isBigEndian: true);
+            BigInteger k = new(n, isUnsigned: true, isBigEndian: true);
             if (k.Sign == 0)
                 return p.Curve.Infinity;
             return Multiply(p, k);

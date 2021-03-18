@@ -9,18 +9,19 @@ using System;
 namespace Neo.SmartContract.Manifest
 {
     /// <summary>
-    /// A group represents a set of mutually trusted contracts. A contract will trust and allow any contract in the same group to invoke it, and the user interface will not give any warnings.
+    /// Represents a set of mutually trusted contracts.
+    /// A contract will trust and allow any contract in the same group to invoke it, and the user interface will not give any warnings.
     /// A group is identified by a public key and must be accompanied by a signature for the contract hash to prove that the contract is indeed included in the group.
     /// </summary>
     public class ContractGroup : IInteroperable
     {
         /// <summary>
-        /// Pubkey represents the public key of the group.
+        /// The public key of the group.
         /// </summary>
         public ECPoint PubKey { get; set; }
 
         /// <summary>
-        /// Signature is the signature of the contract hash.
+        /// The signature of the contract hash which can be verified by <see cref="PubKey"/>.
         /// </summary>
         public byte[] Signature { get; set; }
 
@@ -37,13 +38,13 @@ namespace Neo.SmartContract.Manifest
         }
 
         /// <summary>
-        /// Parse ContractManifestGroup from json
+        /// Converts the group from a JSON object.
         /// </summary>
-        /// <param name="json">Json</param>
-        /// <returns>Return ContractManifestGroup</returns>
+        /// <param name="json">The group represented by a JSON object.</param>
+        /// <returns>The converted group.</returns>
         public static ContractGroup FromJson(JObject json)
         {
-            ContractGroup group = new ContractGroup
+            ContractGroup group = new()
             {
                 PubKey = ECPoint.Parse(json["pubkey"].GetString(), ECCurve.Secp256r1),
                 Signature = Convert.FromBase64String(json["signature"].GetString()),
@@ -53,16 +54,20 @@ namespace Neo.SmartContract.Manifest
         }
 
         /// <summary>
-        /// Return true if the signature is valid
+        /// Determines whether the signature in the group is valid.
         /// </summary>
-        /// <param name="hash">Contract Hash</param>
-        /// <returns>Return true or false</returns>
+        /// <param name="hash">The hash of the contract.</param>
+        /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
         public bool IsValid(UInt160 hash)
         {
             return Crypto.VerifySignature(hash.ToArray(), Signature, PubKey);
         }
 
-        public virtual JObject ToJson()
+        /// <summary>
+        /// Converts the group to a JSON object.
+        /// </summary>
+        /// <returns>The group represented by a JSON object.</returns>
+        public JObject ToJson()
         {
             var json = new JObject();
             json["pubkey"] = PubKey.ToString();

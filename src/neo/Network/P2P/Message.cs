@@ -8,27 +8,47 @@ using System.IO;
 
 namespace Neo.Network.P2P
 {
+    /// <summary>
+    /// Represents a message on the NEO network.
+    /// </summary>
     public class Message : ISerializable
     {
+        /// <summary>
+        /// Indicates the maximum size of <see cref="Payload"/>.
+        /// </summary>
         public const int PayloadMaxSize = 0x02000000;
+
         private const int CompressionMinSize = 128;
         private const int CompressionThreshold = 64;
 
         /// <summary>
-        /// Flags that represents whether a message is compressed.
-        /// 0 for None, 1 for Compressed.
+        /// The flags of the message.
         /// </summary>
         public MessageFlags Flags;
+
+        /// <summary>
+        /// The command of the message.
+        /// </summary>
         public MessageCommand Command;
+
+        /// <summary>
+        /// The payload of the message.
+        /// </summary>
         public ISerializable Payload;
 
         private byte[] _payload_compressed;
 
         public int Size => sizeof(MessageFlags) + sizeof(MessageCommand) + _payload_compressed.GetVarSize();
 
+        /// <summary>
+        /// Creates a new instance of the <see cref="Message"/> class.
+        /// </summary>
+        /// <param name="command">The command of the message.</param>
+        /// <param name="payload">The payload of the message. For the messages that don't require a payload, it should be <see langword="null"/>.</param>
+        /// <returns></returns>
         public static Message Create(MessageCommand command, ISerializable payload = null)
         {
-            Message message = new Message
+            Message message = new()
             {
                 Flags = MessageFlags.None,
                 Command = command,

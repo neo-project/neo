@@ -3,16 +3,25 @@ using System.Numerics;
 
 namespace Neo.Cryptography.ECC
 {
+    /// <summary>
+    /// Represents an elliptic curve.
+    /// </summary>
     public class ECCurve
     {
         internal readonly BigInteger Q;
         internal readonly ECFieldElement A;
         internal readonly ECFieldElement B;
         internal readonly BigInteger N;
+        /// <summary>
+        /// The point at infinity.
+        /// </summary>
         public readonly ECPoint Infinity;
+        /// <summary>
+        /// The generator, or base point, for operations on the curve.
+        /// </summary>
         public readonly ECPoint G;
 
-        public readonly int ExpectedECPointLength;
+        internal readonly int ExpectedECPointLength;
 
         private ECCurve(BigInteger Q, BigInteger A, BigInteger B, BigInteger N, byte[] G)
         {
@@ -25,7 +34,10 @@ namespace Neo.Cryptography.ECC
             this.G = ECPoint.DecodePoint(G, this);
         }
 
-        public static readonly ECCurve Secp256k1 = new ECCurve
+        /// <summary>
+        /// Represents a secp256k1 named curve.
+        /// </summary>
+        public static readonly ECCurve Secp256k1 = new
         (
             BigInteger.Parse("00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F", NumberStyles.AllowHexSpecifier),
             BigInteger.Zero,
@@ -34,7 +46,10 @@ namespace Neo.Cryptography.ECC
             ("04" + "79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798" + "483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8").HexToBytes()
         );
 
-        public static readonly ECCurve Secp256r1 = new ECCurve
+        /// <summary>
+        /// Represents a secp256r1 named curve.
+        /// </summary>
+        public static readonly ECCurve Secp256r1 = new
         (
             BigInteger.Parse("00FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF", NumberStyles.AllowHexSpecifier),
             BigInteger.Parse("00FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC", NumberStyles.AllowHexSpecifier),

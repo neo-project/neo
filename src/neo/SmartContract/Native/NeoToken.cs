@@ -13,12 +13,22 @@ using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
+    /// <summary>
+    /// Represents the NEO token in the NEO system.
+    /// </summary>
     public sealed class NeoToken : FungibleToken<NeoToken.NeoAccountState>
     {
         public override string Symbol => "NEO";
         public override byte Decimals => 0;
+
+        /// <summary>
+        /// Indicates the total amount of NEO.
+        /// </summary>
         public BigInteger TotalAmount { get; }
 
+        /// <summary>
+        /// Indicates the effective voting turnout in NEO. The voted candidates will only be effective when the voting turnout exceeds this value.
+        /// </summary>
         public const decimal EffectiveVoterTurnout = 0.2M;
 
         private const byte Prefix_VotersCount = 1;
@@ -113,13 +123,19 @@ namespace Neo.SmartContract.Native
             }
         }
 
+        /// <summary>
+        /// Determine whether the votes should be recounted at the specified height.
+        /// </summary>
+        /// <param name="height">The height to be checked.</param>
+        /// <param name="committeeMembersCount">The number of committee members in the system.</param>
+        /// <returns><see langword="true"/> if the votes should be recounted; otherwise, <see langword="false"/>.</returns>
         public static bool ShouldRefreshCommittee(uint height, int committeeMembersCount) => height % committeeMembersCount == 0;
 
         internal override ContractTask Initialize(ApplicationEngine engine)
         {
             var cachedCommittee = new CachedCommittee(engine.ProtocolSettings.StandbyCommittee.Select(p => (p, BigInteger.Zero)));
             engine.Snapshot.Add(CreateStorageKey(Prefix_Committee), new StorageItem(cachedCommittee));
-            engine.Snapshot.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(new byte[0]));
+            engine.Snapshot.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(System.Array.Empty<byte>()));
             engine.Snapshot.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u), new StorageItem(5 * GAS.Factor));
             engine.Snapshot.Add(CreateStorageKey(Prefix_RegisterPrice), new StorageItem(1000 * GAS.Factor));
             return Mint(engine, Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators), TotalAmount, false);
@@ -185,6 +201,11 @@ namespace Neo.SmartContract.Native
             entry.Set(gasPerBlock);
         }
 
+        /// <summary>
+        /// Gets the amount of GAS generated in each block.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The amount of GAS generated.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger GetGasPerBlock(DataCache snapshot)
         {
@@ -200,6 +221,11 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_RegisterPrice)).Set(registerPrice);
         }
 
+        /// <summary>
+        /// Gets the fees to be paid to register as a candidate.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The amount of the fees.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public long GetRegisterPrice(DataCache snapshot)
         {
@@ -214,6 +240,13 @@ namespace Neo.SmartContract.Native
                 .Select(u => (BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.AsSpan(^sizeof(uint))), (BigInteger)u.Value));
         }
 
+        /// <summary>
+        /// Get the amount of unclaimed GAS in the specified account.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="account">The account to check.</param>
+        /// <param name="end">The block index used when calculating GAS.</param>
+        /// <returns>The amount of unclaimed GAS.</returns>
         [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger UnclaimedGas(DataCache snapshot, UInt160 account, uint end)
         {
@@ -288,6 +321,11 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
+        /// <summary>
+        /// Gets all registered candidates.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>All the registered candidates.</returns>
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
         public (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(DataCache snapshot)
         {
@@ -299,12 +337,22 @@ namespace Neo.SmartContract.Native
             )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes)).ToArray();
         }
 
+        /// <summary>
+        /// Gets all the members of the committee.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The public keys of the members.</returns>
         [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
         public ECPoint[] GetCommittee(DataCache snapshot)
         {
             return GetCommitteeFromCache(snapshot).Select(p => p.PublicKey).OrderBy(p => p).ToArray();
         }
 
+        /// <summary>
+        /// Gets the address of the committee.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The address of the committee.</returns>
         public UInt160 GetCommitteeAddress(DataCache snapshot)
         {
             ECPoint[] committees = GetCommittee(snapshot);
@@ -316,6 +364,12 @@ namespace Neo.SmartContract.Native
             return snapshot[CreateStorageKey(Prefix_Committee)].GetInteroperable<CachedCommittee>();
         }
 
+        /// <summary>
+        /// Computes the validators of the next block.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> used during computing.</param>
+        /// <returns>The public keys of the validators.</returns>
         public ECPoint[] ComputeNextBlockValidators(DataCache snapshot, ProtocolSettings settings)
         {
             return ComputeCommitteeMembers(snapshot, settings).Select(p => p.PublicKey).Take(settings.ValidatorsCount).OrderBy(p => p).ToArray();
@@ -337,6 +391,12 @@ namespace Neo.SmartContract.Native
             return GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings.ValidatorsCount);
         }
 
+        /// <summary>
+        /// Gets the validators of the next block.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="validatorsCount">The number of validators in the system.</param>
+        /// <returns>The public keys of the validators.</returns>
         public ECPoint[] GetNextBlockValidators(DataCache snapshot, int validatorsCount)
         {
             return GetCommitteeFromCache(snapshot)
@@ -346,9 +406,19 @@ namespace Neo.SmartContract.Native
                 .ToArray();
         }
 
+        /// <summary>
+        /// Represents the account state of <see cref="NeoToken"/>.
+        /// </summary>
         public class NeoAccountState : AccountState
         {
+            /// <summary>
+            /// The height of the block where the balance changed last time.
+            /// </summary>
             public uint BalanceHeight;
+
+            /// <summary>
+            /// The voting target of the account. This field can be <see langword="null"/>.
+            /// </summary>
             public ECPoint VoteTo;
 
             public override void FromStackItem(StackItem stackItem)
@@ -386,7 +456,7 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        public class CachedCommittee : List<(ECPoint PublicKey, BigInteger Votes)>, IInteroperable
+        internal class CachedCommittee : List<(ECPoint PublicKey, BigInteger Votes)>, IInteroperable
         {
             public CachedCommittee()
             {

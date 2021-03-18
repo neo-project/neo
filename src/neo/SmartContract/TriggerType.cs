@@ -1,30 +1,42 @@
+using Neo.Network.P2P.Payloads;
 using System;
 
 namespace Neo.SmartContract
 {
+    /// <summary>
+    /// Represents the triggers for running smart contracts.
+    /// </summary>
     [Flags]
     public enum TriggerType : byte
     {
-        OnPersist = 0x01,
-        PostPersist = 0x02,
         /// <summary>
-        /// The verification trigger indicates that the contract is being invoked as a verification function.
-        /// The verification function can accept multiple parameters, and should return a boolean value that indicates the validity of the transaction or block.
-        /// The entry point of the contract will be invoked if the contract is triggered by Verification: 
-        ///     main(...);
-        /// The entry point of the contract must be able to handle this type of invocation.
+        /// Indicate that the contract is triggered by the system to execute the OnPersist method of the native contracts.
+        /// </summary>
+        OnPersist = 0x01,
+
+        /// <summary>
+        /// Indicate that the contract is triggered by the system to execute the PostPersist method of the native contracts.
+        /// </summary>
+        PostPersist = 0x02,
+
+        /// <summary>
+        /// Indicates that the contract is triggered by the verification of a <see cref="IVerifiable"/>.
         /// </summary>
         Verification = 0x20,
+
         /// <summary>
-        /// The application trigger indicates that the contract is being invoked as an application function.
-        /// The application function can accept multiple parameters, change the states of the blockchain, and return any type of value.
-        /// The contract can have any form of entry point, but we recommend that all contracts should have the following entry point:
-        ///     public byte[] main(string operation, params object[] args)
-        /// The functions can be invoked by creating an InvocationTransaction.
+        /// Indicates that the contract is triggered by the execution of transactions.
         /// </summary>
         Application = 0x40,
 
+        /// <summary>
+        /// The combination of all system triggers.
+        /// </summary>
         System = OnPersist | PostPersist,
+
+        /// <summary>
+        /// The combination of all triggers.
+        /// </summary>
         All = OnPersist | PostPersist | Verification | Application
     }
 }

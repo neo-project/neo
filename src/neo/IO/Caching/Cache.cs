@@ -22,8 +22,8 @@ namespace Neo.IO.Caching
             }
         }
 
-        protected readonly ReaderWriterLockSlim RwSyncRootLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
-        protected readonly Dictionary<TKey, CacheItem> InnerDictionary = new Dictionary<TKey, CacheItem>();
+        protected readonly ReaderWriterLockSlim RwSyncRootLock = new(LockRecursionPolicy.SupportsRecursion);
+        protected readonly Dictionary<TKey, CacheItem> InnerDictionary = new();
         private readonly int max_capacity;
 
         public TValue this[TKey key]

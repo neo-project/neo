@@ -7,14 +7,20 @@ using System.Runtime.InteropServices;
 namespace Neo
 {
     /// <summary>
-    /// This class stores a 160 bit unsigned int, represented as a 20-byte little-endian byte array
-    /// It is composed by ulong(64) + ulong(64) + uint(32) = UInt160(160)
+    /// Represents a 160-bit unsigned integer.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 20)]
     public class UInt160 : IComparable<UInt160>, IEquatable<UInt160>, ISerializable
     {
+        /// <summary>
+        /// The length of <see cref="UInt160"/> values.
+        /// </summary>
         public const int Length = 20;
-        public static readonly UInt160 Zero = new UInt160();
+
+        /// <summary>
+        /// Represents 0.
+        /// </summary>
+        public static readonly UInt160 Zero = new();
 
         [FieldOffset(0)] private ulong value1;
         [FieldOffset(8)] private ulong value2;
@@ -22,23 +28,26 @@ namespace Neo
 
         public int Size => Length;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UInt160"/> class.
+        /// </summary>
         public UInt160()
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UInt160"/> class.
+        /// </summary>
+        /// <param name="value">The value of the <see cref="UInt160"/>.</param>
         public unsafe UInt160(ReadOnlySpan<byte> value)
         {
             fixed (ulong* p = &value1)
             {
-                Span<byte> dst = new Span<byte>(p, Length);
+                Span<byte> dst = new(p, Length);
                 value[..Length].CopyTo(dst);
             }
         }
 
-        /// <summary>
-        /// Method CompareTo returns 1 if this UInt160 is bigger than other UInt160; -1 if it's smaller; 0 if it's equals
-        /// Example: assume this is 01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4, this.CompareTo(02ff00ff00ff00ff00ff00ff00ff00ff00ff00a3) returns 1
-        /// </summary>
         public int CompareTo(UInt160 other)
         {
             int result = value3.CompareTo(other.value3);
@@ -55,18 +64,12 @@ namespace Neo
             value3 = reader.ReadUInt32();
         }
 
-        /// <summary>
-        /// Method Equals returns true if objects are equal, false otherwise
-        /// </summary>
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(obj, this)) return true;
             return Equals(obj as UInt160);
         }
 
-        /// <summary>
-        /// Method Equals returns true if objects are equal, false otherwise
-        /// </summary>
         public bool Equals(UInt160 other)
         {
             if (other is null) return false;
@@ -81,9 +84,11 @@ namespace Neo
         }
 
         /// <summary>
-        /// Method Parse receives a big-endian hex string and stores as a UInt160 little-endian 20-bytes array
-        /// Example: Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01") should create UInt160 01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4
+        /// Parses an <see cref="UInt160"/> from the specified <see cref="string"/>.
         /// </summary>
+        /// <param name="value">An <see cref="UInt160"/> represented by a <see cref="string"/>.</param>
+        /// <returns>The parsed <see cref="UInt160"/>.</returns>
+        /// <exception cref="FormatException"><paramref name="value"/> is not in the correct format.</exception>
         public static UInt160 Parse(string value)
         {
             if (!TryParse(value, out var result)) throw new FormatException();
@@ -103,9 +108,11 @@ namespace Neo
         }
 
         /// <summary>
-        /// Method TryParse tries to parse a big-endian hex string and store it as a UInt160 little-endian 20-bytes array
-        /// Example: TryParse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01", result) should create result UInt160 01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4
+        /// Parses an <see cref="UInt160"/> from the specified <see cref="string"/>.
         /// </summary>
+        /// <param name="s">An <see cref="UInt160"/> represented by a <see cref="string"/>.</param>
+        /// <param name="result">The parsed <see cref="UInt160"/>.</param>
+        /// <returns><see langword="true"/> if an <see cref="UInt160"/> is successfully parsed; otherwise, <see langword="false"/>.</returns>
         public static bool TryParse(string s, out UInt160 result)
         {
             if (s == null)
@@ -114,7 +121,7 @@ namespace Neo
                 return false;
             }
             if (s.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
-                s = s.Substring(2);
+                s = s[2..];
             if (s.Length != Length * 2)
             {
                 result = null;
@@ -131,9 +138,6 @@ namespace Neo
             return true;
         }
 
-        /// <summary>
-        /// Returns true if left UInt160 is equals to right UInt160
-        /// </summary>
         public static bool operator ==(UInt160 left, UInt160 right)
         {
             if (ReferenceEquals(left, right)) return true;
@@ -141,45 +145,26 @@ namespace Neo
             return left.Equals(right);
         }
 
-        /// <summary>
-        /// Returns true if left UIntBase is not equals to right UIntBase
-        /// </summary>
         public static bool operator !=(UInt160 left, UInt160 right)
         {
             return !(left == right);
         }
 
-        /// <summary>
-        /// Operator > returns true if left UInt160 is bigger than right UInt160
-        /// Example: UInt160(01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4) > UInt160 (02ff00ff00ff00ff00ff00ff00ff00ff00ff00a3) is true
-        /// </summary>
         public static bool operator >(UInt160 left, UInt160 right)
         {
             return left.CompareTo(right) > 0;
         }
 
-        /// <summary>
-        /// Operator > returns true if left UInt160 is bigger or equals to right UInt160
-        /// Example: UInt160(01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4) >= UInt160 (02ff00ff00ff00ff00ff00ff00ff00ff00ff00a3) is true
-        /// </summary>
         public static bool operator >=(UInt160 left, UInt160 right)
         {
             return left.CompareTo(right) >= 0;
         }
 
-        /// <summary>
-        /// Operator > returns true if left UInt160 is less than right UInt160
-        /// Example: UInt160(02ff00ff00ff00ff00ff00ff00ff00ff00ff00a3) < UInt160 (01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4) is true
-        /// </summary>
         public static bool operator <(UInt160 left, UInt160 right)
         {
             return left.CompareTo(right) < 0;
         }
 
-        /// <summary>
-        /// Operator > returns true if left UInt160 is less or equals to right UInt160
-        /// Example: UInt160(02ff00ff00ff00ff00ff00ff00ff00ff00ff00a3) < UInt160 (01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4) is true
-        /// </summary>
         public static bool operator <=(UInt160 left, UInt160 right)
         {
             return left.CompareTo(right) <= 0;

@@ -3,6 +3,9 @@ using Neo.Network.P2P.Payloads;
 
 namespace Neo.SmartContract.Native
 {
+    /// <summary>
+    /// Represents the GAS token in the NEO system.
+    /// </summary>
     public sealed class GasToken : FungibleToken<AccountState>
     {
         public override string Symbol => "GAS";

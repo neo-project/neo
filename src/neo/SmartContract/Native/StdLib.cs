@@ -9,6 +9,9 @@ using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
+    /// <summary>
+    /// A native contract library that provides useful functions.
+    /// </summary>
     public sealed class StdLib : NativeContract
     {
         internal StdLib() { }
@@ -37,6 +40,12 @@ namespace Neo.SmartContract.Native
             return JsonSerializer.Deserialize(JObject.Parse(json, 10), engine.ReferenceCounter);
         }
 
+        /// <summary>
+        /// Converts an integer to a <see cref="string"/>.
+        /// </summary>
+        /// <param name="value">The integer to convert.</param>
+        /// <param name="base">The base of the integer. Only support 10 and 16.</param>
+        /// <returns>The converted <see cref="string"/>.</returns>
         [ContractMethod(CpuFee = 1 << 12)]
         public static string Itoa(BigInteger value, int @base)
         {
@@ -48,6 +57,12 @@ namespace Neo.SmartContract.Native
             };
         }
 
+        /// <summary>
+        /// Converts a <see cref="string"/> to an integer.
+        /// </summary>
+        /// <param name="value">The <see cref="string"/> to convert.</param>
+        /// <param name="base">The base of the integer. Only support 10 and 16.</param>
+        /// <returns>The converted integer.</returns>
         [ContractMethod(CpuFee = 1 << 12)]
         public static BigInteger Atoi(string value, int @base)
         {
@@ -59,24 +74,44 @@ namespace Neo.SmartContract.Native
             };
         }
 
+        /// <summary>
+        /// Encodes a byte array into a base64 <see cref="string"/>.
+        /// </summary>
+        /// <param name="data">The byte array to be encoded.</param>
+        /// <returns>The encoded <see cref="string"/>.</returns>
         [ContractMethod(CpuFee = 1 << 12)]
         public static string Base64Encode(byte[] data)
         {
             return Convert.ToBase64String(data);
         }
 
+        /// <summary>
+        /// Decodes a byte array from a base64 <see cref="string"/>.
+        /// </summary>
+        /// <param name="s">The base64 <see cref="string"/>.</param>
+        /// <returns>The decoded byte array.</returns>
         [ContractMethod(CpuFee = 1 << 12)]
         public static byte[] Base64Decode(string s)
         {
             return Convert.FromBase64String(s);
         }
 
+        /// <summary>
+        /// Encodes a byte array into a base58 <see cref="string"/>.
+        /// </summary>
+        /// <param name="data">The byte array to be encoded.</param>
+        /// <returns>The encoded <see cref="string"/>.</returns>
         [ContractMethod(CpuFee = 1 << 12)]
         public static string Base58Encode(byte[] data)
         {
             return Base58.Encode(data);
         }
 
+        /// <summary>
+        /// Decodes a byte array from a base58 <see cref="string"/>.
+        /// </summary>
+        /// <param name="s">The base58 <see cref="string"/>.</param>
+        /// <returns>The decoded byte array.</returns>
         [ContractMethod(CpuFee = 1 << 12)]
         public static byte[] Base58Decode(string s)
         {

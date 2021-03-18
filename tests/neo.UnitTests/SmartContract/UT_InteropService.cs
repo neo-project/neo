@@ -236,7 +236,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestRuntime_Platform()
         {
-            GetEngine().GetPlatform().Should().Be("NEO");
+            ApplicationEngine.GetPlatform().Should().Be("NEO");
         }
 
         [TestMethod]
@@ -522,14 +522,13 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestStorageContext_AsReadOnly()
         {
-            var engine = GetEngine();
             var state = TestUtils.GetContract();
             var storageContext = new StorageContext
             {
                 Id = state.Id,
                 IsReadOnly = false
             };
-            engine.AsReadOnly(storageContext).IsReadOnly.Should().BeTrue();
+            ApplicationEngine.AsReadOnly(storageContext).IsReadOnly.Should().BeTrue();
         }
 
         [TestMethod]
@@ -588,9 +587,8 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestContract_CreateStandardAccount()
         {
-            var engine = GetEngine(true, true);
             ECPoint pubkey = ECPoint.Parse("024b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e", ECCurve.Secp256r1);
-            engine.CreateStandardAccount(pubkey).ToArray().ToHexString().Should().Be("a78796ab56598585c80dbe95059324eabde764db");
+            ApplicationEngine.CreateStandardAccount(pubkey).ToArray().ToHexString().Should().Be("a78796ab56598585c80dbe95059324eabde764db");
         }
 
         public static void LogEvent(object sender, LogEventArgs args)

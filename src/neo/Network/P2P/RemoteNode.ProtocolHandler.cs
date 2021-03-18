@@ -27,7 +27,7 @@ namespace Neo.Network.P2P
             }
         }
 
-        private readonly PendingKnownHashesCollection pendingKnownHashes = new PendingKnownHashesCollection();
+        private readonly PendingKnownHashesCollection pendingKnownHashes = new();
         private readonly HashSetCache<UInt256> knownHashes;
         private readonly HashSetCache<UInt256> sentHashes;
         private bool verack = false;
@@ -151,7 +151,7 @@ namespace Neo.Network.P2P
         /// </summary>
         private void OnGetAddrMessageReceived()
         {
-            Random rand = new Random();
+            Random rand = new();
             IEnumerable<RemoteNode> peers = localNode.RemoteNodes.Values
                 .Where(p => p.ListenerTcpPort > 0)
                 .GroupBy(p => p.Remote.Address, (k, g) => g.First())
@@ -177,7 +177,7 @@ namespace Neo.Network.P2P
             TrimmedBlock state = NativeContract.Ledger.GetTrimmedBlock(snapshot, hash);
             if (state == null) return;
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
-            List<UInt256> hashes = new List<UInt256>();
+            List<UInt256> hashes = new();
             for (uint i = 1; i <= count; i++)
             {
                 uint index = state.Index + i;
@@ -206,7 +206,7 @@ namespace Neo.Network.P2P
                 }
                 else
                 {
-                    BitArray flags = new BitArray(block.Transactions.Select(p => bloom_filter.Test(p)).ToArray());
+                    BitArray flags = new(block.Transactions.Select(p => bloom_filter.Test(p)).ToArray());
                     EnqueueMessage(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
                 }
             }
@@ -241,7 +241,7 @@ namespace Neo.Network.P2P
                             }
                             else
                             {
-                                BitArray flags = new BitArray(block.Transactions.Select(p => bloom_filter.Test(p)).ToArray());
+                                BitArray flags = new(block.Transactions.Select(p => bloom_filter.Test(p)).ToArray());
                                 EnqueueMessage(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
                             }
                         }
@@ -274,7 +274,7 @@ namespace Neo.Network.P2P
         {
             DataCache snapshot = system.StoreView;
             if (payload.IndexStart > NativeContract.Ledger.CurrentIndex(snapshot)) return;
-            List<Header> headers = new List<Header>();
+            List<Header> headers = new();
             uint count = payload.Count == -1 ? HeadersPayload.MaxHeadersCount : (uint)payload.Count;
             for (uint i = 0; i < count; i++)
             {
