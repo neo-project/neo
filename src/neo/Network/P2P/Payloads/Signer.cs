@@ -7,14 +7,32 @@ using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
+    /// <summary>
+    /// Represents a signer of a <see cref="Transaction"/>.
+    /// </summary>
     public class Signer : ISerializable
     {
         // This limits maximum number of AllowedContracts or AllowedGroups here
         private const int MaxSubitems = 16;
 
+        /// <summary>
+        /// The account of the signer.
+        /// </summary>
         public UInt160 Account;
+
+        /// <summary>
+        /// The scopes of the witness.
+        /// </summary>
         public WitnessScope Scopes;
+
+        /// <summary>
+        /// The contracts that allowed by the witness. Only available when the <see cref="WitnessScope.CustomContracts"/> flag is set.
+        /// </summary>
         public UInt160[] AllowedContracts;
+
+        /// <summary>
+        /// The groups that allowed by the witness. Only available when the <see cref="WitnessScope.CustomGroups"/> flag is set.
+        /// </summary>
         public ECPoint[] AllowedGroups;
 
         public int Size =>
@@ -33,10 +51,10 @@ namespace Neo.Network.P2P.Payloads
                 throw new FormatException();
             AllowedContracts = Scopes.HasFlag(WitnessScope.CustomContracts)
                 ? reader.ReadSerializableArray<UInt160>(MaxSubitems)
-                : new UInt160[0];
+                : Array.Empty<UInt160>();
             AllowedGroups = Scopes.HasFlag(WitnessScope.CustomGroups)
                 ? reader.ReadSerializableArray<ECPoint>(MaxSubitems)
-                : new ECPoint[0];
+                : Array.Empty<ECPoint>();
         }
 
         public void Serialize(BinaryWriter writer)
@@ -49,6 +67,10 @@ namespace Neo.Network.P2P.Payloads
                 writer.Write(AllowedGroups);
         }
 
+        /// <summary>
+        /// Converts the signer to a JSON object.
+        /// </summary>
+        /// <returns>The signer represented by a JSON object.</returns>
         public JObject ToJson()
         {
             var json = new JObject();

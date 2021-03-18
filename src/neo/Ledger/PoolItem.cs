@@ -6,7 +6,7 @@ namespace Neo.Ledger
     /// <summary>
     /// Represents an item in the Memory Pool.
     ///
-    //  Note: PoolItem objects don't consider transaction priority (low or high) in their compare CompareTo method.
+    ///  Note: PoolItem objects don't consider transaction priority (low or high) in their compare CompareTo method.
     ///       This is because items of differing priority are never added to the same sorted set in MemoryPool.
     /// </summary>
     internal class PoolItem : IComparable<PoolItem>

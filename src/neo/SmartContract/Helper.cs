@@ -13,32 +13,59 @@ using System.Linq;
 
 namespace Neo.SmartContract
 {
+    /// <summary>
+    /// A helper class related to smart contract.
+    /// </summary>
     public static class Helper
     {
+        /// <summary>
+        /// The maximum GAS that can be consumed when <see cref="VerifyWitnesses"/> is called.
+        /// </summary>
         public const long MaxVerificationGas = 0_50000000;
 
+        /// <summary>
+        /// Calculates the verification fee for a signature address.
+        /// </summary>
+        /// <returns>The calculated cost.</returns>
         public static long SignatureContractCost() =>
             ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
             ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
             ApplicationEngine.CheckSigPrice;
 
+        /// <summary>
+        /// Calculates the verification fee for a multi-signature address.
+        /// </summary>
+        /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="n">The number of public keys in the account.</param>
+        /// <returns>The calculated cost.</returns>
         public static long MultiSignatureContractCost(int m, int n)
         {
             long fee = ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n);
-            using (ScriptBuilder sb = new ScriptBuilder())
+            using (ScriptBuilder sb = new())
                 fee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
-            using (ScriptBuilder sb = new ScriptBuilder())
+            using (ScriptBuilder sb = new())
                 fee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
             fee += ApplicationEngine.OpCodePrices[OpCode.SYSCALL];
             fee += ApplicationEngine.CheckSigPrice * n;
             return fee;
         }
 
+        /// <summary>
+        /// Check the correctness of the script and ABI.
+        /// </summary>
+        /// <param name="script">The script of the contract.</param>
+        /// <param name="abi">The ABI of the contract.</param>
         public static void Check(byte[] script, ContractAbi abi)
         {
             Check(new Script(script, true), abi);
         }
 
+        /// <summary>
+        /// Check the correctness of the script and ABI.
+        /// </summary>
+        /// <param name="script">The script of the contract.</param>
+        /// <param name="abi">The ABI of the contract.</param>
+        /// <remarks>Note: The <see cref="Script"/> passed to this method should be constructed with strict mode.</remarks>
         public static void Check(this Script script, ContractAbi abi)
         {
             foreach (ContractMethodDescriptor method in abi.Methods)
@@ -47,6 +74,13 @@ namespace Neo.SmartContract
             _ = abi.Events.ToDictionary(p => p.Name); // Check the uniqueness of the event names.
         }
 
+        /// <summary>
+        /// Computes the hash of a deployed contract.
+        /// </summary>
+        /// <param name="sender">The sender of the transaction that deployed the contract.</param>
+        /// <param name="nefCheckSum">The checksum of the nef file of the contract.</param>
+        /// <param name="name">The name of the contract.</param>
+        /// <returns>The hash of the contract.</returns>
         public static UInt160 GetContractHash(UInt160 sender, uint nefCheckSum, string name)
         {
             using var sb = new ScriptBuilder();
@@ -58,24 +92,48 @@ namespace Neo.SmartContract
             return sb.ToArray().ToScriptHash();
         }
 
+        /// <summary>
+        /// Gets the script hash of the specified <see cref="ExecutionContext"/>.
+        /// </summary>
+        /// <param name="context">The specified <see cref="ExecutionContext"/>.</param>
+        /// <returns>The script hash of the context.</returns>
         public static UInt160 GetScriptHash(this ExecutionContext context)
         {
             return context.GetState<ExecutionContextState>().ScriptHash;
         }
 
+        /// <summary>
+        /// Determines whether the specified contract is a multi-signature contract.
+        /// </summary>
+        /// <param name="script">The script of the contract.</param>
+        /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
         public static bool IsMultiSigContract(this byte[] script)
         {
             return IsMultiSigContract(script, out _, out _, null);
         }
 
+        /// <summary>
+        /// Determines whether the specified contract is a multi-signature contract.
+        /// </summary>
+        /// <param name="script">The script of the contract.</param>
+        /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="n">The number of public keys in the account.</param>
+        /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
         public static bool IsMultiSigContract(this byte[] script, out int m, out int n)
         {
             return IsMultiSigContract(script, out m, out n, null);
         }
 
+        /// <summary>
+        /// Determines whether the specified contract is a multi-signature contract.
+        /// </summary>
+        /// <param name="script">The script of the contract.</param>
+        /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="points">The public keys in the account.</param>
+        /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
         public static bool IsMultiSigContract(this byte[] script, out int m, out ECPoint[] points)
         {
-            List<ECPoint> list = new List<ECPoint>();
+            List<ECPoint> list = new();
             if (IsMultiSigContract(script, out m, out _, list))
             {
                 points = list.ToArray();
@@ -144,6 +202,11 @@ namespace Neo.SmartContract
             return true;
         }
 
+        /// <summary>
+        /// Determines whether the specified contract is a signature contract.
+        /// </summary>
+        /// <param name="script">The script of the contract.</param>
+        /// <returns><see langword="true"/> if the contract is a signature contract; otherwise, <see langword="false"/>.</returns>
         public static bool IsSignatureContract(this byte[] script)
         {
             if (script.Length != 40) return false;
@@ -155,28 +218,57 @@ namespace Neo.SmartContract
             return true;
         }
 
+        /// <summary>
+        /// Determines whether the specified contract is a standard contract. A standard contract is either a signature contract or a multi-signature contract.
+        /// </summary>
+        /// <param name="script">The script of the contract.</param>
+        /// <returns><see langword="true"/> if the contract is a standard contract; otherwise, <see langword="false"/>.</returns>
         public static bool IsStandardContract(this byte[] script)
         {
             return script.IsSignatureContract() || script.IsMultiSigContract();
         }
 
+        /// <summary>
+        /// Convert the <see cref="StackItem"/> to an <see cref="IInteroperable"/>.
+        /// </summary>
+        /// <typeparam name="T">The type of the <see cref="IInteroperable"/>.</typeparam>
+        /// <param name="item">The <see cref="StackItem"/> to convert.</param>
+        /// <returns>The converted <see cref="IInteroperable"/>.</returns>
         public static T ToInteroperable<T>(this StackItem item) where T : IInteroperable, new()
         {
-            T t = new T();
+            T t = new();
             t.FromStackItem(item);
             return t;
         }
 
+        /// <summary>
+        /// Computes the hash of the specified script.
+        /// </summary>
+        /// <param name="script">The specified script.</param>
+        /// <returns>The hash of the script.</returns>
         public static UInt160 ToScriptHash(this byte[] script)
         {
             return new UInt160(Crypto.Hash160(script));
         }
 
+        /// <summary>
+        /// Computes the hash of the specified script.
+        /// </summary>
+        /// <param name="script">The specified script.</param>
+        /// <returns>The hash of the script.</returns>
         public static UInt160 ToScriptHash(this ReadOnlySpan<byte> script)
         {
             return new UInt160(Crypto.Hash160(script));
         }
 
+        /// <summary>
+        /// Verifies the witnesses of the specified <see cref="IVerifiable"/>.
+        /// </summary>
+        /// <param name="verifiable">The <see cref="IVerifiable"/> to be verified.</param>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> to be used for the verification.</param>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="gas">The maximum GAS that can be used.</param>
+        /// <returns><see langword="true"/> if the <see cref="IVerifiable"/> is verified as valid; otherwise, <see langword="false"/>.</returns>
         public static bool VerifyWitnesses(this IVerifiable verifiable, ProtocolSettings settings, DataCache snapshot, long gas)
         {
             if (gas < 0) return false;

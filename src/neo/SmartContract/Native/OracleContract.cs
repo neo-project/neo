@@ -15,6 +15,9 @@ using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
+    /// <summary>
+    /// The native Oracle service for NEO system.
+    /// </summary>
     public sealed class OracleContract : NativeContract
     {
         private const int MaxUrlLength = 256;
@@ -89,6 +92,11 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Price)).Set(price);
         }
 
+        /// <summary>
+        /// Gets the price for an Oracle request.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>The price for an Oracle request.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public long GetPrice(DataCache snapshot)
         {
@@ -117,16 +125,33 @@ namespace Neo.SmartContract.Native
             return request.OriginalTxid;
         }
 
+        /// <summary>
+        /// Gets a pending request with the specified id.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="id">The id of the request.</param>
+        /// <returns>The pending request. Or <see langword="null"/> if no request with the specified id is found.</returns>
         public OracleRequest GetRequest(DataCache snapshot, ulong id)
         {
             return snapshot.TryGet(CreateStorageKey(Prefix_Request).AddBigEndian(id))?.GetInteroperable<OracleRequest>();
         }
 
+        /// <summary>
+        /// Gets all the pending requests.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>All the pending requests.</returns>
         public IEnumerable<(ulong, OracleRequest)> GetRequests(DataCache snapshot)
         {
             return snapshot.Find(CreateStorageKey(Prefix_Request).ToArray()).Select(p => (BinaryPrimitives.ReadUInt64BigEndian(p.Key.Key.AsSpan(1)), p.Value.GetInteroperable<OracleRequest>()));
         }
 
+        /// <summary>
+        /// Gets the requests with the specified url.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="url">The url of the requests.</param>
+        /// <returns>All the requests with the specified url.</returns>
         public IEnumerable<(ulong, OracleRequest)> GetRequestsByUrl(DataCache snapshot, string url)
         {
             IdList list = snapshot.TryGet(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)))?.GetInteroperable<IdList>();

@@ -13,191 +13,262 @@ using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.VM
 {
+    /// <summary>
+    /// A helper class related to NeoVM.
+    /// </summary>
     public static class Helper
     {
-        public static ScriptBuilder CreateArray<T>(this ScriptBuilder sb, IReadOnlyList<T> list = null)
+        /// <summary>
+        /// Emits the opcodes for creating an array.
+        /// </summary>
+        /// <typeparam name="T">The type of the elements of the array.</typeparam>
+        /// <param name="builder">The <see cref="ScriptBuilder"/> to be used.</param>
+        /// <param name="list">The elements of the array.</param>
+        /// <returns>The same instance as <paramref name="builder"/>.</returns>
+        public static ScriptBuilder CreateArray<T>(this ScriptBuilder builder, IReadOnlyList<T> list = null)
         {
             if (list is null || list.Count == 0)
-                return sb.Emit(OpCode.NEWARRAY0);
+                return builder.Emit(OpCode.NEWARRAY0);
             for (int i = list.Count - 1; i >= 0; i--)
-                sb.EmitPush(list[i]);
-            sb.EmitPush(list.Count);
-            return sb.Emit(OpCode.PACK);
+                builder.EmitPush(list[i]);
+            builder.EmitPush(list.Count);
+            return builder.Emit(OpCode.PACK);
         }
 
-        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder sb, IEnumerable<KeyValuePair<TKey, TValue>> map = null)
+        /// <summary>
+        /// Emits the opcodes for creating a map.
+        /// </summary>
+        /// <typeparam name="TKey">The type of the key of the map.</typeparam>
+        /// <typeparam name="TValue">The type of the value of the map.</typeparam>
+        /// <param name="builder">The <see cref="ScriptBuilder"/> to be used.</param>
+        /// <param name="map">The key/value pairs of the map.</param>
+        /// <returns>The same instance as <paramref name="builder"/>.</returns>
+        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder builder, IEnumerable<KeyValuePair<TKey, TValue>> map = null)
         {
-            sb.Emit(OpCode.NEWMAP);
+            builder.Emit(OpCode.NEWMAP);
             if (map != null)
                 foreach (var p in map)
                 {
-                    sb.Emit(OpCode.DUP);
-                    sb.EmitPush(p.Key);
-                    sb.EmitPush(p.Value);
-                    sb.Emit(OpCode.SETITEM);
+                    builder.Emit(OpCode.DUP);
+                    builder.EmitPush(p.Key);
+                    builder.EmitPush(p.Value);
+                    builder.Emit(OpCode.SETITEM);
                 }
-            return sb;
+            return builder;
         }
 
-        public static ScriptBuilder Emit(this ScriptBuilder sb, params OpCode[] ops)
+        /// <summary>
+        /// Emits the specified opcodes.
+        /// </summary>
+        /// <param name="builder">The <see cref="ScriptBuilder"/> to be used.</param>
+        /// <param name="ops">The opcodes to emit.</param>
+        /// <returns>The same instance as <paramref name="builder"/>.</returns>
+        public static ScriptBuilder Emit(this ScriptBuilder builder, params OpCode[] ops)
         {
             foreach (OpCode op in ops)
-                sb.Emit(op);
-            return sb;
+                builder.Emit(op);
+            return builder;
         }
 
-        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, params object[] args)
+        /// <summary>
+        /// Emits the opcodes for calling a contract dynamically.
+        /// </summary>
+        /// <param name="builder">The <see cref="ScriptBuilder"/> to be used.</param>
+        /// <param name="scriptHash">The hash of the contract to be called.</param>
+        /// <param name="method">The method to be called in the contract.</param>
+        /// <param name="args">The arguments for calling the contract.</param>
+        /// <returns>The same instance as <paramref name="builder"/>.</returns>
+        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder builder, UInt160 scriptHash, string method, params object[] args)
         {
-            return EmitDynamicCall(sb, scriptHash, operation, CallFlags.All, args);
+            return EmitDynamicCall(builder, scriptHash, method, CallFlags.All, args);
         }
 
-        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder sb, UInt160 scriptHash, string operation, CallFlags flags, params object[] args)
+        /// <summary>
+        /// Emits the opcodes for calling a contract dynamically.
+        /// </summary>
+        /// <param name="builder">The <see cref="ScriptBuilder"/> to be used.</param>
+        /// <param name="scriptHash">The hash of the contract to be called.</param>
+        /// <param name="method">The method to be called in the contract.</param>
+        /// <param name="flags">The <see cref="CallFlags"/> for calling the contract.</param>
+        /// <param name="args">The arguments for calling the contract.</param>
+        /// <returns>The same instance as <paramref name="builder"/>.</returns>
+        public static ScriptBuilder EmitDynamicCall(this ScriptBuilder builder, UInt160 scriptHash, string method, CallFlags flags, params object[] args)
         {
-            sb.CreateArray(args);
-            sb.EmitPush(flags);
-            sb.EmitPush(operation);
-            sb.EmitPush(scriptHash);
-            sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
-            return sb;
+            builder.CreateArray(args);
+            builder.EmitPush(flags);
+            builder.EmitPush(method);
+            builder.EmitPush(scriptHash);
+            builder.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            return builder;
         }
 
-        public static ScriptBuilder EmitPush(this ScriptBuilder sb, ISerializable data)
+        /// <summary>
+        /// Emits the opcodes for pushing the specified data onto the stack.
+        /// </summary>
+        /// <param name="builder">The <see cref="ScriptBuilder"/> to be used.</param>
+        /// <param name="data">The data to be pushed.</param>
+        /// <returns>The same instance as <paramref name="builder"/>.</returns>
+        public static ScriptBuilder EmitPush(this ScriptBuilder builder, ISerializable data)
         {
-            return sb.EmitPush(data.ToArray());
+            return builder.EmitPush(data.ToArray());
         }
 
-        public static ScriptBuilder EmitPush(this ScriptBuilder sb, ContractParameter parameter)
+        /// <summary>
+        /// Emits the opcodes for pushing the specified data onto the stack.
+        /// </summary>
+        /// <param name="builder">The <see cref="ScriptBuilder"/> to be used.</param>
+        /// <param name="parameter">The data to be pushed.</param>
+        /// <returns>The same instance as <paramref name="builder"/>.</returns>
+        public static ScriptBuilder EmitPush(this ScriptBuilder builder, ContractParameter parameter)
         {
             if (parameter.Value is null)
-                sb.Emit(OpCode.PUSHNULL);
+                builder.Emit(OpCode.PUSHNULL);
             else
                 switch (parameter.Type)
                 {
                     case ContractParameterType.Signature:
                     case ContractParameterType.ByteArray:
-                        sb.EmitPush((byte[])parameter.Value);
+                        builder.EmitPush((byte[])parameter.Value);
                         break;
                     case ContractParameterType.Boolean:
-                        sb.EmitPush((bool)parameter.Value);
+                        builder.EmitPush((bool)parameter.Value);
                         break;
                     case ContractParameterType.Integer:
                         if (parameter.Value is BigInteger bi)
-                            sb.EmitPush(bi);
+                            builder.EmitPush(bi);
                         else
-                            sb.EmitPush((BigInteger)typeof(BigInteger).GetConstructor(new[] { parameter.Value.GetType() }).Invoke(new[] { parameter.Value }));
+                            builder.EmitPush((BigInteger)typeof(BigInteger).GetConstructor(new[] { parameter.Value.GetType() }).Invoke(new[] { parameter.Value }));
                         break;
                     case ContractParameterType.Hash160:
-                        sb.EmitPush((UInt160)parameter.Value);
+                        builder.EmitPush((UInt160)parameter.Value);
                         break;
                     case ContractParameterType.Hash256:
-                        sb.EmitPush((UInt256)parameter.Value);
+                        builder.EmitPush((UInt256)parameter.Value);
                         break;
                     case ContractParameterType.PublicKey:
-                        sb.EmitPush((ECPoint)parameter.Value);
+                        builder.EmitPush((ECPoint)parameter.Value);
                         break;
                     case ContractParameterType.String:
-                        sb.EmitPush((string)parameter.Value);
+                        builder.EmitPush((string)parameter.Value);
                         break;
                     case ContractParameterType.Array:
                         {
                             IList<ContractParameter> parameters = (IList<ContractParameter>)parameter.Value;
                             for (int i = parameters.Count - 1; i >= 0; i--)
-                                sb.EmitPush(parameters[i]);
-                            sb.EmitPush(parameters.Count);
-                            sb.Emit(OpCode.PACK);
+                                builder.EmitPush(parameters[i]);
+                            builder.EmitPush(parameters.Count);
+                            builder.Emit(OpCode.PACK);
                         }
                         break;
                     case ContractParameterType.Map:
                         {
                             var pairs = (IList<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value;
-                            sb.CreateMap(pairs);
+                            builder.CreateMap(pairs);
                         }
                         break;
                     default:
-                        throw new ArgumentException();
+                        throw new ArgumentException(null, nameof(parameter));
                 }
-            return sb;
+            return builder;
         }
 
-        public static ScriptBuilder EmitPush(this ScriptBuilder sb, object obj)
+        /// <summary>
+        /// Emits the opcodes for pushing the specified data onto the stack.
+        /// </summary>
+        /// <param name="builder">The <see cref="ScriptBuilder"/> to be used.</param>
+        /// <param name="obj">The data to be pushed.</param>
+        /// <returns>The same instance as <paramref name="builder"/>.</returns>
+        public static ScriptBuilder EmitPush(this ScriptBuilder builder, object obj)
         {
             switch (obj)
             {
                 case bool data:
-                    sb.EmitPush(data);
+                    builder.EmitPush(data);
                     break;
                 case byte[] data:
-                    sb.EmitPush(data);
+                    builder.EmitPush(data);
                     break;
                 case string data:
-                    sb.EmitPush(data);
+                    builder.EmitPush(data);
                     break;
                 case BigInteger data:
-                    sb.EmitPush(data);
+                    builder.EmitPush(data);
                     break;
                 case ISerializable data:
-                    sb.EmitPush(data);
+                    builder.EmitPush(data);
                     break;
                 case sbyte data:
-                    sb.EmitPush(data);
+                    builder.EmitPush(data);
                     break;
                 case byte data:
-                    sb.EmitPush(data);
+                    builder.EmitPush(data);
                     break;
                 case short data:
-                    sb.EmitPush(data);
+                    builder.EmitPush(data);
                     break;
                 case ushort data:
-                    sb.EmitPush(data);
+                    builder.EmitPush(data);
                     break;
                 case int data:
-                    sb.EmitPush(data);
+                    builder.EmitPush(data);
                     break;
                 case uint data:
-                    sb.EmitPush(data);
+                    builder.EmitPush(data);
                     break;
                 case long data:
-                    sb.EmitPush(data);
+                    builder.EmitPush(data);
                     break;
                 case ulong data:
-                    sb.EmitPush(data);
+                    builder.EmitPush(data);
                     break;
                 case Enum data:
-                    sb.EmitPush(BigInteger.Parse(data.ToString("d")));
+                    builder.EmitPush(BigInteger.Parse(data.ToString("d")));
                     break;
                 case ContractParameter data:
-                    sb.EmitPush(data);
+                    builder.EmitPush(data);
                     break;
                 case null:
-                    sb.Emit(OpCode.PUSHNULL);
+                    builder.Emit(OpCode.PUSHNULL);
                     break;
                 default:
-                    throw new ArgumentException();
+                    throw new ArgumentException(null, nameof(obj));
             }
-            return sb;
-        }
-
-        public static ScriptBuilder EmitSysCall(this ScriptBuilder sb, uint method, params object[] args)
-        {
-            for (int i = args.Length - 1; i >= 0; i--)
-                EmitPush(sb, args[i]);
-            return sb.EmitSysCall(method);
+            return builder;
         }
 
         /// <summary>
-        /// Generate scripts to call a specific method from a specific contract.
+        /// Emits the opcodes for invoking an interoperable service.
         /// </summary>
-        /// <param name="scriptHash">contract script hash</param>
-        /// <param name="operation">contract operation</param>
-        /// <param name="args">operation arguments</param>
-        /// <returns></returns>
-        public static byte[] MakeScript(this UInt160 scriptHash, string operation, params object[] args)
+        /// <param name="builder">The <see cref="ScriptBuilder"/> to be used.</param>
+        /// <param name="method">The hash of the interoperable service.</param>
+        /// <param name="args">The arguments for calling the interoperable service.</param>
+        /// <returns>The same instance as <paramref name="builder"/>.</returns>
+        public static ScriptBuilder EmitSysCall(this ScriptBuilder builder, uint method, params object[] args)
         {
-            using ScriptBuilder sb = new ScriptBuilder();
-            sb.EmitDynamicCall(scriptHash, operation, args);
+            for (int i = args.Length - 1; i >= 0; i--)
+                EmitPush(builder, args[i]);
+            return builder.EmitSysCall(method);
+        }
+
+        /// <summary>
+        /// Generates the script for calling a contract dynamically.
+        /// </summary>
+        /// <param name="scriptHash">The hash of the contract to be called.</param>
+        /// <param name="method">The method to be called in the contract.</param>
+        /// <param name="args">The arguments for calling the contract.</param>
+        /// <returns>The generated script.</returns>
+        public static byte[] MakeScript(this UInt160 scriptHash, string method, params object[] args)
+        {
+            using ScriptBuilder sb = new();
+            sb.EmitDynamicCall(scriptHash, method, args);
             return sb.ToArray();
         }
 
+        /// <summary>
+        /// Converts the <see cref="StackItem"/> to a JSON object.
+        /// </summary>
+        /// <param name="item">The <see cref="StackItem"/> to convert.</param>
+        /// <returns>The <see cref="StackItem"/> represented by a JSON object.</returns>
         public static JObject ToJson(this StackItem item)
         {
             return ToJson(item, null);
@@ -205,7 +276,7 @@ namespace Neo.VM
 
         private static JObject ToJson(StackItem item, HashSet<StackItem> context)
         {
-            JObject json = new JObject();
+            JObject json = new();
             json["type"] = item.Type;
             switch (item)
             {
@@ -229,7 +300,7 @@ namespace Neo.VM
                     if (!context.Add(map)) throw new InvalidOperationException();
                     json["value"] = new JArray(map.Select(p =>
                     {
-                        JObject item = new JObject();
+                        JObject item = new();
                         item["key"] = ToJson(p.Key, context);
                         item["value"] = ToJson(p.Value, context);
                         return item;
@@ -242,6 +313,11 @@ namespace Neo.VM
             return json;
         }
 
+        /// <summary>
+        /// Converts the <see cref="StackItem"/> to a <see cref="ContractParameter"/>.
+        /// </summary>
+        /// <param name="item">The <see cref="StackItem"/> to convert.</param>
+        /// <returns>The converted <see cref="ContractParameter"/>.</returns>
         public static ContractParameter ToParameter(this StackItem item)
         {
             return ToParameter(item, null);
@@ -249,7 +325,7 @@ namespace Neo.VM
 
         private static ContractParameter ToParameter(StackItem item, List<(StackItem, ContractParameter)> context)
         {
-            if (item is null) throw new ArgumentNullException();
+            if (item is null) throw new ArgumentNullException(nameof(item));
             ContractParameter parameter = null;
             switch (item)
             {
@@ -316,6 +392,11 @@ namespace Neo.VM
             return parameter;
         }
 
+        /// <summary>
+        /// Converts the <see cref="ContractParameter"/> to a <see cref="StackItem"/>.
+        /// </summary>
+        /// <param name="parameter">The <see cref="ContractParameter"/> to convert.</param>
+        /// <returns>The converted <see cref="StackItem"/>.</returns>
         public static StackItem ToStackItem(this ContractParameter parameter)
         {
             return ToStackItem(parameter, null);
@@ -323,7 +404,7 @@ namespace Neo.VM
 
         private static StackItem ToStackItem(ContractParameter parameter, List<(StackItem, ContractParameter)> context)
         {
-            if (parameter is null) throw new ArgumentNullException();
+            if (parameter is null) throw new ArgumentNullException(nameof(parameter));
             if (parameter.Value is null) return StackItem.Null;
             StackItem stackItem = null;
             switch (parameter.Type)
@@ -346,7 +427,7 @@ namespace Neo.VM
                         (stackItem, _) = context.FirstOrDefault(p => ReferenceEquals(p.Item2, parameter));
                     if (stackItem is null)
                     {
-                        Map map = new Map();
+                        Map map = new();
                         foreach (var pair in (IList<KeyValuePair<ContractParameter, ContractParameter>>)parameter.Value)
                             map[(PrimitiveType)ToStackItem(pair.Key, context)] = ToStackItem(pair.Value, context);
                         stackItem = map;

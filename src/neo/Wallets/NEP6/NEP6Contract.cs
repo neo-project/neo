@@ -24,11 +24,11 @@ namespace Neo.Wallets.NEP6
 
         public JObject ToJson()
         {
-            JObject contract = new JObject();
+            JObject contract = new();
             contract["script"] = Convert.ToBase64String(Script);
             contract["parameters"] = new JArray(ParameterList.Zip(ParameterNames, (type, name) =>
             {
-                JObject parameter = new JObject();
+                JObject parameter = new();
                 parameter["name"] = name;
                 parameter["type"] = type;
                 return parameter;

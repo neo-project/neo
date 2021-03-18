@@ -9,19 +9,20 @@ using Array = Neo.VM.Types.Array;
 namespace Neo.SmartContract.Manifest
 {
     /// <summary>
-    /// NeoContract ABI
+    /// Represents the ABI of a smart contract.
     /// </summary>
+    /// <remarks>For more details, see NEP-14.</remarks>
     public class ContractAbi : IInteroperable
     {
         private IReadOnlyDictionary<(string, int), ContractMethodDescriptor> methodDictionary;
 
         /// <summary>
-        /// Methods is an array of Method objects which describe the details of each method in the contract.
+        /// Gets the methods in the ABI.
         /// </summary>
         public ContractMethodDescriptor[] Methods { get; set; }
 
         /// <summary>
-        /// Events is an array of Event objects which describe the details of each event in the contract.
+        /// Gets the events in the ABI.
         /// </summary>
         public ContractEventDescriptor[] Events { get; set; }
 
@@ -42,13 +43,13 @@ namespace Neo.SmartContract.Manifest
         }
 
         /// <summary>
-        /// Parse ContractAbi from json
+        /// Converts the ABI from a JSON object.
         /// </summary>
-        /// <param name="json">Json</param>
-        /// <returns>Return ContractAbi</returns>
+        /// <param name="json">The ABI represented by a JSON object.</param>
+        /// <returns>The converted ABI.</returns>
         public static ContractAbi FromJson(JObject json)
         {
-            ContractAbi abi = new ContractAbi
+            ContractAbi abi = new()
             {
                 Methods = ((JArray)json["methods"]).Select(u => ContractMethodDescriptor.FromJson(u)).ToArray(),
                 Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.FromJson(u)).ToArray()
@@ -57,6 +58,12 @@ namespace Neo.SmartContract.Manifest
             return abi;
         }
 
+        /// <summary>
+        /// Gets the method with the specified name.
+        /// </summary>
+        /// <param name="name">The name of the method.</param>
+        /// <param name="pcount">The number of parameters of the method. It can be set to -1 to search for the method with the specified name and any number of parameters.</param>
+        /// <returns>The method that matches the specified name and number of parameters. If <paramref name="pcount"/> is set to -1, the first method with the specified name will be returned.</returns>
         public ContractMethodDescriptor GetMethod(string name, int pcount)
         {
             if (pcount < -1 || pcount > ushort.MaxValue) throw new ArgumentOutOfRangeException(nameof(pcount));
@@ -72,6 +79,10 @@ namespace Neo.SmartContract.Manifest
             }
         }
 
+        /// <summary>
+        /// Converts the ABI to a JSON object.
+        /// </summary>
+        /// <returns>The ABI represented by a JSON object.</returns>
         public JObject ToJson()
         {
             var json = new JObject();

@@ -5,9 +5,19 @@ using Neo.VM.Types;
 
 namespace Neo.SmartContract.Native
 {
+    /// <summary>
+    /// Represents a transaction that has been included in a block.
+    /// </summary>
     public class TransactionState : IInteroperable
     {
+        /// <summary>
+        /// The block containing this transaction.
+        /// </summary>
         public uint BlockIndex;
+
+        /// <summary>
+        /// The transaction.
+        /// </summary>
         public Transaction Transaction;
 
         private StackItem _rawTransaction;

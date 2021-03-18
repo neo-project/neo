@@ -6,10 +6,21 @@ using static Neo.Helper;
 
 namespace Neo.Cryptography
 {
+    /// <summary>
+    /// A helper class for base-58 encoder.
+    /// </summary>
     public static class Base58
     {
+        /// <summary>
+        /// Represents the alphabet of the base-58 encoder.
+        /// </summary>
         public const string Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
+        /// <summary>
+        /// Converts the specified <see cref="string"/>, which encodes binary data as base-58 digits, to an equivalent byte array. The encoded <see cref="string"/> contains the checksum of the binary data.
+        /// </summary>
+        /// <param name="input">The <see cref="string"/> to convert.</param>
+        /// <returns>A byte array that is equivalent to <paramref name="input"/>.</returns>
         public static byte[] Base58CheckDecode(this string input)
         {
             if (input is null) throw new ArgumentNullException(nameof(input));
@@ -23,6 +34,11 @@ namespace Neo.Cryptography
             return ret;
         }
 
+        /// <summary>
+        /// Converts a byte array to its equivalent <see cref="string"/> representation that is encoded with base-58 digits. The encoded <see cref="string"/> contains the checksum of the binary data.
+        /// </summary>
+        /// <param name="data">The byte array to convert.</param>
+        /// <returns>The <see cref="string"/> representation, in base-58, of the contents of <paramref name="data"/>.</returns>
         public static string Base58CheckEncode(this ReadOnlySpan<byte> data)
         {
             byte[] checksum = data.Sha256().Sha256();
@@ -34,6 +50,11 @@ namespace Neo.Cryptography
             return ret;
         }
 
+        /// <summary>
+        /// Converts the specified <see cref="string"/>, which encodes binary data as base-58 digits, to an equivalent byte array.
+        /// </summary>
+        /// <param name="input">The <see cref="string"/> to convert.</param>
+        /// <returns>A byte array that is equivalent to <paramref name="input"/>.</returns>
         public static byte[] Decode(string input)
         {
             // Decode Base58 string to BigInteger 
@@ -55,10 +76,15 @@ namespace Neo.Cryptography
             return Concat(leadingZeros, bytesWithoutLeadingZeros);
         }
 
+        /// <summary>
+        /// Converts a byte array to its equivalent <see cref="string"/> representation that is encoded with base-58 digits.
+        /// </summary>
+        /// <param name="input">The byte array to convert.</param>
+        /// <returns>The <see cref="string"/> representation, in base-58, of the contents of <paramref name="input"/>.</returns>
         public static string Encode(ReadOnlySpan<byte> input)
         {
             // Decode byte[] to BigInteger
-            BigInteger value = new BigInteger(input, isUnsigned: true, isBigEndian: true);
+            BigInteger value = new(input, isUnsigned: true, isBigEndian: true);
 
             // Encode BigInteger to Base58 string
             var sb = new StringBuilder();

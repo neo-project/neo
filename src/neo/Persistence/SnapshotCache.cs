@@ -6,11 +6,18 @@ using System.Linq;
 
 namespace Neo.Persistence
 {
+    /// <summary>
+    /// Represents a cache for the snapshot or database of the NEO blockchain.
+    /// </summary>
     public class SnapshotCache : DataCache, IDisposable
     {
         private readonly IReadOnlyStore store;
         private readonly ISnapshot snapshot;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SnapshotCache"/> class.
+        /// </summary>
+        /// <param name="store">An <see cref="IReadOnlyStore"/> to create a readonly cache; or an <see cref="ISnapshot"/> to create a snapshot cache.</param>
         public SnapshotCache(IReadOnlyStore store)
         {
             this.store = store;

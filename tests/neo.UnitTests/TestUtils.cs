@@ -92,11 +92,11 @@ namespace Neo.UnitTests
         {
             JObject wallet = new JObject();
             wallet["name"] = "noname";
-            wallet["version"] = new Version("3.0").ToString();
+            wallet["version"] = new Version("1.0").ToString();
             wallet["scrypt"] = new ScryptParameters(2, 1, 1).ToJson();
             wallet["accounts"] = new JArray();
             wallet["extra"] = null;
-            wallet.ToString().Should().Be("{\"name\":\"noname\",\"version\":\"3.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}");
+            wallet.ToString().Should().Be("{\"name\":\"noname\",\"version\":\"1.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}");
             return new NEP6Wallet(null, ProtocolSettings.Default, wallet);
         }
 

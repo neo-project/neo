@@ -6,13 +6,29 @@ using System.IO;
 
 namespace Neo.SmartContract
 {
+    /// <summary>
+    /// Represents the keys in contract storage.
+    /// </summary>
     public class StorageKey : IEquatable<StorageKey>, ISerializable
     {
+        /// <summary>
+        /// The id of the contract.
+        /// </summary>
         public int Id;
+
+        /// <summary>
+        /// The key of the storage entry.
+        /// </summary>
         public byte[] Key;
 
         int ISerializable.Size => sizeof(int) + Key.Length;
 
+        /// <summary>
+        /// Creates a search prefix for a contract.
+        /// </summary>
+        /// <param name="id">The id of the contract.</param>
+        /// <param name="prefix">The prefix of the keys to search.</param>
+        /// <returns>The created search prefix.</returns>
         public static byte[] CreateSearchPrefix(int id, ReadOnlySpan<byte> prefix)
         {
             byte[] buffer = new byte[sizeof(int) + prefix.Length];
@@ -40,7 +56,7 @@ namespace Neo.SmartContract
 
         public override bool Equals(object obj)
         {
-            if (!(obj is StorageKey other)) return false;
+            if (obj is not StorageKey other) return false;
             return Equals(other);
         }
 

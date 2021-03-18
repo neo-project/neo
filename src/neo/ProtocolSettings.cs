@@ -7,24 +7,80 @@ using System.Linq;
 
 namespace Neo
 {
+    /// <summary>
+    /// Represents the protocol settings of the NEO system.
+    /// </summary>
     public record ProtocolSettings
     {
+        /// <summary>
+        /// The magic number of the NEO network.
+        /// </summary>
         public uint Magic { get; init; }
+
+        /// <summary>
+        /// The address version of the NEO system.
+        /// </summary>
         public byte AddressVersion { get; init; }
+
+        /// <summary>
+        /// The public keys of the standby committee members.
+        /// </summary>
         public IReadOnlyList<ECPoint> StandbyCommittee { get; init; }
+
+        /// <summary>
+        /// The number of members of the committee in NEO system.
+        /// </summary>
         public int CommitteeMembersCount => StandbyCommittee.Count;
+
+        /// <summary>
+        /// The number of the validators in NEO system.
+        /// </summary>
         public int ValidatorsCount { get; init; }
+
+        /// <summary>
+        /// The default seed nodes list.
+        /// </summary>
         public string[] SeedList { get; init; }
+
+        /// <summary>
+        /// Indicates the time in milliseconds between two blocks.
+        /// </summary>
         public uint MillisecondsPerBlock { get; init; }
+
+        /// <summary>
+        /// Indicates the time between two blocks.
+        /// </summary>
         public TimeSpan TimePerBlock => TimeSpan.FromMilliseconds(MillisecondsPerBlock);
+
+        /// <summary>
+        /// Indicates the maximum number of transactions that can be contained in a block.
+        /// </summary>
         public uint MaxTransactionsPerBlock { get; init; }
+
+        /// <summary>
+        /// Indicates the maximum number of transactions that can be contained in the memory pool.
+        /// </summary>
         public int MemoryPoolMaxTransactions { get; init; }
+
+        /// <summary>
+        /// Indicates the maximum number of blocks that can be traced in the smart contract.
+        /// </summary>
         public uint MaxTraceableBlocks { get; init; }
+
+        /// <summary>
+        /// Contains the update history of all native contracts.
+        /// </summary>
         public IReadOnlyDictionary<string, uint[]> NativeUpdateHistory { get; init; }
 
         private IReadOnlyList<ECPoint> _standbyValidators;
+        /// <summary>
+        /// The public keys of the standby validators.
+        /// </summary>
         public IReadOnlyList<ECPoint> StandbyValidators => _standbyValidators ??= StandbyCommittee.Take(ValidatorsCount).ToArray();
 
+        /// <summary>
+        /// The default protocol settings for NEO MainNet.
+        /// </summary>
         public static ProtocolSettings Default { get; } = new ProtocolSettings
         {
             Magic = 0x4F454Eu,
@@ -83,6 +139,12 @@ namespace Neo
             }
         };
 
+        /// <summary>
+        /// Loads the <see cref="ProtocolSettings"/> at the specified path.
+        /// </summary>
+        /// <param name="path">The path of the settings file.</param>
+        /// <param name="optional">Indicates whether the file is optional.</param>
+        /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
         public static ProtocolSettings Load(string path, bool optional = true)
         {
             IConfigurationRoot config = new ConfigurationBuilder().AddJsonFile(path, optional).Build();
@@ -90,6 +152,11 @@ namespace Neo
             return Load(section);
         }
 
+        /// <summary>
+        /// Loads the <see cref="ProtocolSettings"/> with the specified <see cref="IConfigurationSection"/>.
+        /// </summary>
+        /// <param name="section">The <see cref="IConfigurationSection"/> to be loaded.</param>
+        /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
         public static ProtocolSettings Load(IConfigurationSection section)
         {
             return new ProtocolSettings

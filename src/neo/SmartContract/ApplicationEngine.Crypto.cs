@@ -7,11 +7,30 @@ namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
+        /// <summary>
+        /// The price of Neo.Crypto.CheckSig.
+        /// </summary>
         public const long CheckSigPrice = 1 << 15;
 
+        /// <summary>
+        /// The <see cref="InteropDescriptor"/> of Neo.Crypto.CheckSig.
+        /// Checks the signature for the current script container.
+        /// </summary>
         public static readonly InteropDescriptor Neo_Crypto_CheckSig = Register("Neo.Crypto.CheckSig", nameof(CheckSig), CheckSigPrice, CallFlags.None);
+
+        /// <summary>
+        /// The <see cref="InteropDescriptor"/> of Neo.Crypto.CheckMultisig.
+        /// Checks the signatures for the current script container.
+        /// </summary>
         public static readonly InteropDescriptor Neo_Crypto_CheckMultisig = Register("Neo.Crypto.CheckMultisig", nameof(CheckMultisig), 0, CallFlags.None);
 
+        /// <summary>
+        /// The implementation of Neo.Crypto.CheckSig.
+        /// Checks the signature for the current script container.
+        /// </summary>
+        /// <param name="pubkey">The public key of the account.</param>
+        /// <param name="signature">The signature of the current script container.</param>
+        /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
         protected internal bool CheckSig(byte[] pubkey, byte[] signature)
         {
             try
@@ -24,6 +43,13 @@ namespace Neo.SmartContract
             }
         }
 
+        /// <summary>
+        /// The implementation of Neo.Crypto.CheckMultisig.
+        /// Checks the signatures for the current script container.
+        /// </summary>
+        /// <param name="pubkeys">The public keys of the account.</param>
+        /// <param name="signatures">The signatures of the current script container.</param>
+        /// <returns><see langword="true"/> if the signatures are valid; otherwise, <see langword="false"/>.</returns>
         protected internal bool CheckMultisig(byte[][] pubkeys, byte[][] signatures)
         {
             byte[] message = ScriptContainer.GetSignData(ProtocolSettings.Magic);

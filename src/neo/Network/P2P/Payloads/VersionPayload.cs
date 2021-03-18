@@ -6,15 +6,44 @@ using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
+    /// <summary>
+    /// Sent when a connection is established.
+    /// </summary>
     public class VersionPayload : ISerializable
     {
+        /// <summary>
+        /// Indicates the maximum number of capabilities contained in a <see cref="VersionPayload"/>.
+        /// </summary>
         public const int MaxCapabilities = 32;
 
+        /// <summary>
+        /// The magic number of the network.
+        /// </summary>
         public uint Magic;
+
+        /// <summary>
+        /// The protocol version of the node.
+        /// </summary>
         public uint Version;
+
+        /// <summary>
+        /// The time when connected to the node.
+        /// </summary>
         public uint Timestamp;
+
+        /// <summary>
+        /// A random number used to identify the node.
+        /// </summary>
         public uint Nonce;
+
+        /// <summary>
+        /// A <see cref="string"/> used to identify the client software of the node.
+        /// </summary>
         public string UserAgent;
+
+        /// <summary>
+        /// The capabilities of the node.
+        /// </summary>
         public NodeCapability[] Capabilities;
 
         public int Size =>
@@ -25,6 +54,14 @@ namespace Neo.Network.P2P.Payloads
             UserAgent.GetVarSize() +    // UserAgent
             Capabilities.GetVarSize();  // Capabilities
 
+        /// <summary>
+        /// Creates a new instance of the <see cref="VersionPayload"/> class.
+        /// </summary>
+        /// <param name="magic">The magic number of the network.</param>
+        /// <param name="nonce">The random number used to identify the node.</param>
+        /// <param name="userAgent">The <see cref="string"/> used to identify the client software of the node.</param>
+        /// <param name="capabilities">The capabilities of the node.</param>
+        /// <returns></returns>
         public static VersionPayload Create(uint magic, uint nonce, string userAgent, params NodeCapability[] capabilities)
         {
             return new VersionPayload
