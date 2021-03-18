@@ -39,8 +39,8 @@ namespace Neo.UnitTests.SmartContract
                     Timestamp = 2,
                     Witness = new Witness()
                     {
-                        InvocationScript = new byte[0],
-                        VerificationScript = new byte[0]
+                        InvocationScript = Array.Empty<byte>(),
+                        VerificationScript = Array.Empty<byte>()
                     },
                     PrevHash = UInt256.Zero,
                     MerkleRoot = UInt256.Zero,
@@ -52,96 +52,92 @@ namespace Neo.UnitTests.SmartContract
 
             var snapshot = TestBlockchain.GetTestSnapshot();
 
-            using (var script = new ScriptBuilder())
+            using ScriptBuilder script = new();
+            script.EmitDynamicCall(NativeContract.Ledger.Hash, "getBlock", block.Hash.ToArray());
+
+            // Without block
+
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            Assert.AreEqual(1, engine.ResultStack.Count);
+            Assert.IsTrue(engine.ResultStack.Peek().IsNull);
+
+            // Not traceable block
+
+            const byte Prefix_Transaction = 11;
+            const byte Prefix_CurrentBlock = 12;
+
+            var height = snapshot[NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>();
+            height.Index = block.Index + ProtocolSettings.Default.MaxTraceableBlocks;
+
+            UT_SmartContractHelper.BlocksAdd(snapshot, block.Hash, block);
+            snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Transaction, tx.Hash), new StorageItem(new TransactionState
             {
-                script.EmitDynamicCall(NativeContract.Ledger.Hash, "getBlock", block.Hash.ToArray());
+                BlockIndex = block.Index,
+                Transaction = tx
+            }));
 
-                // Without block
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine.LoadScript(script.ToArray());
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
-                engine.LoadScript(script.ToArray());
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            Assert.AreEqual(1, engine.ResultStack.Count);
+            Assert.IsTrue(engine.ResultStack.Peek().IsNull);
 
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.IsTrue(engine.ResultStack.Peek().IsNull);
+            // With block
 
-                // Not traceable block
+            height.Index = block.Index;
 
-                const byte Prefix_Transaction = 11;
-                const byte Prefix_CurrentBlock = 12;
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine.LoadScript(script.ToArray());
 
-                var height = snapshot[NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>();
-                height.Index = block.Index + ProtocolSettings.Default.MaxTraceableBlocks;
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            Assert.AreEqual(1, engine.ResultStack.Count);
 
-                UT_SmartContractHelper.BlocksAdd(snapshot, block.Hash, block);
-                snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Transaction, tx.Hash), new StorageItem(new TransactionState
-                {
-                    BlockIndex = block.Index,
-                    Transaction = tx
-                }));
-
-                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
-                engine.LoadScript(script.ToArray());
-
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(1, engine.ResultStack.Count);
-                Assert.IsTrue(engine.ResultStack.Peek().IsNull);
-
-                // With block
-
-                height.Index = block.Index;
-
-                engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
-                engine.LoadScript(script.ToArray());
-
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(1, engine.ResultStack.Count);
-
-                var array = engine.ResultStack.Pop<VM.Types.Array>();
-                Assert.AreEqual(block.Hash, new UInt256(array[0].GetSpan()));
-            }
+            var array = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.AreEqual(block.Hash, new UInt256(array[0].GetSpan()));
         }
 
         [TestMethod]
         public void System_ExecutionEngine_GetScriptContainer()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
-            using (var script = new ScriptBuilder())
+            using ScriptBuilder script = new();
+            script.EmitSysCall(ApplicationEngine.System_Runtime_GetScriptContainer);
+
+            // Without tx
+
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(engine.Execute(), VMState.FAULT);
+            Assert.AreEqual(0, engine.ResultStack.Count);
+
+            // With tx
+
+            var tx = new Transaction()
             {
-                script.EmitSysCall(ApplicationEngine.System_Runtime_GetScriptContainer);
+                Script = new byte[] { 0x01 },
+                Signers = new Signer[] { new Signer() { Account = UInt160.Zero, Scopes = WitnessScope.None } },
+                Attributes = Array.Empty<TransactionAttribute>(),
+                NetworkFee = 0x02,
+                SystemFee = 0x03,
+                Nonce = 0x04,
+                ValidUntilBlock = 0x05,
+                Version = 0x06,
+                Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
+            };
 
-                // Without tx
+            engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot);
+            engine.LoadScript(script.ToArray());
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
-                engine.LoadScript(script.ToArray());
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            Assert.AreEqual(1, engine.ResultStack.Count);
 
-                Assert.AreEqual(engine.Execute(), VMState.FAULT);
-                Assert.AreEqual(0, engine.ResultStack.Count);
-
-                // With tx
-
-                var tx = new Transaction()
-                {
-                    Script = new byte[] { 0x01 },
-                    Signers = new Signer[] { new Signer() { Account = UInt160.Zero, Scopes = WitnessScope.None } },
-                    Attributes = Array.Empty<TransactionAttribute>(),
-                    NetworkFee = 0x02,
-                    SystemFee = 0x03,
-                    Nonce = 0x04,
-                    ValidUntilBlock = 0x05,
-                    Version = 0x06,
-                    Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
-                };
-
-                engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot);
-                engine.LoadScript(script.ToArray());
-
-                Assert.AreEqual(engine.Execute(), VMState.HALT);
-                Assert.AreEqual(1, engine.ResultStack.Count);
-
-                var array = engine.ResultStack.Pop<VM.Types.Array>();
-                Assert.AreEqual(tx.Hash, new UInt256(array[0].GetSpan()));
-            }
+            var array = engine.ResultStack.Pop<VM.Types.Array>();
+            Assert.AreEqual(tx.Hash, new UInt256(array[0].GetSpan()));
         }
 
         [TestMethod]

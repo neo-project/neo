@@ -14,7 +14,7 @@ namespace Neo.UnitTests.Cryptography.ECC
         [TestMethod]
         public void TestECFieldElementConstructor()
         {
-            BigInteger input = new BigInteger(100);
+            BigInteger input = new(100);
             Action action = () => new ECFieldElement(input, ECCurve.Secp256k1);
             action.Should().NotThrow();
 
@@ -29,16 +29,16 @@ namespace Neo.UnitTests.Cryptography.ECC
         [TestMethod]
         public void TestCompareTo()
         {
-            ECFieldElement X1 = new ECFieldElement(new BigInteger(100), ECCurve.Secp256k1);
-            ECFieldElement Y1 = new ECFieldElement(new BigInteger(200), ECCurve.Secp256k1);
-            ECFieldElement X2 = new ECFieldElement(new BigInteger(300), ECCurve.Secp256k1);
-            ECFieldElement Y2 = new ECFieldElement(new BigInteger(400), ECCurve.Secp256k1);
-            ECFieldElement X3 = new ECFieldElement(new BigInteger(100), ECCurve.Secp256r1);
-            ECFieldElement Y3 = new ECFieldElement(new BigInteger(400), ECCurve.Secp256r1);
-            ECPoint point1 = new ECPoint(X1, Y1, ECCurve.Secp256k1);
-            ECPoint point2 = new ECPoint(X2, Y1, ECCurve.Secp256k1);
-            ECPoint point3 = new ECPoint(X1, Y2, ECCurve.Secp256k1);
-            ECPoint point4 = new ECPoint(X3, Y3, ECCurve.Secp256r1);
+            ECFieldElement X1 = new(new BigInteger(100), ECCurve.Secp256k1);
+            ECFieldElement Y1 = new(new BigInteger(200), ECCurve.Secp256k1);
+            ECFieldElement X2 = new(new BigInteger(300), ECCurve.Secp256k1);
+            ECFieldElement Y2 = new(new BigInteger(400), ECCurve.Secp256k1);
+            ECFieldElement X3 = new(new BigInteger(100), ECCurve.Secp256r1);
+            ECFieldElement Y3 = new(new BigInteger(400), ECCurve.Secp256r1);
+            ECPoint point1 = new(X1, Y1, ECCurve.Secp256k1);
+            ECPoint point2 = new(X2, Y1, ECCurve.Secp256k1);
+            ECPoint point3 = new(X1, Y2, ECCurve.Secp256k1);
+            ECPoint point4 = new(X3, Y3, ECCurve.Secp256r1);
 
             point1.CompareTo(point1).Should().Be(0);
             point1.CompareTo(point2).Should().Be(-1);
@@ -52,7 +52,7 @@ namespace Neo.UnitTests.Cryptography.ECC
         [TestMethod]
         public void TestEquals()
         {
-            BigInteger input = new BigInteger(100);
+            BigInteger input = new(100);
             object element = new ECFieldElement(input, ECCurve.Secp256k1);
             element.Equals(element).Should().BeTrue();
             element.Equals(1).Should().BeFalse();
@@ -65,7 +65,7 @@ namespace Neo.UnitTests.Cryptography.ECC
         [TestMethod]
         public void TestSqrt()
         {
-            ECFieldElement element = new ECFieldElement(new BigInteger(100), ECCurve.Secp256k1);
+            ECFieldElement element = new(new BigInteger(100), ECCurve.Secp256k1);
             element.Sqrt().Should().Be(new ECFieldElement(BigInteger.Parse("115792089237316195423570985008687907853269984665640564039457584007908834671653"), ECCurve.Secp256k1));
 
             ConstructorInfo constructor = typeof(ECCurve).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(BigInteger), typeof(BigInteger), typeof(BigInteger), typeof(BigInteger), typeof(byte[]) }, null);

@@ -128,7 +128,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
         {
-            StorageKey storageKey = new StorageKey
+            StorageKey storageKey = new()
             {
                 Id = NativeContract.NEO.Id,
                 Key = new byte[sizeof(byte) + (key?.Length ?? 0)]

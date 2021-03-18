@@ -24,7 +24,7 @@ namespace Neo.UnitTests
 
         static TestWalletAccount()
         {
-            Random random = new Random();
+            Random random = new();
             byte[] prikey = new byte[32];
             random.NextBytes(prikey);
             key = new KeyPair(prikey);
