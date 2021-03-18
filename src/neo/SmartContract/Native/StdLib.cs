@@ -6,6 +6,7 @@ using Neo.VM.Types;
 using System;
 using System.Globalization;
 using System.Numerics;
+using System.Text.RegularExpressions;
 
 namespace Neo.SmartContract.Native
 {
@@ -116,6 +117,15 @@ namespace Neo.SmartContract.Native
         public static byte[] Base58Decode(string s)
         {
             return Base58.Decode(s);
+        }
+
+        [ContractMethod(CpuFee = 1 << 12)]
+        private static bool IsMatch(string input, string regex)
+        {
+            if (input.Length > 1024) throw new ArgumentException(null, nameof(input));
+            if (regex.Length > 512) throw new ArgumentException(null, nameof(regex));
+            Regex r = new(regex, RegexOptions.Singleline);
+            return r.IsMatch(input);
         }
     }
 }
