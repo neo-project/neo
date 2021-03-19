@@ -41,7 +41,7 @@ namespace Neo.UnitTests
                     }
                 },
                 Permissions = new[] { ContractPermission.DefaultPermission },
-                Trusts = WildcardContainer<UInt160>.Create(),
+                Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(),
                 Extra = null
             };
         }

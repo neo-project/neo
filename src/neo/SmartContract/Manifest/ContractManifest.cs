@@ -50,7 +50,7 @@ namespace Neo.SmartContract.Manifest
         /// The trusted contracts and groups of the contract.
         /// If a contract is trusted, the user interface will not give any warnings when called by the contract.
         /// </summary>
-        public WildcardContainer<UInt160> Trusts { get; set; }
+        public WildcardContainer<ContractPermissionDescriptor> Trusts { get; set; }
 
         /// <summary>
         /// Custom user data.
@@ -67,8 +67,8 @@ namespace Neo.SmartContract.Manifest
             Permissions = ((Array)@struct[4]).Select(p => p.ToInteroperable<ContractPermission>()).ToArray();
             Trusts = @struct[5] switch
             {
-                Null => WildcardContainer<UInt160>.CreateWildcard(),
-                Array array => WildcardContainer<UInt160>.Create(array.Select(p => new UInt160(p.GetSpan())).ToArray()),
+                Null => WildcardContainer<ContractPermissionDescriptor>.CreateWildcard(),
+                Array array => WildcardContainer<ContractPermissionDescriptor>.Create(array.Select(p => new ContractPermissionDescriptor(p.GetSpan())).ToArray()),
                 _ => throw new ArgumentException(null, nameof(stackItem))
             };
             Extra = JObject.Parse(@struct[6].GetSpan());
@@ -102,7 +102,7 @@ namespace Neo.SmartContract.Manifest
                 SupportedStandards = ((JArray)json["supportedstandards"]).Select(u => u.GetString()).ToArray(),
                 Abi = ContractAbi.FromJson(json["abi"]),
                 Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u)).ToArray(),
-                Trusts = WildcardContainer<UInt160>.FromJson(json["trusts"], u => UInt160.Parse(u.GetString())),
+                Trusts = WildcardContainer<ContractPermissionDescriptor>.FromJson(json["trusts"], u => ContractPermissionDescriptor.FromJson(u)),
                 Extra = json["extra"]
             };
             if (string.IsNullOrEmpty(manifest.Name))
@@ -147,7 +147,7 @@ namespace Neo.SmartContract.Manifest
                 ["supportedstandards"] = SupportedStandards.Select(u => new JString(u)).ToArray(),
                 ["abi"] = Abi.ToJson(),
                 ["permissions"] = Permissions.Select(p => p.ToJson()).ToArray(),
-                ["trusts"] = Trusts.ToJson(),
+                ["trusts"] = Trusts.ToJson(p => p.ToJson()),
                 ["extra"] = Extra
             };
         }
