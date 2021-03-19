@@ -18,7 +18,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void GetSignData()
         {
-            TestVerifiable verifiable = new TestVerifiable();
+            TestVerifiable verifiable = new();
             byte[] res = verifiable.GetSignData(ProtocolSettings.Default.Magic);
             res.ToHexString().Should().Be("4e454f0050b51da6bb366be3ea50140cda45ba7df575287c0371000b2037ed3898ff8bf5");
         }
@@ -26,7 +26,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Sign()
         {
-            TestVerifiable verifiable = new TestVerifiable();
+            TestVerifiable verifiable = new();
             byte[] res = verifiable.Sign(new KeyPair(TestUtils.GetByteArray(32, 0x42)), ProtocolSettings.Default.Magic);
             res.Length.Should().Be(64);
         }
@@ -59,9 +59,9 @@ namespace Neo.UnitTests
         public void TestHexToBytes()
         {
             string nullStr = null;
-            nullStr.HexToBytes().ToHexString().Should().Be(new byte[0].ToHexString());
+            _ = nullStr.HexToBytes().ToHexString().Should().Be(Array.Empty<byte>().ToHexString());
             string emptyStr = "";
-            emptyStr.HexToBytes().ToHexString().Should().Be(new byte[0].ToHexString());
+            emptyStr.HexToBytes().ToHexString().Should().Be(Array.Empty<byte>().ToHexString());
             string str1 = "hab";
             Action action = () => str1.HexToBytes();
             action.Should().Throw<FormatException>();
@@ -156,7 +156,7 @@ namespace Neo.UnitTests
         {
             byte[] nullStr = null;
             Assert.ThrowsException<NullReferenceException>(() => nullStr.ToHexString());
-            byte[] empty = new byte[0];
+            byte[] empty = Array.Empty<byte>();
             empty.ToHexString().Should().Be("");
             empty.ToHexString(false).Should().Be("");
             empty.ToHexString(true).Should().Be("");
@@ -192,7 +192,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestNextBigIntegerForRandom()
         {
-            Random ran = new Random();
+            Random ran = new();
             Action action1 = () => ran.NextBigInteger(-1);
             action1.Should().Throw<ArgumentException>();
 

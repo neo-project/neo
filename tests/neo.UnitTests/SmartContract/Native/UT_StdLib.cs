@@ -56,31 +56,27 @@ namespace Neo.UnitTests.SmartContract.Native
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "123");
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "null");
 
-                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings))
-                {
-                    engine.LoadScript(script.ToArray());
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+                engine.LoadScript(script.ToArray());
 
-                    Assert.AreEqual(engine.Execute(), VMState.HALT);
-                    Assert.AreEqual(2, engine.ResultStack.Count);
+                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(2, engine.ResultStack.Count);
 
-                    engine.ResultStack.Pop<Null>();
-                    Assert.IsTrue(engine.ResultStack.Pop().GetInteger() == 123);
-                }
+                engine.ResultStack.Pop<Null>();
+                Assert.IsTrue(engine.ResultStack.Pop().GetInteger() == 123);
             }
 
             // Error 1 - Wrong Json
 
-            using (var script = new ScriptBuilder())
+            using (ScriptBuilder script = new())
             {
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "***");
 
-                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings))
-                {
-                    engine.LoadScript(script.ToArray());
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+                engine.LoadScript(script.ToArray());
 
-                    Assert.AreEqual(engine.Execute(), VMState.FAULT);
-                    Assert.AreEqual(0, engine.ResultStack.Count);
-                }
+                Assert.AreEqual(engine.Execute(), VMState.FAULT);
+                Assert.AreEqual(0, engine.ResultStack.Count);
             }
 
             // Error 2 - No decimals
@@ -89,13 +85,11 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "123.45");
 
-                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings))
-                {
-                    engine.LoadScript(script.ToArray());
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+                engine.LoadScript(script.ToArray());
 
-                    Assert.AreEqual(engine.Execute(), VMState.FAULT);
-                    Assert.AreEqual(0, engine.ResultStack.Count);
-                }
+                Assert.AreEqual(engine.Execute(), VMState.FAULT);
+                Assert.AreEqual(0, engine.ResultStack.Count);
             }
         }
 
@@ -122,19 +116,17 @@ namespace Neo.UnitTests.SmartContract.Native
                     }
                 });
 
-                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings))
-                {
-                    engine.LoadScript(script.ToArray());
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+                engine.LoadScript(script.ToArray());
 
-                    Assert.AreEqual(engine.Execute(), VMState.HALT);
-                    Assert.AreEqual(5, engine.ResultStack.Count);
+                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(5, engine.ResultStack.Count);
 
-                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "{\"key\":\"value\"}");
-                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "null");
-                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "\"test\"");
-                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "1");
-                    Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "5");
-                }
+                Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "{\"key\":\"value\"}");
+                Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "null");
+                Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "\"test\"");
+                Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "1");
+                Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "5");
             }
 
             // Error
@@ -143,13 +135,11 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonSerialize");
 
-                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings))
-                {
-                    engine.LoadScript(script.ToArray());
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+                engine.LoadScript(script.ToArray());
 
-                    Assert.AreEqual(engine.Execute(), VMState.FAULT);
-                    Assert.AreEqual(0, engine.ResultStack.Count);
-                }
+                Assert.AreEqual(engine.Execute(), VMState.FAULT);
+                Assert.AreEqual(0, engine.ResultStack.Count);
             }
         }
 
@@ -160,22 +150,18 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Good
 
-            using (var script = new ScriptBuilder())
-            {
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "serialize", 100);
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "serialize", "test");
+            using ScriptBuilder script = new();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "serialize", 100);
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "serialize", "test");
 
-                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings))
-                {
-                    engine.LoadScript(script.ToArray());
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine.LoadScript(script.ToArray());
 
-                    Assert.AreEqual(engine.Execute(), VMState.HALT);
-                    Assert.AreEqual(2, engine.ResultStack.Count);
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            Assert.AreEqual(2, engine.ResultStack.Count);
 
-                    Assert.AreEqual(engine.ResultStack.Pop<ByteString>().GetSpan().ToHexString(), "280474657374");
-                    Assert.AreEqual(engine.ResultStack.Pop<ByteString>().GetSpan().ToHexString(), "210164");
-                }
-            }
+            Assert.AreEqual(engine.ResultStack.Pop<ByteString>().GetSpan().ToHexString(), "280474657374");
+            Assert.AreEqual(engine.ResultStack.Pop<ByteString>().GetSpan().ToHexString(), "210164");
         }
 
         [TestMethod]
@@ -185,22 +171,18 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Good
 
-            using (var script = new ScriptBuilder())
-            {
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "deserialize", "280474657374".HexToBytes());
-                script.EmitDynamicCall(NativeContract.StdLib.Hash, "deserialize", "210164".HexToBytes());
+            using ScriptBuilder script = new();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "deserialize", "280474657374".HexToBytes());
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "deserialize", "210164".HexToBytes());
 
-                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings))
-                {
-                    engine.LoadScript(script.ToArray());
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine.LoadScript(script.ToArray());
 
-                    Assert.AreEqual(engine.Execute(), VMState.HALT);
-                    Assert.AreEqual(2, engine.ResultStack.Count);
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            Assert.AreEqual(2, engine.ResultStack.Count);
 
-                    Assert.AreEqual(engine.ResultStack.Pop<Integer>().GetInteger(), 100);
-                    Assert.AreEqual(engine.ResultStack.Pop<ByteString>().GetString(), "test");
-                }
-            }
+            Assert.AreEqual(engine.ResultStack.Pop<Integer>().GetInteger(), 100);
+            Assert.AreEqual(engine.ResultStack.Pop<ByteString>().GetString(), "test");
         }
     }
 }

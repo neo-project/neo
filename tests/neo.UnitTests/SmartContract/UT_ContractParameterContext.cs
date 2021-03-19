@@ -16,7 +16,7 @@ namespace Neo.UnitTests.SmartContract
         private static KeyPair key;
 
         [ClassInitialize]
-        public static void ClassSetUp(TestContext context)
+        public static void ClassSetUp(TestContext ctx)
         {
             if (contract == null)
             {

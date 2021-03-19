@@ -106,7 +106,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestGenerator()
         {
-            ContractManifest contractManifest = new ContractManifest();
+            ContractManifest contractManifest = new();
             Assert.IsNotNull(contractManifest);
         }
     }

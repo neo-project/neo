@@ -20,8 +20,8 @@ namespace Neo.UnitTests.SmartContract
                          {
                              new Neo.SmartContract.Manifest.ContractMethodDescriptor()
                              {
-                                  Name="verify",
-                                  Parameters=new Neo.SmartContract.Manifest.ContractParameterDefinition[0]
+                                  Name = "verify",
+                                  Parameters = Array.Empty<Neo.SmartContract.Manifest.ContractParameterDefinition>()
                              }
                          }
                     }
@@ -47,8 +47,8 @@ namespace Neo.UnitTests.SmartContract
                          {
                              new Neo.SmartContract.Manifest.ContractMethodDescriptor()
                              {
-                                  Name="noverify",
-                                  Parameters=new Neo.SmartContract.Manifest.ContractParameterDefinition[0]
+                                  Name = "noverify",
+                                  Parameters = Array.Empty<Neo.SmartContract.Manifest.ContractParameterDefinition>()
                              }
                          }
                     }
