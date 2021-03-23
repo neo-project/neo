@@ -593,6 +593,7 @@ namespace Neo.Wallets
         /// <returns><see langword="true"/> if the signature is successfully added to the context; otherwise, <see langword="false"/>.</returns>
         public bool Sign(ContractParametersContext context)
         {
+            if (context.Magic != ProtocolSettings.Magic) return false;
             bool fSuccess = false;
             foreach (UInt160 scriptHash in context.ScriptHashes)
             {

@@ -90,7 +90,7 @@ namespace Neo.UnitTests.Ledger
 
             tx.Nonce = nonce;
 
-            var data = new ContractParametersContext(snapshot, tx);
+            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Magic);
             Assert.IsNull(data.GetSignatures(tx.Sender));
             Assert.IsTrue(wallet.Sign(data));
             Assert.IsTrue(data.Completed);

@@ -145,7 +145,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Sign
 
-            var data = new ContractParametersContext(snapshot, tx);
+            var wrongData = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Magic + 1);
+            Assert.IsFalse(walletA.Sign(wrongData));
+
+            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Magic);
             Assert.IsTrue(walletA.Sign(data));
             Assert.IsTrue(walletB.Sign(data));
             Assert.IsTrue(data.Completed);
@@ -218,7 +221,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Sign
             // ----
 
-            var data = new ContractParametersContext(snapshot, tx);
+            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Magic);
             // 'from' is always required as witness
             // if not included on cosigner with a scope, its scope should be considered 'CalledByEntry'
             data.ScriptHashes.Count.Should().Be(1);
@@ -332,7 +335,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Sign
             // ----
 
-            var data = new ContractParametersContext(snapshot, tx);
+            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Magic);
             bool signed = wallet.Sign(data);
             Assert.IsTrue(signed);
 
@@ -415,7 +418,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Sign
             // ----
 
-            var data = new ContractParametersContext(snapshot, tx);
+            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Magic);
             bool signed = wallet.Sign(data);
             Assert.IsTrue(signed);
 
@@ -501,7 +504,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Sign
             // ----
 
-            var data = new ContractParametersContext(snapshot, tx);
+            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Magic);
             bool signed = wallet.Sign(data);
             Assert.IsTrue(signed);
 
@@ -632,7 +635,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Sign
             // ----
 
-            var data = new ContractParametersContext(snapshot, tx);
+            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Magic);
             bool signed = wallet.Sign(data);
             Assert.IsTrue(signed);
 
@@ -979,7 +982,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Sign
             // ----
 
-            var data = new ContractParametersContext(snapshot, tx);
+            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Magic);
             bool signed = wallet.Sign(data);
             Assert.IsTrue(signed);
 
@@ -1130,7 +1133,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Sign
 
-            var data = new ContractParametersContext(snapshot, tx);
+            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Magic);
             Assert.IsTrue(walletA.Sign(data));
             Assert.IsTrue(walletB.Sign(data));
             Assert.IsTrue(data.Completed);
@@ -1211,7 +1214,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Sign
 
-            var data = new ContractParametersContext(snapshot, tx);
+            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Magic);
             Assert.IsTrue(walletA.Sign(data));
             Assert.IsTrue(walletB.Sign(data));
             Assert.IsTrue(data.Completed);

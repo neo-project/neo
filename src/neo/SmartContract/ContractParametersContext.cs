@@ -64,6 +64,8 @@ namespace Neo.SmartContract
 
         private readonly Dictionary<UInt160, ContextItem> ContextItems;
 
+        public readonly uint Magic;
+
         /// <summary>
         /// Determines whether all witnesses are ready to be added.
         /// </summary>
@@ -88,11 +90,13 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="verifiable">The <see cref="IVerifiable"/> to add witnesses.</param>
-        public ContractParametersContext(DataCache snapshot, IVerifiable verifiable)
+        /// <param name="magic">Current network magic.</param>
+        public ContractParametersContext(DataCache snapshot, IVerifiable verifiable, uint magic)
         {
             this.Verifiable = verifiable;
             this.Snapshot = snapshot;
             this.ContextItems = new Dictionary<UInt160, ContextItem>();
+            this.Magic = magic;
         }
 
         /// <summary>
@@ -215,7 +219,7 @@ namespace Neo.SmartContract
             {
                 verifiable.DeserializeUnsigned(reader);
             }
-            ContractParametersContext context = new(snapshot, verifiable);
+            ContractParametersContext context = new(snapshot, verifiable, (uint)json["magic"].GetInt32());
             foreach (var property in json["items"].Properties)
             {
                 context.ContextItems.Add(UInt160.Parse(property.Key), new ContextItem(property.Value));
@@ -325,6 +329,7 @@ namespace Neo.SmartContract
             json["items"] = new JObject();
             foreach (var item in ContextItems)
                 json["items"][item.Key.ToString()] = item.Value.ToJson();
+            json["magic"] = Magic;
             return json;
         }
 

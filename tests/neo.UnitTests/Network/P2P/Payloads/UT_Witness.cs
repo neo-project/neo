@@ -68,7 +68,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 ValidUntilBlock = 0,
                 Version = 0,
                 Witnesses = Array.Empty<Witness>()
-            });
+            }, ProtocolSettings.Default.Magic);
 
             for (int x = 0; x < m; x++)
             {
