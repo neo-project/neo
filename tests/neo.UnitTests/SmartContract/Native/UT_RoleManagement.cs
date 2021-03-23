@@ -7,6 +7,8 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
@@ -29,6 +31,9 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot1 = _snapshot.CreateSnapshot();
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
             ECPoint[] validators = NativeContract.NEO.ComputeNextBlockValidators(snapshot1, ProtocolSettings.Default);
+            List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
+            EventHandler<NotifyEventArgs> ev = (o, e) => notifications.Add(e);
+            ApplicationEngine.Notify += ev;
             var ret = NativeContract.RoleManagement.Call(
                 snapshot1,
                 new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
@@ -38,6 +43,9 @@ namespace Neo.UnitTests.SmartContract.Native
                 new ContractParameter(ContractParameterType.Array) { Value = validators.Select(p => new ContractParameter(ContractParameterType.ByteArray) { Value = p.ToArray() }).ToList() }
             );
             snapshot1.Commit();
+            ApplicationEngine.Notify -= ev;
+            notifications.Count.Should().Be(1);
+            notifications[0].EventName.Should().Be("designation");
             var snapshot2 = _snapshot.CreateSnapshot();
             ret = NativeContract.RoleManagement.Call(
                 snapshot2,
@@ -63,6 +71,11 @@ namespace Neo.UnitTests.SmartContract.Native
             );
             ret.Should().BeOfType<VM.Types.Array>();
             (ret as VM.Types.Array).Count.Should().Be(0);
+        }
+
+        private void ApplicationEngine_Notify(object sender, NotifyEventArgs e)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

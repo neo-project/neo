@@ -59,6 +59,7 @@ namespace Neo.SmartContract.Native
             list.AddRange(nodes);
             list.Sort();
             engine.Snapshot.Add(key, new StorageItem(list));
+            engine.SendNotification(Hash, "designation", new VM.Types.Array(engine.ReferenceCounter, new StackItem[] { (int)role }));
         }
 
         private class NodeList : List<ECPoint>, IInteroperable
