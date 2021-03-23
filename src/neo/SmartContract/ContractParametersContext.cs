@@ -62,9 +62,12 @@ namespace Neo.SmartContract
         /// </summary>
         public readonly DataCache Snapshot;
 
-        private readonly Dictionary<UInt160, ContextItem> ContextItems;
-
+        /// <summary>
+        /// The magic number of the network.
+        /// </summary>
         public readonly uint Magic;
+
+        private readonly Dictionary<UInt160, ContextItem> ContextItems;
 
         /// <summary>
         /// Determines whether all witnesses are ready to be added.
@@ -90,7 +93,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="verifiable">The <see cref="IVerifiable"/> to add witnesses.</param>
-        /// <param name="magic">Current network magic.</param>
+        /// <param name="magic">The magic number of the network.</param>
         public ContractParametersContext(DataCache snapshot, IVerifiable verifiable, uint magic)
         {
             this.Verifiable = verifiable;
