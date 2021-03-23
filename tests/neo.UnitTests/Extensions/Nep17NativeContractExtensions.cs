@@ -21,7 +21,7 @@ namespace Neo.UnitTests.Extensions
 
             public ManualWitness(params UInt160[] hashForVerify)
             {
-                _hashForVerify = hashForVerify ?? new UInt160[0];
+                _hashForVerify = hashForVerify ?? System.Array.Empty<UInt160>();
             }
 
             public void Deserialize(BinaryReader reader) { }

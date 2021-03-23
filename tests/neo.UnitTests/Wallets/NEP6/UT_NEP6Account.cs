@@ -18,7 +18,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         private static KeyPair _keyPair;
 
         [ClassInitialize]
-        public static void ClassSetup(TestContext context)
+        public static void ClassSetup(TestContext ctx)
         {
             byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
@@ -70,7 +70,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             byte[] array1 = { 0x01 };
             var hash = new UInt160(Crypto.Hash160(array1));
             string password = "hello world";
-            NEP6Account account = new NEP6Account(wallet, hash, _keyPair, password);
+            NEP6Account account = new(wallet, hash, _keyPair, password);
             account.ScriptHash.Should().Be(hash);
             account.Decrypted.Should().BeTrue();
             account.HasKey.Should().BeTrue();
@@ -79,7 +79,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestFromJson()
         {
-            JObject json = new JObject();
+            JObject json = new();
             json["address"] = "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf";
             json["key"] = null;
             json["label"] = null;
@@ -123,12 +123,12 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestToJson()
         {
-            JObject nep6contract = new JObject();
+            JObject nep6contract = new();
             nep6contract["script"] = "IQNgPziA63rqCtRQCJOSXkpC/qSKRO5viYoQs8fOBdKiZ6w=";
-            JObject parameters = new JObject();
+            JObject parameters = new();
             parameters["type"] = 0x00;
             parameters["name"] = "Sig";
-            JArray array = new JArray
+            JArray array = new()
             {
                 parameters
             };

@@ -13,7 +13,7 @@ namespace Neo.UnitTests.Cryptography
     {
         private KeyPair key = null;
 
-        public static KeyPair generateKey(int privateKeyLength)
+        public static KeyPair GenerateKey(int privateKeyLength)
         {
             byte[] privateKey = new byte[privateKeyLength];
             using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
@@ -23,7 +23,7 @@ namespace Neo.UnitTests.Cryptography
             return new KeyPair(privateKey);
         }
 
-        public static KeyPair generateCertainKey(int privateKeyLength)
+        public static KeyPair GenerateCertainKey(int privateKeyLength)
         {
             byte[] privateKey = new byte[privateKeyLength];
             for (int i = 0; i < privateKeyLength; i++)
@@ -36,7 +36,7 @@ namespace Neo.UnitTests.Cryptography
         [TestInitialize]
         public void TestSetup()
         {
-            key = generateKey(32);
+            key = GenerateKey(32);
         }
 
         [TestMethod]

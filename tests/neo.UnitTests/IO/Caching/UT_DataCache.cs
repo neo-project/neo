@@ -125,7 +125,7 @@ namespace Neo.UnitTests.IO.Caching
 
     class MyDataCache : DataCache
     {
-        public Dictionary<StorageKey, StorageItem> InnerDict = new Dictionary<StorageKey, StorageItem>();
+        public Dictionary<StorageKey, StorageItem> InnerDict = new();
 
         protected override void DeleteInternal(StorageKey key)
         {

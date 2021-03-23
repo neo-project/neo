@@ -18,7 +18,7 @@ namespace Neo.UnitTests.Wallets
 
         public override Version Version => Version.Parse("0.0.1");
 
-        Dictionary<UInt160, WalletAccount> accounts = new Dictionary<UInt160, WalletAccount>();
+        private readonly Dictionary<UInt160, WalletAccount> accounts = new();
 
         public MyWallet() : base(null, ProtocolSettings.Default)
         {
@@ -41,13 +41,13 @@ namespace Neo.UnitTests.Wallets
 
         public override WalletAccount CreateAccount(byte[] privateKey)
         {
-            KeyPair key = new KeyPair(privateKey);
-            Neo.Wallets.SQLite.VerificationContract contract = new Neo.Wallets.SQLite.VerificationContract
+            KeyPair key = new(privateKey);
+            Neo.Wallets.SQLite.VerificationContract contract = new()
             {
                 Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
                 ParameterList = new[] { ContractParameterType.Signature }
             };
-            MyWalletAccount account = new MyWalletAccount(contract.ScriptHash);
+            MyWalletAccount account = new(contract.ScriptHash);
             account.SetKey(key);
             account.Contract = contract;
             AddAccount(account);
@@ -56,7 +56,7 @@ namespace Neo.UnitTests.Wallets
 
         public override WalletAccount CreateAccount(Contract contract, KeyPair key = null)
         {
-            MyWalletAccount account = new MyWalletAccount(contract.ScriptHash)
+            MyWalletAccount account = new(contract.ScriptHash)
             {
                 Contract = contract
             };
@@ -67,7 +67,7 @@ namespace Neo.UnitTests.Wallets
 
         public override WalletAccount CreateAccount(UInt160 scriptHash)
         {
-            MyWalletAccount account = new MyWalletAccount(scriptHash);
+            MyWalletAccount account = new(scriptHash);
             AddAccount(account);
             return account;
         }
@@ -101,16 +101,16 @@ namespace Neo.UnitTests.Wallets
         private static string nep2Key;
 
         [ClassInitialize]
-        public static void ClassInit(TestContext context)
+        public static void ClassInit(TestContext ctx)
         {
-            glkey = UT_Crypto.generateCertainKey(32);
+            glkey = UT_Crypto.GenerateCertainKey(32);
             nep2Key = glkey.Export("pwd", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
         }
 
         [TestMethod]
         public void TestContains()
         {
-            MyWallet wallet = new MyWallet();
+            MyWallet wallet = new();
             Action action = () => wallet.Contains(UInt160.Zero);
             action.Should().NotThrow();
         }
@@ -118,19 +118,19 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestCreateAccount1()
         {
-            MyWallet wallet = new MyWallet();
+            MyWallet wallet = new();
             wallet.CreateAccount(new byte[32]).Should().NotBeNull();
         }
 
         [TestMethod]
         public void TestCreateAccount2()
         {
-            MyWallet wallet = new MyWallet();
+            MyWallet wallet = new();
             Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
-            WalletAccount account = wallet.CreateAccount(contract, UT_Crypto.generateCertainKey(32).PrivateKey);
+            WalletAccount account = wallet.CreateAccount(contract, UT_Crypto.GenerateCertainKey(32).PrivateKey);
             account.Should().NotBeNull();
 
-            wallet = new MyWallet();
+            wallet = new();
             account = wallet.CreateAccount(contract, (byte[])(null));
             account.Should().NotBeNull();
         }
@@ -138,7 +138,7 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestCreateAccount3()
         {
-            MyWallet wallet = new MyWallet();
+            MyWallet wallet = new();
             Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
             wallet.CreateAccount(contract, glkey).Should().NotBeNull();
         }
@@ -146,37 +146,37 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestCreateAccount4()
         {
-            MyWallet wallet = new MyWallet();
+            MyWallet wallet = new();
             wallet.CreateAccount(UInt160.Zero).Should().NotBeNull();
         }
 
         [TestMethod]
         public void TestGetName()
         {
-            MyWallet wallet = new MyWallet();
+            MyWallet wallet = new();
             wallet.Name.Should().Be("MyWallet");
         }
 
         [TestMethod]
         public void TestGetVersion()
         {
-            MyWallet wallet = new MyWallet();
+            MyWallet wallet = new();
             wallet.Version.Should().Be(Version.Parse("0.0.1"));
         }
 
         [TestMethod]
         public void TestGetAccount1()
         {
-            MyWallet wallet = new MyWallet();
-            wallet.CreateAccount(UInt160.Parse("0xd92defaf95bf5307ffbc3ab1c5cdf7ddfc1b89b3"));
+            MyWallet wallet = new();
+            wallet.CreateAccount(UInt160.Parse("0x7efe7ee0d3e349e085388c351955e5172605de66"));
             WalletAccount account = wallet.GetAccount(ECCurve.Secp256r1.G);
-            account.ScriptHash.Should().Be(UInt160.Parse("0xd92defaf95bf5307ffbc3ab1c5cdf7ddfc1b89b3"));
+            account.ScriptHash.Should().Be(UInt160.Parse("0x7efe7ee0d3e349e085388c351955e5172605de66"));
         }
 
         [TestMethod]
         public void TestGetAccount2()
         {
-            MyWallet wallet = new MyWallet();
+            MyWallet wallet = new();
             Action action = () => wallet.GetAccount(UInt160.Zero);
             action.Should().NotThrow();
         }
@@ -184,7 +184,7 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestGetAccounts()
         {
-            MyWallet wallet = new MyWallet();
+            MyWallet wallet = new();
             Action action = () => wallet.GetAccounts();
             action.Should().NotThrow();
         }
@@ -192,7 +192,7 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestGetAvailable()
         {
-            MyWallet wallet = new MyWallet();
+            MyWallet wallet = new();
             Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
             WalletAccount account = wallet.CreateAccount(contract, glkey.PrivateKey);
             account.Lock = false;
@@ -214,7 +214,7 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestGetBalance()
         {
-            MyWallet wallet = new MyWallet();
+            MyWallet wallet = new();
             Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
             WalletAccount account = wallet.CreateAccount(contract, glkey.PrivateKey);
             account.Lock = false;
@@ -267,14 +267,14 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestImport1()
         {
-            MyWallet wallet = new MyWallet();
+            MyWallet wallet = new();
             wallet.Import("L3tgppXLgdaeqSGSFw1Go3skBiy8vQAM7YMXvTHsKQtE16PBncSU").Should().NotBeNull();
         }
 
         [TestMethod]
         public void TestImport2()
         {
-            MyWallet wallet = new MyWallet();
+            MyWallet wallet = new();
             wallet.Import(nep2Key, "pwd", 2, 1, 1).Should().NotBeNull();
         }
 
@@ -282,7 +282,7 @@ namespace Neo.UnitTests.Wallets
         public void TestMakeTransaction1()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
-            MyWallet wallet = new MyWallet();
+            MyWallet wallet = new();
             Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
             WalletAccount account = wallet.CreateAccount(contract, glkey.PrivateKey);
             account.Lock = false;
@@ -368,8 +368,8 @@ namespace Neo.UnitTests.Wallets
         public void TestMakeTransaction2()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
-            MyWallet wallet = new MyWallet();
-            Action action = () => wallet.MakeTransaction(snapshot, new byte[] { }, null, null, Array.Empty<TransactionAttribute>());
+            MyWallet wallet = new();
+            Action action = () => wallet.MakeTransaction(snapshot, Array.Empty<byte>(), null, null, Array.Empty<TransactionAttribute>());
             action.Should().Throw<InvalidOperationException>();
 
             Contract contract = Contract.Create(new ContractParameterType[] { ContractParameterType.Boolean }, new byte[] { 1 });
@@ -382,15 +382,15 @@ namespace Neo.UnitTests.Wallets
             entry.GetInteroperable<AccountState>().Balance = 1000000 * NativeContract.GAS.Factor;
             snapshot.Commit();
 
-            var tx = wallet.MakeTransaction(snapshot, new byte[] { }, account.ScriptHash, new[]{ new Signer()
+            var tx = wallet.MakeTransaction(snapshot, Array.Empty<byte>(), account.ScriptHash, new[]{ new Signer()
             {
                 Account = account.ScriptHash,
                 Scopes = WitnessScope.CalledByEntry
-            }}, new TransactionAttribute[] { });
+            }}, Array.Empty<TransactionAttribute>());
 
             tx.Should().NotBeNull();
 
-            tx = wallet.MakeTransaction(snapshot, new byte[] { }, null, null, Array.Empty<TransactionAttribute>());
+            tx = wallet.MakeTransaction(snapshot, Array.Empty<byte>(), null, null, Array.Empty<TransactionAttribute>());
             tx.Should().NotBeNull();
 
             entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
@@ -401,7 +401,7 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestVerifyPassword()
         {
-            MyWallet wallet = new MyWallet();
+            MyWallet wallet = new();
             Action action = () => wallet.VerifyPassword("Test");
             action.Should().NotThrow();
         }

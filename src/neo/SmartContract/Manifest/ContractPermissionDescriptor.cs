@@ -132,5 +132,14 @@ namespace Neo.SmartContract.Manifest
             if (IsGroup) return Group.ToString();
             return "*";
         }
+
+        /// <summary>
+        /// Converts the permission descriptor to byte array.
+        /// </summary>
+        /// <returns>The converted byte array. Or <see langword="null"/> if it is a wildcard.</returns>
+        public byte[] ToArray()
+        {
+            return Hash?.ToArray() ?? Group?.EncodePoint(true);
+        }
     }
 }

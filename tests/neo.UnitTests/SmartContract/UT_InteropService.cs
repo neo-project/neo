@@ -204,7 +204,7 @@ namespace Neo.UnitTests.SmartContract
 
             // Test real
 
-            using ScriptBuilder scriptA = new ScriptBuilder();
+            using ScriptBuilder scriptA = new();
             scriptA.Emit(OpCode.DROP); // Drop arguments
             scriptA.Emit(OpCode.DROP); // Drop method
             scriptA.EmitSysCall(ApplicationEngine.System_Runtime_GetCallingScriptHash);
@@ -218,7 +218,7 @@ namespace Neo.UnitTests.SmartContract
             engine = GetEngine(true, true, addScript: false);
             engine.Snapshot.AddContract(contract.Hash, contract);
 
-            using ScriptBuilder scriptB = new ScriptBuilder();
+            using ScriptBuilder scriptB = new();
             scriptB.EmitDynamicCall(contract.Hash, "test", "0", 1);
             engine.LoadScript(scriptB.ToArray());
 
@@ -244,7 +244,7 @@ namespace Neo.UnitTests.SmartContract
         {
             byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
-            KeyPair keyPair = new KeyPair(privateKey);
+            KeyPair keyPair = new(privateKey);
             ECPoint pubkey = keyPair.PublicKey;
 
             var engine = GetEngine(true);
@@ -275,7 +275,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestRuntime_GetTime()
         {
-            Block block = new Block { Header = new Header() };
+            Block block = new() { Header = new Header() };
             var engine = GetEngine(true, true, hasBlock: true);
             engine.GetTime().Should().Be(block.Timestamp);
         }
@@ -295,7 +295,7 @@ namespace Neo.UnitTests.SmartContract
             byte[] message = iv.GetSignData(ProtocolSettings.Default.Magic);
             byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
-            KeyPair keyPair = new KeyPair(privateKey);
+            KeyPair keyPair = new(privateKey);
             ECPoint pubkey = keyPair.PublicKey;
             byte[] signature = Crypto.Sign(message, privateKey, pubkey.EncodePoint(false).Skip(1).ToArray());
             engine.CheckSig(pubkey.EncodePoint(false), signature).Should().BeTrue();
@@ -588,7 +588,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestContract_CreateStandardAccount()
         {
             ECPoint pubkey = ECPoint.Parse("024b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e", ECCurve.Secp256r1);
-            ApplicationEngine.CreateStandardAccount(pubkey).ToArray().ToHexString().Should().Be("a78796ab56598585c80dbe95059324eabde764db");
+            ApplicationEngine.CreateStandardAccount(pubkey).ToArray().ToHexString().Should().Be("c44ea575c5f79638f0e73f39d7bd4b3337c81691");
         }
 
         public static void LogEvent(object sender, LogEventArgs args)

@@ -10,7 +10,7 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_NefFile
     {
-        public NefFile file = new NefFile()
+        public NefFile file = new()
         {
             Compiler = "".PadLeft(32, ' '),
             Tokens = Array.Empty<MethodToken>(),
@@ -27,9 +27,9 @@ namespace Neo.UnitTests.SmartContract
         public void TestDeserialize()
         {
             byte[] wrongMagic = { 0x00, 0x00, 0x00, 0x00 };
-            using (MemoryStream ms = new MemoryStream(1024))
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            using (BinaryReader reader = new BinaryReader(ms))
+            using (MemoryStream ms = new(1024))
+            using (BinaryWriter writer = new(ms))
+            using (BinaryReader reader = new(ms))
             {
                 ((ISerializable)file).Serialize(writer);
                 ms.Seek(0, SeekOrigin.Begin);
@@ -41,9 +41,9 @@ namespace Neo.UnitTests.SmartContract
             }
 
             file.CheckSum = 0;
-            using (MemoryStream ms = new MemoryStream(1024))
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            using (BinaryReader reader = new BinaryReader(ms))
+            using (MemoryStream ms = new(1024))
+            using (BinaryWriter writer = new(ms))
+            using (BinaryReader reader = new(ms))
             {
                 ((ISerializable)file).Serialize(writer);
                 ms.Seek(0, SeekOrigin.Begin);
@@ -54,9 +54,9 @@ namespace Neo.UnitTests.SmartContract
 
             file.Script = Array.Empty<byte>();
             file.CheckSum = NefFile.ComputeChecksum(file);
-            using (MemoryStream ms = new MemoryStream(1024))
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            using (BinaryReader reader = new BinaryReader(ms))
+            using (MemoryStream ms = new(1024))
+            using (BinaryWriter writer = new(ms))
+            using (BinaryReader reader = new(ms))
             {
                 ((ISerializable)file).Serialize(writer);
                 ms.Seek(0, SeekOrigin.Begin);
