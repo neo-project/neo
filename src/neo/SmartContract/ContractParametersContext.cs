@@ -222,7 +222,7 @@ namespace Neo.SmartContract
             {
                 verifiable.DeserializeUnsigned(reader);
             }
-            ContractParametersContext context = new(snapshot, verifiable, (uint)json["magic"].GetInt32());
+            ContractParametersContext context = new(snapshot, verifiable, (uint)json["network"].GetInt32());
             foreach (var property in json["items"].Properties)
             {
                 context.ContextItems.Add(UInt160.Parse(property.Key), new ContextItem(property.Value));
