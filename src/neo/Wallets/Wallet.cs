@@ -613,7 +613,7 @@ namespace Neo.Wallets
                             account = GetAccount(point);
                             if (account?.HasKey != true) continue;
                             KeyPair key = account.GetKey();
-                            byte[] signature = context.Verifiable.Sign(key, ProtocolSettings.Magic);
+                            byte[] signature = context.Verifiable.Sign(key, context.Magic);
                             fSuccess |= context.AddSignature(multiSigContract, key.PublicKey, signature);
                             if (fSuccess) m--;
                             if (context.Completed || m <= 0) break;
@@ -624,7 +624,7 @@ namespace Neo.Wallets
                     {
                         // Try to sign with regular accounts
                         KeyPair key = account.GetKey();
-                        byte[] signature = context.Verifiable.Sign(key, ProtocolSettings.Magic);
+                        byte[] signature = context.Verifiable.Sign(key, context.Magic);
                         fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
                         continue;
                     }
