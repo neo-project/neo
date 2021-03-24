@@ -134,7 +134,7 @@ namespace Neo.UnitTests.Network.P2P
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Script = new byte[] { (byte)OpCode.PUSH1 },
                 Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
-                Witnesses = new Witness[] { new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = new byte[0] } },
+                Witnesses = new Witness[] { new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() } },
             };
 
             var msg = Message.Create(MessageCommand.Transaction, payload);

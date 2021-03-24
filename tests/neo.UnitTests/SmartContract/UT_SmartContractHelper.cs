@@ -29,50 +29,50 @@ namespace Neo.UnitTests.SmartContract
                 byte[] privateKey1 = new byte[32];
                 RandomNumberGenerator rng1 = RandomNumberGenerator.Create();
                 rng1.GetBytes(privateKey1);
-                KeyPair key1 = new KeyPair(privateKey1);
+                KeyPair key1 = new(privateKey1);
                 publicKeys1[i] = key1.PublicKey;
             }
             byte[] script1 = Contract.CreateMultiSigRedeemScript(20, publicKeys1);
             Assert.AreEqual(true, Neo.SmartContract.Helper.IsMultiSigContract(script1, out _, out ECPoint[] p1));
             CollectionAssert.AreEqual(publicKeys1.OrderBy(p => p).ToArray(), p1);
 
-            Neo.Cryptography.ECC.ECPoint[] publicKeys2 = new Neo.Cryptography.ECC.ECPoint[256];
+            ECPoint[] publicKeys2 = new ECPoint[256];
             for (int i = 0; i < 256; i++)
             {
                 byte[] privateKey2 = new byte[32];
                 RandomNumberGenerator rng2 = RandomNumberGenerator.Create();
                 rng2.GetBytes(privateKey2);
-                KeyPair key2 = new KeyPair(privateKey2);
+                KeyPair key2 = new(privateKey2);
                 publicKeys2[i] = key2.PublicKey;
             }
             byte[] script2 = Contract.CreateMultiSigRedeemScript(256, publicKeys2);
             Assert.AreEqual(true, Neo.SmartContract.Helper.IsMultiSigContract(script2, out _, out ECPoint[] p2));
             CollectionAssert.AreEqual(publicKeys2.OrderBy(p => p).ToArray(), p2);
 
-            Neo.Cryptography.ECC.ECPoint[] publicKeys3 = new Neo.Cryptography.ECC.ECPoint[3];
+            ECPoint[] publicKeys3 = new ECPoint[3];
             for (int i = 0; i < 3; i++)
             {
                 byte[] privateKey3 = new byte[32];
                 RandomNumberGenerator rng3 = RandomNumberGenerator.Create();
                 rng3.GetBytes(privateKey3);
-                KeyPair key3 = new KeyPair(privateKey3);
+                KeyPair key3 = new(privateKey3);
                 publicKeys3[i] = key3.PublicKey;
             }
             byte[] script3 = Contract.CreateMultiSigRedeemScript(3, publicKeys3);
             Assert.AreEqual(true, Neo.SmartContract.Helper.IsMultiSigContract(script3, out _, out ECPoint[] p3));
             CollectionAssert.AreEqual(publicKeys3.OrderBy(p => p).ToArray(), p3);
 
-            Neo.Cryptography.ECC.ECPoint[] publicKeys4 = new Neo.Cryptography.ECC.ECPoint[3];
+            ECPoint[] publicKeys4 = new ECPoint[3];
             for (int i = 0; i < 3; i++)
             {
                 byte[] privateKey4 = new byte[32];
                 RandomNumberGenerator rng4 = RandomNumberGenerator.Create();
                 rng4.GetBytes(privateKey4);
-                KeyPair key4 = new KeyPair(privateKey4);
+                KeyPair key4 = new(privateKey4);
                 publicKeys4[i] = key4.PublicKey;
             }
             byte[] script4 = Contract.CreateMultiSigRedeemScript(3, publicKeys4);
-            script4[script4.Length - 1] = 0x00;
+            script4[^1] = 0x00;
             Assert.AreEqual(false, Neo.SmartContract.Helper.IsMultiSigContract(script4, out _, out ECPoint[] p4));
             Assert.IsNull(p4);
         }
@@ -83,7 +83,7 @@ namespace Neo.UnitTests.SmartContract
             byte[] privateKey = new byte[32];
             RandomNumberGenerator rng = RandomNumberGenerator.Create();
             rng.GetBytes(privateKey);
-            KeyPair key = new KeyPair(privateKey);
+            KeyPair key = new(privateKey);
             byte[] script = Contract.CreateSignatureRedeemScript(key.PublicKey);
             Assert.AreEqual(true, Neo.SmartContract.Helper.IsSignatureContract(script));
             script[0] = 0x22;
@@ -96,17 +96,17 @@ namespace Neo.UnitTests.SmartContract
             byte[] privateKey1 = new byte[32];
             RandomNumberGenerator rng1 = RandomNumberGenerator.Create();
             rng1.GetBytes(privateKey1);
-            KeyPair key1 = new KeyPair(privateKey1);
+            KeyPair key1 = new(privateKey1);
             byte[] script1 = Contract.CreateSignatureRedeemScript(key1.PublicKey);
             Assert.AreEqual(true, Neo.SmartContract.Helper.IsStandardContract(script1));
 
-            Neo.Cryptography.ECC.ECPoint[] publicKeys2 = new Neo.Cryptography.ECC.ECPoint[3];
+            ECPoint[] publicKeys2 = new ECPoint[3];
             for (int i = 0; i < 3; i++)
             {
                 byte[] privateKey2 = new byte[32];
                 RandomNumberGenerator rng2 = RandomNumberGenerator.Create();
                 rng2.GetBytes(privateKey2);
-                KeyPair key2 = new KeyPair(privateKey2);
+                KeyPair key2 = new(privateKey2);
                 publicKeys2[i] = key2.PublicKey;
             }
             byte[] script2 = Contract.CreateMultiSigRedeemScript(3, publicKeys2);
@@ -126,7 +126,7 @@ namespace Neo.UnitTests.SmartContract
                     PrevHash = UInt256.Zero,
                     MerkleRoot = UInt256.Zero,
                     NextConsensus = UInt160.Zero,
-                    Witness = new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] }
+                    Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
                 },
                 Hashes = new UInt256[1] { UInt256.Zero },
             });
@@ -135,7 +135,7 @@ namespace Neo.UnitTests.SmartContract
 
             var snapshot2 = TestBlockchain.GetTestSnapshot();
             UInt256 index2 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
-            TrimmedBlock block2 = new TrimmedBlock()
+            TrimmedBlock block2 = new()
             {
                 Header = new Header
                 {
@@ -143,12 +143,12 @@ namespace Neo.UnitTests.SmartContract
                     PrevHash = UInt256.Zero,
                     MerkleRoot = UInt256.Zero,
                     NextConsensus = UInt160.Zero,
-                    Witness = new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] }
+                    Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
                 },
                 Hashes = new UInt256[1] { UInt256.Zero },
             };
             BlocksAdd(snapshot2, index2, block2);
-            Header header2 = new Header() { PrevHash = index2, Witness = new Witness { InvocationScript = new byte[0], VerificationScript = new byte[0] } };
+            Header header2 = new() { PrevHash = index2, Witness = new Witness { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() } };
 
             snapshot2.AddContract(UInt160.Zero, new ContractState());
             snapshot2.DeleteContract(UInt160.Zero);
@@ -156,7 +156,7 @@ namespace Neo.UnitTests.SmartContract
 
             var snapshot3 = TestBlockchain.GetTestSnapshot();
             UInt256 index3 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
-            TrimmedBlock block3 = new TrimmedBlock()
+            TrimmedBlock block3 = new()
             {
                 Header = new Header
                 {
@@ -164,12 +164,12 @@ namespace Neo.UnitTests.SmartContract
                     PrevHash = UInt256.Zero,
                     MerkleRoot = UInt256.Zero,
                     NextConsensus = UInt160.Zero,
-                    Witness = new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] }
+                    Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
                 },
                 Hashes = new UInt256[1] { UInt256.Zero },
             };
             BlocksAdd(snapshot3, index3, block3);
-            Header header3 = new Header()
+            Header header3 = new()
             {
                 PrevHash = index3,
                 Witness = new Witness
@@ -203,7 +203,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(true, Neo.SmartContract.Helper.VerifyWitnesses(tx, ProtocolSettings.Default, snapshot3, 1000));
         }
 
-        private void BlocksDelete(DataCache snapshot, UInt256 hash)
+        private static void BlocksDelete(DataCache snapshot, UInt256 hash)
         {
             snapshot.Delete(NativeContract.Ledger.CreateStorageKey(Prefix_BlockHash, hash));
             snapshot.Delete(NativeContract.Ledger.CreateStorageKey(Prefix_Block, hash));

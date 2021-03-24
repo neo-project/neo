@@ -28,7 +28,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.InvocationScript.Should().BeNull();
         }
 
-        private Witness PrepareDummyWitness(int pubKeys, int m)
+        private static Witness PrepareDummyWitness(int pubKeys, int m)
         {
             var address = new WalletAccount[pubKeys];
             var wallets = new NEP6Wallet[pubKeys];
@@ -63,11 +63,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 }},
                 NetworkFee = 0,
                 Nonce = 0,
-                Script = new byte[0],
+                Script = Array.Empty<byte>(),
                 SystemFee = 0,
                 ValidUntilBlock = 0,
                 Version = 0,
-                Witnesses = new Witness[0]
+                Witnesses = Array.Empty<Witness>()
             });
 
             for (int x = 0; x < m; x++)
@@ -125,7 +125,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(uut.InvocationScript.ToHexString(), "002020142020");
         }
 
-        private void SetupWitnessWithValues(Witness uut, int lenghtInvocation, int lengthVerification, out byte[] invocationScript, out byte[] verificationScript)
+        private static void SetupWitnessWithValues(Witness uut, int lenghtInvocation, int lengthVerification, out byte[] invocationScript, out byte[] verificationScript)
         {
             invocationScript = TestUtils.GetByteArray(lenghtInvocation, 0x20);
             verificationScript = TestUtils.GetByteArray(lengthVerification, 0x20);

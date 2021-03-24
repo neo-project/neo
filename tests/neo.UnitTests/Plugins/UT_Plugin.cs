@@ -9,13 +9,13 @@ namespace Neo.UnitTests.Plugins
     [TestClass]
     public class UT_Plugin
     {
-        private static readonly object locker = new object();
+        private static readonly object locker = new();
 
         private class DummyP2PPlugin : IP2PPlugin
         {
             public void OnVerifiedInventory(IInventory inventory) { }
         }
-        private class dummyPersistencePlugin : IPersistencePlugin { }
+        private class DummyPersistencePlugin : IPersistencePlugin { }
 
         [TestMethod]
         public void TestIP2PPlugin()
@@ -27,7 +27,7 @@ namespace Neo.UnitTests.Plugins
         [TestMethod]
         public void TestIPersistencePlugin()
         {
-            var pp = new dummyPersistencePlugin() as IPersistencePlugin;
+            var pp = new DummyPersistencePlugin() as IPersistencePlugin;
 
             Assert.IsFalse(pp.ShouldThrowExceptionFromCommit(null));
 

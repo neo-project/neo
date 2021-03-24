@@ -96,9 +96,9 @@ namespace Neo.UnitTests.Ledger
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
             tblock.Hashes = new UInt256[] { TestUtils.GetTransaction(UInt160.Zero).Hash };
             var newBlock = new TrimmedBlock();
-            using (MemoryStream ms = new MemoryStream(1024))
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            using (BinaryReader reader = new BinaryReader(ms))
+            using (MemoryStream ms = new(1024))
+            using (BinaryWriter writer = new(ms))
+            using (BinaryReader reader = new(ms))
             {
                 tblock.Serialize(writer);
                 ms.Seek(0, SeekOrigin.Begin);

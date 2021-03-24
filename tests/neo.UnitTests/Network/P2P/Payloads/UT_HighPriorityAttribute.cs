@@ -65,7 +65,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var test = new HighPriorityAttribute();
             var snapshot = TestBlockchain.GetTestSnapshot();
 
-            Assert.IsFalse(test.Verify(snapshot, new Transaction() { Signers = new Signer[] { } }));
+            Assert.IsFalse(test.Verify(snapshot, new Transaction() { Signers = Array.Empty<Signer>() }));
             Assert.IsFalse(test.Verify(snapshot, new Transaction() { Signers = new Signer[] { new Signer() { Account = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01") } } }));
             Assert.IsTrue(test.Verify(snapshot, new Transaction() { Signers = new Signer[] { new Signer() { Account = NativeContract.NEO.GetCommitteeAddress(snapshot) } } }));
         }

@@ -133,7 +133,7 @@ namespace Neo.UnitTests.IO.Caching
             set.ExceptWith(new UInt256[] { b, c });
             CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { a });
             set.ExceptWith(new UInt256[] { a });
-            CollectionAssert.AreEqual(set.ToArray(), new UInt256[] { });
+            CollectionAssert.AreEqual(set.ToArray(), Array.Empty<UInt256>());
 
             set = new HashSetCache<UInt256>(10)
             {

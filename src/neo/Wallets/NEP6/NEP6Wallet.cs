@@ -78,7 +78,7 @@ namespace Neo.Wallets.NEP6
             extra = wallet["extra"];
         }
 
-        private void AddAccount(NEP6Account account, bool is_import)
+        private void AddAccount(NEP6Account account)
         {
             lock (accounts)
             {
@@ -129,7 +129,7 @@ namespace Neo.Wallets.NEP6
             {
                 Contract = contract
             };
-            AddAccount(account, false);
+            AddAccount(account);
             return account;
         }
 
@@ -151,14 +151,14 @@ namespace Neo.Wallets.NEP6
             else
                 account = new NEP6Account(this, nep6contract.ScriptHash, key, password);
             account.Contract = nep6contract;
-            AddAccount(account, false);
+            AddAccount(account);
             return account;
         }
 
         public override WalletAccount CreateAccount(UInt160 scriptHash)
         {
             NEP6Account account = new(this, scriptHash);
-            AddAccount(account, true);
+            AddAccount(account);
             return account;
         }
 
@@ -216,7 +216,7 @@ namespace Neo.Wallets.NEP6
             {
                 Contract = contract
             };
-            AddAccount(account, true);
+            AddAccount(account);
             return account;
         }
 
@@ -234,7 +234,7 @@ namespace Neo.Wallets.NEP6
             {
                 Contract = contract
             };
-            AddAccount(account, true);
+            AddAccount(account);
             return account;
         }
 
@@ -254,7 +254,7 @@ namespace Neo.Wallets.NEP6
             else
                 account = new NEP6Account(this, contract.ScriptHash, key, passphrase);
             account.Contract = contract;
-            AddAccount(account, true);
+            AddAccount(account);
             return account;
         }
 

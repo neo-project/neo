@@ -15,6 +15,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace Neo.UnitTests.Ledger
 {
@@ -43,7 +44,7 @@ namespace Neo.UnitTests.Ledger
             testBlockchain = TestBlockchain.TheNeoSystem;
         }
 
-        private DataCache GetSnapshot()
+        private static DataCache GetSnapshot()
         {
             return testBlockchain.StoreView.CreateSnapshot();
         }
@@ -73,7 +74,7 @@ namespace Neo.UnitTests.Ledger
             Plugin.TxObserverPlugins.Remove(plugin);
         }
 
-        long LongRandom(long min, long max, Random rand)
+        private static long LongRandom(long min, long max, Random rand)
         {
             // Only returns positive random long values.
             long longRand = (long)rand.NextBigInteger(63);
@@ -82,10 +83,10 @@ namespace Neo.UnitTests.Ledger
 
         private Transaction CreateTransactionWithFee(long fee)
         {
-            Random random = new Random();
+            Random random = new();
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
-            Mock<Transaction> mock = new Mock<Transaction>();
+            Mock<Transaction> mock = new();
             mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
@@ -105,10 +106,10 @@ namespace Neo.UnitTests.Ledger
 
         private Transaction CreateTransactionWithFeeAndBalanceVerify(long fee)
         {
-            Random random = new Random();
+            Random random = new();
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
-            Mock<Transaction> mock = new Mock<Transaction>();
+            Mock<Transaction> mock = new();
             UInt160 sender = senderAccount;
             mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>())).Returns((ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context) => context.CheckTransaction(mock.Object, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
@@ -120,8 +121,8 @@ namespace Neo.UnitTests.Ledger
             {
                 new Witness
                 {
-                    InvocationScript = new byte[0],
-                    VerificationScript = new byte[0]
+                    InvocationScript = Array.Empty<byte>(),
+                    VerificationScript = Array.Empty<byte>()
                 }
             };
             return mock.Object;
@@ -221,12 +222,12 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
-        public void BlockPersistAndReverificationWillAbandonTxAsBalanceTransfered()
+        public async Task BlockPersistAndReverificationWillAbandonTxAsBalanceTransfered()
         {
             var snapshot = GetSnapshot();
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
-            NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
+            await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 70, true);
 
             long txFee = 1;
@@ -244,7 +245,7 @@ namespace Neo.UnitTests.Ledger
             UInt160 sender = block.Transactions[0].Sender;
 
             ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.All, block, snapshot, block, settings: TestBlockchain.TheNeoSystem.Settings, gas: (long)balance);
-            NativeContract.GAS.Burn(applicationEngine, sender, NativeContract.GAS.BalanceOf(snapshot, sender));
+            await NativeContract.GAS.Burn(applicationEngine, sender, NativeContract.GAS.BalanceOf(snapshot, sender));
             _ = NativeContract.GAS.Mint(applicationEngine, sender, txFee * 30, true); // Set the balance to meet 30 txs only
 
             // Persist block and reverify all the txs in mempool, but half of the txs will be discarded
@@ -253,11 +254,11 @@ namespace Neo.UnitTests.Ledger
             _unit.UnverifiedSortedTxCount.Should().Be(0);
 
             // Revert the balance
-            NativeContract.GAS.Burn(applicationEngine, sender, txFee * 30);
+            await NativeContract.GAS.Burn(applicationEngine, sender, txFee * 30);
             _ = NativeContract.GAS.Mint(applicationEngine, sender, balance, true);
         }
 
-        private void VerifyTransactionsSortedDescending(IEnumerable<Transaction> transactions)
+        private static void VerifyTransactionsSortedDescending(IEnumerable<Transaction> transactions)
         {
             Transaction lastTransaction = null;
             foreach (var tx in transactions)
@@ -500,7 +501,7 @@ namespace Neo.UnitTests.Ledger
             tx.Should().BeEquivalentTo(tx1);
 
             var tx2 = CreateTransaction();
-            _unit.TryGetValue(tx2.Hash, out tx).Should().BeFalse();
+            _unit.TryGetValue(tx2.Hash, out _).Should().BeFalse();
         }
 
         [TestMethod]
@@ -509,11 +510,11 @@ namespace Neo.UnitTests.Ledger
             var snapshot = GetSnapshot();
             byte[] transactionsPerBlock = { 0x18, 0x00, 0x00, 0x00 }; // 24
             byte[] feePerByte = { 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00 }; // 1048576
-            StorageItem item1 = new StorageItem
+            StorageItem item1 = new()
             {
                 Value = transactionsPerBlock
             };
-            StorageItem item2 = new StorageItem
+            StorageItem item2 = new()
             {
                 Value = feePerByte
             };
@@ -544,9 +545,9 @@ namespace Neo.UnitTests.Ledger
             _unit.VerifiedCount.Should().Be(0);
         }
 
-        public StorageKey CreateStorageKey(byte prefix, byte[] key = null)
+        public static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
         {
-            StorageKey storageKey = new StorageKey
+            StorageKey storageKey = new()
             {
                 Id = 0,
                 Key = new byte[sizeof(byte) + (key?.Length ?? 0)]

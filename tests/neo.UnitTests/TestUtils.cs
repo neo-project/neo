@@ -41,7 +41,7 @@ namespace Neo.UnitTests
                     }
                 },
                 Permissions = new[] { ContractPermission.DefaultPermission },
-                Trusts = WildcardContainer<UInt160>.Create(),
+                Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(),
                 Extra = null
             };
         }
@@ -113,8 +113,8 @@ namespace Neo.UnitTests
                 } },
                 Witnesses = new Witness[]{ new Witness
                 {
-                    InvocationScript = new byte[0],
-                    VerificationScript = new byte[0]
+                    InvocationScript = Array.Empty<byte>(),
+                    VerificationScript = Array.Empty<byte>()
                 } }
             };
         }

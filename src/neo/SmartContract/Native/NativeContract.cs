@@ -147,7 +147,7 @@ namespace Neo.SmartContract.Native
                     Methods = descriptors.Select(p => p.Descriptor).ToArray()
                 },
                 Permissions = new[] { ContractPermission.DefaultPermission },
-                Trusts = WildcardContainer<UInt160>.Create(),
+                Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(),
                 Extra = null
             };
             contractsList.Add(this);
