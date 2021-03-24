@@ -332,7 +332,7 @@ namespace Neo.SmartContract
             json["items"] = new JObject();
             foreach (var item in ContextItems)
                 json["items"][item.Key.ToString()] = item.Value.ToJson();
-            json["magic"] = Magic;
+            json["network"] = Magic;
             return json;
         }
 
