@@ -65,7 +65,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The magic number of the network.
         /// </summary>
-        public readonly uint Magic;
+        public readonly uint Network;
 
         private readonly Dictionary<UInt160, ContextItem> ContextItems;
 
@@ -99,7 +99,7 @@ namespace Neo.SmartContract
             this.Verifiable = verifiable;
             this.Snapshot = snapshot;
             this.ContextItems = new Dictionary<UInt160, ContextItem>();
-            this.Magic = magic;
+            this.Network = magic;
         }
 
         /// <summary>
@@ -332,7 +332,7 @@ namespace Neo.SmartContract
             json["items"] = new JObject();
             foreach (var item in ContextItems)
                 json["items"][item.Key.ToString()] = item.Value.ToJson();
-            json["network"] = Magic;
+            json["network"] = Network;
             return json;
         }
 
