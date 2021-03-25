@@ -2,6 +2,7 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Persistence;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -17,6 +18,28 @@ namespace Neo.SmartContract.Native
     {
         internal RoleManagement()
         {
+            var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
+            {
+                new ContractEventDescriptor
+                {
+                    Name = "Desingation",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "Role",
+                            Type = ContractParameterType.Integer
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "BlockNumber",
+                            Type = ContractParameterType.Integer
+                        }
+                    }
+                }
+            };
+
+            Manifest.Abi.Events = events.ToArray();
         }
 
         /// <summary>
@@ -59,7 +82,7 @@ namespace Neo.SmartContract.Native
             list.AddRange(nodes);
             list.Sort();
             engine.Snapshot.Add(key, new StorageItem(list));
-            engine.SendNotification(Hash, "designation", new VM.Types.Array(engine.ReferenceCounter, new StackItem[] { (int)role }));
+            engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, new StackItem[] { (int)role, engine.PersistingBlock?.Index ?? 0 }));
         }
 
         private class NodeList : List<ECPoint>, IInteroperable

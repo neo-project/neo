@@ -45,7 +45,7 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot1.Commit();
             ApplicationEngine.Notify -= ev;
             notifications.Count.Should().Be(1);
-            notifications[0].EventName.Should().Be("designation");
+            notifications[0].EventName.Should().Be("Designation");
             var snapshot2 = _snapshot.CreateSnapshot();
             ret = NativeContract.RoleManagement.Call(
                 snapshot2,
