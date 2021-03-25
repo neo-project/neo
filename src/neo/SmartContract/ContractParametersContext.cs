@@ -93,13 +93,13 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="verifiable">The <see cref="IVerifiable"/> to add witnesses.</param>
-        /// <param name="magic">The magic number of the network.</param>
-        public ContractParametersContext(DataCache snapshot, IVerifiable verifiable, uint magic)
+        /// <param name="network">The magic number of the network.</param>
+        public ContractParametersContext(DataCache snapshot, IVerifiable verifiable, uint network)
         {
             this.Verifiable = verifiable;
             this.Snapshot = snapshot;
             this.ContextItems = new Dictionary<UInt160, ContextItem>();
-            this.Network = magic;
+            this.Network = network;
         }
 
         /// <summary>
