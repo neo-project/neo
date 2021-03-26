@@ -63,7 +63,7 @@ namespace Neo.SmartContract.Native
                 .FirstOrDefault() ?? System.Array.Empty<ECPoint>();
         }
 
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private void DesignateAsRole(ApplicationEngine engine, Role role, ECPoint[] nodes)
         {
             if (nodes.Length == 0 || nodes.Length > 32)
