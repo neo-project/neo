@@ -530,6 +530,7 @@ namespace Neo.Wallets
             foreach (UInt160 hash in hashes)
             {
                 byte[] witness_script = GetAccount(hash)?.Contract?.Script;
+                byte[] invocationScript = null;
 
                 if (witness_script is null && tx.Witnesses != null)
                 {
@@ -540,6 +541,7 @@ namespace Neo.Wallets
                         if (witness.ScriptHash == hash)
                         {
                             witness_script = witness.VerificationScript;
+                            invocationScript = witness.InvocationScript;
                             break;
                         }
                     }
@@ -561,6 +563,7 @@ namespace Neo.Wallets
                     // Check verify cost
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: ProtocolSettings);
                     engine.LoadContract(contract, md, CallFlags.ReadOnly);
+                    if (invocationScript != null) engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
                     if (!engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.Hash} returns false.");
 
