@@ -32,7 +32,7 @@ namespace Neo.SmartContract.Native
                         },
                         new ContractParameterDefinition()
                         {
-                            Name = "BlockNumber",
+                            Name = "BlockIndex",
                             Type = ContractParameterType.Integer
                         }
                     }
