@@ -29,7 +29,7 @@ namespace Neo.IO.Json
             this.items.AddRange(items);
         }
 
-        public JObject this[int index]
+        public override JObject this[int index]
         {
             get
             {

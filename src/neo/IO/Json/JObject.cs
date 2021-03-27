@@ -16,10 +16,12 @@ namespace Neo.IO.Json
         /// </summary>
         public static readonly JObject Null = null;
 
+        private readonly OrderedDictionary<string, JObject> properties = new();
+
         /// <summary>
         /// Gets or sets the properties of the JSON object.
         /// </summary>
-        public IDictionary<string, JObject> Properties { get; } = new OrderedDictionary<string, JObject>();
+        public IDictionary<string, JObject> Properties => properties;
 
         /// <summary>
         /// Gets or sets the properties of the JSON object.
@@ -38,6 +40,17 @@ namespace Neo.IO.Json
             {
                 Properties[name] = value;
             }
+        }
+
+        /// <summary>
+        /// Gets the property at the specified index.
+        /// </summary>
+        /// <param name="index">The zero-based index of the property to get.</param>
+        /// <returns>The property at the specified index.</returns>
+        public virtual JObject this[int index]
+        {
+            get => properties[index];
+            set => throw new NotSupportedException();
         }
 
         /// <summary>
