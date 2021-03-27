@@ -550,9 +550,10 @@ namespace Neo.Wallets
                             }
                         }
                     }
-                    else
+                    if (witness_script is null)
                     {
-                        invocationScript = tx.Witnesses[index].InvocationScript;
+                        // Then it's a contract-based witness, so try to get the corresponding invocation script for it
+                        invocationScript = tx.Witnesses[index]?.InvocationScript;
                     }
                 }
 
