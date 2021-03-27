@@ -567,8 +567,9 @@ namespace Neo.Wallets
                     if (md.ReturnType != ContractParameterType.Boolean)
                         throw new ArgumentException("The verify method doesn't return boolean value.");
 
-                    // Empty invocation and verification scripts
-                    size += Array.Empty<byte>().GetVarSize() * 2;
+                    // Empty verification and non-empty invocation scripts
+                    var invSize = invocationScript != null ? invocationScript.GetVarSize() : Array.Empty<byte>().GetVarSize();
+                    size += Array.Empty<byte>().GetVarSize() + invSize;
 
                     // Check verify cost
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: ProtocolSettings);
