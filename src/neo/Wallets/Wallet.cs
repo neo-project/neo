@@ -527,23 +527,32 @@ namespace Neo.Wallets
             int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + tx.Script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
             uint exec_fee_factor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             long networkFee = 0;
+            int index = -1;
             foreach (UInt160 hash in hashes)
             {
+                index++;
                 byte[] witness_script = GetAccount(hash)?.Contract?.Script;
                 byte[] invocationScript = null;
 
-                if (witness_script is null && tx.Witnesses != null)
+                if (tx.Witnesses != null)
                 {
-                    // Try to find the script in the witnesses
-
-                    foreach (var witness in tx.Witnesses)
+                    if (witness_script is null)
                     {
-                        if (witness.ScriptHash == hash)
+                        // Try to find the script in the witnesses
+
+                        foreach (var witness in tx.Witnesses)
                         {
-                            witness_script = witness.VerificationScript;
-                            invocationScript = witness.InvocationScript;
-                            break;
+                            if (witness.ScriptHash == hash)
+                            {
+                                witness_script = witness.VerificationScript;
+                                invocationScript = witness.InvocationScript;
+                                break;
+                            }
                         }
+                    }
+                    else
+                    {
+                        invocationScript = tx.Witnesses[index].InvocationScript;
                     }
                 }
 
