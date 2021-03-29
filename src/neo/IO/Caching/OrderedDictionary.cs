@@ -43,6 +43,14 @@ namespace Neo.IO.Caching
             }
         }
 
+        public TValue this[int index]
+        {
+            get
+            {
+                return collection[index].Value;
+            }
+        }
+
         public void Add(TKey key, TValue value)
         {
             collection.Add(new TItem
