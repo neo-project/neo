@@ -539,20 +539,14 @@ namespace Neo.Wallets
                     if (witness_script is null)
                     {
                         // Try to find the script in the witnesses
+                        Witness witness = tx.Witnesses[index];
+                        witness_script = witness?.VerificationScript;
 
-                        foreach (var witness in tx.Witnesses)
+                        if (witness_script is null)
                         {
-                            if (witness.ScriptHash == hash)
-                            {
-                                witness_script = witness.VerificationScript;
-                                break;
-                            }
+                            // Then it's a contract-based witness, so try to get the corresponding invocation script for it
+                            invocationScript = witness?.InvocationScript;
                         }
-                    }
-                    if (witness_script is null)
-                    {
-                        // Then it's a contract-based witness, so try to get the corresponding invocation script for it
-                        invocationScript = tx.Witnesses[index]?.InvocationScript;
                     }
                 }
 
