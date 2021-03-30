@@ -545,7 +545,6 @@ namespace Neo.Wallets
                             if (witness.ScriptHash == hash)
                             {
                                 witness_script = witness.VerificationScript;
-                                invocationScript = witness.InvocationScript;
                                 break;
                             }
                         }
