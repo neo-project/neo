@@ -721,6 +721,59 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
+        public void FeeIsSignatureContract_UnexistingVerificationContractFAULT()
+        {
+            var wallet = TestUtils.GenerateTestWallet();
+            var snapshot = TestBlockchain.GetTestSnapshot();
+
+            // no password on this wallet
+            using var unlock = wallet.Unlock("");
+            var acc = wallet.CreateAccount();
+
+            // Fake balance
+
+            var key = NativeContract.GAS.CreateStorageKey(20, acc.ScriptHash);
+
+            var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
+
+            entry.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
+
+            snapshot.Commit();
+
+            // Make transaction
+            // Manually creating script
+
+            byte[] script;
+            using (ScriptBuilder sb = new())
+            {
+                // self-transfer of 1e-8 GAS
+                BigInteger value = new BigDecimal(BigInteger.One, 8).Value;
+                sb.EmitDynamicCall(NativeContract.GAS.Hash, "transfer", acc.ScriptHash, acc.ScriptHash, value, null);
+                sb.Emit(OpCode.ASSERT);
+                script = sb.ToArray();
+            }
+
+            // trying global scope
+            var signers = new Signer[]{ new Signer
+                {
+                    Account = acc.ScriptHash,
+                    Scopes = WitnessScope.Global
+                } };
+
+            // creating new wallet with missing account for test
+            var walletWithoutAcc = TestUtils.GenerateTestWallet();
+
+            // using this...
+
+            Transaction tx = null;
+            // expects ArgumentException on execution of 'CalculateNetworkFee' due to
+            // null witness_script (no account in the wallet, no corresponding witness
+            // and no verification contract for the signer)
+            Assert.ThrowsException<ArgumentException>(() => walletWithoutAcc.MakeTransaction(snapshot, script, acc.ScriptHash, signers));
+            Assert.IsNull(tx);
+        }
+
+        [TestMethod]
         public void Transaction_Reverify_Hashes_Length_Unequal_To_Witnesses_Length()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
