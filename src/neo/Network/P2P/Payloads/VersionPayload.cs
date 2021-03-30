@@ -19,7 +19,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The magic number of the network.
         /// </summary>
-        public uint Magic;
+        public uint Network;
 
         /// <summary>
         /// The protocol version of the node.
@@ -66,7 +66,7 @@ namespace Neo.Network.P2P.Payloads
         {
             return new VersionPayload
             {
-                Magic = magic,
+                Network = magic,
                 Version = LocalNode.ProtocolVersion,
                 Timestamp = DateTime.Now.ToTimestamp(),
                 Nonce = nonce,
@@ -77,7 +77,7 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            Magic = reader.ReadUInt32();
+            Network = reader.ReadUInt32();
             Version = reader.ReadUInt32();
             Timestamp = reader.ReadUInt32();
             Nonce = reader.ReadUInt32();
@@ -93,7 +93,7 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write(Magic);
+            writer.Write(Network);
             writer.Write(Version);
             writer.Write(Timestamp);
             writer.Write(Nonce);

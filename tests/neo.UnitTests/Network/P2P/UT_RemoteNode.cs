@@ -36,7 +36,7 @@ namespace Neo.UnitTests.Network.P2P
             {
                 UserAgent = "".PadLeft(1024, '0'),
                 Nonce = 1,
-                Magic = 2,
+                Network = 2,
                 Timestamp = 5,
                 Version = 6,
                 Capabilities = new NodeCapability[]
@@ -61,7 +61,7 @@ namespace Neo.UnitTests.Network.P2P
             {
                 UserAgent = "Unit Test".PadLeft(1024, '0'),
                 Nonce = 1,
-                Magic = ProtocolSettings.Default.Magic,
+                Network = ProtocolSettings.Default.Network,
                 Timestamp = 5,
                 Version = 6,
                 Capabilities = new NodeCapability[]
