@@ -515,7 +515,7 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(owner), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
-            script.EmitDynamicCall(NativeContract.NameService.Hash, "transfer", to, domain);
+            script.EmitDynamicCall(NativeContract.NameService.Hash, "transfer", to, domain, null);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
