@@ -7,9 +7,11 @@ using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
 
@@ -17,30 +19,62 @@ namespace Neo.Network.P2P
 {
     internal class ProtocolHandler : UntypedActor
     {
-        public class SetVersion { public VersionPayload Version; }
-        public class SetVerack { }
         public class SetFilter { public BloomFilter Filter; }
+        internal class Timer { }
+
+        private class PendingKnownHashesCollection : KeyedCollection<UInt256, (UInt256, DateTime)>
+        {
+            protected override UInt256 GetKeyForItem((UInt256, DateTime) item)
+            {
+                return item.Item1;
+            }
+        }
 
         private readonly NeoSystem system;
-        private readonly HashSet<UInt256> knownHashes = new HashSet<UInt256>();
-        private readonly HashSet<UInt256> sentHashes = new HashSet<UInt256>();
+        private readonly PendingKnownHashesCollection pendingKnownHashes;
+        private readonly FIFOSet<UInt256> knownHashes;
+        private readonly FIFOSet<UInt256> sentHashes;
         private VersionPayload version;
         private bool verack = false;
         private BloomFilter bloom_filter;
+        private uint StateRootSentIndex;
+        private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
+        private static readonly TimeSpan PendingTimeout = TimeSpan.FromMinutes(1);
+
+        private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
 
         public ProtocolHandler(NeoSystem system)
         {
             this.system = system;
+            this.pendingKnownHashes = new PendingKnownHashesCollection();
+            this.knownHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
+            this.sentHashes = new FIFOSet<UInt256>(Blockchain.Singleton.MemPool.Capacity * 2);
+            this.StateRootSentIndex = ProtocolSettings.Default.StateRootEnableIndex;
         }
 
         protected override void OnReceive(object message)
         {
-            if (!(message is Message msg)) return;
+            switch (message)
+            {
+                case Message msg:
+                    OnMessage(msg);
+                    break;
+                case Timer _:
+                    OnTimer();
+                    break;
+            }
+        }
+
+        private void OnMessage(Message msg)
+        {
+            foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
+                if (!plugin.OnP2PMessage(msg))
+                    return;
             if (version == null)
             {
                 if (msg.Command != "version")
                     throw new ProtocolViolationException();
-                OnVersionMessageReceived(msg.Payload.AsSerializable<VersionPayload>());
+                OnVersionMessageReceived(msg.GetPayload<VersionPayload>());
                 return;
             }
             if (!verack)
@@ -53,47 +87,62 @@ namespace Neo.Network.P2P
             switch (msg.Command)
             {
                 case "addr":
-                    OnAddrMessageReceived(msg.Payload.AsSerializable<AddrPayload>());
+                    OnAddrMessageReceived(msg.GetPayload<AddrPayload>());
                     break;
                 case "block":
-                    OnInventoryReceived(msg.Payload.AsSerializable<Block>());
+                    OnInventoryReceived(msg.GetPayload<Block>());
                     break;
                 case "consensus":
-                    OnInventoryReceived(msg.Payload.AsSerializable<ConsensusPayload>());
+                    OnInventoryReceived(msg.GetPayload<ConsensusPayload>());
+                    break;
+                case "stateroot":
+                    OnInventoryReceived(msg.GetPayload<StateRoot>());
+                    break;
+                case "getroots":
+                    OnGetStateRootsReceived(msg.GetPayload<GetStateRootsPayload>());
+                    break;
+                case "roots":
+                    OnStateRootsReceived(msg.GetPayload<StateRootsPayload>());
                     break;
                 case "filteradd":
-                    OnFilterAddMessageReceived(msg.Payload.AsSerializable<FilterAddPayload>());
+                    OnFilterAddMessageReceived(msg.GetPayload<FilterAddPayload>());
                     break;
                 case "filterclear":
                     OnFilterClearMessageReceived();
                     break;
                 case "filterload":
-                    OnFilterLoadMessageReceived(msg.Payload.AsSerializable<FilterLoadPayload>());
+                    OnFilterLoadMessageReceived(msg.GetPayload<FilterLoadPayload>());
                     break;
                 case "getaddr":
                     OnGetAddrMessageReceived();
                     break;
                 case "getblocks":
-                    OnGetBlocksMessageReceived(msg.Payload.AsSerializable<GetBlocksPayload>());
+                    OnGetBlocksMessageReceived(msg.GetPayload<GetBlocksPayload>());
                     break;
                 case "getdata":
-                    OnGetDataMessageReceived(msg.Payload.AsSerializable<InvPayload>());
+                    OnGetDataMessageReceived(msg.GetPayload<InvPayload>());
                     break;
                 case "getheaders":
-                    OnGetHeadersMessageReceived(msg.Payload.AsSerializable<GetBlocksPayload>());
+                    OnGetHeadersMessageReceived(msg.GetPayload<GetBlocksPayload>());
                     break;
                 case "headers":
-                    OnHeadersMessageReceived(msg.Payload.AsSerializable<HeadersPayload>());
+                    OnHeadersMessageReceived(msg.GetPayload<HeadersPayload>());
                     break;
                 case "inv":
-                    OnInvMessageReceived(msg.Payload.AsSerializable<InvPayload>());
+                    OnInvMessageReceived(msg.GetPayload<InvPayload>());
                     break;
                 case "mempool":
                     OnMemPoolMessageReceived();
                     break;
+                case "ping":
+                    OnPingMessageReceived(msg.GetPayload<PingPayload>());
+                    break;
+                case "pong":
+                    OnPongMessageReceived(msg.GetPayload<PingPayload>());
+                    break;
                 case "tx":
                     if (msg.Payload.Length <= Transaction.MaxTransactionSize)
-                        OnInventoryReceived(Transaction.DeserializeFrom(msg.Payload));
+                        OnInventoryReceived(msg.GetTransaction());
                     break;
                 case "verack":
                 case "version":
@@ -101,8 +150,6 @@ namespace Neo.Network.P2P
                 case "alert":
                 case "merkleblock":
                 case "notfound":
-                case "ping":
-                case "pong":
                 case "reject":
                 default:
                     //暂时忽略
@@ -116,6 +163,32 @@ namespace Neo.Network.P2P
             {
                 EndPoints = payload.AddressList.Select(p => p.EndPoint)
             });
+        }
+
+        private void OnGetStateRootsReceived(GetStateRootsPayload payload)
+        {
+            var start_index = Math.Max(StateRootSentIndex, payload.StartIndex);
+            var count = Math.Min(payload.Count, StateRootsPayload.MaxStateRootsCount);
+            var end_index = payload.StartIndex + count;
+            if (end_index <= start_index) return;
+            var state_roots = new List<StateRoot>();
+            var cache = Blockchain.Singleton.Store.GetStateRoots();
+            for (uint i = start_index; i < end_index; i++)
+            {
+                var state = cache.TryGet(i);
+                if (state is null || state.Flag != StateRootVerifyFlag.Verified)
+                    break;
+                state_roots.Add(state.StateRoot);
+            }
+            if (state_roots.Count == 0) return;
+            StateRootSentIndex += (uint)(start_index + state_roots.Count);
+            Context.Parent.Tell(Message.Create("roots", StateRootsPayload.Create(state_roots.ToArray())));
+        }
+
+        private void OnStateRootsReceived(StateRootsPayload payload)
+        {
+            if (payload.StateRoots.Length == 0) return;
+            system.Blockchain.Tell(payload.StateRoots, Context.Parent);
         }
 
         private void OnFilterAddMessageReceived(FilterAddPayload payload)
@@ -241,11 +314,13 @@ namespace Neo.Network.P2P
             system.TaskManager.Tell(new TaskManager.TaskCompleted { Hash = inventory.Hash }, Context.Parent);
             if (inventory is MinerTransaction) return;
             system.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
+            pendingKnownHashes.Remove(inventory.Hash);
+            knownHashes.Add(inventory.Hash);
         }
 
         private void OnInvMessageReceived(InvPayload payload)
         {
-            UInt256[] hashes = payload.Hashes.Where(p => knownHashes.Add(p)).ToArray();
+            UInt256[] hashes = payload.Hashes.Where(p => !pendingKnownHashes.Contains(p) && !knownHashes.Contains(p) && !sentHashes.Contains(p)).ToArray();
             if (hashes.Length == 0) return;
             switch (payload.Type)
             {
@@ -259,6 +334,8 @@ namespace Neo.Network.P2P
                     break;
             }
             if (hashes.Length == 0) return;
+            foreach (UInt256 hash in hashes)
+                pendingKnownHashes.Add((hash, DateTime.UtcNow));
             system.TaskManager.Tell(new TaskManager.NewTasks { Payload = InvPayload.Create(payload.Type, hashes) }, Context.Parent);
         }
 
@@ -268,16 +345,49 @@ namespace Neo.Network.P2P
                 Context.Parent.Tell(Message.Create("inv", payload));
         }
 
+        private void OnPingMessageReceived(PingPayload payload)
+        {
+            Context.Parent.Tell(payload);
+            Context.Parent.Tell(Message.Create("pong", PingPayload.Create(Blockchain.Singleton.Height, payload.Nonce)));
+        }
+
+        private void OnPongMessageReceived(PingPayload payload)
+        {
+            Context.Parent.Tell(payload);
+        }
+
         private void OnVerackMessageReceived()
         {
             verack = true;
-            Context.Parent.Tell(new SetVerack());
+            Context.Parent.Tell("verack");
         }
 
         private void OnVersionMessageReceived(VersionPayload payload)
         {
             version = payload;
-            Context.Parent.Tell(new SetVersion { Version = payload });
+            Context.Parent.Tell(payload);
+        }
+
+        private void OnTimer()
+        {
+            RefreshPendingKnownHashes();
+        }
+
+        protected override void PostStop()
+        {
+            timer.CancelIfNotNull();
+            base.PostStop();
+        }
+
+        private void RefreshPendingKnownHashes()
+        {
+            while (pendingKnownHashes.Count > 0)
+            {
+                var (_, time) = pendingKnownHashes[0];
+                if (DateTime.UtcNow - time <= PendingTimeout)
+                    break;
+                pendingKnownHashes.RemoveAt(0);
+            }
         }
 
         public static Props Props(NeoSystem system)
@@ -293,9 +403,9 @@ namespace Neo.Network.P2P
         {
         }
 
-        protected override bool IsHighPriority(object message)
+        internal protected override bool IsHighPriority(object message)
         {
-            if (!(message is Message msg)) return true;
+            if (!(message is Message msg)) return false;
             switch (msg.Command)
             {
                 case "consensus":
@@ -311,15 +421,17 @@ namespace Neo.Network.P2P
             }
         }
 
-        protected override bool ShallDrop(object message, IEnumerable queue)
+        internal protected override bool ShallDrop(object message, IEnumerable queue)
         {
-            if (!(message is Message msg)) return false;
+            if (message is ProtocolHandler.Timer) return false;
+            if (!(message is Message msg)) return true;
             switch (msg.Command)
             {
                 case "getaddr":
                 case "getblocks":
                 case "getdata":
                 case "getheaders":
+                case "getroots":
                 case "mempool":
                     return queue.OfType<Message>().Any(p => p.Command == msg.Command);
                 default:

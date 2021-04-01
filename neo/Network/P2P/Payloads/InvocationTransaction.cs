@@ -12,7 +12,9 @@ namespace Neo.Network.P2P.Payloads
         public byte[] Script;
         public Fixed8 Gas;
 
-        public override int Size => base.Size + Script.GetVarSize();
+        public override int Size => base.Size  // Transaction base size
+           + Script.GetVarSize()               // Script variable size
+           + (Version >= 1 ? Gas.Size : 0);    // Gas Fixed8 size (for version >= 1)
 
         public override Fixed8 SystemFee => Gas;
 
@@ -37,9 +39,9 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        public static Fixed8 GetGas(Fixed8 consumed)
+        public static Fixed8 GetGas(Fixed8 consumed, Fixed8 freeAmount)
         {
-            Fixed8 gas = consumed - Fixed8.FromDecimal(10);
+            Fixed8 gas = consumed - freeAmount;
             if (gas <= Fixed8.Zero) return Fixed8.Zero;
             return gas.Ceiling();
         }
@@ -62,6 +64,7 @@ namespace Neo.Network.P2P.Payloads
         public override bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
         {
             if (Gas.GetData() % 100000000 != 0) return false;
+            if (References is null || NetworkFee < ProtocolSettings.Default.MinimumNetworkFee) return false;
             return base.Verify(snapshot, mempool);
         }
     }

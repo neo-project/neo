@@ -1,7 +1,6 @@
 ﻿using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
-using Neo.VM;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -92,14 +91,14 @@ namespace Neo.Ledger
             JObject json = base.ToJson();
             json["script_hash"] = ScriptHash.ToString();
             json["frozen"] = IsFrozen;
-            json["votes"] = new JArray(Votes.Select(p => (JObject)p.ToString()));
-            json["balances"] = new JArray(Balances.Select(p =>
+            json["votes"] = Votes.Select(p => (JObject)p.ToString()).ToArray();
+            json["balances"] = Balances.Select(p =>
             {
                 JObject balance = new JObject();
                 balance["asset"] = p.Key.ToString();
                 balance["value"] = p.Value.ToString();
                 return balance;
-            }));
+            }).ToArray();
             return json;
         }
     }

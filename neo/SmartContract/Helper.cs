@@ -115,7 +115,8 @@ namespace Neo.SmartContract
                 {
                     engine.LoadScript(verification);
                     engine.LoadScript(verifiable.Witnesses[i].InvocationScript);
-                    if (!engine.Execute()) return false;
+                    engine.Execute();
+                    if (engine.State.HasFlag(VMState.FAULT)) return false;
                     if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
                 }
             }

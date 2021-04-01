@@ -81,7 +81,7 @@ namespace Neo.Cryptography.ECC
             return p;
         }
 
-        private static ECPoint DecompressPoint(int yTilde, BigInteger X1, ECCurve curve)
+        public static ECPoint DecompressPoint(int yTilde, BigInteger X1, ECCurve curve)
         {
             ECFieldElement x = new ECFieldElement(X1, curve);
             ECFieldElement alpha = x * (x.Square() + curve.A) + curve.B;
@@ -124,13 +124,23 @@ namespace Neo.Cryptography.ECC
                     return curve.Infinity;
                 case 0x02:
                 case 0x03:
-                    reader.Read(buffer, 1, expectedLength);
-                    return DecodePoint(buffer.Take(1 + expectedLength).ToArray(), curve);
+                    {
+                        if (reader.Read(buffer, 1, expectedLength) != expectedLength)
+                        {
+                            throw new FormatException();
+                        }
+                        return DecodePoint(buffer.Take(1 + expectedLength).ToArray(), curve);
+                    }
                 case 0x04:
                 case 0x06:
                 case 0x07:
-                    reader.Read(buffer, 1, expectedLength * 2);
-                    return DecodePoint(buffer, curve);
+                    {
+                        if (reader.Read(buffer, 1, expectedLength * 2) != expectedLength * 2)
+                        {
+                            throw new FormatException();
+                        }
+                        return DecodePoint(buffer, curve);
+                    }
                 default:
                     throw new FormatException("Invalid point encoding " + buffer[0]);
             }

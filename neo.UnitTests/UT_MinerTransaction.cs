@@ -69,7 +69,7 @@ namespace Neo.UnitTests
             jObj["net_fee"].AsNumber().Should().Be(0);
             ((JArray)jObj["scripts"]).Count.Should().Be(0);
 
-            jObj["nonce"].AsNumber().Should().Be(42);            
+            jObj["nonce"].AsNumber().Should().Be(42);
         }
 
     }

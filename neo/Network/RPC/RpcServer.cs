@@ -23,25 +23,68 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
+using Neo.Trie.MPT;
 using Neo.VM;
 using Neo.Wallets;
-using Neo.Wallets.NEP6;
 
 namespace Neo.Network.RPC
 {
     public sealed class RpcServer : IDisposable
     {
-        public Wallet Wallet;
+        private class CheckWitnessHashes : IVerifiable
+        {
+            private readonly UInt160[] _scriptHashesForVerifying;
+            public Witness[] Witnesses { get; set; }
+            public int Size { get; }
+
+            public CheckWitnessHashes(UInt160[] scriptHashesForVerifying)
+            {
+                _scriptHashesForVerifying = scriptHashesForVerifying;
+            }
+
+            public void Serialize(BinaryWriter writer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void Deserialize(BinaryReader reader)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void DeserializeUnsigned(BinaryReader reader)
+            {
+                throw new NotImplementedException();
+            }
+
+            public UInt160[] GetScriptHashesForVerifying(Snapshot snapshot)
+            {
+                return _scriptHashesForVerifying;
+            }
+
+            public void SerializeUnsigned(BinaryWriter writer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public byte[] GetMessage()
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public Wallet Wallet { get; set; }
+        public Fixed8 ExtraGasInvoke { get; }
+        public int MaxConcurrentConnections { get; }
 
         private IWebHost host;
-        private Fixed8 maxGasInvoke;
         private readonly NeoSystem system;
 
-        public RpcServer(NeoSystem system, Wallet wallet = null, Fixed8 maxGasInvoke = default(Fixed8))
+        public RpcServer(NeoSystem system, Wallet wallet = null, Fixed8 extraGasInvoke = default)
         {
             this.system = system;
             this.Wallet = wallet;
-            this.maxGasInvoke = maxGasInvoke;
+            this.ExtraGasInvoke = extraGasInvoke;
         }
 
         private static JObject CreateErrorResponse(JObject id, int code, string message, JObject data = null)
@@ -72,45 +115,25 @@ namespace Neo.Network.RPC
             }
         }
 
-        private JObject GetInvokeResult(byte[] script)
+        private JObject GetInvokeResult(byte[] script, IVerifiable checkWitnessHashes = null)
         {
-            ApplicationEngine engine = ApplicationEngine.Run(script, extraGAS: maxGasInvoke);
-            JObject json = new JObject();
-            json["script"] = script.ToHexString();
-            json["state"] = engine.State;
-            json["gas_consumed"] = engine.GasConsumed.ToString();
-            try
+            using (ApplicationEngine engine = ApplicationEngine.Run(script, checkWitnessHashes, extraGAS: ExtraGasInvoke))
             {
-                json["stack"] = new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()));
-            }
-            catch (InvalidOperationException)
-            {
-                json["stack"] = "error: recursive reference";
-            }
-            if (Wallet != null)
-            {
-                InvocationTransaction tx = new InvocationTransaction
+                JObject json = new JObject();
+                json["script"] = script.ToHexString();
+                json["state"] = engine.State;
+                json["gas_consumed"] = engine.GasConsumed.ToString();
+                try
                 {
-                    Version = 1,
-                    Script = json["script"].AsString().HexToBytes(),
-                    Gas = Fixed8.Parse(json["gas_consumed"].AsString())
-                };
-                tx.Gas -= Fixed8.FromDecimal(10);
-                if (tx.Gas < Fixed8.Zero) tx.Gas = Fixed8.Zero;
-                tx.Gas = tx.Gas.Ceiling();
-                tx = Wallet.MakeTransaction(tx);
-                if (tx != null)
-                {
-                    ContractParametersContext context = new ContractParametersContext(tx);
-                    Wallet.Sign(context);
-                    if (context.Completed)
-                        tx.Witnesses = context.GetWitnesses();
-                    else
-                        tx = null;
+                    json["stack"] = new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()));
                 }
-                json["tx"] = tx?.ToArray().ToHexString();
+                catch (InvalidOperationException)
+                {
+                    json["stack"] = "error: recursive reference";
+                }
+
+                return json;
             }
-            return json;
         }
 
         private static JObject GetRelayResult(RelayResultReason reason)
@@ -134,450 +157,179 @@ namespace Neo.Network.RPC
             }
         }
 
-        public void OpenWallet(Wallet wallet)
-        {
-            this.Wallet = wallet;
-        }
-
         private JObject Process(string method, JArray _params)
         {
             switch (method)
             {
-                case "dumpprivkey":
-                    if (Wallet == null)
-                        throw new RpcException(-400, "Access denied");
-                    else
-                    {
-                        UInt160 scriptHash = _params[0].AsString().ToScriptHash();
-                        WalletAccount account = Wallet.GetAccount(scriptHash);
-                        return account.GetKey().Export();
-                    }
                 case "getaccountstate":
                     {
                         UInt160 script_hash = _params[0].AsString().ToScriptHash();
-                        AccountState account = Blockchain.Singleton.Store.GetAccounts().TryGet(script_hash) ?? new AccountState(script_hash);
-                        return account.ToJson();
+                        return GetAccountState(script_hash);
                     }
                 case "getassetstate":
                     {
                         UInt256 asset_id = UInt256.Parse(_params[0].AsString());
-                        AssetState asset = Blockchain.Singleton.Store.GetAssets().TryGet(asset_id);
-                        return asset?.ToJson() ?? throw new RpcException(-100, "Unknown asset");
-                    }
-                case "getbalance":
-                    if (Wallet == null)
-                        throw new RpcException(-400, "Access denied.");
-                    else
-                    {
-                        JObject json = new JObject();
-                        switch (UIntBase.Parse(_params[0].AsString()))
-                        {
-                            case UInt160 asset_id_160: //NEP-5 balance
-                                json["balance"] = Wallet.GetAvailable(asset_id_160).ToString();
-                                break;
-                            case UInt256 asset_id_256: //Global Assets balance
-                                IEnumerable<Coin> coins = Wallet.GetCoins().Where(p => !p.State.HasFlag(CoinState.Spent) && p.Output.AssetId.Equals(asset_id_256));
-                                json["balance"] = coins.Sum(p => p.Output.Value).ToString();
-                                json["confirmed"] = coins.Where(p => p.State.HasFlag(CoinState.Confirmed)).Sum(p => p.Output.Value).ToString();
-                                break;
-                        }
-                        return json;
+                        return GetAssetState(asset_id);
                     }
                 case "getbestblockhash":
-                    return Blockchain.Singleton.CurrentBlockHash.ToString();
+                    {
+                        return GetBestBlockHash();
+                    }
                 case "getblock":
                     {
-                        Block block;
-                        if (_params[0] is JNumber)
-                        {
-                            uint index = (uint)_params[0].AsNumber();
-                            block = Blockchain.Singleton.Store.GetBlock(index);
-                        }
-                        else
-                        {
-                            UInt256 hash = UInt256.Parse(_params[0].AsString());
-                            block = Blockchain.Singleton.Store.GetBlock(hash);
-                        }
-                        if (block == null)
-                            throw new RpcException(-100, "Unknown block");
-                        bool verbose = _params.Count >= 2 && _params[1].AsBooleanOrDefault(false);
-                        if (verbose)
-                        {
-                            JObject json = block.ToJson();
-                            json["confirmations"] = Blockchain.Singleton.Height - block.Index + 1;
-                            UInt256 hash = Blockchain.Singleton.Store.GetNextBlockHash(block.Hash);
-                            if (hash != null)
-                                json["nextblockhash"] = hash.ToString();
-                            return json;
-                        }
-                        return block.ToArray().ToHexString();
+                        JObject key = _params[0];
+                        bool verbose = _params.Count >= 2 && _params[1].AsBoolean();
+                        return GetBlock(key, verbose);
                     }
                 case "getblockcount":
-                    return Blockchain.Singleton.Height + 1;
+                    {
+                        return GetBlockCount();
+                    }
                 case "getblockhash":
                     {
-                        uint height = (uint)_params[0].AsNumber();
-                        if (height <= Blockchain.Singleton.Height)
-                        {
-                            return Blockchain.Singleton.GetBlockHash(height).ToString();
-                        }
-                        throw new RpcException(-100, "Invalid Height");
+                        uint height = uint.Parse(_params[0].AsString());
+                        return GetBlockHash(height);
                     }
                 case "getblockheader":
                     {
-                        Header header;
-                        if (_params[0] is JNumber)
-                        {
-                            uint height = (uint)_params[0].AsNumber();
-                            header = Blockchain.Singleton.Store.GetHeader(height);
-                        }
-                        else
-                        {
-                            UInt256 hash = UInt256.Parse(_params[0].AsString());
-                            header = Blockchain.Singleton.Store.GetHeader(hash);
-                        }
-                        if (header == null)
-                            throw new RpcException(-100, "Unknown block");
-
-                        bool verbose = _params.Count >= 2 && _params[1].AsBooleanOrDefault(false);
-                        if (verbose)
-                        {
-                            JObject json = header.ToJson();
-                            json["confirmations"] = Blockchain.Singleton.Height - header.Index + 1;
-                            UInt256 hash = Blockchain.Singleton.Store.GetNextBlockHash(header.Hash);
-                            if (hash != null)
-                                json["nextblockhash"] = hash.ToString();
-                            return json;
-                        }
-
-                        return header.ToArray().ToHexString();
+                        JObject key = _params[0];
+                        bool verbose = _params.Count >= 2 && _params[1].AsBoolean();
+                        return GetBlockHeader(key, verbose);
                     }
                 case "getblocksysfee":
                     {
-                        uint height = (uint)_params[0].AsNumber();
-                        if (height <= Blockchain.Singleton.Height)
-                        {
-                            return Blockchain.Singleton.Store.GetSysFeeAmount(height).ToString();
-                        }
-                        throw new RpcException(-100, "Invalid Height");
+                        uint height = uint.Parse(_params[0].AsString());
+                        return GetBlockSysFee(height);
                     }
                 case "getconnectioncount":
-                    return LocalNode.Singleton.ConnectedCount;
+                    {
+                        return GetConnectionCount();
+                    }
                 case "getcontractstate":
                     {
                         UInt160 script_hash = UInt160.Parse(_params[0].AsString());
-                        ContractState contract = Blockchain.Singleton.Store.GetContracts().TryGet(script_hash);
-                        return contract?.ToJson() ?? throw new RpcException(-100, "Unknown contract");
-                    }
-                case "getnewaddress":
-                    if (Wallet == null)
-                        throw new RpcException(-400, "Access denied");
-                    else
-                    {
-                        WalletAccount account = Wallet.CreateAccount();
-                        if (Wallet is NEP6Wallet nep6)
-                            nep6.Save();
-                        return account.Address;
+                        return GetContractState(script_hash);
                     }
                 case "getpeers":
                     {
-                        JObject json = new JObject();
-                        json["unconnected"] = new JArray(LocalNode.Singleton.GetUnconnectedPeers().Select(p =>
-                        {
-                            JObject peerJson = new JObject();
-                            peerJson["address"] = p.Address.ToString();
-                            peerJson["port"] = p.Port;
-                            return peerJson;
-                        }));
-                        json["bad"] = new JArray(); //badpeers has been removed
-                        json["connected"] = new JArray(LocalNode.Singleton.GetRemoteNodes().Select(p =>
-                        {
-                            JObject peerJson = new JObject();
-                            peerJson["address"] = p.Remote.Address.ToString();
-                            peerJson["port"] = p.ListenerPort;
-                            return peerJson;
-                        }));
-                        return json;
+                        return GetPeers();
                     }
                 case "getrawmempool":
                     {
-                        bool shouldGetUnverified = _params.Count >= 1 && _params[0].AsBooleanOrDefault(false);
-                        if (!shouldGetUnverified)
-                            return new JArray(Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => (JObject)p.Hash.ToString()));
-
-                        JObject json = new JObject();
-                        json["height"] = Blockchain.Singleton.Height;
-                        Blockchain.Singleton.MemPool.GetVerifiedAndUnverifiedTransactions(
-                            out IEnumerable<Transaction> verifiedTransactions,
-                            out IEnumerable<Transaction> unverifiedTransactions);
-                        json["verified"] = new JArray(verifiedTransactions.Select(p => (JObject) p.Hash.ToString()));
-                        json["unverified"] = new JArray(unverifiedTransactions.Select(p => (JObject) p.Hash.ToString()));
-                        return json;
+                        bool shouldGetUnverified = _params.Count >= 1 && _params[0].AsBoolean();
+                        return GetRawMemPool(shouldGetUnverified);
                     }
                 case "getrawtransaction":
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
-                        bool verbose = _params.Count >= 2 && _params[1].AsBooleanOrDefault(false);
-                        Transaction tx = Blockchain.Singleton.GetTransaction(hash);
-                        if (tx == null)
-                            throw new RpcException(-100, "Unknown transaction");
-                        if (verbose)
-                        {
-                            JObject json = tx.ToJson();
-                            uint? height = Blockchain.Singleton.Store.GetTransactions().TryGet(hash)?.BlockIndex;
-                            if (height != null)
-                            {
-                                Header header = Blockchain.Singleton.Store.GetHeader((uint)height);
-                                json["blockhash"] = header.Hash.ToString();
-                                json["confirmations"] = Blockchain.Singleton.Height - header.Index + 1;
-                                json["blocktime"] = header.Timestamp;
-                            }
-                            return json;
-                        }
-                        return tx.ToArray().ToHexString();
+                        bool verbose = _params.Count >= 2 && _params[1].AsBoolean();
+                        return GetRawTransaction(hash, verbose);
                     }
                 case "getstorage":
                     {
                         UInt160 script_hash = UInt160.Parse(_params[0].AsString());
                         byte[] key = _params[1].AsString().HexToBytes();
-                        StorageItem item = Blockchain.Singleton.Store.GetStorages().TryGet(new StorageKey
-                        {
-                            ScriptHash = script_hash,
-                            Key = key
-                        }) ?? new StorageItem();
-                        return item.Value?.ToHexString();
+                        return GetStorage(script_hash, key);
                     }
                 case "gettransactionheight":
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
-                        uint? height = Blockchain.Singleton.Store.GetTransactions().TryGet(hash)?.BlockIndex;
-                        if (height.HasValue) return height.Value;
-                        throw new RpcException(-100, "Unknown transaction");
+                        return GetTransactionHeight(hash);
                     }
                 case "gettxout":
                     {
                         UInt256 hash = UInt256.Parse(_params[0].AsString());
-                        ushort index = (ushort)_params[1].AsNumber();
-                        return Blockchain.Singleton.Store.GetUnspent(hash, index)?.ToJson(index);
+                        ushort index = ushort.Parse(_params[1].AsString());
+                        return GetTxOut(hash, index);
                     }
                 case "getvalidators":
-                    using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
                     {
-                        var validators = snapshot.GetValidators();
-                        return snapshot.GetEnrollments().Select(p =>
-                        {
-                            JObject validator = new JObject();
-                            validator["publickey"] = p.PublicKey.ToString();
-                            validator["votes"] = p.Votes.ToString();
-                            validator["active"] = validators.Contains(p.PublicKey);
-                            return validator;
-                        }).ToArray();
+                        return GetValidators();
                     }
                 case "getversion":
                     {
-                        JObject json = new JObject();
-                        json["port"] = LocalNode.Singleton.ListenerPort;
-                        json["nonce"] = LocalNode.Nonce;
-                        json["useragent"] = LocalNode.UserAgent;
-                        return json;
+                        return GetVersion();
                     }
-                case "getwalletheight":
-                    if (Wallet == null)
-                        throw new RpcException(-400, "Access denied.");
-                    else
-                        return (Wallet.WalletHeight > 0) ? Wallet.WalletHeight - 1 : 0;
                 case "invoke":
                     {
                         UInt160 script_hash = UInt160.Parse(_params[0].AsString());
                         ContractParameter[] parameters = ((JArray)_params[1]).Select(p => ContractParameter.FromJson(p)).ToArray();
-                        byte[] script;
-                        using (ScriptBuilder sb = new ScriptBuilder())
+                        CheckWitnessHashes checkWitnessHashes = null;
+                        if (_params.Count > 2)
                         {
-                            script = sb.EmitAppCall(script_hash, parameters).ToArray();
+                            UInt160[] scriptHashesForVerifying = _params.Skip(2).Select(u => UInt160.Parse(u.AsString())).ToArray();
+                            checkWitnessHashes = new CheckWitnessHashes(scriptHashesForVerifying);
                         }
-                        return GetInvokeResult(script);
+                        return Invoke(script_hash, parameters, checkWitnessHashes);
                     }
                 case "invokefunction":
                     {
                         UInt160 script_hash = UInt160.Parse(_params[0].AsString());
                         string operation = _params[1].AsString();
                         ContractParameter[] args = _params.Count >= 3 ? ((JArray)_params[2]).Select(p => ContractParameter.FromJson(p)).ToArray() : new ContractParameter[0];
-                        byte[] script;
-                        using (ScriptBuilder sb = new ScriptBuilder())
+                        CheckWitnessHashes checkWitnessHashes = null;
+                        if (_params.Count > 3)
                         {
-                            script = sb.EmitAppCall(script_hash, operation, args).ToArray();
+                            UInt160[] scriptHashesForVerifying = _params.Skip(3).Select(u => UInt160.Parse(u.AsString())).ToArray();
+                            checkWitnessHashes = new CheckWitnessHashes(scriptHashesForVerifying);
                         }
-                        return GetInvokeResult(script);
+                        return InvokeFunction(script_hash, operation, args, checkWitnessHashes);
                     }
                 case "invokescript":
                     {
                         byte[] script = _params[0].AsString().HexToBytes();
-                        return GetInvokeResult(script);
+                        CheckWitnessHashes checkWitnessHashes = null;
+                        if (_params.Count > 1)
+                        {
+                            UInt160[] scriptHashesForVerifying = _params.Skip(1).Select(u => UInt160.Parse(u.AsString())).ToArray();
+                            checkWitnessHashes = new CheckWitnessHashes(scriptHashesForVerifying);
+                        }
+                        return InvokeScript(script, checkWitnessHashes);
                     }
-                case "listaddress":
-                    if (Wallet == null)
-                        throw new RpcException(-400, "Access denied.");
-                    else
-                        return Wallet.GetAccounts().Select(p =>
-                        {
-                            JObject account = new JObject();
-                            account["address"] = p.Address;
-                            account["haskey"] = p.HasKey;
-                            account["label"] = p.Label;
-                            account["watchonly"] = p.WatchOnly;
-                            return account;
-                        }).ToArray();
-                case "sendfrom":
-                    if (Wallet == null)
-                        throw new RpcException(-400, "Access denied");
-                    else
+                case "listplugins":
                     {
-                        UIntBase assetId = UIntBase.Parse(_params[0].AsString());
-                        AssetDescriptor descriptor = new AssetDescriptor(assetId);
-                        UInt160 from = _params[1].AsString().ToScriptHash();
-                        UInt160 to = _params[2].AsString().ToScriptHash();
-                        BigDecimal value = BigDecimal.Parse(_params[3].AsString(), descriptor.Decimals);
-                        if (value.Sign <= 0)
-                            throw new RpcException(-32602, "Invalid params");
-                        Fixed8 fee = _params.Count >= 5 ? Fixed8.Parse(_params[4].AsString()) : Fixed8.Zero;
-                        if (fee < Fixed8.Zero)
-                            throw new RpcException(-32602, "Invalid params");
-                        UInt160 change_address = _params.Count >= 6 ? _params[5].AsString().ToScriptHash() : null;
-                        Transaction tx = Wallet.MakeTransaction(null, new[]
-                        {
-                            new TransferOutput
-                            {
-                                AssetId = assetId,
-                                Value = value,
-                                ScriptHash = to
-                            }
-                        }, from: from, change_address: change_address, fee: fee);
-                        if (tx == null)
-                            throw new RpcException(-300, "Insufficient funds");
-                        ContractParametersContext context = new ContractParametersContext(tx);
-                        Wallet.Sign(context);
-                        if (context.Completed)
-                        {
-                            tx.Witnesses = context.GetWitnesses();
-                            Wallet.ApplyTransaction(tx);
-                            system.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
-                            return tx.ToJson();
-                        }
-                        else
-                        {
-                            return context.ToJson();
-                        }
-                    }
-                case "sendmany":
-                    if (Wallet == null)
-                        throw new RpcException(-400, "Access denied");
-                    else
-                    {
-                        JArray to = (JArray)_params[0];
-                        if (to.Count == 0)
-                            throw new RpcException(-32602, "Invalid params");
-                        TransferOutput[] outputs = new TransferOutput[to.Count];
-                        for (int i = 0; i < to.Count; i++)
-                        {
-                            UIntBase asset_id = UIntBase.Parse(to[i]["asset"].AsString());
-                            AssetDescriptor descriptor = new AssetDescriptor(asset_id);
-                            outputs[i] = new TransferOutput
-                            {
-                                AssetId = asset_id,
-                                Value = BigDecimal.Parse(to[i]["value"].AsString(), descriptor.Decimals),
-                                ScriptHash = to[i]["address"].AsString().ToScriptHash()
-                            };
-                            if (outputs[i].Value.Sign <= 0)
-                                throw new RpcException(-32602, "Invalid params");
-                        }
-                        Fixed8 fee = _params.Count >= 2 ? Fixed8.Parse(_params[1].AsString()) : Fixed8.Zero;
-                        if (fee < Fixed8.Zero)
-                            throw new RpcException(-32602, "Invalid params");
-                        UInt160 change_address = _params.Count >= 3 ? _params[2].AsString().ToScriptHash() : null;
-                        Transaction tx = Wallet.MakeTransaction(null, outputs, change_address: change_address, fee: fee);
-                        if (tx == null)
-                            throw new RpcException(-300, "Insufficient funds");
-                        ContractParametersContext context = new ContractParametersContext(tx);
-                        Wallet.Sign(context);
-                        if (context.Completed)
-                        {
-                            tx.Witnesses = context.GetWitnesses();
-                            Wallet.ApplyTransaction(tx);
-                            system.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
-                            return tx.ToJson();
-                        }
-                        else
-                        {
-                            return context.ToJson();
-                        }
+                        return ListPlugins();
                     }
                 case "sendrawtransaction":
                     {
                         Transaction tx = Transaction.DeserializeFrom(_params[0].AsString().HexToBytes());
-                        RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(tx).Result;
-                        return GetRelayResult(reason);
-                    }
-                case "sendtoaddress":
-                    if (Wallet == null)
-                        throw new RpcException(-400, "Access denied");
-                    else
-                    {
-                        UIntBase assetId = UIntBase.Parse(_params[0].AsString());
-                        AssetDescriptor descriptor = new AssetDescriptor(assetId);
-                        UInt160 scriptHash = _params[1].AsString().ToScriptHash();
-                        BigDecimal value = BigDecimal.Parse(_params[2].AsString(), descriptor.Decimals);
-                        if (value.Sign <= 0)
-                            throw new RpcException(-32602, "Invalid params");
-                        Fixed8 fee = _params.Count >= 4 ? Fixed8.Parse(_params[3].AsString()) : Fixed8.Zero;
-                        if (fee < Fixed8.Zero)
-                            throw new RpcException(-32602, "Invalid params");
-                        UInt160 change_address = _params.Count >= 5 ? _params[4].AsString().ToScriptHash() : null;
-                        Transaction tx = Wallet.MakeTransaction(null, new[]
-                        {
-                            new TransferOutput
-                            {
-                                AssetId = assetId,
-                                Value = value,
-                                ScriptHash = scriptHash
-                            }
-                        }, change_address: change_address, fee: fee);
-                        if (tx == null)
-                            throw new RpcException(-300, "Insufficient funds");
-                        ContractParametersContext context = new ContractParametersContext(tx);
-                        Wallet.Sign(context);
-                        if (context.Completed)
-                        {
-                            tx.Witnesses = context.GetWitnesses();
-                            Wallet.ApplyTransaction(tx);
-                            system.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
-                            return tx.ToJson();
-                        }
-                        else
-                        {
-                            return context.ToJson();
-                        }
+                        return SendRawTransaction(tx);
                     }
                 case "submitblock":
                     {
                         Block block = _params[0].AsString().HexToBytes().AsSerializable<Block>();
-                        RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(block).Result;
-                        return GetRelayResult(reason);
+                        return SubmitBlock(block);
                     }
                 case "validateaddress":
                     {
-                        JObject json = new JObject();
-                        UInt160 scriptHash;
-                        try
-                        {
-                            scriptHash = _params[0].AsString().ToScriptHash();
-                        }
-                        catch
-                        {
-                            scriptHash = null;
-                        }
-                        json["address"] = _params[0];
-                        json["isvalid"] = scriptHash != null;
-                        return json;
+                        string address = _params[0].AsString();
+                        return ValidateAddress(address);
+                    }
+                case "getstateheight":
+                    {
+                        return GetStateHeight();
+                    }
+                case "getstateroot":
+                    {
+                        JObject param = _params[0];
+                        return GetStateRoot(param);
+                    }
+                case "getproof":
+                    {
+                        UInt256 state_root = UInt256.Parse(_params[0].AsString());
+                        UInt160 script_hash = UInt160.Parse(_params[1].AsString());
+                        byte[] store_key = _params[2].AsString().HexToBytes();
+                        return GetStateProof(state_root, script_hash, store_key);
+                    }
+                case "verifyproof":
+                    {
+                        UInt256 state_root = UInt256.Parse(_params[0].AsString());
+                        byte[] proof_bytes = _params[1].AsString().HexToBytes();
+                        return VerifyProof(state_root, proof_bytes);
+                    }
+                case "getminimumnetworkfee":
+                    {
+                        return GetMinimumNetworkFee();
                     }
                 default:
                     throw new RpcException(-32601, "Method not found");
@@ -662,12 +414,24 @@ namespace Neo.Network.RPC
                 string method = request["method"].AsString();
                 JArray _params = (JArray)request["params"];
                 foreach (IRpcPlugin plugin in Plugin.RpcPlugins)
+                    plugin.PreProcess(context, method, _params);
+                foreach (IRpcPlugin plugin in Plugin.RpcPlugins)
                 {
                     result = plugin.OnProcess(context, method, _params);
                     if (result != null) break;
                 }
                 if (result == null)
                     result = Process(method, _params);
+                foreach (IRpcPlugin plugin in Plugin.RpcPlugins)
+                    plugin.PostProcess(context, method, _params, result);
+            }
+            catch (FormatException)
+            {
+                return CreateErrorResponse(request["id"], -32602, "Invalid params");
+            }
+            catch (IndexOutOfRangeException)
+            {
+                return CreateErrorResponse(request["id"], -32602, "Invalid params");
             }
             catch (Exception ex)
             {
@@ -682,10 +446,24 @@ namespace Neo.Network.RPC
             return response;
         }
 
-        public void Start(IPAddress bindAddress, int port, string sslCert = null, string password = null, string[] trustedAuthorities = null)
+        public void Start(IPAddress bindAddress, int port, string sslCert = null, string password = null, string[] trustedAuthorities = null, int maxConcurrentConnections = 40)
         {
             host = new WebHostBuilder().UseKestrel(options => options.Listen(bindAddress, port, listenOptions =>
             {
+                // Default value is unlimited
+                if (maxConcurrentConnections == 0)
+                {
+                    options.Limits.MaxConcurrentConnections = 40;
+                }
+                else
+                {
+                    options.Limits.MaxConcurrentConnections = maxConcurrentConnections;
+                }
+                // Default value is 2 minutes
+                options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(1);
+                // Default value is 30 seconds
+                options.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(15);
+
                 if (string.IsNullOrEmpty(sslCert)) return;
                 listenOptions.UseHttps(sslCert, password, httpsConnectionAdapterOptions =>
                 {
@@ -723,6 +501,372 @@ namespace Neo.Network.RPC
             .Build();
 
             host.Start();
+        }
+
+        private JObject GetAccountState(UInt160 script_hash)
+        {
+            AccountState account = Blockchain.Singleton.Store.GetAccounts().TryGet(script_hash) ?? new AccountState(script_hash);
+            return account.ToJson();
+        }
+
+        private JObject GetAssetState(UInt256 asset_id)
+        {
+            AssetState asset = Blockchain.Singleton.Store.GetAssets().TryGet(asset_id);
+            return asset?.ToJson() ?? throw new RpcException(-100, "Unknown asset");
+        }
+
+        private JObject GetBestBlockHash()
+        {
+            return Blockchain.Singleton.CurrentBlockHash.ToString();
+        }
+
+        private JObject GetBlock(JObject key, bool verbose)
+        {
+            Block block;
+            if (key is JNumber)
+            {
+                uint index = uint.Parse(key.AsString());
+                block = Blockchain.Singleton.Store.GetBlock(index);
+            }
+            else
+            {
+                UInt256 hash = UInt256.Parse(key.AsString());
+                block = Blockchain.Singleton.Store.GetBlock(hash);
+            }
+            if (block == null)
+                throw new RpcException(-100, "Unknown block");
+            if (verbose)
+            {
+                JObject json = block.ToJson();
+                json["confirmations"] = Blockchain.Singleton.Height - block.Index + 1;
+                UInt256 hash = Blockchain.Singleton.Store.GetNextBlockHash(block.Hash);
+                if (hash != null)
+                    json["nextblockhash"] = hash.ToString();
+                return json;
+            }
+            return block.ToArray().ToHexString();
+        }
+
+        private JObject GetBlockCount()
+        {
+            return Blockchain.Singleton.Height + 1;
+        }
+
+        private JObject GetBlockHash(uint height)
+        {
+            if (height <= Blockchain.Singleton.Height)
+            {
+                return Blockchain.Singleton.GetBlockHash(height).ToString();
+            }
+            throw new RpcException(-100, "Invalid Height");
+        }
+
+        private JObject GetBlockHeader(JObject key, bool verbose)
+        {
+            Header header;
+            if (key is JNumber)
+            {
+                uint height = uint.Parse(key.AsString());
+                header = Blockchain.Singleton.Store.GetHeader(height);
+            }
+            else
+            {
+                UInt256 hash = UInt256.Parse(key.AsString());
+                header = Blockchain.Singleton.Store.GetHeader(hash);
+            }
+            if (header == null)
+                throw new RpcException(-100, "Unknown block");
+
+            if (verbose)
+            {
+                JObject json = header.ToJson();
+                json["confirmations"] = Blockchain.Singleton.Height - header.Index + 1;
+                UInt256 hash = Blockchain.Singleton.Store.GetNextBlockHash(header.Hash);
+                if (hash != null)
+                    json["nextblockhash"] = hash.ToString();
+                return json;
+            }
+
+            return header.ToArray().ToHexString();
+        }
+
+        private JObject GetBlockSysFee(uint height)
+        {
+            if (height <= Blockchain.Singleton.Height)
+            {
+                return Blockchain.Singleton.Store.GetSysFeeAmount(height).ToString();
+            }
+            throw new RpcException(-100, "Invalid Height");
+        }
+
+        private JObject GetConnectionCount()
+        {
+            return LocalNode.Singleton.ConnectedCount;
+        }
+
+        private JObject GetContractState(UInt160 script_hash)
+        {
+            ContractState contract = Blockchain.Singleton.Store.GetContracts().TryGet(script_hash);
+            return contract?.ToJson() ?? throw new RpcException(-100, "Unknown contract");
+        }
+
+        private JObject GetPeers()
+        {
+            JObject json = new JObject();
+            json["unconnected"] = new JArray(LocalNode.Singleton.GetUnconnectedPeers().Select(p =>
+            {
+                JObject peerJson = new JObject();
+                peerJson["address"] = p.Address.ToString();
+                peerJson["port"] = p.Port;
+                return peerJson;
+            }));
+            json["bad"] = new JArray(); //badpeers has been removed
+            json["connected"] = new JArray(LocalNode.Singleton.GetRemoteNodes().Select(p =>
+            {
+                JObject peerJson = new JObject();
+                peerJson["address"] = p.Remote.Address.ToString();
+                peerJson["port"] = p.ListenerPort;
+                return peerJson;
+            }));
+            return json;
+        }
+
+        private JObject GetRawMemPool(bool shouldGetUnverified)
+        {
+            if (!shouldGetUnverified)
+                return new JArray(Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => (JObject)p.Hash.ToString()));
+
+            JObject json = new JObject();
+            json["height"] = Blockchain.Singleton.Height;
+            Blockchain.Singleton.MemPool.GetVerifiedAndUnverifiedTransactions(
+                out IEnumerable<Transaction> verifiedTransactions,
+                out IEnumerable<Transaction> unverifiedTransactions);
+            json["verified"] = new JArray(verifiedTransactions.Select(p => (JObject)p.Hash.ToString()));
+            json["unverified"] = new JArray(unverifiedTransactions.Select(p => (JObject)p.Hash.ToString()));
+            return json;
+        }
+
+        private JObject GetRawTransaction(UInt256 hash, bool verbose)
+        {
+            Transaction tx = Blockchain.Singleton.GetTransaction(hash);
+            if (tx == null)
+                throw new RpcException(-100, "Unknown transaction");
+            if (verbose)
+            {
+                JObject json = tx.ToJson();
+                uint? height = Blockchain.Singleton.Store.GetTransactions().TryGet(hash)?.BlockIndex;
+                if (height != null)
+                {
+                    Header header = Blockchain.Singleton.Store.GetHeader((uint)height);
+                    json["blockhash"] = header.Hash.ToString();
+                    json["confirmations"] = Blockchain.Singleton.Height - header.Index + 1;
+                    json["blocktime"] = header.Timestamp;
+                }
+                return json;
+            }
+            return tx.ToArray().ToHexString();
+        }
+
+        private JObject GetStorage(UInt160 script_hash, byte[] key)
+        {
+            StorageItem item = Blockchain.Singleton.Store.GetStorages().TryGet(new StorageKey
+            {
+                ScriptHash = script_hash,
+                Key = key
+            }) ?? new StorageItem();
+            return item.Value?.ToHexString();
+        }
+
+        private JObject GetTransactionHeight(UInt256 hash)
+        {
+            uint? height = Blockchain.Singleton.Store.GetTransactions().TryGet(hash)?.BlockIndex;
+            if (height.HasValue) return height.Value;
+            throw new RpcException(-100, "Unknown transaction");
+        }
+
+        private JObject GetTxOut(UInt256 hash, ushort index)
+        {
+            return Blockchain.Singleton.Store.GetUnspent(hash, index)?.ToJson(index);
+        }
+
+        private JObject GetValidators()
+        {
+            using (Snapshot snapshot = Blockchain.Singleton.GetSnapshot())
+            {
+                var validators = snapshot.GetValidators();
+                return snapshot.GetEnrollments().Select(p =>
+                {
+                    JObject validator = new JObject();
+                    validator["publickey"] = p.PublicKey.ToString();
+                    validator["votes"] = p.Votes.ToString();
+                    validator["active"] = validators.Contains(p.PublicKey);
+                    return validator;
+                }).ToArray();
+            }
+        }
+
+        private JObject GetVersion()
+        {
+            JObject json = new JObject();
+            json["port"] = LocalNode.Singleton.ListenerPort;
+            json["nonce"] = LocalNode.Nonce;
+            json["useragent"] = LocalNode.UserAgent;
+            return json;
+        }
+
+        private JObject Invoke(UInt160 script_hash, ContractParameter[] parameters, IVerifiable checkWitnessHashes = null)
+        {
+            byte[] script;
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                script = sb.EmitAppCall(script_hash, parameters).ToArray();
+            }
+            return GetInvokeResult(script, checkWitnessHashes);
+        }
+
+        private JObject InvokeFunction(UInt160 script_hash, string operation, ContractParameter[] args, IVerifiable checkWitnessHashes = null)
+        {
+            byte[] script;
+            using (ScriptBuilder sb = new ScriptBuilder())
+            {
+                script = sb.EmitAppCall(script_hash, operation, args).ToArray();
+            }
+            return GetInvokeResult(script, checkWitnessHashes);
+        }
+
+        private JObject InvokeScript(byte[] script, IVerifiable checkWitnessHashes = null)
+        {
+            return GetInvokeResult(script, checkWitnessHashes);
+        }
+
+        private JObject ListPlugins()
+        {
+            return new JArray(Plugin.Plugins
+                .OrderBy(u => u.Name)
+                .Select(u => new JObject
+                {
+                    ["name"] = u.Name,
+                    ["version"] = u.Version.ToString(),
+                    ["interfaces"] = new JArray(u.GetType().GetInterfaces()
+                        .Select(p => p.Name)
+                        .Where(p => p.EndsWith("Plugin"))
+                        .Select(p => (JObject)p))
+                }));
+        }
+
+        private JObject SendRawTransaction(Transaction tx)
+        {
+            RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(tx).Result;
+            return GetRelayResult(reason);
+        }
+
+        private JObject SubmitBlock(Block block)
+        {
+            RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(block).Result;
+            return GetRelayResult(reason);
+        }
+
+        private JObject ValidateAddress(string address)
+        {
+            JObject json = new JObject();
+            UInt160 scriptHash;
+            try
+            {
+                scriptHash = address.ToScriptHash();
+            }
+            catch
+            {
+                scriptHash = null;
+            }
+            json["address"] = address;
+            json["isvalid"] = scriptHash != null;
+            return json;
+        }
+
+        private JObject GetStateHeight()
+        {
+            var json = new JObject();
+            json["blockheight"] = Blockchain.Singleton.Height;
+            json["stateheight"] = Blockchain.Singleton.StateHeight;
+            return json;
+        }
+
+        private JObject GetStateRoot(JObject key)
+        {
+            StateRootState state = null;
+            if (key is JNumber)
+            {
+                state = Blockchain.Singleton.GetStateRoot((uint)key.AsNumber());
+            }
+            else if (key is JString)
+            {
+                var hash = UInt256.Parse(key.AsString());
+                state = Blockchain.Singleton.GetStateRoot(hash);
+            }
+            else
+            {
+                throw new RpcException(-100, "Invalid parameter.");
+            }
+            if (state is null) throw new RpcException(-100, "Unknown state root.");
+            return state.ToJson();
+        }
+
+        private JObject GetStateProof(UInt256 state_root, UInt160 script_hash, byte[] store_key)
+        {
+            JObject json = new JObject();
+            var skey = new StorageKey
+            {
+                ScriptHash = script_hash,
+                Key = store_key,
+            };
+            var result = Blockchain.Singleton.GetStateProof(state_root, skey, out HashSet<byte[]> proof);
+            json["success"] = result;
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms, Encoding.UTF8))
+            {
+                writer.WriteVarBytes(skey.ToArray());
+                writer.WriteVarInt(proof.Count);
+                foreach (var item in proof)
+                {
+                    writer.WriteVarBytes(item);
+                }
+                writer.Flush();
+                json["proof"] = ms.ToArray().ToHexString();
+            }
+
+            return json;
+        }
+
+        private JObject GetMinimumNetworkFee()
+        {
+            return ProtocolSettings.Default.MinimumNetworkFee.ToString();
+        }
+
+        private JObject VerifyProof(UInt256 state_root, byte[] proof_bytes)
+        {
+            var json = new JObject();
+            var proof = new HashSet<byte[]>(ByteArrayEqualityComparer.Default);
+            byte[] key;
+            using (MemoryStream ms = new MemoryStream(proof_bytes, false))
+            using (BinaryReader reader = new BinaryReader(ms, Encoding.UTF8))
+            {
+                key = reader.ReadVarBytes(ExtensionNode.MaxKeyLength);
+                var count = reader.ReadVarInt();
+                for (ulong i = 0; i < count; i++)
+                {
+                    proof.Add(reader.ReadVarBytes());
+                }
+            }
+            var result = Blockchain.Singleton.VerifyProof(state_root, key, proof, out byte[] value);
+            if (!result)
+            {
+                json = "invalid";
+            }
+            else
+            {
+                json["value"] = value.ToHexString();
+            }
+            return json;
         }
     }
 }

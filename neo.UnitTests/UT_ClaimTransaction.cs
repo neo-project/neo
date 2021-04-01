@@ -19,7 +19,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Claims_Get()
         {
-            uut.Claims.Should().BeNull();            
+            uut.Claims.Should().BeNull();
         }
 
         [TestMethod]
@@ -101,7 +101,7 @@ namespace Neo.UnitTests
             jObj["net_fee"].AsString().Should().Be("0");
             ((JArray)jObj["scripts"]).Count.Should().Be(0);
 
-            JArray claims = (JArray) jObj["claims"];
+            JArray claims = (JArray)jObj["claims"];
             claims.Count.Should().Be(1);
             claims[0]["txid"].AsString().Should().Be("0x2020202020202020202020202020202020202020202020202020202020202042");
             claims[0]["vout"].AsNumber().Should().Be(0);

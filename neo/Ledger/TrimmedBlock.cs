@@ -57,7 +57,7 @@ namespace Neo.Ledger
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Hashes = reader.ReadSerializableArray<UInt256>();
+            Hashes = reader.ReadSerializableArray<UInt256>(Block.MaxTransactionsPerBlock);
         }
 
         public override void Serialize(BinaryWriter writer)

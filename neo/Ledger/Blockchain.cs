@@ -9,28 +9,32 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
+using Neo.Trie.MPT;
 using Neo.VM;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
 namespace Neo.Ledger
 {
-    public sealed class Blockchain : UntypedActor
+    public sealed partial class Blockchain : UntypedActor
     {
-        public class Register { }
         public class ApplicationExecuted { public Transaction Transaction; public ApplicationExecutionResult[] ExecutionResults; }
         public class PersistCompleted { public Block Block; }
         public class Import { public IEnumerable<Block> Blocks; }
         public class ImportCompleted { }
+        public class FillMemoryPool { public IEnumerable<Transaction> Transactions; }
+        public class FillCompleted { }
 
         public static readonly uint SecondsPerBlock = ProtocolSettings.Default.SecondsPerBlock;
         public const uint DecrementInterval = 2000000;
-        public const uint MaxValidators = 1024;
+        public const int MaxValidators = 1024;
         public static readonly uint[] GenerationAmount = { 8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
         public static readonly TimeSpan TimePerBlock = TimeSpan.FromSeconds(SecondsPerBlock);
         public static readonly ECPoint[] StandbyValidators = ProtocolSettings.Default.StandbyValidators.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
+        public static readonly uint FreeGasChangeHeight = ProtocolSettings.Default.FreeGasChangeHeight;
 
 #pragma warning disable CS0612
         public static readonly RegisterTransaction GoverningToken = new RegisterTransaction
@@ -117,18 +121,17 @@ namespace Neo.Ledger
         private readonly NeoSystem system;
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
-        private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
+        private readonly ConcurrentDictionary<UInt256, Block> block_cache = new ConcurrentDictionary<UInt256, Block>();
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache RelayCache = new RelayCache(100);
-        private readonly HashSet<IActorRef> subscribers = new HashSet<IActorRef>();
         private Snapshot currentSnapshot;
 
         public Store Store { get; }
         public MemoryPool MemPool { get; }
         public uint Height => currentSnapshot.Height;
-        public uint HeaderHeight => (uint)header_index.Count - 1;
+        public uint HeaderHeight => currentSnapshot.HeaderHeight;
         public UInt256 CurrentBlockHash => currentSnapshot.CurrentBlockHash;
-        public UInt256 CurrentHeaderHash => header_index[header_index.Count - 1];
+        public UInt256 CurrentHeaderHash => currentSnapshot.CurrentHeaderHash;
 
         private static Blockchain singleton;
         public static Blockchain Singleton
@@ -193,12 +196,6 @@ namespace Neo.Ledger
             return Store.ContainsTransaction(hash);
         }
 
-        private void Distribute(object message)
-        {
-            foreach (IActorRef subscriber in subscribers)
-                subscriber.Tell(message);
-        }
-
         public Block GetBlock(UInt256 hash)
         {
             if (block_cache.TryGetValue(hash, out Block block))
@@ -253,6 +250,33 @@ namespace Neo.Ledger
             blocks.AddLast(block);
         }
 
+        private void OnFillMemoryPool(IEnumerable<Transaction> transactions)
+        {
+            // Invalidate all the transactions in the memory pool, to avoid any failures when adding new transactions.
+            MemPool.InvalidateAllTransactions();
+
+            // Add the transactions to the memory pool
+            foreach (var tx in transactions)
+            {
+                if (tx.Type == TransactionType.MinerTransaction)
+                    continue;
+                if (Store.ContainsTransaction(tx.Hash))
+                    continue;
+                if (!Plugin.CheckPolicy(tx))
+                    continue;
+                // First remove the tx if it is unverified in the pool.
+                MemPool.TryRemoveUnVerified(tx.Hash, out _);
+                // Verify the the transaction
+                if (!tx.Verify(currentSnapshot, MemPool.GetVerifiedTransactions()))
+                    continue;
+                // Add to the memory pool
+                MemPool.TryAdd(tx.Hash, tx);
+            }
+            // Transactions originally in the pool will automatically be reverified based on their priority.
+
+            Sender.Tell(new FillCompleted());
+        }
+
         private RelayResultReason OnNewBlock(Block block)
         {
             if (block.Index <= Height)
@@ -292,8 +316,9 @@ namespace Neo.Ledger
                     block_cache_unverified.Remove(blockToPersist.Index);
                     Persist(blockToPersist);
 
-                    if (blocksPersisted++ < blocksToPersistList.Count - 2) continue;
-                    // Relay most recent 2 blocks persisted
+                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, (15 - SecondsPerBlock)))) continue;
+                    // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
+                    // Increase in the rate of 1 block per second in configurations with faster blocks
 
                     if (blockToPersist.Index + 100 >= header_index.Count)
                         system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = blockToPersist });
@@ -309,7 +334,7 @@ namespace Neo.Ledger
             }
             else
             {
-                block_cache.Add(block.Hash, block);
+                block_cache.TryAdd(block.Hash, block);
                 if (block.Index + 100 >= header_index.Count)
                     system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = block });
                 if (block.Index == header_index.Count)
@@ -369,42 +394,50 @@ namespace Neo.Ledger
 
         private RelayResultReason OnNewTransaction(Transaction transaction)
         {
-            if (transaction.Type == TransactionType.MinerTransaction)
-                return RelayResultReason.Invalid;
-            if (ContainsTransaction(transaction.Hash))
-                return RelayResultReason.AlreadyExists;
-            if (!MemPool.CanTransactionFitInPool(transaction))
-                return RelayResultReason.OutOfMemory;
-            if (!transaction.Verify(currentSnapshot, MemPool.GetVerifiedTransactions()))
-                return RelayResultReason.Invalid;
-            if (!Plugin.CheckPolicy(transaction))
-                return RelayResultReason.PolicyFail;
+            try
+            {
+                if (transaction.Type == TransactionType.MinerTransaction)
+                    return RelayResultReason.Invalid;
+                if (ContainsTransaction(transaction.Hash))
+                    return RelayResultReason.AlreadyExists;
+                if (!MemPool.CanTransactionFitInPool(transaction))
+                    return RelayResultReason.OutOfMemory;
+                if (!transaction.Verify(currentSnapshot, MemPool.GetVerifiedTransactions()))
+                    return RelayResultReason.Invalid;
+                if (!Plugin.CheckPolicy(transaction))
+                    return RelayResultReason.PolicyFail;
 
-            if (!MemPool.TryAdd(transaction.Hash, transaction))
-                return RelayResultReason.OutOfMemory;
-
+                if (!MemPool.TryAdd(transaction.Hash, transaction))
+                    return RelayResultReason.OutOfMemory;
+            }
+            catch
+            {
+                return RelayResultReason.Error;
+            }
             system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = transaction });
             return RelayResultReason.Succeed;
         }
 
         private void OnPersistCompleted(Block block)
         {
-            block_cache.Remove(block.Hash);
+            block_cache.TryRemove(block.Hash, out _);
             MemPool.UpdatePoolForBlockPersisted(block, currentSnapshot);
-            PersistCompleted completed = new PersistCompleted { Block = block };
-            system.Consensus?.Tell(completed);
-            Distribute(completed);
+            Context.System.EventStream.Publish(new PersistCompleted { Block = block });
+            CheckRootOnBlockPersistCompleted();
         }
 
         protected override void OnReceive(object message)
         {
             switch (message)
             {
-                case Register _:
-                    OnRegister();
-                    break;
                 case Import import:
                     OnImport(import.Blocks);
+                    break;
+                case ImportRoots importRoots:
+                    OnImportRoots(importRoots.Roots);
+                    break;
+                case FillMemoryPool fill:
+                    OnFillMemoryPool(fill.Transactions);
                     break;
                 case Header[] headers:
                     OnNewHeaders(headers);
@@ -415,6 +448,12 @@ namespace Neo.Ledger
                 case Transaction transaction:
                     Sender.Tell(OnNewTransaction(transaction));
                     break;
+                case StateRoot stateRoot:
+                    OnNewStateRoot(stateRoot);
+                    break;
+                case StateRoot[] stateRoots:
+                    OnStateRoots(stateRoots);
+                    break;
                 case ConsensusPayload payload:
                     Sender.Tell(OnNewConsensus(payload));
                     break;
@@ -422,16 +461,7 @@ namespace Neo.Ledger
                     if (MemPool.ReVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot))
                         Self.Tell(Idle.Instance, ActorRefs.NoSender);
                     break;
-                case Terminated terminated:
-                    subscribers.Remove(terminated.ActorRef);
-                    break;
             }
-        }
-
-        private void OnRegister()
-        {
-            subscribers.Add(Sender);
-            Context.Watch(Sender);
         }
 
         private void Persist(Block block)
@@ -572,7 +602,8 @@ namespace Neo.Ledger
                             using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, snapshot.Clone(), tx_invocation.Gas))
                             {
                                 engine.LoadScript(tx_invocation.Script);
-                                if (engine.Execute())
+                                engine.Execute();
+                                if (!engine.State.HasFlag(VMState.FAULT))
                                 {
                                     engine.Service.Commit();
                                 }
@@ -595,7 +626,7 @@ namespace Neo.Ledger
                             Transaction = tx,
                             ExecutionResults = execution_results.ToArray()
                         };
-                        Distribute(application_executed);
+                        Context.System.EventStream.Publish(application_executed);
                         all_application_executed.Add(application_executed);
                     }
                 }
@@ -630,6 +661,7 @@ namespace Neo.Ledger
                 }
                 if (commitExceptions != null) throw new AggregateException(commitExceptions);
             }
+            PersistLocalStateRoot();
             UpdateCurrentSnapshot();
             OnPersistCompleted(block);
         }
@@ -725,12 +757,14 @@ namespace Neo.Ledger
         {
         }
 
-        protected override bool IsHighPriority(object message)
+        internal protected override bool IsHighPriority(object message)
         {
             switch (message)
             {
                 case Header[] _:
                 case Block _:
+                case StateRoot _:
+                case StateRoot[] _:
                 case ConsensusPayload _:
                 case Terminated _:
                     return true;

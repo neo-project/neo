@@ -28,7 +28,7 @@ namespace Neo.Wallets.NEP6
 
         public override string Name => name;
         public override Version Version => version;
-        public override uint WalletHeight => indexer.IndexHeight;
+        public override uint WalletHeight => indexer != null ? indexer.IndexHeight : default;
 
         public NEP6Wallet(WalletIndexer indexer, string path, string name = null)
         {
@@ -46,7 +46,8 @@ namespace Neo.Wallets.NEP6
                 this.Scrypt = ScryptParameters.FromJson(wallet["scrypt"]);
                 this.accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson(p, this)).ToDictionary(p => p.ScriptHash);
                 this.extra = wallet["extra"];
-                indexer.RegisterAccounts(accounts.Keys);
+
+                indexer?.RegisterAccounts(accounts.Keys);
             }
             else
             {
@@ -56,7 +57,11 @@ namespace Neo.Wallets.NEP6
                 this.accounts = new Dictionary<UInt160, NEP6Account>();
                 this.extra = JObject.Null;
             }
-            indexer.WalletTransaction += WalletIndexer_WalletTransaction;
+
+            if (indexer != null)
+            {
+                indexer.WalletTransaction += WalletIndexer_WalletTransaction;
+            }
         }
 
         private void AddAccount(NEP6Account account, bool is_import)
@@ -86,7 +91,7 @@ namespace Neo.Wallets.NEP6
                 }
                 else
                 {
-                    indexer.RegisterAccounts(new[] { account.ScriptHash }, is_import ? 0 : Blockchain.Singleton.Height);
+                    indexer?.RegisterAccounts(new[] { account.ScriptHash }, is_import ? 0 : Blockchain.Singleton.Height);
                 }
                 accounts[account.ScriptHash] = account;
             }
@@ -177,14 +182,17 @@ namespace Neo.Wallets.NEP6
             }
             if (removed)
             {
-                indexer.UnregisterAccounts(new[] { scriptHash });
+                indexer?.UnregisterAccounts(new[] { scriptHash });
             }
             return removed;
         }
 
         public override void Dispose()
         {
-            indexer.WalletTransaction -= WalletIndexer_WalletTransaction;
+            if (indexer != null)
+            {
+                indexer.WalletTransaction -= WalletIndexer_WalletTransaction;
+            }
         }
 
         public override Coin[] FindUnspentCoins(UInt256 asset_id, Fixed8 amount, UInt160[] from)
@@ -212,6 +220,9 @@ namespace Neo.Wallets.NEP6
 
         public override IEnumerable<Coin> GetCoins(IEnumerable<UInt160> accounts)
         {
+            if (indexer == null)
+                return Enumerable.Empty<Coin>();
+
             if (unconfirmed.Count == 0)
                 return indexer.GetCoins(accounts);
             else
@@ -265,12 +276,15 @@ namespace Neo.Wallets.NEP6
 
         public override IEnumerable<UInt256> GetTransactions()
         {
-            foreach (UInt256 hash in indexer.GetTransactions(accounts.Keys))
-                yield return hash;
-            lock (unconfirmed)
+            if (indexer != null)
             {
-                foreach (UInt256 hash in unconfirmed.Keys)
+                foreach (UInt256 hash in indexer.GetTransactions(accounts.Keys))
                     yield return hash;
+                lock (unconfirmed)
+                {
+                    foreach (UInt256 hash in unconfirmed.Keys)
+                        yield return hash;
+                }
             }
         }
 

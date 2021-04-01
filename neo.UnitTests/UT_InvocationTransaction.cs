@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 
 namespace Neo.UnitTests
@@ -58,6 +59,12 @@ namespace Neo.UnitTests
 
             byte[] val = TestUtils.GetByteArray(32, 0x42);
             uut.Script = val;
+
+            //SIZE: SIZE_TX + Script.GetVarSize() + (Version >= 1 ? Gas.Size : 0)
+            //SIZE_TX: sizeof(TransactionType) + sizeof(byte) + Attributes.GetVarSize() + Inputs.GetVarSize() + Outputs.GetVarSize() + Witnesses.GetVarSize();
+            uut.Version.Should().Be(0);
+            uut.Script.Length.Should().Be(32);
+            uut.Script.GetVarSize().Should().Be(33);
             uut.Size.Should().Be(39); // 1, 1, 1, 1, 1, 1 + script 33
         }
 

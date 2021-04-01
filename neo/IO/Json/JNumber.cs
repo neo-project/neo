@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Reflection;
 using System.Text;
 
 namespace Neo.IO.Json
@@ -16,34 +15,7 @@ namespace Neo.IO.Json
 
         public override bool AsBoolean()
         {
-            if (Value == 0)
-                return false;
-            return true;
-        }
-
-        public override T AsEnum<T>(bool ignoreCase = false)
-        {
-            Type t = typeof(T);
-            TypeInfo ti = t.GetTypeInfo();
-            if (!ti.IsEnum)
-                throw new InvalidCastException();
-            if (ti.GetEnumUnderlyingType() == typeof(byte))
-                return (T)Enum.ToObject(t, (byte)Value);
-            if (ti.GetEnumUnderlyingType() == typeof(int))
-                return (T)Enum.ToObject(t, (int)Value);
-            if (ti.GetEnumUnderlyingType() == typeof(long))
-                return (T)Enum.ToObject(t, (long)Value);
-            if (ti.GetEnumUnderlyingType() == typeof(sbyte))
-                return (T)Enum.ToObject(t, (sbyte)Value);
-            if (ti.GetEnumUnderlyingType() == typeof(short))
-                return (T)Enum.ToObject(t, (short)Value);
-            if (ti.GetEnumUnderlyingType() == typeof(uint))
-                return (T)Enum.ToObject(t, (uint)Value);
-            if (ti.GetEnumUnderlyingType() == typeof(ulong))
-                return (T)Enum.ToObject(t, (ulong)Value);
-            if (ti.GetEnumUnderlyingType() == typeof(ushort))
-                return (T)Enum.ToObject(t, (ushort)Value);
-            throw new InvalidCastException();
+            return Value != 0 && !double.IsNaN(Value);
         }
 
         public override double AsNumber()
@@ -53,21 +25,9 @@ namespace Neo.IO.Json
 
         public override string AsString()
         {
+            if (double.IsPositiveInfinity(Value)) return "Infinity";
+            if (double.IsNegativeInfinity(Value)) return "-Infinity";
             return Value.ToString();
-        }
-
-        public override bool CanConvertTo(Type type)
-        {
-            if (type == typeof(bool))
-                return true;
-            if (type == typeof(double))
-                return true;
-            if (type == typeof(string))
-                return true;
-            TypeInfo ti = type.GetTypeInfo();
-            if (ti.IsEnum && Enum.IsDefined(type, Convert.ChangeType(Value, ti.GetEnumUnderlyingType())))
-                return true;
-            return false;
         }
 
         internal static JNumber Parse(TextReader reader)
@@ -92,7 +52,7 @@ namespace Neo.IO.Json
 
         public override string ToString()
         {
-            return Value.ToString();
+            return AsString();
         }
 
         public DateTime ToTimestamp()
@@ -100,6 +60,22 @@ namespace Neo.IO.Json
             if (Value < 0 || Value > ulong.MaxValue)
                 throw new InvalidCastException();
             return ((ulong)Value).ToDateTime();
+        }
+
+        public override T TryGetEnum<T>(T defaultValue = default, bool ignoreCase = false)
+        {
+            Type enumType = typeof(T);
+            object value;
+            try
+            {
+                value = Convert.ChangeType(Value, enumType.GetEnumUnderlyingType());
+            }
+            catch (OverflowException)
+            {
+                return defaultValue;
+            }
+            object result = Enum.ToObject(enumType, value);
+            return Enum.IsDefined(enumType, result) ? (T)result : defaultValue;
         }
     }
 }

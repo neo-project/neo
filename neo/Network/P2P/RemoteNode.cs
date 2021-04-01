@@ -29,6 +29,7 @@ namespace Neo.Network.P2P
         public IPEndPoint Listener => new IPEndPoint(Remote.Address, ListenerPort);
         public override int ListenerPort => Version?.Port ?? 0;
         public VersionPayload Version { get; private set; }
+        public uint LastBlockIndex { get; private set; }
 
         public RemoteNode(NeoSystem system, object connection, IPEndPoint remote, IPEndPoint local)
             : base(connection, remote, local)
@@ -62,7 +63,10 @@ namespace Neo.Network.P2P
                 case "getaddr":
                 case "getblocks":
                 case "getheaders":
+                case "getroots":
                 case "mempool":
+                case "ping":
+                case "pong":
                     is_single = true;
                     break;
             }
@@ -114,15 +118,27 @@ namespace Neo.Network.P2P
                 case Relay relay:
                     OnRelay(relay.Inventory);
                     break;
-                case ProtocolHandler.SetVersion setVersion:
-                    OnSetVersion(setVersion.Version);
+                case VersionPayload payload:
+                    OnVersionPayload(payload);
                     break;
-                case ProtocolHandler.SetVerack _:
-                    OnSetVerack();
+                case "verack":
+                    OnVerack();
                     break;
                 case ProtocolHandler.SetFilter setFilter:
                     OnSetFilter(setFilter.Filter);
                     break;
+                case PingPayload payload:
+                    OnPingPayload(payload);
+                    break;
+            }
+        }
+
+        private void OnPingPayload(PingPayload payload)
+        {
+            if (payload.LastBlockIndex > LastBlockIndex)
+            {
+                LastBlockIndex = payload.LastBlockIndex;
+                system.TaskManager.Tell(new TaskManager.Update { LastBlockIndex = LastBlockIndex });
             }
         }
 
@@ -153,16 +169,17 @@ namespace Neo.Network.P2P
             bloom_filter = filter;
         }
 
-        private void OnSetVerack()
+        private void OnVerack()
         {
             verack = true;
             system.TaskManager.Tell(new TaskManager.Register { Version = Version });
             CheckMessageQueue();
         }
 
-        private void OnSetVersion(VersionPayload version)
+        private void OnVersionPayload(VersionPayload version)
         {
             this.Version = version;
+            this.LastBlockIndex = Version.StartHeight;
             if (version.Nonce == LocalNode.Nonce)
             {
                 Disconnect(true);
@@ -227,7 +244,7 @@ namespace Neo.Network.P2P
         {
         }
 
-        protected override bool IsHighPriority(object message)
+        internal protected override bool IsHighPriority(object message)
         {
             switch (message)
             {

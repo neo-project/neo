@@ -3,57 +3,18 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
 using Neo.VM.Types;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Neo.SmartContract
 {
     public class ApplicationEngine : ExecutionEngine
     {
-        #region Limits
-        /// <summary>
-        /// Max value for SHL and SHR
-        /// </summary>
-        public const int Max_SHL_SHR = ushort.MaxValue;
-        /// <summary>
-        /// Min value for SHL and SHR
-        /// </summary>
-        public const int Min_SHL_SHR = -Max_SHL_SHR;
-        /// <summary>
-        /// Set the max size allowed size for BigInteger
-        /// </summary>
-        public const int MaxSizeForBigInteger = 32;
-        /// <summary>
-        /// Set the max Stack Size
-        /// </summary>
-        public const uint MaxStackSize = 2 * 1024;
-        /// <summary>
-        /// Set Max Item Size
-        /// </summary>
-        public const uint MaxItemSize = 1024 * 1024;
-        /// <summary>
-        /// Set Max Invocation Stack Size
-        /// </summary>
-        public const uint MaxInvocationStackSize = 1024;
-        /// <summary>
-        /// Set Max Array Size
-        /// </summary>
-        public const uint MaxArraySize = 1024;
-        #endregion
-
         private const long ratio = 100000;
-        private const long gas_free = 10 * 100000000;
+        private const long gas_free = 1000000000;
+        private const long gas_free_new = 5000000000;
         private readonly long gas_amount;
         private long gas_consumed = 0;
         private readonly bool testMode;
         private readonly Snapshot snapshot;
-
-        private int stackitem_count = 0;
-        private bool is_stackitem_count_strict = true;
 
         public Fixed8 GasConsumed => new Fixed8(gas_consumed);
         public new NeoService Service => (NeoService)base.Service;
@@ -61,326 +22,22 @@ namespace Neo.SmartContract
         public ApplicationEngine(TriggerType trigger, IScriptContainer container, Snapshot snapshot, Fixed8 gas, bool testMode = false)
             : base(container, Cryptography.Crypto.Default, snapshot, new NeoService(trigger, snapshot))
         {
-            this.gas_amount = gas_free + gas.GetData();
+            if (snapshot.Height < Blockchain.FreeGasChangeHeight)
+                this.gas_amount = gas_free + gas.GetData();
+            else
+                this.gas_amount = gas_free_new + gas.GetData();
             this.testMode = testMode;
             this.snapshot = snapshot;
         }
 
-        private bool CheckArraySize(OpCode nextInstruction)
+        private bool CheckDynamicInvoke()
         {
-            int size;
-            switch (nextInstruction)
-            {
-                case OpCode.PACK:
-                case OpCode.NEWARRAY:
-                case OpCode.NEWSTRUCT:
-                    {
-                        if (CurrentContext.EvaluationStack.Count == 0) return false;
-                        size = (int)CurrentContext.EvaluationStack.Peek().GetBigInteger();
-                    }
-                    break;
-                case OpCode.SETITEM:
-                    {
-                        if (CurrentContext.EvaluationStack.Count < 3) return false;
-                        if (!(CurrentContext.EvaluationStack.Peek(2) is Map map)) return true;
-                        StackItem key = CurrentContext.EvaluationStack.Peek(1);
-                        if (key is ICollection) return false;
-                        if (map.ContainsKey(key)) return true;
-                        size = map.Count + 1;
-                    }
-                    break;
-                case OpCode.APPEND:
-                    {
-                        if (CurrentContext.EvaluationStack.Count < 2) return false;
-                        if (!(CurrentContext.EvaluationStack.Peek(1) is Array array)) return false;
-                        size = array.Count + 1;
-                    }
-                    break;
-                default:
-                    return true;
-            }
-            return size <= MaxArraySize;
-        }
-
-        private bool CheckInvocationStack(OpCode nextInstruction)
-        {
-            switch (nextInstruction)
-            {
-                case OpCode.CALL:
-                case OpCode.APPCALL:
-                case OpCode.CALL_I:
-                case OpCode.CALL_E:
-                case OpCode.CALL_ED:
-                    if (InvocationStack.Count >= MaxInvocationStackSize) return false;
-                    return true;
-                default:
-                    return true;
-            }
-        }
-
-        private bool CheckItemSize(OpCode nextInstruction)
-        {
-            switch (nextInstruction)
-            {
-                case OpCode.PUSHDATA4:
-                    {
-                        if (CurrentContext.InstructionPointer + 4 >= CurrentContext.Script.Length)
-                            return false;
-                        uint length = CurrentContext.Script.ToUInt32(CurrentContext.InstructionPointer + 1);
-                        if (length > MaxItemSize) return false;
-                        return true;
-                    }
-                case OpCode.CAT:
-                    {
-                        if (CurrentContext.EvaluationStack.Count < 2) return false;
-                        int length = CurrentContext.EvaluationStack.Peek(0).GetByteArray().Length + CurrentContext.EvaluationStack.Peek(1).GetByteArray().Length;
-                        if (length > MaxItemSize) return false;
-                        return true;
-                    }
-                default:
-                    return true;
-            }
-        }
-
-        /// <summary>
-        /// Check if the BigInteger is allowed for numeric operations
-        /// </summary>
-        /// <param name="value">Value</param>
-        /// <returns>Return True if are allowed, otherwise False</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool CheckBigInteger(BigInteger value)
-        {
-            return value.ToByteArray().Length <= MaxSizeForBigInteger;
-        }
-
-        /// <summary>
-        /// Check if the BigInteger is allowed for numeric operations
-        /// </summary>
-        private bool CheckBigIntegers(OpCode nextInstruction)
-        {
-            switch (nextInstruction)
-            {
-                case OpCode.SHL:
-                    {
-                        BigInteger ishift = CurrentContext.EvaluationStack.Peek(0).GetBigInteger();
-
-                        if ((ishift > Max_SHL_SHR || ishift < Min_SHL_SHR))
-                            return false;
-
-                        BigInteger x = CurrentContext.EvaluationStack.Peek(1).GetBigInteger();
-
-                        if (!CheckBigInteger(x << (int)ishift))
-                            return false;
-
-                        break;
-                    }
-                case OpCode.SHR:
-                    {
-                        BigInteger ishift = CurrentContext.EvaluationStack.Peek(0).GetBigInteger();
-
-                        if ((ishift > Max_SHL_SHR || ishift < Min_SHL_SHR))
-                            return false;
-
-                        BigInteger x = CurrentContext.EvaluationStack.Peek(1).GetBigInteger();
-
-                        if (!CheckBigInteger(x >> (int)ishift))
-                            return false;
-
-                        break;
-                    }
-                case OpCode.INC:
-                    {
-                        BigInteger x = CurrentContext.EvaluationStack.Peek().GetBigInteger();
-
-                        if (!CheckBigInteger(x) || !CheckBigInteger(x + 1))
-                            return false;
-
-                        break;
-                    }
-                case OpCode.DEC:
-                    {
-                        BigInteger x = CurrentContext.EvaluationStack.Peek().GetBigInteger();
-
-                        if (!CheckBigInteger(x) || (x.Sign <= 0 && !CheckBigInteger(x - 1)))
-                            return false;
-
-                        break;
-                    }
-                case OpCode.ADD:
-                    {
-                        BigInteger x2 = CurrentContext.EvaluationStack.Peek().GetBigInteger();
-                        BigInteger x1 = CurrentContext.EvaluationStack.Peek(1).GetBigInteger();
-
-                        if (!CheckBigInteger(x2) || !CheckBigInteger(x1) || !CheckBigInteger(x1 + x2))
-                            return false;
-
-                        break;
-                    }
-                case OpCode.SUB:
-                    {
-                        BigInteger x2 = CurrentContext.EvaluationStack.Peek().GetBigInteger();
-                        BigInteger x1 = CurrentContext.EvaluationStack.Peek(1).GetBigInteger();
-
-                        if (!CheckBigInteger(x2) || !CheckBigInteger(x1) || !CheckBigInteger(x1 - x2))
-                            return false;
-
-                        break;
-                    }
-                case OpCode.MUL:
-                    {
-                        BigInteger x2 = CurrentContext.EvaluationStack.Peek().GetBigInteger();
-                        BigInteger x1 = CurrentContext.EvaluationStack.Peek(1).GetBigInteger();
-
-                        int lx1 = x1.ToByteArray().Length;
-
-                        if (lx1 > MaxSizeForBigInteger)
-                            return false;
-
-                        int lx2 = x2.ToByteArray().Length;
-
-                        if ((lx1 + lx2) > MaxSizeForBigInteger)
-                            return false;
-
-                        break;
-                    }
-                case OpCode.DIV:
-                    {
-                        BigInteger x2 = CurrentContext.EvaluationStack.Peek().GetBigInteger();
-                        BigInteger x1 = CurrentContext.EvaluationStack.Peek(1).GetBigInteger();
-
-                        if (!CheckBigInteger(x2) || !CheckBigInteger(x1))
-                            return false;
-
-                        break;
-                    }
-                case OpCode.MOD:
-                    {
-                        BigInteger x2 = CurrentContext.EvaluationStack.Peek().GetBigInteger();
-                        BigInteger x1 = CurrentContext.EvaluationStack.Peek(1).GetBigInteger();
-
-                        if (!CheckBigInteger(x2) || !CheckBigInteger(x1))
-                            return false;
-
-                        break;
-                    }
-            }
-
-            return true;
-        }
-
-        private bool CheckStackSize(OpCode nextInstruction)
-        {
-            if (nextInstruction <= OpCode.PUSH16)
-                stackitem_count += 1;
-            else
-                switch (nextInstruction)
-                {
-                    case OpCode.JMPIF:
-                    case OpCode.JMPIFNOT:
-                    case OpCode.DROP:
-                    case OpCode.NIP:
-                    case OpCode.EQUAL:
-                    case OpCode.BOOLAND:
-                    case OpCode.BOOLOR:
-                    case OpCode.CHECKMULTISIG:
-                    case OpCode.REVERSE:
-                    case OpCode.HASKEY:
-                    case OpCode.THROWIFNOT:
-                        stackitem_count -= 1;
-                        is_stackitem_count_strict = false;
-                        break;
-                    case OpCode.XSWAP:
-                    case OpCode.ROLL:
-                    case OpCode.CAT:
-                    case OpCode.LEFT:
-                    case OpCode.RIGHT:
-                    case OpCode.AND:
-                    case OpCode.OR:
-                    case OpCode.XOR:
-                    case OpCode.ADD:
-                    case OpCode.SUB:
-                    case OpCode.MUL:
-                    case OpCode.DIV:
-                    case OpCode.MOD:
-                    case OpCode.SHL:
-                    case OpCode.SHR:
-                    case OpCode.NUMEQUAL:
-                    case OpCode.NUMNOTEQUAL:
-                    case OpCode.LT:
-                    case OpCode.GT:
-                    case OpCode.LTE:
-                    case OpCode.GTE:
-                    case OpCode.MIN:
-                    case OpCode.MAX:
-                    case OpCode.CHECKSIG:
-                    case OpCode.CALL_ED:
-                    case OpCode.CALL_EDT:
-                        stackitem_count -= 1;
-                        break;
-                    case OpCode.RET:
-                    case OpCode.APPCALL:
-                    case OpCode.TAILCALL:
-                    case OpCode.NOT:
-                    case OpCode.ARRAYSIZE:
-                        is_stackitem_count_strict = false;
-                        break;
-                    case OpCode.SYSCALL:
-                    case OpCode.PICKITEM:
-                    case OpCode.SETITEM:
-                    case OpCode.APPEND:
-                    case OpCode.VALUES:
-                        stackitem_count = int.MaxValue;
-                        is_stackitem_count_strict = false;
-                        break;
-                    case OpCode.DUPFROMALTSTACK:
-                    case OpCode.DEPTH:
-                    case OpCode.DUP:
-                    case OpCode.OVER:
-                    case OpCode.TUCK:
-                    case OpCode.NEWMAP:
-                        stackitem_count += 1;
-                        break;
-                    case OpCode.XDROP:
-                    case OpCode.REMOVE:
-                        stackitem_count -= 2;
-                        is_stackitem_count_strict = false;
-                        break;
-                    case OpCode.SUBSTR:
-                    case OpCode.WITHIN:
-                    case OpCode.VERIFY:
-                        stackitem_count -= 2;
-                        break;
-                    case OpCode.UNPACK:
-                        stackitem_count += (int)CurrentContext.EvaluationStack.Peek().GetBigInteger();
-                        is_stackitem_count_strict = false;
-                        break;
-                    case OpCode.NEWARRAY:
-                    case OpCode.NEWSTRUCT:
-                        stackitem_count += ((Array)CurrentContext.EvaluationStack.Peek()).Count;
-                        break;
-                    case OpCode.KEYS:
-                        stackitem_count += ((Array)CurrentContext.EvaluationStack.Peek()).Count;
-                        is_stackitem_count_strict = false;
-                        break;
-                }
-            if (stackitem_count <= MaxStackSize) return true;
-            if (is_stackitem_count_strict) return false;
-            stackitem_count = GetItemCount(InvocationStack.SelectMany(p => p.EvaluationStack.Concat(p.AltStack)));
-            if (stackitem_count > MaxStackSize) return false;
-            is_stackitem_count_strict = true;
-            return true;
-        }
-
-        private bool CheckDynamicInvoke(OpCode nextInstruction)
-        {
-            switch (nextInstruction)
+            Instruction instruction = CurrentContext.CurrentInstruction;
+            switch (instruction.OpCode)
             {
                 case OpCode.APPCALL:
                 case OpCode.TAILCALL:
-                    for (int i = CurrentContext.InstructionPointer + 1; i < CurrentContext.InstructionPointer + 21; i++)
-                    {
-                        if (CurrentContext.Script[i] != 0) return true;
-                    }
+                    if (instruction.Operand.NotZero()) return true;
                     // if we get this far it is a dynamic call
                     // now look at the current executing script
                     // to determine if it can do dynamic calls
@@ -399,70 +56,11 @@ namespace Neo.SmartContract
             Service.Dispose();
         }
 
-        public new bool Execute()
+        protected virtual long GetPrice()
         {
-            try
-            {
-                while (true)
-                {
-                    OpCode nextOpcode = CurrentContext.InstructionPointer >= CurrentContext.Script.Length ? OpCode.RET : CurrentContext.NextInstruction;
-                    if (!PreStepInto(nextOpcode))
-                    {
-                        State |= VMState.FAULT;
-                        return false;
-                    }
-                    StepInto();
-                    if (State.HasFlag(VMState.HALT) || State.HasFlag(VMState.FAULT))
-                        break;
-                    if (!PostStepInto(nextOpcode))
-                    {
-                        State |= VMState.FAULT;
-                        return false;
-                    }
-                }
-            }
-            catch
-            {
-                State |= VMState.FAULT;
-                return false;
-            }
-            return !State.HasFlag(VMState.FAULT);
-        }
-
-        private static int GetItemCount(IEnumerable<StackItem> items)
-        {
-            Queue<StackItem> queue = new Queue<StackItem>(items);
-            List<StackItem> counted = new List<StackItem>();
-            int count = 0;
-            while (queue.Count > 0)
-            {
-                StackItem item = queue.Dequeue();
-                count++;
-                switch (item)
-                {
-                    case Array array:
-                        if (counted.Any(p => ReferenceEquals(p, array)))
-                            continue;
-                        counted.Add(array);
-                        foreach (StackItem subitem in array)
-                            queue.Enqueue(subitem);
-                        break;
-                    case Map map:
-                        if (counted.Any(p => ReferenceEquals(p, map)))
-                            continue;
-                        counted.Add(map);
-                        foreach (StackItem subitem in map.Values)
-                            queue.Enqueue(subitem);
-                        break;
-                }
-            }
-            return count;
-        }
-
-        protected virtual long GetPrice(OpCode nextInstruction)
-        {
-            if (nextInstruction <= OpCode.NOP) return 0;
-            switch (nextInstruction)
+            Instruction instruction = CurrentContext.CurrentInstruction;
+            if (instruction.OpCode <= OpCode.NOP) return 0;
+            switch (instruction.OpCode)
             {
                 case OpCode.APPCALL:
                 case OpCode.TAILCALL:
@@ -497,14 +95,10 @@ namespace Neo.SmartContract
 
         protected virtual long GetPriceForSysCall()
         {
-            if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length - 3)
-                return 1;
-            byte length = CurrentContext.Script[CurrentContext.InstructionPointer + 1];
-            if (CurrentContext.InstructionPointer > CurrentContext.Script.Length - length - 2)
-                return 1;
-            uint api_hash = length == 4
-                ? System.BitConverter.ToUInt32(CurrentContext.Script, CurrentContext.InstructionPointer + 2)
-                : Encoding.ASCII.GetString(CurrentContext.Script, CurrentContext.InstructionPointer + 2, length).ToInteropMethodHash();
+            Instruction instruction = CurrentContext.CurrentInstruction;
+            uint api_hash = instruction.Operand.Length == 4
+                ? instruction.TokenU32
+                : instruction.TokenString.ToInteropMethodHash();
             long price = Service.GetPrice(api_hash);
             if (price > 0) return price;
             if (api_hash == "Neo.Asset.Create".ToInteropMethodHash() ||
@@ -540,23 +134,13 @@ namespace Neo.SmartContract
             return 1;
         }
 
-        private bool PostStepInto(OpCode nextOpcode)
-        {
-            if (!CheckStackSize(nextOpcode)) return false;
-            return true;
-        }
-
-        private bool PreStepInto(OpCode nextOpcode)
+        protected override bool PreExecuteInstruction()
         {
             if (CurrentContext.InstructionPointer >= CurrentContext.Script.Length)
                 return true;
-            gas_consumed = checked(gas_consumed + GetPrice(nextOpcode) * ratio);
+            gas_consumed = checked(gas_consumed + GetPrice() * ratio);
             if (!testMode && gas_consumed > gas_amount) return false;
-            if (!CheckItemSize(nextOpcode)) return false;
-            if (!CheckArraySize(nextOpcode)) return false;
-            if (!CheckInvocationStack(nextOpcode)) return false;
-            if (!CheckBigIntegers(nextOpcode)) return false;
-            if (!CheckDynamicInvoke(nextOpcode)) return false;
+            if (!CheckDynamicInvoke()) return false;
             return true;
         }
 

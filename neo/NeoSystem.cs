@@ -8,14 +8,12 @@ using Neo.Plugins;
 using Neo.Wallets;
 using System;
 using System.Net;
+using System.Threading;
 
 namespace Neo
 {
     public class NeoSystem : IDisposable
     {
-        private Peer.Start start_message = null;
-        private bool suspend = false;
-
         public ActorSystem ActorSystem { get; } = ActorSystem.Create(nameof(NeoSystem),
             $"akka {{ log-dead-letters = off }}" +
             $"blockchain-mailbox {{ mailbox-type: \"{typeof(BlockchainMailbox).AssemblyQualifiedName}\" }}" +
@@ -29,19 +27,35 @@ namespace Neo
         public IActorRef Consensus { get; private set; }
         public RpcServer RpcServer { get; private set; }
 
+        private readonly Store store;
+        private Peer.Start start_message = null;
+        private bool suspend = false;
+
         public NeoSystem(Store store)
         {
+            this.store = store;
+            Plugin.LoadPlugins(this);
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this, store));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
-            Plugin.LoadPlugins(this);
+            Plugin.NotifyPluginsLoadedAfterSystemConstructed();
         }
 
         public void Dispose()
         {
             RpcServer?.Dispose();
-            ActorSystem.Stop(LocalNode);
+            EnsureStoped(LocalNode);
+            // Dispose will call ActorSystem.Terminate()
             ActorSystem.Dispose();
+            ActorSystem.WhenTerminated.Wait();
+        }
+
+        public void EnsureStoped(IActorRef actor)
+        {
+            Inbox inbox = Inbox.Create(ActorSystem);
+            inbox.Watch(actor);
+            ActorSystem.Stop(actor);
+            inbox.Receive(TimeSpan.FromMinutes(5));
         }
 
         internal void ResumeNodeStartup()
@@ -54,21 +68,22 @@ namespace Neo
             }
         }
 
-        public void StartConsensus(Wallet wallet)
+        public void StartConsensus(Wallet wallet, Store consensus_store = null, bool ignoreRecoveryLogs = false)
         {
-            Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.TaskManager, wallet));
-            Consensus.Tell(new ConsensusService.Start());
+            Consensus = ActorSystem.ActorOf(ConsensusService.Props(this.LocalNode, this.TaskManager, consensus_store ?? store, wallet));
+            Consensus.Tell(new ConsensusService.Start { IgnoreRecoveryLogs = ignoreRecoveryLogs }, Blockchain);
         }
 
         public void StartNode(int port = 0, int wsPort = 0, int minDesiredConnections = Peer.DefaultMinDesiredConnections,
-            int maxConnections = Peer.DefaultMaxConnections)
+            int maxConnections = Peer.DefaultMaxConnections, int maxConnectionsPerAddress = 3)
         {
             start_message = new Peer.Start
             {
                 Port = port,
                 WsPort = wsPort,
                 MinDesiredConnections = minDesiredConnections,
-                MaxConnections = maxConnections
+                MaxConnections = maxConnections,
+                MaxConnectionsPerAddress = maxConnectionsPerAddress
             };
             if (!suspend)
             {
@@ -78,10 +93,10 @@ namespace Neo
         }
 
         public void StartRpc(IPAddress bindAddress, int port, Wallet wallet = null, string sslCert = null, string password = null,
-            string[] trustedAuthorities = null, Fixed8 maxGasInvoke = default(Fixed8))
+            string[] trustedAuthorities = null, Fixed8 extraGasInvoke = default, int maxConcurrentConnections = 40)
         {
-            RpcServer = new RpcServer(this, wallet, maxGasInvoke);
-            RpcServer.Start(bindAddress, port, sslCert, password, trustedAuthorities);
+            RpcServer = new RpcServer(this, wallet, extraGasInvoke);
+            RpcServer.Start(bindAddress, port, sslCert, password, trustedAuthorities, maxConcurrentConnections);
         }
 
         internal void SuspendNodeStartup()

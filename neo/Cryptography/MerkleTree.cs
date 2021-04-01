@@ -1,13 +1,14 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Cryptography
 {
     public class MerkleTree
     {
-        private MerkleTreeNode root;
+        private readonly MerkleTreeNode root;
 
         public int Depth { get; private set; }
 
@@ -25,6 +26,8 @@ namespace Neo.Cryptography
         {
             if (leaves.Length == 0) throw new ArgumentException();
             if (leaves.Length == 1) return leaves[0];
+
+            var buffer = new byte[64];
             MerkleTreeNode[] parents = new MerkleTreeNode[(leaves.Length + 1) / 2];
             for (int i = 0; i < parents.Length; i++)
             {
@@ -40,9 +43,18 @@ namespace Neo.Cryptography
                     parents[i].RightChild = leaves[i * 2 + 1];
                     leaves[i * 2 + 1].Parent = parents[i];
                 }
-                parents[i].Hash = new UInt256(Crypto.Default.Hash256(parents[i].LeftChild.Hash.ToArray().Concat(parents[i].RightChild.Hash.ToArray()).ToArray()));
+                parents[i].Hash = Concat(buffer, parents[i].LeftChild.Hash, parents[i].RightChild.Hash);
             }
             return Build(parents); //TailCall
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static UInt256 Concat(byte[] buffer, UInt256 hash1, UInt256 hash2)
+        {
+            Buffer.BlockCopy(hash1.ToArray(), 0, buffer, 0, 32);
+            Buffer.BlockCopy(hash2.ToArray(), 0, buffer, 32, 32);
+
+            return new UInt256(Crypto.Default.Hash256(buffer));
         }
 
         public static UInt256 ComputeRoot(UInt256[] hashes)

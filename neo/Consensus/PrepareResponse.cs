@@ -1,12 +1,14 @@
-﻿using System.IO;
+﻿using Neo.IO;
+using System.IO;
 
 namespace Neo.Consensus
 {
-    internal class PrepareResponse : ConsensusMessage
+    public class PrepareResponse : ConsensusMessage
     {
-        public byte[] Signature;
+        public UInt256 PreparationHash;
+        public byte[] StateRootSignature;
 
-        public override int Size => base.Size + Signature.Length;
+        public override int Size => base.Size + PreparationHash.Size + StateRootSignature.Length;
 
         public PrepareResponse()
             : base(ConsensusMessageType.PrepareResponse)
@@ -16,13 +18,15 @@ namespace Neo.Consensus
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Signature = reader.ReadBytes(64);
+            PreparationHash = reader.ReadSerializable<UInt256>();
+            StateRootSignature = reader.ReadBytes(64);
         }
 
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);
-            writer.Write(Signature);
+            writer.Write(PreparationHash);
+            writer.Write(StateRootSignature);
         }
     }
 }

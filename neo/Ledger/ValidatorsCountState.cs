@@ -25,7 +25,7 @@ namespace Neo.Ledger
         public override void Deserialize(BinaryReader reader)
         {
             base.Deserialize(reader);
-            Votes = reader.ReadSerializableArray<Fixed8>();
+            Votes = reader.ReadSerializableArray<Fixed8>(Blockchain.MaxValidators);
         }
 
         void ICloneable<ValidatorsCountState>.FromReplica(ValidatorsCountState replica)

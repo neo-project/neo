@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace Neo.Persistence.LevelDB
 {
-    internal class DbCache<TKey, TValue> : DataCache<TKey, TValue>
+    public class DbCache<TKey, TValue> : DataCache<TKey, TValue>
         where TKey : IEquatable<TKey>, ISerializable, new()
         where TValue : class, ICloneable<TValue>, ISerializable, new()
     {

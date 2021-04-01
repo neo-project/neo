@@ -264,7 +264,7 @@ namespace Neo.UnitTests
             byte[] requiredData = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0 };
 
             data.Length.Should().Be(25);
-            for (int i=0; i<25; i++)
+            for (int i = 0; i < 25; i++)
             {
                 data[i].Should().Be(requiredData[i]);
             }

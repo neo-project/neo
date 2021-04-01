@@ -115,7 +115,7 @@ namespace Neo.UnitTests
             JObject jObj = uut.ToJson();
             jObj.Should().NotBeNull();
             jObj["usage"].AsString().Should().Be("ECDH02");
-            jObj["data"].AsString().Should().Be("42202020202020202020");           
+            jObj["data"].AsString().Should().Be("42202020202020202020");
         }
     }
 }

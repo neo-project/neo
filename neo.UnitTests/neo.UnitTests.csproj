@@ -9,6 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Update="protocol.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="4.19.4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="1.2.0" />

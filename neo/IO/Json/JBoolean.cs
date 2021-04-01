@@ -17,18 +17,14 @@ namespace Neo.IO.Json
             return Value;
         }
 
+        public override double AsNumber()
+        {
+            return Value ? 1 : 0;
+        }
+
         public override string AsString()
         {
             return Value.ToString().ToLower();
-        }
-
-        public override bool CanConvertTo(Type type)
-        {
-            if (type == typeof(bool))
-                return true;
-            if (type == typeof(string))
-                return true;
-            return false;
         }
 
         internal static JBoolean Parse(TextReader reader)
@@ -61,7 +57,7 @@ namespace Neo.IO.Json
 
         public override string ToString()
         {
-            return Value.ToString().ToLower();
+            return AsString();
         }
     }
 }
