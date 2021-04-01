@@ -27,7 +27,7 @@ namespace Neo.UnitTests.Network.P2P
         }
 
         [TestMethod]
-        public void RemoteNode_Test_Abort_DifferentMagic()
+        public void RemoteNode_Test_Abort_DifferentNetwork()
         {
             var connectionTestProbe = CreateTestProbe();
             var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, new LocalNode(testBlockchain), connectionTestProbe, null, null));
@@ -36,7 +36,7 @@ namespace Neo.UnitTests.Network.P2P
             {
                 UserAgent = "".PadLeft(1024, '0'),
                 Nonce = 1,
-                Magic = 2,
+                Network = 2,
                 Timestamp = 5,
                 Version = 6,
                 Capabilities = new NodeCapability[]
@@ -52,7 +52,7 @@ namespace Neo.UnitTests.Network.P2P
         }
 
         [TestMethod]
-        public void RemoteNode_Test_Accept_IfSameMagic()
+        public void RemoteNode_Test_Accept_IfSameNetwork()
         {
             var connectionTestProbe = CreateTestProbe();
             var remoteNodeActor = ActorOfAsTestActorRef(() => new RemoteNode(testBlockchain, new LocalNode(testBlockchain), connectionTestProbe, new IPEndPoint(IPAddress.Parse("192.168.1.2"), 8080), new IPEndPoint(IPAddress.Parse("192.168.1.1"), 8080)));
@@ -61,7 +61,7 @@ namespace Neo.UnitTests.Network.P2P
             {
                 UserAgent = "Unit Test".PadLeft(1024, '0'),
                 Nonce = 1,
-                Magic = ProtocolSettings.Default.Magic,
+                Network = ProtocolSettings.Default.Network,
                 Timestamp = 5,
                 Version = 6,
                 Capabilities = new NodeCapability[]

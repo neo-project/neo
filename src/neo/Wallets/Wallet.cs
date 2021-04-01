@@ -548,7 +548,8 @@ namespace Neo.Wallets
                 if (witness_script is null)
                 {
                     var contract = NativeContract.ContractManagement.GetContract(snapshot, hash);
-                    if (contract is null) continue;
+                    if (contract is null)
+                        throw new ArgumentException($"The smart contract or address {hash} is not found");
                     var md = contract.Manifest.Abi.GetMethod("verify", 0);
                     if (md is null)
                         throw new ArgumentException($"The smart contract {contract.Hash} haven't got verify method without arguments");
@@ -593,6 +594,7 @@ namespace Neo.Wallets
         /// <returns><see langword="true"/> if the signature is successfully added to the context; otherwise, <see langword="false"/>.</returns>
         public bool Sign(ContractParametersContext context)
         {
+            if (context.Network != ProtocolSettings.Network) return false;
             bool fSuccess = false;
             foreach (UInt160 scriptHash in context.ScriptHashes)
             {
@@ -612,7 +614,7 @@ namespace Neo.Wallets
                             account = GetAccount(point);
                             if (account?.HasKey != true) continue;
                             KeyPair key = account.GetKey();
-                            byte[] signature = context.Verifiable.Sign(key, ProtocolSettings.Magic);
+                            byte[] signature = context.Verifiable.Sign(key, context.Network);
                             fSuccess |= context.AddSignature(multiSigContract, key.PublicKey, signature);
                             if (fSuccess) m--;
                             if (context.Completed || m <= 0) break;
@@ -623,7 +625,7 @@ namespace Neo.Wallets
                     {
                         // Try to sign with regular accounts
                         KeyPair key = account.GetKey();
-                        byte[] signature = context.Verifiable.Sign(key, ProtocolSettings.Magic);
+                        byte[] signature = context.Verifiable.Sign(key, context.Network);
                         fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
                         continue;
                     }

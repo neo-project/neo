@@ -44,6 +44,17 @@ namespace Neo.SmartContract.Native
         /// Converts an integer to a <see cref="string"/>.
         /// </summary>
         /// <param name="value">The integer to convert.</param>
+        /// <returns>The converted <see cref="string"/>.</returns>
+        [ContractMethod(CpuFee = 1 << 12)]
+        public static string Itoa(BigInteger value)
+        {
+            return Itoa(value, 10);
+        }
+
+        /// <summary>
+        /// Converts an integer to a <see cref="string"/>.
+        /// </summary>
+        /// <param name="value">The integer to convert.</param>
         /// <param name="base">The base of the integer. Only support 10 and 16.</param>
         /// <returns>The converted <see cref="string"/>.</returns>
         [ContractMethod(CpuFee = 1 << 12)]
@@ -55,6 +66,17 @@ namespace Neo.SmartContract.Native
                 16 => value.ToString("x"),
                 _ => throw new ArgumentOutOfRangeException(nameof(@base))
             };
+        }
+
+        /// <summary>
+        /// Converts a <see cref="string"/> to an integer.
+        /// </summary>
+        /// <param name="value">The <see cref="string"/> to convert.</param>
+        /// <returns>The converted integer.</returns>
+        [ContractMethod(CpuFee = 1 << 12)]
+        public static BigInteger Atoi(string value)
+        {
+            return Atoi(value, 10);
         }
 
         /// <summary>

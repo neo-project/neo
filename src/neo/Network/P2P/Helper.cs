@@ -28,13 +28,13 @@ namespace Neo.Network.P2P
         /// Gets the data of a <see cref="IVerifiable"/> object to be hashed.
         /// </summary>
         /// <param name="verifiable">The <see cref="IVerifiable"/> object to hash.</param>
-        /// <param name="magic">The magic number of the network.</param>
+        /// <param name="network">The magic number of the network.</param>
         /// <returns>The data to hash.</returns>
-        public static byte[] GetSignData(this IVerifiable verifiable, uint magic)
+        public static byte[] GetSignData(this IVerifiable verifiable, uint network)
         {
             using MemoryStream ms = new();
             using BinaryWriter writer = new(ms);
-            writer.Write(magic);
+            writer.Write(network);
             writer.Write(verifiable.Hash);
             writer.Flush();
             return ms.ToArray();
