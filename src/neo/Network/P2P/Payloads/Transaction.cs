@@ -356,10 +356,15 @@ namespace Neo.Network.P2P.Payloads
                 if (NativeContract.Policy.IsBlocked(snapshot, hash))
                     return VerifyResult.PolicyFail;
             if (!(context?.CheckTransaction(this, snapshot) ?? true)) return VerifyResult.InsufficientFunds;
+            long notary_fee = 0;
             foreach (TransactionAttribute attribute in Attributes)
+            {
                 if (!attribute.Verify(snapshot, this))
                     return VerifyResult.Invalid;
-            long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
+                if (attribute is NotaryAssisted)
+                    notary_fee = (((NotaryAssisted)attribute).NKeys + 1) * NativeContract.Notary.GetNotaryServiceFeePerKey(snapshot);
+            }
+            long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot) - notary_fee;
             if (net_fee < 0) return VerifyResult.InsufficientFunds;
 
             if (net_fee > MaxVerificationGas) net_fee = MaxVerificationGas;

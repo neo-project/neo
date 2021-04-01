@@ -69,6 +69,10 @@ namespace Neo.SmartContract.Native
         /// Gets the instance of the <see cref="Native.NameService"/> class.
         /// </summary>
         public static NameService NameService { get; } = new();
+        /// <summary>
+        /// Gets the instance of the <see cref="NotaryContract"/> class.
+        /// </summary>
+        public static NotaryContract Notary { get; } = new();
 
         #endregion
 
