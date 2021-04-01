@@ -105,7 +105,7 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Runtime.BurnGas.
         /// Burning GAS to benefit the NEO ecosystem.
         /// </summary>
-        public static readonly InteropDescriptor System_Runtime_BurnGas = Register("System.Runtime.BurnGas", nameof(AddGas), 1 << 4, CallFlags.None);
+        public static readonly InteropDescriptor System_Runtime_BurnGas = Register("System.Runtime.BurnGas", nameof(BurnGas), 1 << 4, CallFlags.None);
 
         /// <summary>
         /// The implementation of System.Runtime.Platform.
@@ -283,6 +283,18 @@ namespace Neo.SmartContract
             NotifyEventArgs[] array = notifications.ToArray();
             if (array.Length > Limits.MaxStackSize) throw new InvalidOperationException();
             return array;
+        }
+
+        /// <summary>
+        /// The implementation of System.Runtime.BurnGas.
+        /// Burning GAS to benefit the NEO ecosystem.
+        /// </summary>
+        /// <param name="gas">The amount of GAS to burn.</param>
+        protected internal void BurnGas(long gas)
+        {
+            if (gas <= 0)
+                throw new InvalidOperationException("GAS must be possitive.");
+            AddGas(gas);
         }
     }
 }

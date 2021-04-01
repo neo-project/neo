@@ -142,8 +142,6 @@ namespace Neo.SmartContract
         /// <param name="gas">The amount of GAS to be added.</param>
         protected internal void AddGas(long gas)
         {
-            if (gas < 0)
-                throw new InvalidOperationException("GAS must be possitive.");
             GasConsumed = checked(GasConsumed + gas);
             if (GasConsumed > gas_amount)
                 throw new InvalidOperationException("Insufficient GAS.");
