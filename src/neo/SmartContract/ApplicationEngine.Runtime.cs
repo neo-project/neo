@@ -102,6 +102,12 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_GasLeft = Register("System.Runtime.GasLeft", nameof(GasLeft), 1 << 4, CallFlags.None);
 
         /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Runtime.BurnGas.
+        /// Burning GAS to benefit the NEO ecosystem.
+        /// </summary>
+        public static readonly InteropDescriptor System_Runtime_BurnGas = Register("System.Runtime.BurnGas", nameof(AddGas), 1 << 4, CallFlags.None);
+
+        /// <summary>
         /// The implementation of System.Runtime.Platform.
         /// Gets the name of the current platform.
         /// </summary>
