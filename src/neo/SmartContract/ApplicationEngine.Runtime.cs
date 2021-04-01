@@ -293,7 +293,7 @@ namespace Neo.SmartContract
         protected internal void BurnGas(long gas)
         {
             if (gas <= 0)
-                throw new InvalidOperationException("GAS must be possitive.");
+                throw new InvalidOperationException("GAS must be positive.");
             AddGas(gas);
         }
     }
