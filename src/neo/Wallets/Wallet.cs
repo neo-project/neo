@@ -542,7 +542,7 @@ namespace Neo.Wallets
                         Witness witness = tx.Witnesses[index];
                         witness_script = witness?.VerificationScript;
 
-                        if (witness_script is null)
+                        if (witness_script is null || witness_script.Length == 0)
                         {
                             // Then it's a contract-based witness, so try to get the corresponding invocation script for it
                             invocationScript = witness?.InvocationScript;
