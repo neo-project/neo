@@ -3,29 +3,31 @@ using Neo.IO.Json;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
 using System.IO;
-using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
     /// <summary>
-    /// Indicates that the transaction is an Notrary tx.
+    /// Indicates that the transaction is conflict with another.
     /// </summary>
-    public class Conflicts : TransactionAttribute
+    public class ConflictAttribute : TransactionAttribute
     {
+        /// <summary>
+        /// Indicates the conflict transaction hash.
+        /// </summary>
         public UInt256 Hash;
 
-        public override TransactionAttributeType Type => TransactionAttributeType.ConflictsT;
+        public override TransactionAttributeType Type => TransactionAttributeType.Conflict;
 
         public override bool AllowMultiple => true;
 
         protected override void DeserializeWithoutType(BinaryReader reader)
         {
-            Hash = new UInt256(reader.ReadVarBytes(UInt256.Length));
+            Hash = reader.ReadSerializable<UInt256>();
         }
 
         protected override void SerializeWithoutType(BinaryWriter writer)
         {
-            writer.WriteVarBytes(Hash.ToArray());
+            writer.Write(Hash);
         }
 
         public override JObject ToJson()
@@ -37,8 +39,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Verify(DataCache snapshot, Transaction tx)
         {
-            if (NativeContract.Ledger.ContainsTransaction(snapshot, Hash)) return false;
-            return true;
+            return NativeContract.Ledger.ContainsTransaction(snapshot, Hash);
         }
     }
 }
