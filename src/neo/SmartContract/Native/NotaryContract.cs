@@ -90,6 +90,13 @@ namespace Neo.SmartContract.Native
             return StackItem.Null;
         }
 
+        /// <summary>
+        /// Lock asset until the specified height is unlocked
+        /// </summary>
+        /// <param name="engine">ApplicationEngine</param>
+        /// <param name="addr">Account</param>
+        /// <param name="till">specified height</param>
+        /// <returns>result</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private bool LockDepositUntil(ApplicationEngine engine, UInt160 addr, uint till)
         {
@@ -103,6 +110,13 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
+        /// <summary>
+        /// Withdraw sends all deposited GAS for "from" address to "to" address.
+        /// </summary>
+        /// <param name="engine">ApplicationEngine</param>
+        /// <param name="from">From Account</param>
+        /// <param name="to">To Account</param>
+        /// <returns>void</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private async ContractTask Withdraw(ApplicationEngine engine, UInt160 from, UInt160 to)
         {
@@ -115,6 +129,12 @@ namespace Neo.SmartContract.Native
             RemoveDepositFor(engine.Snapshot, from);
         }
 
+        /// <summary>
+        /// BalanceOf returns deposited GAS amount for specified address.
+        /// </summary>
+        /// <param name="snapshot">DataCache</param>
+        /// <param name="acc">Account</param>
+        /// <returns></returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger BalanceOf(DataCache snapshot, UInt160 acc)
         {
@@ -123,6 +143,12 @@ namespace Neo.SmartContract.Native
             return deposit.amount;
         }
 
+        /// <summary>
+        /// ExpirationOf Returns deposit lock height for specified address.
+        /// </summary>
+        /// <param name="snapshot">DataCache</param>
+        /// <param name="acc">Account</param>
+        /// <returns></returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint ExpirationOf(DataCache snapshot, UInt160 acc)
         {
@@ -131,10 +157,15 @@ namespace Neo.SmartContract.Native
             return deposit.till;
         }
 
+        /// <summary>
+        /// Verify checks whether the transaction was signed by one of the notaries.
+        /// </summary>
+        /// <param name="engine">ApplicationEngine</param>
+        /// <param name="sig">Signature</param>
+        /// <returns></returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private bool Verify(ApplicationEngine engine, StackItem item)
+        private bool Verify(ApplicationEngine engine, byte[] sig)
         {
-            var sig = item.GetSpan().ToArray();
             Transaction tx = (Transaction)engine.ScriptContainer;
             if (tx.GetAttribute<NotaryAssisted>() is null) return false;
             foreach (var signer in tx.Signers)
@@ -166,18 +197,33 @@ namespace Neo.SmartContract.Native
             return verified;
         }
 
+        /// <summary>
+        /// GetNotaryNodes returns public keys of notary nodes.
+        /// </summary>
+        /// <param name="snapshot">DataCache</param>
+        /// <returns></returns>
         private ECPoint[] GetNotaryNodes(DataCache snapshot)
         {
             ECPoint[] nodes = RoleManagement.GetDesignatedByRole(snapshot, Role.P2PNotary, uint.MaxValue);
             return nodes;
         }
 
+        /// <summary>
+        /// GetMaxNotValidBeforeDelta is Notary contract method and returns the maximum NotValidBefore delta.
+        /// </summary>
+        /// <param name="snapshot">DataCache</param>
+        /// <returns>NotValidBefore</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint GetMaxNotValidBeforeDelta(DataCache snapshot)
         {
             return (uint)(BigInteger)snapshot[CreateStorageKey(PreMaxNotValidBeforeDelta)];
         }
 
+        /// <summary>
+        /// SetMaxNotValidBeforeDelta is Notary contract method and sets the maximum NotValidBefore delta.
+        /// </summary>
+        /// <param name="engine">ApplicationEngine</param>
+        /// <param name="value">Value</param>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetMaxNotValidBeforeDelta(ApplicationEngine engine, uint value)
         {
@@ -186,12 +232,22 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.GetAndChange(CreateStorageKey(PreMaxNotValidBeforeDelta)).Set(value);
         }
 
+        /// <summary>
+        /// GetNotaryServiceFeePerKey is Notary contract method and returns the NotaryServiceFeePerKey delta.
+        /// </summary>
+        /// <param name="snapshot">DataCache</param>
+        /// <returns>NotaryServiceFeePerKey</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public long GetNotaryServiceFeePerKey(DataCache snapshot)
         {
             return (long)(BigInteger)snapshot[CreateStorageKey(PreNotaryServiceFeePerKey)];
         }
 
+        /// <summary>
+        /// SetNotaryServiceFeePerKey is Notary contract method and sets the NotaryServiceFeePerKey delta.
+        /// </summary>
+        /// <param name="engine">ApplicationEngine</param>
+        /// <param name="value">value</param>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetNotaryServiceFeePerKey(ApplicationEngine engine, long value)
         {
@@ -200,23 +256,48 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.GetAndChange(CreateStorageKey(PreNotaryServiceFeePerKey)).Set(value);
         }
 
+        /// <summary>
+        /// GetDepositFor returns state.Deposit for the account specified. It returns nil in case if
+        /// deposit is not found in storage and panics in case of any other error.
+        /// </summary>
+        /// <param name="snapshot"></param>
+        /// <param name="acc"></param>
+        /// <returns></returns>
         private Deposit GetDepositFor(DataCache snapshot, UInt160 acc)
         {
             Deposit deposit = snapshot.TryGet(CreateStorageKey(PrefixDeposit).Add(acc.ToArray()))?.GetInteroperable<Deposit>();
-            if (deposit is null) Utility.Log("NotaryContract", LogLevel.Error, string.Format("failed to get deposit for {0} from storage", acc.ToString()));
+            if (deposit is null) throw new Exception(string.Format("failed to get deposit for {0} from storage", acc.ToString()));
             return deposit;
         }
 
+        /// <summary>
+        /// PutDepositFor puts deposit on the balance of the specified account in the storage.
+        /// </summary>
+        /// <param name="engine">ApplicationEngine</param>
+        /// <param name="acc">Account</param>
+        /// <param name="deposit">deposit</param>
         private void PutDepositFor(ApplicationEngine engine, UInt160 acc, Deposit deposit)
         {
             engine.Snapshot.Add(CreateStorageKey(PrefixDeposit).Add(acc.ToArray()), new StorageItem(deposit));
         }
 
+        /// <summary>
+        /// RemoveDepositFor removes deposit from the storage.
+        /// </summary>
+        /// <param name="snapshot">DataCache</param>
+        /// <param name="acc">Account</param>
         private void RemoveDepositFor(DataCache snapshot, UInt160 acc)
         {
             snapshot.Delete(CreateStorageKey(PrefixDeposit).Add(acc.ToArray()));
         }
 
+        /// <summary>
+        /// CalculateNotaryReward calculates the reward for a single notary node based on FEE's count and Notary nodes count.
+        /// </summary>
+        /// <param name="snapshot">DataCache</param>
+        /// <param name="nFees"></param>
+        /// <param name="notariesCount"></param>
+        /// <returns>result</returns>
         private long CalculateNotaryReward(DataCache snapshot, long nFees, int notariesCount)
         {
             return nFees * GetNotaryServiceFeePerKey(snapshot) / notariesCount;
