@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Copyright>2015-2021 The Neo Project</Copyright>
+    <Copyright>2018-2021 CRON Foundation, 2015-2021 The Neo Project</Copyright>
     <AssemblyTitle>Neo</AssemblyTitle>
     <Version>2.12.4</Version>
-    <Authors>The Neo Project</Authors>
+    <Authors>CRON Foundation, The Neo Project</Authors>
     <TargetFrameworks>netstandard2.0;net47</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>Neo</AssemblyName>
@@ -17,6 +17,8 @@
     <Company>The CRON Project</Company>
     <Description>CRON</Description>
     <Product>CRON</Product>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageReleaseNotes>The latest 2.12.x version based on Neo 2.12.x Blockchain</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
