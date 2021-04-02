@@ -52,7 +52,7 @@ namespace Neo.SmartContract.Native
                 {
                     var payer = tx.Signers[1];
                     var balance = GetDepositFor(engine.Snapshot, payer.Account);
-                    balance.amount -= (tx.SystemFee + tx.NetworkFee);
+                    balance.amount -= tx.SystemFee + tx.NetworkFee;
                     if (balance.amount.Sign == 0) RemoveDepositFor(engine.Snapshot, payer.Account);
                     else PutDepositFor(engine, payer.Account, balance);
                 }
