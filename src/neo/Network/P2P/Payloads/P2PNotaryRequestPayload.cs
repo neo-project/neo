@@ -9,7 +9,7 @@ namespace Neo.Network.P2P.Payloads
 {
     public class P2PNotaryRequestPayload : ISerializable
     {
-        private static uint NetWork => ProtocolSettings.Default.Magic;
+        private static uint NetWork => ProtocolSettings.Default.Network;
         private Transaction MainTransaction;
         private Transaction FallbackTransaction;
         private Witness Witness;
