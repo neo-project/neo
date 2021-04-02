@@ -27,9 +27,9 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_MaxNotValidBeforeDeltaAndNotaryServiceFeePerKey()
         {
-            //var snapshot = _snapshot.CreateSnapshot();
-            //NativeContract.Notary.GetMaxNotValidBeforeDelta(snapshot).Should().Be(5760);
-           // NativeContract.Notary.GetNotaryServiceFeePerKey(snapshot).Should().Be(140);
+            var snapshot = _snapshot.CreateSnapshot();
+            NativeContract.Notary.GetMaxNotValidBeforeDelta(snapshot).Should().Be(140);
+            NativeContract.Notary.GetNotaryServiceFeePerKey(snapshot).Should().Be(10000000L);
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, uint key)

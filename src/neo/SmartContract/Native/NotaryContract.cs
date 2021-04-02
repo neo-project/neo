@@ -57,7 +57,7 @@ namespace Neo.SmartContract.Native
                     else PutDepositFor(engine, payer.Account, balance);
                 }
             }
-            if (nFees == 0) await ContractTask.CompletedTask;
+            if (nFees == 0) return;
             var singleReward = CalculateNotaryReward(engine.Snapshot, nFees, notaries.Length);
             foreach (var notary in notaries) await GAS.Mint(engine, notary.EncodePoint(true).ToScriptHash(), singleReward, false);
         }
