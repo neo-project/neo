@@ -1,5 +1,7 @@
 using Neo.Cryptography;
 using Neo.IO;
+using Neo.Persistence;
+using Neo.SmartContract;
 using Neo.VM;
 using System;
 using System.IO;
@@ -7,113 +9,133 @@ using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
-    public class NotaryRequest : ISerializable
+    public class NotaryRequest : IInventory
     {
-        private static uint NetWork => ProtocolSettings.Default.Network;
-
         /// <summary>
         /// The transaction need Notary to collect signatures.
         /// </summary>
-        private Transaction MainTransaction;
+        private Transaction mainTransaction;
 
         /// <summary>
         /// This transaction is valid when MainTransaction failed.
         /// </summary>
-        private Transaction FallbackTransaction;
+        private Transaction fallbackTransaction;
 
         /// <summary>
         /// The witness of the payload. It must be one of multi-sig address of <see cref="MainTransaction"/>.
         /// </summary>
-        private Witness Witness;
-        private UInt256 Hash;
-        private UInt256 SignedHash;
+        private Witness witness;
+        private UInt256 hash = null;
 
-        public int Size => MainTransaction.Size + FallbackTransaction.Size + Witness.Size;
+        public InventoryType InventoryType => InventoryType.Notary;
 
-        public NotaryRequest(byte[] value)
+        public UInt256 Hash
         {
-            using MemoryStream ms = new MemoryStream(value);
-            using BinaryReader reader = new(ms);
-            Deserialize(reader);
+            get
+            {
+                if (hash == null)
+                {
+                    hash = this.CalculateHash();
+                }
+                return hash;
+            }
         }
 
-        public NotaryRequest(Transaction mainTx, Transaction fbTx, Witness witness)
+        public Witness[] Witnesses
         {
-            MainTransaction = mainTx;
-            FallbackTransaction = fbTx;
-            Witness = witness;
+            get
+            {
+                return new Witness[] { witness };
+            }
+            set
+            {
+                witness = value[0];
+            }
+        }
+
+        public Transaction MainTransaction
+        {
+            get => mainTransaction;
+            set
+            {
+                mainTransaction = value;
+                hash = null;
+            }
+        }
+
+        public Transaction FallbackTransaction
+        {
+            get => fallbackTransaction;
+            set
+            {
+                fallbackTransaction = value;
+                hash = null;
+            }
+        }
+
+        public int Size => mainTransaction.Size + fallbackTransaction.Size + witness.Size;
+
+
+        public void DeserializeUnsigned(BinaryReader reader)
+        {
+            mainTransaction = reader.ReadSerializable<Transaction>();
+            fallbackTransaction = reader.ReadSerializable<Transaction>();
         }
 
         public void Deserialize(BinaryReader reader)
         {
-            DeserializeHashableFields(reader);
-            Witness = reader.ReadSerializable<Witness>();
+            DeserializeUnsigned(reader);
+            witness = reader.ReadSerializable<Witness>();
         }
 
         public void Serialize(BinaryWriter writer)
         {
-            SerializeHashableFields(writer);
-            writer.Write(Witness);
+            SerializeUnsigned(writer);
+            writer.Write(witness);
         }
 
-        public void DeserializeHashableFields(BinaryReader reader)
+        public void SerializeUnsigned(BinaryWriter writer)
         {
-            MainTransaction = reader.ReadSerializable<Transaction>();
-            FallbackTransaction = reader.ReadSerializable<Transaction>();
-            IsValid();
-            CreateHash();
+            writer.Write(mainTransaction);
+            writer.Write(fallbackTransaction);
         }
 
-        public void SerializeHashableFields(BinaryWriter writer)
+        public UInt160[] GetScriptHashesForVerifying(DataCache snapshot)
         {
-            writer.Write(MainTransaction);
-            writer.Write(FallbackTransaction);
+            return new UInt160[] { fallbackTransaction.Signers[1].Account };
         }
 
-        public UInt256 GetSignedHash()
-        {
-            if (SignedHash is null) CreateHash();
-            return SignedHash;
-        }
-
-        public byte[] GetSignedPart()
-        {
-            if (Hash is null) CreateHash();
-            using MemoryStream ms = new();
-            using BinaryWriter writer = new(ms);
-            writer.Write(NetWork);
-            writer.Write(Hash.ToArray());
-            return ms.ToArray();
-        }
-
-        public void CreateHash()
-        {
-            using MemoryStream ms = new();
-            using BinaryWriter writer = new(ms);
-            SerializeHashableFields(writer);
-            Hash = new UInt256(ms.ToArray().Sha256());
-            byte[] signed = GetSignedPart();
-            SignedHash = new UInt256(signed.Sha256());
-        }
-
-        public void IsValid()
+        public bool VerifyStateIndependent()
         {
             var nKeysMain = MainTransaction.GetAttributes<NotaryAssisted>();
-            if (!nKeysMain.Any()) throw new Exception("main transaction should have NotaryAssisted attribute");
-            if (nKeysMain.ToArray()[0].NKeys == 0) throw new Exception("main transaction should have NKeys > 0");
-            if (FallbackTransaction.Signers.Length != 2) throw new Exception("fallback transaction should have two signers");
+            if (!nKeysMain.Any()) return false;
+            if (nKeysMain.ToArray()[0].NKeys == 0) return false;
+            if (FallbackTransaction.Signers.Length != 2) return false;
             if (FallbackTransaction.Witnesses[0].InvocationScript.Length != 66
                 || FallbackTransaction.Witnesses[0].VerificationScript.Length != 0
                 || (FallbackTransaction.Witnesses[0].InvocationScript[0] != (byte)OpCode.PUSHDATA1 && FallbackTransaction.Witnesses[0].InvocationScript[1] != 64))
-                throw new Exception("fallback transaction has invalid dummy Notary witness");
-            if (FallbackTransaction.GetAttribute<NotValidBefore>() is null) throw new Exception("fallback transactions should have NotValidBefore attribute");
+                return false;
+            if (FallbackTransaction.GetAttribute<NotValidBefore>() is null) return false;
             var conflicts = FallbackTransaction.GetAttributes<ConflictAttribute>();
-            if (conflicts.Count() != 1) throw new Exception("fallback transaction should have one Conflicts attribute");
-            if (conflicts.ToArray()[0].Hash != MainTransaction.Hash) throw new Exception("fallback transaction does not conflicts with the main transaction");
+            if (conflicts.Count() != 1) return false;
+            if (conflicts.ToArray()[0].Hash != MainTransaction.Hash) return false;
             var nKeysFallback = FallbackTransaction.GetAttributes<NotaryAssisted>();
-            if (!nKeysFallback.Any()) throw new Exception("fallback transaction should have NotaryAssisted attribute");
-            if (nKeysFallback.ToArray()[0].NKeys != 0) throw new Exception("fallback transaction should have NKeys = 0");
-            if (MainTransaction.ValidUntilBlock != FallbackTransaction.ValidUntilBlock) throw new Exception("both main and fallback transactions should have the same ValidUntil value");
+            if (!nKeysFallback.Any()) return false;
+            if (nKeysFallback.ToArray()[0].NKeys != 0) return false;
+            return MainTransaction.ValidUntilBlock == FallbackTransaction.ValidUntilBlock;
+        }
+
+        public bool VerifyStateDependent(ProtocolSettings settings, DataCache snapshot)
+        {
+            if (!fallbackTransaction.VerifyWitness(settings, snapshot, fallbackTransaction.Signers[1].Account, fallbackTransaction.Witnesses[1], 0_02000000, out _))
+                return false;
+            return this.VerifyWitnesses(settings, snapshot, 0_02000000);
+        }
+
+        public bool Verify(ProtocolSettings settings, DataCache snapshot)
+        {
+            if (!VerifyStateIndependent()) return false;
+            return VerifyStateDependent(settings, snapshot);
         }
     }
 }
