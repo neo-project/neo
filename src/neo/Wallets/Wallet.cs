@@ -527,20 +527,25 @@ namespace Neo.Wallets
             int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + tx.Script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
             uint exec_fee_factor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             long networkFee = 0;
+            int index = -1;
             foreach (UInt160 hash in hashes)
             {
+                index++;
                 byte[] witness_script = GetAccount(hash)?.Contract?.Script;
+                byte[] invocationScript = null;
 
-                if (witness_script is null && tx.Witnesses != null)
+                if (tx.Witnesses != null)
                 {
-                    // Try to find the script in the witnesses
-
-                    foreach (var witness in tx.Witnesses)
+                    if (witness_script is null)
                     {
-                        if (witness.ScriptHash == hash)
+                        // Try to find the script in the witnesses
+                        Witness witness = tx.Witnesses[index];
+                        witness_script = witness?.VerificationScript;
+
+                        if (witness_script is null || witness_script.Length == 0)
                         {
-                            witness_script = witness.VerificationScript;
-                            break;
+                            // Then it's a contract-based witness, so try to get the corresponding invocation script for it
+                            invocationScript = witness?.InvocationScript;
                         }
                     }
                 }
@@ -556,12 +561,14 @@ namespace Neo.Wallets
                     if (md.ReturnType != ContractParameterType.Boolean)
                         throw new ArgumentException("The verify method doesn't return boolean value.");
 
-                    // Empty invocation and verification scripts
-                    size += Array.Empty<byte>().GetVarSize() * 2;
+                    // Empty verification and non-empty invocation scripts
+                    var invSize = invocationScript != null ? invocationScript.GetVarSize() : Array.Empty<byte>().GetVarSize();
+                    size += Array.Empty<byte>().GetVarSize() + invSize;
 
                     // Check verify cost
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: ProtocolSettings);
                     engine.LoadContract(contract, md, CallFlags.ReadOnly);
+                    if (invocationScript != null) engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
                     if (!engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.Hash} returns false.");
 
