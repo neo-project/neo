@@ -14,6 +14,8 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public sealed class StdLib : NativeContract
     {
+        private const int MaxInputLength = 1024;
+
         internal StdLib() { }
 
         [ContractMethod(CpuFee = 1 << 12)]
@@ -88,6 +90,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 12)]
         public static BigInteger Atoi(string value, int @base)
         {
+            CheckInput(value);
             return @base switch
             {
                 10 => BigInteger.Parse(value),
@@ -104,6 +107,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 12)]
         public static string Base64Encode(byte[] data)
         {
+            CheckInput(data);
             return Convert.ToBase64String(data);
         }
 
@@ -115,6 +119,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 12)]
         public static byte[] Base64Decode(string s)
         {
+            CheckInput(s);
             return Convert.FromBase64String(s);
         }
 
@@ -126,6 +131,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 12)]
         public static string Base58Encode(byte[] data)
         {
+            CheckInput(data);
             return Base58.Encode(data);
         }
 
@@ -137,7 +143,63 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 12)]
         public static byte[] Base58Decode(string s)
         {
+            CheckInput(s);
             return Base58.Decode(s);
+        }
+
+        [ContractMethod(CpuFee = 1 << 12)]
+        private static int MemoryCompare(byte[] str1, byte[] str2)
+        {
+            CheckInput(str1);
+            CheckInput(str2);
+            return Math.Sign(str1.AsSpan().SequenceCompareTo(str2));
+        }
+
+        [ContractMethod(CpuFee = 1 << 12)]
+        private static int MemorySearch(byte[] mem, byte[] value)
+        {
+            return MemorySearch(mem, value, 0, false);
+        }
+
+        [ContractMethod(CpuFee = 1 << 12)]
+        private static int MemorySearch(byte[] mem, byte[] value, int start)
+        {
+            return MemorySearch(mem, value, start, false);
+        }
+
+        [ContractMethod(CpuFee = 1 << 12)]
+        private static int MemorySearch(byte[] mem, byte[] value, int start, bool backward)
+        {
+            CheckInput(mem);
+            if (backward)
+            {
+                return mem.AsSpan(0, start).LastIndexOf(value);
+            }
+            else
+            {
+                int index = mem.AsSpan(start).IndexOf(value);
+                if (index < 0) return -1;
+                return index + start;
+            }
+        }
+
+        [ContractMethod(CpuFee = 1 << 12)]
+        private static string[] StringSplit(string str, string separator)
+        {
+            CheckInput(str);
+            return str.Split(separator);
+        }
+
+        private static void CheckInput(string input)
+        {
+            if (Utility.StrictUTF8.GetByteCount(input) > MaxInputLength)
+                throw new InvalidOperationException("The input exceeds the maximum length.");
+        }
+
+        private static void CheckInput(byte[] input)
+        {
+            if (input.Length > MaxInputLength)
+                throw new InvalidOperationException("The input exceeds the maximum length.");
         }
     }
 }
