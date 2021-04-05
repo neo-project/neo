@@ -149,7 +149,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 12)]
-        private static int MemorySearch(byte[] mem, byte[] value)
+        private static int MemorySearch([MaxLength(MaxInputLength)] byte[] mem, byte[] value)
         {
             return MemorySearch(mem, value, 0, false);
         }
@@ -157,7 +157,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 12)]
         private static int MemorySearch(byte[] mem, byte[] value, int start)
         {
-            return MemorySearch(mem, value, start, false);
+            return MemorySearch([MaxLength(MaxInputLength)] mem, value, start, false);
         }
 
         [ContractMethod(CpuFee = 1 << 12)]
