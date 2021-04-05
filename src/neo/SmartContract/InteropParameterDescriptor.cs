@@ -2,6 +2,7 @@ using Neo.Cryptography.ECC;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Reflection;
 
@@ -12,6 +13,8 @@ namespace Neo.SmartContract
     /// </summary>
     public class InteropParameterDescriptor
     {
+        private readonly ValidatorAttribute[] validators;
+
         /// <summary>
         /// The name of the parameter.
         /// </summary>
@@ -69,6 +72,7 @@ namespace Neo.SmartContract
             : this(parameterInfo.ParameterType)
         {
             this.Name = parameterInfo.Name;
+            this.validators = parameterInfo.GetCustomAttributes<ValidatorAttribute>(true).ToArray();
         }
 
         internal InteropParameterDescriptor(Type type)
@@ -90,6 +94,12 @@ namespace Neo.SmartContract
                 else
                     Converter = converter;
             }
+        }
+
+        public void Validate(StackItem item)
+        {
+            foreach (ValidatorAttribute validator in validators)
+                validator.Validate(item);
         }
     }
 }
