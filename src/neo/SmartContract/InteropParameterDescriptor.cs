@@ -2,6 +2,7 @@ using Neo.Cryptography.ECC;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Reflection;
 
@@ -12,6 +13,8 @@ namespace Neo.SmartContract
     /// </summary>
     public class InteropParameterDescriptor
     {
+        private readonly ValidatorAttribute[] validators;
+
         /// <summary>
         /// The name of the parameter.
         /// </summary>
@@ -26,11 +29,6 @@ namespace Neo.SmartContract
         /// The converter to convert the parameter from <see cref="StackItem"/> to <see cref="object"/>.
         /// </summary>
         public Func<StackItem, object> Converter { get; }
-
-        /// <summary>
-        /// Validator
-        /// </summary>
-        public Action<object> Validator { get; }
 
         /// <summary>
         /// Indicates whether the parameter is an enumeration.
@@ -74,27 +72,7 @@ namespace Neo.SmartContract
             : this(parameterInfo.ParameterType)
         {
             this.Name = parameterInfo.Name;
-            // Validators
-            var maxLength = parameterInfo.GetCustomAttribute<MaxLengthAttribute>();
-            if (maxLength != null)
-            {
-                if (parameterInfo.ParameterType == typeof(string))
-                {
-                    this.Validator = (input) =>
-                    {
-                        if (Utility.StrictUTF8.GetByteCount((string)input) > maxLength.MaxLength)
-                            throw new InvalidOperationException("The input exceeds the maximum length.");
-                    };
-                }
-                else if (parameterInfo.ParameterType == typeof(byte[]))
-                {
-                    this.Validator = (input) =>
-                    {
-                        if (((byte[])input).Length > maxLength.MaxLength)
-                            throw new InvalidOperationException("The input exceeds the maximum length.");
-                    };
-                }
-            }
+            this.validators = parameterInfo.GetCustomAttributes<ValidatorAttribute>(true).ToArray();
         }
 
         internal InteropParameterDescriptor(Type type)
@@ -116,6 +94,12 @@ namespace Neo.SmartContract
                 else
                     Converter = converter;
             }
+        }
+
+        public void Validate(StackItem item)
+        {
+            foreach (ValidatorAttribute validator in validators)
+                validator.Validate(item);
         }
     }
 }

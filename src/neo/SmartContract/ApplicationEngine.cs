@@ -365,6 +365,7 @@ namespace Neo.SmartContract
         /// <returns>The converted <see cref="object"/>.</returns>
         protected internal object Convert(StackItem item, InteropParameterDescriptor descriptor)
         {
+            descriptor.Validate(item);
             if (descriptor.IsArray)
             {
                 Array av;
@@ -382,7 +383,6 @@ namespace Neo.SmartContract
                     for (int i = 0; i < av.Length; i++)
                         av.SetValue(descriptor.Converter(Pop()), i);
                 }
-                descriptor?.Validator(av);
                 return av;
             }
             else
@@ -392,7 +392,6 @@ namespace Neo.SmartContract
                     value = Enum.ToObject(descriptor.Type, value);
                 else if (descriptor.IsInterface)
                     value = ((InteropInterface)value).GetInterface<object>();
-                descriptor?.Validator(value);
                 return value;
             }
         }
