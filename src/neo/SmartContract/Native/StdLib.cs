@@ -88,9 +88,8 @@ namespace Neo.SmartContract.Native
         /// <param name="base">The base of the integer. Only support 10 and 16.</param>
         /// <returns>The converted integer.</returns>
         [ContractMethod(CpuFee = 1 << 12)]
-        public static BigInteger Atoi(string value, int @base)
+        public static BigInteger Atoi([MaxLength(MaxInputLength)] string value, int @base)
         {
-            CheckInput(value);
             return @base switch
             {
                 10 => BigInteger.Parse(value),
@@ -105,9 +104,8 @@ namespace Neo.SmartContract.Native
         /// <param name="data">The byte array to be encoded.</param>
         /// <returns>The encoded <see cref="string"/>.</returns>
         [ContractMethod(CpuFee = 1 << 12)]
-        public static string Base64Encode(byte[] data)
+        public static string Base64Encode([MaxLength(MaxInputLength)] byte[] data)
         {
-            CheckInput(data);
             return Convert.ToBase64String(data);
         }
 
@@ -117,9 +115,8 @@ namespace Neo.SmartContract.Native
         /// <param name="s">The base64 <see cref="string"/>.</param>
         /// <returns>The decoded byte array.</returns>
         [ContractMethod(CpuFee = 1 << 12)]
-        public static byte[] Base64Decode(string s)
+        public static byte[] Base64Decode([MaxLength(MaxInputLength)] string s)
         {
-            CheckInput(s);
             return Convert.FromBase64String(s);
         }
 
@@ -129,9 +126,8 @@ namespace Neo.SmartContract.Native
         /// <param name="data">The byte array to be encoded.</param>
         /// <returns>The encoded <see cref="string"/>.</returns>
         [ContractMethod(CpuFee = 1 << 12)]
-        public static string Base58Encode(byte[] data)
+        public static string Base58Encode([MaxLength(MaxInputLength)] byte[] data)
         {
-            CheckInput(data);
             return Base58.Encode(data);
         }
 
@@ -141,17 +137,14 @@ namespace Neo.SmartContract.Native
         /// <param name="s">The base58 <see cref="string"/>.</param>
         /// <returns>The decoded byte array.</returns>
         [ContractMethod(CpuFee = 1 << 12)]
-        public static byte[] Base58Decode(string s)
+        public static byte[] Base58Decode([MaxLength(MaxInputLength)] string s)
         {
-            CheckInput(s);
             return Base58.Decode(s);
         }
 
         [ContractMethod(CpuFee = 1 << 12)]
-        private static int MemoryCompare(byte[] str1, byte[] str2)
+        private static int MemoryCompare([MaxLength(MaxInputLength)] byte[] str1, [MaxLength(MaxInputLength)] byte[] str2)
         {
-            CheckInput(str1);
-            CheckInput(str2);
             return Math.Sign(str1.AsSpan().SequenceCompareTo(str2));
         }
 
@@ -168,9 +161,8 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 12)]
-        private static int MemorySearch(byte[] mem, byte[] value, int start, bool backward)
+        private static int MemorySearch([MaxLength(MaxInputLength)] byte[] mem, byte[] value, int start, bool backward)
         {
-            CheckInput(mem);
             if (backward)
             {
                 return mem.AsSpan(0, start).LastIndexOf(value);
@@ -184,22 +176,9 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 12)]
-        private static string[] StringSplit(string str, string separator)
+        private static string[] StringSplit([MaxLength(MaxInputLength)] string str, string separator)
         {
-            CheckInput(str);
             return str.Split(separator);
-        }
-
-        private static void CheckInput(string input)
-        {
-            if (Utility.StrictUTF8.GetByteCount(input) > MaxInputLength)
-                throw new InvalidOperationException("The input exceeds the maximum length.");
-        }
-
-        private static void CheckInput(byte[] input)
-        {
-            if (input.Length > MaxInputLength)
-                throw new InvalidOperationException("The input exceeds the maximum length.");
         }
     }
 }

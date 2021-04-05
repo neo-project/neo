@@ -382,6 +382,7 @@ namespace Neo.SmartContract
                     for (int i = 0; i < av.Length; i++)
                         av.SetValue(descriptor.Converter(Pop()), i);
                 }
+                descriptor?.Validator(av);
                 return av;
             }
             else
@@ -391,6 +392,7 @@ namespace Neo.SmartContract
                     value = Enum.ToObject(descriptor.Type, value);
                 else if (descriptor.IsInterface)
                     value = ((InteropInterface)value).GetInterface<object>();
+                descriptor?.Validator(value);
                 return value;
             }
         }

@@ -28,6 +28,11 @@ namespace Neo.SmartContract
         public Func<StackItem, object> Converter { get; }
 
         /// <summary>
+        /// Validator
+        /// </summary>
+        public Action<object> Validator { get; }
+
+        /// <summary>
         /// Indicates whether the parameter is an enumeration.
         /// </summary>
         public bool IsEnum => Type.IsEnum;
@@ -69,6 +74,27 @@ namespace Neo.SmartContract
             : this(parameterInfo.ParameterType)
         {
             this.Name = parameterInfo.Name;
+            // Validators
+            var maxLength = parameterInfo.GetCustomAttribute<MaxLengthAttribute>();
+            if (maxLength != null)
+            {
+                if (parameterInfo.ParameterType == typeof(string))
+                {
+                    this.Validator = (input) =>
+                    {
+                        if (Utility.StrictUTF8.GetByteCount((string)input) > maxLength.MaxLength)
+                            throw new InvalidOperationException("The input exceeds the maximum length.");
+                    };
+                }
+                else if (parameterInfo.ParameterType == typeof(byte[]))
+                {
+                    this.Validator = (input) =>
+                    {
+                        if (((byte[])input).Length > maxLength.MaxLength)
+                            throw new InvalidOperationException("The input exceeds the maximum length.");
+                    };
+                }
+            }
         }
 
         internal InteropParameterDescriptor(Type type)
