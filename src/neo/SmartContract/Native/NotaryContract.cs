@@ -204,7 +204,7 @@ namespace Neo.SmartContract.Native
         /// <returns></returns>
         private ECPoint[] GetNotaryNodes(DataCache snapshot)
         {
-            ECPoint[] nodes = RoleManagement.GetDesignatedByRole(snapshot, Role.P2PNotary, uint.MaxValue);
+            ECPoint[] nodes = RoleManagement.GetDesignatedByRole(snapshot, Role.Notary, uint.MaxValue);
             return nodes;
         }
 
