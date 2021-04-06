@@ -262,6 +262,12 @@ namespace Neo.SmartContract.Native
             return tx?.GetAttribute<OracleResponse>() != null;
         }
 
+        [ContractMethod(CpuFee = 1 << 15)]
+        private bool IsResponse(ApplicationEngine engine)
+        {
+            return Verify(engine) && engine.CallingScriptHash == engine.EntryScriptHash;
+        }
+
         private class IdList : List<ulong>, IInteroperable
         {
             public void FromStackItem(StackItem stackItem)
