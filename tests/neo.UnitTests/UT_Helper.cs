@@ -19,7 +19,7 @@ namespace Neo.UnitTests
         public void GetSignData()
         {
             TestVerifiable verifiable = new();
-            byte[] res = verifiable.GetSignData(ProtocolSettings.Default.Magic);
+            byte[] res = verifiable.GetSignData(ProtocolSettings.Default.Network);
             res.ToHexString().Should().Be("4e454f0050b51da6bb366be3ea50140cda45ba7df575287c0371000b2037ed3898ff8bf5");
         }
 
@@ -27,7 +27,7 @@ namespace Neo.UnitTests
         public void Sign()
         {
             TestVerifiable verifiable = new();
-            byte[] res = verifiable.Sign(new KeyPair(TestUtils.GetByteArray(32, 0x42)), ProtocolSettings.Default.Magic);
+            byte[] res = verifiable.Sign(new KeyPair(TestUtils.GetByteArray(32, 0x42)), ProtocolSettings.Default.Network);
             res.Length.Should().Be(64);
         }
 

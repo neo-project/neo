@@ -68,7 +68,7 @@ namespace Neo.UnitTests.SmartContract
             tx.Signers[0].Account = contract.ScriptHash;
 
             using ScriptBuilder invocationScript = new();
-            invocationScript.EmitPush(Neo.Wallets.Helper.Sign(tx, _key, ProtocolSettings.Default.Magic));
+            invocationScript.EmitPush(Neo.Wallets.Helper.Sign(tx, _key, ProtocolSettings.Default.Network));
             tx.Witnesses = new Witness[] { new Witness() { InvocationScript = invocationScript.ToArray(), VerificationScript = contract.Script } };
 
             using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, null, null, ProtocolSettings.Default);
@@ -89,7 +89,7 @@ namespace Neo.UnitTests.SmartContract
             tx.Signers[0].Account = contract.ScriptHash;
 
             using ScriptBuilder invocationScript = new();
-            invocationScript.EmitPush(Neo.Wallets.Helper.Sign(tx, _key, ProtocolSettings.Default.Magic));
+            invocationScript.EmitPush(Neo.Wallets.Helper.Sign(tx, _key, ProtocolSettings.Default.Network));
 
             using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, null, null, ProtocolSettings.Default);
             engine.LoadScript(contract.Script);

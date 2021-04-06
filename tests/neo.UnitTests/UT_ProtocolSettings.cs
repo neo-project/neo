@@ -18,10 +18,10 @@ namespace Neo.UnitTests
         }
 
         [TestMethod]
-        public void Default_Magic_should_be_mainnet_Magic_value()
+        public void Default_Network_should_be_mainnet_Network_value()
         {
-            var mainNetMagic = 0x4F454Eu;
-            ProtocolSettings.Default.Magic.Should().Be(mainNetMagic);
+            var mainNetNetwork = 0x4F454Eu;
+            ProtocolSettings.Default.Network.Should().Be(mainNetNetwork);
         }
 
         [TestMethod]
