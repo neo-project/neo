@@ -23,6 +23,6 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Notary nodes
         /// </summary>
-        P2PNotary = 128
+        Notary = 128
     }
 }

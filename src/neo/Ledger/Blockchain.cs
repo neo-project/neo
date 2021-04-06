@@ -318,7 +318,6 @@ namespace Neo.Ledger
 
         private VerifyResult OnNotaryRequest(NotaryRequest payload)
         {
-            DataCache snapshot = system.StoreView;
             if (!payload.Verify(system.Settings)) return VerifyResult.Invalid;
             system.RelayCache.Add(payload);
             return VerifyResult.Succeed;
