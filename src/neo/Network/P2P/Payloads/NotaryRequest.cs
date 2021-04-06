@@ -1,3 +1,4 @@
+using Akka.Actor;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.Persistence;
@@ -11,6 +12,11 @@ namespace Neo.Network.P2P.Payloads
 {
     public class NotaryRequest : IInventory
     {
+        /// <summary>
+        /// Represents the fixed value of the <see cref="Transaction.Script"/> field of the fallback transaction.
+        /// </summary>
+        public static readonly byte[] FallbackFixedScript = new byte[] { (byte)OpCode.RET };
+
         /// <summary>
         /// The transaction need Notary to collect signatures.
         /// </summary>
@@ -105,12 +111,14 @@ namespace Neo.Network.P2P.Payloads
             return new UInt160[] { fallbackTransaction.Signers[1].Account };
         }
 
-        public bool VerifyStateIndependent()
+        public bool Verify(ProtocolSettings settings)
         {
             var nKeysMain = MainTransaction.GetAttributes<NotaryAssisted>();
             if (!nKeysMain.Any()) return false;
             if (nKeysMain.ToArray()[0].NKeys == 0) return false;
+            if (!fallbackTransaction.Script.SequenceEqual(FallbackFixedScript)) return false;
             if (FallbackTransaction.Signers.Length != 2) return false;
+            if (fallbackTransaction.Signers[1].Scopes != WitnessScope.None) return false;
             if (FallbackTransaction.Witnesses[0].InvocationScript.Length != 66
                 || FallbackTransaction.Witnesses[0].VerificationScript.Length != 0
                 || (FallbackTransaction.Witnesses[0].InvocationScript[0] != (byte)OpCode.PUSHDATA1 && FallbackTransaction.Witnesses[0].InvocationScript[1] != 64))
@@ -122,20 +130,9 @@ namespace Neo.Network.P2P.Payloads
             var nKeysFallback = FallbackTransaction.GetAttributes<NotaryAssisted>();
             if (!nKeysFallback.Any()) return false;
             if (nKeysFallback.ToArray()[0].NKeys != 0) return false;
-            return MainTransaction.ValidUntilBlock == FallbackTransaction.ValidUntilBlock;
-        }
-
-        public bool VerifyStateDependent(ProtocolSettings settings, DataCache snapshot)
-        {
-            if (!fallbackTransaction.VerifyWitness(settings, snapshot, fallbackTransaction.Signers[1].Account, fallbackTransaction.Witnesses[1], 0_02000000, out _))
-                return false;
-            return this.VerifyWitnesses(settings, snapshot, 0_02000000);
-        }
-
-        public bool Verify(ProtocolSettings settings, DataCache snapshot)
-        {
-            if (!VerifyStateIndependent()) return false;
-            return VerifyStateDependent(settings, snapshot);
+            if (MainTransaction.ValidUntilBlock != FallbackTransaction.ValidUntilBlock) return false;
+            if (!fallbackTransaction.VerifyWitness(settings, null, fallbackTransaction.Signers[1].Account, fallbackTransaction.Witnesses[1], 0_02000000, out _)) return false;
+            return this.VerifyWitnesses(settings, null, 0_02000000);
         }
     }
 }
