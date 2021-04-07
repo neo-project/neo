@@ -282,9 +282,9 @@ namespace Neo.Ledger
             _txRwLock.EnterWriteLock();
             try
             {
-                if (!CheckConflicts(tx)) return VerifyResult.Invalid;
                 VerifyResult result = tx.VerifyStateDependent(_system.Settings, snapshot, VerificationContext);
                 if (result != VerifyResult.Succeed) return result;
+                if (!CheckConflicts(tx)) return VerifyResult.Invalid;
 
                 _unsortedTransactions.Add(tx.Hash, poolItem);
                 VerificationContext.AddTransaction(tx);
