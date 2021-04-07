@@ -34,7 +34,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_ExpirationOf()
         {
-            NativeContract.Notary.ExpirationOf(_snapshot,UInt160.Zero).Should().Be(0);
+            NativeContract.Notary.ExpirationOf(_snapshot, UInt160.Zero).Should().Be(0);
         }
 
         [TestMethod]
