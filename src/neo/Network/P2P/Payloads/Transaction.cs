@@ -366,7 +366,7 @@ namespace Neo.Network.P2P.Payloads
                 if (attribute is NotaryAssisted)
                     notary_fee = (((NotaryAssisted)attribute).NKeys + 1) * NativeContract.Notary.GetNotaryServiceFeePerKey(snapshot);
             }
-            if (mempool is not null && !VerifyConflict(mempool)) return VerifyResult.Invalid;
+            if (mempool is not null && !VerifyConflicts(mempool)) return VerifyResult.Invalid;
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot) - notary_fee;
             if (net_fee < 0) return VerifyResult.InsufficientFunds;
 
