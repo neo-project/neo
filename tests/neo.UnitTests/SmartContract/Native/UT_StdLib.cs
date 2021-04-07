@@ -45,6 +45,117 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void MemoryCompare()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshot();
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memoryCompare", "abc", "c");
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memoryCompare", "abc", "d");
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memoryCompare", "abc", "abc");
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memoryCompare", "abc", "abcd");
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(4, engine.ResultStack.Count);
+
+                Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
+                Assert.AreEqual(0, engine.ResultStack.Pop<Integer>().GetInteger());
+                Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
+                Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
+            }
+        }
+
+        [TestMethod]
+        public void MemorySearch()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshot();
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "c", 0);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "c", 1);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "c", 2);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "c", 3);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "d", 0);
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(5, engine.ResultStack.Count);
+
+                Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
+                Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
+                Assert.AreEqual(2, engine.ResultStack.Pop<Integer>().GetInteger());
+                Assert.AreEqual(2, engine.ResultStack.Pop<Integer>().GetInteger());
+            }
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "c", 0, false);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "c", 1, false);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "c", 2, false);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "c", 3, false);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "d", 0, false);
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(5, engine.ResultStack.Count);
+
+                Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
+                Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
+                Assert.AreEqual(2, engine.ResultStack.Pop<Integer>().GetInteger());
+                Assert.AreEqual(2, engine.ResultStack.Pop<Integer>().GetInteger());
+            }
+
+            using (var script = new ScriptBuilder())
+            {
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "c", 0, true);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "c", 1, true);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "c", 2, true);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "c", 3, true);
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "memorySearch", "abc", "d", 0, true);
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(5, engine.ResultStack.Count);
+
+                Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
+                Assert.AreEqual(2, engine.ResultStack.Pop<Integer>().GetInteger());
+                Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
+                Assert.AreEqual(-1, engine.ResultStack.Pop<Integer>().GetInteger());
+            }
+        }
+
+        [TestMethod]
+        public void StringSplit()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshot();
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringSplit", "a,b", ",");
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            Assert.AreEqual(1, engine.ResultStack.Count);
+
+            var arr = engine.ResultStack.Pop<Array>();
+            Assert.AreEqual(2, arr.Count);
+            Assert.AreEqual("a", arr[0].GetString());
+            Assert.AreEqual("b", arr[1].GetString());
+        }
+
+        [TestMethod]
         public void Json_Deserialize()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
