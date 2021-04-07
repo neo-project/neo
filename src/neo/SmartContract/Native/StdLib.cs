@@ -180,5 +180,12 @@ namespace Neo.SmartContract.Native
         {
             return str.Split(separator);
         }
+
+        [ContractMethod(CpuFee = 1 << 8)]
+        private static string[] StringSplit([MaxLength(MaxInputLength)] string str, string separator, bool removeEmptyEntries)
+        {
+            StringSplitOptions options = removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None;
+            return str.Split(separator, options);
+        }
     }
 }
