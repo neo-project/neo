@@ -310,6 +310,7 @@ namespace Neo.Ledger
         {
             DataCache snapshot = system.StoreView;
             extensibleWitnessWhiteList ??= UpdateExtensibleWitnessWhiteList(system.Settings, snapshot);
+            if (system.RelayCache.Any(u => u is ExtensiblePayload ext && ext.Sender == payload.Sender)) return VerifyResult.PolicyFail;
             if (!payload.Verify(system.Settings, snapshot, extensibleWitnessWhiteList)) return VerifyResult.Invalid;
             system.RelayCache.Add(payload);
             return VerifyResult.Succeed;
@@ -475,12 +476,6 @@ namespace Neo.Ledger
             var validators = NativeContract.NEO.GetNextBlockValidators(snapshot, settings.ValidatorsCount);
             builder.Add(Contract.GetBFTAddress(validators));
             builder.UnionWith(validators.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()));
-            var oracles = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, currentHeight);
-            if (oracles.Length > 0)
-            {
-                builder.Add(Contract.GetBFTAddress(oracles));
-                builder.UnionWith(oracles.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()));
-            }
             var stateValidators = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.StateValidator, currentHeight);
             if (stateValidators.Length > 0)
             {
