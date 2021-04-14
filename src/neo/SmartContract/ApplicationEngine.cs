@@ -365,6 +365,7 @@ namespace Neo.SmartContract
         /// <returns>The converted <see cref="object"/>.</returns>
         protected internal object Convert(StackItem item, InteropParameterDescriptor descriptor)
         {
+            descriptor.Validate(item);
             if (descriptor.IsArray)
             {
                 Array av;
