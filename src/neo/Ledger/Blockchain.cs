@@ -310,7 +310,6 @@ namespace Neo.Ledger
         {
             DataCache snapshot = system.StoreView;
             extensibleWitnessWhiteList ??= UpdateExtensibleWitnessWhiteList(system.Settings, snapshot);
-            if (system.RelayCache.Any(u => u is ExtensiblePayload ext && ext.Sender == payload.Sender)) return VerifyResult.PolicyFail;
             if (!payload.Verify(system.Settings, snapshot, extensibleWitnessWhiteList)) return VerifyResult.Invalid;
             system.RelayCache.Add(payload);
             return VerifyResult.Succeed;
