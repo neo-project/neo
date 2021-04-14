@@ -119,14 +119,24 @@ namespace Neo.Wallets
         /// <returns>The created account.</returns>
         public WalletAccount CreateAccount()
         {
+        generate:
             byte[] privateKey = new byte[32];
-            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+            try
             {
-                rng.GetBytes(privateKey);
+                using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+                {
+                    rng.GetBytes(privateKey);
+                }
+                return CreateAccount(privateKey);
             }
-            WalletAccount account = CreateAccount(privateKey);
-            Array.Clear(privateKey, 0, privateKey.Length);
-            return account;
+            catch (ArgumentException)
+            {
+                goto generate;
+            }
+            finally
+            {
+                Array.Clear(privateKey, 0, privateKey.Length);
+            }
         }
 
         /// <summary>
