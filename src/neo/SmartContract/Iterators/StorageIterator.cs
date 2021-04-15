@@ -7,12 +7,14 @@ namespace Neo.SmartContract.Iterators
     internal class StorageIterator : IIterator
     {
         private readonly IEnumerator<(StorageKey Key, StorageItem Value)> enumerator;
+        private readonly int prefixLength;
         private readonly FindOptions options;
         private readonly ReferenceCounter referenceCounter;
 
-        public StorageIterator(IEnumerator<(StorageKey, StorageItem)> enumerator, FindOptions options, ReferenceCounter referenceCounter)
+        public StorageIterator(IEnumerator<(StorageKey, StorageItem)> enumerator, int prefixLength, FindOptions options, ReferenceCounter referenceCounter)
         {
             this.enumerator = enumerator;
+            this.prefixLength = prefixLength;
             this.options = options;
             this.referenceCounter = referenceCounter;
         }
@@ -33,7 +35,7 @@ namespace Neo.SmartContract.Iterators
             byte[] value = enumerator.Current.Value.Value;
 
             if (options.HasFlag(FindOptions.RemovePrefix))
-                key = key[1..];
+                key = key[prefixLength..];
 
             StackItem item = options.HasFlag(FindOptions.DeserializeValues)
                 ? BinarySerializer.Deserialize(value, 1024, referenceCounter)
