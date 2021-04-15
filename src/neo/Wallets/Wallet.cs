@@ -119,8 +119,8 @@ namespace Neo.Wallets
         /// <returns>The created account.</returns>
         public WalletAccount CreateAccount()
         {
-        generate:
             byte[] privateKey = new byte[32];
+        generate:
             try
             {
                 using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
