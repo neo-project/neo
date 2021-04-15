@@ -176,7 +176,7 @@ namespace Neo.SmartContract.Native
         protected IIterator Tokens(DataCache snapshot)
         {
             var results = snapshot.Find(CreateStorageKey(Prefix_Token).ToArray()).GetEnumerator();
-            return new StorageIterator(results, FindOptions.ValuesOnly | FindOptions.DeserializeValues | FindOptions.PickField1, null);
+            return new StorageIterator(results, 1, FindOptions.ValuesOnly | FindOptions.DeserializeValues | FindOptions.PickField1, null);
         }
 
         /// <summary>
