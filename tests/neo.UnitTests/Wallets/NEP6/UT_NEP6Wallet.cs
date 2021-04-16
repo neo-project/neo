@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
@@ -70,6 +71,26 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             if (File.Exists(wPath)) File.Delete(wPath);
             if (Directory.Exists(rootPath)) Directory.Delete(rootPath);
+        }
+
+        [TestMethod]
+        public void TestCreateAccount()
+        {
+            var uut = new NEP6Wallet(wPath, ProtocolSettings.Default);
+            uut.Unlock("123");
+            var acc = uut.CreateAccount("FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632549".HexToBytes());
+            var tx = new Transaction()
+            {
+                Attributes = Array.Empty<TransactionAttribute>(),
+                Script = new byte[1],
+                Signers = new Signer[] { new Signer() { Account = acc.ScriptHash } },
+            };
+            var ctx = new ContractParametersContext(TestBlockchain.GetTestSnapshot(), tx, ProtocolSettings.Default.Network);
+            var sig = uut.Sign(ctx);
+            tx.Witnesses = ctx.GetWitnesses();
+            Assert.IsTrue(tx.VerifyWitnesses(ProtocolSettings.Default, TestBlockchain.GetTestSnapshot(), long.MaxValue));
+            Assert.ThrowsException<ArgumentNullException>(() => uut.CreateAccount((byte[])null));
+            Assert.ThrowsException<ArgumentException>(() => uut.CreateAccount("FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551".HexToBytes()));
         }
 
         [TestMethod]
