@@ -15,6 +15,16 @@ namespace Neo.Ledger
 
         public Block GetBlock(DataCache<UInt256, TransactionState> cache)
         {
+            var transactions = Hashes.Select(p => cache[p].Transaction).ToArray();
+            for (uint i = 0; i < transactions.Length; i++)
+            {
+                var tx = transactions[i];
+                if (tx.Data == null)
+                {
+                    tx.Data = TransactionData.Create(Hash, Index, 0, i);
+                }
+            }
+            
             return new Block
             {
                 Version = Version,
@@ -25,7 +35,7 @@ namespace Neo.Ledger
                 ConsensusData = ConsensusData,
                 NextConsensus = NextConsensus,
                 Witness = Witness,
-                Transactions = Hashes.Select(p => cache[p].Transaction).ToArray()
+                Transactions = transactions
             };
         }
 

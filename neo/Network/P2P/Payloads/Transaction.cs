@@ -81,6 +81,8 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
+        public TransactionData Data { get; set; }
+        
         private IReadOnlyDictionary<CoinReference, TransactionOutput> _references;
         public IReadOnlyDictionary<CoinReference, TransactionOutput> References
         {
@@ -259,6 +261,7 @@ namespace Neo.Network.P2P.Payloads
             json["sys_fee"] = SystemFee.ToString();
             json["net_fee"] = NetworkFee.ToString();
             json["scripts"] = Witnesses.Select(p => p.ToJson()).ToArray();
+            json["data"] = Data.ToJson();
             return json;
         }
 
