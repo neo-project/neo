@@ -62,16 +62,18 @@ namespace Neo.SmartContract.Manifest
             Struct @struct = (Struct)stackItem;
             Name = @struct[0].GetString();
             Groups = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractGroup>()).ToArray();
-            SupportedStandards = ((Array)@struct[2]).Select(p => p.GetString()).ToArray();
-            Abi = @struct[3].ToInteroperable<ContractAbi>();
-            Permissions = ((Array)@struct[4]).Select(p => p.ToInteroperable<ContractPermission>()).ToArray();
-            Trusts = @struct[5] switch
+            if (((Array)@struct[2]).Count != 0)
+                throw new ArgumentException(null, nameof(stackItem));
+            SupportedStandards = ((Array)@struct[3]).Select(p => p.GetString()).ToArray();
+            Abi = @struct[4].ToInteroperable<ContractAbi>();
+            Permissions = ((Array)@struct[5]).Select(p => p.ToInteroperable<ContractPermission>()).ToArray();
+            Trusts = @struct[6] switch
             {
                 Null => WildcardContainer<ContractPermissionDescriptor>.CreateWildcard(),
                 Array array => WildcardContainer<ContractPermissionDescriptor>.Create(array.Select(p => new ContractPermissionDescriptor(p.GetSpan())).ToArray()),
                 _ => throw new ArgumentException(null, nameof(stackItem))
             };
-            Extra = JObject.Parse(@struct[6].GetSpan());
+            Extra = JObject.Parse(@struct[7].GetSpan());
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
@@ -80,6 +82,7 @@ namespace Neo.SmartContract.Manifest
             {
                 Name,
                 new Array(referenceCounter, Groups.Select(p => p.ToStackItem(referenceCounter))),
+                new Array(referenceCounter),
                 new Array(referenceCounter, SupportedStandards.Select(p => (StackItem)p)),
                 Abi.ToStackItem(referenceCounter),
                 new Array(referenceCounter, Permissions.Select(p => p.ToStackItem(referenceCounter))),
@@ -108,6 +111,8 @@ namespace Neo.SmartContract.Manifest
             if (string.IsNullOrEmpty(manifest.Name))
                 throw new FormatException();
             _ = manifest.Groups.ToDictionary(p => p.PubKey);
+            if (json["features"].GetArray().Count != 0)
+                throw new FormatException();
             if (manifest.SupportedStandards.Any(p => string.IsNullOrEmpty(p)))
                 throw new FormatException();
             _ = manifest.SupportedStandards.ToDictionary(p => p);
@@ -144,6 +149,7 @@ namespace Neo.SmartContract.Manifest
             {
                 ["name"] = Name,
                 ["groups"] = Groups.Select(u => u.ToJson()).ToArray(),
+                ["features"] = new JArray(),
                 ["supportedstandards"] = SupportedStandards.Select(u => new JString(u)).ToArray(),
                 ["abi"] = Abi.ToJson(),
                 ["permissions"] = Permissions.Select(p => p.ToJson()).ToArray(),
