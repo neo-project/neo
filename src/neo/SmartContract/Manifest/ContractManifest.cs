@@ -62,7 +62,7 @@ namespace Neo.SmartContract.Manifest
             Struct @struct = (Struct)stackItem;
             Name = @struct[0].GetString();
             Groups = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractGroup>()).ToArray();
-            if (((Array)@struct[2]).Count != 0)
+            if (((Map)@struct[2]).Count != 0)
                 throw new ArgumentException(null, nameof(stackItem));
             SupportedStandards = ((Array)@struct[3]).Select(p => p.GetString()).ToArray();
             Abi = @struct[4].ToInteroperable<ContractAbi>();
@@ -82,7 +82,7 @@ namespace Neo.SmartContract.Manifest
             {
                 Name,
                 new Array(referenceCounter, Groups.Select(p => p.ToStackItem(referenceCounter))),
-                new Array(referenceCounter),
+                new Map(referenceCounter),
                 new Array(referenceCounter, SupportedStandards.Select(p => (StackItem)p)),
                 Abi.ToStackItem(referenceCounter),
                 new Array(referenceCounter, Permissions.Select(p => p.ToStackItem(referenceCounter))),
@@ -111,7 +111,7 @@ namespace Neo.SmartContract.Manifest
             if (string.IsNullOrEmpty(manifest.Name))
                 throw new FormatException();
             _ = manifest.Groups.ToDictionary(p => p.PubKey);
-            if (json["features"].GetArray().Count != 0)
+            if (json["features"].Properties.Count != 0)
                 throw new FormatException();
             if (manifest.SupportedStandards.Any(p => string.IsNullOrEmpty(p)))
                 throw new FormatException();
@@ -149,7 +149,7 @@ namespace Neo.SmartContract.Manifest
             {
                 ["name"] = Name,
                 ["groups"] = Groups.Select(u => u.ToJson()).ToArray(),
-                ["features"] = new JArray(),
+                ["features"] = new JObject(),
                 ["supportedstandards"] = SupportedStandards.Select(u => new JString(u)).ToArray(),
                 ["abi"] = Abi.ToJson(),
                 ["permissions"] = Permissions.Select(p => p.ToJson()).ToArray(),
