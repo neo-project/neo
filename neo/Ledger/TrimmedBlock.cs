@@ -21,7 +21,8 @@ namespace Neo.Ledger
                 var tx = transactions[i];
                 if (tx.Data == null)
                 {
-                    tx.Data = TransactionData.Create(Hash, Index, 0, i);
+                    var globalIndex = ulong.Parse($"{Index}{i}");
+                    tx.Data = TransactionData.Create(Hash, Index, globalIndex, i);
                 }
             }
             
