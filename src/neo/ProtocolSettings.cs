@@ -135,7 +135,6 @@ namespace Neo
                 [nameof(PolicyContract)] = new[] { 0u },
                 [nameof(RoleManagement)] = new[] { 0u },
                 [nameof(OracleContract)] = new[] { 0u },
-                [nameof(NameService)] = new[] { 0u },
                 [nameof(NotaryContract)] = new[] { 0u }
             }
         };
