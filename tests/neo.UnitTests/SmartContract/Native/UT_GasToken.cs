@@ -6,6 +6,7 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
+using Neo.VM;
 using System;
 using System.Linq;
 using System.Numerics;
@@ -34,6 +35,71 @@ namespace Neo.UnitTests.SmartContract.Native
 
         [TestMethod]
         public void Check_Decimals() => NativeContract.GAS.Decimals(_snapshot).Should().Be(8);
+
+        [TestMethod]
+        public void Refuel()
+        {
+            // Global is supposed to be default
+
+            var wallet = TestUtils.GenerateTestWallet();
+            var snapshot = TestBlockchain.GetTestSnapshot();
+
+            // no password on this wallet
+            using var unlock = wallet.Unlock("");
+            var accBalance = wallet.CreateAccount();
+            var accNoBalance = wallet.CreateAccount();
+
+            // Fake balance
+
+            var key = NativeContract.GAS.CreateStorageKey(20, accNoBalance.ScriptHash);
+            var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
+            entry.GetInteroperable<AccountState>().Balance = 1 * NativeContract.GAS.Factor;
+
+            key = NativeContract.GAS.CreateStorageKey(20, accBalance.ScriptHash);
+            entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
+            entry.GetInteroperable<AccountState>().Balance = 100 * NativeContract.GAS.Factor;
+
+            snapshot.Commit();
+
+            // Make transaction
+            // Manually creating script
+
+            byte[] script;
+            using (ScriptBuilder sb = new())
+            {
+                // self-transfer of 1e-8 GAS
+                sb.EmitDynamicCall(NativeContract.GAS.Hash, "refuel", accBalance.ScriptHash, 100 * NativeContract.GAS.Factor);
+                sb.Emit(OpCode.DROP);
+                sb.EmitSysCall(ApplicationEngine.System_Runtime_GasLeft);
+                script = sb.ToArray();
+            }
+
+            // try to use fee only inside the smart contract
+            var signers = new Signer[]{ new Signer
+                {
+                    Account = accBalance.ScriptHash,
+                    Scopes =  WitnessScope.CalledByEntry
+                } ,
+                new Signer
+                {
+                    Account = accNoBalance.ScriptHash,
+                    Scopes =  WitnessScope.CalledByEntry
+                } };
+
+            var tx = wallet.MakeTransaction(snapshot, script, accBalance.ScriptHash, signers);
+            Assert.IsNotNull(tx);
+
+            // Check
+
+            using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: tx.NetworkFee);
+            engine.LoadScript(tx.Script);
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual(1, engine.ResultStack.Count);
+            Assert.AreEqual(100_00300140, engine.ResultStack.Pop().GetInteger());
+
+            entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
+            Assert.AreEqual(0, entry.GetInteroperable<AccountState>().Balance);
+        }
 
         [TestMethod]
         public async Task Check_BalanceOfTransferAndBurn()
