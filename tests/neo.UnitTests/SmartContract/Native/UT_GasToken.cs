@@ -39,12 +39,11 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Refuel()
         {
-            // Global is supposed to be default
+            // Prepare
 
             var wallet = TestUtils.GenerateTestWallet();
             var snapshot = TestBlockchain.GetTestSnapshot();
 
-            // no password on this wallet
             using var unlock = wallet.Unlock("");
             var accBalance = wallet.CreateAccount();
             var accNoBalance = wallet.CreateAccount();
@@ -62,19 +61,16 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.Commit();
 
             // Make transaction
-            // Manually creating script
 
             byte[] script;
             using (ScriptBuilder sb = new())
             {
-                // self-transfer of 1e-8 GAS
                 sb.EmitDynamicCall(NativeContract.GAS.Hash, "refuel", accBalance.ScriptHash, 100 * NativeContract.GAS.Factor);
                 sb.Emit(OpCode.DROP);
                 sb.EmitSysCall(ApplicationEngine.System_Runtime_GasLeft);
                 script = sb.ToArray();
             }
 
-            // try to use fee only inside the smart contract
             var signers = new Signer[]{ new Signer
                 {
                     Account = accBalance.ScriptHash,
