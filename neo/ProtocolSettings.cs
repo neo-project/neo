@@ -39,7 +39,12 @@ namespace Neo
             {
                 if (_default == null)
                 {
-                    var configuration = new ConfigurationBuilder().AddJsonFile("protocol.json", true).Build();
+                    var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+                    var configuration = new ConfigurationBuilder()
+                        .AddJsonFile("protocol.json", true)
+                        .AddJsonFile($"protocol.{environmentName}.json", true)
+                        .AddEnvironmentVariables()
+                        .Build();
                     UpdateDefault(configuration);
                 }
 
