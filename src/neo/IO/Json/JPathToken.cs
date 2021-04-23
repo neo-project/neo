@@ -209,10 +209,16 @@ namespace Neo.IO.Json
             while (objects.Length > 0)
             {
                 if (identifier is null)
+                {
                     Descent(ref objects);
+                    results.AddRange(objects);
+                }
                 else
-                    Descent(ref objects, identifier);
-                results.AddRange(objects);
+                {
+                    var properties = objects.SelectMany(p => p.Properties);
+                    results.AddRange(properties.Where(p => p.Key == identifier).Select(p => p.Value));
+                    objects = properties.Select(p => p.Value).ToArray();
+                }
             }
             objects = results.ToArray();
         }
