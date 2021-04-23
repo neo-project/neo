@@ -80,12 +80,7 @@ namespace Neo.UnitTests.IO.Json
             //Assert.AreEqual(@"[1,2]", json.JsonPath("$..book[1:2]").ToString());
             //Assert.AreEqual(@"[1,2]", json.JsonPath("$..book[-2:]").ToString());
             //Assert.AreEqual(@"[1,2]", json.JsonPath("$..book[2:]").ToString());
-            //Assert.AreEqual(@"[1,2]", json.JsonPath("$..book[?(@.isbn)]").ToString());
-            //Assert.AreEqual(@"[1,2]", json.JsonPath("$.store.book[?(@.price < 10)]").ToString());
-            //Assert.AreEqual(@"[1,2]", json.JsonPath("$..book[?(@.price <= $['expensive'])]").ToString());
-            //Assert.AreEqual(@"[1,2]", json.JsonPath("$..book[?(@.author =~ /.*REES/i)]").ToString());
             //Assert.AreEqual(@"[1,2]", json.JsonPath("$..*").ToString());
-            //Assert.AreEqual(@"[1,2]", json.JsonPath("$..book.length()").ToString());
         }
     }
 }
