@@ -289,10 +289,9 @@ namespace Neo.IO.Json
             {
                 foreach (int index in indexes)
                 {
-                    if (index < 0)
-                        throw new FormatException();
-                    if (index < array.Count)
-                        yield return array[index];
+                    int i = index >= 0 ? index : index + array.Count;
+                    if (i >= 0 && i < array.Count)
+                        yield return array[i];
                 }
             }
             objects = objects.OfType<JArray>().SelectMany(p => GetElements(p, indexes)).ToArray();
@@ -303,9 +302,9 @@ namespace Neo.IO.Json
             objects = objects.OfType<JArray>().SelectMany(p =>
             {
                 int iStart = start >= 0 ? start : start + p.Count;
+                if (iStart < 0) iStart = 0;
                 int iEnd = end > 0 ? end : end + p.Count;
                 int count = iEnd - iStart;
-                if (count < 0) throw new FormatException();
                 return p.Skip(iStart).Take(count);
             }).ToArray();
         }
