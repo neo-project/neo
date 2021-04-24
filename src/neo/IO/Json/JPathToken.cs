@@ -215,9 +215,8 @@ namespace Neo.IO.Json
                 }
                 else
                 {
-                    var properties = objects.SelectMany(p => p.Properties);
-                    results.AddRange(properties.Where(p => p.Key == identifier).Select(p => p.Value));
-                    objects = properties.Select(p => p.Value).ToArray();
+                    results.AddRange(objects.SelectMany(p => p.Properties).Where(p => p.Key == identifier).Select(p => p.Value));
+                    Descent(ref objects);
                 }
             }
             objects = results.ToArray();
