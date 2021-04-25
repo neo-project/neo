@@ -19,7 +19,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The magic number of the network.
         /// </summary>
-        public uint Magic;
+        public uint Network;
 
         /// <summary>
         /// The protocol version of the node.
@@ -47,7 +47,7 @@ namespace Neo.Network.P2P.Payloads
         public NodeCapability[] Capabilities;
 
         public int Size =>
-            sizeof(uint) +              // Magic
+            sizeof(uint) +              // Network
             sizeof(uint) +              // Version
             sizeof(uint) +              // Timestamp
             sizeof(uint) +              // Nonce
@@ -57,16 +57,16 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// Creates a new instance of the <see cref="VersionPayload"/> class.
         /// </summary>
-        /// <param name="magic">The magic number of the network.</param>
+        /// <param name="network">The magic number of the network.</param>
         /// <param name="nonce">The random number used to identify the node.</param>
         /// <param name="userAgent">The <see cref="string"/> used to identify the client software of the node.</param>
         /// <param name="capabilities">The capabilities of the node.</param>
         /// <returns></returns>
-        public static VersionPayload Create(uint magic, uint nonce, string userAgent, params NodeCapability[] capabilities)
+        public static VersionPayload Create(uint network, uint nonce, string userAgent, params NodeCapability[] capabilities)
         {
             return new VersionPayload
             {
-                Magic = magic,
+                Network = network,
                 Version = LocalNode.ProtocolVersion,
                 Timestamp = DateTime.Now.ToTimestamp(),
                 Nonce = nonce,
@@ -77,7 +77,7 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            Magic = reader.ReadUInt32();
+            Network = reader.ReadUInt32();
             Version = reader.ReadUInt32();
             Timestamp = reader.ReadUInt32();
             Nonce = reader.ReadUInt32();
@@ -93,7 +93,7 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write(Magic);
+            writer.Write(Network);
             writer.Write(Version);
             writer.Write(Timestamp);
             writer.Write(Nonce);

@@ -15,7 +15,7 @@ namespace Neo
         /// <summary>
         /// The magic number of the NEO network.
         /// </summary>
-        public uint Magic { get; init; }
+        public uint Network { get; init; }
 
         /// <summary>
         /// The address version of the NEO system.
@@ -83,7 +83,7 @@ namespace Neo
         /// </summary>
         public static ProtocolSettings Default { get; } = new ProtocolSettings
         {
-            Magic = 0x4F454Eu,
+            Network = 0x4F454Eu,
             AddressVersion = 0x35,
             StandbyCommittee = new[]
             {
@@ -161,7 +161,7 @@ namespace Neo
         {
             return new ProtocolSettings
             {
-                Magic = section.GetValue("Magic", Default.Magic),
+                Network = section.GetValue("Network", Default.Network),
                 AddressVersion = section.GetValue("AddressVersion", Default.AddressVersion),
                 StandbyCommittee = section.GetSection("StandbyCommittee").Exists()
                     ? section.GetSection("StandbyCommittee").GetChildren().Select(p => ECPoint.Parse(p.Get<string>(), ECCurve.Secp256r1)).ToArray()

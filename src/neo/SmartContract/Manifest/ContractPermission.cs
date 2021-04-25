@@ -87,7 +87,7 @@ namespace Neo.SmartContract.Manifest
         {
             var json = new JObject();
             json["contract"] = Contract.ToJson();
-            json["methods"] = Methods.ToJson();
+            json["methods"] = Methods.ToJson(p => p);
             return json;
         }
 

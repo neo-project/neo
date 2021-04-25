@@ -44,7 +44,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             UInt256 val256 = UInt256.Zero;
             var snapshot = TestBlockchain.GetTestSnapshot().CreateSnapshot();
             TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _);
-            uut.Witness = new Witness() { InvocationScript = new byte[0], VerificationScript = new byte[0] };
+            uut.Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() };
 
             UT_SmartContractHelper.BlocksAdd(snapshot, uut.Hash, new TrimmedBlock()
             {
@@ -82,11 +82,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var hex = "0000000000000000000000000000000000000000000000000000000000000000000000007227ba7b747f1a98f68679d4a98b68927646ab195a6f56b542ca5a0e6a412662e913ff854c0000000000000000000000000000000000000000000000000000000001000111";
 
-            using (MemoryStream ms = new MemoryStream(hex.HexToBytes(), false))
-            {
-                using BinaryReader reader = new BinaryReader(ms);
-                uut.Deserialize(reader);
-            }
+            using MemoryStream ms = new(hex.HexToBytes(), false);
+            using BinaryReader reader = new(ms);
+            uut.Deserialize(reader);
 
             AssertStandardHeaderTestVals(val256, merkRoot, val160, timestampVal, indexVal, scriptVal);
         }
@@ -119,8 +117,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Equals_SameHash()
         {
-            Header newHeader = new Header();
-            UInt256 prevHash = new UInt256(TestUtils.GetByteArray(32, 0x42));
+            Header newHeader = new();
+            UInt256 prevHash = new(TestUtils.GetByteArray(32, 0x42));
             TestUtils.SetupHeaderWithValues(newHeader, prevHash, out _, out _, out _, out _, out _);
             TestUtils.SetupHeaderWithValues(uut, prevHash, out _, out _, out _, out _, out _);
 

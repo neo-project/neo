@@ -61,7 +61,7 @@ namespace Neo.UnitTests.IO.Caching
         readonly int max_capacity = 4;
 
         [TestInitialize]
-        public void init()
+        public void Init()
         {
             cache = new MyCache(max_capacity);
         }
@@ -166,8 +166,10 @@ namespace Neo.UnitTests.IO.Caching
         public void TestRemoveDisposableKey()
         {
             var entry = new CacheDisposableEntry() { Key = 1 };
-            var dcache = new MyDisposableCache(100);
-            dcache.Add(entry);
+            var dcache = new MyDisposableCache(100)
+            {
+                entry
+            };
 
             entry.IsDisposed.Should().BeFalse();
             dcache.Remove(entry.Key).Should().BeTrue();

@@ -74,10 +74,10 @@ namespace Neo.SmartContract.Manifest
         /// Converts the list to a JSON object.
         /// </summary>
         /// <returns>The list represented by a JSON object.</returns>
-        public JObject ToJson()
+        public JObject ToJson(Func<T, JObject> elementSelector)
         {
             if (IsWildcard) return "*";
-            return _data.Select(p => (JObject)p.ToString()).ToArray();
+            return _data.Select(p => elementSelector(p)).ToArray();
         }
     }
 }

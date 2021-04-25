@@ -58,7 +58,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             Assert.AreEqual(manifest.ToJson().ToString(), json);
 
             var check = TestUtils.CreateDefaultManifest();
-            check.Trusts = WildcardContainer<UInt160>.Create(UInt160.Parse("0x0000000000000000000000000000000000000001"));
+            check.Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(ContractPermissionDescriptor.Create(UInt160.Parse("0x0000000000000000000000000000000000000001")));
             Assert.AreEqual(manifest.ToJson().ToString(), check.ToJson().ToString());
         }
 
@@ -106,7 +106,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestGenerator()
         {
-            ContractManifest contractManifest = new ContractManifest();
+            ContractManifest contractManifest = new();
             Assert.IsNotNull(contractManifest);
         }
     }

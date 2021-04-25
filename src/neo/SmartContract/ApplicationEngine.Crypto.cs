@@ -8,24 +8,24 @@ namespace Neo.SmartContract
     partial class ApplicationEngine
     {
         /// <summary>
-        /// The price of Neo.Crypto.CheckSig.
+        /// The price of System.Crypto.CheckSig.
         /// </summary>
         public const long CheckSigPrice = 1 << 15;
 
         /// <summary>
-        /// The <see cref="InteropDescriptor"/> of Neo.Crypto.CheckSig.
+        /// The <see cref="InteropDescriptor"/> of System.Crypto.CheckSig.
         /// Checks the signature for the current script container.
         /// </summary>
-        public static readonly InteropDescriptor Neo_Crypto_CheckSig = Register("Neo.Crypto.CheckSig", nameof(CheckSig), CheckSigPrice, CallFlags.None);
+        public static readonly InteropDescriptor System_Crypto_CheckSig = Register("System.Crypto.CheckSig", nameof(CheckSig), CheckSigPrice, CallFlags.None);
 
         /// <summary>
-        /// The <see cref="InteropDescriptor"/> of Neo.Crypto.CheckMultisig.
+        /// The <see cref="InteropDescriptor"/> of System.Crypto.CheckMultisig.
         /// Checks the signatures for the current script container.
         /// </summary>
-        public static readonly InteropDescriptor Neo_Crypto_CheckMultisig = Register("Neo.Crypto.CheckMultisig", nameof(CheckMultisig), 0, CallFlags.None);
+        public static readonly InteropDescriptor System_Crypto_CheckMultisig = Register("System.Crypto.CheckMultisig", nameof(CheckMultisig), 0, CallFlags.None);
 
         /// <summary>
-        /// The implementation of Neo.Crypto.CheckSig.
+        /// The implementation of System.Crypto.CheckSig.
         /// Checks the signature for the current script container.
         /// </summary>
         /// <param name="pubkey">The public key of the account.</param>
@@ -35,7 +35,7 @@ namespace Neo.SmartContract
         {
             try
             {
-                return Crypto.VerifySignature(ScriptContainer.GetSignData(ProtocolSettings.Magic), signature, pubkey, ECCurve.Secp256r1);
+                return Crypto.VerifySignature(ScriptContainer.GetSignData(ProtocolSettings.Network), signature, pubkey, ECCurve.Secp256r1);
             }
             catch (ArgumentException)
             {
@@ -44,7 +44,7 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// The implementation of Neo.Crypto.CheckMultisig.
+        /// The implementation of System.Crypto.CheckMultisig.
         /// Checks the signatures for the current script container.
         /// </summary>
         /// <param name="pubkeys">The public keys of the account.</param>
@@ -52,7 +52,7 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the signatures are valid; otherwise, <see langword="false"/>.</returns>
         protected internal bool CheckMultisig(byte[][] pubkeys, byte[][] signatures)
         {
-            byte[] message = ScriptContainer.GetSignData(ProtocolSettings.Magic);
+            byte[] message = ScriptContainer.GetSignData(ProtocolSettings.Network);
             int m = signatures.Length, n = pubkeys.Length;
             if (n == 0 || m == 0 || m > n) throw new ArgumentException();
             AddGas(CheckSigPrice * n * exec_fee_factor);

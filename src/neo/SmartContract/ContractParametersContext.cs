@@ -62,6 +62,11 @@ namespace Neo.SmartContract
         /// </summary>
         public readonly DataCache Snapshot;
 
+        /// <summary>
+        /// The magic number of the network.
+        /// </summary>
+        public readonly uint Network;
+
         private readonly Dictionary<UInt160, ContextItem> ContextItems;
 
         /// <summary>
@@ -88,11 +93,13 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="verifiable">The <see cref="IVerifiable"/> to add witnesses.</param>
-        public ContractParametersContext(DataCache snapshot, IVerifiable verifiable)
+        /// <param name="network">The magic number of the network.</param>
+        public ContractParametersContext(DataCache snapshot, IVerifiable verifiable, uint network)
         {
             this.Verifiable = verifiable;
             this.Snapshot = snapshot;
             this.ContextItems = new Dictionary<UInt160, ContextItem>();
+            this.Network = network;
         }
 
         /// <summary>
@@ -215,7 +222,7 @@ namespace Neo.SmartContract
             {
                 verifiable.DeserializeUnsigned(reader);
             }
-            ContractParametersContext context = new(snapshot, verifiable);
+            ContractParametersContext context = new(snapshot, verifiable, (uint)json["network"].GetInt32());
             foreach (var property in json["items"].Properties)
             {
                 context.ContextItems.Add(UInt160.Parse(property.Key), new ContextItem(property.Value));
@@ -325,6 +332,7 @@ namespace Neo.SmartContract
             json["items"] = new JObject();
             foreach (var item in ContextItems)
                 json["items"][item.Key.ToString()] = item.Value.ToJson();
+            json["network"] = Network;
             return json;
         }
 

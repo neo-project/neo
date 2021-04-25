@@ -36,7 +36,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestToJson()
         {
-            NEP6Contract nep6Contract = new NEP6Contract()
+            NEP6Contract nep6Contract = new()
             {
                 Script = new byte[] { 0x00, 0x01 },
                 ParameterList = new ContractParameterType[] { ContractParameterType.Boolean, ContractParameterType.Integer },

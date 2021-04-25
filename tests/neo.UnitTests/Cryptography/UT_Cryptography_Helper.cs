@@ -53,28 +53,26 @@ namespace Neo.UnitTests.Cryptography
         {
             int m = 7, n = 10;
             uint nTweak = 123456;
-            BloomFilter filter = new BloomFilter(m, n, nTweak);
+            BloomFilter filter = new(m, n, nTweak);
 
-            Transaction tx = new Transaction
+            Transaction tx = new()
             {
                 Script = TestUtils.GetByteArray(32, 0x42),
                 SystemFee = 4200000000,
-                Signers = new Signer[] { new Signer() { Account = (new byte[0]).ToScriptHash() } },
+                Signers = new Signer[] { new Signer() { Account = (Array.Empty<byte>()).ToScriptHash() } },
                 Attributes = Array.Empty<TransactionAttribute>(),
                 Witnesses = new[]
                 {
                     new Witness
                     {
-                        InvocationScript = new byte[0],
-                        VerificationScript = new byte[0]
+                        InvocationScript = Array.Empty<byte>(),
+                        VerificationScript = Array.Empty<byte>()
                     }
                 }
             };
             filter.Test(tx).Should().BeFalse();
-
             filter.Add(tx.Witnesses[0].ScriptHash.ToArray());
             filter.Test(tx).Should().BeTrue();
-
             filter.Add(tx.Hash.ToArray());
             filter.Test(tx).Should().BeTrue();
         }
@@ -84,8 +82,7 @@ namespace Neo.UnitTests.Cryptography
         {
             string password = "hello world";
             string string1 = "bc62d4b80d9e36da29c16c5d4d9f11731f36052c72401a76c23c0fb5a9b74423";
-            byte[] byteArray = new byte[string1.Length / 2];
-            byteArray = string1.HexToBytes();
+            byte[] byteArray = string1.HexToBytes();
             password.ToAesKey().Should().Equal(byteArray);
         }
 
@@ -105,8 +102,7 @@ namespace Neo.UnitTests.Cryptography
             password.AppendChar('l');
             password.AppendChar('d');
             string string1 = "bc62d4b80d9e36da29c16c5d4d9f11731f36052c72401a76c23c0fb5a9b74423";
-            byte[] byteArray = new byte[string1.Length / 2];
-            byteArray = string1.HexToBytes();
+            byte[] byteArray = string1.HexToBytes();
             password.ToAesKey().Should().Equal(byteArray);
         }
 
@@ -134,7 +130,7 @@ namespace Neo.UnitTests.Cryptography
 
             var zeroString = new SecureString();
             var result = zeroString.ToArray();
-            byteArray = new byte[0];
+            byteArray = Array.Empty<byte>();
             result.Should().Equal(byteArray);
         }
     }

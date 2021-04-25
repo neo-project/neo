@@ -197,7 +197,7 @@ namespace Neo.SmartContract
             }
             if (script.Length != i + 5) return false;
             if (script[i++] != (byte)OpCode.SYSCALL) return false;
-            if (BinaryPrimitives.ReadUInt32LittleEndian(script.AsSpan(i)) != ApplicationEngine.Neo_Crypto_CheckMultisig)
+            if (BinaryPrimitives.ReadUInt32LittleEndian(script.AsSpan(i)) != ApplicationEngine.System_Crypto_CheckMultisig)
                 return false;
             return true;
         }
@@ -213,7 +213,7 @@ namespace Neo.SmartContract
             if (script[0] != (byte)OpCode.PUSHDATA1
                 || script[1] != 33
                 || script[35] != (byte)OpCode.SYSCALL
-                || BinaryPrimitives.ReadUInt32LittleEndian(script.AsSpan(36)) != ApplicationEngine.Neo_Crypto_CheckSig)
+                || BinaryPrimitives.ReadUInt32LittleEndian(script.AsSpan(36)) != ApplicationEngine.System_Crypto_CheckSig)
                 return false;
             return true;
         }

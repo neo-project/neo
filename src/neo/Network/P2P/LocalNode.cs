@@ -157,7 +157,7 @@ namespace Neo.Network.P2P
         /// <returns><see langword="true"/> if the new connection is allowed; otherwise, <see langword="false"/>.</returns>
         public bool AllowNewConnection(IActorRef actor, RemoteNode node)
         {
-            if (node.Version.Magic != system.Settings.Magic) return false;
+            if (node.Version.Network != system.Settings.Network) return false;
             if (node.Version.Nonce == Nonce) return false;
 
             // filter duplicate connections
