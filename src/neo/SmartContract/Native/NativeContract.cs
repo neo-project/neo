@@ -65,11 +65,6 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public static OracleContract Oracle { get; } = new();
 
-        /// <summary>
-        /// Gets the instance of the <see cref="Native.NameService"/> class.
-        /// </summary>
-        public static NameService NameService { get; } = new();
-
         #endregion
 
         /// <summary>
