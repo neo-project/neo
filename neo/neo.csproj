@@ -19,7 +19,7 @@
     <Product>CRON</Product>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageReleaseNotes>The latest 2.12.x version based on Neo 2.12.x Blockchain</PackageReleaseNotes>
-    <PackageVersion>2.12.9-dev</PackageVersion>
+    <PackageVersion>2.12.10-dev</PackageVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
