@@ -261,7 +261,11 @@ namespace Neo.Network.P2P.Payloads
             json["sys_fee"] = SystemFee.ToString();
             json["net_fee"] = NetworkFee.ToString();
             json["scripts"] = Witnesses.Select(p => p.ToJson()).ToArray();
-            json["data"] = Data.ToJson();
+            if (Data != null)
+            {
+                json["data"] = Data.ToJson();
+            } 
+            
             return json;
         }
 
