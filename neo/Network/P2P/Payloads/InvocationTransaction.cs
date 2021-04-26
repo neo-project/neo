@@ -58,7 +58,38 @@ namespace Neo.Network.P2P.Payloads
             JObject json = base.ToJson();
             json["script"] = Script.ToHexString();
             json["gas"] = Gas.ToString();
+            json["invocationData"] = InvocationDataJson();
             return json;
+        }
+
+        // added for cron-tracker
+        private JObject InvocationDataJson()
+        {
+            JObject invocationData = new JObject();
+            var result = new JObject();
+
+            var stack = new JArray();
+            var stackObj = new JObject();
+            stackObj["type"] = "Integer";
+            stackObj["value"] = "1";
+            stack.Add(stackObj);
+
+            
+            result["state"] = 1;
+            result["gas_consumed"] = 0;
+            result["gas_cost"] = 0;
+            result["stack"] = stack;
+            
+            
+            invocationData["result"] = result;
+            invocationData["contracts"] = new JArray();
+            invocationData["deletedContractHashes"] = new JArray();
+            invocationData["migratedContractHashes"] = new JArray();
+            invocationData["voteUpdates"] = new JArray();
+            invocationData["actions"] = new JArray();
+            invocationData["storageChanges"] = new JArray();
+
+            return invocationData;
         }
 
         public override bool Verify(Snapshot snapshot, IEnumerable<Transaction> mempool)
