@@ -161,7 +161,7 @@ namespace Neo.Network.RPC
         {
             switch (method)
             {
-                case "getaccountstate":
+                case "getaccountstate_old":
                     {
                         UInt160 script_hash = _params[0].AsString().ToScriptHash();
                         return GetAccountState(script_hash);
