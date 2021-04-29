@@ -22,7 +22,7 @@ namespace Neo.SmartContract.Native
             {
                 new ContractEventDescriptor
                 {
-                    Name = "Desingation",
+                    Name = "Designation",
                     Parameters = new ContractParameterDefinition[]
                     {
                         new ContractParameterDefinition()
