@@ -455,11 +455,11 @@ namespace Neo.UnitTests.Wallets.NEP6
             var w = new NEP6Wallet(null, ProtocolSettings.Default, wallet);
             using var l = w.Unlock("");
             var ac = w.CreateAccount();
-            Assert.AreEqual(ac.Address, w.GetAccount().Address);
+            Assert.AreEqual(ac.Address, w.GetDefaultAccount().Address);
             var ac2 = w.CreateAccount();
-            Assert.AreEqual(ac.Address, w.GetAccount().Address);
+            Assert.AreEqual(ac.Address, w.GetDefaultAccount().Address);
             ac2.IsDefault = true;
-            Assert.AreEqual(ac2.Address, w.GetAccount().Address);
+            Assert.AreEqual(ac2.Address, w.GetDefaultAccount().Address);
         }
     }
 }

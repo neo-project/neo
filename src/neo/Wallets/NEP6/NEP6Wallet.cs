@@ -182,20 +182,6 @@ namespace Neo.Wallets.NEP6
             }
         }
 
-        public WalletAccount GetAccount()
-        {
-            NEP6Account first = null;
-            lock (accounts)
-            {
-                foreach (NEP6Account account in accounts.Values)
-                {
-                    if (account.IsDefault) return account;
-                    if (first == null) first = account;
-                }
-            }
-            return first;
-        }
-
         public override WalletAccount GetAccount(UInt160 scriptHash)
         {
             lock (accounts)
@@ -212,6 +198,20 @@ namespace Neo.Wallets.NEP6
                 foreach (NEP6Account account in accounts.Values)
                     yield return account;
             }
+        }
+
+        public WalletAccount GetDefaultAccount()
+        {
+            NEP6Account first = null;
+            lock (accounts)
+            {
+                foreach (NEP6Account account in accounts.Values)
+                {
+                    if (account.IsDefault) return account;
+                    if (first == null) first = account;
+                }
+            }
+            return first;
         }
 
         public override WalletAccount Import(X509Certificate2 cert)
