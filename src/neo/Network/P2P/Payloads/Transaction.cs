@@ -28,11 +28,6 @@ namespace Neo.Network.P2P.Payloads
         public const int MaxTransactionSize = 102400;
 
         /// <summary>
-        /// The maximum increment of the <see cref="ValidUntilBlock"/> field.
-        /// </summary>
-        public const uint MaxValidUntilBlockIncrement = 5760; // 24 hour
-
-        /// <summary>
         /// The maximum number of attributes that can be contained within a transaction.
         /// </summary>
         public const int MaxTransactionAttributes = 16;
@@ -349,7 +344,7 @@ namespace Neo.Network.P2P.Payloads
         public virtual VerifyResult VerifyStateDependent(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context)
         {
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);
-            if (ValidUntilBlock <= height || ValidUntilBlock > height + MaxValidUntilBlockIncrement)
+            if (ValidUntilBlock <= height || ValidUntilBlock > height + settings.MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
             foreach (UInt160 hash in hashes)
