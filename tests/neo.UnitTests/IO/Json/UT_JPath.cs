@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
+using System;
 
 namespace Neo.UnitTests.IO.Json
 {
@@ -66,6 +67,12 @@ namespace Neo.UnitTests.IO.Json
             Assert.AreEqual(@"[{""category"":""fiction"",""author"":""Evelyn Waugh"",""title"":""Sword of Honour"",""price"":12.99}]", json.JsonPath("$..book[1:2]").ToString());
             Assert.AreEqual(@"[{""category"":""fiction"",""author"":""Herman Melville"",""title"":""Moby Dick"",""isbn"":""0-553-21311-3"",""price"":8.99},{""category"":""fiction"",""author"":""J. R. R. Tolkien"",""title"":""The Lord of the Rings"",""isbn"":""0-395-19395-8"",""price"":22.99}]", json.JsonPath("$..book[-2:]").ToString());
             Assert.AreEqual(@"[{""category"":""fiction"",""author"":""Herman Melville"",""title"":""Moby Dick"",""isbn"":""0-553-21311-3"",""price"":8.99},{""category"":""fiction"",""author"":""J. R. R. Tolkien"",""title"":""The Lord of the Rings"",""isbn"":""0-395-19395-8"",""price"":22.99}]", json.JsonPath("$..book[2:]").ToString());
+        }
+
+        [TestMethod]
+        public void TestMaxDepth()
+        {
+            Assert.ThrowsException<InvalidOperationException>(() => json.JsonPath("$..book[*].author"));
         }
     }
 }
