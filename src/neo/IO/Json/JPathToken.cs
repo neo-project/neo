@@ -200,24 +200,11 @@ namespace Neo.IO.Json
         {
             List<JObject> results = new();
             JPathToken token = DequeueToken(tokens);
-            string identifier = token.Type switch
-            {
-                JPathTokenType.Asterisk => null,
-                JPathTokenType.Identifier => token.Content,
-                _ => throw new FormatException(),
-            };
+            if (token.Type != JPathTokenType.Identifier) throw new FormatException();
             while (objects.Length > 0)
             {
-                if (identifier is null)
-                {
-                    Descent(ref objects);
-                    results.AddRange(objects);
-                }
-                else
-                {
-                    results.AddRange(objects.SelectMany(p => p.Properties).Where(p => p.Key == identifier).Select(p => p.Value));
-                    Descent(ref objects);
-                }
+                results.AddRange(objects.SelectMany(p => p.Properties).Where(p => p.Key == token.Content).Select(p => p.Value));
+                Descent(ref objects);
             }
             objects = results.ToArray();
         }
