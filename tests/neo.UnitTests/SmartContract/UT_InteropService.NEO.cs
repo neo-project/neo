@@ -6,16 +6,13 @@ using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
-using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
-using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Linq;
-using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -255,55 +252,6 @@ namespace Neo.UnitTests.SmartContract
             iterator.Next();
             var ele = iterator.Value();
             ele.GetSpan().ToHexString().Should().Be(storageItem.Value.ToHexString());
-        }
-
-        [TestMethod]
-        public void TestIterator_Next()
-        {
-            var arr = new VMArray {
-                new byte[]{ 0x01 },
-                new byte[]{ 0x02 }
-            };
-            ApplicationEngine.IteratorNext(new ArrayWrapper(arr)).Should().BeTrue();
-        }
-
-        [TestMethod]
-        public void TestIterator_Value()
-        {
-            var arr = new VMArray {
-                new byte[]{ 0x01 },
-                new byte[]{ 0x02 }
-            };
-            var wrapper = new ArrayWrapper(arr);
-            wrapper.Next();
-            ApplicationEngine.IteratorValue(wrapper).GetSpan().ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
-        }
-
-        [TestMethod]
-        public void TestIterator_Create()
-        {
-            var engine = GetEngine();
-            var arr = new VMArray {
-                new byte[]{ 0x01 },
-                new byte[]{ 0x02 }
-            };
-            var ret = engine.CreateIterator(arr);
-            ret.Next();
-            ret.Value().GetSpan().ToHexString().Should().Be(new byte[] { 0x01 }.ToHexString());
-
-            var interop = new InteropInterface(1);
-            Assert.ThrowsException<ArgumentException>(() => engine.CreateIterator(interop));
-
-            var map = new Map
-            {
-                [1] = 2,
-                [3] = 4
-            };
-            ret = engine.CreateIterator(map);
-            ret.Next();
-            Struct @struct = (Struct)ret.Value();
-            @struct[0].GetInteger().Should().Be(1);
-            @struct[1].GetInteger().Should().Be(2);
         }
     }
 }

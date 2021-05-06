@@ -40,7 +40,7 @@ namespace Neo.SmartContract
 
         private static IApplicationEngineProvider applicationEngineProvider;
         private static Dictionary<uint, InteropDescriptor> services;
-        private readonly long gas_amount;
+        private long gas_amount;
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
@@ -145,6 +145,14 @@ namespace Neo.SmartContract
             GasConsumed = checked(GasConsumed + gas);
             if (GasConsumed > gas_amount)
                 throw new InvalidOperationException("Insufficient GAS.");
+        }
+
+        internal void Refuel(long gas)
+        {
+            checked
+            {
+                gas_amount += gas;
+            }
         }
 
         protected override void OnFault(Exception ex)

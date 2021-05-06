@@ -120,13 +120,23 @@ namespace Neo.Wallets
         public WalletAccount CreateAccount()
         {
             byte[] privateKey = new byte[32];
-            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+        generate:
+            try
             {
-                rng.GetBytes(privateKey);
+                using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+                {
+                    rng.GetBytes(privateKey);
+                }
+                return CreateAccount(privateKey);
             }
-            WalletAccount account = CreateAccount(privateKey);
-            Array.Clear(privateKey, 0, privateKey.Length);
-            return account;
+            catch (ArgumentException)
+            {
+                goto generate;
+            }
+            finally
+            {
+                Array.Clear(privateKey, 0, privateKey.Length);
+            }
         }
 
         /// <summary>
@@ -492,7 +502,7 @@ namespace Neo.Wallets
                     Version = 0,
                     Nonce = (uint)rand.Next(),
                     Script = script,
-                    ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + Transaction.MaxValidUntilBlockIncrement,
+                    ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + ProtocolSettings.MaxValidUntilBlockIncrement,
                     Signers = GetSigners(account, cosigners),
                     Attributes = attributes,
                 };
