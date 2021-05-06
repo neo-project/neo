@@ -416,7 +416,7 @@ namespace Neo.Network.P2P.Payloads
                 // Transaction properties
                 (int)Version,
                 Nonce,
-                new Array(Signers.Select(u=> (ByteString)u.ToArray())),
+                new Array(referenceCounter, Signers.Select(u=> (ByteString)u.ToArray())),
                 SystemFee,
                 NetworkFee,
                 ValidUntilBlock,
