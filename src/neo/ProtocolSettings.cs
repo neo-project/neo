@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Neo.Cryptography.ECC;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
@@ -51,6 +52,11 @@ namespace Neo
         /// Indicates the time between two blocks.
         /// </summary>
         public TimeSpan TimePerBlock => TimeSpan.FromMilliseconds(MillisecondsPerBlock);
+
+        /// <summary>
+        /// The maximum increment of the <see cref="Transaction.ValidUntilBlock"/> field.
+        /// </summary>
+        public uint MaxValidUntilBlockIncrement => 86400000 / MillisecondsPerBlock;
 
         /// <summary>
         /// Indicates the maximum number of transactions that can be contained in a block.
