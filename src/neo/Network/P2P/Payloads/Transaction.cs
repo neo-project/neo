@@ -416,11 +416,12 @@ namespace Neo.Network.P2P.Payloads
                 // Transaction properties
                 (int)Version,
                 Nonce,
-                new Array(referenceCounter, Signers.Select(u=> (ByteString)u.ToArray())),
+                Sender.ToArray(),
                 SystemFee,
                 NetworkFee,
                 ValidUntilBlock,
                 Script,
+                new Array(referenceCounter, Signers.Select(u=> (ByteString)u.ToArray())),
             });
         }
     }
