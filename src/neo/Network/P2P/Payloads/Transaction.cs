@@ -421,7 +421,7 @@ namespace Neo.Network.P2P.Payloads
                 NetworkFee,
                 ValidUntilBlock,
                 Script,
-                new Array(referenceCounter, Signers.Select(u=> (ByteString)u.ToArray()))
+                new Array(referenceCounter, Signers.Select(u => (ByteString)u.Account.ToArray()))
             });
         }
     }
