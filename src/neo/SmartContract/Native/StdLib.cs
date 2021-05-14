@@ -142,6 +142,28 @@ namespace Neo.SmartContract.Native
             return Base58.Decode(s);
         }
 
+        /// <summary>
+        /// Converts a byte array to its equivalent <see cref="string"/> representation that is encoded with base-58 digits. The encoded <see cref="string"/> contains the checksum of the binary data.
+        /// </summary>
+        /// <param name="data">The byte array to be encoded.</param>
+        /// <returns>The encoded <see cref="string"/>.</returns>
+        [ContractMethod(CpuFee = 1 << 16)]
+        public static string Base58CheckEncode([MaxLength(MaxInputLength)] byte[] data)
+        {
+            return Base58.Base58CheckEncode(data);
+        }
+
+        /// <summary>
+        /// Converts the specified <see cref="string"/>, which encodes binary data as base-58 digits, to an equivalent byte array. The encoded <see cref="string"/> contains the checksum of the binary data.
+        /// </summary>
+        /// <param name="s">The base58 <see cref="string"/>.</param>
+        /// <returns>The decoded byte array.</returns>
+        [ContractMethod(CpuFee = 1 << 16)]
+        public static byte[] Base58CheckDecode([MaxLength(MaxInputLength)] string s)
+        {
+            return Base58.Base58CheckDecode(s);
+        }
+
         [ContractMethod(CpuFee = 1 << 5)]
         private static int MemoryCompare([MaxLength(MaxInputLength)] byte[] str1, [MaxLength(MaxInputLength)] byte[] str2)
         {
