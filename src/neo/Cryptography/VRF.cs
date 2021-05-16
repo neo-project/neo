@@ -117,7 +117,6 @@ namespace Neo.Cryptography
             // 3. one_string = 0x01 = int_to_string(1, 1), a single octet with value 1
             byte[] cipher = new byte[] { (byte)CipherSuite.P256_SHA256_TAI, 0x01 };
 
-
             // 6.B. hash_string = Hash(suite_string || one_string || PK_string || alpha_string || ctr_string)
             byte[] v = cipher.Concat(pk_bytes).ToArray().Concat(alpha).ToArray().Concat(new byte[] { 0x00 }).ToArray();
             var position = v.Length - 1;
@@ -160,8 +159,6 @@ namespace Neo.Cryptography
             {
                 point_bytes = point_bytes.Concat(point.EncodePoint(true)).ToArray();
             }
-            //str.Concat(new byte[] { 0x00 });
-
             var c_string = SHA256.Create().ComputeHash(point_bytes);
             var truncated_c_string = c_string[0..16];
             return new BigInteger(truncated_c_string, true, true);
@@ -169,9 +166,9 @@ namespace Neo.Cryptography
 
 
         /// <summary>
-        /// Decodes a VRF proof by extracting the pi
+        /// Decodes a VRF proof
         /// </summary>
-        /// <param name="pi"> VRF proof, octet string (ptLen+n+qLen octets)</param>
+        /// <param name="proof"> VRF proof, octet string (ptLen+n+qLen octets)</param>
         /// 
         /// <returns>
         /// "INVALID",
@@ -179,11 +176,11 @@ namespace Neo.Cryptography
         /// c     - integer between 0 and 2^(8n)-1
         /// s     - integer between 0 and 2^(8qLen)-1
         /// </returns>
-        public static Tuple<ECC.ECPoint, BigInteger, BigInteger> DecodeProof(byte[] pi)
+        public static Tuple<ECC.ECPoint, BigInteger, BigInteger> DecodeProof(byte[] proof)
         {
-            var Gamma = ECC.ECPoint.FromBytes(pi[..33], ECC.ECCurve.Secp256r1);
-            var c = new BigInteger(pi[33..49], true, true);
-            var s = new BigInteger(pi[49..], true, true);
+            var Gamma = ECC.ECPoint.FromBytes(proof[..33], ECC.ECCurve.Secp256r1);
+            var c = new BigInteger(proof[33..49], true, true);
+            var s = new BigInteger(proof[49..], true, true);
 
             return Tuple.Create(Gamma, c, s);
         }
@@ -208,12 +205,11 @@ namespace Neo.Cryptography
         /// concatenated with the gamma point ([VRF-draft-08](https://tools.ietf.org/pdf/draft-irtf-cfrg-vrf-08), section 5.2).
         /// 
         /// </summary>
-        /// <param name="pi"> VRF proof, octet string of length ptLen+n+qLen</param>
+        /// <param name="proof"> VRF proof, octet string of length ptLen+n+qLen</param>
         /// <returns>VRF hash output, octet string of length hLen</returns>
-        public static byte[] ProofToHash(byte[] pi)
+        public static byte[] ProofToHash(byte[] proof)
         {
-            var (gamma_point, _, _) = DecodeProof(pi);
-
+            var (gamma_point, _, _) = DecodeProof(proof);
             return GammaToHash(gamma_point);
         }
 
@@ -245,26 +241,23 @@ namespace Neo.Cryptography
             // Step 5: k = ECVRF_nonce_generation(SK, h_string)
             var k = GenerateNonce(prikey, h_string);
             var kBytes = k.ToByteArray(true, true);
+
             // Step 6: c = ECVRF_hash_points(H, Gamma, k*B, k*H)
             var u_point = DerivePubkeyPoint(k.ToByteArray(true, true));
             var v_point = h_point * kBytes;
-
             var c = HashPoints(new ECC.ECPoint[] { h_point, gamma_point, u_point, v_point });
 
             // Step 7: s = (k + c*x) mod q
             var num_x = new BigInteger(prikey, true, true);
             var s = (k + (c * num_x)) % ECC.ECCurve.Secp256r1.N;
-
-            // Step 8: encode (gamma, c, s)
             var gamma_string = gamma_point.EncodePoint(true);
 
             // Fixed size; len(c) must be n and len(s)=2n
             var c_string = AppendLeadingZeros(c.ToByteArray(true, true), n);
             var s_string = AppendLeadingZeros(s.ToByteArray(true, true), qlen);
 
-            // proof =  [Gamma_string||c_string||s_string]
+            // Step 8: pi_string =  [Gamma_string||c_string||s_string]
             var proof = gamma_string.Concat(c_string).ToArray().Concat(s_string).ToArray();
-
             return proof;
         }
 
@@ -274,23 +267,23 @@ namespace Neo.Cryptography
         /// [VRF-draft-08](https://tools.ietf.org/pdf/draft-irtf-cfrg-vrf-08) (section 5.3).
         /// </summary>
         /// 
-        /// <param name="y"> Public key, an EC point. </param>
-        /// <param name="pi"> VRF proof, octet string of length ptLen+n+qLen. </param>
+        /// <param name="pubkey"> Public key, an EC point. </param>
+        /// <param name="proof"> VRF proof, octet string of length ptLen+n+qLen. </param>
         /// <param name="alpha"> VRF input, octet string. </param>
         /// <returns>("VALID", beta_string), where beta_string is the VRF hash output,
         /// octet string of length hLen; or
         /// "INVALID" </returns>
-        public static byte[] Verify(byte[] y, byte[] pi, byte[] alpha)
+        public static byte[] Verify(byte[] pubkey, byte[] proof, byte[] alpha)
         {
             // Step 1 2 3: decode proof
-            var (gamma_point, c, s) = DecodeProof(pi);
+            var (gamma_point, c, s) = DecodeProof(proof);
 
             // Fixed size; len(c) must be n and len(s)=2n
             var c_string = AppendLeadingZeros(c.ToByteArray(true, true), qlen);
             var s_string = AppendLeadingZeros(s.ToByteArray(true, true), qlen);
 
             // Step 4: hash to curve
-            var pubkey_point = ECC.ECPoint.FromBytes(y, ECC.ECCurve.Secp256r1);
+            var pubkey_point = ECC.ECPoint.FromBytes(pubkey, ECC.ECCurve.Secp256r1);
             var h_point = HashToTryAndIncrement(pubkey_point, alpha);
 
             // Step 5: U = s*B - c*Y
@@ -332,7 +325,6 @@ namespace Neo.Cryptography
             }
             var res = Enumerable.Repeat((byte)0x00, (bits_length + 7) / 8).ToArray();
             data.CopyTo(res, res.Length - data.Length);
-
             return res;
         }
 
