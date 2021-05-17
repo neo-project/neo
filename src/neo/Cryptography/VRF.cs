@@ -9,7 +9,7 @@ namespace Neo.Cryptography
     /// Verifiable Random Function
     /// Based on VRF draft-irtf-cfrg-vrf-08
     /// 
-    /// VRF function consumes the persisting MerkelTree hash as input
+    /// VRF function consumes an octet string as input
     /// and generates a verifiable random number during the consensus.
     /// </summary>
     public static class VRF
@@ -226,7 +226,7 @@ namespace Neo.Cryptography
         {
             // Step 1: derive public key from secret key
             // `Y = x * B`
-            // TODO: validate secret key length?
+            if (prikey.Length != 32) throw new FormatException();
             var pubkey_point = DerivePubkeyPoint(prikey);
 
             // Step 2: Hash to curve
@@ -256,7 +256,7 @@ namespace Neo.Cryptography
             var c_string = AppendLeadingZeros(c.ToByteArray(true, true), n);
             var s_string = AppendLeadingZeros(s.ToByteArray(true, true), qlen);
 
-            // Step 8: pi_string =  [Gamma_string||c_string||s_string]
+            // Step 8: proof =  [Gamma_string||c_string||s_string]
             var proof = gamma_string.Concat(c_string).ToArray().Concat(s_string).ToArray();
             return proof;
         }
@@ -300,11 +300,7 @@ namespace Neo.Cryptography
             var derived_c = HashPoints(new ECC.ECPoint[] { h_point, gamma_point, u_point, v_point });
 
             // Step 6: Check validity
-            if (!derived_c.Equals(c))
-            {
-                // TODO: Or throw an exception?
-                return new byte[] { 0x00 };
-            }
+            if (!derived_c.Equals(c)) throw new FormatException();
             return GammaToHash(gamma_point);
         }
 
