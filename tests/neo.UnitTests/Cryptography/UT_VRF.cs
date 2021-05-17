@@ -10,7 +10,6 @@ namespace Neo.UnitTests.Cryptography
     [TestClass]
     public class UT_VRF
     {
-
         [TestMethod]
         public void TestDerivePublicKey_()
         {
@@ -40,11 +39,9 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestVerifyP256Sha256Tai_1()
         {
-
             var y = "0360fed4ba255a9d31c961eb74c6356d68c049b8923b61fa6ce669622e60f29fb6".HexToBytes();
             var pi = "029bdca4cc39e57d97e2f42f88bcf0ecb1120fb67eb408a856050dbfbcbf57c524347fc46ccd87843ec0a9fdc090a407c6fbae8ac1480e240c58854897eabbc3a7bb61b201059f89186e7175af796d65e7".HexToBytes();
             var alpha = "73616d706c65".HexToBytes();
-
             var beta = VRF.Verify(y, pi, alpha);
             var expected_beta =
                 "59ca3801ad3e981a88e36880a3aee1df38a0472d5be52d6e39663ea0314e594c".HexToBytes();
@@ -58,7 +55,6 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestProveP256Sha256Tai_2()
         {
-
             var x = "c9afa9d845ba75166b5c215767b1d6934e50c3db36e89b127b8a622b120f6721".HexToBytes();
             var alpha = "74657374".HexToBytes();
             var pi = VRF.Prove(x, alpha);
@@ -144,7 +140,6 @@ namespace Neo.UnitTests.Cryptography
             hash_bytes.SequenceEqual(expected_hash).Should().BeTrue();
         }
 
-
         /// Test vector for `P-256` curve with `SHA-256`
         /// Message: sample
         /// Source: [RFC6979](https://tools.ietf.org/html/rfc6979) (section A.2.5)
@@ -226,9 +221,7 @@ namespace Neo.UnitTests.Cryptography
         {
             var hash_hex =
                 "02e2e1ab1b9f5a8a68fa4aad597e7493095648d3473b213bba120fe42d1a595f3e".HexToBytes();
-
             var pi_hex = "029bdca4cc39e57d97e2f42f88bcf0ecb1120fb67eb408a856050dbfbcbf57c524347fc46ccd87843ec0a9fdc090a407c6fbae8ac1480e240c58854897eabbc3a7bb61b201059f89186e7175af796d65e7".HexToBytes();
-
             var hash_point = Neo.Cryptography.ECC.ECPoint.FromBytes(hash_hex, Neo.Cryptography.ECC.ECCurve.Secp256r1);
             var c_s_hex = pi_hex[33..];
             var gamma_point = Neo.Cryptography.ECC.ECPoint.FromBytes(pi_hex[..33], Neo.Cryptography.ECC.ECCurve.Secp256r1);
@@ -239,9 +232,7 @@ namespace Neo.UnitTests.Cryptography
             var v_hex =
                 "03e4258b4a5f772ed29830050712fa09ea8840715493f78e5aaaf7b27248efc216".HexToBytes();
             var v_point = Neo.Cryptography.ECC.ECPoint.FromBytes(v_hex, Neo.Cryptography.ECC.ECCurve.Secp256r1);
-
             var computed_c = VRF.HashPoints(new Neo.Cryptography.ECC.ECPoint[] { hash_point, gamma_point, u_point, v_point }).ToByteArray(false, true);
-
             var expected_c = c_s_hex[..16];
             computed_c.SequenceEqual(expected_c).Should().BeTrue();
         }
