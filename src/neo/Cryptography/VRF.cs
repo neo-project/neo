@@ -254,7 +254,7 @@ namespace Neo.Cryptography
         /// <returns>("VALID", beta_string), where beta_string is the VRF hash output,
         /// octet string of length hLen; or
         /// "INVALID" </returns>
-        public static byte[] Verify(byte[] pubkey, byte[] proof, byte[] alpha)
+        public static byte[] Verify(ECC.ECPoint pubkey, byte[] proof, byte[] alpha)
         {
             // Step 1 2 3: decode proof
             var (gamma_point, c, s) = DecodeProof(proof);
@@ -264,12 +264,11 @@ namespace Neo.Cryptography
             var s_string = AppendLeadingZeros(s.ToByteArray(true, true), qlen);
 
             // Step 4: hash to curve
-            var pubkey_point = ECC.ECPoint.FromBytes(pubkey, ECC.ECCurve.Secp256r1);
-            var h_point = HashToTryAndIncrement(pubkey_point, alpha);
+            var h_point = HashToTryAndIncrement(pubkey, alpha);
 
             // Step 5: U = s*B - c*Y
             var s_b = DerivePubkeyPoint(s_string);
-            var c_y = pubkey_point * c_string;
+            var c_y = pubkey * c_string;
             var u_point = s_b - c_y;
 
             // Step 6: V = sH -cGamma
@@ -281,7 +280,8 @@ namespace Neo.Cryptography
             var derived_c = HashPoints(new ECC.ECPoint[] { h_point, gamma_point, u_point, v_point });
 
             // Step 6: Check validity
-            if (!derived_c.Equals(c)) throw new FormatException();
+            if (!derived_c.Equals(c)) return null;
+
             return GammaToHash(gamma_point);
         }
 

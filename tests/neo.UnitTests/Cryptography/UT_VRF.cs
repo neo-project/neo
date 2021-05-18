@@ -42,7 +42,7 @@ namespace Neo.UnitTests.Cryptography
             var y = "0360fed4ba255a9d31c961eb74c6356d68c049b8923b61fa6ce669622e60f29fb6".HexToBytes();
             var pi = "029bdca4cc39e57d97e2f42f88bcf0ecb1120fb67eb408a856050dbfbcbf57c524347fc46ccd87843ec0a9fdc090a407c6fbae8ac1480e240c58854897eabbc3a7bb61b201059f89186e7175af796d65e7".HexToBytes();
             var alpha = "73616d706c65".HexToBytes();
-            var beta = VRF.Verify(y, pi, alpha);
+            var beta = VRF.Verify(Neo.Cryptography.ECC.ECPoint.FromBytes(y, Neo.Cryptography.ECC.ECCurve.Secp256r1), pi, alpha);
             var expected_beta =
                 "59ca3801ad3e981a88e36880a3aee1df38a0472d5be52d6e39663ea0314e594c".HexToBytes();
 
@@ -71,7 +71,7 @@ namespace Neo.UnitTests.Cryptography
             var y = "0360fed4ba255a9d31c961eb74c6356d68c049b8923b61fa6ce669622e60f29fb6".HexToBytes();
             var pi = "03873a1cce2ca197e466cc116bca7b1156fff599be67ea40b17256c4f34ba2549c94ffd2b31588b5fe034fd92c87de5b520b12084da6c4ab63080a7c5467094a1ee84b80b59aca54bba2e2baa0d108191b".HexToBytes();
             var alpha = "74657374".HexToBytes();
-            var beta = VRF.Verify(y, pi, alpha);
+            var beta = VRF.Verify(Neo.Cryptography.ECC.ECPoint.FromBytes(y, Neo.Cryptography.ECC.ECCurve.Secp256r1), pi, alpha);
             var expected_beta =
                 "dc85c20f95100626eddc90173ab58d5e4f837bb047fb2f72e9a408feae5bc6c1".HexToBytes();
             beta.SequenceEqual(expected_beta).Should().BeTrue();
@@ -99,7 +99,7 @@ namespace Neo.UnitTests.Cryptography
             var y = "03596375e6ce57e0f20294fc46bdfcfd19a39f8161b58695b3ec5b3d16427c274d".HexToBytes();
             var pi = "02abe3ce3b3aa2ab3c6855a7e729517ebfab6901c2fd228f6fa066f15ebc9b9d415a680736f7c33f6c796e367f7b2f467026495907affb124be9711cf0e2d05722d3a33e11d0c5bf932b8f0c5ed1981b64".HexToBytes();
             var alpha = "4578616d706c65206f66204543445341207769746820616e736970323536723120616e64205348412d323536".HexToBytes();
-            var beta = VRF.Verify(y, pi, alpha);
+            var beta = VRF.Verify(Neo.Cryptography.ECC.ECPoint.FromBytes(y, Neo.Cryptography.ECC.ECCurve.Secp256r1), pi, alpha);
             var expected_beta =
                 "e880bde34ac5263b2ce5c04626870be2cbff1edcdadabd7d4cb7cbc696467168".HexToBytes();
             beta.SequenceEqual(expected_beta).Should().BeTrue();
