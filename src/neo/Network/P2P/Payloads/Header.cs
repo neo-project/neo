@@ -20,8 +20,10 @@ namespace Neo.Network.P2P.Payloads
         private UInt256 merkleRoot;
         private ulong timestamp;
         private uint index;
+        private uint nonce;
         private byte primaryIndex;
         private UInt160 nextConsensus;
+
 
         /// <summary>
         /// The witness of the block.
@@ -74,6 +76,15 @@ namespace Neo.Network.P2P.Payloads
         }
 
         /// <summary>
+        /// The last four bytes of random number generated from VRF
+        /// </summary>
+        public uint Nonce
+        {
+            get => nonce;
+            set { nonce = value; _hash = null; }
+        }
+
+        /// <summary>
         /// The primary index of the consensus node that generated this block.
         /// </summary>
         public byte PrimaryIndex
@@ -110,6 +121,7 @@ namespace Neo.Network.P2P.Payloads
             UInt256.Length +    // MerkleRoot
             sizeof(ulong) +     // Timestamp
             sizeof(uint) +      // Index
+            sizeof(uint) +      // Nonce
             sizeof(byte) +      // PrimaryIndex
             UInt160.Length +    // NextConsensus
             1 + Witness.Size;   // Witness   
@@ -144,6 +156,7 @@ namespace Neo.Network.P2P.Payloads
             merkleRoot = reader.ReadSerializable<UInt256>();
             timestamp = reader.ReadUInt64();
             index = reader.ReadUInt32();
+            nonce = reader.ReadUInt32();
             primaryIndex = reader.ReadByte();
             nextConsensus = reader.ReadSerializable<UInt160>();
         }
@@ -186,6 +199,7 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(merkleRoot);
             writer.Write(timestamp);
             writer.Write(index);
+            writer.Write(nonce);
             writer.Write(primaryIndex);
             writer.Write(nextConsensus);
         }
@@ -205,6 +219,7 @@ namespace Neo.Network.P2P.Payloads
             json["merkleroot"] = merkleRoot.ToString();
             json["time"] = timestamp;
             json["index"] = index;
+            json["nonce"] = nonce;
             json["primary"] = primaryIndex;
             json["nextconsensus"] = nextConsensus.ToAddress(settings.AddressVersion);
             json["witnesses"] = new JArray(Witness.ToJson());

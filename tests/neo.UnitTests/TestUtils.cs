@@ -157,12 +157,24 @@ namespace Neo.UnitTests
             };
         }
 
-        public static void SetupHeaderWithValues(Header header, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal)
+        /// <summary>
+        /// Test Util function SetupHeaderWithValues
+        /// </summary>
+        /// <param name="header">The header to be assigned</param>
+        /// <param name="val256">PrevHash</param>
+        /// <param name="merkRootVal">MerkleRoot</param>
+        /// <param name="val160">NextConsensus</param>
+        /// <param name="timestampVal">Timestamp</param>
+        /// <param name="indexVal">Index</param>
+        /// <param name="nonceVal">Nonce</param>
+        /// <param name="scriptVal">Witness</param>
+        public static void SetupHeaderWithValues(Header header, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out uint nonceVal, out Witness scriptVal)
         {
             header.PrevHash = val256;
             header.MerkleRoot = merkRootVal = UInt256.Parse("0x6226416a0e5aca42b5566f5a19ab467692688ba9d47986f6981a7f747bba2772");
             header.Timestamp = timestampVal = new DateTime(1980, 06, 01, 0, 0, 1, 001, DateTimeKind.Utc).ToTimestampMS(); // GMT: Sunday, June 1, 1980 12:00:01.001 AM
             header.Index = indexVal = 0;
+            header.Nonce = nonceVal = 0;
             header.NextConsensus = val160 = UInt160.Zero;
             header.Witness = scriptVal = new Witness
             {
@@ -171,10 +183,10 @@ namespace Neo.UnitTests
             };
         }
 
-        public static void SetupBlockWithValues(Block block, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal, out Transaction[] transactionsVal, int numberOfTransactions)
+        public static void SetupBlockWithValues(Block block, UInt256 val256, out UInt256 merkRootVal, out UInt160 val160, out ulong timestampVal, out uint indexVal, out uint nonceVal, out Witness scriptVal, out Transaction[] transactionsVal, int numberOfTransactions)
         {
             Header header = new Header();
-            SetupHeaderWithValues(header, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out scriptVal);
+            SetupHeaderWithValues(header, val256, out merkRootVal, out val160, out timestampVal, out indexVal, out nonceVal, out scriptVal);
 
             transactionsVal = new Transaction[numberOfTransactions];
             if (numberOfTransactions > 0)

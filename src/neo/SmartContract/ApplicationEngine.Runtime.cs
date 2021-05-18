@@ -78,6 +78,13 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_GetInvocationCounter = Register("System.Runtime.GetInvocationCounter", nameof(GetInvocationCounter), 1 << 4, CallFlags.None);
 
         /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Runtime.GetRandom.
+        /// Gets the random number generated form the VRF.
+        /// </summary>
+        public static readonly InteropDescriptor System_Runtime_GetRandom = Register("System.Runtime.GetRandom", nameof(GetRandom), 1 << 4, CallFlags.None);
+
+
+        /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.Log.
         /// Writes a log.
         /// </summary>
@@ -226,6 +233,16 @@ namespace Neo.SmartContract
                 invocationCounter[CurrentScriptHash] = counter = 1;
             }
             return counter;
+        }
+
+        /// <summary>
+        /// The implementation of System.Runtime.GetRandom.
+        /// Gets the random number genrated form the VRF
+        /// </summary>
+        /// <returns>The last four bytes of the random number.</returns>
+        protected internal uint GetRandom()
+        {
+            return PersistingBlock.Header.Nonce;
         }
 
         /// <summary>

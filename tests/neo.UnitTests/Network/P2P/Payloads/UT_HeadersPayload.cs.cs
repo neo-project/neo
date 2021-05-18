@@ -12,7 +12,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Size_Get()
         {
             var header = new Header();
-            TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRoot, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal);
+            TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRoot, out UInt160 val160, out ulong timestampVal, out uint indexVal, out uint nonceVal, out Witness scriptVal);
 
             var test = HeadersPayload.Create();
             test.Size.Should().Be(1);
@@ -24,7 +24,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void DeserializeAndSerialize()
         {
             var header = new Header();
-            TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRoot, out UInt160 val160, out ulong timestampVal, out uint indexVal, out Witness scriptVal);
+            TestUtils.SetupHeaderWithValues(header, UInt256.Zero, out UInt256 merkRoot, out UInt160 val160, out ulong timestampVal, out uint indexVal, out uint nonceVal, out Witness scriptVal);
             var test = HeadersPayload.Create(header);
             var clone = test.ToArray().AsSerializable<HeadersPayload>();
 
