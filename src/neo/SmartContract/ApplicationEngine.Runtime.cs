@@ -238,6 +238,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The implementation of System.Runtime.GetRandom.
         /// Gets the random number genrated form the VRF
+        /// Primary geterates this random number with `prevHash`, the hash of the prevuous block
         /// </summary>
         /// <returns>The last four bytes of the random number.</returns>
         protected internal uint GetRandom()
