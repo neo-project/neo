@@ -348,6 +348,20 @@ namespace Neo.SmartContract.Native
             return GetCommitteeFromCache(snapshot).Select(p => p.PublicKey).OrderBy(p => p).ToArray();
         }
 
+
+        /// <summary>
+        /// Get account state.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="account">account</param>
+        /// <returns>The amount of the fees.</returns>
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public NeoAccountState GetAccountState(DataCache snapshot, UInt160 account)
+        {
+            NeoAccountState state_account = snapshot.GetAndChange(CreateStorageKey(Prefix_Account).Add(account))?.GetInteroperable<NeoAccountState>();
+            return state_account;
+        }
+
         /// <summary>
         /// Gets the address of the committee.
         /// </summary>
