@@ -1093,8 +1093,6 @@ namespace Neo.UnitTests.SmartContract.Native
             return (true, result.GetBoolean());
         }
 
-
-
         internal static (BigInteger balance, BigInteger height, byte[] voteto) GetAccountState(DataCache snapshot, UInt160 account)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
@@ -1105,11 +1103,10 @@ namespace Neo.UnitTests.SmartContract.Native
 
             engine.Execute().Should().Be(VMState.HALT);
 
-
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Struct));
 
-            var state = (result as VM.Types.Struct);
+            VM.Types.Struct state = (result as VM.Types.Struct);
             var balance = state[0].GetInteger();
             var height = state[1].GetInteger();
             var voteto = state[2].IsNull ? null : state[2].GetSpan().ToArray();
