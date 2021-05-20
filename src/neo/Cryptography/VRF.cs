@@ -280,7 +280,7 @@ namespace Neo.Cryptography
             var derived_c = HashPoints(new ECC.ECPoint[] { h_point, gamma_point, u_point, v_point });
 
             // Step 6: Check validity
-            if (!derived_c.Equals(c)) return null;
+            if (!derived_c.Equals(c)) throw new FormatException();
 
             return GammaToHash(gamma_point);
         }
