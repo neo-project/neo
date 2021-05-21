@@ -26,11 +26,18 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public ContractEventDescriptor[] Events { get; set; }
 
+        /// <summary>
+        /// Gets the triggers in the ABI.
+        /// Triggers are for smart contract automated execution.
+        /// </summary>
+        public ContractTriggerDescriptor[] Triggers { get; set; }
+
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
             Methods = ((Array)@struct[0]).Select(p => p.ToInteroperable<ContractMethodDescriptor>()).ToArray();
             Events = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractEventDescriptor>()).ToArray();
+            Triggers = ((Array)@struct[2]).Select(p => p.ToInteroperable<ContractTriggerDescriptor>()).ToArray();
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
@@ -39,6 +46,8 @@ namespace Neo.SmartContract.Manifest
             {
                 new Array(referenceCounter, Methods.Select(p => p.ToStackItem(referenceCounter))),
                 new Array(referenceCounter, Events.Select(p => p.ToStackItem(referenceCounter))),
+                new Array(referenceCounter, Triggers.Select(p => p.ToStackItem(referenceCounter))),
+
             };
         }
 
@@ -52,7 +61,8 @@ namespace Neo.SmartContract.Manifest
             ContractAbi abi = new()
             {
                 Methods = ((JArray)json["methods"]).Select(u => ContractMethodDescriptor.FromJson(u)).ToArray(),
-                Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.FromJson(u)).ToArray()
+                Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.FromJson(u)).ToArray(),
+                Triggers = ((JArray)json["triggers"]).Select(u => ContractTriggerDescriptor.FromJson(u)).ToArray()
             };
             if (abi.Methods.Length == 0) throw new FormatException();
             return abi;
@@ -88,6 +98,7 @@ namespace Neo.SmartContract.Manifest
             var json = new JObject();
             json["methods"] = new JArray(Methods.Select(u => u.ToJson()).ToArray());
             json["events"] = new JArray(Events.Select(u => u.ToJson()).ToArray());
+            json["triggers"] = new JArray(Triggers.Select(u => u.ToJson()).ToArray());
             return json;
         }
     }

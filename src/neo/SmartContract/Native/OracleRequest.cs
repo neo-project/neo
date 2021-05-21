@@ -21,6 +21,11 @@ namespace Neo.SmartContract.Native
         public long GasForResponse;
 
         /// <summary>
+        /// The trigger height of the request.
+        /// </summary>
+        public uint Height;
+
+        /// <summary>
         /// The url of the request.
         /// </summary>
         public string Url;
@@ -63,7 +68,8 @@ namespace Neo.SmartContract.Native
             {
                 OriginalTxid.ToArray(),
                 GasForResponse,
-                Url,
+                Height ?? StackItem.Null,
+                Url ?? StackItem.Null,
                 Filter ?? StackItem.Null,
                 CallbackContract.ToArray(),
                 CallbackMethod,
