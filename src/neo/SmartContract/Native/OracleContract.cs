@@ -106,11 +106,6 @@ namespace Neo.SmartContract.Native
                         {
                             Name = "Height",
                             Type = ContractParameterType.Integer
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "Filter",
-                            Type = ContractParameterType.String
                         }
                     }
                 },
@@ -196,7 +191,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot"></param>
         /// <param name="id"></param>
         /// <returns></returns>
-        public OracleTrigger GetTrigger(DataCache snapshot, uint height, ulong id)
+        public OracleTrigger GetTrigger(DataCache snapshot, ulong id)
         {
             return snapshot.TryGet(CreateStorageKey(Prefix_Trigger).AddBigEndian(id))?.GetInteroperable<OracleTrigger>();
 
