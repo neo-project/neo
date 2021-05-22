@@ -13,7 +13,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestGetRandom()
         {
             var settings = ProtocolSettings.Default;
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             uint rand_1 = engine.GetRandom();
             uint rand_2 = engine.GetRandom();
