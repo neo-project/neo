@@ -256,7 +256,7 @@ namespace Neo.SmartContract
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas)
         {
-            if (persistingBlock != null && random != null)
+            if (persistingBlock != null && random == null)
                 random = new Random((int)persistingBlock.Nonce);
 
             return applicationEngineProvider?.Create(trigger, container, snapshot, persistingBlock, settings, gas)
