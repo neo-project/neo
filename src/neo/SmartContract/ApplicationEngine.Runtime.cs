@@ -243,7 +243,9 @@ namespace Neo.SmartContract
         /// <returns>The last four bytes of the random number.</returns>
         protected internal uint GetRandom()
         {
-            return (uint)random.Next(int.MinValue, int.MaxValue);
+            var nonce = next_nonce;
+            next_nonce = Cryptography.Helper.Sha256(nonce);
+            return BitConverter.ToUInt32(nonce);
         }
 
         /// <summary>

@@ -12,7 +12,6 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestGetRandom()
         {
-            var settings = ProtocolSettings.Default;
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             uint rand_1 = engine.GetRandom();
@@ -21,11 +20,11 @@ namespace Neo.UnitTests.SmartContract
             uint rand_4 = engine.GetRandom();
             uint rand_5 = engine.GetRandom();
 
-            rand_1.Should().Be(176440129u);
-            rand_2.Should().Be(3661770765u);
-            rand_3.Should().Be(2257404069u);
-            rand_4.Should().Be(3268448324u);
-            rand_5.Should().Be(3091612587u);
+            rand_1.Should().Be(2083236893u);
+            rand_2.Should().Be(3262894070u);
+            rand_3.Should().Be(1882351097u);
+            rand_4.Should().Be(2376063185u);
+            rand_5.Should().Be(2304732336u);
         }
     }
 }
