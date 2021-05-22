@@ -243,7 +243,7 @@ namespace Neo.SmartContract
         /// <returns>The last four bytes of the random number.</returns>
         protected internal uint GetRandom()
         {
-            return PersistingBlock.Header.Nonce;
+            return (uint)random.Next(int.MinValue, int.MaxValue);
         }
 
         /// <summary>

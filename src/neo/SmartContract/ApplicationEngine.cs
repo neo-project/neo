@@ -115,6 +115,8 @@ namespace Neo.SmartContract
         /// </summary>
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
 
+        private static Random random;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ApplicationEngine"/> class.
         /// </summary>
@@ -254,6 +256,8 @@ namespace Neo.SmartContract
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas)
         {
+            if (persistingBlock != null)
+                random = new Random((int)persistingBlock.Nonce);
             return applicationEngineProvider?.Create(trigger, container, snapshot, persistingBlock, settings, gas)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas);
         }
