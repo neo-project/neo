@@ -30,14 +30,14 @@ namespace Neo.SmartContract.Manifest
         /// Gets the triggers in the ABI.
         /// Triggers are for smart contract automated execution.
         /// </summary>
-        public ContractTriggerDescriptor[] Triggers { get; set; }
+        public ContractEventDescriptor[] Triggers { get; set; }
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
             Methods = ((Array)@struct[0]).Select(p => p.ToInteroperable<ContractMethodDescriptor>()).ToArray();
             Events = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractEventDescriptor>()).ToArray();
-            Triggers = ((Array)@struct[2]).Select(p => p.ToInteroperable<ContractTriggerDescriptor>()).ToArray();
+            Triggers = ((Array)@struct[2]).Select(p => p.ToInteroperable<ContractEventDescriptor>()).ToArray();
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
@@ -62,7 +62,7 @@ namespace Neo.SmartContract.Manifest
             {
                 Methods = ((JArray)json["methods"]).Select(u => ContractMethodDescriptor.FromJson(u)).ToArray(),
                 Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.FromJson(u)).ToArray(),
-                Triggers = ((JArray)json["triggers"]).Select(u => ContractTriggerDescriptor.FromJson(u)).ToArray()
+                Triggers = ((JArray)json["triggers"]).Select(u => ContractEventDescriptor.FromJson(u)).ToArray()
             };
             if (abi.Methods.Length == 0) throw new FormatException();
             return abi;

@@ -28,7 +28,7 @@ namespace Neo.UnitTests
                 Abi = new ContractAbi()
                 {
                     Events = new ContractEventDescriptor[0],
-                    Triggers = new ContractTriggerDescriptor[0],
+                    Triggers = new ContractEventDescriptor[0],
                     Methods = new[]
                     {
                         new ContractMethodDescriptor

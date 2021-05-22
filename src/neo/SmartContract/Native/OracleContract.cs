@@ -85,9 +85,9 @@ namespace Neo.SmartContract.Native
                 }
             };
 
-            var triggers = new List<ContractTriggerDescriptor>(Manifest.Abi.Triggers)
+            var triggers = new List<ContractEventDescriptor>(Manifest.Abi.Events)
             {
-                new ContractTriggerDescriptor
+                new ContractEventDescriptor
                 {
                     Name = "OracleTrigger",
                     Parameters = new ContractParameterDefinition[]
@@ -104,12 +104,17 @@ namespace Neo.SmartContract.Native
                         },
                         new ContractParameterDefinition()
                         {
-                            Name = "Height",
-                            Type = ContractParameterType.Integer
+                            Name = "Url",
+                            Type = ContractParameterType.String
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "Filter",
+                            Type = ContractParameterType.String
                         }
                     }
                 },
-                new ContractTriggerDescriptor
+                new ContractEventDescriptor
                 {
                     Name = "OracleResponse",
                     Parameters = new ContractParameterDefinition[]
@@ -191,9 +196,9 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot"></param>
         /// <param name="id"></param>
         /// <returns></returns>
-        public OracleTrigger GetTrigger(DataCache snapshot, ulong id)
+        public OracleRequest GetTrigger(DataCache snapshot, ulong id)
         {
-            return snapshot.TryGet(CreateStorageKey(Prefix_Trigger).AddBigEndian(id))?.GetInteroperable<OracleTrigger>();
+            return snapshot.TryGet(CreateStorageKey(Prefix_Trigger).AddBigEndian(id))?.GetInteroperable<OracleRequest>();
 
         }
 
@@ -207,9 +212,9 @@ namespace Neo.SmartContract.Native
             return snapshot.Find(CreateStorageKey(Prefix_Request).ToArray()).Select(p => (BinaryPrimitives.ReadUInt64BigEndian(p.Key.Key.AsSpan(1)), p.Value.GetInteroperable<OracleRequest>()));
         }
 
-        public IEnumerable<(ulong, OracleTrigger)> GetTriggers(DataCache snapshot)
+        public IEnumerable<(ulong, OracleRequest)> GetTriggers(DataCache snapshot)
         {
-            return snapshot.Find(CreateStorageKey(Prefix_Trigger).ToArray()).Select(p => (BinaryPrimitives.ReadUInt64BigEndian(p.Key.Key.AsSpan(1)), p.Value.GetInteroperable<OracleTrigger>()));
+            return snapshot.Find(CreateStorageKey(Prefix_Trigger).ToArray()).Select(p => (BinaryPrimitives.ReadUInt64BigEndian(p.Key.Key.AsSpan(1)), p.Value.GetInteroperable<OracleRequest>()));
         }
 
         /// <summary>
@@ -233,12 +238,12 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot"></param>
         /// <param name="height"></param>
         /// <returns></returns>
-        public IEnumerable<(ulong, OracleTrigger)> GetTriggersByHeight(DataCache snapshot, uint height)
+        public IEnumerable<(ulong, OracleRequest)> GetTriggersByHeight(DataCache snapshot, uint height)
         {
-            IdList list = snapshot.TryGet(CreateStorageKey(Prefix_HeightList).Add(height))?.GetInteroperable<IdList>();
+            IdList list = snapshot.TryGet(CreateStorageKey(Prefix_HeightList).Add(GetHeightHash(height)))?.GetInteroperable<IdList>();
             if (list is null) yield break;
             foreach (ulong id in list)
-                yield return (id, snapshot[CreateStorageKey(Prefix_Trigger).AddBigEndian(id)].GetInteroperable<OracleTrigger>());
+                yield return (id, snapshot[CreateStorageKey(Prefix_Trigger).AddBigEndian(id)].GetInteroperable<OracleRequest>());
         }
 
         private static byte[] GetUrlHash(string url)
@@ -246,6 +251,10 @@ namespace Neo.SmartContract.Native
             return Crypto.Hash160(Utility.StrictUTF8.GetBytes(url));
         }
 
+        private static byte[] GetHeightHash(uint height)
+        {
+            return Crypto.Hash160(Utility.StrictUTF8.GetBytes("height:" + height));
+        }
         internal override ContractTask Initialize(ApplicationEngine engine)
         {
             engine.Snapshot.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BigInteger.Zero));
@@ -279,12 +288,12 @@ namespace Neo.SmartContract.Native
 
                 // Remove the trigger from storage
                 key = CreateStorageKey(Prefix_Trigger).AddBigEndian(response.Id);
-                OracleTrigger trigger = engine.Snapshot.TryGet(key)?.GetInteroperable<OracleTrigger>();
+                OracleRequest trigger = engine.Snapshot.TryGet(key)?.GetInteroperable<OracleRequest>();
                 if (trigger == null) continue;
                 engine.Snapshot.Delete(key);
 
                 // Remove the id from heightlist
-                key = CreateStorageKey(Prefix_HeightList).Add(trigger.Height);
+                key = CreateStorageKey(Prefix_HeightList).Add(GetUrlHash(trigger.Url));
                 list = engine.Snapshot.GetAndChange(key).GetInteroperable<IdList>();
                 if (!list.Remove(response.Id)) throw new InvalidOperationException();
                 if (list.Count == 0) engine.Snapshot.Delete(key);
@@ -374,18 +383,18 @@ namespace Neo.SmartContract.Native
             //Put the request to storage
             if (ContractManagement.GetContract(engine.Snapshot, engine.CallingScriptHash) is null)
                 throw new InvalidOperationException();
-            engine.Snapshot.Add(CreateStorageKey(Prefix_Trigger).AddBigEndian(id), new StorageItem(new OracleTrigger
+            engine.Snapshot.Add(CreateStorageKey(Prefix_Trigger).AddBigEndian(id), new StorageItem(new OracleRequest
             {
                 OriginalTxid = GetOriginalTxid(engine),
                 GasForResponse = gasForResponse,
-                Height = height,
+                Url = "height:" + height,
                 CallbackContract = engine.CallingScriptHash,
                 CallbackMethod = callback,
                 UserData = BinarySerializer.Serialize(userData, MaxUserDataLength)
             }));
 
             //Add the id to the HeightList
-            var list = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_HeightList).Add(height), () => new StorageItem(new IdList())).GetInteroperable<IdList>();
+            var list = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_HeightList).Add(GetHeightHash(height)), () => new StorageItem(new IdList())).GetInteroperable<IdList>();
             if (list.Count >= 256)
                 throw new InvalidOperationException("There are too many pending triggers at this height");
             list.Add(id);

@@ -139,7 +139,7 @@ namespace Neo.SmartContract.Native
                 Abi = new ContractAbi()
                 {
                     Events = Array.Empty<ContractEventDescriptor>(),
-                    Triggers = Array.Empty<ContractTriggerDescriptor>(),
+                    Triggers = Array.Empty<ContractEventDescriptor>(),
                     Methods = descriptors.Select(p => p.Descriptor).ToArray()
                 },
                 Permissions = new[] { ContractPermission.DefaultPermission },
