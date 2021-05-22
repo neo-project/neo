@@ -24,7 +24,6 @@ namespace Neo.Network.P2P.Payloads
         private byte primaryIndex;
         private UInt160 nextConsensus;
 
-
         /// <summary>
         /// The witness of the block.
         /// </summary>
