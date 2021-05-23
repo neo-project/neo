@@ -115,7 +115,9 @@ namespace Neo.SmartContract
         /// </summary>
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
 
+        private static uint persisting_nonce;
         private static byte[] next_nonce;
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ApplicationEngine"/> class.
@@ -256,8 +258,13 @@ namespace Neo.SmartContract
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas)
         {
-            if (persistingBlock != null && next_nonce == null)
+            if (persistingBlock != null
+                && (next_nonce == null || persisting_nonce != persistingBlock.Nonce)) // Make sure to update the nonce when a new Block is persisting
+            {
+                persisting_nonce = persistingBlock.Nonce;
                 next_nonce = BitConverter.GetBytes(persistingBlock.Nonce);
+            }
+
 
             return applicationEngineProvider?.Create(trigger, container, snapshot, persistingBlock, settings, gas)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas);
