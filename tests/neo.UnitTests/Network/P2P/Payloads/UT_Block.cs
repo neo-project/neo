@@ -162,7 +162,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void ToJson()
         {
             UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupBlockWithValues(uut, val256, out _, out _, out _, out _, out _, out _, out _, 1);
+            TestUtils.SetupBlockWithValues(uut, val256, out _, out _, out var timeVal, out var indexVal, out var nonceVal, out _, out _, 1);
 
             JObject jObj = uut.ToJson(ProtocolSettings.Default);
             jObj.Should().NotBeNull();
@@ -171,9 +171,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             jObj["version"].AsNumber().Should().Be(0);
             jObj["previousblockhash"].AsString().Should().Be("0x0000000000000000000000000000000000000000000000000000000000000000");
             jObj["merkleroot"].AsString().Should().Be("0xb9bbfb2804f7582fd4340f5d87d741242afd29d3a02a5c9caa9b67325dbe236c");
-            jObj["time"].AsNumber().Should().Be(328665601001);
-            jObj["index"].AsNumber().Should().Be(0);
-            //jObj["nonce"].AsNumber().Should().Be(0);
+            jObj["time"].AsNumber().Should().Be(timeVal);
+            jObj["index"].AsNumber().Should().Be(indexVal);
+            jObj["nonce"].AsNumber().Should().Be(nonceVal);
             jObj["nextconsensus"].AsString().Should().Be("NKuyBkoGdZZSLyPbJEetheRhMjeznFZszf");
 
             JObject scObj = ((JArray)jObj["witnesses"])[0];

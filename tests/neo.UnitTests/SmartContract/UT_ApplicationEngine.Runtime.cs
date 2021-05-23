@@ -1,12 +1,9 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
-using Neo.VM.Types;
-
 
 namespace Neo.UnitTests.SmartContract
 {
-
     public partial class UT_ApplicationEngine
     {
         [TestMethod]

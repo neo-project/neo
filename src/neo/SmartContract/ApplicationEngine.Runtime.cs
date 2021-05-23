@@ -83,7 +83,6 @@ namespace Neo.SmartContract
         /// </summary>
         public static readonly InteropDescriptor System_Runtime_GetRandom = Register("System.Runtime.GetRandom", nameof(GetRandom), 1 << 4, CallFlags.None);
 
-
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.Log.
         /// Writes a log.
@@ -243,6 +242,7 @@ namespace Neo.SmartContract
         /// <returns>The last four bytes of the random number.</returns>
         protected internal uint GetRandom()
         {
+            if (next_nonce == null) throw new InvalidOperationException("Require persistingBlock");
             var nonce = next_nonce;
             next_nonce = Cryptography.Helper.Sha256(nonce);
             return BitConverter.ToUInt32(nonce);
