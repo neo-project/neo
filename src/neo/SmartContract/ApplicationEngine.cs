@@ -115,8 +115,8 @@ namespace Neo.SmartContract
         /// </summary>
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
 
-        private static uint persisting_nonce;
-        private static byte[] next_nonce;
+        private static uint persistingNonce;
+        private static byte[] nextNonce;
 
 
         /// <summary>
@@ -259,10 +259,10 @@ namespace Neo.SmartContract
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas)
         {
             if (persistingBlock != null
-                && (next_nonce == null || persisting_nonce != persistingBlock.Nonce)) // Make sure to update the nonce when a new Block is persisting
+                && (nextNonce == null || persistingNonce != persistingBlock.Nonce)) // Make sure to update the nonce when a new Block is persisting
             {
-                persisting_nonce = persistingBlock.Nonce;
-                next_nonce = BitConverter.GetBytes(persistingBlock.Nonce);
+                persistingNonce = persistingBlock.Nonce;
+                nextNonce = BitConverter.GetBytes(persistingBlock.Nonce);
             }
 
 

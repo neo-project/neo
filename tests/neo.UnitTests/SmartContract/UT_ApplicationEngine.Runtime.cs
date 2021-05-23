@@ -11,6 +11,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestGetRandomSameBlock()
         {
+            // Even if persisting the same block, in different ApplicationEngine instance, the random number should be different
             using var engine_1 = ApplicationEngine.Create(TriggerType.Application, null, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
             using var engine_2 = ApplicationEngine.Create(TriggerType.Application, null, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
