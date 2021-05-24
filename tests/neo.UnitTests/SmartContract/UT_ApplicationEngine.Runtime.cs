@@ -14,32 +14,44 @@ namespace Neo.UnitTests.SmartContract
         public void TestGetRandomSameBlock()
         {
 
-            Block block_1 = TestBlockchain.TheNeoSystem.GenesisBlock;
-            block_1.Transactions = new[]
+            Block block_1 = new()
             {
-                new Transaction
+                Header = new Header
                 {
-                    Version = 0,
-                    Nonce = 0,
-                    ValidUntilBlock = 0,
-                    Signers = Array.Empty<Signer>(),
-                    Attributes = Array.Empty<TransactionAttribute>(),
-                    Script = Array.Empty<byte>(),
-                    SystemFee = 0,
-                    NetworkFee = 0,
-                    Witnesses = Array.Empty<Witness>()
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Timestamp = TestBlockchain.TheNeoSystem.GenesisBlock.Timestamp,
+                    Index = 0,
+                    PrimaryIndex = 0,
+                    NextConsensus = TestBlockchain.TheNeoSystem.GenesisBlock.NextConsensus,
+                    Witness = TestBlockchain.TheNeoSystem.GenesisBlock.Witness,
                 },
-                new Transaction
+                Transactions = new[]
                 {
-                    Version = 0,
-                    Nonce = 2083236893,
-                    ValidUntilBlock = 0,
-                    Signers = Array.Empty<Signer>(),
-                    Attributes = Array.Empty<TransactionAttribute>(),
-                    Script = Array.Empty<byte>(),
-                    SystemFee = 0,
-                    NetworkFee = 0,
-                    Witnesses = Array.Empty<Witness>()
+                    new Transaction
+                    {
+                        Version = 0,
+                        Nonce = 0,
+                        ValidUntilBlock = 0,
+                        Signers = Array.Empty<Signer>(),
+                        Attributes = Array.Empty<TransactionAttribute>(),
+                        Script = Array.Empty<byte>(),
+                        SystemFee = 0,
+                        NetworkFee = 0,
+                        Witnesses = Array.Empty<Witness>()
+                    },
+                    new Transaction
+                    {
+                        Version = 0,
+                        Nonce = 2083236893,
+                        ValidUntilBlock = 0,
+                        Signers = Array.Empty<Signer>(),
+                        Attributes = Array.Empty<TransactionAttribute>(),
+                        Script = Array.Empty<byte>(),
+                        SystemFee = 0,
+                        NetworkFee = 0,
+                        Witnesses = Array.Empty<Witness>()
+                    }
                 }
             };
             // Even if persisting the same block, in different ApplicationEngine instance, the random number should be different
@@ -75,32 +87,44 @@ namespace Neo.UnitTests.SmartContract
         public void TestGetRandomDifferentBlock()
         {
 
-            Block block_1 = TestBlockchain.TheNeoSystem.GenesisBlock;
-            block_1.Transactions = new[]
+            Block block_1 = new()
             {
-                new Transaction
+                Header = new Header
                 {
-                    Version = 0,
-                    Nonce = 0,
-                    ValidUntilBlock = 0,
-                    Signers = Array.Empty<Signer>(),
-                    Attributes = Array.Empty<TransactionAttribute>(),
-                    Script = Array.Empty<byte>(),
-                    SystemFee = 0,
-                    NetworkFee = 0,
-                    Witnesses = Array.Empty<Witness>()
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Timestamp = 0,
+                    Index = 0,
+                    PrimaryIndex = 0,
+                    NextConsensus = TestBlockchain.TheNeoSystem.GenesisBlock.NextConsensus,
+                    Witness = TestBlockchain.TheNeoSystem.GenesisBlock.Witness,
                 },
-                new Transaction
+                Transactions = new[]
                 {
-                    Version = 0,
-                    Nonce = 2083236893,
-                    ValidUntilBlock = 0,
-                    Signers = Array.Empty<Signer>(),
-                    Attributes = Array.Empty<TransactionAttribute>(),
-                    Script = Array.Empty<byte>(),
-                    SystemFee = 0,
-                    NetworkFee = 0,
-                    Witnesses = Array.Empty<Witness>()
+                    new Transaction
+                    {
+                        Version = 0,
+                        Nonce = 0,
+                        ValidUntilBlock = 0,
+                        Signers = Array.Empty<Signer>(),
+                        Attributes = Array.Empty<TransactionAttribute>(),
+                        Script = Array.Empty<byte>(),
+                        SystemFee = 0,
+                        NetworkFee = 0,
+                        Witnesses = Array.Empty<Witness>()
+                    },
+                    new Transaction
+                    {
+                        Version = 0,
+                        Nonce = 2083236893,
+                        ValidUntilBlock = 0,
+                        Signers = Array.Empty<Signer>(),
+                        Attributes = Array.Empty<TransactionAttribute>(),
+                        Script = Array.Empty<byte>(),
+                        SystemFee = 0,
+                        NetworkFee = 0,
+                        Witnesses = Array.Empty<Witness>()
+                    }
                 }
             };
 
