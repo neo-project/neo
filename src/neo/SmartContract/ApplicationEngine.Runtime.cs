@@ -79,7 +79,7 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.GetRandom.
-        /// Gets the random number generated form the VRF.
+        /// Gets the random number generated from the VRF.
         /// </summary>
         public static readonly InteropDescriptor System_Runtime_GetRandom = Register("System.Runtime.GetRandom", nameof(GetRandom), 1 << 4, CallFlags.None);
 
@@ -237,7 +237,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The implementation of System.Runtime.GetRandom.
         /// Gets the random number genrated form the VRF
-        /// Primary geterates this random number with `prevHash`, the hash of the previous (validators.Length/3 + 1) block
+        /// Primary generates this random number with `prevHash`, the hash of the previous (validators.Length/3 + 1) block
         /// </summary>
         /// <returns>The last four bytes of the random number.</returns>
         protected internal uint GetRandom()

@@ -52,11 +52,6 @@ namespace Neo.Network.P2P.Payloads
         public uint Index => Header.Index;
 
         /// <summary>
-        /// The random number of the block from VRF.
-        /// </summary>
-        public uint Nonce => Header.Nonce;
-
-        /// <summary>
         /// The primary index of the consensus node that generated this block.
         /// </summary>
         public byte PrimaryIndex => Header.PrimaryIndex;

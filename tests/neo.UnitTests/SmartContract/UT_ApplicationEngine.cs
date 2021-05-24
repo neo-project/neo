@@ -55,11 +55,5 @@ namespace Neo.UnitTests.SmartContract
             engine.PersistingBlock.PrevHash.Should().Be(TestBlockchain.TheNeoSystem.GenesisBlock.Hash);
             engine.PersistingBlock.MerkleRoot.Should().Be(new UInt256());
         }
-
-        [TestMethod]
-        public void TestGenesisBlockNonce()
-        {
-            TestBlockchain.TheNeoSystem.GenesisBlock.Nonce.Should().Be(2083236893);
-        }
     }
 }

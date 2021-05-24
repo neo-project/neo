@@ -8,12 +8,43 @@ namespace Neo.UnitTests.SmartContract
 {
     public partial class UT_ApplicationEngine
     {
+
+
         [TestMethod]
         public void TestGetRandomSameBlock()
         {
+
+            Block block_1 = TestBlockchain.TheNeoSystem.GenesisBlock;
+            block_1.Transactions = new[]
+            {
+                new Transaction
+                {
+                    Version = 0,
+                    Nonce = 0,
+                    ValidUntilBlock = 0,
+                    Signers = Array.Empty<Signer>(),
+                    Attributes = Array.Empty<TransactionAttribute>(),
+                    Script = Array.Empty<byte>(),
+                    SystemFee = 0,
+                    NetworkFee = 0,
+                    Witnesses = Array.Empty<Witness>()
+                },
+                new Transaction
+                {
+                    Version = 0,
+                    Nonce = 2083236893,
+                    ValidUntilBlock = 0,
+                    Signers = Array.Empty<Signer>(),
+                    Attributes = Array.Empty<TransactionAttribute>(),
+                    Script = Array.Empty<byte>(),
+                    SystemFee = 0,
+                    NetworkFee = 0,
+                    Witnesses = Array.Empty<Witness>()
+                }
+            };
             // Even if persisting the same block, in different ApplicationEngine instance, the random number should be different
-            using var engine_1 = ApplicationEngine.Create(TriggerType.Application, null, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
-            using var engine_2 = ApplicationEngine.Create(TriggerType.Application, null, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine_1 = ApplicationEngine.Create(TriggerType.Application, null, null, block_1, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine_2 = ApplicationEngine.Create(TriggerType.Application, null, null, block_1, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             uint rand_1 = engine_1.GetRandom();
             uint rand_2 = engine_1.GetRandom();
@@ -45,6 +76,34 @@ namespace Neo.UnitTests.SmartContract
         {
 
             Block block_1 = TestBlockchain.TheNeoSystem.GenesisBlock;
+            block_1.Transactions = new[]
+            {
+                new Transaction
+                {
+                    Version = 0,
+                    Nonce = 0,
+                    ValidUntilBlock = 0,
+                    Signers = Array.Empty<Signer>(),
+                    Attributes = Array.Empty<TransactionAttribute>(),
+                    Script = Array.Empty<byte>(),
+                    SystemFee = 0,
+                    NetworkFee = 0,
+                    Witnesses = Array.Empty<Witness>()
+                },
+                new Transaction
+                {
+                    Version = 0,
+                    Nonce = 2083236893,
+                    ValidUntilBlock = 0,
+                    Signers = Array.Empty<Signer>(),
+                    Attributes = Array.Empty<TransactionAttribute>(),
+                    Script = Array.Empty<byte>(),
+                    SystemFee = 0,
+                    NetworkFee = 0,
+                    Witnesses = Array.Empty<Witness>()
+                }
+            };
+
             Block block_2 = new()
             {
                 Header = new Header
@@ -53,12 +112,37 @@ namespace Neo.UnitTests.SmartContract
                     MerkleRoot = UInt256.Zero,
                     Timestamp = block_1.Timestamp,
                     Index = 0,
-                    Nonce = 2083236893 + 1,
                     PrimaryIndex = 0,
                     NextConsensus = block_1.NextConsensus,
                     Witness = block_1.Witness,
                 },
-                Transactions = Array.Empty<Transaction>()
+                Transactions = new[]
+                {
+                    new Transaction
+                    {
+                        Version = 0,
+                        Nonce = 0,
+                        ValidUntilBlock = 0,
+                        Signers = Array.Empty<Signer>(),
+                        Attributes = Array.Empty<TransactionAttribute>(),
+                        Script = Array.Empty<byte>(),
+                        SystemFee = 0,
+                        NetworkFee = 0,
+                        Witnesses = Array.Empty<Witness>()
+                    },
+                    new Transaction
+                    {
+                        Version = 0,
+                        Nonce = 2083236893+1,
+                        ValidUntilBlock = 0,
+                        Signers = Array.Empty<Signer>(),
+                        Attributes = Array.Empty<TransactionAttribute>(),
+                        Script = Array.Empty<byte>(),
+                        SystemFee = 0,
+                        NetworkFee = 0,
+                        Witnesses = Array.Empty<Witness>()
+                    }
+                }
             };
 
             using var engine_1 = ApplicationEngine.Create(TriggerType.Application, null, null, block_1, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);

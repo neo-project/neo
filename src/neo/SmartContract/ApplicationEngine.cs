@@ -259,12 +259,16 @@ namespace Neo.SmartContract
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas)
         {
             if (persistingBlock != null
-                && (nextNonce == null || persistingNonce != persistingBlock.Nonce)) // Make sure to update the nonce when a new Block is persisting
+                && persistingBlock.Transactions != null
+                && persistingBlock.Transactions.Count() > 1) // The block should have at least 2 transactions
             {
-                persistingNonce = persistingBlock.Nonce;
-                nextNonce = BitConverter.GetBytes(persistingBlock.Nonce);
+                var nonceTX = persistingBlock.Transactions[persistingBlock.Transactions.Count() - 1];
+                if (nextNonce == null || persistingNonce != nonceTX.Nonce) // Make sure to update the nonce when a new Block is persisting
+                {
+                    persistingNonce = nonceTX.Nonce;
+                    nextNonce = BitConverter.GetBytes(nonceTX.Nonce);
+                }
             }
-
 
             return applicationEngineProvider?.Create(trigger, container, snapshot, persistingBlock, settings, gas)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas);
