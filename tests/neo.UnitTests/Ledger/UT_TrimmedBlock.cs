@@ -87,7 +87,7 @@ namespace Neo.UnitTests.Ledger
         {
             TrimmedBlock tblock = GetTrimmedBlockWithNoTransaction();
             tblock.Hashes = new UInt256[] { TestUtils.GetTransaction(UInt160.Zero).Hash };
-            tblock.Size.Should().Be(142); // 138 + nonce
+            tblock.Size.Should().Be(138);
         }
 
         [TestMethod]
