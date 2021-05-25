@@ -114,8 +114,6 @@ namespace Neo.SmartContract
         /// </summary>
         public static readonly InteropDescriptor System_Runtime_GetRandom = Register("System.Runtime.GetRandom", nameof(GetRandom), 1 << 4, CallFlags.None);
 
-        private int random_counter = 0;
-
         /// <summary>
         /// The implementation of System.Runtime.GetRandom.
         /// Gets the random number genrated form the VRF
@@ -127,13 +125,12 @@ namespace Neo.SmartContract
             uint index = NativeContract.Ledger.CurrentIndex(Snapshot);
             if (index < ProtocolSettings.ValidatorsCount) throw new InvalidOperationException("Require more blocks than validators");
 
-            random_counter++;
-            byte[] hash = new byte[sizeof(int) + ((ProtocolSettings.ValidatorsCount + 1) * UInt256.Length)];
+            byte[] hash = new byte[sizeof(long) + ((ProtocolSettings.ValidatorsCount + 1) * UInt256.Length)];
 
             // Tx related
-            const int offset = sizeof(int) + UInt256.Length;
-            System.Array.Copy(BitConverter.GetBytes(random_counter), 0, hash, 0, sizeof(int));
-            System.Array.Copy(ScriptContainer.Hash.ToArray(), 0, hash, sizeof(int), UInt256.Length);
+            const int offset = sizeof(long) + UInt256.Length;
+            System.Array.Copy(BitConverter.GetBytes(GasConsumed), 0, hash, 0, sizeof(long));
+            System.Array.Copy(ScriptContainer.Hash.ToArray(), 0, hash, sizeof(long), UInt256.Length);
 
             // Block related
             for (int count = 0; count < ProtocolSettings.ValidatorsCount; index--, count++)
