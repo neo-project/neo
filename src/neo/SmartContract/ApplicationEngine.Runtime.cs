@@ -116,10 +116,8 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// The implementation of System.Runtime.GetRandom.
-        /// Gets the random number genrated form the VRF
-        /// Primary generates this random number with `prevHash`, the hash of the previous (validators.Length/3 + 1) block
         /// </summary>
-        /// <returns>The last four bytes of the random number.</returns>
+        /// <returns>The last eight bytes of the random number.</returns>
         protected internal ulong GetRandom()
         {
             uint index = NativeContract.Ledger.CurrentIndex(Snapshot);
