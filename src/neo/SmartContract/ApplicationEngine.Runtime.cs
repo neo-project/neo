@@ -1,3 +1,4 @@
+using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
@@ -106,6 +107,43 @@ namespace Neo.SmartContract
         /// Burning GAS to benefit the NEO ecosystem.
         /// </summary>
         public static readonly InteropDescriptor System_Runtime_BurnGas = Register("System.Runtime.BurnGas", nameof(BurnGas), 1 << 4, CallFlags.None);
+
+        /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Runtime.GetRandom.
+        /// Gets the random number generated from the VRF.
+        /// </summary>
+        public static readonly InteropDescriptor System_Runtime_GetRandom = Register("System.Runtime.GetRandom", nameof(GetRandom), 1 << 4, CallFlags.None);
+
+        private int random_counter = 0;
+
+        /// <summary>
+        /// The implementation of System.Runtime.GetRandom.
+        /// Gets the random number genrated form the VRF
+        /// Primary generates this random number with `prevHash`, the hash of the previous (validators.Length/3 + 1) block
+        /// </summary>
+        /// <returns>The last four bytes of the random number.</returns>
+        protected internal uint GetRandom()
+        {
+            uint index = NativeContract.Ledger.CurrentIndex(Snapshot);
+            if (index < ProtocolSettings.ValidatorsCount) throw new InvalidOperationException("Require more blocks than validators");
+
+            random_counter++;
+            byte[] hash = new byte[sizeof(int) + ((ProtocolSettings.ValidatorsCount + 1) * UInt256.Length)];
+
+            // Tx related
+            const int offset = sizeof(int) + UInt256.Length;
+            System.Array.Copy(BitConverter.GetBytes(random_counter), 0, hash, 0, sizeof(int));
+            System.Array.Copy(ScriptContainer.Hash.ToArray(), 0, hash, sizeof(int), UInt256.Length);
+
+            // Block related
+            for (int count = 0; count < ProtocolSettings.ValidatorsCount; index--, count++)
+            {
+                System.Array.Copy(NativeContract.Ledger.GetBlockHash(Snapshot, index).ToArray(), 0, hash, offset + (UInt256.Length * count), UInt256.Length);
+            }
+
+            // Double Sha256
+            return BitConverter.ToUInt32(hash.Sha256().Sha256());
+        }
 
         /// <summary>
         /// The implementation of System.Runtime.Platform.
