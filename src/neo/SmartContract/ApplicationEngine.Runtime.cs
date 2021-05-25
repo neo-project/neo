@@ -120,7 +120,7 @@ namespace Neo.SmartContract
         /// Primary generates this random number with `prevHash`, the hash of the previous (validators.Length/3 + 1) block
         /// </summary>
         /// <returns>The last four bytes of the random number.</returns>
-        protected internal uint GetRandom()
+        protected internal ulong GetRandom()
         {
             uint index = NativeContract.Ledger.CurrentIndex(Snapshot);
             if (index < ProtocolSettings.ValidatorsCount) throw new InvalidOperationException("Require more blocks than validators");
@@ -139,7 +139,7 @@ namespace Neo.SmartContract
             }
 
             // Double Sha256
-            return BitConverter.ToUInt32(hash.Sha256().Sha256());
+            return BitConverter.ToUInt64(hash.Sha256().Sha256());
         }
 
         /// <summary>
