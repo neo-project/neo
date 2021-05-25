@@ -133,7 +133,8 @@ namespace Neo.SmartContract
             // Block related
             for (int count = 0; count < ProtocolSettings.ValidatorsCount; index--, count++)
             {
-                System.Array.Copy(NativeContract.Ledger.GetBlockHash(Snapshot, index).ToArray(), 0, hash, offset + (UInt256.Length * count), UInt256.Length);
+                var blockHash = count == 0 ? PersistingBlock.Hash : NativeContract.Ledger.GetBlockHash(Snapshot, index);
+                System.Array.Copy(blockHash.ToArray(), 0, hash, offset + (UInt256.Length * count), UInt256.Length);
             }
 
             // Double Sha256
