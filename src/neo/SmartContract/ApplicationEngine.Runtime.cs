@@ -120,7 +120,7 @@ namespace Neo.SmartContract
         /// <returns>The last eight bytes of the random number.</returns>
         protected internal ulong GetRandom()
         {
-            uint index = NativeContract.Ledger.CurrentIndex(Snapshot);
+            uint index = PersistingBlock.Index;
             if (index < ProtocolSettings.ValidatorsCount) throw new InvalidOperationException("Require more blocks than validators");
 
             byte[] hash = new byte[sizeof(long) + ((ProtocolSettings.ValidatorsCount + 1) * UInt256.Length)];
