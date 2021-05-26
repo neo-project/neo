@@ -137,8 +137,8 @@ namespace Neo.SmartContract
                 System.Array.Copy(blockHash.ToArray(), 0, hash, offset + (UInt256.Length * count), UInt256.Length);
             }
 
-            // Double Sha256
-            return BitConverter.ToUInt64(hash.Sha256().Sha256());
+            // Sha256
+            return BitConverter.ToUInt64(hash.Sha256());
         }
 
         /// <summary>
