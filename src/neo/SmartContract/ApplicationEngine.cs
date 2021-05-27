@@ -262,7 +262,7 @@ namespace Neo.SmartContract
                 && persistingBlock.Transactions != null
                 && persistingBlock.Transactions.Count() > 1) // The block should have at least 2 transactions
             {
-                var nonceTX = persistingBlock.Transactions[persistingBlock.Transactions.Count() - 1];
+                var nonceTX = persistingBlock.Transactions[0];
                 if (nextNonce == null || persistingNonce != nonceTX.Nonce) // Make sure to update the nonce when a new Block is persisting
                 {
                     persistingNonce = nonceTX.Nonce;
