@@ -31,7 +31,7 @@ namespace Neo.UnitTests.SmartContract
                     new Transaction
                     {
                         Version = 0,
-                        Nonce = 0,
+                        Nonce = 2083236893,
                         ValidUntilBlock = 0,
                         Signers = Array.Empty<Signer>(),
                         Attributes = Array.Empty<TransactionAttribute>(),
@@ -43,7 +43,7 @@ namespace Neo.UnitTests.SmartContract
                     new Transaction
                     {
                         Version = 0,
-                        Nonce = 2083236893,
+                        Nonce = 0,
                         ValidUntilBlock = 0,
                         Signers = Array.Empty<Signer>(),
                         Attributes = Array.Empty<TransactionAttribute>(),
@@ -51,7 +51,7 @@ namespace Neo.UnitTests.SmartContract
                         SystemFee = 0,
                         NetworkFee = 0,
                         Witnesses = Array.Empty<Witness>()
-                    }
+                    },
                 }
             };
             // Even if persisting the same block, in different ApplicationEngine instance, the random number should be different
@@ -104,7 +104,7 @@ namespace Neo.UnitTests.SmartContract
                     new Transaction
                     {
                         Version = 0,
-                        Nonce = 0,
+                        Nonce = 2083236893,
                         ValidUntilBlock = 0,
                         Signers = Array.Empty<Signer>(),
                         Attributes = Array.Empty<TransactionAttribute>(),
@@ -116,7 +116,7 @@ namespace Neo.UnitTests.SmartContract
                     new Transaction
                     {
                         Version = 0,
-                        Nonce = 2083236893,
+                        Nonce = 0,
                         ValidUntilBlock = 0,
                         Signers = Array.Empty<Signer>(),
                         Attributes = Array.Empty<TransactionAttribute>(),
