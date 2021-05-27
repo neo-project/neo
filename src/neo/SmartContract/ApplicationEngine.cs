@@ -269,6 +269,10 @@ namespace Neo.SmartContract
                     nextNonce = BitConverter.GetBytes(nonceTX.Nonce);
                 }
             }
+            else
+            {
+                nextNonce = null;
+            }
 
             return applicationEngineProvider?.Create(trigger, container, snapshot, persistingBlock, settings, gas)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas);
