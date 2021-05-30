@@ -116,9 +116,9 @@ namespace Neo
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
             this.TxRouter = ActorSystem.ActorOf(TransactionRouter.Props(this));
+            Blockchain.Ask(new Blockchain.Initialize()).Wait();
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnSystemLoaded(this);
-            Blockchain.Ask(new Blockchain.Initialize()).Wait();
         }
 
         /// <summary>
