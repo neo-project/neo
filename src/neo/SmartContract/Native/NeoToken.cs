@@ -349,6 +349,18 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
+        /// Get account state.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="account">account</param>
+        /// <returns>The state of the account.</returns>
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public NeoAccountState GetAccountState(DataCache snapshot, UInt160 account)
+        {
+            return snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account))?.GetInteroperable<NeoAccountState>();
+        }
+
+        /// <summary>
         /// Gets the address of the committee.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
