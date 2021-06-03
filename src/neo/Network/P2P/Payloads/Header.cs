@@ -219,7 +219,7 @@ namespace Neo.Network.P2P.Payloads
             if (prev is null) return false;
             if (prev.Index + 1 != index) return false;
             if (prev.Header.timestamp >= timestamp) return false;
-            if (!this.VerifyWitnesses(settings, snapshot, 1_00000000)) return false;
+            if (!this.VerifyWitnesses(settings, snapshot, (1_00000000L * PolicyContract.MaxExecFeeFactor / PolicyContract.DefaultExecFeeFactor + 1))) return false;
             return true;
         }
 
@@ -232,7 +232,7 @@ namespace Neo.Network.P2P.Payloads
             if (prev.Hash != prevHash) return false;
             if (prev.index + 1 != index) return false;
             if (prev.timestamp >= timestamp) return false;
-            return this.VerifyWitness(settings, snapshot, prev.nextConsensus, Witness, 1_00000000, out _);
+            return this.VerifyWitness(settings, snapshot, prev.nextConsensus, Witness, (1_00000000L * PolicyContract.MaxExecFeeFactor / PolicyContract.DefaultExecFeeFactor + 1), out _);
         }
     }
 }
