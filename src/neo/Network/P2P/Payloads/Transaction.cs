@@ -329,7 +329,7 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The result of the verification.</returns>
         public VerifyResult Verify(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context)
         {
-            VerifyResult result = VerifyStateIndependent(settings);
+            VerifyResult result = VerifyStateIndependent(settings, snapshot);
             if (result != VerifyResult.Succeed) return result;
             return VerifyStateDependent(settings, snapshot, context);
         }
@@ -381,7 +381,7 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         /// <param name="settings">The <see cref="ProtocolSettings"/> used to verify the transaction.</param>
         /// <returns>The result of the verification.</returns>
-        public virtual VerifyResult VerifyStateIndependent(ProtocolSettings settings)
+        public virtual VerifyResult VerifyStateIndependent(ProtocolSettings settings, DataCache snapshot)
         {
             if (Size > MaxTransactionSize) return VerifyResult.Invalid;
             try
@@ -396,7 +396,7 @@ namespace Neo.Network.P2P.Payloads
             UInt160[] hashes = GetScriptHashesForVerifying(null);
             for (int i = 0; i < hashes.Length; i++)
                 if (witnesses[i].VerificationScript.IsStandardContract())
-                    if (!this.VerifyWitness(settings, null, hashes[i], witnesses[i], net_fee, out long fee))
+                    if (!this.VerifyWitness(settings, snapshot, hashes[i], witnesses[i], net_fee, out long fee))
                         return VerifyResult.Invalid;
                     else
                     {
