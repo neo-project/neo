@@ -18,7 +18,7 @@ namespace Neo.UnitTests.Plugins
 
         public void LogMessage(string message)
         {
-            Log(message);
+            // Log(message);
         }
 
         public bool TestOnMessage(object message)
@@ -31,6 +31,6 @@ namespace Neo.UnitTests.Plugins
             return GetConfiguration();
         }
 
-        protected override bool OnMessage(object message) => true;
+        internal override bool OnMessage(object message) => true;
     }
 }

@@ -1,4 +1,5 @@
 using Akka.Actor;
+using Akka.Event;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P;
@@ -35,7 +36,7 @@ namespace Neo
         /// The <see cref="Akka.Actor.ActorSystem"/> used to create actors for the <see cref="NeoSystem"/>.
         /// </summary>
         public ActorSystem ActorSystem { get; } = ActorSystem.Create(nameof(NeoSystem),
-            $"akka {{ log-dead-letters = off , loglevel = warning, loggers = [ \"{typeof(Utility.Logger).AssemblyQualifiedName}\" ] }}" +
+            $"akka {{ log-dead-letters = off , loglevel = warning, loggers = [ \"{typeof(Logger).AssemblyQualifiedName}\" ] }}" +
             $"blockchain-mailbox {{ mailbox-type: \"{typeof(BlockchainMailbox).AssemblyQualifiedName}\" }}" +
             $"task-manager-mailbox {{ mailbox-type: \"{typeof(TaskManagerMailbox).AssemblyQualifiedName}\" }}" +
             $"remote-node-mailbox {{ mailbox-type: \"{typeof(RemoteNodeMailbox).AssemblyQualifiedName}\" }}");
@@ -86,18 +87,11 @@ namespace Neo
         internal RelayCache RelayCache { get; } = new(100);
 
         private ImmutableList<object> services = ImmutableList<object>.Empty;
+        private ImmutableList<Plugin> plugins = ImmutableList<Plugin>.Empty;
         private readonly string storage_engine;
         private readonly IStore store;
         private ChannelsConfig start_message = null;
         private int suspend = 0;
-
-        static NeoSystem()
-        {
-            // Unify unhandled exceptions
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-
-            Plugin.LoadPlugins();
-        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NeoSystem"/> class.
@@ -105,8 +99,16 @@ namespace Neo
         /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
         /// <param name="storageEngine">The storage engine used to create the <see cref="IStore"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
         /// <param name="storagePath">The path of the storage. If <paramref name="storageEngine"/> is the default in-memory storage engine, this parameter is ignored.</param>
-        public NeoSystem(ProtocolSettings settings, string storageEngine = null, string storagePath = null)
+        /// <param name="plugins">Collection of Plugins to preload into NeoSystem instance</param>
+        public NeoSystem(ProtocolSettings settings, string storageEngine = null, string storagePath = null, IEnumerable<Plugin> plugins = null)
         {
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
+            foreach (var plugin in plugins ?? Enumerable.Empty<Plugin>())
+            {
+                AddPlugin(plugin);
+            }
+
             this.Settings = settings;
             this.GenesisBlock = CreateGenesisBlock(settings);
             this.storage_engine = storageEngine;
@@ -116,8 +118,6 @@ namespace Neo
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
             this.TxRouter = ActorSystem.ActorOf(TransactionRouter.Props(this));
-            foreach (var plugin in Plugin.Plugins)
-                plugin.OnSystemLoaded(this);
             Blockchain.Ask(new Blockchain.Initialize()).Wait();
         }
 
@@ -145,15 +145,18 @@ namespace Neo
             Transactions = Array.Empty<Transaction>()
         };
 
-        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            Utility.Log("UnhandledException", LogLevel.Fatal, e.ExceptionObject);
+            Log("UnhandledException", LogLevel.Fatal, e.ExceptionObject);
         }
 
         public void Dispose()
         {
-            foreach (var p in Plugin.Plugins)
+            foreach (var p in plugins)
+            {
+                if (p is ILogPlugin logPlugin) Logger.LogPlugins.Remove(logPlugin);
                 p.Dispose();
+            }
             EnsureStoped(LocalNode);
             // Dispose will call ActorSystem.Terminate()
             ActorSystem.Dispose();
@@ -170,6 +173,61 @@ namespace Neo
         {
             ImmutableInterlocked.Update(ref services, p => p.Add(service));
             ServiceAdded?.Invoke(this, service);
+        }
+
+        public void AddPlugin(Plugin plugin)
+        {
+            ImmutableInterlocked.Update(ref plugins, p => p.Add(plugin));
+            plugin.OnSystemLoaded(this);
+
+            if (plugin is ILogPlugin logPlugin)
+            {
+                Logger.LogPlugins.Add(logPlugin);
+            }
+        }
+
+        class Logger : ReceiveActor
+        {
+            static List<ILogPlugin> logPlugins = new();
+
+            public static IList<ILogPlugin> LogPlugins => logPlugins;
+
+            public Logger()
+            {
+                Receive<InitializeLogger>(_ => Sender.Tell(new LoggerInitialized()));
+                Receive<LogEvent>(e => Log(e.LogSource, (LogLevel)e.LogLevel(), e.Message));
+            }
+
+            void Log(string source, LogLevel level, object message)
+            {
+                for (int i = 0; i < logPlugins.Count; i++)
+                {
+                    logPlugins[i].Log(source, level, message);
+                }
+            }   
+        }
+
+        public IEnumerable<IMemoryPoolTxObserverPlugin> TxObserverPlugins => plugins.OfType<IMemoryPoolTxObserverPlugin>();
+        public IEnumerable<IPersistencePlugin> PersistencePlugins => plugins.OfType<IPersistencePlugin>();
+        public IEnumerable<IP2PPlugin> P2PPlugins => plugins.OfType<IP2PPlugin>();
+
+        /// <summary>
+        /// Sends a message to all plugins. It can be handled by <see cref="Plugin.OnMessage"/>.
+        /// </summary>
+        /// <param name="message">The message to send.</param>
+        /// <returns><see langword="true"/> if the <paramref name="message"/> is handled by a plugin; otherwise, <see langword="false"/>.</returns>
+        public bool SendPluginMessage(object message)
+        {
+            foreach (Plugin plugin in plugins)
+                if (plugin.OnMessage(message))
+                    return true;
+            return false;
+        }
+
+        public void Log(string source, LogLevel level, object message)
+        {
+            foreach (ILogPlugin plugin in plugins.OfType<ILogPlugin>())
+                plugin.Log(source, level, message);
         }
 
         /// <summary>
@@ -206,9 +264,20 @@ namespace Neo
         /// <returns>The loaded <see cref="IStore"/>.</returns>
         public IStore LoadStore(string path)
         {
-            return string.IsNullOrEmpty(storage_engine) || storage_engine == nameof(MemoryStore)
-                ? new MemoryStore()
-                : Plugin.Storages[storage_engine].GetStore(path);
+            if (string.IsNullOrEmpty(storage_engine) || storage_engine == nameof(MemoryStore))
+                return new MemoryStore();
+
+            for (int i = 0; i < plugins.Count; i++)
+            {
+                Plugin plugin = plugins[i];
+                if (plugin is IStorageProvider storageProvider 
+                    && plugin.Name == storage_engine)
+                {
+                    return storageProvider.GetStore(path);
+                }
+            }
+
+            throw new InvalidOperationException($"{storage_engine} store not found");
         }
 
         /// <summary>

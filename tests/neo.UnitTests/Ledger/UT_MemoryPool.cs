@@ -71,7 +71,7 @@ namespace Neo.UnitTests.Ledger
         [TestCleanup]
         public void CleanUp()
         {
-            Plugin.TxObserverPlugins.Remove(plugin);
+            // Plugin.TxObserverPlugins.Remove(plugin);
         }
 
         private static long LongRandom(long min, long max, Random rand)
