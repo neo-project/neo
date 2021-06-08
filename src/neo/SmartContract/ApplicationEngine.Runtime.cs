@@ -242,10 +242,10 @@ namespace Neo.SmartContract
         /// <returns>The last four bytes of the random number.</returns>
         protected internal ulong GetRandom()
         {
-            if (nextNonce == null) throw new InvalidOperationException("Require persistingBlock");
+            if (nextNonce == 0) throw new InvalidOperationException("Require persistingBlock");
             var nonce = nextNonce;
-            nextNonce = Cryptography.Helper.Sha256(nonce);
-            return BitConverter.ToUInt64(nonce);
+            nextNonce = BitConverter.ToUInt64(Cryptography.Helper.Sha256(BitConverter.GetBytes(nonce))[..8]);
+            return nonce;
         }
 
         /// <summary>
