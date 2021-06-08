@@ -240,12 +240,12 @@ namespace Neo.SmartContract
         /// Primary generates this random number with `prevHash`, the hash of the previous (validators.Length/3 + 1) block
         /// </summary>
         /// <returns>The last four bytes of the random number.</returns>
-        protected internal uint GetRandom()
+        protected internal ulong GetRandom()
         {
             if (nextNonce == null) throw new InvalidOperationException("Require persistingBlock");
             var nonce = nextNonce;
             nextNonce = Cryptography.Helper.Sha256(nonce);
-            return BitConverter.ToUInt32(nonce);
+            return BitConverter.ToUInt64(nonce);
         }
 
         /// <summary>
