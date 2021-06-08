@@ -102,8 +102,7 @@ namespace Neo
         /// <param name="plugins">Collection of Plugins to preload into NeoSystem instance</param>
         public NeoSystem(ProtocolSettings settings, string storageEngine = null, string storagePath = null, IEnumerable<Plugin> plugins = null)
         {
-            plugins ??= Enumerable.Empty<Plugin>();
-            this.plugins = plugins.ToImmutableList();
+            this.plugins = plugins == null ? ImmutableList<Plugin>.Empty : plugins.ToImmutableList();
 
             var logger = ActorSystem.ActorOf<Logger>();
             logger.Tell(new Logger.SetNeoSystem() { NeoSystem = this });
