@@ -102,12 +102,13 @@ namespace Neo
         /// <param name="plugins">Collection of Plugins to preload into NeoSystem instance</param>
         public NeoSystem(ProtocolSettings settings, string storageEngine = null, string storagePath = null, IEnumerable<Plugin> plugins = null)
         {
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            plugins ??= Enumerable.Empty<Plugin>();
+            this.plugins = plugins.ToImmutableList();
 
-            foreach (var plugin in plugins ?? Enumerable.Empty<Plugin>())
-            {
-                AddPlugin(plugin);
-            }
+            var logger = ActorSystem.ActorOf<Logger>();
+            logger.Tell(new Logger.SetNeoSystem() { NeoSystem = this });
+
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) => CurrentDomain_UnhandledException(this, sender, args);
 
             this.Settings = settings;
             this.GenesisBlock = CreateGenesisBlock(settings);
@@ -118,6 +119,8 @@ namespace Neo
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
             this.TxRouter = ActorSystem.ActorOf(TransactionRouter.Props(this));
+            foreach (var plugin in this.plugins)
+                plugin.OnSystemLoaded(this);
             Blockchain.Ask(new Blockchain.Initialize()).Wait();
         }
 
@@ -145,18 +148,18 @@ namespace Neo
             Transactions = Array.Empty<Transaction>()
         };
 
-        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        private void CurrentDomain_UnhandledException(NeoSystem that, object sender, UnhandledExceptionEventArgs e)
         {
-            Log("UnhandledException", LogLevel.Fatal, e.ExceptionObject);
+            if (object.ReferenceEquals(this, that))
+            {
+                Log("UnhandledException", LogLevel.Fatal, e.ExceptionObject);
+            }
         }
 
         public void Dispose()
         {
-            foreach (var p in plugins)
-            {
-                if (p is ILogPlugin logPlugin) Logger.LogPlugins.Remove(logPlugin);
-                p.Dispose();
-            }
+            foreach (var p in plugins) p.Dispose();
+
             EnsureStoped(LocalNode);
             // Dispose will call ActorSystem.Terminate()
             ActorSystem.Dispose();
@@ -175,35 +178,38 @@ namespace Neo
             ServiceAdded?.Invoke(this, service);
         }
 
+        /// <summary>
+        /// Adds a Plugin to the <see cref="NeoSystem"/>.
+        /// </summary>
+        /// <param name="plugin">The plugin object to be added.</param>
         public void AddPlugin(Plugin plugin)
         {
             ImmutableInterlocked.Update(ref plugins, p => p.Add(plugin));
             plugin.OnSystemLoaded(this);
-
-            if (plugin is ILogPlugin logPlugin)
-            {
-                Logger.LogPlugins.Add(logPlugin);
-            }
         }
 
         class Logger : ReceiveActor
         {
-            static List<ILogPlugin> logPlugins = new();
+            public class SetNeoSystem { public NeoSystem NeoSystem { get; init; } }
 
-            public static IList<ILogPlugin> LogPlugins => logPlugins;
+            NeoSystem system = null;
 
             public Logger()
             {
                 Receive<InitializeLogger>(_ => Sender.Tell(new LoggerInitialized()));
-                Receive<LogEvent>(e => Log(e.LogSource, (LogLevel)e.LogLevel(), e.Message));
-            }
-
-            void Log(string source, LogLevel level, object message)
-            {
-                for (int i = 0; i < logPlugins.Count; i++)
+                Receive<SetNeoSystem>(sns => Interlocked.CompareExchange(ref system, sns.NeoSystem, null));
+                Receive<LogEvent>(e => 
                 {
-                    logPlugins[i].Log(source, level, message);
-                }
+                    var logLevel = e.LogLevel() switch
+                    {
+                        Akka.Event.LogLevel.DebugLevel => Neo.LogLevel.Debug,
+                        Akka.Event.LogLevel.ErrorLevel => Neo.LogLevel.Error,
+                        Akka.Event.LogLevel.InfoLevel => Neo.LogLevel.Info,
+                        Akka.Event.LogLevel.WarningLevel => Neo.LogLevel.Warning,
+                        _ => Neo.LogLevel.Info,
+                    };
+                    system?.Log(e.LogSource, logLevel, e.Message);
+                });
             }
         }
 
@@ -218,16 +224,23 @@ namespace Neo
         /// <returns><see langword="true"/> if the <paramref name="message"/> is handled by a plugin; otherwise, <see langword="false"/>.</returns>
         public bool SendPluginMessage(object message)
         {
-            foreach (Plugin plugin in plugins)
-                if (plugin.OnMessage(message))
-                    return true;
+            for (int i = 0; i < plugins.Count; i++)
+            {
+                if (plugins[i].OnMessage(message)) return true;
+            }
+
             return false;
         }
 
         public void Log(string source, LogLevel level, object message)
         {
-            foreach (ILogPlugin plugin in plugins.OfType<ILogPlugin>())
-                plugin.Log(source, level, message);
+            for (int i = 0; i < plugins.Count; i++)
+            {
+                if (plugins[i] is ILogPlugin logPlugin)
+                {
+                    logPlugin.Log(source, level, message);
+                }
+            }
         }
 
         /// <summary>
