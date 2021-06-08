@@ -9,7 +9,7 @@ namespace Neo.UnitTests.Plugins
 
         public string Output { set; get; }
 
-        protected override void Configure() { }
+        // protected override void Configure() { }
 
         void ILogPlugin.Log(string source, LogLevel level, object message)
         {
@@ -26,10 +26,10 @@ namespace Neo.UnitTests.Plugins
             return OnMessage(message);
         }
 
-        public IConfigurationSection TestGetConfiguration()
-        {
-            return GetConfiguration();
-        }
+        // public IConfigurationSection TestGetConfiguration()
+        // {
+        //     return GetConfiguration();
+        // }
 
         internal override bool OnMessage(object message) => true;
     }
