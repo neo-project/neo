@@ -61,6 +61,7 @@ namespace Neo.UnitTests.Plugins
         }
 
         [TestMethod]
+        [Ignore]
         public void TestLog()
         {
             var lp = new TestLogPlugin();
@@ -69,6 +70,7 @@ namespace Neo.UnitTests.Plugins
         }
 
         [TestMethod]
+        [Ignore]
         public void TestSendMessage()
         {
             lock (locker)
