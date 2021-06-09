@@ -18,7 +18,7 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestHashCore()
         {
-            byte[] array =  Encoding.ASCII.GetBytes("hello");
+            byte[] array = Encoding.ASCII.GetBytes("hello");
             array.Murmur128(123u).ToHexString().ToString().Should().Be("0bc59d0ad25fde2982ed65af61227a0e");
 
             array = Encoding.ASCII.GetBytes("world");

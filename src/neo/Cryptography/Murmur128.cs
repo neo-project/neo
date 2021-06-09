@@ -52,7 +52,7 @@ namespace Neo.Cryptography
                 H1 += H2;
                 H1 = H1 * m + n1;
 
-                ulong k2 = BinaryPrimitives.ReadUInt64BigEndian(array.AsSpan(i+8));
+                ulong k2 = BinaryPrimitives.ReadUInt64BigEndian(array.AsSpan(i + 8));
                 k2 *= c2;
                 k2 = RotateLeft(k2, r2);
                 k2 *= c1;
