@@ -70,6 +70,60 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void CheckDecodeEncode()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshot();
+
+            using (ScriptBuilder script = new())
+            {
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "base58CheckEncode", new byte[] { 1, 2, 3 });
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(1, engine.ResultStack.Count);
+
+                Assert.AreEqual("3DUz7ncyT", engine.ResultStack.Pop<ByteString>().GetString());
+            }
+
+            using (ScriptBuilder script = new())
+            {
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "base58CheckDecode", "3DUz7ncyT");
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(engine.Execute(), VMState.HALT);
+                Assert.AreEqual(1, engine.ResultStack.Count);
+
+                CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, engine.ResultStack.Pop<ByteString>().GetSpan().ToArray());
+            }
+
+            // Error
+
+            using (ScriptBuilder script = new())
+            {
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "base58CheckDecode", "AA");
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(engine.Execute(), VMState.FAULT);
+            }
+
+            using (ScriptBuilder script = new())
+            {
+                script.EmitDynamicCall(NativeContract.StdLib.Hash, "base58CheckDecode", null);
+
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+                engine.LoadScript(script.ToArray());
+
+                Assert.AreEqual(engine.Execute(), VMState.FAULT);
+            }
+        }
+
+        [TestMethod]
         public void MemorySearch()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
