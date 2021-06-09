@@ -66,14 +66,13 @@ namespace Neo.Network.P2P.Payloads
         }
 
         /// <summary>
-        /// The last four bytes of random number generated from VRF
+        /// The last four bytes of random number generated from VRF.
         /// </summary>
         public ulong Nonce
         {
             get => nonce;
             set { nonce = value; _hash = null; }
         }
-
 
         /// <summary>
         /// The index of the block.

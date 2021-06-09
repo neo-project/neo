@@ -28,7 +28,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Header_Get()
         {
             UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupBlockWithValues(uut, val256, out var merkRootVal, out _, out var timestampVal, out var nonceVal, out var indexVal,  out var scriptVal, out _, 0);
+            TestUtils.SetupBlockWithValues(uut, val256, out var merkRootVal, out _, out var timestampVal, out var nonceVal, out var indexVal, out var scriptVal, out _, 0);
 
             uut.Header.Should().NotBeNull();
             uut.Header.PrevHash.Should().Be(val256);
