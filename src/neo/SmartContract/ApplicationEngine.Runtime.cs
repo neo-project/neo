@@ -244,7 +244,7 @@ namespace Neo.SmartContract
         {
             if (nextNonce == 0) throw new InvalidOperationException("Require persistingBlock");
             var nonce = nextNonce;
-            nextNonce = BitConverter.ToUInt64(Cryptography.Helper.Sha256(BitConverter.GetBytes(nonce))[..8]);
+            nextNonce = BitConverter.ToUInt64(Cryptography.Helper.Murmur128(BitConverter.GetBytes(nonce), 123)[..8]);
             return nonce;
         }
 

@@ -27,11 +27,11 @@ namespace Neo.UnitTests.SmartContract
             ulong rand_9 = engine_2.GetRandom();
             ulong rand_10 = engine_2.GetRandom();
 
-            rand_1.Should().Be(2083236893u);
-            rand_2.Should().Be(3262894070u);
-            rand_3.Should().Be(1882351097u);
-            rand_4.Should().Be(2376063185u);
-            rand_5.Should().Be(2304732336u);
+            rand_1.Should().Be(2083236893UL);
+            rand_2.Should().Be(15505770856184835187UL);
+            rand_3.Should().Be(15021106126503388921UL);
+            rand_4.Should().Be(3078937783697608639UL);
+            rand_5.Should().Be(18325662478462184943UL);
 
             rand_1.Should().NotBe(rand_6);
             rand_2.Should().NotBe(rand_7);
@@ -78,10 +78,10 @@ namespace Neo.UnitTests.SmartContract
             ulong rand_10 = engine_2.GetRandom();
 
             rand_1.Should().NotBe(2083236893u);
-            rand_2.Should().NotBe(3262894070u);
-            rand_3.Should().NotBe(1882351097u);
-            rand_4.Should().NotBe(2376063185u);
-            rand_5.Should().NotBe(2304732336u);
+            rand_2.Should().NotBe(15505770856184835187UL);
+            rand_3.Should().NotBe(15021106126503388921UL);
+            rand_4.Should().NotBe(3078937783697608639UL);
+            rand_5.Should().NotBe(18325662478462184943UL);
 
             rand_1.Should().NotBe(rand_6);
             rand_2.Should().NotBe(rand_7);

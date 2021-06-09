@@ -264,10 +264,6 @@ namespace Neo.SmartContract
                 persistingNonce = persistingBlock.Nonce;
                 nextNonce = persistingBlock.Nonce;
             }
-            else
-            {
-                nextNonce = 0;
-            }
 
             return applicationEngineProvider?.Create(trigger, container, snapshot, persistingBlock, settings, gas)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas);
