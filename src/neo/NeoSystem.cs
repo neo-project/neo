@@ -197,7 +197,7 @@ namespace Neo
             {
                 Receive<InitializeLogger>(_ => Sender.Tell(new LoggerInitialized()));
                 Receive<SetNeoSystem>(sns => Interlocked.CompareExchange(ref system, sns.NeoSystem, null));
-                Receive<LogEvent>(e => 
+                Receive<LogEvent>(e =>
                 {
                     var logLevel = e.LogLevel() switch
                     {
