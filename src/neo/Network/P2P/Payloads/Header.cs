@@ -66,7 +66,7 @@ namespace Neo.Network.P2P.Payloads
         }
 
         /// <summary>
-        /// The last four bytes of random number generated from VRF.
+        /// The first eight bytes of random number generated from VRF.
         /// </summary>
         public ulong Nonce
         {
