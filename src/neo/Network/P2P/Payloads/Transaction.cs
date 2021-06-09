@@ -12,6 +12,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Neo.Cryptography.ECC;
+using Neo.Plugins;
 using static Neo.SmartContract.Helper;
 using Array = Neo.VM.Types.Array;
 
@@ -329,7 +331,7 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The result of the verification.</returns>
         public VerifyResult Verify(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context)
         {
-            VerifyResult result = VerifyStateIndependent(settings, snapshot);
+            VerifyResult result = VerifyStateIndependent(settings);
             if (result != VerifyResult.Succeed) return result;
             return VerifyStateDependent(settings, snapshot, context);
         }
@@ -381,7 +383,7 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         /// <param name="settings">The <see cref="ProtocolSettings"/> used to verify the transaction.</param>
         /// <returns>The result of the verification.</returns>
-        public virtual VerifyResult VerifyStateIndependent(ProtocolSettings settings, DataCache snapshot)
+        public virtual VerifyResult VerifyStateIndependent(ProtocolSettings settings)
         {
             if (Size > MaxTransactionSize) return VerifyResult.Invalid;
             try
@@ -392,17 +394,18 @@ namespace Neo.Network.P2P.Payloads
             {
                 return VerifyResult.Invalid;
             }
-            long net_fee = Math.Min(NetworkFee, MaxVerificationGas);
             UInt160[] hashes = GetScriptHashesForVerifying(null);
             for (int i = 0; i < hashes.Length; i++)
-                if (witnesses[i].VerificationScript.IsStandardContract())
-                    if (!this.VerifyWitness(settings, snapshot, hashes[i], witnesses[i], net_fee, out long fee))
-                        return VerifyResult.Invalid;
-                    else
+            {
+                if (witnesses[i].VerificationScript.IsSignatureContract())
+                {
+                    var pubkey = witnesses[i].VerificationScript[2..35];
+                    if (!Crypto.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript[2..], pubkey, ECCurve.Secp256r1))
                     {
-                        net_fee -= fee;
-                        if (net_fee < 0) return VerifyResult.InsufficientFunds;
+                        return VerifyResult.Invalid;
                     }
+                }
+            }
             return VerifyResult.Succeed;
         }
 

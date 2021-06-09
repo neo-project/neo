@@ -1140,9 +1140,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     }
                 }
             };
-            tx.VerifyStateIndependent(ProtocolSettings.Default, null).Should().Be(VerifyResult.Invalid);
+            tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Invalid);
             tx.Script = Array.Empty<byte>();
-            tx.VerifyStateIndependent(ProtocolSettings.Default, null).Should().Be(VerifyResult.Succeed);
+            tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Succeed);
 
             var walletA = TestUtils.GenerateTestWallet();
             var walletB = TestUtils.GenerateTestWallet();
@@ -1192,7 +1192,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.IsTrue(data.Completed);
 
             tx.Witnesses = data.GetWitnesses();
-            tx.VerifyStateIndependent(ProtocolSettings.Default, null).Should().Be(VerifyResult.Succeed);
+            tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Succeed);
         }
 
         [TestMethod]
