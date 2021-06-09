@@ -104,8 +104,7 @@ namespace Neo
         {
             this.plugins = plugins == null ? ImmutableList<Plugin>.Empty : plugins.ToImmutableList();
 
-            var logger = ActorSystem.ActorOf<Logger>();
-            logger.Tell(new Logger.SetNeoSystem() { NeoSystem = this });
+            ActorSystem.ActorSelection("/system/log*").Tell(new Logger.SetNeoSystem() { NeoSystem = this });
 
             AppDomain.CurrentDomain.UnhandledException += (sender, args) => CurrentDomain_UnhandledException(this, sender, args);
 
