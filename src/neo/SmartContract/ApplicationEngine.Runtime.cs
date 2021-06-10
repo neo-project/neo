@@ -242,7 +242,7 @@ namespace Neo.SmartContract
         /// <returns>The last four bytes of the random number.</returns>
         protected internal ulong GetRandom()
         {
-            if (nextNonce == 0) return 0; // Return 0 if here is no persistingBlock, this is for invoke call from rpc
+            if (nextNonce == 0) return 0; // Return 0 if here is no persistingBlock.
             var nonce = nextNonce;
             nextNonce = BitConverter.ToUInt64(Cryptography.Helper.Murmur128(BitConverter.GetBytes(nonce), 123)[..8]);
             var h = (ulong)ScriptContainer.GetHashCode();
