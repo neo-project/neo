@@ -246,7 +246,7 @@ namespace Neo.SmartContract
             var nonce = nextNonce;
             nextNonce = BitConverter.ToUInt64(Cryptography.Helper.Murmur128(BitConverter.GetBytes(nonce), 123)[..8]);
             var h = (ulong)ScriptContainer.GetHashCode();
-            return nonce^h;
+            return nonce ^ h;
         }
 
         /// <summary>

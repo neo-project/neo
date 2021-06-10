@@ -136,7 +136,7 @@ namespace Neo.SmartContract
             this.gas_amount = gas;
             this.exec_fee_factor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(Snapshot);
             this.StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(Snapshot);
-        
+
             if (persistingBlock != null) // Make sure to update the nonce when a new Block is persisting
             {
                 nextNonce = persistingBlock.Nonce;
