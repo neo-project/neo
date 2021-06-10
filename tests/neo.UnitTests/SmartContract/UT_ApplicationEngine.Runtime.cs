@@ -11,9 +11,14 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestGetRandomSameBlock()
         {
+
+            var tx = TestUtils.GetTransaction(UInt160.Zero);
             // Even if persisting the same block, in different ApplicationEngine instance, the random number should be different
-            using var engine_1 = ApplicationEngine.Create(TriggerType.Application, null, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
-            using var engine_2 = ApplicationEngine.Create(TriggerType.Application, null, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine_1 = ApplicationEngine.Create(TriggerType.Application, tx, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine_2 = ApplicationEngine.Create(TriggerType.Application, tx, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+
+            engine_1.LoadScript(new byte[] { 0x01 });
+            engine_2.LoadScript(new byte[] { 0x01 });
 
             ulong rand_1 = engine_1.GetRandom();
             ulong rand_2 = engine_1.GetRandom();
@@ -27,43 +32,45 @@ namespace Neo.UnitTests.SmartContract
             ulong rand_9 = engine_2.GetRandom();
             ulong rand_10 = engine_2.GetRandom();
 
-            rand_1.Should().Be(2083236893UL);
-            rand_2.Should().Be(15505770856184835187UL);
-            rand_3.Should().Be(15021106126503388921UL);
-            rand_4.Should().Be(3078937783697608639UL);
-            rand_5.Should().Be(18325662478462184943UL);
+            rand_1.Should().Be(563449713UL);
+            rand_2.Should().Be(15505770855291309855UL);
+            rand_3.Should().Be(15021106125335659925UL);
+            rand_4.Should().Be(3078937782566857939UL);
+            rand_5.Should().Be(18325662479089094275UL);
 
-            rand_1.Should().NotBe(rand_6);
-            rand_2.Should().NotBe(rand_7);
-            rand_3.Should().NotBe(rand_8);
-            rand_4.Should().NotBe(rand_9);
-            rand_5.Should().NotBe(rand_10);
+            rand_1.Should().Be(rand_6);
+            rand_2.Should().Be(rand_7);
+            rand_3.Should().Be(rand_8);
+            rand_4.Should().Be(rand_9);
+            rand_5.Should().Be(rand_10);
         }
 
         [TestMethod]
         public void TestGetRandomDifferentBlock()
         {
 
-            Block block_1 = TestBlockchain.TheNeoSystem.GenesisBlock;
-            Block block_2 = new()
+            // Block block_1 = TestBlockchain.TheNeoSystem.GenesisBlock;
+            var tx_1 = TestUtils.GetTransaction(UInt160.Zero);
+
+            var tx_2 = new Transaction
             {
-                Header = new Header
-                {
-                    PrevHash = UInt256.Zero,
-                    MerkleRoot = UInt256.Zero,
-                    Timestamp = block_1.Timestamp,
-                    Index = 0,
-                    Nonce = 2083236893 + 1,
-                    PrimaryIndex = 0,
-                    NextConsensus = block_1.NextConsensus,
-                    Witness = block_1.Witness,
-                },
-                Transactions = Array.Empty<Transaction>()
+                Version = 0,
+                Nonce = 2083236893,
+                ValidUntilBlock = 0,
+                Signers = Array.Empty<Signer>(),
+                Attributes = Array.Empty<TransactionAttribute>(),
+                Script = Array.Empty<byte>(),
+                SystemFee = 0,
+                NetworkFee = 0,
+                Witnesses = Array.Empty<Witness>()
             };
 
-            using var engine_1 = ApplicationEngine.Create(TriggerType.Application, null, null, block_1, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine_1 = ApplicationEngine.Create(TriggerType.Application, tx_1, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
             // The next_nonce shuld be reinitialized when a new block is persisting
-            using var engine_2 = ApplicationEngine.Create(TriggerType.Application, null, null, block_2, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine_2 = ApplicationEngine.Create(TriggerType.Application, tx_2, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+
+            // engine_1.LoadScript(new byte[] { 0x01 });
+            // engine_2.LoadScript(new byte[] { 0x02 });
 
             ulong rand_1 = engine_1.GetRandom();
             ulong rand_2 = engine_1.GetRandom();
@@ -77,11 +84,11 @@ namespace Neo.UnitTests.SmartContract
             ulong rand_9 = engine_2.GetRandom();
             ulong rand_10 = engine_2.GetRandom();
 
-            rand_1.Should().NotBe(2083236893u);
-            rand_2.Should().NotBe(15505770856184835187UL);
-            rand_3.Should().NotBe(15021106126503388921UL);
-            rand_4.Should().NotBe(3078937783697608639UL);
-            rand_5.Should().NotBe(18325662478462184943UL);
+            rand_1.Should().Be(563449713UL);
+            rand_2.Should().Be(15505770855291309855UL);
+            rand_3.Should().Be(15021106125335659925UL);
+            rand_4.Should().Be(3078937782566857939UL);
+            rand_5.Should().Be(18325662479089094275UL);
 
             rand_1.Should().NotBe(rand_6);
             rand_2.Should().NotBe(rand_7);

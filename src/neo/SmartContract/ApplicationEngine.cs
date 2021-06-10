@@ -114,9 +114,7 @@ namespace Neo.SmartContract
         /// The notifications sent during the execution.
         /// </summary>
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
-
-        private static ulong persistingNonce;
-        private static ulong nextNonce;
+        private ulong nextNonce;
 
 
         /// <summary>
@@ -138,6 +136,11 @@ namespace Neo.SmartContract
             this.gas_amount = gas;
             this.exec_fee_factor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(Snapshot);
             this.StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(Snapshot);
+        
+            if (persistingBlock != null) // Make sure to update the nonce when a new Block is persisting
+            {
+                nextNonce = persistingBlock.Nonce;
+            }
         }
 
         /// <summary>
@@ -258,13 +261,6 @@ namespace Neo.SmartContract
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas)
         {
-            if (persistingBlock != null &&
-             (nextNonce == 0 || persistingNonce != persistingBlock.Nonce)) // Make sure to update the nonce when a new Block is persisting
-            {
-                persistingNonce = persistingBlock.Nonce;
-                nextNonce = persistingBlock.Nonce;
-            }
-
             return applicationEngineProvider?.Create(trigger, container, snapshot, persistingBlock, settings, gas)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas);
         }
