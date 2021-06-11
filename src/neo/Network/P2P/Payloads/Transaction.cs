@@ -367,8 +367,6 @@ namespace Neo.Network.P2P.Payloads
                     net_fee -= execFeeFactor * SignatureContractCost();
                 else if (witnesses[i].VerificationScript.IsMultiSigContract(out int m, out int n))
                 {
-                    if (!this.VerifyWitness(settings, snapshot, hashes[i], witnesses[i], net_fee, out long fee))
-                        return VerifyResult.Invalid;
                     net_fee -= execFeeFactor * MultiSignatureContractCost(m, n);
                 }
                 else
@@ -405,6 +403,35 @@ namespace Neo.Network.P2P.Payloads
                 {
                     var pubkey = witnesses[i].VerificationScript[2..35];
                     if (!Crypto.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript[2..], pubkey, ECCurve.Secp256r1))
+                    {
+                        return VerifyResult.Invalid;
+                    }
+                }
+
+                if (witnesses[i].VerificationScript.IsMultiSigContract(out var _, out ECPoint[] points))
+                {
+                    var signatures = witnesses[i].InvocationScript.GetMultiSignature();
+                    var signCount = signatures.Length;
+                    var pubkeys = points.Select(p => p.EncodePoint(true)).ToArray();
+                    var pubkeyCount = pubkeys.Length;
+                    if (pubkeyCount == 0 || signCount == 0 || signCount > pubkeyCount)
+                    {
+                        return VerifyResult.Invalid;
+                    }
+
+                    var message = this.GetSignData(settings.Network);
+                    try
+                    {
+                        for (int x = 0, y = 0; x < signCount && y < pubkeyCount;)
+                        {
+                            if (Crypto.VerifySignature(message, signatures[x], pubkeys[y], ECCurve.Secp256r1))
+                                x++;
+                            y++;
+                            if (signCount - x > pubkeyCount - y)
+                                return VerifyResult.Invalid;
+                        }
+                    }
+                    catch (ArgumentException)
                     {
                         return VerifyResult.Invalid;
                     }

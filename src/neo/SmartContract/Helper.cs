@@ -202,6 +202,22 @@ namespace Neo.SmartContract
             return true;
         }
 
+
+
+        public static byte[][] GetMultiSignature(this byte[] script)
+        {
+            int i = 0;
+            var signatures = new List<byte[]>();
+            while (script[i] == (byte)OpCode.PUSHDATA1)
+            {
+                if (script.Length <= i + 64) break;
+                if (script[++i] != 64) break;
+                signatures.Add(script.AsSpan(i + 1, 64).ToArray());
+                i += 64;
+            }
+            return signatures.ToArray();
+        }
+
         /// <summary>
         /// Determines whether the specified contract is a signature contract.
         /// </summary>
