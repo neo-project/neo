@@ -217,7 +217,7 @@ namespace Neo.Network.P2P.Payloads
             json["previousblockhash"] = prevHash.ToString();
             json["merkleroot"] = merkleRoot.ToString();
             json["time"] = timestamp;
-            json["nonce"] = nonce.ToString("X");
+            json["nonce"] = nonce.ToString("X8");
             json["index"] = index;
             json["primary"] = primaryIndex;
             json["nextconsensus"] = nextConsensus.ToAddress(settings.AddressVersion);
