@@ -280,9 +280,8 @@ namespace Neo
 
             for (int i = 0; i < plugins.Count; i++)
             {
-                Plugin plugin = plugins[i];
-                if (plugin is IStorageProvider storageProvider
-                    && plugin.Name == storage_engine)
+                if (plugins[i] is IStorageProvider storageProvider
+                    && plugins[i].Name == storage_engine)
                 {
                     return storageProvider.GetStore(path);
                 }
