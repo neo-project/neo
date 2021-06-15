@@ -210,10 +210,10 @@ namespace Neo.SmartContract
             var signatures = new List<byte[]>();
             while (script[i] == (byte)OpCode.PUSHDATA1)
             {
-                if (script.Length <= i + 66) break;
                 if (script[++i] != 64) break;
                 signatures.Add(script.AsSpan(i + 1, 64).ToArray());
                 i += 65;
+                if (i >= script.Length) break;
             }
             return signatures.ToArray();
         }

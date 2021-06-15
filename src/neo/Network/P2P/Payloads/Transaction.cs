@@ -408,10 +408,14 @@ namespace Neo.Network.P2P.Payloads
                     }
                 }
 
-                if (witnesses[i].VerificationScript.IsMultiSigContract(out var _, out ECPoint[] points))
+                if (witnesses[i].VerificationScript.IsMultiSigContract(out var limit, out ECPoint[] points))
                 {
                     var signatures = witnesses[i].InvocationScript.GetMultiSignature();
                     var signCount = signatures.Length;
+                    if (signCount < limit)
+                    {
+                        return VerifyResult.Invalid;
+                    }
                     var pubkeys = points.Select(p => p.EncodePoint(true)).ToArray();
                     var pubkeyCount = pubkeys.Length;
                     if (pubkeyCount == 0 || signCount == 0 || signCount > pubkeyCount)
