@@ -35,7 +35,7 @@ namespace Neo.Persistence
         public UInt256 CurrentBlockHash => BlockHashIndex.Get().Hash;
         public UInt256 CurrentHeaderHash => HeaderHashIndex.Get().Hash;
 
-        private const uint noBonusHeight = 200_000;
+        private const uint NoBonusHeight = 200_000;
 
         public Fixed8 CalculateBonus(IEnumerable<CoinReference> inputs, bool ignoreClaimed = true)
         {
@@ -91,10 +91,10 @@ namespace Neo.Persistence
             {
                 uint amount = 0;
                 uint ustart = group.Key.StartHeight / Blockchain.DecrementInterval;
-                if (ustart < Blockchain.GenerationAmount.Length && group.Key.StartHeight < noBonusHeight)
+                if (ustart < Blockchain.GenerationAmount.Length && group.Key.StartHeight < NoBonusHeight)
                 {
                     uint istart = group.Key.StartHeight % Blockchain.DecrementInterval;
-                    uint endHeight = Math.Min(group.Key.EndHeight, noBonusHeight);
+                    uint endHeight = Math.Min(group.Key.EndHeight, NoBonusHeight);
                     uint uend = endHeight / Blockchain.DecrementInterval;
                     uint iend = endHeight % Blockchain.DecrementInterval;
                     if (uend >= Blockchain.GenerationAmount.Length)
