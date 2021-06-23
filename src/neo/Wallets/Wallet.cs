@@ -560,7 +560,7 @@ namespace Neo.Wallets
                     }
                 }
 
-                if (witness_script is null)
+                if (witness_script is null || witness_script.Length == 0)
                 {
                     var contract = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (contract is null)
