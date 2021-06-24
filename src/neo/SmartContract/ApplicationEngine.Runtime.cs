@@ -245,8 +245,9 @@ namespace Neo.SmartContract
             if (nextNonce == 0) return 0; // Return 0 if here is no persistingBlock.
             var nonce = nextNonce;
             nextNonce = BitConverter.ToUInt64(Cryptography.Helper.Murmur128(BitConverter.GetBytes(nonce), 123)[..8]);
-            var h = (ulong)ScriptContainer.GetHashCode();
-            return nonce ^ h;
+            var tx = (Transaction)ScriptContainer;
+            
+            return nonce ^ BitConverter.ToUInt64(tx?.Hash.ToArray());
         }
 
         /// <summary>

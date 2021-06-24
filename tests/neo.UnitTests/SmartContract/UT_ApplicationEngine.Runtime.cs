@@ -32,11 +32,11 @@ namespace Neo.UnitTests.SmartContract
             ulong rand_9 = engine_2.GetRandom();
             ulong rand_10 = engine_2.GetRandom();
 
-            rand_1.Should().Be(563449713UL);
-            rand_2.Should().Be(15505770855291309855UL);
-            rand_3.Should().Be(15021106125335659925UL);
-            rand_4.Should().Be(3078937782566857939UL);
-            rand_5.Should().Be(18325662479089094275UL);
+            rand_1.Should().Be(12293533072847376241UL);
+            rand_2.Should().Be(9058136615909478175UL);
+            rand_3.Should().Be(8858254313899918741UL);
+            rand_4.Should().Be(9232927530282724563UL);
+            rand_5.Should().Be(6109893603630206595UL);
 
             rand_1.Should().Be(rand_6);
             rand_2.Should().Be(rand_7);
@@ -84,11 +84,11 @@ namespace Neo.UnitTests.SmartContract
             ulong rand_9 = engine_2.GetRandom();
             ulong rand_10 = engine_2.GetRandom();
 
-            rand_1.Should().Be(563449713UL);
-            rand_2.Should().Be(15505770855291309855UL);
-            rand_3.Should().Be(15021106125335659925UL);
-            rand_4.Should().Be(3078937782566857939UL);
-            rand_5.Should().Be(18325662479089094275UL);
+            rand_1.Should().Be(12293533072847376241UL);
+            rand_2.Should().Be(9058136615909478175UL);
+            rand_3.Should().Be(8858254313899918741UL);
+            rand_4.Should().Be(9232927530282724563UL);
+            rand_5.Should().Be(6109893603630206595UL);
 
             rand_1.Should().NotBe(rand_6);
             rand_2.Should().NotBe(rand_7);
