@@ -59,11 +59,26 @@ namespace Neo.Cryptography
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
         public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECC.ECPoint pubkey)
         {
+            byte[] buffer = pubkey.EncodePoint(false);
+#if !OSX
+            try
+            {
+                var curve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName(pubkey.Curve == ECC.ECCurve.Secp256r1 ? "secp256r1" : "secp256k1");
+                var domain = new Org.BouncyCastle.Crypto.Parameters.ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H);
+                var point = curve.Curve.DecodePoint(buffer);
+                var pubKey = new Org.BouncyCastle.Crypto.Parameters.ECPublicKeyParameters("ECDSA", point, domain);
+                var signer = Org.BouncyCastle.Security.SignerUtilities.GetSigner("SHA-256withECDSA");
+
+                signer.Init(false, pubKey);
+                signer.BlockUpdate(message.ToArray(), 0, message.Length);
+                return signer.VerifySignature(signature.ToArray());
+            }
+            catch { return false; }
+#else
             ECCurve curve =
                 pubkey.Curve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
                 pubkey.Curve == ECC.ECCurve.Secp256k1 ? ECCurve.CreateFromFriendlyName("secP256k1") :
                 throw new NotSupportedException();
-            byte[] buffer = pubkey.EncodePoint(false);
             using var ecdsa = ECDsa.Create(new ECParameters
             {
                 Curve = curve,
@@ -74,6 +89,7 @@ namespace Neo.Cryptography
                 }
             });
             return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
+#endif
         }
 
         /// <summary>
