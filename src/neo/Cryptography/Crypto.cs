@@ -60,7 +60,7 @@ namespace Neo.Cryptography
         public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECC.ECPoint pubkey)
         {
             byte[] buffer = pubkey.EncodePoint(false);
-#if !OSX
+#if OSX
             try
             {
                 var curve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName(pubkey.Curve == ECC.ECCurve.Secp256r1 ? "secp256r1" : "secp256k1");
