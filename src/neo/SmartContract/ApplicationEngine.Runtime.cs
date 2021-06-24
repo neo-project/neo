@@ -236,18 +236,18 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// The implementation of System.Runtime.GetRandom.
-        /// Gets the random number, random number will xor with the hash value of the scriptcontainer.
+        /// Gets the random number, random number will xor with the hash value of the transaction.
         /// </summary>
         /// <returns>The first eight bytes of the random number.</returns>
         protected internal ulong GetRandom()
         {
             // Return 0 if here is no persistingBlock.
-            // We need this for users to test their transaction locally.
-            if (nextNonce == 0) return 0; 
+            // We need this for users to test their transactions locally.
+            if (nextNonce == 0) return 0;
             var nonce = nextNonce;
             nextNonce = BitConverter.ToUInt64(Cryptography.Helper.Murmur128(BitConverter.GetBytes(nonce), 123)[..8]);
             var tx = (Transaction)ScriptContainer;
-            
+
             return nonce ^ BitConverter.ToUInt64(tx?.Hash.ToArray());
         }
 
