@@ -59,13 +59,14 @@ namespace Neo.Cryptography
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
         public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECC.ECPoint pubkey)
         {
-            byte[] buffer = pubkey.EncodePoint(false);
 #if OSX
             try
             {
                 var curve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName(pubkey.Curve == ECC.ECCurve.Secp256r1 ? "secp256r1" : "secp256k1");
                 var domain = new Org.BouncyCastle.Crypto.Parameters.ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H);
-                var point = curve.Curve.DecodePoint(buffer);
+                var point = curve.Curve.CreatePoint(
+                    new Org.BouncyCastle.Math.BigInteger(pubkey.X.Value.ToString()),
+                    new Org.BouncyCastle.Math.BigInteger(pubkey.Y.Value.ToString()));
                 var pubKey = new Org.BouncyCastle.Crypto.Parameters.ECPublicKeyParameters("ECDSA", point, domain);
                 var signer = Org.BouncyCastle.Security.SignerUtilities.GetSigner("SHA-256withECDSA");
 
@@ -75,6 +76,7 @@ namespace Neo.Cryptography
             }
             catch { return false; }
 #else
+            byte[] buffer = pubkey.EncodePoint(false);
             ECCurve curve =
                 pubkey.Curve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
                 pubkey.Curve == ECC.ECCurve.Secp256k1 ? ECCurve.CreateFromFriendlyName("secP256k1") :
