@@ -114,6 +114,10 @@ namespace Neo.SmartContract
         /// The notifications sent during the execution.
         /// </summary>
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
+
+        /// <summary>
+        /// The nonce seed for the next random call.
+        /// </summary>
         private ulong nextNonce;
 
 
