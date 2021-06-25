@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -236,19 +237,14 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// The implementation of System.Runtime.GetRandom.
-        /// Gets the random number, random number will xor with the hash value of the transaction.
+        /// Gets the next random number.
         /// </summary>
-        /// <returns>The first eight bytes of the random number.</returns>
-        protected internal ulong GetRandom()
+        /// <returns>The next random number.</returns>
+        protected internal BigInteger GetRandom()
         {
-            // Return 0 if here is no persistingBlock.
-            // We need this for users to test their transactions locally.
-            if (nextNonce == 0) return 0;
-            var nonce = nextNonce;
-            nextNonce = BitConverter.ToUInt64(Cryptography.Helper.Murmur128(BitConverter.GetBytes(nonce), 123)[..8]);
-            var tx = (Transaction)ScriptContainer;
-
-            return nonce ^ BitConverter.ToUInt64(tx?.Hash.ToArray());
+            if (nonceData is null) return 0;
+            nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
+            return new BigInteger(nonceData, isUnsigned: true);
         }
 
         /// <summary>
