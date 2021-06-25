@@ -135,10 +135,9 @@ namespace Neo.SmartContract
             this.gas_amount = gas;
             this.exec_fee_factor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(Snapshot);
             this.StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(Snapshot);
-
-            if (persistingBlock is not null && container is Transaction tx)
+            this.nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
+            if (persistingBlock is not null)
             {
-                nonceData = tx.Hash.ToArray()[..16];
                 fixed (byte* p = nonceData)
                 {
                     *(ulong*)p ^= persistingBlock.Nonce;

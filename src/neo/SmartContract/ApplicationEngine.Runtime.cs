@@ -242,7 +242,6 @@ namespace Neo.SmartContract
         /// <returns>The next random number.</returns>
         protected internal BigInteger GetRandom()
         {
-            if (nonceData is null) return 0;
             nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
             return new BigInteger(nonceData, isUnsigned: true);
         }
