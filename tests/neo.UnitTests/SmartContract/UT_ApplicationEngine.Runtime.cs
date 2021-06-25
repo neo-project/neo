@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using System;
+using System.Numerics;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -20,23 +21,23 @@ namespace Neo.UnitTests.SmartContract
             engine_1.LoadScript(new byte[] { 0x01 });
             engine_2.LoadScript(new byte[] { 0x01 });
 
-            ulong rand_1 = engine_1.GetRandom();
-            ulong rand_2 = engine_1.GetRandom();
-            ulong rand_3 = engine_1.GetRandom();
-            ulong rand_4 = engine_1.GetRandom();
-            ulong rand_5 = engine_1.GetRandom();
+            var rand_1 = engine_1.GetRandom();
+            var rand_2 = engine_1.GetRandom();
+            var rand_3 = engine_1.GetRandom();
+            var rand_4 = engine_1.GetRandom();
+            var rand_5 = engine_1.GetRandom();
 
-            ulong rand_6 = engine_2.GetRandom();
-            ulong rand_7 = engine_2.GetRandom();
-            ulong rand_8 = engine_2.GetRandom();
-            ulong rand_9 = engine_2.GetRandom();
-            ulong rand_10 = engine_2.GetRandom();
+            var rand_6 = engine_2.GetRandom();
+            var rand_7 = engine_2.GetRandom();
+            var rand_8 = engine_2.GetRandom();
+            var rand_9 = engine_2.GetRandom();
+            var rand_10 = engine_2.GetRandom();
 
-            rand_1.Should().Be(12293533072847376241UL);
-            rand_2.Should().Be(9058136615909478175UL);
-            rand_3.Should().Be(8858254313899918741UL);
-            rand_4.Should().Be(9232927530282724563UL);
-            rand_5.Should().Be(6109893603630206595UL);
+            rand_1.Should().Be(BigInteger.Parse("318788182164858154199132431451757857059"));
+            rand_2.Should().Be(BigInteger.Parse("282447758760362720671055450131457608779"));
+            rand_3.Should().Be(BigInteger.Parse("135807514681881442643162663784616300855"));
+            rand_4.Should().Be(BigInteger.Parse("312803243085521724655455828201034417069"));
+            rand_5.Should().Be(BigInteger.Parse("188525996996387253649513686803230761335"));
 
             rand_1.Should().Be(rand_6);
             rand_2.Should().Be(rand_7);
@@ -72,23 +73,23 @@ namespace Neo.UnitTests.SmartContract
             // engine_1.LoadScript(new byte[] { 0x01 });
             // engine_2.LoadScript(new byte[] { 0x02 });
 
-            ulong rand_1 = engine_1.GetRandom();
-            ulong rand_2 = engine_1.GetRandom();
-            ulong rand_3 = engine_1.GetRandom();
-            ulong rand_4 = engine_1.GetRandom();
-            ulong rand_5 = engine_1.GetRandom();
+            var rand_1 = engine_1.GetRandom();
+            var rand_2 = engine_1.GetRandom();
+            var rand_3 = engine_1.GetRandom();
+            var rand_4 = engine_1.GetRandom();
+            var rand_5 = engine_1.GetRandom();
 
-            ulong rand_6 = engine_2.GetRandom();
-            ulong rand_7 = engine_2.GetRandom();
-            ulong rand_8 = engine_2.GetRandom();
-            ulong rand_9 = engine_2.GetRandom();
-            ulong rand_10 = engine_2.GetRandom();
+            var rand_6 = engine_2.GetRandom();
+            var rand_7 = engine_2.GetRandom();
+            var rand_8 = engine_2.GetRandom();
+            var rand_9 = engine_2.GetRandom();
+            var rand_10 = engine_2.GetRandom();
 
-            rand_1.Should().Be(12293533072847376241UL);
-            rand_2.Should().Be(9058136615909478175UL);
-            rand_3.Should().Be(8858254313899918741UL);
-            rand_4.Should().Be(9232927530282724563UL);
-            rand_5.Should().Be(6109893603630206595UL);
+            rand_1.Should().Be(BigInteger.Parse("318788182164858154199132431451757857059"));
+            rand_2.Should().Be(BigInteger.Parse("282447758760362720671055450131457608779"));
+            rand_3.Should().Be(BigInteger.Parse("135807514681881442643162663784616300855"));
+            rand_4.Should().Be(BigInteger.Parse("312803243085521724655455828201034417069"));
+            rand_5.Should().Be(BigInteger.Parse("188525996996387253649513686803230761335"));
 
             rand_1.Should().NotBe(rand_6);
             rand_2.Should().NotBe(rand_7);
