@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using System;
-
+using System.Numerics;
 namespace Neo.UnitTests.SmartContract
 {
     public partial class UT_ApplicationEngine
@@ -20,23 +20,23 @@ namespace Neo.UnitTests.SmartContract
             engine_1.LoadScript(new byte[] { 0x01 });
             engine_2.LoadScript(new byte[] { 0x01 });
 
-            ulong rand_1 = engine_1.GetRandom();
-            ulong rand_2 = engine_1.GetRandom();
-            ulong rand_3 = engine_1.GetRandom();
-            ulong rand_4 = engine_1.GetRandom();
-            ulong rand_5 = engine_1.GetRandom();
+            var rand_1 = engine_1.GetRandom().ToByteArray().ToHexString().ToString();
+            var rand_2 = engine_1.GetRandom().ToByteArray().ToHexString().ToString();
+            var rand_3 = engine_1.GetRandom().ToByteArray().ToHexString().ToString();
+            var rand_4 = engine_1.GetRandom().ToByteArray().ToHexString().ToString();
+            var rand_5 = engine_1.GetRandom().ToByteArray().ToHexString().ToString();
 
-            ulong rand_6 = engine_2.GetRandom();
-            ulong rand_7 = engine_2.GetRandom();
-            ulong rand_8 = engine_2.GetRandom();
-            ulong rand_9 = engine_2.GetRandom();
-            ulong rand_10 = engine_2.GetRandom();
+            var rand_6 = engine_2.GetRandom().ToByteArray().ToHexString().ToString();
+            var rand_7 = engine_2.GetRandom().ToByteArray().ToHexString().ToString();
+            var rand_8 = engine_2.GetRandom().ToByteArray().ToHexString().ToString();
+            var rand_9 = engine_2.GetRandom().ToByteArray().ToHexString().ToString();
+            var rand_10 = engine_2.GetRandom().ToByteArray().ToHexString().ToString();
 
-            rand_1.Should().Be(12293533072847376241UL);
-            rand_2.Should().Be(9058136615909478175UL);
-            rand_3.Should().Be(8858254313899918741UL);
-            rand_4.Should().Be(9232927530282724563UL);
-            rand_5.Should().Be(6109893603630206595UL);
+            rand_1.Should().Be("23c919ec06fdc03d408a214ddf5ed4ef00");
+            rand_2.Should().Be("4b8c639785bb8aa6b99f1a74aa757dd400");
+            rand_3.Should().Be("37114c35d0c0637db9fdf67b6f932b66");
+            rand_4.Should().Be("ad039fc7a63b68ba8f7ab7f197b653eb00");
+            rand_5.Should().Be("7721046c41c4f15d31dd495f4ac9d48d00");
 
             rand_1.Should().Be(rand_6);
             rand_2.Should().Be(rand_7);
@@ -72,23 +72,23 @@ namespace Neo.UnitTests.SmartContract
             // engine_1.LoadScript(new byte[] { 0x01 });
             // engine_2.LoadScript(new byte[] { 0x02 });
 
-            ulong rand_1 = engine_1.GetRandom();
-            ulong rand_2 = engine_1.GetRandom();
-            ulong rand_3 = engine_1.GetRandom();
-            ulong rand_4 = engine_1.GetRandom();
-            ulong rand_5 = engine_1.GetRandom();
+            var rand_1 = engine_1.GetRandom().ToByteArray().ToHexString().ToString();
+            var rand_2 = engine_1.GetRandom().ToByteArray().ToHexString().ToString();
+            var rand_3 = engine_1.GetRandom().ToByteArray().ToHexString().ToString();
+            var rand_4 = engine_1.GetRandom().ToByteArray().ToHexString().ToString();
+            var rand_5 = engine_1.GetRandom().ToByteArray().ToHexString().ToString();
 
-            ulong rand_6 = engine_2.GetRandom();
-            ulong rand_7 = engine_2.GetRandom();
-            ulong rand_8 = engine_2.GetRandom();
-            ulong rand_9 = engine_2.GetRandom();
-            ulong rand_10 = engine_2.GetRandom();
+            var rand_6 = engine_2.GetRandom().ToByteArray().ToHexString().ToString();
+            var rand_7 = engine_2.GetRandom().ToByteArray().ToHexString().ToString();
+            var rand_8 = engine_2.GetRandom().ToByteArray().ToHexString().ToString();
+            var rand_9 = engine_2.GetRandom().ToByteArray().ToHexString().ToString();
+            var rand_10 = engine_2.GetRandom().ToByteArray().ToHexString().ToString();
 
-            rand_1.Should().Be(12293533072847376241UL);
-            rand_2.Should().Be(9058136615909478175UL);
-            rand_3.Should().Be(8858254313899918741UL);
-            rand_4.Should().Be(9232927530282724563UL);
-            rand_5.Should().Be(6109893603630206595UL);
+            rand_1.Should().Be("23c919ec06fdc03d408a214ddf5ed4ef00");
+            rand_2.Should().Be("4b8c639785bb8aa6b99f1a74aa757dd400");
+            rand_3.Should().Be("37114c35d0c0637db9fdf67b6f932b66");
+            rand_4.Should().Be("ad039fc7a63b68ba8f7ab7f197b653eb00");
+            rand_5.Should().Be("7721046c41c4f15d31dd495f4ac9d48d00");
 
             rand_1.Should().NotBe(rand_6);
             rand_2.Should().NotBe(rand_7);
