@@ -21,7 +21,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The maximum GAS that can be consumed when <see cref="VerifyWitnesses"/> is called.
         /// </summary>
-        public const long MaxVerificationGas = 0_50000000;
+        public const long MaxVerificationGas = 1_50000000;
 
         /// <summary>
         /// Calculates the verification fee for a signature address.
