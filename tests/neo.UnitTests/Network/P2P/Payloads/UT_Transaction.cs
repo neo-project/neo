@@ -1277,9 +1277,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             tx.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.Succeed);
         }
 
-
-
-
         [TestMethod]
         public void Test_VerifyStateInDependent_Multi()
         {
