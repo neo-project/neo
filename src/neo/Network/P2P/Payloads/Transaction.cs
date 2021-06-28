@@ -402,7 +402,12 @@ namespace Neo.Network.P2P.Payloads
                 if (witnesses[i].VerificationScript.IsSignatureContract())
                 {
                     var pubkey = witnesses[i].VerificationScript[2..35];
-                    if (!Crypto.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript[2..], pubkey, ECCurve.Secp256r1))
+                    try
+                    {
+                        if (!Crypto.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript[2..], pubkey, ECCurve.Secp256r1))
+                            return VerifyResult.Invalid;
+                    }
+                    catch (ArgumentException)
                     {
                         return VerifyResult.Invalid;
                     }
