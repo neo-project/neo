@@ -4,6 +4,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using System;
 using System.Numerics;
+
 namespace Neo.UnitTests.SmartContract
 {
     public partial class UT_ApplicationEngine
@@ -11,7 +12,6 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestGetRandomSameBlock()
         {
-
             var tx = TestUtils.GetTransaction(UInt160.Zero);
             // Even if persisting the same block, in different ApplicationEngine instance, the random number should be different
             using var engine_1 = ApplicationEngine.Create(TriggerType.Application, tx, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
@@ -48,8 +48,6 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestGetRandomDifferentBlock()
         {
-
-            // Block block_1 = TestBlockchain.TheNeoSystem.GenesisBlock;
             var tx_1 = TestUtils.GetTransaction(UInt160.Zero);
 
             var tx_2 = new Transaction
@@ -68,9 +66,6 @@ namespace Neo.UnitTests.SmartContract
             using var engine_1 = ApplicationEngine.Create(TriggerType.Application, tx_1, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
             // The next_nonce shuld be reinitialized when a new block is persisting
             using var engine_2 = ApplicationEngine.Create(TriggerType.Application, tx_2, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
-
-            // engine_1.LoadScript(new byte[] { 0x01 });
-            // engine_2.LoadScript(new byte[] { 0x02 });
 
             var rand_1 = engine_1.GetRandom();
             var rand_2 = engine_1.GetRandom();

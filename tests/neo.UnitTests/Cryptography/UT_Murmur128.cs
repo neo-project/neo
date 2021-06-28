@@ -2,12 +2,12 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using System.Text;
+
 namespace Neo.UnitTests.Cryptography
 {
     [TestClass]
     public class UT_Murmur128
     {
-
         [TestMethod]
         public void TestGetHashSize()
         {
