@@ -416,7 +416,6 @@ namespace Neo.Network.P2P.Payloads
                     var signatures = GetMultiSignatures(witnesses[i].InvocationScript);
                     if (signatures.Length != m) return VerifyResult.Invalid;
                     var n = points.Length;
-                    if (n == 0 || m == 0 || m > n) return VerifyResult.Invalid;
                     var message = this.GetSignData(settings.Network);
                     try
                     {
