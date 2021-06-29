@@ -400,7 +400,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 if (witnesses[i].VerificationScript.IsSignatureContract())
                 {
-                    var pubkey = witnesses[i].VerificationScript[2..35];
+                    var pubkey = witnesses[i].VerificationScript.AsSpan(2..35);
                     try
                     {
                         if (!Crypto.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript.AsSpan(2), pubkey, ECCurve.Secp256r1))
@@ -411,30 +411,21 @@ namespace Neo.Network.P2P.Payloads
                         return VerifyResult.Invalid;
                     }
                 }
-                else if (witnesses[i].VerificationScript.IsMultiSigContract(out var limit, out ECPoint[] points))
+                else if (witnesses[i].VerificationScript.IsMultiSigContract(out var m, out ECPoint[] points))
                 {
                     var signatures = GetMultiSignatures(witnesses[i].InvocationScript);
-                    var signCount = signatures.Length;
-                    if (signCount < limit)
-                    {
-                        return VerifyResult.Invalid;
-                    }
-                    var pubkeys = points.Select(p => p.EncodePoint(true)).ToArray();
-                    var pubkeyCount = pubkeys.Length;
-                    if (pubkeyCount == 0 || signCount == 0 || signCount > pubkeyCount)
-                    {
-                        return VerifyResult.Invalid;
-                    }
-
+                    if (signatures.Length != m) return VerifyResult.Invalid;
+                    var n = points.Length;
+                    if (n == 0 || m == 0 || m > n) return VerifyResult.Invalid;
                     var message = this.GetSignData(settings.Network);
                     try
                     {
-                        for (int x = 0, y = 0; x < signCount && y < pubkeyCount;)
+                        for (int x = 0, y = 0; x < m && y < n;)
                         {
-                            if (Crypto.VerifySignature(message, signatures[x], pubkeys[y], ECCurve.Secp256r1))
+                            if (Crypto.VerifySignature(message, signatures[x], points[y]))
                                 x++;
                             y++;
-                            if (signCount - x > pubkeyCount - y)
+                            if (m - x > n - y)
                                 return VerifyResult.Invalid;
                         }
                     }
