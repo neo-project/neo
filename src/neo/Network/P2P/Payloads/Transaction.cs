@@ -413,7 +413,7 @@ namespace Neo.Network.P2P.Payloads
                 }
                 else if (witnesses[i].VerificationScript.IsMultiSigContract(out var limit, out ECPoint[] points))
                 {
-                    var signatures = GetMultiSignature(witnesses[i].InvocationScript);
+                    var signatures = GetMultiSignatures(witnesses[i].InvocationScript);
                     var signCount = signatures.Length;
                     if (signCount < limit)
                     {
@@ -465,17 +465,17 @@ namespace Neo.Network.P2P.Payloads
             });
         }
 
-        private static byte[][] GetMultiSignature(byte[] script)
+        private static byte[][] GetMultiSignatures(byte[] script)
         {
             int i = 0;
             var signatures = new List<byte[]>();
-            while (script[i] == (byte)OpCode.PUSHDATA1)
+            while (i < script.Length)
             {
-                if (i + 65 >= script.Length) break;
-                if (script[++i] != 64) break;
-                signatures.Add(script.AsSpan(i + 1, 64).ToArray());
-                i += 65;
-                if (i >= script.Length) break;
+                if (script[i++] != (byte)OpCode.PUSHDATA1) return null;
+                if (i + 65 > script.Length) return null;
+                if (script[i++] != 64) return null;
+                signatures.Add(script[i..(i + 64)]);
+                i += 64;
             }
             return signatures.ToArray();
         }
