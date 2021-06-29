@@ -1,4 +1,5 @@
 using Neo.Cryptography;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
@@ -12,8 +13,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Neo.Cryptography.ECC;
-using Neo.Plugins;
 using static Neo.SmartContract.Helper;
 using Array = Neo.VM.Types.Array;
 
@@ -404,7 +403,7 @@ namespace Neo.Network.P2P.Payloads
                     var pubkey = witnesses[i].VerificationScript[2..35];
                     try
                     {
-                        if (!Crypto.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript[2..], pubkey, ECCurve.Secp256r1))
+                        if (!Crypto.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript.AsSpan(2), pubkey, ECCurve.Secp256r1))
                             return VerifyResult.Invalid;
                     }
                     catch (ArgumentException)
@@ -412,10 +411,9 @@ namespace Neo.Network.P2P.Payloads
                         return VerifyResult.Invalid;
                     }
                 }
-
-                if (witnesses[i].VerificationScript.IsMultiSigContract(out var limit, out ECPoint[] points))
+                else if (witnesses[i].VerificationScript.IsMultiSigContract(out var limit, out ECPoint[] points))
                 {
-                    var signatures = witnesses[i].InvocationScript.GetMultiSignature();
+                    var signatures = GetMultiSignature(witnesses[i].InvocationScript);
                     var signCount = signatures.Length;
                     if (signCount < limit)
                     {
@@ -465,6 +463,21 @@ namespace Neo.Network.P2P.Payloads
                 ValidUntilBlock,
                 Script,
             });
+        }
+
+        private static byte[][] GetMultiSignature(byte[] script)
+        {
+            int i = 0;
+            var signatures = new List<byte[]>();
+            while (script[i] == (byte)OpCode.PUSHDATA1)
+            {
+                if (i + 65 >= script.Length) break;
+                if (script[++i] != 64) break;
+                signatures.Add(script.AsSpan(i + 1, 64).ToArray());
+                i += 65;
+                if (i >= script.Length) break;
+            }
+            return signatures.ToArray();
         }
     }
 }
