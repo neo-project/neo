@@ -391,21 +391,35 @@ namespace Neo.Ledger
                 }
                 DataCache clonedSnapshot = snapshot.CreateSnapshot();
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
-                foreach (Transaction tx in block.Transactions)
+                if (block.Transactions != null && block.Transactions.Length != 0)
                 {
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee);
-                    engine.LoadScript(tx.Script);
-                    if (engine.Execute() == VMState.HALT)
+                    var isExecuted = new bool[block.Transactions.Length];
+                    uint length = (uint)block.Transactions.Length;
+                    uint step = (uint)block.Nonce % length;
+                    uint pointer = step;
+                    int executedTx = 0;
+                    while (executedTx < block.Transactions.Length)
                     {
-                        clonedSnapshot.Commit();
+                        while (isExecuted[pointer]) pointer = (pointer + 1) % length;
+                        Transaction tx = block.Transactions[pointer];
+                        isExecuted[pointer] = true;
+                        pointer = (pointer + step) % length;
+                        executedTx++;
+
+                        using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee);
+                        engine.LoadScript(tx.Script);
+                        if (engine.Execute() == VMState.HALT)
+                        {
+                            clonedSnapshot.Commit();
+                        }
+                        else
+                        {
+                            clonedSnapshot = snapshot.CreateSnapshot();
+                        }
+                        ApplicationExecuted application_executed = new(engine);
+                        Context.System.EventStream.Publish(application_executed);
+                        all_application_executed.Add(application_executed);
                     }
-                    else
-                    {
-                        clonedSnapshot = snapshot.CreateSnapshot();
-                    }
-                    ApplicationExecuted application_executed = new(engine);
-                    Context.System.EventStream.Publish(application_executed);
-                    all_application_executed.Add(application_executed);
                 }
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, system.Settings, 0))
                 {
