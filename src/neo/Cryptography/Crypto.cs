@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
 namespace Neo.Cryptography
@@ -8,6 +9,8 @@ namespace Neo.Cryptography
     /// </summary>
     public static class Crypto
     {
+        private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+
         /// <summary>
         /// Calculates the 160-bit hash value of the specified message.
         /// </summary>
@@ -59,39 +62,42 @@ namespace Neo.Cryptography
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
         public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECC.ECPoint pubkey)
         {
-#if OSX
-            try
+            if (IsOSX)
             {
-                var curve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName(pubkey.Curve == ECC.ECCurve.Secp256r1 ? "secp256r1" : "secp256k1");
-                var domain = new Org.BouncyCastle.Crypto.Parameters.ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H);
-                var point = curve.Curve.CreatePoint(
-                    new Org.BouncyCastle.Math.BigInteger(pubkey.X.Value.ToString()),
-                    new Org.BouncyCastle.Math.BigInteger(pubkey.Y.Value.ToString()));
-                var pubKey = new Org.BouncyCastle.Crypto.Parameters.ECPublicKeyParameters("ECDSA", point, domain);
-                var signer = Org.BouncyCastle.Security.SignerUtilities.GetSigner("SHA-256withECDSA");
-
-                signer.Init(false, pubKey);
-                signer.BlockUpdate(message.ToArray(), 0, message.Length);
-                return signer.VerifySignature(signature.ToArray());
-            }
-            catch { return false; }
-#else
-            byte[] buffer = pubkey.EncodePoint(false);
-            ECCurve curve =
-                pubkey.Curve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
-                pubkey.Curve == ECC.ECCurve.Secp256k1 ? ECCurve.CreateFromFriendlyName("secP256k1") :
-                throw new NotSupportedException();
-            using var ecdsa = ECDsa.Create(new ECParameters
-            {
-                Curve = curve,
-                Q = new ECPoint
+                try
                 {
-                    X = buffer[1..33],
-                    Y = buffer[33..]
+                    var curve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName(pubkey.Curve == ECC.ECCurve.Secp256r1 ? "secp256r1" : "secp256k1");
+                    var domain = new Org.BouncyCastle.Crypto.Parameters.ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H);
+                    var point = curve.Curve.CreatePoint(
+                        new Org.BouncyCastle.Math.BigInteger(pubkey.X.Value.ToString()),
+                        new Org.BouncyCastle.Math.BigInteger(pubkey.Y.Value.ToString()));
+                    var pubKey = new Org.BouncyCastle.Crypto.Parameters.ECPublicKeyParameters("ECDSA", point, domain);
+                    var signer = Org.BouncyCastle.Security.SignerUtilities.GetSigner("SHA-256withECDSA");
+
+                    signer.Init(false, pubKey);
+                    signer.BlockUpdate(message.ToArray(), 0, message.Length);
+                    return signer.VerifySignature(signature.ToArray());
                 }
-            });
-            return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
-#endif
+                catch { return false; }
+            }
+            else
+            {
+                byte[] buffer = pubkey.EncodePoint(false);
+                ECCurve curve =
+                    pubkey.Curve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
+                    pubkey.Curve == ECC.ECCurve.Secp256k1 ? ECCurve.CreateFromFriendlyName("secP256k1") :
+                    throw new NotSupportedException();
+                using var ecdsa = ECDsa.Create(new ECParameters
+                {
+                    Curve = curve,
+                    Q = new ECPoint
+                    {
+                        X = buffer[1..33],
+                        Y = buffer[33..]
+                    }
+                });
+                return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
+            }
         }
 
         /// <summary>
