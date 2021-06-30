@@ -1,4 +1,5 @@
 using Neo.Cryptography;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
@@ -364,7 +365,9 @@ namespace Neo.Network.P2P.Payloads
                 if (witnesses[i].VerificationScript.IsSignatureContract())
                     net_fee -= execFeeFactor * SignatureContractCost();
                 else if (witnesses[i].VerificationScript.IsMultiSigContract(out int m, out int n))
+                {
                     net_fee -= execFeeFactor * MultiSignatureContractCost(m, n);
+                }
                 else
                 {
                     if (!this.VerifyWitness(settings, snapshot, hashes[i], witnesses[i], net_fee, out long fee))
@@ -392,17 +395,45 @@ namespace Neo.Network.P2P.Payloads
             {
                 return VerifyResult.Invalid;
             }
-            long net_fee = Math.Min(NetworkFee, MaxVerificationGas);
             UInt160[] hashes = GetScriptHashesForVerifying(null);
             for (int i = 0; i < hashes.Length; i++)
-                if (witnesses[i].VerificationScript.IsStandardContract())
-                    if (!this.VerifyWitness(settings, null, hashes[i], witnesses[i], net_fee, out long fee))
-                        return VerifyResult.Invalid;
-                    else
+            {
+                if (witnesses[i].VerificationScript.IsSignatureContract())
+                {
+                    var pubkey = witnesses[i].VerificationScript.AsSpan(2..35);
+                    try
                     {
-                        net_fee -= fee;
-                        if (net_fee < 0) return VerifyResult.InsufficientFunds;
+                        if (!Crypto.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript.AsSpan(2), pubkey, ECCurve.Secp256r1))
+                            return VerifyResult.Invalid;
                     }
+                    catch (ArgumentException)
+                    {
+                        return VerifyResult.Invalid;
+                    }
+                }
+                else if (witnesses[i].VerificationScript.IsMultiSigContract(out var m, out ECPoint[] points))
+                {
+                    var signatures = GetMultiSignatures(witnesses[i].InvocationScript);
+                    if (signatures.Length != m) return VerifyResult.Invalid;
+                    var n = points.Length;
+                    var message = this.GetSignData(settings.Network);
+                    try
+                    {
+                        for (int x = 0, y = 0; x < m && y < n;)
+                        {
+                            if (Crypto.VerifySignature(message, signatures[x], points[y]))
+                                x++;
+                            y++;
+                            if (m - x > n - y)
+                                return VerifyResult.Invalid;
+                        }
+                    }
+                    catch (ArgumentException)
+                    {
+                        return VerifyResult.Invalid;
+                    }
+                }
+            }
             return VerifyResult.Succeed;
         }
 
@@ -422,6 +453,21 @@ namespace Neo.Network.P2P.Payloads
                 ValidUntilBlock,
                 Script,
             });
+        }
+
+        private static byte[][] GetMultiSignatures(byte[] script)
+        {
+            int i = 0;
+            var signatures = new List<byte[]>();
+            while (i < script.Length)
+            {
+                if (script[i++] != (byte)OpCode.PUSHDATA1) return null;
+                if (i + 65 > script.Length) return null;
+                if (script[i++] != 64) return null;
+                signatures.Add(script[i..(i + 64)]);
+                i += 64;
+            }
+            return signatures.ToArray();
         }
     }
 }

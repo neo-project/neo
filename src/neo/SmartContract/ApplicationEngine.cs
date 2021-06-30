@@ -47,6 +47,7 @@ namespace Neo.SmartContract
         private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
         private readonly uint exec_fee_factor;
         internal readonly uint StoragePrice;
+        private byte[] nonceData;
 
         /// <summary>
         /// Gets the descriptors of all interoperable services available in NEO.
@@ -124,7 +125,7 @@ namespace Neo.SmartContract
         /// <param name="persistingBlock">The block being persisted. It should be <see langword="null"/> if the <paramref name="trigger"/> is <see cref="TriggerType.Verification"/>.</param>
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
-        protected ApplicationEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas)
+        protected unsafe ApplicationEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
@@ -134,6 +135,14 @@ namespace Neo.SmartContract
             this.gas_amount = gas;
             this.exec_fee_factor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(Snapshot);
             this.StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(Snapshot);
+            this.nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
+            if (persistingBlock is not null)
+            {
+                fixed (byte* p = nonceData)
+                {
+                    *(ulong*)p ^= persistingBlock.Nonce;
+                }
+            }
         }
 
         /// <summary>
