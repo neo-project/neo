@@ -393,12 +393,12 @@ namespace Neo.Ledger
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 if (block.Transactions != null && block.Transactions.Length != 0)
                 {
-                    var isExecuted = new bool[block.Transactions.Length];
                     uint length = (uint)block.Transactions.Length;
+                    var isExecuted = new bool[length];
                     uint step = (uint)block.Nonce % length;
                     uint pointer = step;
                     int executedTx = 0;
-                    while (executedTx < block.Transactions.Length)
+                    while (executedTx < length)
                     {
                         while (isExecuted[pointer]) pointer = (pointer + 1) % length;
                         Transaction tx = block.Transactions[pointer];
