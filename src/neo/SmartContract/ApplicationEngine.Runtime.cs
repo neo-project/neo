@@ -31,6 +31,12 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_Platform = Register("System.Runtime.Platform", nameof(GetPlatform), 1 << 3, CallFlags.None);
 
         /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Runtime.GetNetwork.
+        /// Gets the magic number of the current network.
+        /// </summary>
+        public static readonly InteropDescriptor System_Runtime_GetNetwork = Register("System.Runtime.GetNetwork", nameof(GetNetwork), 1 << 3, CallFlags.None);
+
+        /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.GetTrigger.
         /// Gets the trigger of the execution.
         /// </summary>
@@ -122,6 +128,16 @@ namespace Neo.SmartContract
         internal protected static string GetPlatform()
         {
             return "NEO";
+        }
+
+        /// <summary>
+        /// The implementation of System.Runtime.GetNetwork.
+        /// Gets the magic number of the current network.
+        /// </summary>
+        /// <returns>The magic number of the current network.</returns>
+        internal protected uint GetNetwork()
+        {
+            return ProtocolSettings.Network;
         }
 
         /// <summary>
