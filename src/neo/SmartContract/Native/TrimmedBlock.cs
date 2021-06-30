@@ -64,6 +64,7 @@ namespace Neo.SmartContract.Native
                 Header.PrevHash.ToArray(),
                 Header.MerkleRoot.ToArray(),
                 Header.Timestamp,
+                Header.Nonce,
                 Header.Index,
                 Header.PrimaryIndex,
                 Header.NextConsensus.ToArray(),

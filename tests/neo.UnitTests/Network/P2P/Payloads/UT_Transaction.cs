@@ -708,7 +708,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var signers = new Signer[]{ new Signer
                 {
                     Account = acc.ScriptHash,
-                    Scopes = (WitnessScope) 0xFF,
+                    Scopes = WitnessScope.CustomContracts,
                     AllowedContracts = new[] { NativeContract.NEO.Hash, NativeContract.GAS.Hash }
                 } };
 

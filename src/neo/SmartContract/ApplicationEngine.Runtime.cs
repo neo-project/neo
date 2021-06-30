@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -82,6 +83,12 @@ namespace Neo.SmartContract
         /// Gets the number of times the current contract has been called during the execution.
         /// </summary>
         public static readonly InteropDescriptor System_Runtime_GetInvocationCounter = Register("System.Runtime.GetInvocationCounter", nameof(GetInvocationCounter), 1 << 4, CallFlags.None);
+
+        /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Runtime.GetRandom.
+        /// Gets the random number generated from the VRF.
+        /// </summary>
+        public static readonly InteropDescriptor System_Runtime_GetRandom = Register("System.Runtime.GetRandom", nameof(GetRandom), 1 << 4, CallFlags.None);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.Log.
@@ -242,6 +249,17 @@ namespace Neo.SmartContract
                 invocationCounter[CurrentScriptHash] = counter = 1;
             }
             return counter;
+        }
+
+        /// <summary>
+        /// The implementation of System.Runtime.GetRandom.
+        /// Gets the next random number.
+        /// </summary>
+        /// <returns>The next random number.</returns>
+        protected internal BigInteger GetRandom()
+        {
+            nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
+            return new BigInteger(nonceData, isUnsigned: true);
         }
 
         /// <summary>

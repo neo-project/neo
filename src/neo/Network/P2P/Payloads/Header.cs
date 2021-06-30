@@ -19,6 +19,7 @@ namespace Neo.Network.P2P.Payloads
         private UInt256 prevHash;
         private UInt256 merkleRoot;
         private ulong timestamp;
+        private ulong nonce;
         private uint index;
         private byte primaryIndex;
         private UInt160 nextConsensus;
@@ -62,6 +63,15 @@ namespace Neo.Network.P2P.Payloads
         {
             get => timestamp;
             set { timestamp = value; _hash = null; }
+        }
+
+        /// <summary>
+        /// The first eight bytes of random number generated.
+        /// </summary>
+        public ulong Nonce
+        {
+            get => nonce;
+            set { nonce = value; _hash = null; }
         }
 
         /// <summary>
@@ -109,6 +119,7 @@ namespace Neo.Network.P2P.Payloads
             UInt256.Length +    // PrevHash
             UInt256.Length +    // MerkleRoot
             sizeof(ulong) +     // Timestamp
+            sizeof(ulong) +      // Nonce
             sizeof(uint) +      // Index
             sizeof(byte) +      // PrimaryIndex
             UInt160.Length +    // NextConsensus
@@ -143,6 +154,7 @@ namespace Neo.Network.P2P.Payloads
             prevHash = reader.ReadSerializable<UInt256>();
             merkleRoot = reader.ReadSerializable<UInt256>();
             timestamp = reader.ReadUInt64();
+            nonce = reader.ReadUInt64();
             index = reader.ReadUInt32();
             primaryIndex = reader.ReadByte();
             nextConsensus = reader.ReadSerializable<UInt160>();
@@ -185,6 +197,7 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(prevHash);
             writer.Write(merkleRoot);
             writer.Write(timestamp);
+            writer.Write(nonce);
             writer.Write(index);
             writer.Write(primaryIndex);
             writer.Write(nextConsensus);
@@ -204,6 +217,7 @@ namespace Neo.Network.P2P.Payloads
             json["previousblockhash"] = prevHash.ToString();
             json["merkleroot"] = merkleRoot.ToString();
             json["time"] = timestamp;
+            json["nonce"] = nonce.ToString("X16");
             json["index"] = index;
             json["primary"] = primaryIndex;
             json["nextconsensus"] = nextConsensus.ToAddress(settings.AddressVersion);
