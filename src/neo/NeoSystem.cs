@@ -133,6 +133,7 @@ namespace Neo
                 PrevHash = UInt256.Zero,
                 MerkleRoot = UInt256.Zero,
                 Timestamp = (new DateTime(2016, 7, 15, 15, 8, 21, DateTimeKind.Utc)).ToTimestampMS(),
+                Nonce = 2083236893, // nonce from the Bitcoin genesis block.
                 Index = 0,
                 PrimaryIndex = 0,
                 NextConsensus = Contract.GetBFTAddress(settings.StandbyValidators),
