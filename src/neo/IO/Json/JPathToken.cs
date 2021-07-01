@@ -204,7 +204,7 @@ namespace Neo.IO.Json
             if (token.Type != JPathTokenType.Identifier) throw new FormatException();
             while (objects.Length > 0)
             {
-                results.AddRange(objects.Where(p=> p is not null).SelectMany(p => p.Properties).Where(p => p.Key == token.Content).Select(p => p.Value));
+                results.AddRange(objects.Where(p => p is not null).SelectMany(p => p.Properties).Where(p => p.Key == token.Content).Select(p => p.Value));
                 Descent(ref objects, ref maxDepth);
             }
             objects = results.ToArray();
@@ -259,7 +259,7 @@ namespace Neo.IO.Json
         {
             if (maxDepth <= 0) throw new InvalidOperationException();
             --maxDepth;
-            objects = objects.Where(p=> p is not null).SelectMany(p => p is JArray array ? array : p.Properties.Values).ToArray();
+            objects = objects.Where(p => p is not null).SelectMany(p => p is JArray array ? array : p.Properties.Values).ToArray();
         }
 
         private static void Descent(ref JObject[] objects, ref int maxDepth, params string[] names)
