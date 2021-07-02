@@ -46,6 +46,11 @@ namespace Neo.Network.P2P.Payloads
         InsufficientFunds = 0x1c,
 
         /// <summary>
+        /// Indicates that the content-type of the request is not supported.
+        /// </summary>
+        ContentTypeNotSupported = 0x1f,
+
+        /// <summary>
         /// Indicates that the request failed due to other errors.
         /// </summary>
         Error = 0xff

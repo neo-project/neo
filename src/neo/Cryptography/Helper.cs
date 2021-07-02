@@ -51,6 +51,18 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
+        /// Computes the 128-bit hash value for the specified byte array using the murmur algorithm.
+        /// </summary>
+        /// <param name="value">The input to compute the hash code for.</param>
+        /// <param name="seed">The seed used by the murmur algorithm.</param>
+        /// <returns>The computed hash code.</returns>
+        public static byte[] Murmur128(this byte[] value, uint seed)
+        {
+            using Murmur128 murmur = new(seed);
+            return murmur.ComputeHash(value);
+        }
+
+        /// <summary>
         /// Computes the hash value for the specified byte array using the sha256 algorithm.
         /// </summary>
         /// <param name="value">The input to compute the hash code for.</param>
