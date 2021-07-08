@@ -33,6 +33,6 @@
     <PackageReference Include="Neo.VM" Version="3.0.0-rc3" />
   </ItemGroup>
 
- <Import Project="../../Prebuild.targets" />
+  <Import Project="../../Prebuild.targets" />
 
 </Project>
