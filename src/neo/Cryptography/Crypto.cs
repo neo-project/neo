@@ -62,7 +62,7 @@ namespace Neo.Cryptography
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
         public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECC.ECPoint pubkey)
         {
-            if (IsOSX)
+            if (IsOSX && pubkey.Curve != ECC.ECCurve.Secp256r1)
             {
                 try
                 {
