@@ -28,7 +28,12 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_Price = 5;
         private const byte Prefix_RequestId = 9;
         private const byte Prefix_Request = 7;
+
+        private const byte Prefix_TriggerId = 13;
+        private const byte Prefix_Trigger = 11;
+
         private const byte Prefix_IdList = 6;
+        private const byte Prefix_HeightList = 8;
 
         internal OracleContract()
         {
@@ -80,7 +85,56 @@ namespace Neo.SmartContract.Native
                 }
             };
 
+            var triggers = new List<ContractEventDescriptor>(Manifest.Abi.Events)
+            {
+                new ContractEventDescriptor
+                {
+                    Name = "OracleTrigger",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "Id",
+                            Type = ContractParameterType.Integer
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "TriggerContract",
+                            Type = ContractParameterType.Hash160
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "Url",
+                            Type = ContractParameterType.String
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "Filter",
+                            Type = ContractParameterType.String
+                        }
+                    }
+                },
+                new ContractEventDescriptor
+                {
+                    Name = "OracleResponse",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "Id",
+                            Type = ContractParameterType.Integer
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "OriginalTx",
+                            Type = ContractParameterType.Hash256
+                        }
+                    }
+                }
+            };
+
             Manifest.Abi.Events = events.ToArray();
+            Manifest.Abi.Triggers = triggers.ToArray();
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -136,6 +190,18 @@ namespace Neo.SmartContract.Native
             return snapshot.TryGet(CreateStorageKey(Prefix_Request).AddBigEndian(id))?.GetInteroperable<OracleRequest>();
         }
 
+        // <summary>
+        /// Gets a pending trigger with the specified id.
+        /// </summary>
+        /// <param name="snapshot"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public OracleRequest GetTrigger(DataCache snapshot, ulong id)
+        {
+            return snapshot.TryGet(CreateStorageKey(Prefix_Trigger).AddBigEndian(id))?.GetInteroperable<OracleRequest>();
+
+        }
+
         /// <summary>
         /// Gets all the pending requests.
         /// </summary>
@@ -144,6 +210,11 @@ namespace Neo.SmartContract.Native
         public IEnumerable<(ulong, OracleRequest)> GetRequests(DataCache snapshot)
         {
             return snapshot.Find(CreateStorageKey(Prefix_Request).ToArray()).Select(p => (BinaryPrimitives.ReadUInt64BigEndian(p.Key.Key.AsSpan(1)), p.Value.GetInteroperable<OracleRequest>()));
+        }
+
+        public IEnumerable<(ulong, OracleRequest)> GetTriggers(DataCache snapshot)
+        {
+            return snapshot.Find(CreateStorageKey(Prefix_Trigger).ToArray()).Select(p => (BinaryPrimitives.ReadUInt64BigEndian(p.Key.Key.AsSpan(1)), p.Value.GetInteroperable<OracleRequest>()));
         }
 
         /// <summary>
@@ -160,14 +231,36 @@ namespace Neo.SmartContract.Native
                 yield return (id, snapshot[CreateStorageKey(Prefix_Request).AddBigEndian(id)].GetInteroperable<OracleRequest>());
         }
 
+
+        /// <summary>
+        /// Get triggers by block height
+        /// </summary>
+        /// <param name="snapshot"></param>
+        /// <param name="height"></param>
+        /// <returns></returns>
+        public IEnumerable<(ulong, OracleRequest)> GetTriggersByHeight(DataCache snapshot, uint height)
+        {
+            IdList list = snapshot.TryGet(CreateStorageKey(Prefix_HeightList).Add(GetHeightHash(height)))?.GetInteroperable<IdList>();
+            if (list is null) yield break;
+            foreach (ulong id in list)
+                yield return (id, snapshot[CreateStorageKey(Prefix_Trigger).AddBigEndian(id)].GetInteroperable<OracleRequest>());
+        }
+
         private static byte[] GetUrlHash(string url)
         {
             return Crypto.Hash160(Utility.StrictUTF8.GetBytes(url));
         }
 
+        private static byte[] GetHeightHash(uint height)
+        {
+            return Crypto.Hash160(Utility.StrictUTF8.GetBytes("height:" + height));
+        }
         internal override ContractTask Initialize(ApplicationEngine engine)
         {
             engine.Snapshot.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BigInteger.Zero));
+            // Trigger
+            engine.Snapshot.Add(CreateStorageKey(Prefix_TriggerId), new StorageItem(BigInteger.Zero));
+
             engine.Snapshot.Add(CreateStorageKey(Prefix_Price), new StorageItem(0_50000000));
             return ContractTask.CompletedTask;
         }
@@ -190,6 +283,18 @@ namespace Neo.SmartContract.Native
                 //Remove the id from IdList
                 key = CreateStorageKey(Prefix_IdList).Add(GetUrlHash(request.Url));
                 IdList list = engine.Snapshot.GetAndChange(key).GetInteroperable<IdList>();
+                if (!list.Remove(response.Id)) throw new InvalidOperationException();
+                if (list.Count == 0) engine.Snapshot.Delete(key);
+
+                // Remove the trigger from storage
+                key = CreateStorageKey(Prefix_Trigger).AddBigEndian(response.Id);
+                OracleRequest trigger = engine.Snapshot.TryGet(key)?.GetInteroperable<OracleRequest>();
+                if (trigger == null) continue;
+                engine.Snapshot.Delete(key);
+
+                // Remove the id from heightlist
+                key = CreateStorageKey(Prefix_HeightList).Add(GetUrlHash(trigger.Url));
+                list = engine.Snapshot.GetAndChange(key).GetInteroperable<IdList>();
                 if (!list.Remove(response.Id)) throw new InvalidOperationException();
                 if (list.Count == 0) engine.Snapshot.Delete(key);
 
@@ -254,6 +359,49 @@ namespace Neo.SmartContract.Native
 
             engine.SendNotification(Hash, "OracleRequest", new VM.Types.Array { id, engine.CallingScriptHash.ToArray(), url, filter ?? StackItem.Null });
         }
+
+        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        private async ContractTask Trigger(ApplicationEngine engine, uint height, string callback, StackItem userData, long gasForResponse)
+        {
+            //Check the arguments
+            if (height <= engine.PersistingBlock.Index
+                || Utility.StrictUTF8.GetByteCount(callback) > MaxCallbackLength || callback.StartsWith('_')
+                || gasForResponse < 0_10000000)
+                throw new ArgumentException();
+
+            engine.AddGas(GetPrice(engine.Snapshot));
+
+            //Mint gas for the response
+            engine.AddGas(gasForResponse);
+            await GAS.Mint(engine, Hash, gasForResponse, false);
+
+            //Increase the request id
+            StorageItem item_id = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_TriggerId));
+            ulong id = (ulong)(BigInteger)item_id;
+            item_id.Add(1);
+
+            //Put the request to storage
+            if (ContractManagement.GetContract(engine.Snapshot, engine.CallingScriptHash) is null)
+                throw new InvalidOperationException();
+            engine.Snapshot.Add(CreateStorageKey(Prefix_Trigger).AddBigEndian(id), new StorageItem(new OracleRequest
+            {
+                OriginalTxid = GetOriginalTxid(engine),
+                GasForResponse = gasForResponse,
+                Url = "height:" + height,
+                CallbackContract = engine.CallingScriptHash,
+                CallbackMethod = callback,
+                UserData = BinarySerializer.Serialize(userData, MaxUserDataLength)
+            }));
+
+            //Add the id to the HeightList
+            var list = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_HeightList).Add(GetHeightHash(height)), () => new StorageItem(new IdList())).GetInteroperable<IdList>();
+            if (list.Count >= 256)
+                throw new InvalidOperationException("There are too many pending triggers at this height");
+            list.Add(id);
+
+            engine.SendNotification(Hash, "OracleTrigger", new VM.Types.Array { id, engine.CallingScriptHash.ToArray(), height });
+        }
+
 
         [ContractMethod(CpuFee = 1 << 15)]
         private bool Verify(ApplicationEngine engine)

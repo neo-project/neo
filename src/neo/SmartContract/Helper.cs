@@ -72,6 +72,7 @@ namespace Neo.SmartContract
                 script.GetInstruction(method.Offset);
             abi.GetMethod(string.Empty, 0); // Trigger the construction of ContractAbi.methodDictionary to check the uniqueness of the method names.
             _ = abi.Events.ToDictionary(p => p.Name); // Check the uniqueness of the event names.
+            _ = abi.Events.ToDictionary(p => p.Name); // Check the uniqueness of the trigger names.
         }
 
         /// <summary>
