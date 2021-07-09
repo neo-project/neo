@@ -140,7 +140,7 @@ namespace Neo.SmartContract
                 if (ms.Position + writer.BytesPending > maxSize) throw new InvalidOperationException();
             }
             writer.Flush();
-            if (ms.Position + writer.BytesPending > maxSize) throw new InvalidOperationException();
+            if (ms.Position > maxSize) throw new InvalidOperationException();
             return ms.ToArray();
         }
 
