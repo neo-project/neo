@@ -62,6 +62,8 @@ namespace Neo.Cryptography
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
         public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECC.ECPoint pubkey)
         {
+            if (signature.Length != 64) return false;
+
             if (IsOSX && pubkey.Curve != ECC.ECCurve.Secp256r1)
             {
                 try
@@ -76,7 +78,13 @@ namespace Neo.Cryptography
 
                     signer.Init(false, pubKey);
                     signer.BlockUpdate(message.ToArray(), 0, message.Length);
-                    return signer.VerifySignature(signature.ToArray());
+
+                    var sig = signature.ToArray();
+                    var r = new Org.BouncyCastle.Math.BigInteger(sig.AsSpan().Slice(0, 32).ToArray());
+                    var s = new Org.BouncyCastle.Math.BigInteger(sig.AsSpan().Slice(32, 32).ToArray());
+                    sig = new Org.BouncyCastle.Asn1.DerSequence(new Org.BouncyCastle.Asn1.DerInteger(r), new Org.BouncyCastle.Asn1.DerInteger(s)).GetDerEncoded();
+
+                    return signer.VerifySignature(sig);
                 }
                 catch { return false; }
             }
