@@ -32,7 +32,7 @@ namespace Neo.UnitTests.Ledger
             ms.Seek(0, SeekOrigin.Begin);
 
             HashIndexState dest = new HashIndexState();
-            ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(reader, 1024, 1024, null));
+            ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(reader, 1024, 1024, 2048, null));
 
             dest.Hash.Should().Be(origin.Hash);
             dest.Index.Should().Be(origin.Index);

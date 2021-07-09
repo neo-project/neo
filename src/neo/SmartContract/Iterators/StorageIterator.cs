@@ -38,7 +38,7 @@ namespace Neo.SmartContract.Iterators
                 key = key[prefixLength..];
 
             StackItem item = options.HasFlag(FindOptions.DeserializeValues)
-                ? BinarySerializer.Deserialize(value, 1024, referenceCounter)
+                ? BinarySerializer.Deserialize(value, 1024, 2048, referenceCounter)
                 : value;
 
             if (options.HasFlag(FindOptions.PickField0))
