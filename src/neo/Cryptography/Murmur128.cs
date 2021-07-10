@@ -103,9 +103,11 @@ namespace Neo.Cryptography
             H1 += H2;
             H2 += H1;
 
-            var buffer = new byte[16];
-            Array.Copy(BitConverter.GetBytes(H1), 0, buffer, 0, 8);
-            Array.Copy(BitConverter.GetBytes(H2), 0, buffer, 8, 8);
+            var buffer = new byte[sizeof(ulong) * 2];
+            Span<byte> bytes = buffer;
+
+            BinaryPrimitives.WriteUInt64LittleEndian(bytes, H1);
+            BinaryPrimitives.WriteUInt64LittleEndian(bytes[sizeof(ulong)..], H2);
 
             return buffer;
         }
@@ -125,7 +127,6 @@ namespace Neo.Cryptography
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ulong FMix(ulong h)
         {
-            // pipelining friendly algorithm
             h = (h ^ (h >> 33)) * 0xff51afd7ed558ccd;
             h = (h ^ (h >> 33)) * 0xc4ceb9fe1a85ec53;
 
