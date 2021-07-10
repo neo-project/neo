@@ -103,11 +103,11 @@ namespace Neo.Cryptography
             H1 += H2;
             H2 += H1;
 
-            var buffer = new byte[16];
+            var buffer = new byte[sizeof(ulong) * 2];
             Span<byte> bytes = buffer;
 
-            BinaryPrimitives.WriteUInt64LittleEndian(bytes.Slice(0, 8), H1);
-            BinaryPrimitives.WriteUInt64LittleEndian(bytes.Slice(8, 8), H2);
+            BinaryPrimitives.WriteUInt64LittleEndian(bytes, H1);
+            BinaryPrimitives.WriteUInt64LittleEndian(bytes[sizeof(ulong)..], H2);
 
             return buffer;
         }
