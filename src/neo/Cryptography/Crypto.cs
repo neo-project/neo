@@ -68,7 +68,7 @@ namespace Neo.Cryptography
             {
                 try
                 {
-                    var curve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName(pubkey.Curve == ECC.ECCurve.Secp256r1 ? "secp256r1" : "secp256k1");
+                    var curve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
                     var domain = new Org.BouncyCastle.Crypto.Parameters.ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H);
                     var point = curve.Curve.CreatePoint(
                         new Org.BouncyCastle.Math.BigInteger(pubkey.X.Value.ToString()),
