@@ -80,8 +80,8 @@ namespace Neo.Cryptography
                     signer.BlockUpdate(message.ToArray(), 0, message.Length);
 
                     var sig = signature.ToArray();
-                    var r = new Org.BouncyCastle.Math.BigInteger(sig.AsSpan().Slice(0, 32).ToArray());
-                    var s = new Org.BouncyCastle.Math.BigInteger(sig.AsSpan().Slice(32, 32).ToArray());
+                    var r = new Org.BouncyCastle.Math.BigInteger(1, sig, 0, 32);
+                    var s = new Org.BouncyCastle.Math.BigInteger(1, sig, 32, 32);
                     sig = new Org.BouncyCastle.Asn1.DerSequence(new Org.BouncyCastle.Asn1.DerInteger(r), new Org.BouncyCastle.Asn1.DerInteger(s)).GetDerEncoded();
 
                     return signer.VerifySignature(sig);
