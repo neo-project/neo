@@ -40,13 +40,14 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="data">The byte array to parse.</param>
         /// <param name="maxArraySize">The maximum length of arrays during the deserialization.</param>
+        /// <param name="maxItems">The maximum of items to deserialize</param>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(byte[] data, uint maxArraySize, ReferenceCounter referenceCounter = null)
+        public static StackItem Deserialize(byte[] data, uint maxArraySize, uint maxItems, ReferenceCounter referenceCounter = null)
         {
             using MemoryStream ms = new(data, false);
             using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
-            return Deserialize(reader, maxArraySize, (uint)data.Length, referenceCounter);
+            return Deserialize(reader, maxArraySize, (uint)data.Length, maxItems, referenceCounter);
         }
 
         /// <summary>
@@ -54,16 +55,17 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="data">The byte array to parse.</param>
         /// <param name="maxArraySize">The maximum length of arrays during the deserialization.</param>
+        /// <param name="maxItems">The maximum of items to deserialize</param>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static unsafe StackItem Deserialize(ReadOnlySpan<byte> data, uint maxArraySize, ReferenceCounter referenceCounter = null)
+        public static unsafe StackItem Deserialize(ReadOnlySpan<byte> data, uint maxArraySize, uint maxItems, ReferenceCounter referenceCounter = null)
         {
             if (data.IsEmpty) throw new FormatException();
             fixed (byte* pointer = data)
             {
                 using UnmanagedMemoryStream ms = new(pointer, data.Length);
                 using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
-                return Deserialize(reader, maxArraySize, (uint)data.Length, referenceCounter);
+                return Deserialize(reader, maxArraySize, (uint)data.Length, maxItems, referenceCounter);
             }
         }
 
@@ -73,9 +75,10 @@ namespace Neo.SmartContract
         /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
         /// <param name="maxArraySize">The maximum length of arrays during the deserialization.</param>
         /// <param name="maxItemSize">The maximum size of <see cref="StackItem"/> during the deserialization.</param>
+        /// <param name="maxItems">The maximum of items to deserialize</param>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(BinaryReader reader, uint maxArraySize, uint maxItemSize, ReferenceCounter referenceCounter)
+        public static StackItem Deserialize(BinaryReader reader, uint maxArraySize, uint maxItemSize, uint maxItems, ReferenceCounter referenceCounter)
         {
             Stack<StackItem> deserialized = new();
             int undeserialized = 1;
@@ -119,6 +122,7 @@ namespace Neo.SmartContract
                     default:
                         throw new FormatException();
                 }
+                if (deserialized.Count > maxItems) throw new FormatException();
             }
             Stack<StackItem> stack_temp = new();
             while (deserialized.Count > 0)
