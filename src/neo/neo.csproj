@@ -33,7 +33,12 @@
     <PackageReference Include="Neo.VM" Version="3.0.0-rc3" />
   </ItemGroup>
   
-  <Target Name="PreBuild" Condition="$(BuildingInsideVisualStudio) == 'True' AND Exists('$(HOME)\.dotnet\tools\dotnet-format')" BeforeTargets="PreBuildEvent">
+  <PropertyGroup>
+    <FormatOnLinux Condition="Exists('$(HOME)\.dotnet\tools\dotnet-format')">True</FormatOnLinux>
+    <FormatOnWin Condition="Exists('$(USERPROFILE)\.dotnet\tools\dotnet-format.exe')">True</FormatOnWin>
+   </PropertyGroup>
+
+  <Target Name="PreBuild" Condition="$(BuildingInsideVisualStudio) == 'True' AND ($(FormatOnLinux) Or $(FormatOnWin)) " BeforeTargets="PreBuildEvent">
     <Exec Command="dotnet format" />
   </Target>
 
