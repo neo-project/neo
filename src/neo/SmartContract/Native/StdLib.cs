@@ -27,7 +27,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 14)]
         private static StackItem Deserialize(ApplicationEngine engine, byte[] data)
         {
-            return BinarySerializer.Deserialize(data, engine.Limits.MaxStackSize, engine.Limits.MaxStackSize, engine.ReferenceCounter);
+            return BinarySerializer.Deserialize(data, engine.Limits, engine.ReferenceCounter);
         }
 
         [ContractMethod(CpuFee = 1 << 12)]

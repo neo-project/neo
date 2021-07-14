@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
 using System.IO;
 
 namespace Neo.UnitTests.Ledger
@@ -32,7 +33,7 @@ namespace Neo.UnitTests.Ledger
             ms.Seek(0, SeekOrigin.Begin);
 
             HashIndexState dest = new HashIndexState();
-            ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(reader, 1024, 1024, 2048, null));
+            ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(reader, ExecutionEngineLimits.Default, null));
 
             dest.Hash.Should().Be(origin.Hash);
             dest.Index.Should().Be(origin.Index);

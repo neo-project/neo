@@ -44,7 +44,7 @@ namespace Neo.UnitTests.Ledger
             ms.Seek(0, SeekOrigin.Begin);
 
             TransactionState dest = new TransactionState();
-            ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(reader, 1024, 1024, 2048, null));
+            ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(reader, ExecutionEngineLimits.Default, null));
 
             dest.BlockIndex.Should().Be(origin.BlockIndex);
             dest.Transaction.Hash.Should().Be(origin.Transaction.Hash);
