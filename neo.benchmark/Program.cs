@@ -45,20 +45,13 @@ namespace neo.benchmark
         public BM_Crypto()
         {
             key = GenerateKey(32);
-           message = System.Text.Encoding.Default.GetBytes("HelloWorld");
-             signature = Crypto.Sign(message, key.PrivateKey, key.PublicKey.EncodePoint(false).Skip(1).ToArray());
+            message = System.Text.Encoding.Default.GetBytes("HelloWorld");
+            signature = Crypto.Sign(message, key.PrivateKey, key.PublicKey.EncodePoint(false).Skip(1).ToArray());
         }
 
         [Benchmark]
         public bool VerifySignatureR1() => Crypto.VerifySignature(message, signature, key.PublicKey);
 
-
-        
-        //[GlobalSetup]
-        //public void Setup()
-        //{
-        //    System.Diagnostics.Debugger.Launch();
-        //}
 
         [Benchmark]
         public bool VerifySignature() => Crypto.VerifySignature(message, signature, pubKey, Neo.Cryptography.ECC.ECCurve.Secp256k1);
