@@ -29,7 +29,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The maximum execution fee factor that the committee can set.
         /// </summary>
-        public const uint MaxExecFeeFactor = 1000;
+        public const uint MaxExecFeeFactor = 100;
 
         /// <summary>
         /// The maximum storage price that the committee can set.
