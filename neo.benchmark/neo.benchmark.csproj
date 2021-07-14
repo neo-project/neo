@@ -1,12 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <!-- <OutputType>Exe</OutputType> -->
     <TargetFramework>net5.0</TargetFramework>
     <AssemblyName>neo.benchmark</AssemblyName>
     <RootNamespace>neo.benchmark</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <ProjectGuid>{9EB0C780-AB39-44C3-ABBB-A7966963669E}</ProjectGuid>
+    <ProjectGuid>{9EB0C780-AB39-44C3-ABBB-A7966963669E}</ProjectGuid>
+       <IsPackable>false</IsPackable>
+    <GenerateProgramFile>false</GenerateProgramFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,10 +23,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\neo\neo.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\src\neo\neo.csproj" />
   </ItemGroup>
 </Project>
