@@ -5,12 +5,12 @@ using Neo.Cryptography;
 namespace Neo.UnitTests.Cryptography
 {
     [TestClass]
-    public class UT_Murmur3
+    public class UT_Murmur32
     {
         [TestMethod]
         public void TestGetHashSize()
         {
-            Murmur3 murmur3 = new Murmur3(1);
+            Murmur32 murmur3 = new Murmur32(1);
             murmur3.HashSize.Should().Be(32);
         }
 
