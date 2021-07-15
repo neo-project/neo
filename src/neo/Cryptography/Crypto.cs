@@ -64,29 +64,25 @@ namespace Neo.Cryptography
         {
             if (signature.Length != 64) return false;
 
-            if (IsOSX && pubkey.Curve != ECC.ECCurve.Secp256r1)
+            if (IsOSX && pubkey.Curve == ECC.ECCurve.Secp256k1)
             {
-                try
-                {
-                    var curve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
-                    var domain = new Org.BouncyCastle.Crypto.Parameters.ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H);
-                    var point = curve.Curve.CreatePoint(
-                        new Org.BouncyCastle.Math.BigInteger(pubkey.X.Value.ToString()),
-                        new Org.BouncyCastle.Math.BigInteger(pubkey.Y.Value.ToString()));
-                    var pubKey = new Org.BouncyCastle.Crypto.Parameters.ECPublicKeyParameters("ECDSA", point, domain);
-                    var signer = Org.BouncyCastle.Security.SignerUtilities.GetSigner("SHA-256withECDSA");
+                var curve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
+                var domain = new Org.BouncyCastle.Crypto.Parameters.ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H);
+                var point = curve.Curve.CreatePoint(
+                    new Org.BouncyCastle.Math.BigInteger(pubkey.X.Value.ToString()),
+                    new Org.BouncyCastle.Math.BigInteger(pubkey.Y.Value.ToString()));
+                var pubKey = new Org.BouncyCastle.Crypto.Parameters.ECPublicKeyParameters("ECDSA", point, domain);
+                var signer = Org.BouncyCastle.Security.SignerUtilities.GetSigner("SHA-256withECDSA");
 
-                    signer.Init(false, pubKey);
-                    signer.BlockUpdate(message.ToArray(), 0, message.Length);
+                signer.Init(false, pubKey);
+                signer.BlockUpdate(message.ToArray(), 0, message.Length);
 
-                    var sig = signature.ToArray();
-                    var r = new Org.BouncyCastle.Math.BigInteger(1, sig, 0, 32);
-                    var s = new Org.BouncyCastle.Math.BigInteger(1, sig, 32, 32);
-                    sig = new Org.BouncyCastle.Asn1.DerSequence(new Org.BouncyCastle.Asn1.DerInteger(r), new Org.BouncyCastle.Asn1.DerInteger(s)).GetDerEncoded();
+                var sig = signature.ToArray();
+                var r = new Org.BouncyCastle.Math.BigInteger(1, sig, 0, 32);
+                var s = new Org.BouncyCastle.Math.BigInteger(1, sig, 32, 32);
+                sig = new Org.BouncyCastle.Asn1.DerSequence(new Org.BouncyCastle.Asn1.DerInteger(r), new Org.BouncyCastle.Asn1.DerInteger(s)).GetDerEncoded();
 
-                    return signer.VerifySignature(sig);
-                }
-                catch { return false; }
+                return signer.VerifySignature(sig);
             }
             else
             {
