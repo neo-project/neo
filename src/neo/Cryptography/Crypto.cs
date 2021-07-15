@@ -90,11 +90,11 @@ namespace Neo.Cryptography
             }
             else
             {
-                byte[] buffer = pubkey.EncodePoint(false);
                 ECCurve curve =
                     pubkey.Curve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
                     pubkey.Curve == ECC.ECCurve.Secp256k1 ? ECCurve.CreateFromFriendlyName("secP256k1") :
                     throw new NotSupportedException();
+                byte[] buffer = pubkey.EncodePoint(false);
                 using var ecdsa = ECDsa.Create(new ECParameters
                 {
                     Curve = curve,
