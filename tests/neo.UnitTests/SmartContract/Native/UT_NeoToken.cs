@@ -1049,7 +1049,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static void CheckBalance(byte[] account, DataCache.Trackable trackable, BigInteger balance, BigInteger height, ECPoint voteTo)
         {
-            var st = (VM.Types.Struct)BinarySerializer.Deserialize(trackable.Item.Value, 16);
+            var st = (VM.Types.Struct)BinarySerializer.Deserialize(trackable.Item.Value, ExecutionEngineLimits.Default);
 
             st.Count.Should().Be(3);
             st.Select(u => u.GetType()).ToArray().Should().BeEquivalentTo(new Type[] { typeof(VM.Types.Integer), typeof(VM.Types.Integer), typeof(VM.Types.ByteString) }); // Balance

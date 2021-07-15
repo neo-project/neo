@@ -46,7 +46,7 @@ namespace Neo.Cryptography
         /// <returns>The computed hash code.</returns>
         public static uint Murmur32(this byte[] value, uint seed)
         {
-            using Murmur3 murmur = new(seed);
+            using Murmur32 murmur = new(seed);
             return BinaryPrimitives.ReadUInt32LittleEndian(murmur.ComputeHash(value));
         }
 
