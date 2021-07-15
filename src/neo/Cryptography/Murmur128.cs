@@ -43,7 +43,7 @@ namespace Neo.Cryptography
             int alignedLength = ibStart + (cbSize - remainder);
             for (int i = ibStart; i < alignedLength; i += 16)
             {
-                ulong k1 = BinaryPrimitives.ReadUInt64BigEndian(array.AsSpan(i));
+                ulong k1 = BinaryPrimitives.ReadUInt64LittleEndian(array.AsSpan(i));
                 k1 *= c1;
                 k1 = RotateLeft(k1, r1);
                 k1 *= c2;
@@ -52,7 +52,7 @@ namespace Neo.Cryptography
                 H1 += H2;
                 H1 = H1 * m + n1;
 
-                ulong k2 = BinaryPrimitives.ReadUInt64BigEndian(array.AsSpan(i + 8));
+                ulong k2 = BinaryPrimitives.ReadUInt64LittleEndian(array.AsSpan(i + 8));
                 k2 *= c2;
                 k2 = RotateLeft(k2, r2);
                 k2 *= c1;
