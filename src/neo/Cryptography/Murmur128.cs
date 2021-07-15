@@ -1,5 +1,6 @@
 using System;
 using System.Buffers.Binary;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 
@@ -45,19 +46,19 @@ namespace Neo.Cryptography
             {
                 ulong k1 = BinaryPrimitives.ReadUInt64LittleEndian(array.AsSpan(i));
                 k1 *= c1;
-                k1 = RotateLeft(k1, r1);
+                k1 = BitOperations.RotateLeft(k1, r1);
                 k1 *= c2;
                 H1 ^= k1;
-                H1 = RotateLeft(H1, 27);
+                H1 = BitOperations.RotateLeft(H1, 27);
                 H1 += H2;
                 H1 = H1 * m + n1;
 
                 ulong k2 = BinaryPrimitives.ReadUInt64LittleEndian(array.AsSpan(i + 8));
                 k2 *= c2;
-                k2 = RotateLeft(k2, r2);
+                k2 = BitOperations.RotateLeft(k2, r2);
                 k2 *= c1;
                 H2 ^= k2;
-                H2 = RotateLeft(H2, 31);
+                H2 = BitOperations.RotateLeft(H2, 31);
                 H2 += H1;
                 H2 = H2 * m + n2;
             }
@@ -84,8 +85,8 @@ namespace Neo.Cryptography
                     case 1: remainingBytesL ^= (ulong)array[alignedLength] << 0; break;
                 }
 
-                H2 ^= RotateLeft(remainingBytesH * c2, r2) * c1;
-                H1 ^= RotateLeft(remainingBytesL * c1, r1) * c2;
+                H2 ^= BitOperations.RotateLeft(remainingBytesH * c2, r2) * c1;
+                H1 ^= BitOperations.RotateLeft(remainingBytesL * c1, r1) * c2;
             }
         }
 
@@ -116,12 +117,6 @@ namespace Neo.Cryptography
         {
             H1 = H2 = seed;
             length = 0;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static ulong RotateLeft(ulong x, byte n)
-        {
-            return (x << n) | (x >> (64 - n));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
