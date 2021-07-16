@@ -26,6 +26,9 @@ namespace Neo.UnitTests.Cryptography
 
             array = Encoding.ASCII.GetBytes("hello world");
             array.Murmur128(123u).ToHexString().ToString().Should().Be("e0a0632d4f51302c55e3b3e48d28795d");
+
+            array = "718f952132679baa9c5c2aa0d329fd2a".HexToBytes();
+            array.Murmur128(123u).ToHexString().ToString().Should().Be("9b4aa747ff0cf4e41b3d96251551c8ae");
         }
     }
 }
