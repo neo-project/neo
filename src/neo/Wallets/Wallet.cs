@@ -570,6 +570,8 @@ namespace Neo.Wallets
                         throw new ArgumentException($"The smart contract {contract.Hash} haven't got verify method");
                     if (md.ReturnType != ContractParameterType.Boolean)
                         throw new ArgumentException("The verify method doesn't return boolean value.");
+                    if (md.Parameters.Length > 0 && invocationScript is null)
+                        throw new ArgumentException("The verify method needs invocation script.");
 
                     // Empty verification and non-empty invocation scripts
                     var invSize = invocationScript != null ? invocationScript.GetVarSize() : Array.Empty<byte>().GetVarSize();
