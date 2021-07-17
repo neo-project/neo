@@ -51,7 +51,7 @@ namespace Neo
             int p = 0;
             foreach (byte[] src in buffers)
             {
-                Buffer.BlockCopy(src, 0, dst, p, src.Length);
+                Array.Copy(src, 0, dst, p, src.Length);
                 p += src.Length;
             }
             return dst;

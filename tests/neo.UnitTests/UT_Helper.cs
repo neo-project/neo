@@ -222,5 +222,16 @@ namespace Neo.UnitTests
             var endPoint2 = new IPEndPoint(addr2, 8888);
             endPoint2.Unmap().Should().Be(endPoint);
         }
+
+        [TestMethod]
+        public void TestConcat()
+        {
+            var a = "2d3b96ae1bcc5a585e075e3b81920210dec16302".HexToBytes();
+            var b = "4e454f0050b51da6bb366be3ea50140cda45ba7df575287c0371000b2037ed3898ff8bf5".HexToBytes();
+            var c = "2d3b96ae1bcc5a585e075e3b81920210dec16302".HexToBytes();
+            var d = Helper.Concat(a, b, c).ToHexString().ToString();
+
+            Assert.AreEqual(d, "2d3b96ae1bcc5a585e075e3b81920210dec163024e454f0050b51da6bb366be3ea50140cda45ba7df575287c0371000b2037ed3898ff8bf52d3b96ae1bcc5a585e075e3b81920210dec16302");
+        }
     }
 }
