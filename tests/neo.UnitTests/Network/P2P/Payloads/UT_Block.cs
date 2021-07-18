@@ -28,13 +28,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Header_Get()
         {
             UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupBlockWithValues(uut, val256, out var merkRootVal, out _, out var timestampVal, out var indexVal, out var scriptVal, out _, 0);
+            TestUtils.SetupBlockWithValues(uut, val256, out var merkRootVal, out _, out var timestampVal, out var nonceVal, out var indexVal, out var scriptVal, out _, 0);
 
             uut.Header.Should().NotBeNull();
             uut.Header.PrevHash.Should().Be(val256);
             uut.Header.MerkleRoot.Should().Be(merkRootVal);
             uut.Header.Timestamp.Should().Be(timestampVal);
             uut.Header.Index.Should().Be(indexVal);
+            uut.Header.Nonce.Should().Be(nonceVal);
             uut.Header.Witness.Should().Be(scriptVal);
         }
 
@@ -42,31 +43,31 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Size_Get()
         {
             UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupBlockWithValues(uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, 0);
+            TestUtils.SetupBlockWithValues(uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, out var _, 0);
             // header 4 + 32 + 32 + 8 + 4 + 1 + 20 + 4
             // tx 1
-            uut.Size.Should().Be(106);
+            uut.Size.Should().Be(114); // 106 + nonce
         }
 
         [TestMethod]
         public void Size_Get_1_Transaction()
         {
             UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupBlockWithValues(uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, 0);
+            TestUtils.SetupBlockWithValues(uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, out var _, 0);
 
             uut.Transactions = new[]
             {
                 TestUtils.GetTransaction(UInt160.Zero)
             };
 
-            uut.Size.Should().Be(159);
+            uut.Size.Should().Be(167); // 159 + nonce 
         }
 
         [TestMethod]
         public void Size_Get_3_Transaction()
         {
             UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupBlockWithValues(uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, 0);
+            TestUtils.SetupBlockWithValues(uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, out var _, 0);
 
             uut.Transactions = new[]
             {
@@ -75,16 +76,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 TestUtils.GetTransaction(UInt160.Zero)
             };
 
-            uut.Size.Should().Be(265);
+            uut.Size.Should().Be(273); // 265 + nonce
         }
 
         [TestMethod]
         public void Serialize()
         {
             UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupBlockWithValues(uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, 1);
+            TestUtils.SetupBlockWithValues(uut, val256, out var _, out var _, out var _, out var _, out var _, out var _, out var _, 1);
 
-            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000006c23be5d32679baa9c5c2aa0d329fd2a2441d7875d0f34d42f58f70428fbbbb9e913ff854c0000000000000000000000000000000000000000000000000000000001000111010000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000001000112010000";
+            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000006c23be5d32679baa9c5c2aa0d329fd2a2441d7875d0f34d42f58f70428fbbbb9e913ff854c00000000000000000000000000000000000000000000000000000000000000000000000001000111010000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000001000112010000";
             uut.ToArray().ToHexString().Should().Be(hex);
         }
 
@@ -92,24 +93,25 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Deserialize()
         {
             UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupBlockWithValues(new Block(), val256, out _, out var val160, out var timestampVal, out var indexVal, out var scriptVal, out var transactionsVal, 1);
+            TestUtils.SetupBlockWithValues(new Block(), val256, out _, out var val160, out var timestampVal, out var indexVal, out var nonceVal, out var scriptVal, out var transactionsVal, 1);
 
-            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000006c23be5d32679baa9c5c2aa0d329fd2a2441d7875d0f34d42f58f70428fbbbb9e913ff854c0000000000000000000000000000000000000000000000000000000001000111010000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000001000112010000";
+            var hex = "0000000000000000000000000000000000000000000000000000000000000000000000006c23be5d32679baa9c5c2aa0d329fd2a2441d7875d0f34d42f58f70428fbbbb9e913ff854c00000000000000000000000000000000000000000000000000000000000000000000000001000111010000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000001000112010000";
 
             using MemoryStream ms = new(hex.HexToBytes(), false);
             using BinaryReader reader = new(ms);
             uut.Deserialize(reader);
             UInt256 merkRoot = uut.MerkleRoot;
 
-            AssertStandardBlockTestVals(val256, merkRoot, val160, timestampVal, indexVal, scriptVal, transactionsVal);
+            AssertStandardBlockTestVals(val256, merkRoot, val160, timestampVal, indexVal, nonceVal, scriptVal, transactionsVal);
         }
 
-        private void AssertStandardBlockTestVals(UInt256 val256, UInt256 merkRoot, UInt160 val160, ulong timestampVal, uint indexVal, Witness scriptVal, Transaction[] transactionsVal, bool testTransactions = true)
+        private void AssertStandardBlockTestVals(UInt256 val256, UInt256 merkRoot, UInt160 val160, ulong timestampVal, ulong nonceVal, uint indexVal, Witness scriptVal, Transaction[] transactionsVal, bool testTransactions = true)
         {
             uut.PrevHash.Should().Be(val256);
             uut.MerkleRoot.Should().Be(merkRoot);
             uut.Timestamp.Should().Be(timestampVal);
             uut.Index.Should().Be(indexVal);
+            uut.Nonce.Should().Be(nonceVal);
             uut.NextConsensus.Should().Be(val160);
             uut.Witness.InvocationScript.Length.Should().Be(0);
             uut.Witness.Size.Should().Be(scriptVal.Size);
@@ -133,8 +135,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Block newBlock = new();
             UInt256 val256 = UInt256.Zero;
             UInt256 prevHash = new(TestUtils.GetByteArray(32, 0x42));
-            TestUtils.SetupBlockWithValues(newBlock, val256, out _, out _, out _, out uint _, out _, out _, 1);
-            TestUtils.SetupBlockWithValues(uut, prevHash, out _, out _, out _, out _, out _, out _, 0);
+            TestUtils.SetupBlockWithValues(newBlock, val256, out _, out _, out _, out ulong _, out uint _, out _, out _, 1);
+            TestUtils.SetupBlockWithValues(uut, prevHash, out _, out _, out _, out _, out _, out _, out _, 0);
 
             uut.Equals(newBlock).Should().BeFalse();
         }
@@ -150,8 +152,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             Block newBlock = new();
             UInt256 prevHash = new(TestUtils.GetByteArray(32, 0x42));
-            TestUtils.SetupBlockWithValues(newBlock, prevHash, out _, out _, out _, out _, out _, out _, 1);
-            TestUtils.SetupBlockWithValues(uut, prevHash, out _, out _, out _, out _, out _, out _, 1);
+            TestUtils.SetupBlockWithValues(newBlock, prevHash, out _, out _, out _, out _, out _, out _, out _, 1);
+            TestUtils.SetupBlockWithValues(uut, prevHash, out _, out _, out _, out _, out _, out _, out _, 1);
 
             uut.Equals(newBlock).Should().BeTrue();
         }
@@ -160,17 +162,18 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void ToJson()
         {
             UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupBlockWithValues(uut, val256, out _, out _, out _, out _, out _, out _, 1);
+            TestUtils.SetupBlockWithValues(uut, val256, out _, out _, out var timeVal, out var indexVal, out var nonceVal, out _, out _, 1);
 
             JObject jObj = uut.ToJson(ProtocolSettings.Default);
             jObj.Should().NotBeNull();
-            jObj["hash"].AsString().Should().Be("0x54b3a829333d9bb352eef69942317fe011251370c2212ad0d20d7c2a3974b26e");
-            jObj["size"].AsNumber().Should().Be(159);
+            jObj["hash"].AsString().Should().Be("0x60193a05005c433787d8a9b95da332bbeebb311e904525e9fb1bacc34ff1ead7");
+            jObj["size"].AsNumber().Should().Be(167); // 159 + nonce
             jObj["version"].AsNumber().Should().Be(0);
             jObj["previousblockhash"].AsString().Should().Be("0x0000000000000000000000000000000000000000000000000000000000000000");
             jObj["merkleroot"].AsString().Should().Be("0xb9bbfb2804f7582fd4340f5d87d741242afd29d3a02a5c9caa9b67325dbe236c");
-            jObj["time"].AsNumber().Should().Be(328665601001);
-            jObj["index"].AsNumber().Should().Be(0);
+            jObj["time"].AsNumber().Should().Be(timeVal);
+            jObj["nonce"].AsString().Should().Be(nonceVal.ToString("X16"));
+            jObj["index"].AsNumber().Should().Be(indexVal);
             jObj["nextconsensus"].AsString().Should().Be("NKuyBkoGdZZSLyPbJEetheRhMjeznFZszf");
 
             JObject scObj = ((JArray)jObj["witnesses"])[0];
