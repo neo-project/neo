@@ -5,7 +5,6 @@ using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 
 namespace Neo
 {
@@ -82,7 +81,7 @@ namespace Neo
         /// <summary>
         /// Indicates the amount of gas to distribute during initialization.
         /// </summary>
-        public BigInteger InitialGasDistribution { get; init; }
+        public ulong InitialGasDistribution { get; init; }
 
         private IReadOnlyList<ECPoint> _standbyValidators;
         /// <summary>
