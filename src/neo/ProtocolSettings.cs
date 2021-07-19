@@ -136,7 +136,7 @@ namespace Neo
             MaxTransactionsPerBlock = 512,
             MemoryPoolMaxTransactions = 50_000,
             MaxTraceableBlocks = 2_102_400,
-            InitialGasDistribution = 52_000_000_0000_0000,
+            InitialGasDistribution = 52_000_000_00000000,
             NativeUpdateHistory = new Dictionary<string, uint[]>
             {
                 [nameof(ContractManagement)] = new[] { 0u },
