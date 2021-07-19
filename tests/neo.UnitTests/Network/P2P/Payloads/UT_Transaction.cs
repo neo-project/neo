@@ -1141,7 +1141,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     }
                 }
             };
-            tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Invalid);
+            tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.TooBig);
             tx.Script = Array.Empty<byte>();
             tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Succeed);
 
@@ -1223,7 +1223,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var balance = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             balance.GetInteroperable<AccountState>().Balance = tx.NetworkFee;
 
-            tx.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.Invalid);
+            tx.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.InvalidSignature);
             balance.GetInteroperable<AccountState>().Balance = 0;
             tx.SystemFee = 10;
             tx.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.InsufficientFunds);

@@ -48,6 +48,26 @@ namespace Neo.Ledger
         PolicyFail,
 
         /// <summary>
+        /// Indicates that the <see cref="Transaction"/> it's too big.
+        /// </summary>
+        TooBig,
+
+        /// <summary>
+        /// Indicates that the <see cref="Transaction"/> has an invalid script.
+        /// </summary>
+        InvalidScript,
+
+        /// <summary>
+        /// Indicates that the <see cref="Transaction"/> has an invalid signature.
+        /// </summary>
+        InvalidSignature,
+
+        /// <summary>
+        /// Indicates that the <see cref="Transaction"/> has an invalid attribute.
+        /// </summary>
+        InvalidAttribute,
+
+        /// <summary>
         /// Indicates that the <see cref="IInventory"/> failed to verify due to other reasons.
         /// </summary>
         Unknown
