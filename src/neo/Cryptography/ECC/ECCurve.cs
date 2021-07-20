@@ -11,7 +11,7 @@ namespace Neo.Cryptography.ECC
         internal readonly BigInteger Q;
         internal readonly ECFieldElement A;
         internal readonly ECFieldElement B;
-        internal readonly BigInteger N;
+        public readonly BigInteger N;
         /// <summary>
         /// The point at infinity.
         /// </summary>

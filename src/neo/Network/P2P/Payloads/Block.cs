@@ -47,6 +47,11 @@ namespace Neo.Network.P2P.Payloads
         public ulong Timestamp => Header.Timestamp;
 
         /// <summary>
+        /// The random number of the block.
+        /// </summary>
+        public ulong Nonce => Header.Nonce;
+
+        /// <summary>
         /// The index of the block.
         /// </summary>
         public uint Index => Header.Index;
