@@ -39,7 +39,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 14)]
         private static StackItem JsonDeserialize(ApplicationEngine engine, byte[] json)
         {
-            return JsonSerializer.Deserialize(JObject.Parse(json, 10), engine.ReferenceCounter);
+            return JsonSerializer.Deserialize(JObject.Parse(json, 10), engine);
         }
 
         /// <summary>

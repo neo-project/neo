@@ -148,42 +148,48 @@ namespace Neo.SmartContract
         /// Deserializes a <see cref="StackItem"/> from <see cref="JObject"/>.
         /// </summary>
         /// <param name="json">The <see cref="JObject"/> to deserialize.</param>
-        /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
+        /// <param name="engine">The <see cref="ApplicationEngine"/> used for pay gas.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(JObject json, ReferenceCounter referenceCounter = null)
+        public static StackItem Deserialize(JObject json, ApplicationEngine engine = null)
         {
             switch (json)
             {
                 case null:
                     {
+                        if (engine != null) engine.AddGas(100);
                         return StackItem.Null;
                     }
                 case JArray array:
                     {
-                        return new Array(referenceCounter, array.Select(p => Deserialize(p, referenceCounter)));
+                        if (engine != null) engine.AddGas(1_000);
+                        return new Array(engine?.ReferenceCounter, array.Select(p => Deserialize(p, engine)));
                     }
                 case JString str:
                     {
+                        if (engine != null) engine.AddGas(100);
                         return str.Value;
                     }
                 case JNumber num:
                     {
                         if ((num.Value % 1) != 0) throw new FormatException("Decimal value is not allowed");
+                        if (engine != null) engine.AddGas(100);
 
                         return (BigInteger)num.Value;
                     }
                 case JBoolean boolean:
                     {
+                        if (engine != null) engine.AddGas(100);
                         return new Boolean(boolean.Value);
                     }
                 case JObject obj:
                     {
-                        var item = new Map(referenceCounter);
+                        if (engine != null) engine.AddGas(1_000);
+                        var item = new Map(engine?.ReferenceCounter);
 
                         foreach (var entry in obj.Properties)
                         {
                             var key = entry.Key;
-                            var value = Deserialize(entry.Value, referenceCounter);
+                            var value = Deserialize(entry.Value, engine);
 
                             item[key] = value;
                         }
