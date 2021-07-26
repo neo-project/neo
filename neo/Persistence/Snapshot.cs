@@ -35,7 +35,7 @@ namespace Neo.Persistence
         public UInt256 CurrentBlockHash => BlockHashIndex.Get().Hash;
         public UInt256 CurrentHeaderHash => HeaderHashIndex.Get().Hash;
 
-        private const uint NoBonusHeight = 200_000;
+        private const uint NoBonusHeight = 8_000_000;
 
         public Fixed8 CalculateBonus(IEnumerable<CoinReference> inputs, bool ignoreClaimed = true)
         {
