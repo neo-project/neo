@@ -15,6 +15,7 @@ namespace Neo.SmartContract.Native
     public sealed class StdLib : NativeContract
     {
         private const int MaxInputLength = 1024;
+        private const int MaxJsonLength = 100 * 1024;
 
         internal StdLib() { }
 
@@ -36,9 +37,10 @@ namespace Neo.SmartContract.Native
             return JsonSerializer.SerializeToByteArray(item, engine.Limits.MaxItemSize);
         }
 
-        [ContractMethod(CpuFee = 1 << 14)]
+        [ContractMethod(CpuFee = 1 << 18)]
         private static StackItem JsonDeserialize(ApplicationEngine engine, byte[] json)
         {
+            if (json.Length > MaxJsonLength) throw new ArgumentOutOfRangeException(nameof(json), "Exceed max json length");
             return JsonSerializer.Deserialize(JObject.Parse(json, 10), engine.ReferenceCounter);
         }
 
