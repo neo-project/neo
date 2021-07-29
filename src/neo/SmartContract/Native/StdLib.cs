@@ -38,9 +38,8 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 18)]
-        private static StackItem JsonDeserialize(ApplicationEngine engine, byte[] json)
+        private static StackItem JsonDeserialize(ApplicationEngine engine, [MaxLength(MaxJsonLength)] byte[] json)
         {
-            if (json.Length > MaxJsonLength) throw new ArgumentOutOfRangeException(nameof(json), "Exceed max json length");
             return JsonSerializer.Deserialize(JObject.Parse(json, 10), engine.ReferenceCounter);
         }
 
