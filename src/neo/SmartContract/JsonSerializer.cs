@@ -3,10 +3,12 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text.Json;
+using static Neo.SmartContract.BinarySerializer;
 using Array = Neo.VM.Types.Array;
 using Boolean = Neo.VM.Types.Boolean;
 using Buffer = Neo.VM.Types.Buffer;
@@ -150,48 +152,78 @@ namespace Neo.SmartContract
         /// <param name="json">The <see cref="JObject"/> to deserialize.</param>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(JObject json, ReferenceCounter referenceCounter = null)
+        public static StackItem Deserialize(JObject json, ExecutionEngineLimits limits, ReferenceCounter referenceCounter = null)
         {
-            switch (json)
+            Stack<StackItem> deserialized = new();
+            Stack<JObject> stack = new();
+            stack.Push(json);
+            while (stack.Count > 0)
             {
-                case null:
-                    {
-                        return StackItem.Null;
-                    }
-                case JArray array:
-                    {
-                        return new Array(referenceCounter, array.Select(p => Deserialize(p, referenceCounter)));
-                    }
-                case JString str:
-                    {
-                        return str.Value;
-                    }
-                case JNumber num:
-                    {
+                var item = stack.Pop();
+                switch (item)
+                {
+                    case null:
+                        deserialized.Push(StackItem.Null);
+                        break;
+                    case JString str:
+                        deserialized.Push(str.Value);
+                        break;
+                    case JNumber num:
                         if ((num.Value % 1) != 0) throw new FormatException("Decimal value is not allowed");
-
-                        return (BigInteger)num.Value;
-                    }
-                case JBoolean boolean:
-                    {
-                        return new Boolean(boolean.Value);
-                    }
-                case JObject obj:
-                    {
-                        var item = new Map(referenceCounter);
-
-                        foreach (var entry in obj.Properties)
+                        deserialized.Push((BigInteger)num.Value);
+                        break;
+                    case JBoolean boolean:
+                        deserialized.Push(new Boolean(boolean.Value));
+                        break;
+                    case JArray array:
+                        deserialized.Push(new ContainerPlaceholder(StackItemType.Array, array.Count));
+                        foreach (var value in array.Reverse())
                         {
-                            var key = entry.Key;
-                            var value = Deserialize(entry.Value, referenceCounter);
-
-                            item[key] = value;
+                            stack.Push(value);
                         }
-
-                        return item;
-                    }
-                default: throw new FormatException();
+                        break;
+                    case JObject obj:
+                        deserialized.Push(new ContainerPlaceholder(StackItemType.Map, obj.Properties.Count));
+                        foreach (var entry in obj.Properties.Reverse())
+                        {
+                            stack.Push(entry.Value);
+                            stack.Push((JString)entry.Key);
+                        }
+                        break;
+                    default: throw new FormatException();
+                }
+                if (deserialized.Count > limits.MaxStackSize) throw new FormatException();
             }
+
+            Stack<StackItem> stack_temp = new();
+            while (deserialized.Count > 0)
+            {
+                StackItem item = deserialized.Pop();
+                if (item is ContainerPlaceholder placeholder)
+                {
+                    switch (placeholder.Type)
+                    {
+                        case StackItemType.Array:
+                            Array array = new(referenceCounter);
+                            for (int i = 0; i < placeholder.ElementCount; i++)
+                                array.Add(stack_temp.Pop());
+                            item = array;
+                            break;
+                        case StackItemType.Map:
+                            Map map = new(referenceCounter);
+                            for (int i = 0; i < placeholder.ElementCount; i++)
+                            {
+                                StackItem key = stack_temp.Pop();
+                                StackItem value = stack_temp.Pop();
+                                map[(PrimitiveType)key] = value;
+                            }
+                            item = map;
+                            break;
+                    }
+                }
+                stack_temp.Push(item);
+            }
+            return stack_temp.Peek();
         }
     }
 }

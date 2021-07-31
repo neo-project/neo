@@ -17,7 +17,7 @@ namespace Neo.SmartContract
     /// </summary>
     public static class BinarySerializer
     {
-        private class ContainerPlaceholder : StackItem
+        public class ContainerPlaceholder : StackItem
         {
             public override StackItemType Type { get; }
             public int ElementCount { get; }
