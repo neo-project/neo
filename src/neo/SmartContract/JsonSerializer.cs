@@ -155,7 +155,7 @@ namespace Neo.SmartContract
         public static StackItem Deserialize(JObject json, ExecutionEngineLimits limits, ReferenceCounter referenceCounter = null)
         {
             Stack<StackItem> deserialized = new();
-            Stack<JObject> stack = new();
+            Stack stack = new();
             stack.Push(json);
             while (stack.Count > 0)
             {
@@ -176,54 +176,49 @@ namespace Neo.SmartContract
                         deserialized.Push(new Boolean(boolean.Value));
                         break;
                     case JArray array:
-                        deserialized.Push(new ContainerPlaceholder(StackItemType.Array, array.Count));
-                        foreach (var value in array.Reverse())
+                        var placeholder = new ContainerPlaceholder(StackItemType.Array, array.Count);
+                        stack.Push(placeholder);
+                        foreach (var value in array)
                         {
                             stack.Push(value);
                         }
                         break;
                     case JObject obj:
-                        deserialized.Push(new ContainerPlaceholder(StackItemType.Map, obj.Properties.Count));
-                        foreach (var entry in obj.Properties.Reverse())
+                        var mapPlaceholder = new ContainerPlaceholder(StackItemType.Map, obj.Properties.Count);
+                        stack.Push(mapPlaceholder);
+                        foreach (var entry in obj.Properties)
                         {
-                            stack.Push(entry.Value);
                             stack.Push((JString)entry.Key);
+                            stack.Push(entry.Value);
                         }
+                        break;
+
+                    case ContainerPlaceholder container when container.Type == StackItemType.Array:
+                        {
+                            Array array = new(referenceCounter);
+                            for (int i = 0; i < container.ElementCount; i++)
+                                array.Add(deserialized.Pop());
+
+                            deserialized.Push(array);
+                        };
+                        break;
+                    case ContainerPlaceholder container when container.Type == StackItemType.Map:
+                        {
+                            Map map = new(referenceCounter);
+                            for (int i = 0; i < container.ElementCount; i++)
+                            {
+                                StackItem key = deserialized.Pop();
+                                StackItem value = deserialized.Pop();
+                                map[(PrimitiveType)key] = value;
+                            }
+                            deserialized.Push(map);
+                        };
                         break;
                     default: throw new FormatException();
                 }
                 if (deserialized.Count > limits.MaxStackSize) throw new FormatException();
             }
-
-            Stack<StackItem> stack_temp = new();
-            while (deserialized.Count > 0)
-            {
-                StackItem item = deserialized.Pop();
-                if (item is ContainerPlaceholder placeholder)
-                {
-                    switch (placeholder.Type)
-                    {
-                        case StackItemType.Array:
-                            Array array = new(referenceCounter);
-                            for (int i = 0; i < placeholder.ElementCount; i++)
-                                array.Add(stack_temp.Pop());
-                            item = array;
-                            break;
-                        case StackItemType.Map:
-                            Map map = new(referenceCounter);
-                            for (int i = 0; i < placeholder.ElementCount; i++)
-                            {
-                                StackItem key = stack_temp.Pop();
-                                StackItem value = stack_temp.Pop();
-                                map[(PrimitiveType)key] = value;
-                            }
-                            item = map;
-                            break;
-                    }
-                }
-                stack_temp.Push(item);
-            }
-            return stack_temp.Peek();
+            return deserialized.Peek();
         }
     }
 }
