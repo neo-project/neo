@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Json;
 using Neo.SmartContract;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
@@ -181,7 +182,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Deserialize_WrongJson()
         {
-            Assert.ThrowsException<FormatException>(() => JsonSerializer.Deserialize(JObject.Parse("x")));
+            Assert.ThrowsException<FormatException>(() => JsonSerializer.Deserialize(JObject.Parse("x"), ExecutionEngineLimits.Default));
         }
 
         [TestMethod]
@@ -215,7 +216,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Deserialize_EmptyObject()
         {
-            var items = JsonSerializer.Deserialize(JObject.Parse("{}"));
+            var items = JsonSerializer.Deserialize(JObject.Parse("{}"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(Map));
             Assert.AreEqual(((Map)items).Count, 0);
@@ -233,7 +234,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Deserialize_EmptyArray()
         {
-            var items = JsonSerializer.Deserialize(JObject.Parse("[]"));
+            var items = JsonSerializer.Deserialize(JObject.Parse("[]"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(VM.Types.Array));
             Assert.AreEqual(((VM.Types.Array)items).Count, 0);
@@ -257,7 +258,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Deserialize_Map_Test()
         {
-            var items = JsonSerializer.Deserialize(JObject.Parse("{\"test1\":123,\"test2\":321}"));
+            var items = JsonSerializer.Deserialize(JObject.Parse("{\"test1\":123,\"test2\":321}"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(Map));
             Assert.AreEqual(((Map)items).Count, 2);
@@ -286,7 +287,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Deserialize_Array_Bool_Str_Num()
         {
-            var items = JsonSerializer.Deserialize(JObject.Parse("[true,\"test\",123]"));
+            var items = JsonSerializer.Deserialize(JObject.Parse("[true,\"test\",123]"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(VM.Types.Array));
             Assert.AreEqual(((VM.Types.Array)items).Count, 3);
@@ -315,7 +316,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Deserialize_Array_OfArray()
         {
-            var items = JsonSerializer.Deserialize(JObject.Parse("[[true,\"test1\",123],[true,\"test2\",321]]"));
+            var items = JsonSerializer.Deserialize(JObject.Parse("[[true,\"test1\",123],[true,\"test2\",321]]"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(VM.Types.Array));
             Assert.AreEqual(((VM.Types.Array)items).Count, 2);

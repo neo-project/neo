@@ -3,6 +3,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -148,10 +149,18 @@ namespace Neo.SmartContract
         /// Deserializes a <see cref="StackItem"/> from <see cref="JObject"/>.
         /// </summary>
         /// <param name="json">The <see cref="JObject"/> to deserialize.</param>
+        /// <param name="limits">The limits for the deserialization.</param>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(JObject json, ReferenceCounter referenceCounter = null)
+        public static StackItem Deserialize(JObject json, ExecutionEngineLimits limits, ReferenceCounter referenceCounter = null)
         {
+            uint maxStackSize = limits.MaxStackSize;
+            return Deserialize(json, ref maxStackSize, referenceCounter);
+        }
+
+        private static StackItem Deserialize(JObject json, ref uint maxStackSize, ReferenceCounter referenceCounter)
+        {
+            if (maxStackSize-- == 0) throw new FormatException();
             switch (json)
             {
                 case null:
@@ -160,7 +169,10 @@ namespace Neo.SmartContract
                     }
                 case JArray array:
                     {
-                        return new Array(referenceCounter, array.Select(p => Deserialize(p, referenceCounter)));
+                        List<StackItem> list = new();
+                        foreach (JObject obj in array)
+                            list.Add(Deserialize(obj, ref maxStackSize, referenceCounter));
+                        return new Array(referenceCounter, list);
                     }
                 case JString str:
                     {
@@ -182,8 +194,10 @@ namespace Neo.SmartContract
 
                         foreach (var entry in obj.Properties)
                         {
+                            if (maxStackSize-- == 0) throw new FormatException();
+
                             var key = entry.Key;
-                            var value = Deserialize(entry.Value, referenceCounter);
+                            var value = Deserialize(entry.Value, ref maxStackSize, referenceCounter);
 
                             item[key] = value;
                         }
