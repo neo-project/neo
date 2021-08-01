@@ -169,7 +169,7 @@ namespace Neo.SmartContract
                     }
                 case JArray array:
                     {
-                        List<StackItem> list = new();
+                        List<StackItem> list = new(array.Count);
                         foreach (JObject obj in array)
                             list.Add(Deserialize(obj, ref maxStackSize, referenceCounter));
                         return new Array(referenceCounter, list);
