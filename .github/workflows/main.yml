@@ -86,7 +86,7 @@ jobs:
       id: get_version
       run: |
         sudo apt install xmlstarlet
-        find src -name *.csproj | xargs xmlstarlet sel -t -v "concat('::set-output name=version::v',//VersionPrefix/text(),'-',//VersionSuffix/text())" | xargs echo
+        find src -name *.csproj | xargs xmlstarlet sel -t -v "concat('::set-output name=version::v',//VersionPrefix/text())" | xargs echo
     - name: Check tag
       id: check_tag
       run: curl -s -I ${{ format('https://github.com/{0}/releases/tag/{1}', github.repository, steps.get_version.outputs.version) }} | head -n 1 | cut -d$' ' -f2 | xargs printf "::set-output name=statusCode::%s" | xargs echo
