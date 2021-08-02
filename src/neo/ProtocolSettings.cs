@@ -94,7 +94,7 @@ namespace Neo
         /// </summary>
         public static ProtocolSettings Default { get; } = new ProtocolSettings
         {
-            Network = 0x4F454Eu,
+            Network = 0x334F454Eu,
             AddressVersion = 0x35,
             StandbyCommittee = new[]
             {
