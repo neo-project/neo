@@ -400,6 +400,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 if (witnesses[i].VerificationScript.IsSignatureContract())
                 {
+                    if (hashes[i] != witnesses[i].ScriptHash) return VerifyResult.Invalid;
                     var pubkey = witnesses[i].VerificationScript.AsSpan(2..35);
                     try
                     {
@@ -413,6 +414,7 @@ namespace Neo.Network.P2P.Payloads
                 }
                 else if (witnesses[i].VerificationScript.IsMultiSigContract(out var m, out ECPoint[] points))
                 {
+                    if (hashes[i] != witnesses[i].ScriptHash) return VerifyResult.Invalid;
                     var signatures = GetMultiSignatures(witnesses[i].InvocationScript);
                     if (signatures.Length != m) return VerifyResult.Invalid;
                     var n = points.Length;
