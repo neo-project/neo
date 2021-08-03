@@ -78,6 +78,11 @@ namespace Neo
         /// </summary>
         public IReadOnlyDictionary<string, uint[]> NativeUpdateHistory { get; init; }
 
+        /// <summary>
+        /// Indicates the amount of gas to distribute during initialization.
+        /// </summary>
+        public ulong InitialGasDistribution { get; init; }
+
         private IReadOnlyList<ECPoint> _standbyValidators;
         /// <summary>
         /// The public keys of the standby validators.
@@ -89,7 +94,7 @@ namespace Neo
         /// </summary>
         public static ProtocolSettings Default { get; } = new ProtocolSettings
         {
-            Network = 0x4F454Eu,
+            Network = 0x334F454Eu,
             AddressVersion = 0x35,
             StandbyCommittee = new[]
             {
@@ -130,6 +135,7 @@ namespace Neo
             MaxTransactionsPerBlock = 512,
             MemoryPoolMaxTransactions = 50_000,
             MaxTraceableBlocks = 2_102_400,
+            InitialGasDistribution = 52_000_000_00000000,
             NativeUpdateHistory = new Dictionary<string, uint[]>
             {
                 [nameof(ContractManagement)] = new[] { 0u },
@@ -179,6 +185,7 @@ namespace Neo
                 MaxTransactionsPerBlock = section.GetValue("MaxTransactionsPerBlock", Default.MaxTransactionsPerBlock),
                 MemoryPoolMaxTransactions = section.GetValue("MemoryPoolMaxTransactions", Default.MemoryPoolMaxTransactions),
                 MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", Default.MaxTraceableBlocks),
+                InitialGasDistribution = section.GetValue("InitialGasDistribution", Default.InitialGasDistribution),
                 NativeUpdateHistory = section.GetSection("NativeUpdateHistory").Exists()
                     ? section.GetSection("NativeUpdateHistory").GetChildren().ToDictionary(p => p.Key, p => p.GetChildren().Select(q => uint.Parse(q.Value)).ToArray())
                     : Default.NativeUpdateHistory
