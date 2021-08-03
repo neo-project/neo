@@ -1199,7 +1199,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             tx.Witnesses[0] = new Witness()
             {
-                VerificationScript = tx.Witnesses[1].VerificationScript.ToArray(),
+                VerificationScript = walletB.GetAccounts().First().Contract.Script,
                 InvocationScript = tx.Witnesses[0].InvocationScript.ToArray()
             };
             tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Invalid);
