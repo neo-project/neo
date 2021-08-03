@@ -1199,10 +1199,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             tx.Witnesses[0] = new Witness()
             {
-                VerificationScript = tx.Witnesses[0].VerificationScript.ToArray(),
+                VerificationScript = tx.Witnesses[1].VerificationScript.ToArray(),
                 InvocationScript = tx.Witnesses[0].InvocationScript.ToArray()
             };
-            tx.Witnesses[0].VerificationScript[10]++;
             tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Invalid);
         }
 
