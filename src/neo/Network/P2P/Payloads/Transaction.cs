@@ -386,7 +386,7 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The result of the verification.</returns>
         public virtual VerifyResult VerifyStateIndependent(ProtocolSettings settings)
         {
-            if (Size > MaxTransactionSize) return VerifyResult.TooBig;
+            if (Size > MaxTransactionSize) return VerifyResult.TransactionOverSize;
             try
             {
                 _ = new Script(Script, true);

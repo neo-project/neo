@@ -48,9 +48,9 @@ namespace Neo.Ledger
         PolicyFail,
 
         /// <summary>
-        /// Indicates that the <see cref="Transaction"/> it's too big.
+        /// Indicates that the size of the <see cref="Transaction"/> is not allowed.
         /// </summary>
-        TooBig,
+        TransactionOverSize,
 
         /// <summary>
         /// Indicates that the <see cref="Transaction"/> has an invalid script.
