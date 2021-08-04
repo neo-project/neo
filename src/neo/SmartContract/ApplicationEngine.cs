@@ -27,6 +27,7 @@ namespace Neo.SmartContract
         /// The maximum cost that can be spent when a contract is executed in test mode.
         /// </summary>
         public const long TestModeGas = 20_00000000;
+        private const long MAX_REFUEL = 1_00000000;
 
         /// <summary>
         /// Triggered when a contract calls System.Runtime.Notify.
@@ -41,6 +42,7 @@ namespace Neo.SmartContract
         private static IApplicationEngineProvider applicationEngineProvider;
         private static Dictionary<uint, InteropDescriptor> services;
         private long gas_amount;
+        private long gas_refuel = 0;
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
@@ -161,7 +163,10 @@ namespace Neo.SmartContract
             checked
             {
                 gas_amount += gas;
+                gas_refuel += gas;
             }
+            if (gas_refuel > MAX_REFUEL)
+                throw new InvalidOperationException();
         }
 
         protected override void OnFault(Exception ex)
