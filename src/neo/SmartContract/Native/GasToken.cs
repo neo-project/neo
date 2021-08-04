@@ -42,8 +42,8 @@ namespace Neo.SmartContract.Native
         {
             if (amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (!engine.CheckWitnessInternal(account)) throw new InvalidOperationException();
-            await Burn(engine, account, amount);
             engine.Refuel(amount);
+            await Burn(engine, account, amount);
         }
     }
 }
