@@ -27,7 +27,6 @@ namespace Neo.SmartContract
         /// The maximum cost that can be spent when a contract is executed in test mode.
         /// </summary>
         public const long TestModeGas = 20_00000000;
-        private const long MAX_REFUEL = 1_00000000;
 
         /// <summary>
         /// Triggered when a contract calls System.Runtime.Notify.
@@ -160,11 +159,12 @@ namespace Neo.SmartContract
 
         internal void Refuel(long gas)
         {
+            if (ScriptContainer is not Transaction tx) throw new InvalidOperationException();
             checked
             {
                 gas_refuel += gas;
-                if (gas_refuel > MAX_REFUEL)
-                    throw new InvalidOperationException("The MAX_REFUEL limit has been exceeded.");
+                if (gas_refuel > tx.SystemFee + tx.NetworkFee)
+                    throw new InvalidOperationException("Too much GAS is refuelled.");
                 gas_amount += gas;
             }
         }
