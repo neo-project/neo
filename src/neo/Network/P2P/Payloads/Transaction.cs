@@ -407,7 +407,7 @@ namespace Neo.Network.P2P.Payloads
                         if (!Crypto.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript.AsSpan(2), pubkey, ECCurve.Secp256r1))
                             return VerifyResult.Invalid;
                     }
-                    catch (ArgumentException)
+                    catch (Exception)
                     {
                         return VerifyResult.Invalid;
                     }
@@ -430,7 +430,7 @@ namespace Neo.Network.P2P.Payloads
                                 return VerifyResult.Invalid;
                         }
                     }
-                    catch (ArgumentException)
+                    catch (Exception)
                     {
                         return VerifyResult.Invalid;
                     }
