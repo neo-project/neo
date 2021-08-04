@@ -430,7 +430,7 @@ namespace Neo.Network.P2P.Payloads
                                 return VerifyResult.Invalid;
                         }
                     }
-                    catch (Exception)
+                    catch
                     {
                         return VerifyResult.Invalid;
                     }
