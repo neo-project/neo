@@ -40,7 +40,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private async ContractTask Refuel(ApplicationEngine engine, UInt160 account, long amount)
         {
-            if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            if (amount <= 0 || amount > 1_00000000) throw new ArgumentOutOfRangeException(nameof(amount));
             if (!engine.CheckWitnessInternal(account)) throw new InvalidOperationException();
             await Burn(engine, account, amount);
             engine.Refuel(amount);
