@@ -162,11 +162,11 @@ namespace Neo.SmartContract
         {
             checked
             {
-                gas_amount += gas;
                 gas_refuel += gas;
+                if (gas_refuel > MAX_REFUEL)
+                    throw new InvalidOperationException();
+                gas_amount += gas;
             }
-            if (gas_refuel > MAX_REFUEL)
-                throw new InvalidOperationException();
         }
 
         protected override void OnFault(Exception ex)
