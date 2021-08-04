@@ -65,7 +65,7 @@ namespace Neo.UnitTests.SmartContract.Native
             byte[] script;
             using (ScriptBuilder sb = new())
             {
-                sb.EmitDynamicCall(NativeContract.GAS.Hash, "refuel", accBalance.ScriptHash, 100 * NativeContract.GAS.Factor);
+                sb.EmitDynamicCall(NativeContract.GAS.Hash, "refuel", accBalance.ScriptHash, 1 * NativeContract.GAS.Factor);
                 sb.Emit(OpCode.DROP);
                 sb.EmitSysCall(ApplicationEngine.System_Runtime_GasLeft);
                 script = sb.ToArray();
@@ -91,7 +91,7 @@ namespace Neo.UnitTests.SmartContract.Native
             engine.LoadScript(tx.Script);
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual(1, engine.ResultStack.Count);
-            Assert.AreEqual(100_00300140, engine.ResultStack.Pop().GetInteger());
+            Assert.AreEqual(1_00300140, engine.ResultStack.Pop().GetInteger());
 
             entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             Assert.AreEqual(0, entry.GetInteroperable<AccountState>().Balance);
