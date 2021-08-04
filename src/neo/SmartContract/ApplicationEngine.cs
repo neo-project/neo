@@ -164,7 +164,7 @@ namespace Neo.SmartContract
             {
                 gas_refuel += gas;
                 if (gas_refuel > MAX_REFUEL)
-                    throw new InvalidOperationException();
+                    throw new InvalidOperationException("The MAX_REFUEL limit has been exceeded.");
                 gas_amount += gas;
             }
         }
