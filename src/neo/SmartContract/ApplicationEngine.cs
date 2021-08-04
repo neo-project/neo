@@ -86,7 +86,7 @@ namespace Neo.SmartContract
         /// GAS spent to execute.
         /// </summary>
         public long GasConsumed { get; private set; } = 0;
-        public long GasRefueled { get; private set; } = 0;
+        public long GasRefueledSummary { get; private set; } = 0;
 
         /// <summary>
         /// The remaining GAS that can be spent in order to complete the execution.
@@ -162,8 +162,8 @@ namespace Neo.SmartContract
         {
             checked
             {
-                GasRefueled += gas;
-                if (GasRefueledLimit < GasRefueled)
+                GasRefueledSummary += gas;
+                if (GasRefueledLimit < GasRefueledSummary)
                     throw new InvalidOperationException("Exceed gas refuel limit");
                 gas_amount += gas;
             }
