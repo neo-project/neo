@@ -1194,6 +1194,15 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             tx.Witnesses = data.GetWitnesses();
             tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Succeed);
+
+            // Different hash
+
+            tx.Witnesses[0] = new Witness()
+            {
+                VerificationScript = walletB.GetAccounts().First().Contract.Script,
+                InvocationScript = tx.Witnesses[0].InvocationScript.ToArray()
+            };
+            tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Invalid);
         }
 
         [TestMethod]
