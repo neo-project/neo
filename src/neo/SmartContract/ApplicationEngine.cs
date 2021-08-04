@@ -162,9 +162,9 @@ namespace Neo.SmartContract
         {
             checked
             {
+                GasRefueled += gas;
                 if (GasRefueledLimit < GasRefueled)
                     throw new InvalidOperationException("Exceed gas refuel limit");
-                GasRefueled += gas;
                 gas_amount += gas;
             }
         }
