@@ -91,10 +91,10 @@ namespace Neo.UnitTests.SmartContract.Native
             engine.LoadScript(tx.Script);
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual(1, engine.ResultStack.Count);
-            Assert.AreEqual(1_00300140, engine.ResultStack.Pop().GetInteger());
+            Assert.AreEqual(1_00296140, engine.ResultStack.Pop().GetInteger());
 
             entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
-            Assert.AreEqual(0, entry.GetInteroperable<AccountState>().Balance);
+            Assert.AreEqual(99_00000000, entry.GetInteroperable<AccountState>().Balance);
         }
 
         [TestMethod]
