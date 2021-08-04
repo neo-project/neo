@@ -41,6 +41,8 @@ namespace Neo.SmartContract.Native
         private async ContractTask Refuel(ApplicationEngine engine, UInt160 account, long amount)
         {
             if (amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            if (ContractManagement.GetContract(engine.Snapshot, engine.CallingScriptHash) is null)
+                throw new InvalidOperationException();
             if (!engine.CheckWitnessInternal(account)) throw new InvalidOperationException();
             engine.Refuel(amount);
             await Burn(engine, account, amount);
