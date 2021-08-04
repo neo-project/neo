@@ -1,8 +1,5 @@
-#pragma warning disable IDE0051
-
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
-using System;
 
 namespace Neo.SmartContract.Native
 {
@@ -35,15 +32,6 @@ namespace Neo.SmartContract.Native
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings.ValidatorsCount);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
             await Mint(engine, primary, totalNetworkFee, false);
-        }
-
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private async ContractTask Refuel(ApplicationEngine engine, UInt160 account, long amount)
-        {
-            if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
-            if (!engine.CheckWitnessInternal(account)) throw new InvalidOperationException();
-            await Burn(engine, account, amount);
-            engine.Refuel(amount);
         }
     }
 }
