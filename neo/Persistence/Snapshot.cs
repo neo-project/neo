@@ -89,11 +89,12 @@ namespace Neo.Persistence
             {
                 uint amount = 0;
                 uint ustart = group.Key.StartHeight / Blockchain.DecrementInterval;
-                if (ustart < Blockchain.GenerationAmount.Length)
+                if (ustart < Blockchain.GenerationAmount.Length && group.Key.StartHeight < Blockchain.NoBonusHeight)
                 {
                     uint istart = group.Key.StartHeight % Blockchain.DecrementInterval;
-                    uint uend = group.Key.EndHeight / Blockchain.DecrementInterval;
-                    uint iend = group.Key.EndHeight % Blockchain.DecrementInterval;
+                    uint endHeight = Math.Min(group.Key.EndHeight, Blockchain.NoBonusHeight);
+                    uint uend = endHeight / Blockchain.DecrementInterval;
+                    uint iend = endHeight % Blockchain.DecrementInterval;
                     if (uend >= Blockchain.GenerationAmount.Length)
                     {
                         uend = (uint)Blockchain.GenerationAmount.Length;
