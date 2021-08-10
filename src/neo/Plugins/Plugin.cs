@@ -78,7 +78,7 @@ namespace Neo.Plugins
         /// </summary>
         protected Plugin()
         {
-            if (!Plugins.Contains(this))Plugins.Add(this);
+            if (!Plugins.Contains(this)) Plugins.Add(this);
 
             if (this is ILogPlugin logger && !Loggers.Contains(logger)) Loggers.Add(logger);
             if (this is IStorageProvider storage && !Storages.ContainsKey(Name)) Storages.Add(Name, storage);
