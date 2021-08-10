@@ -34,10 +34,11 @@ namespace Neo.Persistence
             snapshot?.Delete(key.ToArray());
         }
 
-        public override void Commit()
+        public override byte[] Commit()
         {
             base.Commit();
             snapshot.Commit();
+            return null;
         }
 
         protected override bool ContainsInternal(StorageKey key)
