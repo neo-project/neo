@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace Neo.Ledger
 {
@@ -390,6 +391,8 @@ namespace Neo.Ledger
                     all_application_executed.Add(application_executed);
                 }
                 DataCache clonedSnapshot = snapshot.CreateSnapshot();
+                using var sha256 = SHA256.Create();
+                byte[] state = null;
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (Transaction tx in block.Transactions)
                 {
@@ -397,7 +400,7 @@ namespace Neo.Ledger
                     engine.LoadScript(tx.Script);
                     if (engine.Execute() == VMState.HALT)
                     {
-                        clonedSnapshot.Commit();
+                        state = sha256.ComputeHash(clonedSnapshot.Commit()).XOR(state);
                     }
                     else
                     {
@@ -417,6 +420,10 @@ namespace Neo.Ledger
                 }
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(system, block, snapshot, all_application_executed);
+
+                // TODO: this should be moved to a native contract or somewhere to make is more reasonable
+                // The key should contain the block height
+                snapshot.Add(new StorageKey(), new StorageItem(state));
                 snapshot.Commit();
                 List<Exception> commitExceptions = null;
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)

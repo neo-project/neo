@@ -298,5 +298,16 @@ namespace Neo
                 return endPoint;
             return new IPEndPoint(endPoint.Address.Unmap(), endPoint.Port);
         }
+
+        internal static byte[] XOR(this byte[] value, byte[] other)
+        {
+            if (value.Length != other.Length) return null;
+
+            for (int i = 0; i < value.Length; i++)
+            {
+                value[i] ^= other[i];
+            }
+            return value;
+        }
     }
 }

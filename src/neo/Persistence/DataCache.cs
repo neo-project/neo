@@ -2,7 +2,10 @@ using Neo.IO;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using Neo.Cryptography;
 
 namespace Neo.Persistence
 {
@@ -30,6 +33,16 @@ namespace Neo.Persistence
             /// The state of the entry.
             /// </summary>
             public TrackState State;
+
+            public byte[] GetHash()
+            {
+                using MemoryStream ms = new();
+                using BinaryWriter writer = new(ms);
+                writer.Write(Key);
+                writer.Write(Item);
+                writer.Write((byte)State);
+                return ms.ToArray().Sha256();
+            }
         }
 
         private readonly Dictionary<StorageKey, Trackable> dictionary = new();
@@ -100,10 +113,14 @@ namespace Neo.Persistence
         /// <summary>
         /// Commits all changes in the cache to the underlying storage.
         /// </summary>
-        public virtual void Commit()
+        public virtual byte[] Commit()
         {
+            using var sha256 = SHA256.Create();
+            byte[] state = null;
             LinkedList<StorageKey> deletedItem = new();
             foreach (Trackable trackable in GetChangeSet())
+            {
+                state = sha256.ComputeHash(trackable.GetHash()).XOR(state);
                 switch (trackable.State)
                 {
                     case TrackState.Added:
@@ -119,11 +136,14 @@ namespace Neo.Persistence
                         deletedItem.AddFirst(trackable.Key);
                         break;
                 }
+            }
+
             foreach (StorageKey key in deletedItem)
             {
                 dictionary.Remove(key);
             }
             changeSet.Clear();
+            return state;
         }
 
         /// <summary>
