@@ -65,7 +65,7 @@ namespace Neo.Plugins
                 {
                     EnableRaisingEvents = true,
                     IncludeSubdirectories = true,
-                    NotifyFilter = NotifyFilters.CreationTime | NotifyFilters.LastWrite | NotifyFilters.Size,
+                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.CreationTime | NotifyFilters.LastWrite | NotifyFilters.Size,
                 };
                 configWatcher.Changed += ConfigWatcher_Changed;
                 configWatcher.Created += ConfigWatcher_Changed;
