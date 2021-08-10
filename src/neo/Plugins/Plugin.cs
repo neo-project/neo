@@ -78,13 +78,13 @@ namespace Neo.Plugins
         /// </summary>
         protected Plugin()
         {
-            Plugins.Add(this);
+            if (!Plugins.Contains(this))Plugins.Add(this);
 
-            if (this is ILogPlugin logger) Loggers.Add(logger);
-            if (this is IStorageProvider storage) Storages.Add(Name, storage);
-            if (this is IP2PPlugin p2p) P2PPlugins.Add(p2p);
-            if (this is IPersistencePlugin persistence) PersistencePlugins.Add(persistence);
-            if (this is IMemoryPoolTxObserverPlugin txObserver) TxObserverPlugins.Add(txObserver);
+            if (this is ILogPlugin logger && !Loggers.Contains(logger)) Loggers.Add(logger);
+            if (this is IStorageProvider storage && !Storages.ContainsKey(Name)) Storages.Add(Name, storage);
+            if (this is IP2PPlugin p2p && !P2PPlugins.Contains(p2p)) P2PPlugins.Add(p2p);
+            if (this is IPersistencePlugin persistence && !PersistencePlugins.Contains(persistence)) PersistencePlugins.Add(persistence);
+            if (this is IMemoryPoolTxObserverPlugin txObserver && !TxObserverPlugins.Contains(txObserver)) TxObserverPlugins.Add(txObserver);
             if (this is IApplicationEngineProvider provider) ApplicationEngine.SetApplicationEngineProvider(provider);
 
             Configure();
