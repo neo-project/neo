@@ -30,8 +30,6 @@ namespace Neo.Plugins
         /// </summary>
         public static readonly string PluginsDirectory = Combine(GetDirectoryName(Assembly.GetEntryAssembly().Location), "Plugins");
 
-        private static readonly FileSystemWatcher configWatcher;
-
         /// <summary>
         /// Indicates the location of the plugin configuration file.
         /// </summary>
@@ -61,14 +59,6 @@ namespace Neo.Plugins
         {
             if (Directory.Exists(PluginsDirectory))
             {
-                configWatcher = new FileSystemWatcher(PluginsDirectory)
-                {
-                    EnableRaisingEvents = true,
-                    IncludeSubdirectories = true,
-                    NotifyFilter = NotifyFilters.CreationTime | NotifyFilters.LastWrite | NotifyFilters.Size,
-                };
-                configWatcher.Changed += ConfigWatcher_Changed;
-                configWatcher.Created += ConfigWatcher_Changed;
                 AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
             }
         }
@@ -95,29 +85,6 @@ namespace Neo.Plugins
         /// </summary>
         protected virtual void Configure()
         {
-        }
-
-        private static void ConfigWatcher_Changed(object sender, FileSystemEventArgs e)
-        {
-            switch (GetExtension(e.Name))
-            {
-                case ".json":
-                    try
-                    {
-                        Plugins.FirstOrDefault(p => p.ConfigFile == e.FullPath)?.Configure();
-                    }
-                    catch (FormatException) { }
-                    break;
-                case ".dll":
-                    if (e.ChangeType != WatcherChangeTypes.Created) return;
-                    if (GetDirectoryName(e.FullPath) != PluginsDirectory) return;
-                    try
-                    {
-                        LoadPlugin(Assembly.Load(File.ReadAllBytes(e.FullPath)));
-                    }
-                    catch { }
-                    break;
-            }
         }
 
         private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
