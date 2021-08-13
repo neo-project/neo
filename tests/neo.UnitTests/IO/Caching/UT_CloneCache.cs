@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Persistence;
+using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,14 +36,14 @@ namespace Neo.UnitTests.IO.Caching
             clonedCache[new MyKey("key1")].Should().Be(new MyValue("value1"));
 
             clonedCache.Commit();
-            myDataCache[new MyKey("key1")].Should().Be(new MyValue("value1"));
+            Assert.IsTrue(myDataCache[new MyKey("key1")].Value.SequenceEqual(new MyValue("value1").Value));
         }
 
         [TestMethod]
         public void TestDeleteInternal()
         {
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-            clonedCache.Delete(new MyKey("key1"));   //  trackable.State = TrackState.Deleted 
+            clonedCache.Delete(new MyKey("key1"));   //  trackable.State = TrackState.Deleted
             clonedCache.Commit();
 
             clonedCache.TryGet(new MyKey("key1")).Should().BeNull();
@@ -123,6 +124,34 @@ namespace Neo.UnitTests.IO.Caching
             new MyValue("value_new_2").Should().Be(clonedCache[new MyKey("key2")]);
             new MyValue("value_new_3").Should().Be(clonedCache[new MyKey("key3")]);
             new MyValue("value_new_2").Should().Be(clonedCache[new MyKey("key2")]);
+        }
+
+        [TestMethod]
+        public void TestCacheOverrideIssue2572()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshot();
+            var storages = snapshot.CreateSnapshot();
+
+            storages.Add
+                (
+                new StorageKey() { Key = new byte[] { 0x00, 0x01 }, Id = 0 },
+                new StorageItem() { Value = new byte[] { } }
+                );
+            storages.Add
+                (
+                new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 },
+                new StorageItem() { Value = new byte[] { 0x05 } }
+                );
+
+            storages.Commit();
+
+            var item = storages.GetAndChange(new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 });
+            item.Value = new byte[] { 0x06 };
+
+            var res = snapshot.TryGet(new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 });
+            Assert.AreEqual("05", res.Value.ToHexString());
+            res = storages.TryGet(new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 });
+            Assert.AreEqual("06", res.Value.ToHexString());
         }
     }
 }
