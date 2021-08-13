@@ -89,7 +89,7 @@ namespace Neo.SmartContract
         {
             return new StorageItem
             {
-                Value = Value
+                Value = (byte[])Value.Clone()
             };
         }
 
@@ -104,7 +104,7 @@ namespace Neo.SmartContract
         /// <param name="replica">The instance to be copied.</param>
         public void FromReplica(StorageItem replica)
         {
-            Value = replica.Value;
+            Value = (byte[])replica.Value.Clone();
         }
 
         /// <summary>
