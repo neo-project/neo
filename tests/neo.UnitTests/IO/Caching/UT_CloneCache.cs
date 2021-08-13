@@ -150,7 +150,8 @@ namespace Neo.UnitTests.IO.Caching
 
             var res = snapshot.TryGet(new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 });
             Assert.AreEqual("05", res.Value.ToHexString());
-            res = storages.TryGet(new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 });
+            storages.Commit();
+            res = snapshot.TryGet(new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 });
             Assert.AreEqual("06", res.Value.ToHexString());
         }
     }
