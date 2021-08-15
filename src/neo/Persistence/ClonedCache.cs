@@ -24,7 +24,7 @@ namespace Neo.Persistence
 
         protected override void AddInternal(StorageKey key, StorageItem value)
         {
-            innerCache.Add(key, value);
+            innerCache.Add(key, value.Clone());
         }
 
         protected override void DeleteInternal(StorageKey key)
