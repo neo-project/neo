@@ -135,7 +135,7 @@ namespace Neo.UnitTests.IO.Caching
             storages.Add
                 (
                 new StorageKey() { Key = new byte[] { 0x00, 0x01 }, Id = 0 },
-                new StorageItem() { Value = new byte[] { } }
+                new StorageItem() { Value = Array.Empty<byte>() }
                 );
             storages.Add
                 (
