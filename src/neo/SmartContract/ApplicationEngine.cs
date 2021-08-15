@@ -178,6 +178,9 @@ namespace Neo.SmartContract
 
         private ExecutionContext CallContractInternal(ContractState contract, ContractMethodDescriptor method, CallFlags flags, bool hasReturnValue, IReadOnlyList<StackItem> args)
         {
+            if (NativeContract.Policy.IsBlocked(Snapshot, contract.Hash))
+                throw new InvalidOperationException($"The contract {contract.Hash} has been blocked.");
+
             if (method.Safe)
             {
                 flags &= ~(CallFlags.WriteStates | CallFlags.AllowNotify);
