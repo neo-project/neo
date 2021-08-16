@@ -30,6 +30,8 @@ namespace Neo.Plugins
         /// </summary>
         public static readonly string PluginsDirectory = Combine(GetDirectoryName(Assembly.GetEntryAssembly().Location), "Plugins");
 
+        private static readonly FileSystemWatcher configWatcher;
+
         /// <summary>
         /// Indicates the location of the plugin configuration file.
         /// </summary>
@@ -59,6 +61,14 @@ namespace Neo.Plugins
         {
             if (Directory.Exists(PluginsDirectory))
             {
+                configWatcher = new FileSystemWatcher(PluginsDirectory)
+                {
+                    EnableRaisingEvents = true,
+                    IncludeSubdirectories = true,
+                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.CreationTime | NotifyFilters.LastWrite | NotifyFilters.Size,
+                };
+                configWatcher.Changed += ConfigWatcher_Changed;
+                configWatcher.Created += ConfigWatcher_Changed;
                 AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
             }
         }
@@ -85,6 +95,19 @@ namespace Neo.Plugins
         /// </summary>
         protected virtual void Configure()
         {
+        }
+
+        private static void ConfigWatcher_Changed(object sender, FileSystemEventArgs e)
+        {
+            switch (GetExtension(e.Name))
+            {
+                case ".json":
+                    Utility.Log(nameof(Plugin), LogLevel.Warning, $"Config file {e.Name} is {e.ChangeType}, please restart node.");
+                    break;
+                case ".dll":
+                    Utility.Log(nameof(Plugin), LogLevel.Warning, $"Dll file {e.Name} is {e.ChangeType}, please restart node.");
+                    break;
+            }
         }
 
         private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
