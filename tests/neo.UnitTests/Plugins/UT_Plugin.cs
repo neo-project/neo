@@ -15,7 +15,10 @@ namespace Neo.UnitTests.Plugins
         {
             public void OnVerifiedInventory(IInventory inventory) { }
         }
-        private class DummyPersistencePlugin : IPersistencePlugin { }
+        private class DummyPersistencePlugin : IPersistencePlugin
+        {
+            public uint CurrentHeight => 0;
+        }
 
         [TestMethod]
         public void TestIP2PPlugin()
@@ -35,6 +38,7 @@ namespace Neo.UnitTests.Plugins
 
             pp.OnCommit(null, null, null);
             pp.OnPersist(null, null, null, null);
+            Assert.AreEqual(pp.CurrentHeight, 0u);
         }
 
         [TestMethod]

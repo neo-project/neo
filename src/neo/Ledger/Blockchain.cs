@@ -417,26 +417,29 @@ namespace Neo.Ledger
                 }
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(system, block, snapshot, all_application_executed);
-                snapshot.Commit();
                 List<Exception> commitExceptions = null;
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                 {
-                    try
+                    if (plugin.CurrentHeight < block.Index)
                     {
-                        plugin.OnCommit(system, block, snapshot);
-                    }
-                    catch (Exception ex)
-                    {
-                        if (plugin.ShouldThrowExceptionFromCommit(ex))
+                        try
                         {
-                            if (commitExceptions == null)
-                                commitExceptions = new List<Exception>();
+                            plugin.OnCommit(system, block, snapshot);
+                        }
+                        catch (Exception ex)
+                        {
+                            if (plugin.ShouldThrowExceptionFromCommit(ex))
+                            {
+                                if (commitExceptions == null)
+                                    commitExceptions = new List<Exception>();
 
-                            commitExceptions.Add(ex);
+                                commitExceptions.Add(ex);
+                            }
                         }
                     }
                 }
                 if (commitExceptions != null) throw new AggregateException(commitExceptions);
+                snapshot.Commit();
                 system.MemPool.UpdatePoolForBlockPersisted(block, snapshot);
             }
             extensibleWitnessWhiteList = null;

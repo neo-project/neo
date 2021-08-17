@@ -12,6 +12,11 @@ namespace Neo.Plugins
     public interface IPersistencePlugin
     {
         /// <summary>
+        /// Indicate current persisted height.
+        /// </summary>
+        uint CurrentHeight { get; }
+
+        /// <summary>
         /// Called when a block is being persisted.
         /// </summary>
         /// <param name="system">The <see cref="NeoSystem"/> object that contains the blockchain.</param>
