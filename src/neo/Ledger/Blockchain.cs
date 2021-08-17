@@ -416,7 +416,12 @@ namespace Neo.Ledger
                     all_application_executed.Add(application_executed);
                 }
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
-                    plugin.OnPersist(system, block, snapshot, all_application_executed);
+                {
+                    if (plugin.CurrentHeight < block.Index)
+                    {
+                        plugin.OnPersist(system, block, snapshot, all_application_executed);
+                    }
+                }
                 List<Exception> commitExceptions = null;
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                 {
