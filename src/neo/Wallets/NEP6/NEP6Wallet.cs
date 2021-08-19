@@ -328,6 +328,15 @@ namespace Neo.Wallets.NEP6
             return new WalletLocker(this);
         }
 
+        /// <summary>
+        /// Unlock empty wallet with the specified password.
+        /// </summary>
+        /// <param name="password">The password of the wallet.</param>
+        public void UnlockEmpty(string password)
+        {
+            this.password = password;
+        }
+
         public override bool VerifyPassword(string password)
         {
             lock (accounts)
