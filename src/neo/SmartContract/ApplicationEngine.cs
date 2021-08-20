@@ -40,7 +40,7 @@ namespace Neo.SmartContract
 
         private static IApplicationEngineProvider applicationEngineProvider;
         private static Dictionary<uint, InteropDescriptor> services;
-        private long gas_amount;
+        private readonly long gas_amount;
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
@@ -156,14 +156,6 @@ namespace Neo.SmartContract
                 throw new InvalidOperationException("Insufficient GAS.");
         }
 
-        internal void Refuel(long gas)
-        {
-            checked
-            {
-                gas_amount += gas;
-            }
-        }
-
         protected override void OnFault(Exception ex)
         {
             FaultException = ex;
@@ -186,6 +178,9 @@ namespace Neo.SmartContract
 
         private ExecutionContext CallContractInternal(ContractState contract, ContractMethodDescriptor method, CallFlags flags, bool hasReturnValue, IReadOnlyList<StackItem> args)
         {
+            if (NativeContract.Policy.IsBlocked(Snapshot, contract.Hash))
+                throw new InvalidOperationException($"The contract {contract.Hash} has been blocked.");
+
             if (method.Safe)
             {
                 flags &= ~(CallFlags.WriteStates | CallFlags.AllowNotify);
