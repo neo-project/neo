@@ -188,21 +188,24 @@ namespace Neo.Wallets
                         orderedAccounts.RemoveAt(i);
                         i--;
                     }
-                    for (i = 0; amount > 0 && i < orderedAccounts.Count; i++)
+                    if (amount > 0)
                     {
-                        if (orderedAccounts[i].Value < amount)
-                            continue;
-                        if (orderedAccounts[i].Value == amount)
+                        for (i = 0; i < orderedAccounts.Count; i++)
                         {
-                            result.Add(orderedAccounts[i]);
-                            orderedAccounts.RemoveAt(i);
+                            if (orderedAccounts[i].Value < amount)
+                                continue;
+                            if (orderedAccounts[i].Value == amount)
+                            {
+                                result.Add(orderedAccounts[i]);
+                                orderedAccounts.RemoveAt(i);
+                            }
+                            else
+                            {
+                                result.Add((orderedAccounts[i].Account, amount));
+                                orderedAccounts[i] = (orderedAccounts[i].Account, orderedAccounts[i].Value - amount);
+                            }
+                            break;
                         }
-                        else
-                        {
-                            result.Add((orderedAccounts[i].Account, amount));
-                            orderedAccounts[i] = (orderedAccounts[i].Account, orderedAccounts[i].Value - amount);
-                        }
-                        break;
                     }
                 }
             }
