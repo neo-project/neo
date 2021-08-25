@@ -259,6 +259,10 @@ namespace Neo.UnitTests.SmartContract
 
             Action action = () => engine.CheckWitness(System.Array.Empty<byte>());
             action.Should().Throw<ArgumentException>();
+
+            engine.CurrentContext.GetState<ExecutionContextState>().CallFlags |= CallFlags.DisableCheckWitness;
+            action = () => engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeTrue();
+            action.Should().Throw<InvalidOperationException>();
         }
 
         [TestMethod]

@@ -34,6 +34,11 @@ namespace Neo.SmartContract
         AllowNotify = 0b00001000,
 
         /// <summary>
+        /// Indicates that the called contract is not allowed to check witnesses.
+        /// </summary>
+        DisableCheckWitness = 0b00010000,
+
+        /// <summary>
         /// Indicates that the called contract is allowed to read or write states.
         /// </summary>
         States = ReadStates | WriteStates,

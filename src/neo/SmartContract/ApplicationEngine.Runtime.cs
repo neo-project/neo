@@ -185,6 +185,10 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the account has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
         protected internal bool CheckWitnessInternal(UInt160 hash)
         {
+            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
+            if (state.CallFlags.HasFlag(CallFlags.DisableCheckWitness))
+                throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
+
             if (hash.Equals(CallingScriptHash)) return true;
 
             if (ScriptContainer is Transaction tx)
