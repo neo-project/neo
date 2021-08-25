@@ -229,7 +229,7 @@ namespace Neo.SmartContract
 
                     ValidateCallFlags(CallFlags.ReadStates);
 
-                    var contract = NativeContract.ContractManagement.GetContract(Snapshot, CallingScriptHash);
+                    var contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
                     // check if current group is the required one
                     if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(signer.AllowedGroups).Any())
                         return true;
