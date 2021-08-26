@@ -69,6 +69,7 @@ namespace Neo.Plugins
                 };
                 configWatcher.Changed += ConfigWatcher_Changed;
                 configWatcher.Created += ConfigWatcher_Changed;
+                configWatcher.Renamed += ConfigWatcher_Changed;
                 AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
             }
         }
