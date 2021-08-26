@@ -27,13 +27,16 @@ namespace Neo.SmartContract.Native
         {
             engine.Snapshot.Add(CreateStorageKey(Prefix_BlockHash).AddBigEndian(engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray()));
             engine.Snapshot.Add(CreateStorageKey(Prefix_Block).Add(engine.PersistingBlock.Hash), new StorageItem(Trim(engine.PersistingBlock).ToArray()));
+            int txindex = 0;
             foreach (Transaction tx in engine.PersistingBlock.Transactions)
             {
                 engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(tx.Hash), new StorageItem(new TransactionState
                 {
                     BlockIndex = engine.PersistingBlock.Index,
-                    Transaction = tx
+                    Transaction = tx,
+                    State = engine.PersistingBlock.TransactionStates[txindex]
                 }));
+                txindex++;
             }
             return ContractTask.CompletedTask;
         }
