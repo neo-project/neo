@@ -2,6 +2,7 @@
 
 using Neo.Persistence;
 using System;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -126,6 +127,7 @@ namespace Neo.SmartContract.Native
         private bool BlockAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            if (Contracts.Any(u => u.Hash == account)) throw new InvalidOperationException("Is not possible to block a native contract.");
 
             var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
             if (engine.Snapshot.Contains(key)) return false;
