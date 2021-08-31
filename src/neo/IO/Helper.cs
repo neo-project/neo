@@ -2,6 +2,7 @@ using K4os.Compression.LZ4;
 using System;
 using System.Buffers;
 using System.Buffers.Binary;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -192,6 +193,28 @@ namespace Neo.IO
             return GetVarSize(value.Count) + value_size;
         }
 
+
+
+
+        /// <summary>
+        /// Gets the size of the specified Dictionary encoded in variable-length encoding.
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="dict"></param>
+        /// <returns></returns>
+        public static int GetVarSize<TKey, TValue>(this IDictionary<TKey, TValue[]> dict) where TKey : ISerializable where TValue : ISerializable
+        {
+            var countSize = GetVarSize(dict.Count);
+            int valueSize = 0;
+            foreach (var key in dict.Keys)
+            {
+                valueSize += key.Size;
+                valueSize += dict[key].GetVarSize();
+            }
+            return countSize + valueSize;
+        }
+
         /// <summary>
         /// Gets the size of the specified <see cref="string"/> encoded in variable-length encoding.
         /// </summary>
@@ -287,6 +310,32 @@ namespace Neo.IO
             }
             return array;
         }
+
+
+
+        /// <summary>
+        /// Reads an <see cref="ISerializable"/> Dictionary(TKey,TValue[]) from a <see cref="BinaryReader"/>.
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
+        /// <param name="max">The maximum number of elements in the array.</param>
+        /// <returns>The array read from the <see cref="BinaryReader"/>.</returns>
+        public static IDictionary<TKey, TValue[]> ReadLookup<TKey, TValue>(this BinaryReader reader, int max = 0x1000000)
+            where TKey : ISerializable, new()
+            where TValue : ISerializable, new()
+        {
+            var dict = new Dictionary<TKey, TValue[]>();
+            var count = reader.ReadVarInt();
+            for (uint i = 0; i < count; i++)
+            {
+                var key = reader.ReadSerializable<TKey>();
+                var value = reader.ReadSerializableArray<TValue>();
+                dict[key] = value;
+            }
+            return dict;
+        }
+
 
         /// <summary>
         /// Reads a byte array from a <see cref="BinaryReader"/>.
@@ -473,6 +522,26 @@ namespace Neo.IO
         public static void WriteVarString(this BinaryWriter writer, string value)
         {
             writer.WriteVarBytes(Utility.StrictUTF8.GetBytes(value));
+        }
+
+
+        /// <summary>
+        /// Writes an <see cref="ISerializable"/> Dictionary(TKey,TValue[]) into a <see cref="BinaryWriter"/>.
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="writer"></param>
+        /// <param name="dict"></param>
+        public static void WriteLookup<TKey, TValue>(this BinaryWriter writer, IDictionary<TKey, TValue[]> dict)
+            where TKey : ISerializable
+            where TValue : class, ISerializable
+        {
+            writer.WriteVarInt(dict.Count);
+            foreach (var key in dict.Keys)
+            {
+                writer.Write(key);
+                writer.Write(dict[key]);
+            }
         }
     }
 }

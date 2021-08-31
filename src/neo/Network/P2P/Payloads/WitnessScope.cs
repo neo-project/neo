@@ -21,6 +21,16 @@ namespace Neo.Network.P2P.Payloads
         CalledByEntry = 0x01,
 
         /// <summary>
+        /// Custom calling contract hash for contract-specific.
+        /// </summary>
+        CustomCallingContracts = 0x02,
+
+        /// <summary>
+        ///  Custom  pubkey for calling group members.
+        /// </summary>
+        CustomCallingGroups = 0x04,
+
+        /// <summary>
         /// Custom hash for contract-specific.
         /// </summary>
         CustomContracts = 0x10,

@@ -2,6 +2,7 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -35,17 +36,22 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         public ECPoint[] AllowedGroups;
 
+        public IDictionary<UInt160, UInt160[]> AllowedCallingContracts;
+        public IDictionary<UInt160, ECPoint[]> AllowedCallingGroup;
+
         public int Size =>
             /*Account*/             UInt160.Length +
             /*Scopes*/              sizeof(WitnessScope) +
             /*AllowedContracts*/    (Scopes.HasFlag(WitnessScope.CustomContracts) ? AllowedContracts.GetVarSize() : 0) +
-            /*AllowedGroups*/       (Scopes.HasFlag(WitnessScope.CustomGroups) ? AllowedGroups.GetVarSize() : 0);
+            /*AllowedGroups*/       (Scopes.HasFlag(WitnessScope.CustomGroups) ? AllowedGroups.GetVarSize() : 0) +
+            /*AllowedCustomCallingContracts*/  (Scopes.HasFlag(WitnessScope.CustomCallingContracts) ? AllowedCallingContracts.GetVarSize() : 0) +
+            /*AllowedCustomCallingGroups*/  (Scopes.HasFlag(WitnessScope.CustomCallingGroups) ? AllowedCallingGroup.GetVarSize() : 0);
 
         public void Deserialize(BinaryReader reader)
         {
             Account = reader.ReadSerializable<UInt160>();
             Scopes = (WitnessScope)reader.ReadByte();
-            if ((Scopes & ~(WitnessScope.CalledByEntry | WitnessScope.CustomContracts | WitnessScope.CustomGroups | WitnessScope.Global)) != 0)
+            if ((Scopes & ~(WitnessScope.CalledByEntry | WitnessScope.CustomContracts | WitnessScope.CustomGroups | WitnessScope.CustomCallingContracts | WitnessScope.CustomCallingGroups | WitnessScope.Global)) != 0)
                 throw new FormatException();
             if (Scopes.HasFlag(WitnessScope.Global) && Scopes != WitnessScope.Global)
                 throw new FormatException();
@@ -55,6 +61,13 @@ namespace Neo.Network.P2P.Payloads
             AllowedGroups = Scopes.HasFlag(WitnessScope.CustomGroups)
                 ? reader.ReadSerializableArray<ECPoint>(MaxSubitems)
                 : Array.Empty<ECPoint>();
+            AllowedCallingContracts = Scopes.HasFlag(WitnessScope.CustomCallingContracts)
+                ? reader.ReadLookup<UInt160, UInt160>()
+                : new Dictionary<UInt160, UInt160[]>();
+            AllowedCallingGroup = Scopes.HasFlag(WitnessScope.CustomCallingGroups)
+                ? reader.ReadLookup<UInt160, ECPoint>()
+                : new Dictionary<UInt160, ECPoint[]>();
+
         }
 
         public void Serialize(BinaryWriter writer)
@@ -65,6 +78,10 @@ namespace Neo.Network.P2P.Payloads
                 writer.Write(AllowedContracts);
             if (Scopes.HasFlag(WitnessScope.CustomGroups))
                 writer.Write(AllowedGroups);
+            if (Scopes.HasFlag(WitnessScope.CustomCallingContracts))
+                writer.WriteLookup(AllowedCallingContracts);
+            if (Scopes.HasFlag(WitnessScope.CustomCallingGroups))
+                writer.WriteLookup(AllowedCallingGroup);
         }
 
         /// <summary>
@@ -80,6 +97,22 @@ namespace Neo.Network.P2P.Payloads
                 json["allowedcontracts"] = AllowedContracts.Select(p => (JObject)p.ToString()).ToArray();
             if (Scopes.HasFlag(WitnessScope.CustomGroups))
                 json["allowedgroups"] = AllowedGroups.Select(p => (JObject)p.ToString()).ToArray();
+            if (Scopes.HasFlag(WitnessScope.CustomCallingContracts))
+                json["allowedcallingcontracts"] = AllowedCallingContracts.Select(p =>
+                {
+                    var obj = new JObject();
+                    obj["contact"] = p.Key.ToString();
+                    obj["trusts"] = p.Value.Select(v => (JObject)v.ToString()).ToArray();
+                    return obj;
+                }).ToArray();
+            if (Scopes.HasFlag(WitnessScope.CustomCallingGroups))
+                json["allowedcallinggroups"] = AllowedCallingGroup.Select(p =>
+                {
+                    var obj = new JObject();
+                    obj["contact"] = p.Key.ToString();
+                    obj["trusts"] = p.Value.Select(v => (JObject)v.ToString()).ToArray();
+                    return obj;
+                }).ToArray();
             return json;
         }
     }

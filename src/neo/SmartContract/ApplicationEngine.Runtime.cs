@@ -224,6 +224,30 @@ namespace Neo.SmartContract
                     if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(signer.AllowedGroups).Any())
                         return true;
                 }
+
+                if (signer.Scopes.HasFlag(WitnessScope.CustomCallingContracts))
+                {
+                    if (signer.AllowedCallingContracts.ContainsKey(CurrentScriptHash))
+                    {
+                        if (CallingScriptHash == null || CallingScriptHash == EntryScriptHash) return true;
+
+                        if (signer.AllowedCallingContracts[CurrentScriptHash].Any(a => a == CallingScriptHash)) return true;
+                    }
+                }
+
+                if (signer.Scopes.HasFlag(WitnessScope.CustomCallingGroups))
+                {
+                    // Check allow state callflag
+                    ValidateCallFlags(CallFlags.ReadStates);
+
+                    if (signer.AllowedCallingGroup.ContainsKey(CurrentScriptHash))
+                    {
+                        if (CallingScriptHash == null || CallingScriptHash == EntryScriptHash) return true;
+
+                        var contract = NativeContract.ContractManagement.GetContract(Snapshot, CallingScriptHash);
+                        if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(signer.AllowedCallingGroup[CurrentScriptHash]).Any()) return true;
+                    }
+                }
                 return false;
             }
 

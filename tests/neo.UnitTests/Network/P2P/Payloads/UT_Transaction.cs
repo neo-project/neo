@@ -10,6 +10,7 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -847,8 +848,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 {
                     Account = UInt160.Zero,
                     AllowedContracts = Array.Empty<UInt160>(),
-                    AllowedGroups = Array.Empty<ECPoint>() }
-                }
+                    AllowedGroups = Array.Empty<ECPoint>(),
+                    AllowedCallingGroup = new Dictionary<UInt160, ECPoint[]>(),
+                    AllowedCallingContracts = new Dictionary<UInt160, UInt160[]>(),
+                }, }
             );
             tx2.Script.Should().BeEquivalentTo(new byte[] { (byte)OpCode.PUSH1 });
             tx2.Witnesses.Should().BeEquivalentTo(new Witness[] { new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() } });
