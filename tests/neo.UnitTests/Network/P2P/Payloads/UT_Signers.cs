@@ -218,7 +218,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Account = UInt160.Zero
             };
 
-            var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CustomCallingContracts\",\"allowedcallingcontracts\":[{\"contact\":\"0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5\",\"trusts\":[\"0x0000000000000000000000000000000000000000\"]}]}";
+            var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CustomCallingContracts\",\"allowedcallingcontracts\":[{\"contract\":\"0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5\",\"trusts\":[\"0x0000000000000000000000000000000000000000\"]}]}";
             attr.ToJson().ToString().Should().Be(json);
         }
 
@@ -238,7 +238,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
 
 
-            var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CustomCallingGroups\",\"allowedcallinggroups\":[{\"contact\":\"0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5\",\"trusts\":[\"03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c\"]}]}";
+            var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CustomCallingGroups\",\"allowedcallinggroups\":[{\"contract\":\"0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5\",\"trusts\":[\"03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c\"]}]}";
             attr.ToJson().ToString().Should().Be(json);
         }
     }
