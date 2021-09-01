@@ -1,10 +1,9 @@
-using System.Collections.Generic;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
-using Neo.SmartContract.Native;
+using System.Collections.Generic;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -22,7 +21,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var hex = "000000000000000000000000000000000000000080";
             attr.ToArray().ToHexString().Should().Be(hex);
-
             var copy = hex.HexToBytes().AsSerializable<Signer>();
 
             Assert.AreEqual(attr.ToArray().Length, attr.Size);
@@ -41,7 +39,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var hex = "000000000000000000000000000000000000000001";
             attr.ToArray().ToHexString().Should().Be(hex);
-
             var copy = hex.HexToBytes().AsSerializable<Signer>();
 
             Assert.AreEqual(attr.ToArray().Length, attr.Size);
@@ -61,7 +58,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var hex = "000000000000000000000000000000000000000010010000000000000000000000000000000000000000";
             attr.ToArray().ToHexString().Should().Be(hex);
-
             var copy = hex.HexToBytes().AsSerializable<Signer>();
 
             Assert.AreEqual(attr.ToArray().Length, attr.Size);
@@ -82,7 +78,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var hex = "0000000000000000000000000000000000000000200103b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c";
             attr.ToArray().ToHexString().Should().Be(hex);
-
             var copy = hex.HexToBytes().AsSerializable<Signer>();
 
             Assert.AreEqual(attr.ToArray().Length, attr.Size);
@@ -90,7 +85,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             CollectionAssert.AreEqual(attr.AllowedGroups, copy.AllowedGroups);
             Assert.AreEqual(attr.Account, copy.Account);
         }
-
 
         [TestMethod]
         public void Serialize_Deserialize_CustomCallingContracts()
@@ -108,7 +102,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var hex = "00000000000000000000000000000000000000000201f563ea40bc283d4d0e05c48ea305b3f2a07340ef010000000000000000000000000000000000000000";
             attr.ToArray().ToHexString().Should().Be(hex);
-
             var copy = hex.HexToBytes().AsSerializable<Signer>();
 
             Assert.AreEqual(attr.ToArray().Length, attr.Size);
@@ -118,7 +111,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(1, copy.AllowedCallingContracts[contract].Length);
             Assert.AreEqual(attr.AllowedCallingContracts[contract][0], copy.AllowedCallingContracts[contract][0]);
         }
-
 
         [TestMethod]
         public void Serialize_Deserialize_CustomCallingGroup()
@@ -137,7 +129,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var hex = "00000000000000000000000000000000000000000401f563ea40bc283d4d0e05c48ea305b3f2a07340ef0103b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c";
             attr.ToArray().ToHexString().Should().Be(hex);
-
             var copy = hex.HexToBytes().AsSerializable<Signer>();
 
             Assert.AreEqual(attr.ToArray().Length, attr.Size);
@@ -202,8 +193,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             attr.ToJson().ToString().Should().Be(json);
         }
 
-
-
         [TestMethod]
         public void Json_CustomCallingContracts()
         {
@@ -236,7 +225,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 },
                 Account = UInt160.Zero
             };
-
 
             var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CustomCallingGroups\",\"allowedcallinggroups\":[{\"contract\":\"0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5\",\"trusts\":[\"03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c\"]}]}";
             attr.ToJson().ToString().Should().Be(json);

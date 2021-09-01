@@ -98,8 +98,6 @@ namespace Neo.UnitTests.SmartContract
             rand_5.Should().NotBe(rand_10);
         }
 
-
-
         /// <summary>
         /// Entry(CheckWitness)
         /// AllowedCallingContracts: [EntryHash]=[...]
@@ -132,7 +130,6 @@ namespace Neo.UnitTests.SmartContract
             var result = engine.ResultStack.Pop();
             Assert.IsTrue(result.GetBoolean());
         }
-
 
         /// <summary>
         /// Entry(CheckWitness)
@@ -200,7 +197,6 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(result.GetBoolean());
         }
 
-
         /// <summary>
         /// Entry=>VerifyContract(CheckWitness)
         /// AllowedCallingContracts: Empty
@@ -233,8 +229,6 @@ namespace Neo.UnitTests.SmartContract
             var result = engine.ResultStack.Pop();
             Assert.IsFalse(result.GetBoolean());
         }
-
-
 
         /// <summary>
         /// Entry=>Bridge=>Verify(CheckWitness)
@@ -347,11 +341,6 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsFalse(result.GetBoolean());
         }
 
-
-
-
-
-
         /// <summary>
         /// Entry(CheckWitness)
         /// AllowedCallingGroup: [EntryHash]=[...]
@@ -385,7 +374,6 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(result.GetBoolean());
         }
 
-
         /// <summary>
         /// Entry(CheckWitness)
         /// AllowedCallingGroup: Empty
@@ -415,8 +403,6 @@ namespace Neo.UnitTests.SmartContract
             var result = engine.ResultStack.Pop();
             Assert.IsFalse(result.GetBoolean());
         }
-
-
 
         /// <summary>
         /// Entry=>VerifyContract(CheckWitness)
@@ -454,9 +440,6 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(result.GetBoolean());
         }
 
-
-
-
         /// <summary>
         /// Entry=>VerifyContract(CheckWitness)
         /// AllowedCallingGroup: Empty
@@ -490,10 +473,8 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsFalse(result.GetBoolean());
         }
 
-
         private ECPoint _point = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1);
         private ECPoint _point2 = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a700", ECCurve.Secp256r1);
-
 
         /// <summary>
         /// Entry=>Bridge=>Verify(CheckWitness)
@@ -606,10 +587,6 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsFalse(result.GetBoolean());
         }
 
-
-
-
-
         private UInt160 GerRandomAddress()
         {
             var bytes = new byte[20];
@@ -646,7 +623,6 @@ namespace Neo.UnitTests.SmartContract
             return contract;
         }
 
-
         private ContractState GetBridgeContract()
         {
             using var script = new ScriptBuilder();
@@ -680,7 +656,6 @@ namespace Neo.UnitTests.SmartContract
             };
             return contract;
         }
-
 
         private byte[] BuildBridgeCallScript(UInt160 sender, ContractState verifyContract, ContractState bridgeContract)
         {
@@ -719,7 +694,6 @@ namespace Neo.UnitTests.SmartContract
                 });
             return script.ToArray();
         }
-
 
         private Transaction InitTx()
         {
