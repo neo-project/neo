@@ -61,7 +61,7 @@ namespace Neo.UnitTests.Cryptography
             KeyPair key = account.GetKey();
             var message = Encoding.ASCII.GetBytes("hello world");
             var cypher = Neo.Cryptography.Helper.ECEncrypt(message, key.PublicKey);
-            var m = Neo.Cryptography.Helper.ECDecrypt(cypher, key.PrivateKey, key.PublicKey);
+            var m = Neo.Cryptography.Helper.ECDecrypt(cypher, key);
             var message2 = Encoding.ASCII.GetString(m);
             Assert.AreEqual("hello world", message2);
         }

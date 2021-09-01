@@ -1,5 +1,6 @@
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.Wallets;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -160,7 +161,7 @@ namespace Neo.Cryptography
             var EM = message.AES256Encrypt(EK);
             return RBar.Concat(EM).ToArray();
         }
-        public static byte[] ECDecrypt(byte[] cypher, byte[] priKey, ECPoint pubKey)
+        public static byte[] ECDecrypt(byte[] cypher, KeyPair key)
         {
             // {R,M+rP}={rG, M+rP}=> M + rP - kR = M + r(kG) - k(rG) = M
             if (cypher is null || cypher.Length < 33)
@@ -169,8 +170,8 @@ namespace Neo.Cryptography
                 throw new ArgumentException();
             var RBar = cypher.Take(33).ToArray();
             var EM = cypher.Skip(33).ToArray();
-            var R = ECPoint.FromBytes(RBar, pubKey.Curve);
-            var k = new BigInteger(priKey.Reverse().Concat(new byte[1]).ToArray());
+            var R = ECPoint.FromBytes(RBar, key.PublicKey.Curve);
+            var k = new BigInteger(key.PrivateKey.Reverse().Concat(new byte[1]).ToArray());
             var z = ECPoint.Multiply(R, k).X; // z = k * R = k * r * G
             var EK = z.ToByteArray().Sha256();
             var M = EM.AES256Decrypt(EK);
