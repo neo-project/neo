@@ -240,12 +240,25 @@ namespace Neo.SmartContract
                     // Check allow state callflag
                     ValidateCallFlags(CallFlags.ReadStates);
 
-                    if (signer.AllowedCallingGroup.ContainsKey(CurrentScriptHash))
+                    var currentContract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
+                    var currentGroups = currentContract?.Manifest?.Groups?.Select(p => Contract.CreateSignatureRedeemScript(p.PubKey).ToScriptHash()).ToHashSet() ?? new HashSet<UInt160>();
+                    if (signer.AllowedCallingGroup.TryGetValue(CurrentScriptHash, out var contractTrusts) || signer.AllowedCallingGroup.Keys.ContainsAny(currentGroups))
                     {
                         if (CallingScriptHash == null || CallingScriptHash == EntryScriptHash) return true;
 
                         var contract = NativeContract.ContractManagement.GetContract(Snapshot, CallingScriptHash);
-                        if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(signer.AllowedCallingGroup[CurrentScriptHash]).Any()) return true;
+                        var callerGroups = contract.Manifest.Groups.Select(p => Contract.CreateSignatureRedeemScript(p.PubKey).ToScriptHash()).ToHashSet();
+                        // key is contract
+                        if (contractTrusts != null &&
+                            (contractTrusts.Contains(CallingScriptHash) || contractTrusts.ContainsAny(callerGroups))) return true;
+
+                        // key is group
+                        foreach (var currentGroup in currentGroups)
+                        {
+                            if (signer.AllowedCallingGroup.TryGetValue(currentGroup, out var groupTrusts) &&
+                                // in same group                        or caller hash in trusts                or caller group in trusts
+                                (callerGroups.Contains(currentGroup) || groupTrusts.Contains(CallingScriptHash) || groupTrusts.ContainsAny(callerGroups))) return true;
+                        }
                     }
                 }
                 return false;

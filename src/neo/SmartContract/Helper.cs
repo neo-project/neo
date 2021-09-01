@@ -343,5 +343,18 @@ namespace Neo.SmartContract
             }
             return true;
         }
+
+
+        /// <summary>
+        /// Check if first and second collection have same item
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="first"></param>
+        /// <param name="second"></param>
+        /// <returns></returns>
+        public static bool ContainsAny<T>(this IEnumerable<T> first, IEnumerable<T> second)
+        {
+            return first.Intersect(second).Any();
+        }
     }
 }

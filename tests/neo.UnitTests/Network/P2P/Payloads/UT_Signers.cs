@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract;
 using Neo.SmartContract.Native;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
@@ -128,14 +129,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var attr = new Signer()
             {
                 Scopes = WitnessScope.CustomCallingGroups,
-                AllowedCallingGroup = new Dictionary<UInt160, ECPoint[]>()
+                AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
                 {
-                    [contract] = new[] { point }
+                    [contract] = new[] { Contract.CreateSignatureContract(point).ScriptHash }
                 },
                 Account = UInt160.Zero
             };
 
-            var hex = "00000000000000000000000000000000000000000401f563ea40bc283d4d0e05c48ea305b3f2a07340ef0103b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c";
+            var hex = "00000000000000000000000000000000000000000401f563ea40bc283d4d0e05c48ea305b3f2a07340ef0196949ed482e7c60aaeec691550f1b3d599146194";
             attr.ToArray().ToHexString().Should().Be(hex);
 
             var copy = hex.HexToBytes().AsSerializable<Signer>();
@@ -230,15 +231,15 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var attr = new Signer()
             {
                 Scopes = WitnessScope.CustomCallingGroups,
-                AllowedCallingGroup = new Dictionary<UInt160, ECPoint[]>()
+                AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
                 {
-                    [contract] = new[] { point }
+                    [contract] = new[] { Contract.CreateSignatureContract(point).ScriptHash }
                 },
                 Account = UInt160.Zero
             };
 
 
-            var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CustomCallingGroups\",\"allowedcallinggroups\":[{\"contract\":\"0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5\",\"trusts\":[\"03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c\"]}]}";
+            var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CustomCallingGroups\",\"allowedcallinggroups\":[{\"contract\":\"0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5\",\"trusts\":[\"0x94611499d5b3f1501569ecae0ac6e782d49e9496\"]}]}";
             attr.ToJson().ToString().Should().Be(json);
         }
     }

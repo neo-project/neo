@@ -849,7 +849,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     Account = UInt160.Zero,
                     AllowedContracts = Array.Empty<UInt160>(),
                     AllowedGroups = Array.Empty<ECPoint>(),
-                    AllowedCallingGroup = new Dictionary<UInt160, ECPoint[]>(),
                     AllowedCallingContracts = new Dictionary<UInt160, UInt160[]>(),
                 }, }
             );

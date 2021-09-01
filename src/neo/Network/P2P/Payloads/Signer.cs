@@ -37,7 +37,7 @@ namespace Neo.Network.P2P.Payloads
         public ECPoint[] AllowedGroups;
 
         public IDictionary<UInt160, UInt160[]> AllowedCallingContracts;
-        public IDictionary<UInt160, ECPoint[]> AllowedCallingGroup;
+        public IDictionary<UInt160, UInt160[]> AllowedCallingGroup;
 
         public int Size =>
             /*Account*/             UInt160.Length +
@@ -65,9 +65,8 @@ namespace Neo.Network.P2P.Payloads
                 ? reader.ReadLookup<UInt160, UInt160>()
                 : new Dictionary<UInt160, UInt160[]>();
             AllowedCallingGroup = Scopes.HasFlag(WitnessScope.CustomCallingGroups)
-                ? reader.ReadLookup<UInt160, ECPoint>()
-                : new Dictionary<UInt160, ECPoint[]>();
-
+                ? reader.ReadLookup<UInt160, UInt160>()
+                : new Dictionary<UInt160, UInt160[]>();
         }
 
         public void Serialize(BinaryWriter writer)

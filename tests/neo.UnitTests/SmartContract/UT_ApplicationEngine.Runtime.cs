@@ -361,7 +361,9 @@ namespace Neo.UnitTests.SmartContract
         {
             var sender = GerRandomAddress();
             var tx = InitTx();
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, null, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            var snapshot = TestBlockchain.GetTestSnapshot();
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             using var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Runtime_CheckWitness, sender);
@@ -373,9 +375,9 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingGroups,
-                    AllowedCallingGroup = new Dictionary<UInt160, ECPoint[]>()
+                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
                     {
-                        [script.ToArray().ToScriptHash()] = new ECPoint[] { }
+                        [script.ToArray().ToScriptHash()] = new UInt160[]{}
                     }
                 }
             };
@@ -395,7 +397,9 @@ namespace Neo.UnitTests.SmartContract
         {
             var sender = GerRandomAddress();
             var tx = InitTx();
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, null, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            var snapshot = TestBlockchain.GetTestSnapshot();
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             using var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Runtime_CheckWitness, sender);
@@ -407,7 +411,7 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingGroups,
-                    AllowedCallingGroup = new Dictionary<UInt160, ECPoint[]>()
+                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
                 }
             };
             Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -441,9 +445,9 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingGroups,
-                    AllowedCallingGroup = new Dictionary<UInt160, ECPoint[]>()
+                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
                     {
-                        [verifyContract.Hash] = new ECPoint[] { }
+                        [verifyContract.Hash] = new UInt160[] { }
                     }
                 }
             };
@@ -455,6 +459,45 @@ namespace Neo.UnitTests.SmartContract
         }
 
 
+        /// <summary>
+        /// Entry=>VerifyContract(CheckWitness)
+        /// AllowedCallingGroup: [VerifyGroup]=[Any]
+        /// </summary>
+        [TestMethod]
+        public void TestCheckWitness_CustomCallingGroup_Entry_Call_Success2()
+        {
+            var sender = GerRandomAddress();
+            var tx = InitTx();
+            var verifyContract = GetVerifyContract();
+            var bridgeContract = GetBridgeContract();
+            verifyContract.Manifest.Groups = new ContractGroup[]
+            {
+                new ContractGroup() { PubKey = _point }
+            };
+            var snapshot = TestBlockchain.GetTestSnapshot();
+            snapshot.AddContract(verifyContract.Hash, verifyContract);
+            snapshot.AddContract(bridgeContract.Hash, bridgeContract);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            engine.LoadScript(BuildEntryCallScript(sender, verifyContract));
+
+            tx.Signers = new Signer[]
+            {
+                new Signer()
+                {
+                    Account = sender,
+                    Scopes = WitnessScope.CustomCallingGroups,
+                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
+                    {
+                        [Contract.CreateSignatureContract(_point).ScriptHash] = new UInt160[] { }
+                    }
+                }
+            };
+            var state = engine.Execute();
+            Assert.AreEqual(VMState.HALT, state);
+
+            var result = engine.ResultStack.Pop();
+            Assert.IsTrue(result.GetBoolean());
+        }
 
 
         /// <summary>
@@ -480,7 +523,7 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingGroups,
-                    AllowedCallingGroup = new Dictionary<UInt160, ECPoint[]>()
+                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
                 }
             };
             var state = engine.Execute();
@@ -497,7 +540,7 @@ namespace Neo.UnitTests.SmartContract
 
         /// <summary>
         /// Entry=>Bridge=>Verify(CheckWitness)
-        /// AllowedCallingGroup: [VerifyContractHash]=[BridgeGroup,...]
+        /// AllowedCallingGroup: [VerifyHash]=[BridgeGroup,...]
         /// </summary>
         [TestMethod]
         public void TestCheckWitness_CustomCallingGroup_Bridge_Success()
@@ -520,9 +563,9 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingGroups,
-                    AllowedCallingGroup = new Dictionary<UInt160, ECPoint[]>()
+                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
                     {
-                        [verifyContract.Hash] = new ECPoint[] { _point }
+                        [verifyContract.Hash] = new UInt160[] { Contract.CreateSignatureContract(_point).ScriptHash }
                     }
                 }
             };
@@ -532,6 +575,178 @@ namespace Neo.UnitTests.SmartContract
             var result = engine.ResultStack.Pop();
             Assert.IsTrue(result.GetBoolean());
         }
+
+
+        /// <summary>
+        /// Entry=>Bridge=>Verify(CheckWitness)
+        /// AllowedCallingGroup: [VerifyGroup]=[BridgeHash]
+        /// </summary>
+        [TestMethod]
+        public void TestCheckWitness_CustomCallingGroup_Bridge_Success2()
+        {
+            var sender = GerRandomAddress();
+            var tx = InitTx();
+
+            var verifyContract = GetVerifyContract();
+            var bridgeContract = GetBridgeContract();
+
+            verifyContract.Manifest.Groups = new ContractGroup[]
+            {
+                new ContractGroup() { PubKey = _point2 }
+            };
+            var snapshot = TestBlockchain.GetTestSnapshot();
+            snapshot.AddContract(verifyContract.Hash, verifyContract);
+            snapshot.AddContract(bridgeContract.Hash, bridgeContract);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+
+            engine.LoadScript(BuildBridgeCallScript(sender, verifyContract, bridgeContract));
+
+            tx.Signers = new Signer[]
+            {
+                new Signer()
+                {
+                    Account = sender,
+                    Scopes = WitnessScope.CustomCallingGroups,
+                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
+                    {
+                        [Contract.CreateSignatureContract(_point2).ScriptHash] = new UInt160[] { bridgeContract.Hash }
+                    }
+                }
+            };
+            var state = engine.Execute();
+            Assert.AreEqual(VMState.HALT, state);
+
+            var result = engine.ResultStack.Pop();
+            Assert.IsTrue(result.GetBoolean());
+        }
+
+
+        /// <summary>
+        /// Entry=>Bridge=>Verify(CheckWitness)
+        /// AllowedCallingGroup: [VerifyGroup]=[BridgeGroup]
+        /// </summary>
+        [TestMethod]
+        public void TestCheckWitness_CustomCallingGroup_Bridge_Success3()
+        {
+            var sender = GerRandomAddress();
+            var tx = InitTx();
+
+            var verifyContract = GetVerifyContract();
+            var bridgeContract = GetBridgeContract();
+
+            verifyContract.Manifest.Groups = new ContractGroup[]
+            {
+                new ContractGroup() { PubKey = _point2 }
+            };
+            var snapshot = TestBlockchain.GetTestSnapshot();
+            snapshot.AddContract(verifyContract.Hash, verifyContract);
+            snapshot.AddContract(bridgeContract.Hash, bridgeContract);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+
+            engine.LoadScript(BuildBridgeCallScript(sender, verifyContract, bridgeContract));
+
+            tx.Signers = new Signer[]
+            {
+                new Signer()
+                {
+                    Account = sender,
+                    Scopes = WitnessScope.CustomCallingGroups,
+                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
+                    {
+                        [Contract.CreateSignatureContract(_point2).ScriptHash] = new [] { Contract.CreateSignatureContract(_point).ScriptHash }
+                    }
+                }
+            };
+            var state = engine.Execute();
+            Assert.AreEqual(VMState.HALT, state);
+
+            var result = engine.ResultStack.Pop();
+            Assert.IsTrue(result.GetBoolean());
+        }
+
+
+        /// <summary>
+        /// Entry=>Bridge=>Verify(CheckWitness)
+        /// AllowedCallingGroup: [VerifyHash]=[BridgeHash]
+        /// </summary>
+        [TestMethod]
+        public void TestCheckWitness_CustomCallingGroup_Bridge_Success4()
+        {
+            var sender = GerRandomAddress();
+            var tx = InitTx();
+
+            var verifyContract = GetVerifyContract();
+            var bridgeContract = GetBridgeContract();
+
+            var snapshot = TestBlockchain.GetTestSnapshot();
+            snapshot.AddContract(verifyContract.Hash, verifyContract);
+            snapshot.AddContract(bridgeContract.Hash, bridgeContract);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+
+            engine.LoadScript(BuildBridgeCallScript(sender, verifyContract, bridgeContract));
+
+            tx.Signers = new Signer[]
+            {
+                new Signer()
+                {
+                    Account = sender,
+                    Scopes = WitnessScope.CustomCallingGroups,
+                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
+                    {
+                        [verifyContract.Hash] = new [] { bridgeContract.Hash }
+                    }
+                }
+            };
+            var state = engine.Execute();
+            Assert.AreEqual(VMState.HALT, state);
+
+            var result = engine.ResultStack.Pop();
+            Assert.IsTrue(result.GetBoolean());
+        }
+
+        /// <summary>
+        /// Entry=>Bridge=>Verify(CheckWitness)
+        /// AllowedCallingGroup: [VerifyGroup]=[] //Same Group Auto Trust
+        /// </summary>
+        [TestMethod]
+        public void TestCheckWitness_CustomCallingGroup_Bridge_Success5()
+        {
+            var sender = GerRandomAddress();
+            var tx = InitTx();
+
+            var verifyContract = GetVerifyContract();
+            var bridgeContract = GetBridgeContract();
+
+            verifyContract.Manifest.Groups = new ContractGroup[]
+            {
+                new ContractGroup(){PubKey = _point}
+            };
+            var snapshot = TestBlockchain.GetTestSnapshot();
+            snapshot.AddContract(verifyContract.Hash, verifyContract);
+            snapshot.AddContract(bridgeContract.Hash, bridgeContract);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+
+            engine.LoadScript(BuildBridgeCallScript(sender, verifyContract, bridgeContract));
+
+            tx.Signers = new Signer[]
+            {
+                new Signer()
+                {
+                    Account = sender,
+                    Scopes = WitnessScope.CustomCallingGroups,
+                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
+                    {
+                        [Contract.CreateSignatureContract(_point).ScriptHash] = new UInt160[] { }
+                    }
+                }
+            };
+            var state = engine.Execute();
+            Assert.AreEqual(VMState.HALT, state);
+
+            var result = engine.ResultStack.Pop();
+            Assert.IsTrue(result.GetBoolean());
+        }
+
 
         /// <summary>
         /// Entry=>Bridge=>Verify(CheckWitness)
@@ -558,9 +773,9 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingGroups,
-                    AllowedCallingGroup = new Dictionary<UInt160, ECPoint[]>()
+                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
                     {
-                        [verifyContract.Hash] = new ECPoint[] { _point2 }
+                        [verifyContract.Hash] = new[] { Contract.CreateSignatureContract(_point2).ScriptHash }
                     }
                 }
             };
@@ -596,7 +811,7 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingGroups,
-                    AllowedCallingGroup = new Dictionary<UInt160, ECPoint[]>()
+                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
                 }
             };
             var state = engine.Execute();
