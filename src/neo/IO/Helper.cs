@@ -193,9 +193,6 @@ namespace Neo.IO
             return GetVarSize(value.Count) + value_size;
         }
 
-
-
-
         /// <summary>
         /// Gets the size of the specified Dictionary encoded in variable-length encoding.
         /// </summary>
@@ -207,10 +204,10 @@ namespace Neo.IO
         {
             var countSize = GetVarSize(dict.Count);
             int valueSize = 0;
-            foreach (var key in dict.Keys)
+            foreach (var entry in dict)
             {
-                valueSize += key.Size;
-                valueSize += dict[key].GetVarSize();
+                valueSize += entry.Key.Size;
+                valueSize += entry.Value.GetVarSize();
             }
             return countSize + valueSize;
         }
@@ -311,8 +308,6 @@ namespace Neo.IO
             return array;
         }
 
-
-
         /// <summary>
         /// Reads an <see cref="ISerializable"/> Dictionary(TKey,TValue[]) from a <see cref="BinaryReader"/>.
         /// </summary>
@@ -321,21 +316,20 @@ namespace Neo.IO
         /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
         /// <param name="max">The maximum number of elements in the array.</param>
         /// <returns>The array read from the <see cref="BinaryReader"/>.</returns>
-        public static IDictionary<TKey, TValue[]> ReadLookup<TKey, TValue>(this BinaryReader reader, int max = 0x1000000)
+        public static IDictionary<TKey, TValue[]> ReadLookup<TKey, TValue>(this BinaryReader reader, ulong max = 0x1000000)
             where TKey : ISerializable, new()
             where TValue : ISerializable, new()
         {
             var dict = new Dictionary<TKey, TValue[]>();
-            var count = reader.ReadVarInt();
+            var count = reader.ReadVarInt(max);
             for (uint i = 0; i < count; i++)
             {
                 var key = reader.ReadSerializable<TKey>();
                 var value = reader.ReadSerializableArray<TValue>();
-                dict[key] = value;
+                if (!dict.TryAdd(key, value)) throw new FormatException();
             }
             return dict;
         }
-
 
         /// <summary>
         /// Reads a byte array from a <see cref="BinaryReader"/>.
@@ -524,7 +518,6 @@ namespace Neo.IO
             writer.WriteVarBytes(Utility.StrictUTF8.GetBytes(value));
         }
 
-
         /// <summary>
         /// Writes an <see cref="ISerializable"/> Dictionary(TKey,TValue[]) into a <see cref="BinaryWriter"/>.
         /// </summary>
@@ -537,10 +530,10 @@ namespace Neo.IO
             where TValue : class, ISerializable
         {
             writer.WriteVarInt(dict.Count);
-            foreach (var key in dict.Keys)
+            foreach (var entry in dict)
             {
-                writer.Write(key);
-                writer.Write(dict[key]);
+                writer.Write(entry.Key);
+                writer.Write(entry.Value);
             }
         }
     }
