@@ -4,10 +4,12 @@ using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.Cryptography
 {
@@ -108,6 +110,88 @@ namespace Neo.Cryptography
         {
             return Sha256((ReadOnlySpan<byte>)value);
         }
+
+        public static byte[] AES256Decrypt(this byte[] data, byte[] key)
+        {
+            using Aes aes = Aes.Create();
+            aes.Key = key;
+            aes.Mode = CipherMode.ECB;
+            aes.Padding = PaddingMode.PKCS7;
+            using ICryptoTransform decryptor = aes.CreateDecryptor();
+            return decryptor.TransformFinalBlock(data, 0, data.Length);
+        }
+
+        public static byte[] AES256Encrypt(this byte[] data, byte[] key)
+        {
+            using Aes aes = Aes.Create();
+            aes.Key = key;
+            aes.Mode = CipherMode.ECB;
+            aes.Padding = PaddingMode.PKCS7;
+            using ICryptoTransform encryptor = aes.CreateEncryptor();
+            return encryptor.TransformFinalBlock(data, 0, data.Length);
+        }
+
+        public static byte[] ECEncrypt(byte[] message, ECPoint pubKey)
+        {
+            // P=kG,R=rG =>{R,M+rP}
+            BigInteger r, rx;
+            ECPoint R;
+            var curve = pubKey.Curve;
+            //r > N
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+            {
+                do
+                {
+                    do
+                    {
+                        r = rng.NextBigInteger((int)curve.N.GetBitLength());
+                    }
+                    while (r.Sign == 0 || r.CompareTo(curve.N) >= 0);
+                    R = ECPoint.Multiply(curve.G, r);
+                    BigInteger x = R.X.Value;
+                    rx = x.Mod(curve.N);
+                }
+                while (rx.Sign == 0);
+            }
+            byte[] RBar = R.EncodePoint(true);
+            var z = ECPoint.Multiply(pubKey, r).X; // z = r * P = r* k * G
+            var Z = z.ToByteArray();
+            var EK = Z.Sha256();
+            var EM = message.AES256Encrypt(EK);
+            return RBar.Concat(EM).ToArray();
+        }
+        public static byte[] ECDecrypt(byte[] cypher, byte[] priKey, ECPoint pubKey)
+        {
+            // {R,M+rP}={rG, M+rP}=> M + rP - kR = M + r(kG) - k(rG) = M
+            if (cypher is null || cypher.Length < 33)
+                throw new ArgumentException();
+            if (cypher[0] != 0x02 && cypher[0] != 0x03)
+                throw new ArgumentException();
+            var RBar = cypher.Take(33).ToArray();
+            var EM = cypher.Skip(33).ToArray();
+            var R = ECPoint.FromBytes(RBar, pubKey.Curve);
+            var k = new BigInteger(priKey.Reverse().Concat(new byte[1]).ToArray());
+            var z = ECPoint.Multiply(R, k).X; // z = k * R = k * r * G
+            var EK = z.ToByteArray().Sha256();
+            var M = EM.AES256Decrypt(EK);
+            return M;
+        }
+
+        internal static BigInteger NextBigInteger(this RandomNumberGenerator rng, int sizeInBits)
+        {
+            if (sizeInBits < 0)
+                throw new ArgumentException("sizeInBits must be non-negative");
+            if (sizeInBits == 0)
+                return 0;
+            byte[] b = new byte[sizeInBits / 8 + 1];
+            rng.GetBytes(b);
+            if (sizeInBits % 8 == 0)
+                b[b.Length - 1] = 0;
+            else
+                b[b.Length - 1] &= (byte)((1 << sizeInBits % 8) - 1);
+            return new BigInteger(b);
+        }
+
 
         internal static bool Test(this BloomFilter filter, Transaction tx)
         {

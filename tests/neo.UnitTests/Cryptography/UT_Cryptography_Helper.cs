@@ -4,7 +4,10 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.Wallets;
+using Neo.Wallets.NEP6;
 using System;
+using System.Linq;
 using System.Security;
 using System.Text;
 
@@ -46,6 +49,21 @@ namespace Neo.UnitTests.Cryptography
             byte[] result = value.RIPEMD160();
             string resultStr = result.ToHexString();
             resultStr.Should().Be("98c615784ccb5fe5936fbc0cbe9dfdb408d92f0f");
+        }
+
+        [TestMethod]
+        public void TestECEncryptAndDecrypt()
+        {
+            NEP6Wallet wallet = new NEP6Wallet("", ProtocolSettings.Default);
+            wallet.Unlock("1");
+            wallet.CreateAccount();
+            WalletAccount account = wallet.GetAccounts().ToArray()[0];
+            KeyPair key = account.GetKey();
+            var message = Encoding.ASCII.GetBytes("hello world");
+            var cypher = Neo.Cryptography.Helper.ECEncrypt(message, key.PublicKey);
+            var m = Neo.Cryptography.Helper.ECDecrypt(cypher, key.PrivateKey, key.PublicKey);
+            var message2 = Encoding.ASCII.GetString(m);
+            Assert.AreEqual("hello world", message2);
         }
 
         [TestMethod]
