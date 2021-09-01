@@ -162,6 +162,7 @@ namespace Neo.Cryptography
             var EM = message.AES256Encrypt(EK);
             return RBar.Concat(EM).ToArray();
         }
+
         public static byte[] ECDecrypt(byte[] cypher, KeyPair key)
         {
             // {R,M+rP}={rG, M+rP}=> M + rP - kR = M + r(kG) - k(rG) = M
@@ -194,7 +195,6 @@ namespace Neo.Cryptography
                 b[b.Length - 1] &= (byte)((1 << sizeInBits % 8) - 1);
             return new BigInteger(b);
         }
-
 
         internal static bool Test(this BloomFilter filter, Transaction tx)
         {
