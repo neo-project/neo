@@ -169,7 +169,7 @@ namespace Neo.Cryptography
                 throw new ArgumentException();
             if (cypher[0] != 0x02 && cypher[0] != 0x03)
                 throw new ArgumentException();
-            if(key.PublicKey.IsInfinity) throw new ArgumentException();
+            if (key.PublicKey.IsInfinity) throw new ArgumentException();
             var RBar = cypher.Take(33).ToArray();
             var EM = cypher.Skip(33).ToArray();
             var R = ECPoint.FromBytes(RBar, key.PublicKey.Curve);
