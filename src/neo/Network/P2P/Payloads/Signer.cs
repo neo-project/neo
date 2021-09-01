@@ -101,7 +101,7 @@ namespace Neo.Network.P2P.Payloads
                 json["allowedcallingcontracts"] = AllowedCallingContracts.Select(p =>
                 {
                     var obj = new JObject();
-                    obj["contact"] = p.Key.ToString();
+                    obj["contract"] = p.Key.ToString();
                     obj["trusts"] = p.Value.Select(v => (JObject)v.ToString()).ToArray();
                     return obj;
                 }).ToArray();
@@ -109,7 +109,7 @@ namespace Neo.Network.P2P.Payloads
                 json["allowedcallinggroups"] = AllowedCallingGroup.Select(p =>
                 {
                     var obj = new JObject();
-                    obj["contact"] = p.Key.ToString();
+                    obj["contract"] = p.Key.ToString();
                     obj["trusts"] = p.Value.Select(v => (JObject)v.ToString()).ToArray();
                     return obj;
                 }).ToArray();
