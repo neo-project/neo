@@ -122,7 +122,6 @@ namespace Neo.Cryptography
             var associatedBytes = associatedData == null ? null : Encoding.UTF8.GetBytes(associatedData);
             var plainBytes = Encoding.UTF8.GetBytes(plainData);
             var cipherBytes = new byte[plainBytes.Length];
-            //tag size is 16
             var tag = new byte[16];
             using var cipher = new AesGcm(keyBytes);
             cipher.Encrypt(nonceBytes, plainBytes, cipherBytes, tag, associatedBytes);
@@ -132,14 +131,12 @@ namespace Neo.Cryptography
             Buffer.BlockCopy(tag, 0, cipherWithTag, nonceBytes.Length + cipherBytes.Length, tag.Length);
             return Convert.ToBase64String(cipherWithTag);
         }
+
         public static string AES256Decrypt(this string encryptedData, string key, string associatedData = null)
         {
             var keyBytes = Encoding.UTF8.GetBytes(key);
-            //var nonceBytes = Encoding.UTF8.GetBytes(nonce);
             var associatedBytes = associatedData == null ? null : Encoding.UTF8.GetBytes(associatedData);
-
             var encryptedBytes = Convert.FromBase64String(encryptedData);
-            //tag size is 16
             var nonceBytes = encryptedBytes.Take(12).ToArray();
             var cipherBytes = encryptedBytes.Skip(12).Take(encryptedBytes.Length - 28).ToArray();
             var tag = encryptedBytes[^16..];
