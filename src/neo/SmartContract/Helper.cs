@@ -348,10 +348,10 @@ namespace Neo.SmartContract
         /// <summary>
         /// Check if first and second collection have same item
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="first"></param>
-        /// <param name="second"></param>
-        /// <returns></returns>
+        /// <typeparam name="T">Type</typeparam>
+        /// <param name="first">First enumerable</param>
+        /// <param name="second">Second enumerable</param>
+        /// <returns>Return true if contains any</returns>
         public static bool ContainsAny<T>(this IEnumerable<T> first, IEnumerable<T> second)
         {
             return first.Intersect(second).Any();
