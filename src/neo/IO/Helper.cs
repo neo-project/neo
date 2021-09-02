@@ -316,16 +316,16 @@ namespace Neo.IO
         /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
         /// <param name="max">The maximum number of elements in the array.</param>
         /// <returns>The array read from the <see cref="BinaryReader"/>.</returns>
-        public static IDictionary<TKey, TValue[]> ReadLookup<TKey, TValue>(this BinaryReader reader, ulong max = 0x1000000)
+        public static IDictionary<TKey, TValue[]> ReadLookup<TKey, TValue>(this BinaryReader reader, int max = 0x1000000)
             where TKey : ISerializable, new()
             where TValue : ISerializable, new()
         {
             var dict = new Dictionary<TKey, TValue[]>();
-            var count = reader.ReadVarInt(max);
+            var count = reader.ReadVarInt((ulong)max);
             for (uint i = 0; i < count; i++)
             {
                 var key = reader.ReadSerializable<TKey>();
-                var value = reader.ReadSerializableArray<TValue>();
+                var value = reader.ReadSerializableArray<TValue>(max);
                 if (!dict.TryAdd(key, value)) throw new FormatException();
             }
             return dict;

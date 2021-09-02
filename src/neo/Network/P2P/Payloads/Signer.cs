@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Neo.VM.Types;
+using Array = System.Array;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -62,10 +64,10 @@ namespace Neo.Network.P2P.Payloads
                 ? reader.ReadSerializableArray<ECPoint>(MaxSubitems)
                 : Array.Empty<ECPoint>();
             AllowedCallingContracts = Scopes.HasFlag(WitnessScope.CustomCallingContracts)
-                ? reader.ReadLookup<UInt160, UInt160>()
+                ? reader.ReadLookup<UInt160, UInt160>(MaxSubitems)
                 : new Dictionary<UInt160, UInt160[]>();
             AllowedCallingGroup = Scopes.HasFlag(WitnessScope.CustomCallingGroups)
-                ? reader.ReadLookup<UInt160, UInt160>()
+                ? reader.ReadLookup<UInt160, UInt160>(MaxSubitems)
                 : new Dictionary<UInt160, UInt160[]>();
         }
 
