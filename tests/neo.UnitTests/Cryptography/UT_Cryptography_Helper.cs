@@ -52,6 +52,20 @@ namespace Neo.UnitTests.Cryptography
         }
 
         [TestMethod]
+        public void TestAESEncryptAndDecrypt()
+        {
+            NEP6Wallet wallet = new NEP6Wallet("", ProtocolSettings.Default);
+            wallet.Unlock("1");
+            wallet.CreateAccount();
+            WalletAccount account = wallet.GetAccounts().ToArray()[0];
+            KeyPair key = account.GetKey();
+            var cypher = Neo.Cryptography.Helper.AES256Encrypt(Convert.ToBase64String(Encoding.UTF8.GetBytes("hello world")), Encoding.ASCII.GetString(key.PrivateKey), "77d0a5ff3937");
+            var m = Neo.Cryptography.Helper.AES256Decrypt(cypher, Encoding.ASCII.GetString(key.PrivateKey));
+            var message2 = Encoding.UTF8.GetString(Convert.FromBase64String(m));
+            Assert.AreEqual("hello world", message2);
+        }
+
+        [TestMethod]
         public void TestECEncryptAndDecrypt()
         {
             NEP6Wallet wallet = new NEP6Wallet("", ProtocolSettings.Default);
