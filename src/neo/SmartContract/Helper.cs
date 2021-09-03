@@ -344,7 +344,6 @@ namespace Neo.SmartContract
             return true;
         }
 
-
         /// <summary>
         /// Check if first and second collection have same item
         /// </summary>
