@@ -20,8 +20,12 @@ namespace Neo.UnitTests.SmartContract
         {
             var tx = TestUtils.GetTransaction(UInt160.Zero);
             // Even if persisting the same block, in different ApplicationEngine instance, the random number should be different
-            using var engine_1 = ApplicationEngine.Create(TriggerType.Application, tx, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
-            using var engine_2 = ApplicationEngine.Create(TriggerType.Application, tx, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine_1 = ApplicationEngine.Create(TriggerType.Application, tx, null,
+                TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings,
+                gas: 1100_00000000);
+            using var engine_2 = ApplicationEngine.Create(TriggerType.Application, tx, null,
+                TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings,
+                gas: 1100_00000000);
 
             engine_1.LoadScript(new byte[] { 0x01 });
             engine_2.LoadScript(new byte[] { 0x01 });
@@ -69,9 +73,13 @@ namespace Neo.UnitTests.SmartContract
                 Witnesses = Array.Empty<Witness>()
             };
 
-            using var engine_1 = ApplicationEngine.Create(TriggerType.Application, tx_1, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine_1 = ApplicationEngine.Create(TriggerType.Application, tx_1, null,
+                TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings,
+                gas: 1100_00000000);
             // The next_nonce shuld be reinitialized when a new block is persisting
-            using var engine_2 = ApplicationEngine.Create(TriggerType.Application, tx_2, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine_2 = ApplicationEngine.Create(TriggerType.Application, tx_2, null,
+                TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings,
+                gas: 1100_00000000);
 
             var rand_1 = engine_1.GetRandom();
             var rand_2 = engine_1.GetRandom();
@@ -107,7 +115,8 @@ namespace Neo.UnitTests.SmartContract
         {
             var sender = GerRandomAddress();
             var tx = InitTx();
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, null, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, null,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             using var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Runtime_CheckWitness, sender);
@@ -140,7 +149,8 @@ namespace Neo.UnitTests.SmartContract
         {
             var sender = GerRandomAddress();
             var tx = InitTx();
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, null, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, null,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             using var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Runtime_CheckWitness, sender);
@@ -175,7 +185,8 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.AddContract(verifyContract.Hash, verifyContract);
             snapshot.AddContract(bridgeContract.Hash, bridgeContract);
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
             engine.LoadScript(BuildEntryCallScript(sender, verifyContract));
 
             tx.Signers = new Signer[]
@@ -211,7 +222,8 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.AddContract(verifyContract.Hash, verifyContract);
             snapshot.AddContract(bridgeContract.Hash, bridgeContract);
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
             engine.LoadScript(BuildEntryCallScript(sender, verifyContract));
 
             tx.Signers = new Signer[]
@@ -245,7 +257,8 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.AddContract(verifyContract.Hash, verifyContract);
             snapshot.AddContract(bridgeContract.Hash, bridgeContract);
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             engine.LoadScript(BuildBridgeCallScript(sender, verifyContract, bridgeContract));
 
@@ -283,7 +296,8 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.AddContract(verifyContract.Hash, verifyContract);
             snapshot.AddContract(bridgeContract.Hash, bridgeContract);
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             engine.LoadScript(BuildBridgeCallScript(sender, verifyContract, bridgeContract));
 
@@ -295,7 +309,7 @@ namespace Neo.UnitTests.SmartContract
                     Scopes = WitnessScope.CustomCallingContracts,
                     AllowedCallingContracts = new Dictionary<UInt160, UInt160[]>()
                     {
-                        [verifyContract.Hash] = new UInt160[] { verifyContract.Hash}
+                        [verifyContract.Hash] = new UInt160[] { verifyContract.Hash }
                     }
                 }
             };
@@ -321,7 +335,8 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.AddContract(verifyContract.Hash, verifyContract);
             snapshot.AddContract(bridgeContract.Hash, bridgeContract);
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             engine.LoadScript(BuildBridgeCallScript(sender, verifyContract, bridgeContract));
 
@@ -352,7 +367,8 @@ namespace Neo.UnitTests.SmartContract
             var tx = InitTx();
             var snapshot = TestBlockchain.GetTestSnapshot();
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             using var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Runtime_CheckWitness, sender);
@@ -364,9 +380,9 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingGroups,
-                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
+                    AllowedCallingGroup = new Dictionary<ContractOrGroup, ContractOrGroup[]>()
                     {
-                        [script.ToArray().ToScriptHash()] = new UInt160[]{}
+                        [script.ToArray().ToScriptHash()] = new ContractOrGroup[] { }
                     }
                 }
             };
@@ -387,7 +403,8 @@ namespace Neo.UnitTests.SmartContract
             var tx = InitTx();
             var snapshot = TestBlockchain.GetTestSnapshot();
 
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             using var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Runtime_CheckWitness, sender);
@@ -399,7 +416,7 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingGroups,
-                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
+                    AllowedCallingGroup = new Dictionary<ContractOrGroup, ContractOrGroup[]>()
                 }
             };
             Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -422,7 +439,8 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.AddContract(verifyContract.Hash, verifyContract);
             snapshot.AddContract(bridgeContract.Hash, bridgeContract);
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
             engine.LoadScript(BuildEntryCallScript(sender, verifyContract));
 
             tx.Signers = new Signer[]
@@ -431,9 +449,9 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingGroups,
-                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
+                    AllowedCallingGroup = new Dictionary<ContractOrGroup, ContractOrGroup[]>()
                     {
-                        [verifyContract.Hash] = new UInt160[] { }
+                        [verifyContract.Hash] = new ContractOrGroup[] { }
                     }
                 }
             };
@@ -463,7 +481,8 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.AddContract(verifyContract.Hash, verifyContract);
             snapshot.AddContract(bridgeContract.Hash, bridgeContract);
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
             engine.LoadScript(BuildEntryCallScript(sender, verifyContract));
 
             tx.Signers = new Signer[]
@@ -472,9 +491,9 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingGroups,
-                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
+                    AllowedCallingGroup = new Dictionary<ContractOrGroup, ContractOrGroup[]>()
                     {
-                        [Contract.CreateSignatureContract(_point).ScriptHash] = new UInt160[] { }
+                        [_point] = new ContractOrGroup[] { }
                     }
                 }
             };
@@ -500,7 +519,8 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.AddContract(verifyContract.Hash, verifyContract);
             snapshot.AddContract(bridgeContract.Hash, bridgeContract);
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
             engine.LoadScript(BuildEntryCallScript(sender, verifyContract));
 
             tx.Signers = new Signer[]
@@ -509,7 +529,7 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingGroups,
-                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
+                    AllowedCallingGroup = new Dictionary<ContractOrGroup, ContractOrGroup[]>()
                 }
             };
             var state = engine.Execute();
@@ -520,6 +540,7 @@ namespace Neo.UnitTests.SmartContract
         }
 
         private ECPoint _point = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1);
+
         private ECPoint _point2 = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a700", ECCurve.Secp256r1);
 
         /// <summary>
@@ -537,7 +558,8 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.AddContract(verifyContract.Hash, verifyContract);
             snapshot.AddContract(bridgeContract.Hash, bridgeContract);
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             engine.LoadScript(BuildBridgeCallScript(sender, verifyContract, bridgeContract));
 
@@ -547,9 +569,9 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingGroups,
-                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
+                    AllowedCallingGroup = new Dictionary<ContractOrGroup, ContractOrGroup[]>()
                     {
-                        [verifyContract.Hash] = new UInt160[] { Contract.CreateSignatureContract(_point).ScriptHash }
+                        [verifyContract.Hash] = new ContractOrGroup[] { _point },
                     }
                 }
             };
@@ -581,7 +603,8 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.AddContract(verifyContract.Hash, verifyContract);
             snapshot.AddContract(bridgeContract.Hash, bridgeContract);
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             engine.LoadScript(BuildBridgeCallScript(sender, verifyContract, bridgeContract));
 
@@ -591,9 +614,9 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingGroups,
-                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
+                    AllowedCallingGroup = new Dictionary<ContractOrGroup, ContractOrGroup[]>()
                     {
-                        [Contract.CreateSignatureContract(_point2).ScriptHash] = new UInt160[] { bridgeContract.Hash }
+                        [_point2] = new ContractOrGroup[] { bridgeContract.Hash }
                     }
                 }
             };
@@ -625,7 +648,8 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.AddContract(verifyContract.Hash, verifyContract);
             snapshot.AddContract(bridgeContract.Hash, bridgeContract);
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             engine.LoadScript(BuildBridgeCallScript(sender, verifyContract, bridgeContract));
 
@@ -635,9 +659,9 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingGroups,
-                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
+                    AllowedCallingGroup = new Dictionary<ContractOrGroup, ContractOrGroup[]>()
                     {
-                        [Contract.CreateSignatureContract(_point2).ScriptHash] = new [] { Contract.CreateSignatureContract(_point).ScriptHash }
+                        [_point2] = new ContractOrGroup[] { _point }
                     }
                 }
             };
@@ -665,7 +689,8 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.AddContract(verifyContract.Hash, verifyContract);
             snapshot.AddContract(bridgeContract.Hash, bridgeContract);
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             engine.LoadScript(BuildBridgeCallScript(sender, verifyContract, bridgeContract));
 
@@ -675,9 +700,9 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingGroups,
-                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
+                    AllowedCallingGroup = new Dictionary<ContractOrGroup, ContractOrGroup[]>()
                     {
-                        [verifyContract.Hash] = new [] { bridgeContract.Hash }
+                        [verifyContract.Hash] = new ContractOrGroup[] { bridgeContract.Hash }
                     }
                 }
             };
@@ -703,12 +728,13 @@ namespace Neo.UnitTests.SmartContract
 
             verifyContract.Manifest.Groups = new ContractGroup[]
             {
-                new ContractGroup(){PubKey = _point}
+                new ContractGroup() { PubKey = _point }
             };
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.AddContract(verifyContract.Hash, verifyContract);
             snapshot.AddContract(bridgeContract.Hash, bridgeContract);
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             engine.LoadScript(BuildBridgeCallScript(sender, verifyContract, bridgeContract));
 
@@ -718,9 +744,9 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingGroups,
-                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
+                    AllowedCallingGroup = new Dictionary<ContractOrGroup, ContractOrGroup[]>()
                     {
-                        [Contract.CreateSignatureContract(_point).ScriptHash] = new UInt160[] { }
+                        [_point] = new ContractOrGroup[] { }
                     }
                 }
             };
@@ -747,7 +773,8 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.AddContract(verifyContract.Hash, verifyContract);
             snapshot.AddContract(bridgeContract.Hash, bridgeContract);
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             engine.LoadScript(BuildBridgeCallScript(sender, verifyContract, bridgeContract));
 
@@ -757,9 +784,9 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingGroups,
-                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
+                    AllowedCallingGroup = new Dictionary<ContractOrGroup, ContractOrGroup[]>()
                     {
-                        [verifyContract.Hash] = new[] { Contract.CreateSignatureContract(_point2).ScriptHash }
+                        [verifyContract.Hash] = new ContractOrGroup[] { _point2 }
                     }
                 }
             };
@@ -785,7 +812,8 @@ namespace Neo.UnitTests.SmartContract
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.AddContract(verifyContract.Hash, verifyContract);
             snapshot.AddContract(bridgeContract.Hash, bridgeContract);
-            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             engine.LoadScript(BuildBridgeCallScript(sender, verifyContract, bridgeContract));
 
@@ -795,7 +823,7 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingGroups,
-                    AllowedCallingGroup = new Dictionary<UInt160, UInt160[]>()
+                    AllowedCallingGroup = new Dictionary<ContractOrGroup, ContractOrGroup[]>()
                 }
             };
             var state = engine.Execute();
@@ -886,7 +914,8 @@ namespace Neo.UnitTests.SmartContract
                     {
                         new ContractParameter() { Type = ContractParameterType.Hash160, Value = verifyContract.Hash },
                         new ContractParameter() { Type = ContractParameterType.String, Value = "verify" },
-                        new ContractParameter() { Type = ContractParameterType.Integer, Value = (BigInteger)(byte)CallFlags.All },
+                        new ContractParameter()
+                            { Type = ContractParameterType.Integer, Value = (BigInteger)(byte)CallFlags.All },
                         new ContractParameter
                         {
                             Type = ContractParameterType.Array,
