@@ -311,8 +311,8 @@ namespace Neo.IO
         /// <summary>
         /// Reads an <see cref="ISerializable"/> Dictionary(TKey,TValue[]) from a <see cref="BinaryReader"/>.
         /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <typeparam name="TValue"></typeparam>
+        /// <typeparam name="TKey">The type of the key element.</typeparam>
+        /// <typeparam name="TValue">The type of the value element.</typeparam>
         /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
         /// <param name="max">The maximum number of elements in the array.</param>
         /// <returns>The array read from the <see cref="BinaryReader"/>.</returns>
@@ -521,10 +521,10 @@ namespace Neo.IO
         /// <summary>
         /// Writes an <see cref="ISerializable"/> Dictionary(TKey,TValue[]) into a <see cref="BinaryWriter"/>.
         /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <typeparam name="TValue"></typeparam>
-        /// <param name="writer"></param>
-        /// <param name="dict"></param>
+        /// <typeparam name="TKey">The type of the key element.</typeparam>
+        /// <typeparam name="TValue">The type of the value element.</typeparam>
+        /// <param name="writer">The <see cref="BinaryWriter"/> for writing data.</param>
+        /// <param name="dict">The <see cref="IDictionary"/> to be written.</param>
         public static void WriteLookup<TKey, TValue>(this BinaryWriter writer, IDictionary<TKey, TValue[]> dict)
             where TKey : ISerializable
             where TValue : class, ISerializable

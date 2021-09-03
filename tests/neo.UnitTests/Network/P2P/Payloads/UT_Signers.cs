@@ -124,7 +124,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 Scopes = WitnessScope.CustomCallingGroups,
                 AllowedCallingGroup = new Dictionary<ContractOrGroup, ContractOrGroup[]>()
                 {
-                    [contract]=new ContractOrGroup[]{point}
+                    [contract] = new ContractOrGroup[] { point }
                 },
                 Account = UInt160.Zero
             };
