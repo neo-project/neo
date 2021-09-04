@@ -170,9 +170,7 @@ namespace Neo.Cryptography
                 while (rx.Sign == 0);
             }
             byte[] RBar = R.EncodePoint(true);
-            var z = ECPoint.Multiply(pubKey, r).X; // z = r * P = r* k * G
-            var Z = z.ToByteArray();
-            var EK = Z.Sha256();
+            var EK = ECPoint.Multiply(pubKey, r).X.ToByteArray().Sha256(); // z = r * P = r* k * G
             Random random = new Random();
             byte[] Nonce = new byte[12];
             random.NextBytes(Nonce);
