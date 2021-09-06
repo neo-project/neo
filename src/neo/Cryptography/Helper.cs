@@ -117,16 +117,23 @@ namespace Neo.Cryptography
 
         public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[] associatedData = null)
         {
-            if (key.Length != 32) throw new ArgumentException();
-            if (nonce.Length != 12) throw new ArgumentException();
-            var cipherBytes = new byte[plainData.Length];
-            var tag = new byte[16];
+            var keyLen = key is null ? 0 : key.Length;
+            var nonceLen = nonce is null ? 0 : nonce.Length;
+
+            if (keyLen != 32) throw new ArgumentException();
+            if (nonceLen != 12) throw new ArgumentException();
+
+            var msgLen = plainData is null ? 0 : plainData.Length;
+            var tagLen = 16;
+
+            var cipherBytes = new byte[msgLen];
+            var tag = new byte[tagLen];
             using var cipher = new AesGcm(key);
             cipher.Encrypt(nonce, plainData, cipherBytes, tag, associatedData);
-            var cipherWithTag = new byte[nonce.Length + cipherBytes.Length + tag.Length];
-            Buffer.BlockCopy(nonce, 0, cipherWithTag, 0, nonce.Length);
-            Buffer.BlockCopy(cipherBytes, 0, cipherWithTag, nonce.Length, cipherBytes.Length);
-            Buffer.BlockCopy(tag, 0, cipherWithTag, nonce.Length + cipherBytes.Length, tag.Length);
+            var cipherWithTag = new byte[nonceLen + msgLen + tagLen];
+            Buffer.BlockCopy(nonce, 0, cipherWithTag, 0, nonceLen);
+            Buffer.BlockCopy(cipherBytes, 0, cipherWithTag, nonceLen, msgLen);
+            Buffer.BlockCopy(tag, 0, cipherWithTag, nonceLen + msgLen, tagLen);
             return cipherWithTag;
         }
 
