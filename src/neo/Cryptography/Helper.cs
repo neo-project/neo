@@ -115,35 +115,31 @@ namespace Neo.Cryptography
             return Sha256((ReadOnlySpan<byte>)value);
         }
 
-        public static string AES256Encrypt(this string plainData, string key, string nonce, string associatedData = null)
+        public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[] associatedData = null)
         {
-            var keyBytes = Encoding.UTF8.GetBytes(key);
-            var nonceBytes = Encoding.UTF8.GetBytes(nonce);
-            var associatedBytes = associatedData == null ? null : Encoding.UTF8.GetBytes(associatedData);
-            var plainBytes = Encoding.UTF8.GetBytes(plainData);
-            var cipherBytes = new byte[plainBytes.Length];
+            if (key.Length != 32) throw new ArgumentException();
+            if (nonce.Length != 12) throw new ArgumentException();
+            var cipherBytes = new byte[plainData.Length];
             var tag = new byte[16];
-            using var cipher = new AesGcm(keyBytes);
-            cipher.Encrypt(nonceBytes, plainBytes, cipherBytes, tag, associatedBytes);
-            var cipherWithTag = new byte[nonceBytes.Length + cipherBytes.Length + tag.Length];
-            Buffer.BlockCopy(nonceBytes, 0, cipherWithTag, 0, nonceBytes.Length);
-            Buffer.BlockCopy(cipherBytes, 0, cipherWithTag, nonceBytes.Length, cipherBytes.Length);
-            Buffer.BlockCopy(tag, 0, cipherWithTag, nonceBytes.Length + cipherBytes.Length, tag.Length);
-            return Convert.ToBase64String(cipherWithTag);
+            using var cipher = new AesGcm(key);
+            cipher.Encrypt(nonce, plainData, cipherBytes, tag, associatedData);
+            var cipherWithTag = new byte[nonce.Length + cipherBytes.Length + tag.Length];
+            Buffer.BlockCopy(nonce, 0, cipherWithTag, 0, nonce.Length);
+            Buffer.BlockCopy(cipherBytes, 0, cipherWithTag, nonce.Length, cipherBytes.Length);
+            Buffer.BlockCopy(tag, 0, cipherWithTag, nonce.Length + cipherBytes.Length, tag.Length);
+            return cipherWithTag;
         }
 
-        public static string AES256Decrypt(this string encryptedData, string key, string associatedData = null)
+        public static byte[] AES256Decrypt(this byte[] encryptedData, byte[] key, byte[] associatedData = null)
         {
-            var keyBytes = Encoding.UTF8.GetBytes(key);
-            var associatedBytes = associatedData == null ? null : Encoding.UTF8.GetBytes(associatedData);
-            var encryptedBytes = Convert.FromBase64String(encryptedData);
-            var nonceBytes = encryptedBytes.Take(12).ToArray();
-            var cipherBytes = encryptedBytes.Skip(12).Take(encryptedBytes.Length - 28).ToArray();
-            var tag = encryptedBytes[^16..];
+            if (key.Length != 32) throw new ArgumentException();
+            var nonce = encryptedData.Take(12).ToArray();
+            var cipherBytes = encryptedData.Skip(12).Take(encryptedData.Length - 28).ToArray();
+            var tag = encryptedData[^16..];
             var decryptedData = new byte[cipherBytes.Length];
-            using var cipher = new AesGcm(keyBytes);
-            cipher.Decrypt(nonceBytes, cipherBytes, tag, decryptedData, associatedBytes);
-            return Encoding.UTF8.GetString(decryptedData);
+            using var cipher = new AesGcm(key);
+            cipher.Decrypt(nonce, cipherBytes, tag, decryptedData, associatedData);
+            return decryptedData;
         }
 
         public static byte[] ECEncrypt(byte[] message, ECPoint pubKey)
@@ -161,39 +157,32 @@ namespace Neo.Cryptography
                     do
                     {
                         r = rng.NextBigInteger((int)curve.N.GetBitLength());
-                    }
-                    while (r.Sign == 0 || r.CompareTo(curve.N) >= 0);
+                    } while (r.Sign == 0 || r.CompareTo(curve.N) >= 0);
                     R = ECPoint.Multiply(curve.G, r);
                     BigInteger x = R.X.Value;
                     rx = x.Mod(curve.N);
-                }
-                while (rx.Sign == 0);
+                } while (rx.Sign == 0);
             }
             byte[] RBar = R.EncodePoint(true);
             var EK = ECPoint.Multiply(pubKey, r).X.ToByteArray().Sha256(); // z = r * P = r* k * G
             Random random = new Random();
             byte[] Nonce = new byte[12];
             random.NextBytes(Nonce);
-            var EM = Convert.ToBase64String(message).AES256Encrypt(Encoding.ASCII.GetString(EK), Encoding.ASCII.GetString(Nonce));
-            return RBar.Concat(Convert.FromBase64String(EM)).ToArray();
+            return RBar.Concat(message.AES256Encrypt(EK, Nonce)).ToArray();
         }
 
         public static byte[] ECDecrypt(byte[] cypher, KeyPair key)
         {
             // {R,M+rP}={rG, M+rP}=> M + rP - kR = M + r(kG) - k(rG) = M
-            if (cypher is null || cypher.Length < 33)
-                throw new ArgumentException();
-            if (cypher[0] != 0x02 && cypher[0] != 0x03)
-                throw new ArgumentException();
+            if (cypher is null || cypher.Length < 33) throw new ArgumentException();
+            if (cypher[0] != 0x02 && cypher[0] != 0x03) throw new ArgumentException();
             if (key.PublicKey.IsInfinity) throw new ArgumentException();
             var RBar = cypher.Take(33).ToArray();
             var EM = cypher.Skip(33).ToArray();
             var R = ECPoint.FromBytes(RBar, key.PublicKey.Curve);
             var k = new BigInteger(key.PrivateKey.Reverse().Concat(new byte[1]).ToArray());
-            var z = ECPoint.Multiply(R, k).X; // z = k * R = k * r * G
-            var EK = z.ToByteArray().Sha256();
-            var M = Convert.ToBase64String(EM).AES256Decrypt(Encoding.ASCII.GetString(EK));
-            return Convert.FromBase64String(M);
+            var EK = ECPoint.Multiply(R, k).X.ToByteArray().Sha256(); // z = k * R = k * r * G
+            return EM.AES256Decrypt(EK);
         }
 
         internal static BigInteger NextBigInteger(this RandomNumberGenerator rng, int sizeInBits)

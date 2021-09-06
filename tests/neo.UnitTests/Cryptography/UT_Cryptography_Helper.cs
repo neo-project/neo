@@ -59,9 +59,12 @@ namespace Neo.UnitTests.Cryptography
             wallet.CreateAccount();
             WalletAccount account = wallet.GetAccounts().ToArray()[0];
             KeyPair key = account.GetKey();
-            var cypher = Neo.Cryptography.Helper.AES256Encrypt(Convert.ToBase64String(Encoding.UTF8.GetBytes("hello world")), Encoding.ASCII.GetString(key.PrivateKey), "77d0a5ff3937");
-            var m = Neo.Cryptography.Helper.AES256Decrypt(cypher, Encoding.ASCII.GetString(key.PrivateKey));
-            var message2 = Encoding.UTF8.GetString(Convert.FromBase64String(m));
+            Random random = new Random();
+            byte[] nonce = new byte[12];
+            random.NextBytes(nonce);
+            var cypher = Neo.Cryptography.Helper.AES256Encrypt(Encoding.UTF8.GetBytes("hello world"), key.PrivateKey, nonce);
+            var m = Neo.Cryptography.Helper.AES256Decrypt(cypher, key.PrivateKey);
+            var message2 = Encoding.UTF8.GetString(m);
             Assert.AreEqual("hello world", message2);
         }
 
