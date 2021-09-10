@@ -69,18 +69,22 @@ namespace Neo.UnitTests.Cryptography
         }
 
         [TestMethod]
-        public void TestECEncryptAndDecrypt()
+        public void TestEcdhEncryptAndDecrypt()
         {
             NEP6Wallet wallet = new NEP6Wallet("", ProtocolSettings.Default);
             wallet.Unlock("1");
             wallet.CreateAccount();
-            WalletAccount account = wallet.GetAccounts().ToArray()[0];
-            KeyPair key = account.GetKey();
+            wallet.CreateAccount();
+            WalletAccount account1 = wallet.GetAccounts().ToArray()[0];
+            KeyPair key1 = account1.GetKey();
+            WalletAccount account2 = wallet.GetAccounts().ToArray()[1];
+            KeyPair key2 = account2.GetKey();
+            Console.WriteLine($"Account:{1},privatekey:{key1.PrivateKey.ToHexString()},publicKey:{key1.PublicKey.ToArray().ToHexString()}");
+            Console.WriteLine($"Account:{2},privatekey:{key2.PrivateKey.ToHexString()},publicKey:{key2.PublicKey.ToArray().ToHexString()}");
             var message = Encoding.ASCII.GetBytes("hello world");
-            var cypher = Neo.Cryptography.Helper.ECEncrypt(message, key.PublicKey);
-            var m = Neo.Cryptography.Helper.ECDecrypt(cypher, key);
-            var message2 = Encoding.ASCII.GetString(m);
-            Assert.AreEqual("hello world", message2);
+            var cypher1 = Neo.Cryptography.Helper.EcdhEncrypt(message, key1, key2.PublicKey);
+            var cypher2 = Neo.Cryptography.Helper.EcdhDecrypt(cypher1, key2, key1.PublicKey);
+            Assert.AreEqual("hello world", Encoding.ASCII.GetString(cypher2));
         }
 
         [TestMethod]

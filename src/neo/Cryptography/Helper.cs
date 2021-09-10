@@ -129,10 +129,8 @@ namespace Neo.Cryptography
 
             if (keyLen != 32) throw new ArgumentException();
             if (nonceLen != 12) throw new ArgumentException();
-
             var msgLen = plainData is null ? 0 : plainData.Length;
             var tagLen = 16;
-
             var cipherBytes = new byte[msgLen];
             var tag = new byte[tagLen];
             using var cipher = new AesGcm(key);
@@ -156,62 +154,57 @@ namespace Neo.Cryptography
             return decryptedData;
         }
 
-        public static byte[] ECEncrypt(byte[] message, ECPoint pubKey)
+        public static byte[] EcdhEncrypt(byte[] message, KeyPair local, ECPoint remote)
         {
-            // P=kG,R=rG =>{R,M+rP}
-            if (pubKey.IsInfinity) throw new ArgumentException();
-            BigInteger r, rx;
-            ECPoint R;
-            var curve = pubKey.Curve;
-            //r > N
-            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+            ECDiffieHellman ecdh1 = ECDiffieHellmanCng.Create(new ECParameters
             {
-                do
+                Curve = ECCurve.NamedCurves.nistP256,
+                D = local.PrivateKey,
+                Q = new System.Security.Cryptography.ECPoint
                 {
-                    do
-                    {
-                        r = rng.NextBigInteger((int)curve.N.GetBitLength());
-                    } while (r.Sign == 0 || r.CompareTo(curve.N) >= 0);
-                    R = ECPoint.Multiply(curve.G, r);
-                    BigInteger x = R.X.Value;
-                    rx = x.Mod(curve.N);
-                } while (rx.Sign == 0);
-            }
-            byte[] RBar = R.EncodePoint(true);
-            var EK = ECPoint.Multiply(pubKey, r).X.ToByteArray().Sha256(); // z = r * P = r* k * G
+                    X = local.PublicKey.EncodePoint(false)[1..][..32],
+                    Y = local.PublicKey.EncodePoint(false)[1..][32..]
+                }
+            });
+            ECDiffieHellman ecdh2 = ECDiffieHellmanCng.Create(new ECParameters
+            {
+                Curve = ECCurve.NamedCurves.nistP256,
+                Q = new System.Security.Cryptography.ECPoint
+                {
+                    X = remote.EncodePoint(false)[1..][..32],
+                    Y = remote.EncodePoint(false)[1..][32..]
+                }
+            });
+            byte[] secret = ecdh1.DeriveKeyMaterial(ecdh2.PublicKey).Sha256();//z = r * P = r* k * G
             Random random = new Random();
-            byte[] Nonce = new byte[12];
-            random.NextBytes(Nonce);
-            return RBar.Concat(message.AES256Encrypt(EK, Nonce)).ToArray();
+            byte[] nonce = new byte[12];
+            random.NextBytes(nonce);
+            return message.AES256Encrypt(secret, nonce);
         }
 
-        public static byte[] ECDecrypt(byte[] cypher, KeyPair key)
+        public static byte[] EcdhDecrypt(byte[] cypher, KeyPair local, ECPoint remote)
         {
-            // {R,M+rP}={rG, M+rP}=> M + rP - kR = M + r(kG) - k(rG) = M
-            if (cypher is null || cypher.Length < 33) throw new ArgumentException();
-            if (cypher[0] != 0x02 && cypher[0] != 0x03) throw new ArgumentException();
-            if (key.PublicKey.IsInfinity) throw new ArgumentException();
-            var RBar = cypher.Take(33).ToArray();
-            var EM = cypher.Skip(33).ToArray();
-            var R = ECPoint.FromBytes(RBar, key.PublicKey.Curve);
-            var k = new BigInteger(key.PrivateKey.Reverse().Concat(new byte[1]).ToArray());
-            var EK = ECPoint.Multiply(R, k).X.ToByteArray().Sha256(); // z = k * R = k * r * G
-            return EM.AES256Decrypt(EK);
-        }
-
-        internal static BigInteger NextBigInteger(this RandomNumberGenerator rng, int sizeInBits)
-        {
-            if (sizeInBits < 0)
-                throw new ArgumentException("sizeInBits must be non-negative");
-            if (sizeInBits == 0)
-                return 0;
-            byte[] b = new byte[sizeInBits / 8 + 1];
-            rng.GetBytes(b);
-            if (sizeInBits % 8 == 0)
-                b[b.Length - 1] = 0;
-            else
-                b[b.Length - 1] &= (byte)((1 << sizeInBits % 8) - 1);
-            return new BigInteger(b);
+            ECDiffieHellman ecdh1 = ECDiffieHellmanCng.Create(new ECParameters
+            {
+                Curve = ECCurve.NamedCurves.nistP256,
+                D = local.PrivateKey,
+                Q = new System.Security.Cryptography.ECPoint
+                {
+                    X = local.PublicKey.EncodePoint(false)[1..][..32],
+                    Y = local.PublicKey.EncodePoint(false)[1..][32..]
+                }
+            });
+            ECDiffieHellman ecdh2 = ECDiffieHellmanCng.Create(new ECParameters
+            {
+                Curve = ECCurve.NamedCurves.nistP256,
+                Q = new System.Security.Cryptography.ECPoint
+                {
+                    X = remote.EncodePoint(false)[1..][..32],
+                    Y = remote.EncodePoint(false)[1..][32..]
+                }
+            });
+            byte[] secret = ecdh1.DeriveKeyMaterial(ecdh2.PublicKey).Sha256();//z = r * P = r* k * G
+            return cypher.AES256Decrypt(secret);
         }
 
         internal static bool Test(this BloomFilter filter, Transaction tx)
