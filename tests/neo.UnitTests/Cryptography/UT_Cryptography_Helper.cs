@@ -81,10 +81,16 @@ namespace Neo.UnitTests.Cryptography
             KeyPair key2 = account2.GetKey();
             Console.WriteLine($"Account:{1},privatekey:{key1.PrivateKey.ToHexString()},publicKey:{key1.PublicKey.ToArray().ToHexString()}");
             Console.WriteLine($"Account:{2},privatekey:{key2.PrivateKey.ToHexString()},publicKey:{key2.PublicKey.ToArray().ToHexString()}");
+            var secret1 = Neo.Cryptography.Helper.ECDHDeriveKey(key1, key2.PublicKey);
+            var secret2 = Neo.Cryptography.Helper.ECDHDeriveKey(key1, key2.PublicKey);
+            Assert.AreEqual(secret1.ToHexString(), secret2.ToHexString());
             var message = Encoding.ASCII.GetBytes("hello world");
-            var cypher1 = Neo.Cryptography.Helper.EcdhEncrypt(message, key1, key2.PublicKey);
-            var cypher2 = Neo.Cryptography.Helper.EcdhDecrypt(cypher1, key2, key1.PublicKey);
-            Assert.AreEqual("hello world", Encoding.ASCII.GetString(cypher2));
+            Random random = new Random();
+            byte[] nonce = new byte[12];
+            random.NextBytes(nonce);
+            var cypher = message.AES256Encrypt(secret1, nonce);
+            cypher.AES256Decrypt(secret2);
+            Assert.AreEqual("hello world", Encoding.ASCII.GetString(cypher.AES256Decrypt(secret2)));
         }
 
         [TestMethod]

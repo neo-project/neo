@@ -126,7 +126,6 @@ namespace Neo.Cryptography
         {
             var keyLen = key is null ? 0 : key.Length;
             var nonceLen = nonce is null ? 0 : nonce.Length;
-
             if (keyLen != 32) throw new ArgumentException();
             if (nonceLen != 12) throw new ArgumentException();
             var msgLen = plainData is null ? 0 : plainData.Length;
@@ -154,7 +153,7 @@ namespace Neo.Cryptography
             return decryptedData;
         }
 
-        public static byte[] EcdhEncrypt(byte[] message, KeyPair local, ECPoint remote)
+        public static byte[] ECDHDeriveKey(KeyPair local, ECPoint remote)
         {
             ECDiffieHellman ecdh1 = ECDiffieHellmanCng.Create(new ECParameters
             {
@@ -175,36 +174,7 @@ namespace Neo.Cryptography
                     Y = remote.EncodePoint(false)[1..][32..]
                 }
             });
-            byte[] secret = ecdh1.DeriveKeyMaterial(ecdh2.PublicKey).Sha256();//z = r * P = r* k * G
-            Random random = new Random();
-            byte[] nonce = new byte[12];
-            random.NextBytes(nonce);
-            return message.AES256Encrypt(secret, nonce);
-        }
-
-        public static byte[] EcdhDecrypt(byte[] cypher, KeyPair local, ECPoint remote)
-        {
-            ECDiffieHellman ecdh1 = ECDiffieHellmanCng.Create(new ECParameters
-            {
-                Curve = ECCurve.NamedCurves.nistP256,
-                D = local.PrivateKey,
-                Q = new System.Security.Cryptography.ECPoint
-                {
-                    X = local.PublicKey.EncodePoint(false)[1..][..32],
-                    Y = local.PublicKey.EncodePoint(false)[1..][32..]
-                }
-            });
-            ECDiffieHellman ecdh2 = ECDiffieHellmanCng.Create(new ECParameters
-            {
-                Curve = ECCurve.NamedCurves.nistP256,
-                Q = new System.Security.Cryptography.ECPoint
-                {
-                    X = remote.EncodePoint(false)[1..][..32],
-                    Y = remote.EncodePoint(false)[1..][32..]
-                }
-            });
-            byte[] secret = ecdh1.DeriveKeyMaterial(ecdh2.PublicKey).Sha256();//z = r * P = r* k * G
-            return cypher.AES256Decrypt(secret);
+            return ecdh1.DeriveKeyMaterial(ecdh2.PublicKey).Sha256();//z = r * P = r* k * G
         }
 
         internal static bool Test(this BloomFilter filter, Transaction tx)
