@@ -154,14 +154,16 @@ namespace Neo.Cryptography
 
         public static byte[] ECDHDeriveKey(KeyPair local, ECPoint remote)
         {
+            ReadOnlySpan<byte> pubkey_local = local.PublicKey.EncodePoint(false);
+            ReadOnlySpan<byte> pubkey_remote = remote.EncodePoint(false);
             using ECDiffieHellman ecdh1 = ECDiffieHellman.Create(new ECParameters
             {
                 Curve = ECCurve.NamedCurves.nistP256,
                 D = local.PrivateKey,
                 Q = new System.Security.Cryptography.ECPoint
                 {
-                    X = local.PublicKey.EncodePoint(false)[1..][..32],
-                    Y = local.PublicKey.EncodePoint(false)[1..][32..]
+                    X = pubkey_local[1..][..32].ToArray(),
+                    Y = pubkey_local[1..][32..].ToArray()
                 }
             });
             using ECDiffieHellman ecdh2 = ECDiffieHellman.Create(new ECParameters
@@ -169,8 +171,8 @@ namespace Neo.Cryptography
                 Curve = ECCurve.NamedCurves.nistP256,
                 Q = new System.Security.Cryptography.ECPoint
                 {
-                    X = remote.EncodePoint(false)[1..][..32],
-                    Y = remote.EncodePoint(false)[1..][32..]
+                    X = pubkey_remote[1..][..32].ToArray(),
+                    Y = pubkey_remote[1..][32..].ToArray()
                 }
             });
             return ecdh1.DeriveKeyMaterial(ecdh2.PublicKey).Sha256();//z = r * P = r* k * G
