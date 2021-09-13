@@ -15,7 +15,6 @@ using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.Cryptography;
@@ -155,7 +154,7 @@ namespace Neo.Cryptography
 
         public static byte[] ECDHDeriveKey(KeyPair local, ECPoint remote)
         {
-            ECDiffieHellman ecdh1 = ECDiffieHellmanCng.Create(new ECParameters
+            using ECDiffieHellman ecdh1 = ECDiffieHellman.Create(new ECParameters
             {
                 Curve = ECCurve.NamedCurves.nistP256,
                 D = local.PrivateKey,
@@ -165,7 +164,7 @@ namespace Neo.Cryptography
                     Y = local.PublicKey.EncodePoint(false)[1..][32..]
                 }
             });
-            ECDiffieHellman ecdh2 = ECDiffieHellmanCng.Create(new ECParameters
+            using ECDiffieHellman ecdh2 = ECDiffieHellman.Create(new ECParameters
             {
                 Curve = ECCurve.NamedCurves.nistP256,
                 Q = new System.Security.Cryptography.ECPoint
