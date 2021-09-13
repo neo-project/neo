@@ -82,7 +82,7 @@ namespace Neo.UnitTests.Cryptography
             Console.WriteLine($"Account:{1},privatekey:{key1.PrivateKey.ToHexString()},publicKey:{key1.PublicKey.ToArray().ToHexString()}");
             Console.WriteLine($"Account:{2},privatekey:{key2.PrivateKey.ToHexString()},publicKey:{key2.PublicKey.ToArray().ToHexString()}");
             var secret1 = Neo.Cryptography.Helper.ECDHDeriveKey(key1, key2.PublicKey);
-            var secret2 = Neo.Cryptography.Helper.ECDHDeriveKey(key1, key2.PublicKey);
+            var secret2 = Neo.Cryptography.Helper.ECDHDeriveKey(key2, key1.PublicKey);
             Assert.AreEqual(secret1.ToHexString(), secret2.ToHexString());
             var message = Encoding.ASCII.GetBytes("hello world");
             Random random = new Random();
