@@ -19,6 +19,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
+using static Neo.Helper;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.Cryptography
@@ -123,29 +124,20 @@ namespace Neo.Cryptography
 
         public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[] associatedData = null)
         {
-            var keyLen = key is null ? 0 : key.Length;
-            var nonceLen = nonce is null ? 0 : nonce.Length;
-            if (keyLen != 32) throw new ArgumentException();
-            if (nonceLen != 12) throw new ArgumentException();
-            var msgLen = plainData is null ? 0 : plainData.Length;
-            var tagLen = 16;
-            var cipherBytes = new byte[msgLen];
-            var tag = new byte[tagLen];
+            if (nonce.Length != 12) throw new ArgumentOutOfRangeException(nameof(nonce));
+            var cipherBytes = new byte[plainData.Length];
+            var tag = new byte[16];
             using var cipher = new AesGcm(key);
             cipher.Encrypt(nonce, plainData, cipherBytes, tag, associatedData);
-            var cipherWithTag = new byte[nonceLen + msgLen + tagLen];
-            Buffer.BlockCopy(nonce, 0, cipherWithTag, 0, nonceLen);
-            Buffer.BlockCopy(cipherBytes, 0, cipherWithTag, nonceLen, msgLen);
-            Buffer.BlockCopy(tag, 0, cipherWithTag, nonceLen + msgLen, tagLen);
-            return cipherWithTag;
+            return Concat(nonce, cipherBytes, tag);
         }
 
         public static byte[] AES256Decrypt(this byte[] encryptedData, byte[] key, byte[] associatedData = null)
         {
-            if (key.Length != 32) throw new ArgumentException();
-            var nonce = encryptedData.Take(12).ToArray();
-            var cipherBytes = encryptedData.Skip(12).Take(encryptedData.Length - 28).ToArray();
-            var tag = encryptedData[^16..];
+            ReadOnlySpan<byte> encrypted = encryptedData;
+            var nonce = encrypted[..12];
+            var cipherBytes = encrypted[12..^16];
+            var tag = encrypted[^16..];
             var decryptedData = new byte[cipherBytes.Length];
             using var cipher = new AesGcm(key);
             cipher.Decrypt(nonce, cipherBytes, tag, decryptedData, associatedData);
