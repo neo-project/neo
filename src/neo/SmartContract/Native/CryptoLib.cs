@@ -51,6 +51,18 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
+        /// Computes the hash value for the specified byte array using the murmur32 algorithm.
+        /// </summary>
+        /// <param name="data">The input to compute the hash code for.</param>
+        /// <returns>The computed hash code.</returns>
+        [ContractMethod(CpuFee = 1 << 4)]
+        public static byte[] Murmur32(byte[] data, uint seed)
+        {
+            using Murmur32 murmur = new(seed);
+            return murmur.ComputeHash(data);
+        }
+
+        /// <summary>
         /// Verifies that a digital signature is appropriate for the provided key and message using the ECDSA algorithm.
         /// </summary>
         /// <param name="message">The signed message.</param>
