@@ -54,6 +54,7 @@ namespace Neo.SmartContract.Native
         /// Computes the hash value for the specified byte array using the murmur32 algorithm.
         /// </summary>
         /// <param name="data">The input to compute the hash code for.</param>
+        /// <param name="seed">The seed of the murmur32 hash function</param>
         /// <returns>The computed hash code.</returns>
         [ContractMethod(CpuFee = 1 << 4)]
         public static byte[] Murmur32(byte[] data, uint seed)
