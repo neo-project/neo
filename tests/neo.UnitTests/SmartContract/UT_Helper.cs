@@ -28,6 +28,7 @@ namespace Neo.UnitTests.SmartContract
             var nef = new NefFile()
             {
                 Compiler = "test",
+                Source = string.Empty,
                 Tokens = Array.Empty<MethodToken>(),
                 Script = new byte[] { 1, 2, 3 }
             };
