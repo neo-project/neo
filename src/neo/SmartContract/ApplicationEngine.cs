@@ -299,7 +299,14 @@ namespace Neo.SmartContract
                 {
                     p.CallFlags = callFlags;
                     p.ScriptHash = contract.Hash;
-                    p.Contract = contract;
+                    p.Contract = new ContractState
+                    {
+                        Id = contract.Id,
+                        UpdateCounter = contract.UpdateCounter,
+                        Hash = contract.Hash,
+                        Nef = contract.Nef,
+                        Manifest = contract.Manifest
+                    };
                 });
 
             // Call initialization
