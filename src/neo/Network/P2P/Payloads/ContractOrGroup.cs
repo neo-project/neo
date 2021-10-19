@@ -9,6 +9,7 @@
 // modifications are permitted.
 
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Linq;
 using Neo.Cryptography.ECC;
@@ -37,11 +38,13 @@ namespace Neo.Network.P2P.Payloads
 
         public static implicit operator ContractOrGroup(UInt160 hash)
         {
+            if (hash is null) throw new ArgumentNullException();
             return new ContractOrGroup() { _data = hash.ToArray() };
         }
 
         public static implicit operator ContractOrGroup(ECPoint point)
         {
+            if (point is null) throw new ArgumentNullException();
             return new ContractOrGroup() { _data = point.EncodePoint(true) };
         }
 
@@ -51,7 +54,7 @@ namespace Neo.Network.P2P.Payloads
             if (ReferenceEquals(obj, this)) return true;
             if (obj is ContractOrGroup other)
             {
-                if (Data == null || other.Data == null) return Data == other.Data;
+                if (Data is null || other.Data is null) return Data == other.Data;
                 return Data.SequenceEqual(other.Data);
             }
             return false;
@@ -60,7 +63,7 @@ namespace Neo.Network.P2P.Payloads
         public override int GetHashCode()
         {
             if (Data == null) return 0;
-            if (Data.Length >= 4) return BitConverter.ToInt32(Data);
+            if (Data.Length >= 4) return BinaryPrimitives.ReadInt32LittleEndian(Data);
             int hash = Data.Length;
 
             foreach (var b in Data)

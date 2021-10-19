@@ -109,6 +109,7 @@ namespace Neo.Network.P2P.Payloads
             if (Scopes.HasFlag(WitnessScope.CustomGroups))
                 json["allowedgroups"] = AllowedGroups.Select(p => (JObject)p.ToString()).ToArray();
             if (Scopes.HasFlag(WitnessScope.CustomCallingContracts))
+            {
                 json["allowedcallingcontracts"] = AllowedCallingContracts.Select(p =>
                 {
                     var obj = new JObject();
@@ -116,7 +117,9 @@ namespace Neo.Network.P2P.Payloads
                     obj["trusts"] = p.Value.Select(v => (JObject)v.ToString()).ToArray();
                     return obj;
                 }).ToArray();
+            }
             if (Scopes.HasFlag(WitnessScope.CustomCallingGroups))
+            {
                 json["allowedcallinggroups"] = AllowedCallingGroup.Select(p =>
                 {
                     var obj = new JObject();
@@ -131,6 +134,7 @@ namespace Neo.Network.P2P.Payloads
                     obj["trusts"] = p.Value.Select(v => (JObject)v.ToHashString()).ToArray();
                     return obj;
                 }).ToArray();
+            }
             return json;
         }
     }
