@@ -51,7 +51,6 @@ namespace Neo.SmartContract
 
         private static IApplicationEngineProvider applicationEngineProvider;
         private static Dictionary<uint, InteropDescriptor> services;
-        private readonly Diagnostic diagnostic;
         private TreeNode<UInt160> currentNodeOfInvocationTree = null;
         private readonly long gas_amount;
         private List<NotifyEventArgs> notifications;
@@ -66,6 +65,11 @@ namespace Neo.SmartContract
         /// Gets the descriptors of all interoperable services available in NEO.
         /// </summary>
         public static IReadOnlyDictionary<uint, InteropDescriptor> Services => services;
+
+        /// <summary>
+        /// The diagnostic used by the engine. This property can be <see langword="null"/>.
+        /// </summary>
+        public Diagnostic Diagnostic { get; }
 
         private List<IDisposable> Disposables => disposables ??= new List<IDisposable>();
 
@@ -147,7 +151,7 @@ namespace Neo.SmartContract
             this.PersistingBlock = persistingBlock;
             this.ProtocolSettings = settings;
             this.gas_amount = gas;
-            this.diagnostic = diagnostic;
+            this.Diagnostic = diagnostic;
             this.exec_fee_factor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(Snapshot);
             this.StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(Snapshot);
             this.nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
@@ -255,7 +259,7 @@ namespace Neo.SmartContract
         protected override void ContextUnloaded(ExecutionContext context)
         {
             base.ContextUnloaded(context);
-            if (diagnostic is not null)
+            if (Diagnostic is not null)
                 currentNodeOfInvocationTree = currentNodeOfInvocationTree.Parent;
             if (!contractTasks.Remove(context, out var awaiter)) return;
             if (UncaughtException is not null)
@@ -287,10 +291,10 @@ namespace Neo.SmartContract
             state.ScriptHash ??= ((byte[])context.Script).ToScriptHash();
             invocationCounter.TryAdd(state.ScriptHash, 1);
 
-            if (diagnostic is not null)
+            if (Diagnostic is not null)
             {
                 if (currentNodeOfInvocationTree is null)
-                    currentNodeOfInvocationTree = diagnostic.InvocationTree.AddRoot(state.ScriptHash);
+                    currentNodeOfInvocationTree = Diagnostic.InvocationTree.AddRoot(state.ScriptHash);
                 else
                     currentNodeOfInvocationTree = currentNodeOfInvocationTree.AddChild(state.ScriptHash);
             }
