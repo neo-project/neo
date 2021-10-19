@@ -62,6 +62,7 @@ namespace Neo.Network.P2P
         private readonly Dictionary<uint, int> globalIndexTasks = new();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
+        private uint lastSeenPersistedIndex = 0;
 
         private bool HasHeaderTask => globalInvTasks.ContainsKey(HeaderTaskHash);
 
@@ -136,6 +137,8 @@ namespace Neo.Network.P2P
 
         private void OnPersistCompleted(Block block)
         {
+            lastSeenPersistedIndex = block.Index;
+
             foreach (var (actor, session) in sessions)
                 if (session.ReceivedBlock.Remove(block.Index, out Block receivedBlock))
                 {
@@ -236,7 +239,10 @@ namespace Neo.Network.P2P
                         session.ReceivedBlock.Add(block.Index, block);
                     }
                 }
-                RequestTasks(Sender, session);
+                if (inventory is not Block)
+                {
+                    RequestTasks(Sender, session);
+                }
             }
         }
 
@@ -372,9 +378,10 @@ namespace Neo.Network.P2P
             }
 
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
-            uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
+            uint headerHeight = (system.HeaderCache.Last?.Index ?? currentHeight) + 1;
             // When the number of AvailableTasks is no more than 0, no pending tasks of InventoryType.Block, it should process pending the tasks of headers
             // If not HeaderTask pending to be processed it should ask for more Blocks
+
             if ((!HasHeaderTask || globalInvTasks[HeaderTaskHash] < MaxConncurrentTasks) && headerHeight < session.LastBlockIndex && !system.HeaderCache.Full)
             {
                 session.InvTasks[HeaderTaskHash] = DateTime.UtcNow;
@@ -383,8 +390,8 @@ namespace Neo.Network.P2P
             }
             else if (currentHeight < session.LastBlockIndex)
             {
-                uint startHeight = currentHeight;
-                while (globalIndexTasks.ContainsKey(++startHeight)) { }
+                uint startHeight = Math.Max(currentHeight, lastSeenPersistedIndex + 1);
+                while (globalIndexTasks.ContainsKey(startHeight) || session.ReceivedBlock.ContainsKey(startHeight)) { startHeight++; }
                 if (startHeight > session.LastBlockIndex || startHeight >= currentHeight + InvPayload.MaxHashesCount) return;
                 uint endHeight = startHeight;
                 while (!globalIndexTasks.ContainsKey(++endHeight) && endHeight <= session.LastBlockIndex && endHeight <= currentHeight + InvPayload.MaxHashesCount) { }
