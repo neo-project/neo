@@ -14,6 +14,6 @@ namespace Neo.SmartContract
 {
     public class Diagnostic
     {
-        public Tree<UInt160> InvocationTree { get; }
+        public Tree<UInt160> InvocationTree { get; } = new();
     }
 }
