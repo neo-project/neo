@@ -313,6 +313,7 @@ namespace Neo.Ledger
                 if (!header.Verify(system.Settings, snapshot, system.HeaderCache))
                 {
                     Sender.Tell(VerifyResult.Invalid);
+                    break;
                 }
                 system.HeaderCache.Add(header);
                 ++headerHeight;
