@@ -239,7 +239,7 @@ namespace Neo.Network.P2P
                         session.ReceivedBlock.Add(block.Index, block);
                     }
                 }
-                if (inventory is not Block)
+                else
                 {
                     RequestTasks(Sender, session);
                 }
