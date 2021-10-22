@@ -46,7 +46,7 @@ namespace Neo.UnitTests.Extensions
 
             if (engine.Execute() == VMState.FAULT)
             {
-                return false;
+                throw engine.FaultException;
             }
 
             var result = engine.ResultStack.Pop();

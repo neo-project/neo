@@ -136,6 +136,7 @@ namespace Neo.SmartContract.Native
             this.Nef = new NefFile
             {
                 Compiler = "neo-core-v3.0",
+                Source = string.Empty,
                 Tokens = Array.Empty<MethodToken>(),
                 Script = script
             };
