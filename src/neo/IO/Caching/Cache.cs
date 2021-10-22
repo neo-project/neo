@@ -32,8 +32,21 @@ namespace Neo.IO.Caching
             }
         }
 
+        protected class StructuralEqualityComparer : EqualityComparer<TKey>
+        {
+            public override bool Equals(TKey x, TKey y)
+            {
+                return StructuralComparisons.StructuralEqualityComparer.Equals(x, y);
+            }
+
+            public override int GetHashCode(TKey obj)
+            {
+                return StructuralComparisons.StructuralEqualityComparer.GetHashCode(obj);
+            }
+        }
+
         protected readonly ReaderWriterLockSlim RwSyncRootLock = new(LockRecursionPolicy.SupportsRecursion);
-        protected readonly Dictionary<TKey, CacheItem> InnerDictionary = new();
+        protected readonly Dictionary<TKey, CacheItem> InnerDictionary = new(new StructuralEqualityComparer());
         private readonly int max_capacity;
 
         public TValue this[TKey key]

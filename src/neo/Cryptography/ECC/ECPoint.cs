@@ -77,7 +77,7 @@ namespace Neo.Cryptography.ECC
                         if (encoded.Length != (curve.ExpectedECPointLength + 1))
                             throw new FormatException("Incorrect length for compressed encoding");
                         byte[] compressedPoint = encoded.ToArray();
-                        if (pointCache.TryGet(compressedPoint.ToHexString(), out ECPoint inventory))
+                        if (pointCache.TryGet(compressedPoint, out ECPoint inventory))
                         {
                             p = inventory;
                         }

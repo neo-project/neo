@@ -12,16 +12,16 @@ using Neo.Cryptography.ECC;
 
 namespace Neo.IO.Caching
 {
-    internal class ECPointCache : FIFOCache<string, ECPoint>
+    internal class ECPointCache : FIFOCache<byte[], ECPoint>
     {
         public ECPointCache(int max_capacity)
             : base(max_capacity)
         {
         }
 
-        protected override string GetKeyForItem(ECPoint item)
+        protected override byte[] GetKeyForItem(ECPoint item)
         {
-            return item.EncodePoint(true).ToHexString();
+            return item.EncodePoint(true);
         }
     }
 }

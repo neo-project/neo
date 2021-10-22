@@ -23,7 +23,7 @@ namespace Neo.UnitTests.IO.Caching
         {
             relayCache.Add(ECCurve.Secp256r1.G);
             relayCache.Contains(ECCurve.Secp256r1.G).Should().BeTrue();
-            relayCache.TryGet(ECCurve.Secp256r1.G.EncodePoint(true).ToHexString(), out ECPoint tmp).Should().BeTrue();
+            relayCache.TryGet(ECCurve.Secp256r1.G.EncodePoint(true), out ECPoint tmp).Should().BeTrue();
             (tmp is ECPoint).Should().BeTrue();
         }
     }
