@@ -77,23 +77,7 @@ namespace Neo.Cryptography.ECC
                     {
                         if (encoded.Length != (curve.ExpectedECPointLength + 1))
                             throw new FormatException("Incorrect length for compressed encoding");
-                        byte[] compressedPoint = encoded.ToArray();
-                        IO.Caching.ECPointCache pointCache = null;
-                        if (curve == ECCurve.Secp256k1) pointCache = pointCacheK1;
-                        else if (curve == ECCurve.Secp256r1) pointCache = pointCacheR1;
-                        else throw new FormatException("Invalid curve " + curve);
-                        if (pointCache.TryGet(compressedPoint, out ECPoint inventory))
-                        {
-                            p = inventory;
-                        }
-                        else
-                        {
-                            int yTilde = encoded[0] & 1;
-                            BigInteger X1 = new(encoded[1..], isUnsigned: true, isBigEndian: true);
-                            p = DecompressPoint(yTilde, X1, curve);
-                            p._compressedPoint = compressedPoint;
-                            pointCache.Add(p);
-                        }
+                        p = DecompressPoint(encoded, curve);
                         break;
                     }
                 case 0x04: // uncompressed
@@ -112,6 +96,30 @@ namespace Neo.Cryptography.ECC
                     throw new FormatException("Invalid point encoding " + encoded[0]);
             }
             return p;
+        }
+
+        private static ECPoint DecompressPoint(ReadOnlySpan<byte> encoded, ECCurve curve)
+        {
+            IO.Caching.ECPointCache pointCache = null;
+            if (curve == ECCurve.Secp256k1) pointCache = pointCacheK1;
+            else if (curve == ECCurve.Secp256r1) pointCache = pointCacheR1;
+            else throw new FormatException("Invalid curve " + curve);
+
+            byte[] compressedPoint = encoded.ToArray();
+            if (pointCache.TryGet(compressedPoint, out ECPoint inventory))
+            {
+                return inventory;
+            }
+            else
+            {
+                ECPoint p = null;
+                int yTilde = encoded[0] & 1;
+                BigInteger X1 = new(encoded[1..], isUnsigned: true, isBigEndian: true);
+                p = DecompressPoint(yTilde, X1, curve);
+                p._compressedPoint = compressedPoint;
+                pointCache.Add(p);
+                return p;
+            }
         }
 
         private static ECPoint DecompressPoint(int yTilde, BigInteger X1, ECCurve curve)
