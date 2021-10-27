@@ -270,8 +270,8 @@ namespace Neo.Ledger
                 }
 
                 int blocksPersisted = 0;
-                // 15000 is the default among of seconds per block, while MilliSecondsPerBlock is the current
-                uint extraBlocks = (15000 - system.Settings.MillisecondsPerBlock) / 1000;
+                uint extraBlocks = system.Settings.MillisecondsPerBlock <= ProtocolSettings.Default.MillisecondsPerBlock ?
+                    (ProtocolSettings.Default.MillisecondsPerBlock - system.Settings.MillisecondsPerBlock) / 1000 : 0;
                 foreach (Block blockToPersist in blocksToPersistList)
                 {
                     block_cache_unverified.Remove(blockToPersist.Index);
