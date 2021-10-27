@@ -35,8 +35,8 @@ namespace Neo.Cryptography.ECC
 
         public int Size => IsInfinity ? 1 : 33;
 
-        private static IO.Caching.ECPointCache pointCacheK1 { get; } = new(100);
-        private static IO.Caching.ECPointCache pointCacheR1 { get; } = new(100);
+        private static IO.Caching.ECPointCache pointCacheK1 { get; } = new(1000);
+        private static IO.Caching.ECPointCache pointCacheR1 { get; } = new(1000);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ECPoint"/> class with the secp256r1 curve.
