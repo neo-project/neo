@@ -35,7 +35,8 @@ namespace Neo.Cryptography.ECC
 
         public int Size => IsInfinity ? 1 : 33;
 
-        private static IO.Caching.ECPointCache pointCache { get; } = new(100);
+        private static IO.Caching.ECPointCache pointCacheK1 { get; } = new(100);
+        private static IO.Caching.ECPointCache pointCacheR1 { get; } = new(100);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ECPoint"/> class with the secp256r1 curve.
@@ -77,6 +78,10 @@ namespace Neo.Cryptography.ECC
                         if (encoded.Length != (curve.ExpectedECPointLength + 1))
                             throw new FormatException("Incorrect length for compressed encoding");
                         byte[] compressedPoint = encoded.ToArray();
+                        IO.Caching.ECPointCache pointCache = null;
+                        if (curve == ECCurve.Secp256k1) pointCache = pointCacheK1;
+                        else if (curve == ECCurve.Secp256r1) pointCache = pointCacheR1;
+                        else throw new FormatException("Invalid curve " + curve);
                         if (pointCache.TryGet(compressedPoint, out ECPoint inventory))
                         {
                             p = inventory;
