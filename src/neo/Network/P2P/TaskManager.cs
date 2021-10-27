@@ -377,7 +377,7 @@ namespace Neo.Network.P2P
                 }
             }
 
-            uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
+            uint currentHeight = Math.Max(NativeContract.Ledger.CurrentIndex(snapshot), lastSeenPersistedIndex);
             uint headerHeight = (system.HeaderCache.Last?.Index ?? currentHeight) + 1;
             // When the number of AvailableTasks is no more than 0, no pending tasks of InventoryType.Block, it should process pending the tasks of headers
             // If not HeaderTask pending to be processed it should ask for more Blocks
@@ -389,7 +389,7 @@ namespace Neo.Network.P2P
             }
             else if (currentHeight < session.LastBlockIndex)
             {
-                uint startHeight = Math.Max(currentHeight, lastSeenPersistedIndex) + 1;
+                uint startHeight = currentHeight + 1;
                 while (globalIndexTasks.ContainsKey(startHeight) || session.ReceivedBlock.ContainsKey(startHeight)) { startHeight++; }
                 if (startHeight > session.LastBlockIndex || startHeight >= currentHeight + InvPayload.MaxHashesCount) return;
                 uint endHeight = startHeight;
