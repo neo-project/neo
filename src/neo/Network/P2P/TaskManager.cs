@@ -389,7 +389,7 @@ namespace Neo.Network.P2P
             }
             else if (currentHeight < session.LastBlockIndex)
             {
-                uint startHeight = Math.Max(currentHeight, lastSeenPersistedIndex + 1);
+                uint startHeight = Math.Max(currentHeight, lastSeenPersistedIndex) + 1;
                 while (globalIndexTasks.ContainsKey(startHeight) || session.ReceivedBlock.ContainsKey(startHeight)) { startHeight++; }
                 if (startHeight > session.LastBlockIndex || startHeight >= currentHeight + InvPayload.MaxHashesCount) return;
                 uint endHeight = startHeight;
