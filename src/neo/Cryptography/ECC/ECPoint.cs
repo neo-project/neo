@@ -9,6 +9,7 @@
 // modifications are permitted.
 
 using Neo.IO;
+using Neo.IO.Caching;
 using System;
 using System.IO;
 using System.Numerics;
@@ -100,26 +101,21 @@ namespace Neo.Cryptography.ECC
 
         private static ECPoint DecompressPoint(ReadOnlySpan<byte> encoded, ECCurve curve)
         {
-            IO.Caching.ECPointCache pointCache = null;
+            ECPointCache pointCache = null;
             if (curve == ECCurve.Secp256k1) pointCache = pointCacheK1;
             else if (curve == ECCurve.Secp256r1) pointCache = pointCacheR1;
             else throw new FormatException("Invalid curve " + curve);
 
             byte[] compressedPoint = encoded.ToArray();
-            if (pointCache.TryGet(compressedPoint, out ECPoint inventory))
+            if (!pointCache.TryGet(compressedPoint, out ECPoint p))
             {
-                return inventory;
-            }
-            else
-            {
-                ECPoint p = null;
                 int yTilde = encoded[0] & 1;
                 BigInteger X1 = new(encoded[1..], isUnsigned: true, isBigEndian: true);
                 p = DecompressPoint(yTilde, X1, curve);
                 p._compressedPoint = compressedPoint;
                 pointCache.Add(p);
-                return p;
             }
+            return p;
         }
 
         private static ECPoint DecompressPoint(int yTilde, BigInteger X1, ECCurve curve)
