@@ -101,7 +101,7 @@ namespace Neo.Network.P2P
                 return;
 
             // Do not accept payload of type InventoryType.TX if not synced on HeaderHeight
-            uint currentHeight = NativeContract.Ledger.CurrentIndex(system.StoreView);
+            uint currentHeight = Math.Max(NativeContract.Ledger.CurrentIndex(system.StoreView), lastSeenPersistedIndex);
             uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
             if (currentHeight < headerHeight && (payload.Type == InventoryType.TX || (payload.Type == InventoryType.Block && currentHeight < session.LastBlockIndex - InvPayload.MaxHashesCount)))
             {
@@ -378,14 +378,14 @@ namespace Neo.Network.P2P
             }
 
             uint currentHeight = Math.Max(NativeContract.Ledger.CurrentIndex(snapshot), lastSeenPersistedIndex);
-            uint headerHeight = (system.HeaderCache.Last?.Index ?? currentHeight) + 1;
+            uint headerHeight = (system.HeaderCache.Last?.Index ?? currentHeight);
             // When the number of AvailableTasks is no more than 0, no pending tasks of InventoryType.Block, it should process pending the tasks of headers
             // If not HeaderTask pending to be processed it should ask for more Blocks
             if ((!HasHeaderTask || globalInvTasks[HeaderTaskHash] < MaxConncurrentTasks) && headerHeight < session.LastBlockIndex && !system.HeaderCache.Full)
             {
                 session.InvTasks[HeaderTaskHash] = DateTime.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);
-                remoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlockByIndexPayload.Create(headerHeight)));
+                remoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlockByIndexPayload.Create(headerHeight + 1)));
             }
             else if (currentHeight < session.LastBlockIndex)
             {
