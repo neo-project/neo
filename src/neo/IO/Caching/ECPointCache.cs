@@ -15,7 +15,7 @@ namespace Neo.IO.Caching
     internal class ECPointCache : FIFOCache<byte[], ECPoint>
     {
         public ECPointCache(int max_capacity)
-            : base(max_capacity)
+            : base(max_capacity, ByteArrayEqualityComparer.Default)
         {
         }
 

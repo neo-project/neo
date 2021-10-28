@@ -8,12 +8,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.Collections.Generic;
+
 namespace Neo.IO.Caching
 {
     internal abstract class FIFOCache<TKey, TValue> : Cache<TKey, TValue>
     {
-        public FIFOCache(int max_capacity)
-            : base(max_capacity)
+        public FIFOCache(int max_capacity, IEqualityComparer<TKey> comparer = null)
+            : base(max_capacity, comparer)
         {
         }
 
