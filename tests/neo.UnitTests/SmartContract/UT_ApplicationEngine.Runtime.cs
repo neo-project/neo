@@ -389,7 +389,7 @@ namespace Neo.UnitTests.SmartContract
             var result = engine.ResultStack.Pop();
             Assert.IsFalse(result.GetBoolean());
         }
-        
+
         /// <summary>
         /// Entry=>VerifyContract(CheckWitness)
         /// AllowedCallingGroup: [VerifyGroup]=[Any]
@@ -605,7 +605,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(result.GetBoolean());
         }
 
-        
+
         /// <summary>
         /// Entry=>Bridge=>Verify(CheckWitness)
         /// AllowedCallingGroup: empty
