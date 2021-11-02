@@ -251,17 +251,13 @@ namespace Neo.SmartContract
                     ValidateCallFlags(CallFlags.ReadStates);
 
                     var currentContract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
-                    var currentGroups = currentContract?.Manifest?.Groups?.Select(p => (ContractOrGroup)p.PubKey).ToHashSet() ?? new HashSet<ContractOrGroup>();
-                    if (signer.AllowedCallingGroup.TryGetValue(CurrentScriptHash, out var contractTrusts) || signer.AllowedCallingGroup.Keys.ContainsAny(currentGroups))
+                    var currentGroups = currentContract?.Manifest?.Groups?.Select(p => p.PubKey).ToHashSet() ?? new HashSet<ECPoint>();
+                    if (signer.AllowedCallingGroup.Keys.ContainsAny(currentGroups))
                     {
                         if (CallingScriptHash == null || CallingScriptHash == EntryScriptHash) return true;
 
                         var contract = NativeContract.ContractManagement.GetContract(Snapshot, CallingScriptHash);
                         var callerGroups = contract.Manifest.Groups.Select(p => (ContractOrGroup)p.PubKey).ToHashSet();
-                        // key is contract
-                        if (contractTrusts != null &&
-                            (contractTrusts.Contains(CallingScriptHash) || contractTrusts.ContainsAny(callerGroups))) return true;
-
                         // key is group
                         foreach (var currentGroup in currentGroups)
                         {

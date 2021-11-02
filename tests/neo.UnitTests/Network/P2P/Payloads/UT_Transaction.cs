@@ -850,7 +850,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     AllowedContracts = Array.Empty<UInt160>(),
                     AllowedGroups = Array.Empty<ECPoint>(),
                     AllowedCallingContracts = new Dictionary<UInt160, UInt160[]>(),
-                    AllowedCallingGroup = new Dictionary<ContractOrGroup, ContractOrGroup[]>()
+                    AllowedCallingGroup = new Dictionary<ECPoint, ContractOrGroup[]>()
                 }, }
             );
             tx2.Script.Should().BeEquivalentTo(new byte[] { (byte)OpCode.PUSH1 });

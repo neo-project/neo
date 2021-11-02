@@ -122,14 +122,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var attr = new Signer()
             {
                 Scopes = WitnessScope.CustomCallingGroups,
-                AllowedCallingGroup = new Dictionary<ContractOrGroup, ContractOrGroup[]>()
+                AllowedCallingGroup = new Dictionary<ECPoint, ContractOrGroup[]>()
                 {
-                    [contract] = new ContractOrGroup[] { point }
+                    [point] = new ContractOrGroup[] { point }
                 },
                 Account = UInt160.Zero
             };
 
-            var hex = "0000000000000000000000000000000000000000040114f563ea40bc283d4d0e05c48ea305b3f2a07340ef012103b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c";
+            var hex = "0000000000000000000000000000000000000000040103b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c012103b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c";
             attr.ToArray().ToHexString().Should().Be(hex);
             var copy = hex.HexToBytes().AsSerializable<Signer>();
 
@@ -137,8 +137,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(attr.Scopes, copy.Scopes);
             Assert.AreEqual(attr.Account, copy.Account);
             Assert.AreEqual(1, copy.AllowedCallingGroup.Count);
-            Assert.AreEqual(1, copy.AllowedCallingGroup[contract].Length);
-            Assert.AreEqual(attr.AllowedCallingGroup[contract][0], copy.AllowedCallingGroup[contract][0]);
+            Assert.AreEqual(1, copy.AllowedCallingGroup[point].Length);
+            Assert.AreEqual(attr.AllowedCallingGroup[point][0], copy.AllowedCallingGroup[point][0]);
         }
 
         [TestMethod]
@@ -221,15 +221,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var attr = new Signer()
             {
                 Scopes = WitnessScope.CustomCallingGroups,
-                AllowedCallingGroup = new Dictionary<ContractOrGroup, ContractOrGroup[]>()
+                AllowedCallingGroup = new Dictionary<ECPoint, ContractOrGroup[]>()
                 {
-                    [contract] = new ContractOrGroup[] { point },
                     [point] = new ContractOrGroup[] { contract },
                 },
                 Account = UInt160.Zero
             };
 
-            var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CustomCallingGroups\",\"allowedcallinggroups\":[{\"contract\":\"0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5\",\"trusts\":[\"03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c\"]},{\"group\":\"03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c\",\"trusts\":[\"0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5\"]}]}";
+            var json = "{\"account\":\"0x0000000000000000000000000000000000000000\",\"scopes\":\"CustomCallingGroups\",\"allowedcallinggroups\":[{\"group\":\"03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c\",\"trusts\":[\"0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5\"]}]}";
             attr.ToJson().ToString().Should().Be(json);
         }
     }
