@@ -299,7 +299,6 @@ namespace Neo.Network.P2P
         private void OnHeadersMessageReceived(HeadersPayload payload)
         {
             UpdateLastBlockIndex(payload.Headers[^1].Index);
-            system.TaskManager.Tell(payload.Headers);
             system.Blockchain.Tell(payload.Headers);
         }
 
@@ -307,6 +306,7 @@ namespace Neo.Network.P2P
         {
             knownHashes.Add(inventory.Hash);
             pendingKnownHashes.Remove(inventory.Hash);
+            system.TaskManager.Tell(inventory);
             switch (inventory)
             {
                 case Transaction transaction:
@@ -322,7 +322,6 @@ namespace Neo.Network.P2P
                     system.Blockchain.Tell(inventory);
                     break;
             }
-            system.TaskManager.Tell(inventory);
         }
 
         private void OnInvMessageReceived(InvPayload payload)

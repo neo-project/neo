@@ -304,17 +304,20 @@ namespace Neo.Ledger
 
         private void OnNewHeaders(Header[] headers)
         {
-            if (system.HeaderCache.Full) return;
-            DataCache snapshot = system.StoreView;
-            uint headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
-            foreach (Header header in headers)
+            if (!system.HeaderCache.Full)
             {
-                if (header.Index > headerHeight + 1) break;
-                if (header.Index < headerHeight + 1) continue;
-                if (!header.Verify(system.Settings, snapshot, system.HeaderCache)) break;
-                system.HeaderCache.Add(header);
-                ++headerHeight;
+                DataCache snapshot = system.StoreView;
+                uint headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
+                foreach (Header header in headers)
+                {
+                    if (header.Index > headerHeight + 1) break;
+                    if (header.Index < headerHeight + 1) continue;
+                    if (!header.Verify(system.Settings, snapshot, system.HeaderCache)) break;
+                    system.HeaderCache.Add(header);
+                    ++headerHeight;
+                }
             }
+            system.TaskManager.Tell(headers, Sender);
         }
 
         private VerifyResult OnNewExtensiblePayload(ExtensiblePayload payload)
