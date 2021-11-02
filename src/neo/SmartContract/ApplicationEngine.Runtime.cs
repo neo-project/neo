@@ -241,7 +241,9 @@ namespace Neo.SmartContract
                     {
                         if (CallingScriptHash == null || CallingScriptHash == EntryScriptHash) return true;
 
-                        if (signer.AllowedCallingContracts[CurrentScriptHash].Any(a => a == CallingScriptHash)) return true;
+                        var callerContract = NativeContract.ContractManagement.GetContract(Snapshot, CallingScriptHash);
+                        var callerGroups = callerContract.Manifest.Groups.Select(p => (ContractOrGroup)p.PubKey).ToHashSet();
+                        if (signer.AllowedCallingContracts[CurrentScriptHash].Any(a => a.Equals((ContractOrGroup)CallingScriptHash) || callerGroups.Contains(a))) return true;
                     }
                 }
 

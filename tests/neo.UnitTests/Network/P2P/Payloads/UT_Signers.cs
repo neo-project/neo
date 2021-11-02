@@ -95,14 +95,14 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var attr = new Signer()
             {
                 Scopes = WitnessScope.CustomCallingContracts,
-                AllowedCallingContracts = new Dictionary<UInt160, UInt160[]>()
+                AllowedCallingContracts = new Dictionary<UInt160, ContractOrGroup[]>()
                 {
-                    [contract] = new UInt160[] { UInt160.Zero }
+                    [contract] = new[] { (ContractOrGroup)UInt160.Zero }
                 },
                 Account = UInt160.Zero
             };
 
-            var hex = "00000000000000000000000000000000000000000201f563ea40bc283d4d0e05c48ea305b3f2a07340ef010000000000000000000000000000000000000000";
+            var hex = "00000000000000000000000000000000000000000201f563ea40bc283d4d0e05c48ea305b3f2a07340ef01140000000000000000000000000000000000000000";
             attr.ToArray().ToHexString().Should().Be(hex);
             var copy = hex.HexToBytes().AsSerializable<Signer>();
 
@@ -202,9 +202,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var attr = new Signer()
             {
                 Scopes = WitnessScope.CustomCallingContracts,
-                AllowedCallingContracts = new Dictionary<UInt160, UInt160[]>()
+                AllowedCallingContracts = new Dictionary<UInt160, ContractOrGroup[]>()
                 {
-                    [contract] = new UInt160[] { UInt160.Zero }
+                    [contract] = new[] { (ContractOrGroup)UInt160.Zero }
                 },
                 Account = UInt160.Zero
             };

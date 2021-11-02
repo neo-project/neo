@@ -48,7 +48,7 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         public ECPoint[] AllowedGroups;
 
-        public IDictionary<UInt160, UInt160[]> AllowedCallingContracts;
+        public IDictionary<UInt160, ContractOrGroup[]> AllowedCallingContracts;
         public IDictionary<ECPoint, ContractOrGroup[]> AllowedCallingGroup;
 
         public int Size =>
@@ -74,8 +74,8 @@ namespace Neo.Network.P2P.Payloads
                 ? reader.ReadSerializableArray<ECPoint>(MaxSubitems)
                 : Array.Empty<ECPoint>();
             AllowedCallingContracts = Scopes.HasFlag(WitnessScope.CustomCallingContracts)
-                ? reader.ReadLookup<UInt160, UInt160>(MaxSubitems)
-                : new Dictionary<UInt160, UInt160[]>();
+                ? reader.ReadLookup<UInt160, ContractOrGroup>(MaxSubitems)
+                : new Dictionary<UInt160, ContractOrGroup[]>();
             AllowedCallingGroup = Scopes.HasFlag(WitnessScope.CustomCallingGroups)
                 ? reader.ReadLookup<ECPoint, ContractOrGroup>(MaxSubitems)
                 : new Dictionary<ECPoint, ContractOrGroup[]>();
@@ -114,7 +114,7 @@ namespace Neo.Network.P2P.Payloads
                 {
                     var obj = new JObject();
                     obj["contract"] = p.Key.ToString();
-                    obj["trusts"] = p.Value.Select(v => (JObject)v.ToString()).ToArray();
+                    obj["trusts"] = p.Value.Select(v => (JObject)v.ToHashString()).ToArray();
                     return obj;
                 }).ToArray();
             }

@@ -129,9 +129,9 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingContracts,
-                    AllowedCallingContracts = new Dictionary<UInt160, UInt160[]>()
+                    AllowedCallingContracts = new Dictionary<UInt160, ContractOrGroup[]>()
                     {
-                        [script.ToArray().ToScriptHash()] = new UInt160[] { }
+                        [script.ToArray().ToScriptHash()] = new ContractOrGroup[] { }
                     }
                 }
             };
@@ -163,7 +163,7 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingContracts,
-                    AllowedCallingContracts = new Dictionary<UInt160, UInt160[]>()
+                    AllowedCallingContracts = new Dictionary<UInt160, ContractOrGroup[]>()
                 }
             };
             Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -196,9 +196,9 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingContracts,
-                    AllowedCallingContracts = new Dictionary<UInt160, UInt160[]>()
+                    AllowedCallingContracts = new Dictionary<UInt160, ContractOrGroup[]>()
                     {
-                        [verifyContract.Hash] = new UInt160[] { }
+                        [verifyContract.Hash] = new ContractOrGroup[] { }
                     }
                 }
             };
@@ -233,7 +233,7 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingContracts,
-                    AllowedCallingContracts = new Dictionary<UInt160, UInt160[]>()
+                    AllowedCallingContracts = new Dictionary<UInt160, ContractOrGroup[]>()
                 }
             };
             var state = engine.Execute();
@@ -269,9 +269,50 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingContracts,
-                    AllowedCallingContracts = new Dictionary<UInt160, UInt160[]>()
+                    AllowedCallingContracts = new Dictionary<UInt160, ContractOrGroup[]>()
                     {
-                        [verifyContract.Hash] = new UInt160[] { bridgeContract.Hash }
+                        [verifyContract.Hash] = new ContractOrGroup[] { bridgeContract.Hash }
+                    }
+                }
+            };
+            var state = engine.Execute();
+            Assert.AreEqual(VMState.HALT, state);
+
+            var result = engine.ResultStack.Pop();
+            Assert.IsTrue(result.GetBoolean());
+        }
+
+
+
+        /// <summary>
+        /// Entry=>Bridge=>Verify(CheckWitness)
+        /// AllowedCallingContracts: [VerifyContractHash]=[BridgeContractGroup,...]
+        /// </summary>
+        [TestMethod]
+        public void TestCheckWitness_CustomCallingContracts_Bridge_Success2()
+        {
+            var sender = GerRandomAddress();
+            var tx = InitTx();
+
+            var verifyContract = GetVerifyContract();
+            var bridgeContract = GetBridgeContract();
+            var snapshot = TestBlockchain.GetTestSnapshot();
+            snapshot.AddContract(verifyContract.Hash, verifyContract);
+            snapshot.AddContract(bridgeContract.Hash, bridgeContract);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot,
+                settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+
+            engine.LoadScript(BuildBridgeCallScript(sender, verifyContract, bridgeContract));
+
+            tx.Signers = new Signer[]
+            {
+                new Signer()
+                {
+                    Account = sender,
+                    Scopes = WitnessScope.CustomCallingContracts,
+                    AllowedCallingContracts = new Dictionary<UInt160, ContractOrGroup[]>()
+                    {
+                        [verifyContract.Hash] = new ContractOrGroup[] { _point }
                     }
                 }
             };
@@ -308,9 +349,9 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingContracts,
-                    AllowedCallingContracts = new Dictionary<UInt160, UInt160[]>()
+                    AllowedCallingContracts = new Dictionary<UInt160, ContractOrGroup[]>()
                     {
-                        [verifyContract.Hash] = new UInt160[] { verifyContract.Hash }
+                        [verifyContract.Hash] = new ContractOrGroup[] { verifyContract.Hash }
                     }
                 }
             };
@@ -347,7 +388,7 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Account = sender,
                     Scopes = WitnessScope.CustomCallingContracts,
-                    AllowedCallingContracts = new Dictionary<UInt160, UInt160[]>()
+                    AllowedCallingContracts = new Dictionary<UInt160, ContractOrGroup[]>()
                 }
             };
             var state = engine.Execute();
