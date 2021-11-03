@@ -180,9 +180,6 @@ namespace Neo
         /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
         public static ProtocolSettings Load(IConfigurationSection section)
         {
-            uint millisecondsPerBlock = section.GetValue("MillisecondsPerBlock", Default.MillisecondsPerBlock);
-            if (millisecondsPerBlock == 0) throw new ArgumentException("0 is not a valid value for ProtocolConfiguration:MillisecondsPerBlock.");
-
             return new ProtocolSettings
             {
                 Network = section.GetValue("Network", Default.Network),
@@ -194,7 +191,7 @@ namespace Neo
                 SeedList = section.GetSection("SeedList").Exists()
                     ? section.GetSection("SeedList").GetChildren().Select(p => p.Get<string>()).ToArray()
                     : Default.SeedList,
-                MillisecondsPerBlock = millisecondsPerBlock,
+                MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", Default.MillisecondsPerBlock),
                 MaxTransactionsPerBlock = section.GetValue("MaxTransactionsPerBlock", Default.MaxTransactionsPerBlock),
                 MemoryPoolMaxTransactions = section.GetValue("MemoryPoolMaxTransactions", Default.MemoryPoolMaxTransactions),
                 MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", Default.MaxTraceableBlocks),
