@@ -4,7 +4,10 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.Wallets;
+using Neo.Wallets.NEP6;
 using System;
+using System.Linq;
 using System.Security;
 using System.Text;
 
@@ -46,6 +49,48 @@ namespace Neo.UnitTests.Cryptography
             byte[] result = value.RIPEMD160();
             string resultStr = result.ToHexString();
             resultStr.Should().Be("98c615784ccb5fe5936fbc0cbe9dfdb408d92f0f");
+        }
+
+        [TestMethod]
+        public void TestAESEncryptAndDecrypt()
+        {
+            NEP6Wallet wallet = new NEP6Wallet("", ProtocolSettings.Default);
+            wallet.Unlock("1");
+            wallet.CreateAccount();
+            WalletAccount account = wallet.GetAccounts().ToArray()[0];
+            KeyPair key = account.GetKey();
+            Random random = new Random();
+            byte[] nonce = new byte[12];
+            random.NextBytes(nonce);
+            var cypher = Neo.Cryptography.Helper.AES256Encrypt(Encoding.UTF8.GetBytes("hello world"), key.PrivateKey, nonce);
+            var m = Neo.Cryptography.Helper.AES256Decrypt(cypher, key.PrivateKey);
+            var message2 = Encoding.UTF8.GetString(m);
+            Assert.AreEqual("hello world", message2);
+        }
+
+        [TestMethod]
+        public void TestEcdhEncryptAndDecrypt()
+        {
+            NEP6Wallet wallet = new NEP6Wallet("", ProtocolSettings.Default);
+            wallet.Unlock("1");
+            wallet.CreateAccount();
+            wallet.CreateAccount();
+            WalletAccount account1 = wallet.GetAccounts().ToArray()[0];
+            KeyPair key1 = account1.GetKey();
+            WalletAccount account2 = wallet.GetAccounts().ToArray()[1];
+            KeyPair key2 = account2.GetKey();
+            Console.WriteLine($"Account:{1},privatekey:{key1.PrivateKey.ToHexString()},publicKey:{key1.PublicKey.ToArray().ToHexString()}");
+            Console.WriteLine($"Account:{2},privatekey:{key2.PrivateKey.ToHexString()},publicKey:{key2.PublicKey.ToArray().ToHexString()}");
+            var secret1 = Neo.Cryptography.Helper.ECDHDeriveKey(key1, key2.PublicKey);
+            var secret2 = Neo.Cryptography.Helper.ECDHDeriveKey(key2, key1.PublicKey);
+            Assert.AreEqual(secret1.ToHexString(), secret2.ToHexString());
+            var message = Encoding.ASCII.GetBytes("hello world");
+            Random random = new Random();
+            byte[] nonce = new byte[12];
+            random.NextBytes(nonce);
+            var cypher = message.AES256Encrypt(secret1, nonce);
+            cypher.AES256Decrypt(secret2);
+            Assert.AreEqual("hello world", Encoding.ASCII.GetString(cypher.AES256Decrypt(secret2)));
         }
 
         [TestMethod]
