@@ -279,7 +279,7 @@ namespace Neo.SmartContract
             var state = context.GetState<ExecutionContextState>();
             state.ScriptHash ??= ((byte[])context.Script).ToScriptHash();
             invocationCounter.TryAdd(state.ScriptHash, 1);
-
+            context.Compiler = state.Contract.Nef.Compiler;
             base.LoadContext(context);
         }
 
