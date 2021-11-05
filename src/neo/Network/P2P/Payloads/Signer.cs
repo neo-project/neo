@@ -74,10 +74,10 @@ namespace Neo.Network.P2P.Payloads
                 ? reader.ReadSerializableArray<ECPoint>(MaxSubitems)
                 : Array.Empty<ECPoint>();
             AllowedCallingContracts = Scopes.HasFlag(WitnessScope.CustomCallingContracts)
-                ? reader.ReadLookup<UInt160, ContractOrGroup>(MaxSubitems)
+                ? reader.ReadLookup<UInt160, ContractOrGroup>(MaxSubitems, 33)
                 : new Dictionary<UInt160, ContractOrGroup[]>();
             AllowedCallingGroup = Scopes.HasFlag(WitnessScope.CustomCallingGroups)
-                ? reader.ReadLookup<ECPoint, ContractOrGroup>(MaxSubitems)
+                ? reader.ReadLookup<ECPoint, ContractOrGroup>(MaxSubitems, 33)
                 : new Dictionary<ECPoint, ContractOrGroup[]>();
         }
 

@@ -22,6 +22,7 @@ namespace Neo.Network.P2P.Payloads
         private byte[] _data;
         public byte[] Data => _data;
         public int Size => _data?.GetVarSize() ?? 0;
+
         public void Serialize(BinaryWriter writer)
         {
             writer.WriteVarBytes(_data);
@@ -29,7 +30,7 @@ namespace Neo.Network.P2P.Payloads
 
         public void Deserialize(BinaryReader reader)
         {
-            _data = reader.ReadVarBytes();
+            _data = reader.ReadVarBytes(33);
             if (_data.Length != 33 && _data.Length != 20)
             {
                 throw new Exception("Must be UInt160 or PublicKey");
@@ -47,7 +48,6 @@ namespace Neo.Network.P2P.Payloads
             if (point is null) throw new ArgumentNullException();
             return new ContractOrGroup() { _data = point.EncodePoint(true) };
         }
-
 
         public override bool Equals(object? obj)
         {
@@ -82,7 +82,7 @@ namespace Neo.Network.P2P.Payloads
         public string ToHashString()
         {
             if (Data == null) return null;
-            if (Data.Length == 20)
+            if (Data.Length == UInt160.Length)
             {
                 return new UInt160(Data).ToString();
             }
