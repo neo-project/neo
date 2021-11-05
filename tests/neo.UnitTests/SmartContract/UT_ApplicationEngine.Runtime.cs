@@ -282,8 +282,6 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(result.GetBoolean());
         }
 
-
-
         /// <summary>
         /// Entry=>Bridge=>Verify(CheckWitness)
         /// AllowedCallingContracts: [VerifyContractHash]=[BridgeContractGroup,...]
@@ -472,7 +470,6 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(result.GetBoolean());
         }
 
-
         /// <summary>
         /// Entry=>VerifyContract(CheckWitness)
         /// AllowedCallingGroup: Empty
@@ -507,10 +504,8 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsFalse(result.GetBoolean());
         }
 
-        private ECPoint _point = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1);
-
-        private ECPoint _point2 = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a700", ECCurve.Secp256r1);
-
+        private readonly ECPoint _point = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1);
+        private readonly ECPoint _point2 = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a700", ECCurve.Secp256r1);
 
         /// <summary>
         /// Entry=>Bridge=>Verify(CheckWitness)
@@ -556,7 +551,6 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(result.GetBoolean());
         }
 
-
         /// <summary>
         /// Entry=>Bridge=>Verify(CheckWitness)
         /// AllowedCallingGroup: [VerifyGroup]=[BridgeGroup]
@@ -601,7 +595,6 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(result.GetBoolean());
         }
 
-
         /// <summary>
         /// Entry=>Bridge=>Verify(CheckWitness)
         /// AllowedCallingGroup: [VerifyGroup]=[] //Same Group Auto Trust
@@ -645,7 +638,6 @@ namespace Neo.UnitTests.SmartContract
             var result = engine.ResultStack.Pop();
             Assert.IsTrue(result.GetBoolean());
         }
-
 
         /// <summary>
         /// Entry=>Bridge=>Verify(CheckWitness)
