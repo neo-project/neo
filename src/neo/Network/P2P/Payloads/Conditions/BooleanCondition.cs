@@ -8,42 +8,41 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
 using Neo.IO.Json;
 using Neo.SmartContract;
 using System.IO;
 
-namespace Neo.Network.P2P.Payloads
+namespace Neo.Network.P2P.Payloads.Conditions
 {
-    public class ScriptHashCondition : WitnessCondition
+    public class BooleanCondition : WitnessCondition
     {
         /// <summary>
-        /// The script hash to be checked.
+        /// The expression of the <see cref="BooleanCondition"/>.
         /// </summary>
-        public UInt160 Hash;
+        public bool Expression;
 
-        public override int Size => base.Size + UInt160.Length;
-        public override WitnessConditionType Type => WitnessConditionType.ScriptHash;
+        public override int Size => base.Size + sizeof(bool);
+        public override WitnessConditionType Type => WitnessConditionType.Boolean;
 
         protected override void DeserializeWithoutType(BinaryReader reader)
         {
-            Hash = reader.ReadSerializable<UInt160>();
+            Expression = reader.ReadBoolean();
         }
 
         public override bool Match(ApplicationEngine engine)
         {
-            return engine.CurrentScriptHash == Hash;
+            return Expression;
         }
 
         protected override void SerializeWithoutType(BinaryWriter writer)
         {
-            writer.Write(Hash);
+            writer.Write(Expression);
         }
 
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
-            json["hash"] = Hash.ToString();
+            json["expression"] = Expression;
             return json;
         }
     }

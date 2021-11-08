@@ -11,42 +11,45 @@
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.SmartContract;
+using System;
 using System.IO;
+using System.Linq;
 
-namespace Neo.Network.P2P.Payloads
+namespace Neo.Network.P2P.Payloads.Conditions
 {
     /// <summary>
-    /// Reverse another condition.
+    /// Represents the condition that all conditions must be met.
     /// </summary>
-    public class NotCondition : WitnessCondition
+    public class AndCondition : WitnessCondition
     {
         /// <summary>
-        /// The expression of the condition to be reversed.
+        /// The expressions of the condition.
         /// </summary>
-        public WitnessCondition Expression;
+        public WitnessCondition[] Expressions;
 
-        public override int Size => base.Size + Expression.Size;
-        public override WitnessConditionType Type => WitnessConditionType.Not;
+        public override int Size => base.Size + Expressions.GetVarSize();
+        public override WitnessConditionType Type => WitnessConditionType.And;
 
         protected override void DeserializeWithoutType(BinaryReader reader)
         {
-            Expression = DeserializeFrom(reader);
+            Expressions = DeserializeConditions(reader);
+            if (Expressions.Length == 0) throw new FormatException();
         }
 
         public override bool Match(ApplicationEngine engine)
         {
-            return !Expression.Match(engine);
+            return Expressions.All(p => p.Match(engine));
         }
 
         protected override void SerializeWithoutType(BinaryWriter writer)
         {
-            writer.Write(Expression);
+            writer.Write(Expressions);
         }
 
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
-            json["expression"] = Expression.ToJson();
+            json["expressions"] = Expressions.Select(p => p.ToJson()).ToArray();
             return json;
         }
     }

@@ -8,42 +8,47 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using System.IO;
+using System.Linq;
 
-namespace Neo.Network.P2P.Payloads
+namespace Neo.Network.P2P.Payloads.Conditions
 {
-    public class CalledByContractCondition : WitnessCondition
+    public class CalledByGroupCondition : WitnessCondition
     {
         /// <summary>
-        /// The script hash to be checked.
+        /// The group to be checked.
         /// </summary>
-        public UInt160 Hash;
+        public ECPoint Group;
 
-        public override int Size => base.Size + UInt160.Length;
-        public override WitnessConditionType Type => WitnessConditionType.CalledByContract;
+        public override int Size => base.Size + Group.Size;
+        public override WitnessConditionType Type => WitnessConditionType.CalledByGroup;
 
         protected override void DeserializeWithoutType(BinaryReader reader)
         {
-            Hash = reader.ReadSerializable<UInt160>();
+            Group = reader.ReadSerializable<ECPoint>();
         }
 
         public override bool Match(ApplicationEngine engine)
         {
-            return engine.CallingScriptHash == Hash;
+            engine.ValidateCallFlags(CallFlags.ReadStates);
+            ContractState contract = NativeContract.ContractManagement.GetContract(engine.Snapshot, engine.CallingScriptHash);
+            return contract is not null && contract.Manifest.Groups.Any(p => p.PubKey == Group);
         }
 
         protected override void SerializeWithoutType(BinaryWriter writer)
         {
-            writer.Write(Hash);
+            writer.Write(Group);
         }
 
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
-            json["hash"] = Hash.ToString();
+            json["group"] = Group.ToString();
             return json;
         }
     }

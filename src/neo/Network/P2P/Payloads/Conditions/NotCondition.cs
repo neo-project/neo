@@ -8,47 +8,45 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.SmartContract;
-using Neo.SmartContract.Native;
 using System.IO;
-using System.Linq;
 
-namespace Neo.Network.P2P.Payloads
+namespace Neo.Network.P2P.Payloads.Conditions
 {
-    public class CalledByGroupCondition : WitnessCondition
+    /// <summary>
+    /// Reverse another condition.
+    /// </summary>
+    public class NotCondition : WitnessCondition
     {
         /// <summary>
-        /// The group to be checked.
+        /// The expression of the condition to be reversed.
         /// </summary>
-        public ECPoint Group;
+        public WitnessCondition Expression;
 
-        public override int Size => base.Size + Group.Size;
-        public override WitnessConditionType Type => WitnessConditionType.CalledByGroup;
+        public override int Size => base.Size + Expression.Size;
+        public override WitnessConditionType Type => WitnessConditionType.Not;
 
         protected override void DeserializeWithoutType(BinaryReader reader)
         {
-            Group = reader.ReadSerializable<ECPoint>();
+            Expression = DeserializeFrom(reader);
         }
 
         public override bool Match(ApplicationEngine engine)
         {
-            engine.ValidateCallFlags(CallFlags.ReadStates);
-            ContractState contract = NativeContract.ContractManagement.GetContract(engine.Snapshot, engine.CallingScriptHash);
-            return contract is not null && contract.Manifest.Groups.Any(p => p.PubKey == Group);
+            return !Expression.Match(engine);
         }
 
         protected override void SerializeWithoutType(BinaryWriter writer)
         {
-            writer.Write(Group);
+            writer.Write(Expression);
         }
 
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
-            json["group"] = Group.ToString();
+            json["expression"] = Expression.ToJson();
             return json;
         }
     }

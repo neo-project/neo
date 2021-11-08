@@ -10,7 +10,7 @@
 
 using Neo.IO.Caching;
 
-namespace Neo.Network.P2P.Payloads
+namespace Neo.Network.P2P.Payloads.Conditions
 {
     /// <summary>
     /// Represents the type of <see cref="WitnessCondition"/>.

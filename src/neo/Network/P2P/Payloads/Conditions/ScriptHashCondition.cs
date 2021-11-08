@@ -11,45 +11,39 @@
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.SmartContract;
-using System;
 using System.IO;
-using System.Linq;
 
-namespace Neo.Network.P2P.Payloads
+namespace Neo.Network.P2P.Payloads.Conditions
 {
-    /// <summary>
-    /// Represents the condition that any of the conditions meets.
-    /// </summary>
-    public class OrCondition : WitnessCondition
+    public class ScriptHashCondition : WitnessCondition
     {
         /// <summary>
-        /// The expressions of the condition.
+        /// The script hash to be checked.
         /// </summary>
-        public WitnessCondition[] Expressions;
+        public UInt160 Hash;
 
-        public override int Size => base.Size + Expressions.GetVarSize();
-        public override WitnessConditionType Type => WitnessConditionType.Or;
+        public override int Size => base.Size + UInt160.Length;
+        public override WitnessConditionType Type => WitnessConditionType.ScriptHash;
 
         protected override void DeserializeWithoutType(BinaryReader reader)
         {
-            Expressions = DeserializeConditions(reader);
-            if (Expressions.Length == 0) throw new FormatException();
+            Hash = reader.ReadSerializable<UInt160>();
         }
 
         public override bool Match(ApplicationEngine engine)
         {
-            return Expressions.Any(p => p.Match(engine));
+            return engine.CurrentScriptHash == Hash;
         }
 
         protected override void SerializeWithoutType(BinaryWriter writer)
         {
-            writer.Write(Expressions);
+            writer.Write(Hash);
         }
 
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
-            json["expressions"] = Expressions.Select(p => p.ToJson()).ToArray();
+            json["hash"] = Hash.ToString();
             return json;
         }
     }

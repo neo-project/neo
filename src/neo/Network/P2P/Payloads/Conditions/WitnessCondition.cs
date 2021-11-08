@@ -15,7 +15,7 @@ using Neo.SmartContract;
 using System;
 using System.IO;
 
-namespace Neo.Network.P2P.Payloads
+namespace Neo.Network.P2P.Payloads.Conditions
 {
     public abstract class WitnessCondition : ISerializable
     {

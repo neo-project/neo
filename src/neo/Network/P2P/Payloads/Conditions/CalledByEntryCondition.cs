@@ -11,7 +11,7 @@
 using Neo.SmartContract;
 using System.IO;
 
-namespace Neo.Network.P2P.Payloads
+namespace Neo.Network.P2P.Payloads.Conditions
 {
     public class CalledByEntryCondition : WitnessCondition
     {

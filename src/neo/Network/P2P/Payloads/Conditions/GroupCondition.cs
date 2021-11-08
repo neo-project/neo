@@ -8,48 +8,47 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.SmartContract;
-using System;
+using Neo.SmartContract.Native;
 using System.IO;
 using System.Linq;
 
-namespace Neo.Network.P2P.Payloads
+namespace Neo.Network.P2P.Payloads.Conditions
 {
-    /// <summary>
-    /// Represents the condition that all conditions must be met.
-    /// </summary>
-    public class AndCondition : WitnessCondition
+    public class GroupCondition : WitnessCondition
     {
         /// <summary>
-        /// The expressions of the condition.
+        /// The group to be checked.
         /// </summary>
-        public WitnessCondition[] Expressions;
+        public ECPoint Group;
 
-        public override int Size => base.Size + Expressions.GetVarSize();
-        public override WitnessConditionType Type => WitnessConditionType.And;
+        public override int Size => base.Size + Group.Size;
+        public override WitnessConditionType Type => WitnessConditionType.Group;
 
         protected override void DeserializeWithoutType(BinaryReader reader)
         {
-            Expressions = DeserializeConditions(reader);
-            if (Expressions.Length == 0) throw new FormatException();
+            Group = reader.ReadSerializable<ECPoint>();
         }
 
         public override bool Match(ApplicationEngine engine)
         {
-            return Expressions.All(p => p.Match(engine));
+            engine.ValidateCallFlags(CallFlags.ReadStates);
+            ContractState contract = NativeContract.ContractManagement.GetContract(engine.Snapshot, engine.CurrentScriptHash);
+            return contract is not null && contract.Manifest.Groups.Any(p => p.PubKey == Group);
         }
 
         protected override void SerializeWithoutType(BinaryWriter writer)
         {
-            writer.Write(Expressions);
+            writer.Write(Group);
         }
 
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
-            json["expressions"] = Expressions.Select(p => p.ToJson()).ToArray();
+            json["group"] = Group.ToString();
             return json;
         }
     }
