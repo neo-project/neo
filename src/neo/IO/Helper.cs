@@ -208,8 +208,8 @@ namespace Neo.IO
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
-        /// <param name="dict"></param>
-        /// <returns></returns>
+        /// <param name="dict">The specified Dictionary.</param>
+        /// <returns>The size of the specified Dictionary.</returns>
         public static int GetVarSize<TKey, TValue>(this IDictionary<TKey, TValue[]> dict) where TKey : ISerializable where TValue : ISerializable
         {
             var countSize = GetVarSize(dict.Count);

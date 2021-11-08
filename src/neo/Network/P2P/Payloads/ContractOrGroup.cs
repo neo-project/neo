@@ -81,12 +81,12 @@ namespace Neo.Network.P2P.Payloads
 
         public string ToHashString()
         {
-            if (Data == null) return null;
-            if (Data.Length == 20)
+            if (_data == null) return null;
+            if (_data.Length == 20)
             {
-                return new UInt160(Data).ToString();
+                return new UInt160(_data).ToString();
             }
-            return Data.ToHexString();
+            return _data.ToHexString();
         }
     }
 }
