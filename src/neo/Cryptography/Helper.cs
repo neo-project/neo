@@ -1,5 +1,16 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.Wallets;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -8,6 +19,8 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
+using static Neo.Helper;
+using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.Cryptography
 {
@@ -107,6 +120,54 @@ namespace Neo.Cryptography
         public static byte[] Sha256(this Span<byte> value)
         {
             return Sha256((ReadOnlySpan<byte>)value);
+        }
+
+        public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[] associatedData = null)
+        {
+            if (nonce.Length != 12) throw new ArgumentOutOfRangeException(nameof(nonce));
+            var cipherBytes = new byte[plainData.Length];
+            var tag = new byte[16];
+            using var cipher = new AesGcm(key);
+            cipher.Encrypt(nonce, plainData, cipherBytes, tag, associatedData);
+            return Concat(nonce, cipherBytes, tag);
+        }
+
+        public static byte[] AES256Decrypt(this byte[] encryptedData, byte[] key, byte[] associatedData = null)
+        {
+            ReadOnlySpan<byte> encrypted = encryptedData;
+            var nonce = encrypted[..12];
+            var cipherBytes = encrypted[12..^16];
+            var tag = encrypted[^16..];
+            var decryptedData = new byte[cipherBytes.Length];
+            using var cipher = new AesGcm(key);
+            cipher.Decrypt(nonce, cipherBytes, tag, decryptedData, associatedData);
+            return decryptedData;
+        }
+
+        public static byte[] ECDHDeriveKey(KeyPair local, ECPoint remote)
+        {
+            ReadOnlySpan<byte> pubkey_local = local.PublicKey.EncodePoint(false);
+            ReadOnlySpan<byte> pubkey_remote = remote.EncodePoint(false);
+            using ECDiffieHellman ecdh1 = ECDiffieHellman.Create(new ECParameters
+            {
+                Curve = ECCurve.NamedCurves.nistP256,
+                D = local.PrivateKey,
+                Q = new System.Security.Cryptography.ECPoint
+                {
+                    X = pubkey_local[1..][..32].ToArray(),
+                    Y = pubkey_local[1..][32..].ToArray()
+                }
+            });
+            using ECDiffieHellman ecdh2 = ECDiffieHellman.Create(new ECParameters
+            {
+                Curve = ECCurve.NamedCurves.nistP256,
+                Q = new System.Security.Cryptography.ECPoint
+                {
+                    X = pubkey_remote[1..][..32].ToArray(),
+                    Y = pubkey_remote[1..][32..].ToArray()
+                }
+            });
+            return ecdh1.DeriveKeyMaterial(ecdh2.PublicKey).Sha256();//z = r * P = r* k * G
         }
 
         internal static bool Test(this BloomFilter filter, Transaction tx)

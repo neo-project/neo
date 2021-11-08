@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
@@ -40,7 +50,7 @@ namespace Neo.SmartContract
 
         private static IApplicationEngineProvider applicationEngineProvider;
         private static Dictionary<uint, InteropDescriptor> services;
-        private long gas_amount;
+        private readonly long gas_amount;
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
@@ -156,14 +166,6 @@ namespace Neo.SmartContract
                 throw new InvalidOperationException("Insufficient GAS.");
         }
 
-        internal void Refuel(long gas)
-        {
-            checked
-            {
-                gas_amount += gas;
-            }
-        }
-
         protected override void OnFault(Exception ex)
         {
             FaultException = ex;
@@ -186,6 +188,9 @@ namespace Neo.SmartContract
 
         private ExecutionContext CallContractInternal(ContractState contract, ContractMethodDescriptor method, CallFlags flags, bool hasReturnValue, IReadOnlyList<StackItem> args)
         {
+            if (NativeContract.Policy.IsBlocked(Snapshot, contract.Hash))
+                throw new InvalidOperationException($"The contract {contract.Hash} has been blocked.");
+
             if (method.Safe)
             {
                 flags &= ~(CallFlags.WriteStates | CallFlags.AllowNotify);
@@ -294,7 +299,14 @@ namespace Neo.SmartContract
                 {
                     p.CallFlags = callFlags;
                     p.ScriptHash = contract.Hash;
-                    p.Contract = contract;
+                    p.Contract = new ContractState
+                    {
+                        Id = contract.Id,
+                        UpdateCounter = contract.UpdateCounter,
+                        Hash = contract.Hash,
+                        Nef = contract.Nef,
+                        Manifest = contract.Manifest
+                    };
                 });
 
             // Call initialization

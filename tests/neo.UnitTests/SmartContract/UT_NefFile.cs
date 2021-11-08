@@ -13,6 +13,7 @@ namespace Neo.UnitTests.SmartContract
         public NefFile file = new()
         {
             Compiler = "".PadLeft(32, ' '),
+            Source = string.Empty,
             Tokens = Array.Empty<MethodToken>(),
             Script = new byte[] { 0x01, 0x02, 0x03 }
         };
@@ -86,6 +87,7 @@ namespace Neo.UnitTests.SmartContract
             var file = new NefFile()
             {
                 Compiler = "".PadLeft(32, ' '),
+                Source = string.Empty,
                 Tokens = Array.Empty<MethodToken>(),
                 Script = new byte[] { 0x01, 0x02, 0x03 }
             };
@@ -105,6 +107,7 @@ namespace Neo.UnitTests.SmartContract
             var file = new NefFile()
             {
                 Compiler = "".PadLeft(byte.MaxValue, ' '),
+                Source = string.Empty,
                 Tokens = Array.Empty<MethodToken>(),
                 Script = new byte[1024 * 1024],
                 CheckSum = 0

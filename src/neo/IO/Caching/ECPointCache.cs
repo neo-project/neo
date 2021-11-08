@@ -8,24 +8,20 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.VM.Types;
-using System;
+using Neo.Cryptography.ECC;
 
-namespace Neo.SmartContract
+namespace Neo.IO.Caching
 {
-    class MaxLengthAttribute : ValidatorAttribute
+    internal class ECPointCache : FIFOCache<byte[], ECPoint>
     {
-        public readonly int MaxLength;
-
-        public MaxLengthAttribute(int maxLength)
+        public ECPointCache(int max_capacity)
+            : base(max_capacity, ByteArrayEqualityComparer.Default)
         {
-            MaxLength = maxLength;
         }
 
-        public override void Validate(StackItem item)
+        protected override byte[] GetKeyForItem(ECPoint item)
         {
-            if (item.GetSpan().Length > MaxLength)
-                throw new InvalidOperationException("The input exceeds the maximum length.");
+            return item.EncodePoint(true);
         }
     }
 }

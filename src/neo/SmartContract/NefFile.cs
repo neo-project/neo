@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Json;
@@ -17,7 +27,8 @@ namespace Neo.SmartContract
     │ Magic    │ uint32        │ Magic header                               │
     │ Compiler │ byte[64]      │ Compiler name and version                  │
     ├──────────┼───────────────┼────────────────────────────────────────────┤
-    │ Reserve  │ byte[2]       │ Reserved for future extensions. Must be 0. │
+    │ Source   │ byte[]        │ The url of the source files                │
+    │ Reserve  │ byte          │ Reserved for future extensions. Must be 0. │
     │ Tokens   │ MethodToken[] │ Method tokens.                             │
     │ Reserve  │ byte[2]       │ Reserved for future extensions. Must be 0. │
     │ Script   │ byte[]        │ Var bytes for the payload                  │
@@ -39,6 +50,11 @@ namespace Neo.SmartContract
         /// The name and version of the compiler that generated this nef file.
         /// </summary>
         public string Compiler { get; set; }
+
+        /// <summary>
+        /// The url of the source files.
+        /// </summary>
+        public string Source { get; set; }
 
         /// <summary>
         /// The methods that to be called statically.
@@ -66,7 +82,8 @@ namespace Neo.SmartContract
 
         public int Size =>
             HeaderSize +            // Header
-            2 +                     // Reserve
+            Source.GetVarSize() +   // Source
+            1 +                     // Reserve
             Tokens.GetVarSize() +   // Tokens
             2 +                     // Reserve
             Script.GetVarSize() +   // Script
@@ -75,7 +92,8 @@ namespace Neo.SmartContract
         public void Serialize(BinaryWriter writer)
         {
             SerializeHeader(writer);
-            writer.Write((short)0);
+            writer.WriteVarString(Source);
+            writer.Write((byte)0);
             writer.Write(Tokens);
             writer.Write((short)0);
             writer.WriteVarBytes(Script ?? Array.Empty<byte>());
@@ -91,18 +109,13 @@ namespace Neo.SmartContract
         public void Deserialize(BinaryReader reader)
         {
             if (reader.ReadUInt32() != Magic) throw new FormatException("Wrong magic");
-
             Compiler = reader.ReadFixedString(64);
-
-            if (reader.ReadUInt16() != 0) throw new FormatException("Reserved bytes must be 0");
-
+            Source = reader.ReadVarString(256);
+            if (reader.ReadByte() != 0) throw new FormatException("Reserved bytes must be 0");
             Tokens = reader.ReadSerializableArray<MethodToken>(128);
-
             if (reader.ReadUInt16() != 0) throw new FormatException("Reserved bytes must be 0");
-
             Script = reader.ReadVarBytes(MaxScriptLength);
             if (Script.Length == 0) throw new ArgumentException($"Script can't be empty");
-
             CheckSum = reader.ReadUInt32();
             if (CheckSum != ComputeChecksum(this)) throw new FormatException("CRC verification fail");
         }
@@ -127,6 +140,7 @@ namespace Neo.SmartContract
             {
                 ["magic"] = Magic,
                 ["compiler"] = Compiler,
+                ["source"] = Source,
                 ["tokens"] = new JArray(Tokens.Select(p => p.ToJson())),
                 ["script"] = Convert.ToBase64String(Script),
                 ["checksum"] = CheckSum
