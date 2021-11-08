@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.IO;
@@ -260,14 +270,15 @@ namespace Neo.Ledger
                 }
 
                 int blocksPersisted = 0;
-                // 15000 is the default among of seconds per block, while MilliSecondsPerBlock is the current
-                uint extraBlocks = (15000 - system.Settings.MillisecondsPerBlock) / 1000;
+                uint extraRelayingBlocks = system.Settings.MillisecondsPerBlock < ProtocolSettings.Default.MillisecondsPerBlock
+                    ? (ProtocolSettings.Default.MillisecondsPerBlock - system.Settings.MillisecondsPerBlock) / 1000
+                    : 0;
                 foreach (Block blockToPersist in blocksToPersistList)
                 {
                     block_cache_unverified.Remove(blockToPersist.Index);
                     Persist(blockToPersist);
 
-                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + Math.Max(0, extraBlocks))) continue;
+                    if (blocksPersisted++ < blocksToPersistList.Count - (2 + extraRelayingBlocks)) continue;
                     // Empirically calibrated for relaying the most recent 2 blocks persisted with 15s network
                     // Increase in the rate of 1 block per second in configurations with faster blocks
 
@@ -293,17 +304,20 @@ namespace Neo.Ledger
 
         private void OnNewHeaders(Header[] headers)
         {
-            if (system.HeaderCache.Full) return;
-            DataCache snapshot = system.StoreView;
-            uint headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
-            foreach (Header header in headers)
+            if (!system.HeaderCache.Full)
             {
-                if (header.Index > headerHeight + 1) break;
-                if (header.Index < headerHeight + 1) continue;
-                if (!header.Verify(system.Settings, snapshot, system.HeaderCache)) break;
-                system.HeaderCache.Add(header);
-                ++headerHeight;
+                DataCache snapshot = system.StoreView;
+                uint headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
+                foreach (Header header in headers)
+                {
+                    if (header.Index > headerHeight + 1) break;
+                    if (header.Index < headerHeight + 1) continue;
+                    if (!header.Verify(system.Settings, snapshot, system.HeaderCache)) break;
+                    system.HeaderCache.Add(header);
+                    ++headerHeight;
+                }
             }
+            system.TaskManager.Tell(headers, Sender);
         }
 
         private VerifyResult OnNewExtensiblePayload(ExtensiblePayload payload)

@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.IO;
@@ -52,6 +62,7 @@ namespace Neo.Network.P2P
         private readonly Dictionary<uint, int> globalIndexTasks = new();
         private readonly Dictionary<IActorRef, TaskSession> sessions = new();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
+        private uint lastSeenPersistedIndex = 0;
 
         private bool HasHeaderTask => globalInvTasks.ContainsKey(HeaderTaskHash);
 
@@ -90,7 +101,7 @@ namespace Neo.Network.P2P
                 return;
 
             // Do not accept payload of type InventoryType.TX if not synced on HeaderHeight
-            uint currentHeight = NativeContract.Ledger.CurrentIndex(system.StoreView);
+            uint currentHeight = Math.Max(NativeContract.Ledger.CurrentIndex(system.StoreView), lastSeenPersistedIndex);
             uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
             if (currentHeight < headerHeight && (payload.Type == InventoryType.TX || (payload.Type == InventoryType.Block && currentHeight < session.LastBlockIndex - InvPayload.MaxHashesCount)))
             {
@@ -126,6 +137,8 @@ namespace Neo.Network.P2P
 
         private void OnPersistCompleted(Block block)
         {
+            lastSeenPersistedIndex = block.Index;
+
             foreach (var (actor, session) in sessions)
                 if (session.ReceivedBlock.Remove(block.Index, out Block receivedBlock))
                 {
@@ -226,7 +239,10 @@ namespace Neo.Network.P2P
                         session.ReceivedBlock.Add(block.Index, block);
                     }
                 }
-                RequestTasks(Sender, session);
+                else
+                {
+                    RequestTasks(Sender, session);
+                }
             }
         }
 
@@ -361,7 +377,7 @@ namespace Neo.Network.P2P
                 }
             }
 
-            uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
+            uint currentHeight = Math.Max(NativeContract.Ledger.CurrentIndex(snapshot), lastSeenPersistedIndex);
             uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
             // When the number of AvailableTasks is no more than 0, no pending tasks of InventoryType.Block, it should process pending the tasks of headers
             // If not HeaderTask pending to be processed it should ask for more Blocks
@@ -369,12 +385,12 @@ namespace Neo.Network.P2P
             {
                 session.InvTasks[HeaderTaskHash] = DateTime.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);
-                remoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlockByIndexPayload.Create(headerHeight)));
+                remoteNode.Tell(Message.Create(MessageCommand.GetHeaders, GetBlockByIndexPayload.Create(headerHeight + 1)));
             }
             else if (currentHeight < session.LastBlockIndex)
             {
-                uint startHeight = currentHeight;
-                while (globalIndexTasks.ContainsKey(++startHeight)) { }
+                uint startHeight = currentHeight + 1;
+                while (globalIndexTasks.ContainsKey(startHeight) || session.ReceivedBlock.ContainsKey(startHeight)) { startHeight++; }
                 if (startHeight > session.LastBlockIndex || startHeight >= currentHeight + InvPayload.MaxHashesCount) return;
                 uint endHeight = startHeight;
                 while (!globalIndexTasks.ContainsKey(++endHeight) && endHeight <= session.LastBlockIndex && endHeight <= currentHeight + InvPayload.MaxHashesCount) { }

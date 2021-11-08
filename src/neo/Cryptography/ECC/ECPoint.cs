@@ -1,4 +1,15 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.IO;
+using Neo.IO.Caching;
 using System;
 using System.IO;
 using System.Numerics;
@@ -24,6 +35,9 @@ namespace Neo.Cryptography.ECC
         }
 
         public int Size => IsInfinity ? 1 : 33;
+
+        private static IO.Caching.ECPointCache pointCacheK1 { get; } = new(1000);
+        private static IO.Caching.ECPointCache pointCacheR1 { get; } = new(1000);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ECPoint"/> class with the secp256r1 curve.
@@ -64,10 +78,7 @@ namespace Neo.Cryptography.ECC
                     {
                         if (encoded.Length != (curve.ExpectedECPointLength + 1))
                             throw new FormatException("Incorrect length for compressed encoding");
-                        int yTilde = encoded[0] & 1;
-                        BigInteger X1 = new(encoded[1..], isUnsigned: true, isBigEndian: true);
-                        p = DecompressPoint(yTilde, X1, curve);
-                        p._compressedPoint = encoded.ToArray();
+                        p = DecompressPoint(encoded, curve);
                         break;
                     }
                 case 0x04: // uncompressed
@@ -84,6 +95,25 @@ namespace Neo.Cryptography.ECC
                     }
                 default:
                     throw new FormatException("Invalid point encoding " + encoded[0]);
+            }
+            return p;
+        }
+
+        private static ECPoint DecompressPoint(ReadOnlySpan<byte> encoded, ECCurve curve)
+        {
+            ECPointCache pointCache = null;
+            if (curve == ECCurve.Secp256k1) pointCache = pointCacheK1;
+            else if (curve == ECCurve.Secp256r1) pointCache = pointCacheR1;
+            else throw new FormatException("Invalid curve " + curve);
+
+            byte[] compressedPoint = encoded.ToArray();
+            if (!pointCache.TryGet(compressedPoint, out ECPoint p))
+            {
+                int yTilde = encoded[0] & 1;
+                BigInteger X1 = new(encoded[1..], isUnsigned: true, isBigEndian: true);
+                p = DecompressPoint(yTilde, X1, curve);
+                p._compressedPoint = compressedPoint;
+                pointCache.Add(p);
             }
             return p;
         }
