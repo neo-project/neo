@@ -324,18 +324,19 @@ namespace Neo.IO
         /// <typeparam name="TKey">The type of the key element.</typeparam>
         /// <typeparam name="TValue">The type of the value element.</typeparam>
         /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
-        /// <param name="max">The maximum number of elements in the array.</param>
+        /// <param name="maxEntries">The maximum number of elements in the array.</param>
+        /// <param name="maxValue">The maximum size of the value byte array.</param>
         /// <returns>The array read from the <see cref="BinaryReader"/>.</returns>
-        public static IDictionary<TKey, TValue[]> ReadLookup<TKey, TValue>(this BinaryReader reader, int max = 0x1000000)
+        public static IDictionary<TKey, TValue[]> ReadLookup<TKey, TValue>(this BinaryReader reader, int maxEntries = ushort.MaxValue, int maxValue = 0x1000000)
             where TKey : ISerializable, new()
             where TValue : ISerializable, new()
         {
             var dict = new Dictionary<TKey, TValue[]>();
-            var count = reader.ReadVarInt((ulong)max);
+            var count = reader.ReadVarInt((ulong)maxEntries);
             for (uint i = 0; i < count; i++)
             {
                 var key = reader.ReadSerializable<TKey>();
-                var value = reader.ReadSerializableArray<TValue>(max);
+                var value = reader.ReadSerializableArray<TValue>(maxValue);
                 if (!dict.TryAdd(key, value)) throw new FormatException();
             }
             return dict;
