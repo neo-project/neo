@@ -38,10 +38,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Match(ApplicationEngine engine)
         {
-            foreach (WitnessCondition condition in Expressions)
-                if (condition.Match(engine))
-                    return true;
-            return false;
+            return Expressions.Any(p => p.Match(engine));
         }
 
         protected override void SerializeWithoutType(BinaryWriter writer)

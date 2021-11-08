@@ -37,8 +37,7 @@ namespace Neo.Network.P2P.Payloads
         {
             engine.ValidateCallFlags(CallFlags.ReadStates);
             ContractState contract = NativeContract.ContractManagement.GetContract(engine.Snapshot, engine.CallingScriptHash);
-            if (contract is null) return false;
-            return contract.Manifest.Groups.Any(p => p.PubKey == Group);
+            return contract is not null && contract.Manifest.Groups.Any(p => p.PubKey == Group);
         }
 
         protected override void SerializeWithoutType(BinaryWriter writer)
