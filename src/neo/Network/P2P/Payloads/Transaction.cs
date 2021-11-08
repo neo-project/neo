@@ -371,7 +371,7 @@ namespace Neo.Network.P2P.Payloads
                 else
                 {
                     if (!this.VerifyWitness(settings, snapshot, hashes[i], witnesses[i], net_fee, out long fee))
-                        return VerifyResult.InvalidSignature;
+                        return VerifyResult.Invalid;
                     net_fee -= fee;
                 }
                 if (net_fee < 0) return VerifyResult.InsufficientFunds;
