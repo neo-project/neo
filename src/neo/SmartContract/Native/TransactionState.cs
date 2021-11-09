@@ -43,7 +43,7 @@ namespace Neo.SmartContract.Native
             BlockIndex = (uint)@struct[0].GetInteger();
             _rawTransaction = @struct[1];
             Transaction = _rawTransaction.GetSpan().AsSerializable<Transaction>();
-            State = @struct.Count == 2 ? VMState.NONE : (VMState)(byte)@struct[2].GetInteger();
+            State = (VMState)(byte)@struct[2].GetInteger();
         }
 
         StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
