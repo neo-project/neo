@@ -43,6 +43,26 @@ namespace Neo.Ledger
         Invalid,
 
         /// <summary>
+        /// Indicates that the <see cref="Transaction"/> has an invalid script.
+        /// </summary>
+        InvalidScript,
+
+        /// <summary>
+        /// Indicates that the <see cref="Transaction"/> has an invalid attribute.
+        /// </summary>
+        InvalidAttribute,
+
+        /// <summary>
+        /// Indicates that the <see cref="IInventory"/> has an invalid signature.
+        /// </summary>
+        InvalidSignature,
+
+        /// <summary>
+        /// Indicates that the size of the <see cref="IInventory"/> is not allowed.
+        /// </summary>
+        OverSize,
+
+        /// <summary>
         /// Indicates that the <see cref="Transaction"/> has expired.
         /// </summary>
         Expired,
@@ -56,26 +76,6 @@ namespace Neo.Ledger
         /// Indicates that the <see cref="Transaction"/> failed to verify because it didn't comply with the policy.
         /// </summary>
         PolicyFail,
-
-        /// <summary>
-        /// Indicates that the size of the <see cref="Transaction"/> is not allowed.
-        /// </summary>
-        TransactionOverSize,
-
-        /// <summary>
-        /// Indicates that the <see cref="Transaction"/> has an invalid script.
-        /// </summary>
-        InvalidScript,
-
-        /// <summary>
-        /// Indicates that the <see cref="Transaction"/> has an invalid signature.
-        /// </summary>
-        InvalidSignature,
-
-        /// <summary>
-        /// Indicates that the <see cref="Transaction"/> has an invalid attribute.
-        /// </summary>
-        InvalidAttribute,
 
         /// <summary>
         /// Indicates that the <see cref="IInventory"/> failed to verify due to other reasons.

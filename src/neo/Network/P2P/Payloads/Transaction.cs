@@ -396,7 +396,7 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The result of the verification.</returns>
         public virtual VerifyResult VerifyStateIndependent(ProtocolSettings settings)
         {
-            if (Size > MaxTransactionSize) return VerifyResult.TransactionOverSize;
+            if (Size > MaxTransactionSize) return VerifyResult.OverSize;
             try
             {
                 _ = new Script(Script, true);
@@ -419,14 +419,14 @@ namespace Neo.Network.P2P.Payloads
                     }
                     catch
                     {
-                        return VerifyResult.InvalidSignature;
+                        return VerifyResult.Invalid;
                     }
                 }
                 else if (witnesses[i].VerificationScript.IsMultiSigContract(out var m, out ECPoint[] points))
                 {
                     if (hashes[i] != witnesses[i].ScriptHash) return VerifyResult.Invalid;
                     var signatures = GetMultiSignatures(witnesses[i].InvocationScript);
-                    if (signatures.Length != m) return VerifyResult.InvalidSignature;
+                    if (signatures.Length != m) return VerifyResult.Invalid;
                     var n = points.Length;
                     var message = this.GetSignData(settings.Network);
                     try
@@ -442,7 +442,7 @@ namespace Neo.Network.P2P.Payloads
                     }
                     catch
                     {
-                        return VerifyResult.InvalidSignature;
+                        return VerifyResult.Invalid;
                     }
                 }
             }
