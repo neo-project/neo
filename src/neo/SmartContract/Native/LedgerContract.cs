@@ -13,6 +13,7 @@
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.VM;
 using System;
 using System.Linq;
 using System.Numerics;
@@ -35,12 +36,19 @@ namespace Neo.SmartContract.Native
 
         internal override ContractTask OnPersist(ApplicationEngine engine)
         {
+            TransactionState[] transactions = engine.PersistingBlock.Transactions.Select(p => new TransactionState
+            {
+                BlockIndex = engine.PersistingBlock.Index,
+                Transaction = p,
+                State = VMState.NONE
+            }).ToArray();
             engine.Snapshot.Add(CreateStorageKey(Prefix_BlockHash).AddBigEndian(engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray()));
             engine.Snapshot.Add(CreateStorageKey(Prefix_Block).Add(engine.PersistingBlock.Hash), new StorageItem(Trim(engine.PersistingBlock).ToArray()));
-            foreach (TransactionState tx in engine.GetState<TransactionState[]>())
+            foreach (TransactionState tx in transactions)
             {
                 engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(tx.Transaction.Hash), new StorageItem(tx));
             }
+            engine.SetState(transactions);
             return ContractTask.CompletedTask;
         }
 
