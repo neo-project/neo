@@ -1143,7 +1143,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     }
                 }
             };
-            tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Invalid);
+            tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.OverSize);
             tx.Script = Array.Empty<byte>();
             tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Succeed);
 
