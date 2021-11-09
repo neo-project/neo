@@ -403,15 +403,16 @@ namespace Neo.Ledger
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
+                TransactionState[] transactionStates = new TransactionState[block.Transactions.Length];
                 DataCache clonedSnapshot = snapshot.CreateSnapshot();
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
-                int txindex = 0;
-                block.TransactionStates = new VMState[block.Transactions.Length];
-                foreach (Transaction tx in block.Transactions)
+                for (int i = 0; i < block.Transactions.Length; i++)
                 {
+                    Transaction tx = block.Transactions[i];
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee);
                     engine.LoadScript(tx.Script);
-                    if ((block.TransactionStates[txindex] = engine.Execute()) == VMState.HALT)
+                    VMState state = engine.Execute();
+                    if (state == VMState.HALT)
                     {
                         clonedSnapshot.Commit();
                     }
@@ -422,10 +423,16 @@ namespace Neo.Ledger
                     ApplicationExecuted application_executed = new(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
-                    txindex++;
+                    transactionStates[i] = new TransactionState
+                    {
+                        BlockIndex = block.Index,
+                        Transaction = tx,
+                        State = state
+                    };
                 }
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, system.Settings, 0))
                 {
+                    engine.SetState(transactionStates);
                     engine.LoadScript(postPersistScript);
                     if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
                     ApplicationExecuted application_executed = new(engine);

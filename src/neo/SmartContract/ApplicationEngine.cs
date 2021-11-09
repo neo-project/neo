@@ -51,6 +51,7 @@ namespace Neo.SmartContract
         private static IApplicationEngineProvider applicationEngineProvider;
         private static Dictionary<uint, InteropDescriptor> services;
         private readonly long gas_amount;
+        private Dictionary<Type, object> states;
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
@@ -544,6 +545,19 @@ namespace Neo.SmartContract
         internal static bool SetApplicationEngineProvider(IApplicationEngineProvider provider)
         {
             return CompareExchange(ref applicationEngineProvider, provider, null) is null;
+        }
+
+        public T GetState<T>()
+        {
+            if (states is null) return default;
+            if (!states.TryGetValue(typeof(T), out object state)) return default;
+            return (T)state;
+        }
+
+        public void SetState<T>(T state)
+        {
+            states ??= new Dictionary<Type, object>();
+            states[typeof(T)] = state;
         }
     }
 }

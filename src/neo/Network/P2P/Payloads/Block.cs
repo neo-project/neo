@@ -34,11 +34,6 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         public Transaction[] Transactions;
 
-        /// <summary>
-        /// The transaction's execution state list of the block.
-        /// </summary>
-        internal VM.VMState[] TransactionStates;
-
         public UInt256 Hash => Header.Hash;
 
         /// <summary>
