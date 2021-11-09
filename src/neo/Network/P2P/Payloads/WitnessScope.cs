@@ -43,7 +43,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// Indicates that the current context must satisfy the specified rules.
         /// </summary>
-        Rules = 0x40,
+        WitnessRules = 0x40,
 
         /// <summary>
         /// This allows the witness in all contexts (default Neo2 behavior).

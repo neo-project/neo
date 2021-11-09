@@ -48,7 +48,7 @@ namespace Neo.Network.P2P.Payloads
         public ECPoint[] AllowedGroups;
 
         /// <summary>
-        /// The rules that the witness must meet. Only available when the <see cref="WitnessScope.Rules"/> flag is set.
+        /// The rules that the witness must meet. Only available when the <see cref="WitnessScope.WitnessRules"/> flag is set.
         /// </summary>
         public WitnessRule[] Rules;
 
@@ -57,13 +57,13 @@ namespace Neo.Network.P2P.Payloads
             /*Scopes*/              sizeof(WitnessScope) +
             /*AllowedContracts*/    (Scopes.HasFlag(WitnessScope.CustomContracts) ? AllowedContracts.GetVarSize() : 0) +
             /*AllowedGroups*/       (Scopes.HasFlag(WitnessScope.CustomGroups) ? AllowedGroups.GetVarSize() : 0) +
-            /*Rules*/               (Scopes.HasFlag(WitnessScope.Rules) ? Rules.GetVarSize() : 0);
+            /*Rules*/               (Scopes.HasFlag(WitnessScope.WitnessRules) ? Rules.GetVarSize() : 0);
 
         public void Deserialize(BinaryReader reader)
         {
             Account = reader.ReadSerializable<UInt160>();
             Scopes = (WitnessScope)reader.ReadByte();
-            if ((Scopes & ~(WitnessScope.CalledByEntry | WitnessScope.CustomContracts | WitnessScope.CustomGroups | WitnessScope.Rules | WitnessScope.Global)) != 0)
+            if ((Scopes & ~(WitnessScope.CalledByEntry | WitnessScope.CustomContracts | WitnessScope.CustomGroups | WitnessScope.WitnessRules | WitnessScope.Global)) != 0)
                 throw new FormatException();
             if (Scopes.HasFlag(WitnessScope.Global) && Scopes != WitnessScope.Global)
                 throw new FormatException();
@@ -73,7 +73,7 @@ namespace Neo.Network.P2P.Payloads
             AllowedGroups = Scopes.HasFlag(WitnessScope.CustomGroups)
                 ? reader.ReadSerializableArray<ECPoint>(MaxSubitems)
                 : Array.Empty<ECPoint>();
-            Rules = Scopes.HasFlag(WitnessScope.Rules)
+            Rules = Scopes.HasFlag(WitnessScope.WitnessRules)
                 ? reader.ReadSerializableArray<WitnessRule>(MaxSubitems)
                 : Array.Empty<WitnessRule>();
         }
@@ -120,7 +120,7 @@ namespace Neo.Network.P2P.Payloads
                             Condition = new GroupCondition { Group = group }
                         };
                 }
-                if (Scopes.HasFlag(WitnessScope.Rules))
+                if (Scopes.HasFlag(WitnessScope.WitnessRules))
                 {
                     foreach (WitnessRule rule in Rules)
                         yield return rule;
@@ -136,7 +136,7 @@ namespace Neo.Network.P2P.Payloads
                 writer.Write(AllowedContracts);
             if (Scopes.HasFlag(WitnessScope.CustomGroups))
                 writer.Write(AllowedGroups);
-            if (Scopes.HasFlag(WitnessScope.Rules))
+            if (Scopes.HasFlag(WitnessScope.WitnessRules))
                 writer.Write(Rules);
         }
 
@@ -153,7 +153,7 @@ namespace Neo.Network.P2P.Payloads
                 json["allowedcontracts"] = AllowedContracts.Select(p => (JObject)p.ToString()).ToArray();
             if (Scopes.HasFlag(WitnessScope.CustomGroups))
                 json["allowedgroups"] = AllowedGroups.Select(p => (JObject)p.ToString()).ToArray();
-            if (Scopes.HasFlag(WitnessScope.Rules))
+            if (Scopes.HasFlag(WitnessScope.WitnessRules))
                 json["rules"] = Rules.Select(p => p.ToJson()).ToArray();
             return json;
         }
