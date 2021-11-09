@@ -3,6 +3,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.Network.P2P.Payloads.Conditions;
+using System;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -43,6 +45,82 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.AreEqual(attr.Scopes, copy.Scopes);
             Assert.AreEqual(attr.Account, copy.Account);
+        }
+
+        [TestMethod]
+        public void Serialize_Deserialize_MaxNested_And()
+        {
+            var attr = new Signer()
+            {
+                Scopes = WitnessScope.WitnessRules,
+                Account = UInt160.Zero,
+                Rules = new WitnessRule[]{ new WitnessRule()
+                {
+                    Action = WitnessRuleAction.Allow,
+                    Condition = new AndCondition()
+                    {
+                        Expressions = new WitnessCondition[]
+                        {
+                            new AndCondition()
+                            {
+                                Expressions = new WitnessCondition[]
+                                {
+                                    new AndCondition()
+                                    {
+                                        Expressions = new WitnessCondition[]
+                                        {
+                                            new BooleanCondition() { Expression=true }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }}
+            };
+
+            var hex = "00000000000000000000000000000000000000004001010201020102010001";
+            attr.ToArray().ToHexString().Should().Be(hex);
+
+            Assert.ThrowsException<FormatException>(() => hex.HexToBytes().AsSerializable<Signer>());
+        }
+
+        [TestMethod]
+        public void Serialize_Deserialize_MaxNested_Or()
+        {
+            var attr = new Signer()
+            {
+                Scopes = WitnessScope.WitnessRules,
+                Account = UInt160.Zero,
+                Rules = new WitnessRule[]{ new WitnessRule()
+                {
+                    Action = WitnessRuleAction.Allow,
+                    Condition = new OrCondition()
+                    {
+                        Expressions = new WitnessCondition[]
+                        {
+                            new OrCondition()
+                            {
+                                Expressions = new WitnessCondition[]
+                                {
+                                    new OrCondition()
+                                    {
+                                        Expressions = new WitnessCondition[]
+                                        {
+                                            new BooleanCondition() { Expression=true }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }}
+            };
+
+            var hex = "00000000000000000000000000000000000000004001010301030103010001";
+            attr.ToArray().ToHexString().Should().Be(hex);
+
+            Assert.ThrowsException<FormatException>(() => hex.HexToBytes().AsSerializable<Signer>());
         }
 
         [TestMethod]

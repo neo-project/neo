@@ -41,6 +41,11 @@ namespace Neo.Network.P2P.Payloads
         CustomGroups = 0x20,
 
         /// <summary>
+        /// Indicates that the current context must satisfy the specified rules.
+        /// </summary>
+        WitnessRules = 0x40,
+
+        /// <summary>
         /// This allows the witness in all contexts (default Neo2 behavior).
         /// </summary>
         /// <remarks>Note: It cannot be combined with other flags.</remarks>
