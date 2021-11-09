@@ -1232,7 +1232,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var balance = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             balance.GetInteroperable<AccountState>().Balance = tx.NetworkFee;
 
-            tx.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.InvalidSignature);
+            tx.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.Invalid);
             balance.GetInteroperable<AccountState>().Balance = 0;
             tx.SystemFee = 10;
             tx.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.InsufficientFunds);
