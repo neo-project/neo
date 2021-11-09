@@ -24,7 +24,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public override int Size => base.Size + sizeof(bool);
         public override WitnessConditionType Type => WitnessConditionType.Boolean;
 
-        protected override void DeserializeWithoutType(BinaryReader reader)
+        protected override void DeserializeWithoutType(BinaryReader reader, int maxNestDepth)
         {
             Expression = reader.ReadBoolean();
         }

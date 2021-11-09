@@ -38,7 +38,7 @@ namespace Neo.Network.P2P.Payloads
             Action = (WitnessRuleAction)reader.ReadByte();
             if (Action != WitnessRuleAction.Allow && Action != WitnessRuleAction.Deny)
                 throw new FormatException();
-            Condition = WitnessCondition.DeserializeFrom(reader);
+            Condition = WitnessCondition.DeserializeFrom(reader, WitnessCondition.MaxNestingDepth);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

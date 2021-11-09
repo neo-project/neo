@@ -25,7 +25,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public override int Size => base.Size + UInt160.Length;
         public override WitnessConditionType Type => WitnessConditionType.CalledByContract;
 
-        protected override void DeserializeWithoutType(BinaryReader reader)
+        protected override void DeserializeWithoutType(BinaryReader reader, int maxNestDepth)
         {
             Hash = reader.ReadSerializable<UInt160>();
         }

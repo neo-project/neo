@@ -20,6 +20,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
     public abstract class WitnessCondition : ISerializable
     {
         private const int MaxSubitems = 16;
+        internal const int MaxNestingDepth = 2;
 
         /// <summary>
         /// The type of the <see cref="WitnessCondition"/>.
@@ -31,19 +32,20 @@ namespace Neo.Network.P2P.Payloads.Conditions
         void ISerializable.Deserialize(BinaryReader reader)
         {
             if (reader.ReadByte() != (byte)Type) throw new FormatException();
-            DeserializeWithoutType(reader);
+            DeserializeWithoutType(reader, MaxNestingDepth);
         }
 
         /// <summary>
         /// Deserializes an <see cref="WitnessCondition"/> array from a <see cref="BinaryReader"/>.
         /// </summary>
         /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
+        /// <param name="maxNestDepth">The maximum nesting depth allowed during deserialization.</param>
         /// <returns>The deserialized <see cref="WitnessCondition"/> array.</returns>
-        protected static WitnessCondition[] DeserializeConditions(BinaryReader reader)
+        protected static WitnessCondition[] DeserializeConditions(BinaryReader reader, int maxNestDepth)
         {
             WitnessCondition[] conditions = new WitnessCondition[reader.ReadVarInt(MaxSubitems)];
             for (int i = 0; i < conditions.Length; i++)
-                conditions[i] = DeserializeFrom(reader);
+                conditions[i] = DeserializeFrom(reader, maxNestDepth);
             return conditions;
         }
 
@@ -51,13 +53,14 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// Deserializes an <see cref="WitnessCondition"/> object from a <see cref="BinaryReader"/>.
         /// </summary>
         /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
+        /// <param name="maxNestDepth">The maximum nesting depth allowed during deserialization.</param>
         /// <returns>The deserialized <see cref="WitnessCondition"/>.</returns>
-        public static WitnessCondition DeserializeFrom(BinaryReader reader)
+        public static WitnessCondition DeserializeFrom(BinaryReader reader, int maxNestDepth)
         {
             WitnessConditionType type = (WitnessConditionType)reader.ReadByte();
             if (ReflectionCache<WitnessConditionType>.CreateInstance(type) is not WitnessCondition condition)
                 throw new FormatException();
-            condition.DeserializeWithoutType(reader);
+            condition.DeserializeWithoutType(reader, maxNestDepth);
             return condition;
         }
 
@@ -65,7 +68,8 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// Deserializes the <see cref="WitnessCondition"/> object from a <see cref="BinaryReader"/>.
         /// </summary>
         /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
-        protected abstract void DeserializeWithoutType(BinaryReader reader);
+        /// <param name="maxNestDepth">The maximum nesting depth allowed during deserialization.</param>
+        protected abstract void DeserializeWithoutType(BinaryReader reader, int maxNestDepth);
 
         /// <summary>
         /// Checks whether the current context matches the condition.

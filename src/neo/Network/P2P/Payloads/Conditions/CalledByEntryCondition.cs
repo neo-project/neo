@@ -17,7 +17,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
     {
         public override WitnessConditionType Type => WitnessConditionType.CalledByEntry;
 
-        protected override void DeserializeWithoutType(BinaryReader reader)
+        protected override void DeserializeWithoutType(BinaryReader reader, int maxNestDepth)
         {
         }
 

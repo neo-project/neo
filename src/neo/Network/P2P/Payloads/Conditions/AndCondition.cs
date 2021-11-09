@@ -30,9 +30,10 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public override int Size => base.Size + Expressions.GetVarSize();
         public override WitnessConditionType Type => WitnessConditionType.And;
 
-        protected override void DeserializeWithoutType(BinaryReader reader)
+        protected override void DeserializeWithoutType(BinaryReader reader, int maxNestDepth)
         {
-            Expressions = DeserializeConditions(reader);
+            if (maxNestDepth <= 0) throw new FormatException();
+            Expressions = DeserializeConditions(reader, maxNestDepth - 1);
             if (Expressions.Length == 0) throw new FormatException();
         }
 

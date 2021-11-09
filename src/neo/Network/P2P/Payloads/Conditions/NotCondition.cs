@@ -11,6 +11,7 @@
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.SmartContract;
+using System;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads.Conditions
@@ -28,9 +29,10 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public override int Size => base.Size + Expression.Size;
         public override WitnessConditionType Type => WitnessConditionType.Not;
 
-        protected override void DeserializeWithoutType(BinaryReader reader)
+        protected override void DeserializeWithoutType(BinaryReader reader, int maxNestDepth)
         {
-            Expression = DeserializeFrom(reader);
+            if (maxNestDepth <= 0) throw new FormatException();
+            Expression = DeserializeFrom(reader, maxNestDepth - 1);
         }
 
         public override bool Match(ApplicationEngine engine)
