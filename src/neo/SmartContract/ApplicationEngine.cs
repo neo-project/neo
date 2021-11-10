@@ -459,7 +459,7 @@ namespace Neo.SmartContract
         /// Determines whether the <see cref="CallFlags"/> of the current context meets the specified requirements.
         /// </summary>
         /// <param name="requiredCallFlags">The requirements to check.</param>
-        protected void ValidateCallFlags(CallFlags requiredCallFlags)
+        internal protected void ValidateCallFlags(CallFlags requiredCallFlags)
         {
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(requiredCallFlags))

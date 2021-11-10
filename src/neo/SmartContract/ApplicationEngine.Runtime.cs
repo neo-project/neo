@@ -212,27 +212,10 @@ namespace Neo.SmartContract
                 }
                 Signer signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
                 if (signer is null) return false;
-                if (signer.Scopes == WitnessScope.Global) return true;
-                if (signer.Scopes.HasFlag(WitnessScope.CalledByEntry))
+                foreach (WitnessRule rule in signer.GetAllRules())
                 {
-                    if (CallingScriptHash == null || CallingScriptHash == EntryScriptHash)
-                        return true;
-                }
-                if (signer.Scopes.HasFlag(WitnessScope.CustomContracts))
-                {
-                    if (signer.AllowedContracts.Contains(CurrentScriptHash))
-                        return true;
-                }
-                if (signer.Scopes.HasFlag(WitnessScope.CustomGroups))
-                {
-                    // Check allow state callflag
-
-                    ValidateCallFlags(CallFlags.ReadStates);
-
-                    var contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
-                    // check if current group is the required one
-                    if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(signer.AllowedGroups).Any())
-                        return true;
+                    if (rule.Condition.Match(this))
+                        return rule.Action == WitnessRuleAction.Allow;
                 }
                 return false;
             }

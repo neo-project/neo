@@ -8,19 +8,20 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System.Collections.Generic;
+using Neo.Cryptography.ECC;
 
 namespace Neo.IO.Caching
 {
-    internal abstract class FIFOCache<TKey, TValue> : Cache<TKey, TValue>
+    internal class ECPointCache : FIFOCache<byte[], ECPoint>
     {
-        public FIFOCache(int max_capacity, IEqualityComparer<TKey> comparer = null)
-            : base(max_capacity, comparer)
+        public ECPointCache(int max_capacity)
+            : base(max_capacity, ByteArrayEqualityComparer.Default)
         {
         }
 
-        protected override void OnAccess(CacheItem item)
+        protected override byte[] GetKeyForItem(ECPoint item)
         {
+            return item.EncodePoint(true);
         }
     }
 }
