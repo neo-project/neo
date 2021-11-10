@@ -12,6 +12,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
 using System.Xml;
@@ -95,11 +96,7 @@ namespace Neo.Network
             try
             {
                 XmlDocument desc = new() { XmlResolver = null };
-                HttpWebRequest request = WebRequest.CreateHttp(resp);
-                using (WebResponse response = request.GetResponse())
-                {
-                    desc.Load(response.GetResponseStream());
-                }
+                desc.Load(resp);
                 XmlNamespaceManager nsMgr = new(desc.NameTable);
                 nsMgr.AddNamespace("tns", "urn:schemas-upnp-org:device-1-0");
                 XmlNode typen = desc.SelectSingleNode("//tns:device/tns:deviceType/text()", nsMgr);
@@ -180,17 +177,15 @@ namespace Neo.Network
             soap +
             "</s:Body>" +
             "</s:Envelope>";
-            HttpWebRequest r = WebRequest.CreateHttp(url);
-            r.Method = "POST";
-            byte[] b = Encoding.UTF8.GetBytes(req);
-            r.Headers["SOAPACTION"] = "\"urn:schemas-upnp-org:service:WANIPConnection:1#" + function + "\"";
-            r.ContentType = "text/xml; charset=\"utf-8\"";
-            using Stream reqs = r.GetRequestStream();
-            reqs.Write(b, 0, b.Length);
+            using HttpRequestMessage request = new(HttpMethod.Post, url);
+            request.Headers.Add("SOAPACTION", $"\"urn:schemas-upnp-org:service:WANIPConnection:1#{function}\"");
+            request.Headers.Add("Content-Type", "text/xml; charset=\"utf-8\"");
+            request.Content = new StringContent(req);
+            using HttpClient http = new();
+            using HttpResponseMessage response = http.Send(request);
+            using Stream stream = response.EnsureSuccessStatusCode().Content.ReadAsStream();
             XmlDocument resp = new() { XmlResolver = null };
-            WebResponse wres = r.GetResponse();
-            using Stream ress = wres.GetResponseStream();
-            resp.Load(ress);
+            resp.Load(stream);
             return resp;
         }
     }
