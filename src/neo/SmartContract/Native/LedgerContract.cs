@@ -242,8 +242,8 @@ namespace Neo.SmartContract.Native
             return state.Transaction;
         }
 
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getTransactionState")]
-        private VMState GetTransactionStateForContract(ApplicationEngine engine, UInt256 hash)
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getTransactionVMState")]
+        private VMState GetVMState(ApplicationEngine engine, UInt256 hash)
         {
             TransactionState state = GetTransactionState(engine.Snapshot, hash);
             if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return VMState.NONE;
