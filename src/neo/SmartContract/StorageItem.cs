@@ -134,18 +134,6 @@ namespace Neo.SmartContract
             return (T)cache;
         }
 
-        /// <summary>
-        /// Gets a list of <see cref="ISerializable"/> from the storage.
-        /// </summary>
-        /// <typeparam name="T">The type of the <see cref="ISerializable"/>.</typeparam>
-        /// <returns>The list of the <see cref="ISerializable"/>.</returns>
-        public List<T> GetSerializableList<T>() where T : ISerializable, new()
-        {
-            cache ??= new List<T>(value.AsSerializableArray<T>());
-            value = null;
-            return (List<T>)cache;
-        }
-
         public void Serialize(BinaryWriter writer)
         {
             writer.Write(Value);
