@@ -106,8 +106,9 @@ namespace Neo.SmartContract.Native
             {
                 uint[] updates = engine.ProtocolSettings.NativeUpdateHistory[contract.Name];
                 StorageKey versionKey = CreateStorageKey(Prefix_NextVersion).Add(contract.Hash);
-                uint version = (uint)(BigInteger)(engine.Snapshot.TryGet(versionKey) ?? (object)BigInteger.Zero);
-                if (updates.Length >= version) continue;
+                StorageItem versionValue = engine.Snapshot.TryGet(versionKey);
+                uint version = versionValue == null ? 0 : (uint)(BigInteger)versionValue;
+                if (updates.Length <= version) continue;
                 if (updates[version] != engine.PersistingBlock.Index)
                     continue;
                 engine.Snapshot.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
