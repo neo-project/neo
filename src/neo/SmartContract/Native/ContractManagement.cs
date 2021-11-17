@@ -115,6 +115,7 @@ namespace Neo.SmartContract.Native
                     Id = contract.Id,
                     Nef = contract.Nef,
                     Hash = contract.Hash,
+                    UpdateCounter = (ushort)version,
                     Manifest = contract.Manifest.ForVersion(version) // Get versioned Abi
                 }));
                 engine.Snapshot.Add(versionKey, new StorageItem(new BigInteger(version + 1)));
