@@ -27,6 +27,10 @@ namespace Neo.SmartContract.Native
         private static readonly Dictionary<UInt160, NativeContract> contractsDictionary = new();
         private readonly Dictionary<int, ContractMethodMetadata> methods = new();
         private static int id_counter = 0;
+
+        /// <summary>
+        /// Current persisted index of ProtocolSettings.NativeUpdateHistory
+        /// </summary>
         internal uint NextVersion = 0;
 
         #region Named Native Contracts
