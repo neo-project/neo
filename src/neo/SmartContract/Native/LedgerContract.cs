@@ -242,7 +242,7 @@ namespace Neo.SmartContract.Native
             return state.Transaction;
         }
 
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, AvailableFromVersion = 1)]
         private VMState GetTransactionVMState(ApplicationEngine engine, UInt256 hash)
         {
             TransactionState state = GetTransactionState(engine.Snapshot, hash);
