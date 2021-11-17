@@ -105,7 +105,8 @@ namespace Neo.SmartContract.Native
             foreach (NativeContract contract in Contracts)
             {
                 uint[] updates = engine.ProtocolSettings.NativeUpdateHistory[contract.Name];
-                StorageItem version = engine.Snapshot.TryGet(CreateStorageKey(Prefix_NextVersion).Add(contract.Hash));
+                StorageKey versionKey = CreateStorageKey(Prefix_NextVersion).Add(contract.Hash);
+                StorageItem version = engine.Snapshot.TryGet(versionKey);
                 uint nextVersion = version == null ? 0 : (uint)(BigInteger)version;
                 if (updates.Length >= nextVersion) continue;
                 if (updates[nextVersion] != engine.PersistingBlock.Index)
@@ -117,7 +118,7 @@ namespace Neo.SmartContract.Native
                     Hash = contract.Hash,
                     Manifest = contract.Manifest.ForVersion(nextVersion) // Get versioned Abi
                 }));
-                engine.Snapshot.Add(CreateStorageKey(Prefix_NextVersion).Add(contract.Hash), new StorageItem(new BigInteger(nextVersion + 1)));
+                engine.Snapshot.Add(versionKey, new StorageItem(new BigInteger(nextVersion + 1)));
                 await contract.Initialize(engine);
             }
         }
