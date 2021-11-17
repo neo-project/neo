@@ -32,6 +32,11 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public ContractParameterDefinition[] Parameters { get; set; }
 
+        /// <summary>
+        /// When the Method start to be available
+        /// </summary>
+        public uint AvailableFromVersion { get; set; } = 0;
+
         public virtual void FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;

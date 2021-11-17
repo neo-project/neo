@@ -60,7 +60,8 @@ namespace Neo.SmartContract.Native
                 Name = Name,
                 ReturnType = ToParameterType(Handler.ReturnType),
                 Parameters = Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name }).ToArray(),
-                Safe = (attribute.RequiredCallFlags & ~CallFlags.ReadOnly) == 0
+                Safe = (attribute.RequiredCallFlags & ~CallFlags.ReadOnly) == 0,
+                AvailableFromVersion = attribute.AvailableFromVersion
             };
         }
 

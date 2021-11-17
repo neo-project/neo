@@ -100,5 +100,14 @@ namespace Neo.SmartContract.Manifest
             json["events"] = new JArray(Events.Select(u => u.ToJson()).ToArray());
             return json;
         }
+
+        internal ContractAbi ForVersion(uint version)
+        {
+            return new ContractAbi()
+            {
+                Events = Events.Where(u => u.AvailableFromVersion >= version).ToArray(),
+                Methods = Methods.Where(u => u.AvailableFromVersion >= version).ToArray()
+            };
+        }
     }
 }

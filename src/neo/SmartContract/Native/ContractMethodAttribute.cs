@@ -19,5 +19,6 @@ namespace Neo.SmartContract.Native
         public CallFlags RequiredCallFlags { get; init; }
         public long CpuFee { get; init; }
         public long StorageFee { get; init; }
+        public uint AvailableFromVersion { get; init; } = 0;
     }
 }
