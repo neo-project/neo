@@ -105,8 +105,8 @@ namespace Neo.SmartContract.Manifest
         {
             return new ContractAbi()
             {
-                Events = Events.Where(u => u.AvailableFromVersion >= version).ToArray(),
-                Methods = Methods.Where(u => u.AvailableFromVersion >= version).ToArray()
+                Events = Events.Where(u => u.AvailableFromVersion <= version).ToArray(),
+                Methods = Methods.Where(u => u.AvailableFromVersion <= version).ToArray()
             };
         }
     }
