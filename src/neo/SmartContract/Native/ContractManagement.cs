@@ -120,6 +120,7 @@ namespace Neo.SmartContract.Native
                 }));
                 engine.Snapshot.Add(versionKey, new StorageItem(new BigInteger(nextVersion + 1)));
                 await contract.Initialize(engine);
+                engine.SendNotification(Hash, nextVersion != 0 ? "Update" : "Deploy", new VM.Types.Array { contract.Hash.ToArray(), nextVersion });
             }
         }
 
