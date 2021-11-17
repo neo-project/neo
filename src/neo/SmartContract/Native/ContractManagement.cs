@@ -106,21 +106,20 @@ namespace Neo.SmartContract.Native
             {
                 uint[] updates = engine.ProtocolSettings.NativeUpdateHistory[contract.Name];
                 StorageKey versionKey = CreateStorageKey(Prefix_NextVersion).Add(contract.Hash);
-                StorageItem version = engine.Snapshot.TryGet(versionKey);
-                uint nextVersion = version == null ? 0 : (uint)(BigInteger)version;
-                if (updates.Length >= nextVersion) continue;
-                if (updates[nextVersion] != engine.PersistingBlock.Index)
+                uint version = (uint)(BigInteger)(engine.Snapshot.TryGet(versionKey) ?? (object)BigInteger.Zero);
+                if (updates.Length >= version) continue;
+                if (updates[version] != engine.PersistingBlock.Index)
                     continue;
                 engine.Snapshot.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
                 {
                     Id = contract.Id,
                     Nef = contract.Nef,
                     Hash = contract.Hash,
-                    Manifest = contract.Manifest.ForVersion(nextVersion) // Get versioned Abi
+                    Manifest = contract.Manifest.ForVersion(version) // Get versioned Abi
                 }));
-                engine.Snapshot.Add(versionKey, new StorageItem(new BigInteger(nextVersion + 1)));
+                engine.Snapshot.Add(versionKey, new StorageItem(new BigInteger(version + 1)));
                 await contract.Initialize(engine);
-                engine.SendNotification(Hash, nextVersion != 0 ? "Update" : "Deploy", new VM.Types.Array { contract.Hash.ToArray(), nextVersion });
+                engine.SendNotification(Hash, version != 0 ? "Update" : "Deploy", new VM.Types.Array { contract.Hash.ToArray(), version });
             }
         }
 
