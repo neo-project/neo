@@ -30,6 +30,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_MinimumDeploymentFee = 20;
         private const byte Prefix_NextAvailableId = 15;
         private const byte Prefix_Contract = 8;
+        private const byte Prefix_NextVersion = 4;
 
         internal ContractManagement()
         {
@@ -104,17 +105,19 @@ namespace Neo.SmartContract.Native
             foreach (NativeContract contract in Contracts)
             {
                 uint[] updates = engine.ProtocolSettings.NativeUpdateHistory[contract.Name];
-                if (updates.Length >= contract.NextVersion) continue;
-                if (updates[contract.NextVersion] != engine.PersistingBlock.Index)
+                StorageItem version = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_NextVersion).Add(contract.Hash), () => new StorageItem(BigInteger.Zero));
+                uint nextVersion = (uint)(BigInteger)version;
+                if (updates.Length >= nextVersion) continue;
+                if (updates[nextVersion] != engine.PersistingBlock.Index)
                     continue;
                 engine.Snapshot.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
                 {
                     Id = contract.Id,
                     Nef = contract.Nef,
                     Hash = contract.Hash,
-                    Manifest = contract.Manifest.ForVersion(contract.NextVersion) // Get versioned Abi
+                    Manifest = contract.Manifest.ForVersion(nextVersion) // Get versioned Abi
                 }));
-                contract.NextVersion++;
+                version.Add(1);
                 await contract.Initialize(engine);
             }
         }
