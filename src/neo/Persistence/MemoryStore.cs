@@ -43,12 +43,13 @@ namespace Neo.Persistence
 
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
         {
-            if (keyOrPrefix?.Length <= 0) yield break;
+            if (direction == SeekDirection.Backward && keyOrPrefix?.Length == 0) yield break;
 
             ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
-            IEnumerable<KeyValuePair<byte[], byte[]>> records = innerData
-                .Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0)
-                .OrderBy(p => p.Key, comparer);
+            IEnumerable<KeyValuePair<byte[], byte[]>> records = innerData;
+            if (keyOrPrefix?.Length > 0)
+                records = records.Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
+            records = records.OrderBy(p => p.Key, comparer);
             foreach (var pair in records)
                 yield return (pair.Key, pair.Value);
         }
