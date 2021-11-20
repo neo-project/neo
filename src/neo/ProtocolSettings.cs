@@ -23,6 +23,9 @@ namespace Neo
     /// </summary>
     public record ProtocolSettings
     {
+        private readonly HashSet<uint> upgradeBlocks = new();
+        private readonly IReadOnlyDictionary<string, uint[]> nativeUpdateHistory;
+
         /// <summary>
         /// The magic number of the NEO network.
         /// </summary>
@@ -86,7 +89,17 @@ namespace Neo
         /// <summary>
         /// Contains the update history of all native contracts.
         /// </summary>
-        public IReadOnlyDictionary<string, uint[]> NativeUpdateHistory { get; init; }
+        public IReadOnlyDictionary<string, uint[]> NativeUpdateHistory
+        {
+            get => nativeUpdateHistory;
+            init
+            {
+                upgradeBlocks.Clear();
+                nativeUpdateHistory = value;
+                foreach (var values in value.Values)
+                    foreach (var block in values) upgradeBlocks.Add(block);
+            }
+        }
 
         /// <summary>
         /// Indicates the amount of gas to distribute during initialization.
@@ -98,6 +111,13 @@ namespace Neo
         /// The public keys of the standby validators.
         /// </summary>
         public IReadOnlyList<ECPoint> StandbyValidators => _standbyValidators ??= StandbyCommittee.Take(ValidatorsCount).ToArray();
+
+        /// <summary>
+        /// Return true if the block is contained inside NativeUpdateHistory
+        /// </summary>
+        /// <param name="index">Block index</param>
+        /// <returns>True if is contained</returns>
+        public bool IsUpgradableBlock(uint index) => upgradeBlocks.Contains(index);
 
         /// <summary>
         /// The default protocol settings for NEO MainNet.

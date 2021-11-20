@@ -101,6 +101,7 @@ namespace Neo.SmartContract.Native
 
         internal override async ContractTask OnPersist(ApplicationEngine engine)
         {
+            if (!engine.ProtocolSettings.IsUpgradableBlock(engine.PersistingBlock.Index)) return;
             foreach (NativeContract contract in Contracts)
             {
                 uint[] updates = engine.ProtocolSettings.NativeUpdateHistory[contract.Name];
