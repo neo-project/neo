@@ -22,6 +22,12 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Iterator_Next = Register("System.Iterator.Next", nameof(IteratorNext), 1 << 15, CallFlags.None);
 
         /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Iterator.Count.
+        /// Returns the number of entries in the collection.
+        /// </summary>
+        public static readonly InteropDescriptor System_Iterator_Count = Register("System.Iterator.Count", nameof(IteratorCount), 1 << 4, CallFlags.None);
+
+        /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Iterator.Value.
         /// Gets the element in the collection at the current position of the iterator.
         /// </summary>
@@ -36,6 +42,23 @@ namespace Neo.SmartContract
         internal protected static bool IteratorNext(IIterator iterator)
         {
             return iterator.Next();
+        }
+
+        /// <summary>
+        /// The implementation of System.Iterator.Count.
+        /// Returns the number of entries in the collection.
+        /// </summary>
+        /// <param name="iterator">The iterator to be counted.</param>
+        /// <returns>Seek the iterator to the last entry and return the number of entries.</returns>
+        internal protected int IteratorCount(IIterator iterator)
+        {
+            int count = 0;
+            while (iterator.Next())
+            {
+                AddGas(1 << 15);
+                count++;
+            }
+            return count;
         }
 
         /// <summary>
