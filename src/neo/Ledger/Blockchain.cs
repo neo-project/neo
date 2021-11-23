@@ -395,6 +395,7 @@ namespace Neo.Ledger
             using (SnapshotCache snapshot = system.GetSnapshot())
             {
                 List<ApplicationExecuted> all_application_executed = new();
+                TransactionState[] transactionStates;
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, system.Settings, 0))
                 {
                     engine.LoadScript(onPersistScript);
@@ -402,14 +403,17 @@ namespace Neo.Ledger
                     ApplicationExecuted application_executed = new(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
+                    transactionStates = engine.GetState<TransactionState[]>();
                 }
                 DataCache clonedSnapshot = snapshot.CreateSnapshot();
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
-                foreach (Transaction tx in block.Transactions)
+                foreach (TransactionState transactionState in transactionStates)
                 {
+                    Transaction tx = transactionState.Transaction;
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee);
                     engine.LoadScript(tx.Script);
-                    if (engine.Execute() == VMState.HALT)
+                    transactionState.State = engine.Execute();
+                    if (transactionState.State == VMState.HALT)
                     {
                         clonedSnapshot.Commit();
                     }

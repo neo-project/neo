@@ -41,7 +41,7 @@ namespace Neo.UnitTests.Wallets.SQLite
         [ClassCleanup]
         public static void Cleanup()
         {
-            TestUtils.DeleteFile(path);
+            wallet.Delete();
         }
 
         [TestMethod]
@@ -141,7 +141,7 @@ namespace Neo.UnitTests.Wallets.SQLite
             Action action = () => UserWallet.Open(myPath, ss, ProtocolSettings.Default);
             action.Should().Throw<CryptographicException>();
 
-            TestUtils.DeleteFile(myPath);
+            w1.Delete();
         }
 
         [TestMethod]
