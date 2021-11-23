@@ -72,6 +72,10 @@ namespace Neo.UnitTests.Wallets
             return account;
         }
 
+        public override void Delete()
+        {
+        }
+
         public override bool DeleteAccount(UInt160 scriptHash)
         {
             return accounts.Remove(scriptHash);

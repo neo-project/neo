@@ -372,8 +372,8 @@ namespace Neo.UnitTests.Wallets.NEP6
             NEP6Wallet nw = NEP6Wallet.Migrate(npath, path, "123", ProtocolSettings.Default);
             bool result = nw.Contains(testScriptHash);
             Assert.AreEqual(true, result);
-            if (File.Exists(path)) File.Delete(path);
-            if (File.Exists(npath)) File.Delete(npath);
+            uw.Delete();
+            nw.Delete();
         }
 
         [TestMethod]
