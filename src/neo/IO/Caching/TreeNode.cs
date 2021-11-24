@@ -14,10 +14,11 @@ namespace Neo.IO.Caching
 {
     public class TreeNode<T>
     {
+        private readonly List<TreeNode<T>> children = new();
+
         public T Item { get; }
         public TreeNode<T> Parent { get; }
-
-        private readonly List<TreeNode<T>> children = new();
+        public IReadOnlyList<TreeNode<T>> Children => children;
 
         internal TreeNode(T item, TreeNode<T> parent)
         {
