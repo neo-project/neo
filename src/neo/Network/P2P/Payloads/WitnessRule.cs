@@ -48,6 +48,20 @@ namespace Neo.Network.P2P.Payloads
         }
 
         /// <summary>
+        /// Contruct WitnessRule from JSON object
+        /// </summary>
+        /// <param name="json">The rule represented by a JSON object.</param>
+        /// <returns><see cref="WitnessRule"/></returns>
+        public static WitnessRule FromJson(JObject json)
+        {
+            return new()
+            {
+                Action = Enum.Parse<WitnessRuleAction>(json["action"].AsString()),
+                Condition = WitnessCondition.FromJson(json["condition"])
+            };
+        }
+
+        /// <summary>
         /// Converts the rule to a JSON object.
         /// </summary>
         /// <returns>The rule represented by a JSON object.</returns>

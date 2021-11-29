@@ -45,6 +45,11 @@ namespace Neo.Network.P2P.Payloads.Conditions
             writer.Write(Group);
         }
 
+        protected override void ParseJson(JObject json)
+        {
+            Group = ECPoint.Parse(json["group"].AsString(), ECCurve.Secp256r1);
+        }
+
         public override JObject ToJson()
         {
             JObject json = base.ToJson();

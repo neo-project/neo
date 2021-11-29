@@ -91,6 +91,26 @@ namespace Neo.Network.P2P.Payloads.Conditions
         protected abstract void SerializeWithoutType(BinaryWriter writer);
 
         /// <summary>
+        /// Fill fields with JSON object
+        /// </summary>
+        /// <param name="json">The condition represented by a JSON object.</param>
+        protected virtual void ParseJson(JObject json) { }
+
+        /// <summary>
+        /// Construct <see cref="WitnessCondition"/> from JSON object
+        /// </summary>
+        /// <param name="json">The condition represented by a JSON object.</param>
+        /// <returns><see cref="WitnessCondition"/></returns>
+        public static WitnessCondition FromJson(JObject json)
+        {
+            WitnessConditionType type = Enum.Parse<WitnessConditionType>(json["type"].AsString());
+            if (ReflectionCache<WitnessConditionType>.CreateInstance(type) is not WitnessCondition condition)
+                throw new FormatException("invalid WitnessConditionType");
+            condition.ParseJson(json);
+            return condition;
+        }
+
+        /// <summary>
         /// Converts the condition to a JSON object.
         /// </summary>
         /// <returns>The condition represented by a JSON object.</returns>
