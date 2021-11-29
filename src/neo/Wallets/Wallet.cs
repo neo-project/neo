@@ -93,6 +93,11 @@ namespace Neo.Wallets
         public abstract WalletAccount CreateAccount(UInt160 scriptHash);
 
         /// <summary>
+        /// Deletes the entire database of the wallet.
+        /// </summary>
+        public abstract void Delete();
+
+        /// <summary>
         /// Deletes an account from the wallet.
         /// </summary>
         /// <param name="scriptHash">The hash of the account.</param>

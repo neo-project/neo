@@ -265,6 +265,12 @@ namespace Neo.Wallets.SQLite
             return account;
         }
 
+        public override void Delete()
+        {
+            using WalletDataContext ctx = new(Path);
+            ctx.Database.EnsureDeleted();
+        }
+
         public override bool DeleteAccount(UInt160 scriptHash)
         {
             UserWalletAccount account;
