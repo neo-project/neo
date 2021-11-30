@@ -95,10 +95,10 @@ namespace Neo.Network.P2P.Payloads.Conditions
         }
 
         /// <summary>
-        /// Construct <see cref="WitnessCondition"/> from JSON object
+        /// Converts the <see cref="WitnessCondition"/> from a JSON object.
         /// </summary>
-        /// <param name="json">The condition represented by a JSON object.</param>
-        /// <returns><see cref="WitnessCondition"/></returns>
+        /// <param name="json">The <see cref="WitnessCondition"/> represented by a JSON object.</param>
+        /// <returns>The converted <see cref="WitnessCondition"/>.</returns>
         public static WitnessCondition FromJson(JObject json)
         {
             WitnessConditionType type = Enum.Parse<WitnessConditionType>(json["type"].GetString());
