@@ -155,7 +155,7 @@ namespace Neo.Network.P2P.Payloads
             if (signer.Scopes.HasFlag(WitnessScope.CustomGroups))
                 signer.AllowedGroups = json["allowedgroups"].GetArray().Select(p => ECPoint.Parse(p.GetString(), ECCurve.Secp256r1)).ToArray();
             if (signer.Scopes.HasFlag(WitnessScope.WitnessRules))
-                signer.Rules = json["rules"].GetArray().Select(p => WitnessRule.FromJson(p)).ToArray();
+                signer.Rules = json["rules"].GetArray().Select(WitnessRule.FromJson).ToArray();
             return signer;
         }
 
