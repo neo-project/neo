@@ -40,9 +40,9 @@ namespace Neo.Network.P2P.Payloads.Conditions
             writer.Write(Hash);
         }
 
-        protected override void ParseJson(JObject json)
+        private protected override void ParseJson(JObject json)
         {
-            Hash = UInt160.Parse(json["hash"].AsString());
+            Hash = UInt160.Parse(json["hash"].GetString());
         }
 
         public override JObject ToJson()

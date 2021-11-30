@@ -39,9 +39,9 @@ namespace Neo.Network.P2P.Payloads.Conditions
             writer.Write(Expression);
         }
 
-        protected override void ParseJson(JObject json)
+        private protected override void ParseJson(JObject json)
         {
-            Expression = json["expression"].AsBoolean();
+            Expression = json["expression"].GetBoolean();
         }
 
         public override JObject ToJson()
