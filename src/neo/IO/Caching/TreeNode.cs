@@ -19,6 +19,7 @@ namespace Neo.IO.Caching
         public T Item { get; }
         public TreeNode<T> Parent { get; }
         public IReadOnlyList<TreeNode<T>> Children => children;
+        public bool HasChilds => children.Count > 0;
 
         internal TreeNode(T item, TreeNode<T> parent)
         {
