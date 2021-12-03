@@ -16,7 +16,7 @@ namespace Neo
     /// <summary>
     /// Represents a fixed-point number of arbitrary precision.
     /// </summary>
-    public struct BigDecimal
+    public struct BigDecimal : IComparable<BigDecimal>, IEquatable<BigDecimal>
     {
         private readonly BigInteger value;
         private readonly byte decimals;
@@ -163,6 +163,31 @@ namespace Neo
             }
             result = new BigDecimal(value, decimals);
             return true;
+        }
+
+        public int CompareTo(BigDecimal other)
+        {
+            var left = BigInteger.Multiply((int)Math.Pow(10, other.decimals), value);
+            var right = BigInteger.Multiply((int)Math.Pow(10, decimals), other.value);
+            return left.CompareTo(right);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj is BigDecimal @decimal ? @decimal : default);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(value, decimals);
+        }
+
+        public bool Equals(BigDecimal other)
+        {
+            if (Sign != other.Sign) return false;
+            var left = BigInteger.Multiply((int)Math.Pow(10, other.decimals), value);
+            var right = BigInteger.Multiply((int)Math.Pow(10, decimals), other.value);
+            return left == right;
         }
     }
 }
