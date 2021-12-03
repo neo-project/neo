@@ -167,27 +167,28 @@ namespace Neo
 
         public int CompareTo(BigDecimal other)
         {
-            var left = BigInteger.Multiply((int)Math.Pow(10, other.decimals), value);
-            var right = BigInteger.Multiply((int)Math.Pow(10, decimals), other.value);
+            BigInteger left = value, right = other.value;
+            if (decimals < other.decimals)
+                left *= BigInteger.Pow(10, other.decimals - decimals);
+            else if (decimals > other.decimals)
+                right *= BigInteger.Pow(10, decimals - other.decimals);
             return left.CompareTo(right);
         }
 
         public override bool Equals(object obj)
         {
-            return Equals(obj is BigDecimal @decimal ? @decimal : default);
+            if (obj is not BigDecimal @decimal) return false;
+            return Equals(@decimal);
+        }
+
+        public bool Equals(BigDecimal other)
+        {
+            return CompareTo(other) == 0;
         }
 
         public override int GetHashCode()
         {
             return HashCode.Combine(value, decimals);
-        }
-
-        public bool Equals(BigDecimal other)
-        {
-            if (Sign != other.Sign) return false;
-            var left = BigInteger.Multiply((int)Math.Pow(10, other.decimals), value);
-            var right = BigInteger.Multiply((int)Math.Pow(10, decimals), other.value);
-            return left == right;
         }
     }
 }
