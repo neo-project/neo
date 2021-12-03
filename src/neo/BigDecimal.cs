@@ -192,5 +192,35 @@ namespace Neo
             BigInteger result = BigInteger.DivRem(value, divisor, out BigInteger remainder);
             return HashCode.Combine(result, remainder);
         }
+
+        public static bool operator ==(BigDecimal left, BigDecimal right)
+        {
+            return left.CompareTo(right) == 0;
+        }
+
+        public static bool operator !=(BigDecimal left, BigDecimal right)
+        {
+            return left.CompareTo(right) != 0;
+        }
+
+        public static bool operator <(BigDecimal left, BigDecimal right)
+        {
+            return left.CompareTo(right) < 0;
+        }
+
+        public static bool operator <=(BigDecimal left, BigDecimal right)
+        {
+            return left.CompareTo(right) <= 0;
+        }
+
+        public static bool operator >(BigDecimal left, BigDecimal right)
+        {
+            return left.CompareTo(right) > 0;
+        }
+
+        public static bool operator >=(BigDecimal left, BigDecimal right)
+        {
+            return left.CompareTo(right) >= 0;
+        }
     }
 }
