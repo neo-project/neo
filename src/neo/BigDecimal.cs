@@ -188,7 +188,9 @@ namespace Neo
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(value, decimals);
+            BigInteger divisor = BigInteger.Pow(10, decimals);
+            BigInteger result = BigInteger.DivRem(value, divisor, out BigInteger remainder);
+            return HashCode.Combine(result, remainder);
         }
     }
 }
