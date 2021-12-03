@@ -53,9 +53,14 @@ namespace Neo
         /// <param name="value">The value of the number.</param>
         public unsafe BigDecimal(decimal value)
         {
-            ReadOnlySpan<byte> buffer = new(&value, sizeof(decimal));
-            this.decimals = buffer[14];
-            this.value = new BigInteger(decimal.Multiply((decimal)Math.Pow(10, decimals), value));
+            Span<int> span = stackalloc int[4];
+            decimal.GetBits(value, span);
+            fixed (int* p = span)
+            {
+                ReadOnlySpan<byte> buffer = new(p, 16);
+                this.value = new BigInteger(buffer[..12], isUnsigned: true);
+                this.decimals = buffer[14];
+            }
         }
 
         /// <summary>
@@ -65,9 +70,17 @@ namespace Neo
         /// <param name="decimals">The number of decimal places for this number.</param>
         public unsafe BigDecimal(decimal value, byte decimals)
         {
-            ReadOnlySpan<byte> buffer = new(&value, sizeof(decimal));
-            if (buffer[14] > decimals) throw new ArgumentException(null, nameof(value));
-            this.value = new BigInteger(decimal.Multiply((decimal)Math.Pow(10, decimals), value));
+            Span<int> span = stackalloc int[4];
+            decimal.GetBits(value, span);
+            fixed (int* p = span)
+            {
+                ReadOnlySpan<byte> buffer = new(p, 16);
+                this.value = new BigInteger(buffer[..12], isUnsigned: true);
+                if (buffer[14] > decimals)
+                    throw new ArgumentException(null, nameof(value));
+                else if (buffer[14] < decimals)
+                    this.value *= BigInteger.Pow(10, decimals - buffer[14]);
+            }
             this.decimals = decimals;
         }
 
