@@ -59,6 +59,7 @@ namespace Neo
             {
                 ReadOnlySpan<byte> buffer = new(p, 16);
                 this.value = new BigInteger(buffer[..12], isUnsigned: true);
+                if (buffer[15] != 0) this.value = -this.value;
                 this.decimals = buffer[14];
             }
         }
@@ -80,6 +81,8 @@ namespace Neo
                     throw new ArgumentException(null, nameof(value));
                 else if (buffer[14] < decimals)
                     this.value *= BigInteger.Pow(10, decimals - buffer[14]);
+                if (buffer[15] != 0)
+                    this.value = -this.value;
             }
             this.decimals = decimals;
         }
