@@ -117,7 +117,20 @@ namespace Neo.SmartContract.Native
                     Nef = contract.Nef,
                     Hash = contract.Hash,
                     UpdateCounter = (ushort)version,
-                    Manifest = contract.Manifest.ForVersion(version) // Get versioned Abi
+                    Manifest = new ContractManifest() // Get versioned Abi
+                    {
+                        Abi = new ContractAbi()
+                        {
+                            Events = contract.Manifest.Abi.Events.Where(u => u.AvailableFromVersion <= version).ToArray(),
+                            Methods = contract.Manifest.Abi.Methods.Where(u => u.AvailableFromVersion <= version).ToArray()
+                        },
+                        Extra = contract.Manifest.Extra?.Clone(),
+                        Groups = contract.Manifest.Groups,
+                        Name = contract.Manifest.Name,
+                        Permissions = contract.Manifest.Permissions,
+                        SupportedStandards = contract.Manifest.SupportedStandards,
+                        Trusts = contract.Manifest.Trusts
+                    }
                 }));
                 engine.Snapshot.Add(versionKey, new StorageItem(new BigInteger(version + 1)));
                 await contract.Initialize(engine);

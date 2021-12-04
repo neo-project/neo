@@ -101,20 +101,6 @@ namespace Neo.SmartContract.Manifest
             };
         }
 
-        internal ContractManifest ForVersion(uint version)
-        {
-            return new ContractManifest()
-            {
-                Abi = Abi.ForVersion(version),
-                Extra = Extra?.Clone(),
-                Groups = Groups,
-                Name = Name,
-                Permissions = Permissions,
-                SupportedStandards = SupportedStandards,
-                Trusts = Trusts,
-            };
-        }
-
         /// <summary>
         /// Converts the manifest from a JSON object.
         /// </summary>
