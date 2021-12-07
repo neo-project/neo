@@ -47,12 +47,12 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.Add(CreateStorageKey(Prefix_Block).Add(engine.PersistingBlock.Hash), new StorageItem(Trim(engine.PersistingBlock).ToArray()));
             foreach (TransactionState tx in transactions)
             {
-                engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(tx.Hash), new StorageItem(new TransactionState
+                engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(tx.Transaction.Hash), new StorageItem(new TransactionState
                 {
                     BlockIndex = engine.PersistingBlock.Index,
-                    Transaction = tx
+                    Transaction = tx.Transaction
                 }));
-                foreach (var attr in tx.GetAttributes<ConflictAttribute>())
+                foreach (var attr in tx.Transaction.GetAttributes<ConflictAttribute>())
                 {
                     var hash = ((ConflictAttribute)attr).Hash;
                     engine.Snapshot.Add(CreateStorageKey(Prefix_TrimmedTransaction).Add(hash), new StorageItem(engine.PersistingBlock.Index));
