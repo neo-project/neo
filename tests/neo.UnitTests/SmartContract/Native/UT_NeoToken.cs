@@ -375,6 +375,12 @@ namespace Neo.UnitTests.SmartContract.Native
             NativeContract.NEO.BalanceOf(snapshot, from).Should().Be(99999999);
             NativeContract.NEO.BalanceOf(snapshot, to).Should().Be(1);
 
+            var (from_balance, _, _) = GetAccountState(snapshot, new UInt160(from));
+            var (to_balance, _, _) = GetAccountState(snapshot, new UInt160(to));
+
+            from_balance.Should().Be(99999999);
+            to_balance.Should().Be(1);
+
             // Check unclaim
 
             unclaim = Check_UnclaimedGas(snapshot, from, persistingBlock);
@@ -393,9 +399,9 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Bad inputs
 
-            NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.MinusOne, true, persistingBlock).Should().BeFalse();
-            NativeContract.NEO.Transfer(snapshot, new byte[19], to, BigInteger.One, false, persistingBlock).Should().BeFalse();
-            NativeContract.NEO.Transfer(snapshot, from, new byte[19], BigInteger.One, false, persistingBlock).Should().BeFalse();
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.MinusOne, true, persistingBlock));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.NEO.Transfer(snapshot, new byte[19], to, BigInteger.One, false, persistingBlock));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.NEO.Transfer(snapshot, from, new byte[19], BigInteger.One, false, persistingBlock));
 
             // More than balance
 
@@ -853,6 +859,9 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.State.Should().BeTrue();
             ret.Result.Should().BeFalse();
 
+            var (_, _, vote_to_null) = GetAccountState(snapshot, account);
+            vote_to_null.Should().BeNull();
+
             snapshot.Delete(keyAccount);
             snapshot.GetAndChange(keyAccount, () => new StorageItem(new NeoAccountState
             {
@@ -862,6 +871,9 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = Check_Vote(snapshot, account.ToArray(), ECCurve.Secp256r1.G.ToArray(), true, _persistingBlock);
             ret.State.Should().BeTrue();
             ret.Result.Should().BeTrue();
+
+            var (_, _, voteto) = GetAccountState(snapshot, account);
+            voteto.ToHexString().Should().Be(ECCurve.Secp256r1.G.ToArray().ToHexString());
         }
 
         internal (bool State, bool Result) Transfer4TesingOnBalanceChanging(BigInteger amount, bool addVotes)
@@ -1037,7 +1049,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static void CheckBalance(byte[] account, DataCache.Trackable trackable, BigInteger balance, BigInteger height, ECPoint voteTo)
         {
-            var st = (VM.Types.Struct)BinarySerializer.Deserialize(trackable.Item.Value, 16);
+            var st = (VM.Types.Struct)BinarySerializer.Deserialize(trackable.Item.Value, ExecutionEngineLimits.Default);
 
             st.Count.Should().Be(3);
             st.Select(u => u.GetType()).ToArray().Should().BeEquivalentTo(new Type[] { typeof(VM.Types.Integer), typeof(VM.Types.Integer), typeof(VM.Types.ByteString) }); // Balance
@@ -1079,6 +1091,26 @@ namespace Neo.UnitTests.SmartContract.Native
             result.Should().BeOfType(typeof(VM.Types.Boolean));
 
             return (true, result.GetBoolean());
+        }
+
+        internal static (BigInteger balance, BigInteger height, byte[] voteto) GetAccountState(DataCache snapshot, UInt160 account)
+        {
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.NEO.Hash, "getAccountState", account);
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute().Should().Be(VMState.HALT);
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Struct));
+
+            VM.Types.Struct state = (result as VM.Types.Struct);
+            var balance = state[0].GetInteger();
+            var height = state[1].GetInteger();
+            var voteto = state[2].IsNull ? null : state[2].GetSpan().ToArray();
+            return (balance, height, voteto);
         }
     }
 }

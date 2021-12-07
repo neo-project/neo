@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.VM;
 using Neo.VM.Types;
 using System.Collections.Generic;
@@ -38,7 +48,7 @@ namespace Neo.SmartContract.Iterators
                 key = key[prefixLength..];
 
             StackItem item = options.HasFlag(FindOptions.DeserializeValues)
-                ? BinarySerializer.Deserialize(value, 1024, referenceCounter)
+                ? BinarySerializer.Deserialize(value, ExecutionEngineLimits.Default, referenceCounter)
                 : value;
 
             if (options.HasFlag(FindOptions.PickField0))

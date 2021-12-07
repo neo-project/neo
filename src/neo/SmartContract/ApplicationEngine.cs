@@ -1,4 +1,15 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.IO;
+using Neo.IO.Caching;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -40,18 +51,26 @@ namespace Neo.SmartContract
 
         private static IApplicationEngineProvider applicationEngineProvider;
         private static Dictionary<uint, InteropDescriptor> services;
+        private TreeNode<UInt160> currentNodeOfInvocationTree = null;
         private readonly long gas_amount;
+        private Dictionary<Type, object> states;
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
         private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
         private readonly uint exec_fee_factor;
         internal readonly uint StoragePrice;
+        private byte[] nonceData;
 
         /// <summary>
         /// Gets the descriptors of all interoperable services available in NEO.
         /// </summary>
         public static IReadOnlyDictionary<uint, InteropDescriptor> Services => services;
+
+        /// <summary>
+        /// The diagnostic used by the engine. This property can be <see langword="null"/>.
+        /// </summary>
+        public Diagnostic Diagnostic { get; }
 
         private List<IDisposable> Disposables => disposables ??= new List<IDisposable>();
 
@@ -124,7 +143,8 @@ namespace Neo.SmartContract
         /// <param name="persistingBlock">The block being persisted. It should be <see langword="null"/> if the <paramref name="trigger"/> is <see cref="TriggerType.Verification"/>.</param>
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
-        protected ApplicationEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas)
+        /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
+        protected unsafe ApplicationEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, Diagnostic diagnostic)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
@@ -132,8 +152,17 @@ namespace Neo.SmartContract
             this.PersistingBlock = persistingBlock;
             this.ProtocolSettings = settings;
             this.gas_amount = gas;
+            this.Diagnostic = diagnostic;
             this.exec_fee_factor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(Snapshot);
             this.StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(Snapshot);
+            this.nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
+            if (persistingBlock is not null)
+            {
+                fixed (byte* p = nonceData)
+                {
+                    *(ulong*)p ^= persistingBlock.Nonce;
+                }
+            }
         }
 
         /// <summary>
@@ -169,6 +198,9 @@ namespace Neo.SmartContract
 
         private ExecutionContext CallContractInternal(ContractState contract, ContractMethodDescriptor method, CallFlags flags, bool hasReturnValue, IReadOnlyList<StackItem> args)
         {
+            if (NativeContract.Policy.IsBlocked(Snapshot, contract.Hash))
+                throw new InvalidOperationException($"The contract {contract.Hash} has been blocked.");
+
             if (method.Safe)
             {
                 flags &= ~(CallFlags.WriteStates | CallFlags.AllowNotify);
@@ -228,6 +260,8 @@ namespace Neo.SmartContract
         protected override void ContextUnloaded(ExecutionContext context)
         {
             base.ContextUnloaded(context);
+            if (Diagnostic is not null)
+                currentNodeOfInvocationTree = currentNodeOfInvocationTree.Parent;
             if (!contractTasks.Remove(context, out var awaiter)) return;
             if (UncaughtException is not null)
                 throw new VMUnhandledException(UncaughtException);
@@ -243,20 +277,28 @@ namespace Neo.SmartContract
         /// <param name="persistingBlock">The block being persisted. It should be <see langword="null"/> if the <paramref name="trigger"/> is <see cref="TriggerType.Verification"/>.</param>
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
+        /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
-        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas)
+        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, Diagnostic diagnostic = null)
         {
-            return applicationEngineProvider?.Create(trigger, container, snapshot, persistingBlock, settings, gas)
-                  ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas);
+            return applicationEngineProvider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic)
+                  ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic);
         }
 
         protected override void LoadContext(ExecutionContext context)
         {
             // Set default execution context state
-
             var state = context.GetState<ExecutionContextState>();
             state.ScriptHash ??= ((byte[])context.Script).ToScriptHash();
             invocationCounter.TryAdd(state.ScriptHash, 1);
+
+            if (Diagnostic is not null)
+            {
+                if (currentNodeOfInvocationTree is null)
+                    currentNodeOfInvocationTree = Diagnostic.InvocationTree.AddRoot(state.ScriptHash);
+                else
+                    currentNodeOfInvocationTree = currentNodeOfInvocationTree.AddChild(state.ScriptHash);
+            }
 
             base.LoadContext(context);
         }
@@ -277,7 +319,14 @@ namespace Neo.SmartContract
                 {
                     p.CallFlags = callFlags;
                     p.ScriptHash = contract.Hash;
-                    p.Contract = contract;
+                    p.Contract = new ContractState
+                    {
+                        Id = contract.Id,
+                        UpdateCounter = contract.UpdateCounter,
+                        Hash = contract.Hash,
+                        Nef = contract.Nef,
+                        Manifest = contract.Manifest
+                    };
                 });
 
             // Call initialization
@@ -411,7 +460,7 @@ namespace Neo.SmartContract
         /// Determines whether the <see cref="CallFlags"/> of the current context meets the specified requirements.
         /// </summary>
         /// <param name="requiredCallFlags">The requirements to check.</param>
-        protected void ValidateCallFlags(CallFlags requiredCallFlags)
+        internal protected void ValidateCallFlags(CallFlags requiredCallFlags)
         {
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(requiredCallFlags))
@@ -502,11 +551,12 @@ namespace Neo.SmartContract
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
         /// <param name="offset">The initial position of the instruction pointer.</param>
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
+        /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
-        public static ApplicationEngine Run(byte[] script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, ProtocolSettings settings = null, int offset = 0, long gas = TestModeGas)
+        public static ApplicationEngine Run(byte[] script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, ProtocolSettings settings = null, int offset = 0, long gas = TestModeGas, Diagnostic diagnostic = null)
         {
             persistingBlock ??= CreateDummyBlock(snapshot, settings ?? ProtocolSettings.Default);
-            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, persistingBlock, settings, gas);
+            ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, persistingBlock, settings, gas, diagnostic);
             engine.LoadScript(script, initialPosition: offset);
             engine.Execute();
             return engine;
@@ -515,6 +565,19 @@ namespace Neo.SmartContract
         internal static bool SetApplicationEngineProvider(IApplicationEngineProvider provider)
         {
             return CompareExchange(ref applicationEngineProvider, provider, null) is null;
+        }
+
+        public T GetState<T>()
+        {
+            if (states is null) return default;
+            if (!states.TryGetValue(typeof(T), out object state)) return default;
+            return (T)state;
+        }
+
+        public void SetState<T>(T state)
+        {
+            states ??= new Dictionary<Type, object>();
+            states[typeof(T)] = state;
         }
     }
 }

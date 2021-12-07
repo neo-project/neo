@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -121,7 +131,7 @@ namespace Neo.Network.P2P.Payloads
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);
             if (height < ValidBlockStart || height >= ValidBlockEnd) return false;
             if (!extensibleWitnessWhiteList.Contains(Sender)) return false;
-            return this.VerifyWitnesses(settings, snapshot, 0_02000000);
+            return this.VerifyWitnesses(settings, snapshot, 0_06000000L);
         }
     }
 }

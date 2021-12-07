@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using System;
 
 namespace Neo.Network.P2P.Payloads
@@ -29,6 +39,11 @@ namespace Neo.Network.P2P.Payloads
         ///  Custom pubkey for group members.
         /// </summary>
         CustomGroups = 0x20,
+
+        /// <summary>
+        /// Indicates that the current context must satisfy the specified rules.
+        /// </summary>
+        WitnessRules = 0x40,
 
         /// <summary>
         /// This allows the witness in all contexts (default Neo2 behavior).

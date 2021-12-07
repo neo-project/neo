@@ -20,7 +20,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void Default_Network_should_be_mainnet_Network_value()
         {
-            var mainNetNetwork = 0x4F454Eu;
+            var mainNetNetwork = 0x334F454Eu;
             ProtocolSettings.Default.Network.Should().Be(mainNetNetwork);
         }
 

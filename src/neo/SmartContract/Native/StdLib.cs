@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 #pragma warning disable IDE0051
 
 using Neo.Cryptography;
@@ -27,7 +37,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 14)]
         private static StackItem Deserialize(ApplicationEngine engine, byte[] data)
         {
-            return BinarySerializer.Deserialize(data, engine.Limits.MaxStackSize, engine.ReferenceCounter);
+            return BinarySerializer.Deserialize(data, engine.Limits, engine.ReferenceCounter);
         }
 
         [ContractMethod(CpuFee = 1 << 12)]
@@ -39,7 +49,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 14)]
         private static StackItem JsonDeserialize(ApplicationEngine engine, byte[] json)
         {
-            return JsonSerializer.Deserialize(JObject.Parse(json, 10), engine.ReferenceCounter);
+            return JsonSerializer.Deserialize(JObject.Parse(json, 10), engine.Limits, engine.ReferenceCounter);
         }
 
         /// <summary>
@@ -76,7 +86,7 @@ namespace Neo.SmartContract.Native
         /// <param name="value">The <see cref="string"/> to convert.</param>
         /// <returns>The converted integer.</returns>
         [ContractMethod(CpuFee = 1 << 6)]
-        public static BigInteger Atoi(string value)
+        public static BigInteger Atoi([MaxLength(MaxInputLength)] string value)
         {
             return Atoi(value, 10);
         }
@@ -142,6 +152,28 @@ namespace Neo.SmartContract.Native
             return Base58.Decode(s);
         }
 
+        /// <summary>
+        /// Converts a byte array to its equivalent <see cref="string"/> representation that is encoded with base-58 digits. The encoded <see cref="string"/> contains the checksum of the binary data.
+        /// </summary>
+        /// <param name="data">The byte array to be encoded.</param>
+        /// <returns>The encoded <see cref="string"/>.</returns>
+        [ContractMethod(CpuFee = 1 << 16)]
+        public static string Base58CheckEncode([MaxLength(MaxInputLength)] byte[] data)
+        {
+            return Base58.Base58CheckEncode(data);
+        }
+
+        /// <summary>
+        /// Converts the specified <see cref="string"/>, which encodes binary data as base-58 digits, to an equivalent byte array. The encoded <see cref="string"/> contains the checksum of the binary data.
+        /// </summary>
+        /// <param name="s">The base58 <see cref="string"/>.</param>
+        /// <returns>The decoded byte array.</returns>
+        [ContractMethod(CpuFee = 1 << 16)]
+        public static byte[] Base58CheckDecode([MaxLength(MaxInputLength)] string s)
+        {
+            return Base58.Base58CheckDecode(s);
+        }
+
         [ContractMethod(CpuFee = 1 << 5)]
         private static int MemoryCompare([MaxLength(MaxInputLength)] byte[] str1, [MaxLength(MaxInputLength)] byte[] str2)
         {
@@ -163,6 +195,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 6)]
         private static int MemorySearch([MaxLength(MaxInputLength)] byte[] mem, byte[] value, int start, bool backward)
         {
+            if (value is null) throw new ArgumentNullException(nameof(value));
             if (backward)
             {
                 return mem.AsSpan(0, start).LastIndexOf(value);
@@ -178,12 +211,14 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 8)]
         private static string[] StringSplit([MaxLength(MaxInputLength)] string str, string separator)
         {
+            if (separator is null) throw new ArgumentNullException(nameof(separator));
             return str.Split(separator);
         }
 
         [ContractMethod(CpuFee = 1 << 8)]
         private static string[] StringSplit([MaxLength(MaxInputLength)] string str, string separator, bool removeEmptyEntries)
         {
+            if (separator is null) throw new ArgumentNullException(nameof(separator));
             StringSplitOptions options = removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None;
             return str.Split(separator, options);
         }

@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 #pragma warning disable IDE0051
 
 using Neo.Persistence;
@@ -29,7 +39,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The maximum execution fee factor that the committee can set.
         /// </summary>
-        public const uint MaxExecFeeFactor = 1000;
+        public const uint MaxExecFeeFactor = 100;
 
         /// <summary>
         /// The maximum storage price that the committee can set.
@@ -126,6 +136,7 @@ namespace Neo.SmartContract.Native
         private bool BlockAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            if (IsNative(account)) throw new InvalidOperationException("It's impossible to block a native contract.");
 
             var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
             if (engine.Snapshot.Contains(key)) return false;

@@ -1,4 +1,15 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.Cryptography;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
@@ -26,11 +37,6 @@ namespace Neo.Network.P2P.Payloads
         /// The maximum size of a transaction.
         /// </summary>
         public const int MaxTransactionSize = 102400;
-
-        /// <summary>
-        /// The maximum increment of the <see cref="ValidUntilBlock"/> field.
-        /// </summary>
-        public const uint MaxValidUntilBlockIncrement = 5760; // 24 hour
 
         /// <summary>
         /// The maximum number of attributes that can be contained within a transaction.
@@ -351,7 +357,7 @@ namespace Neo.Network.P2P.Payloads
         public virtual VerifyResult VerifyStateDependent(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> mempool = null)
         {
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);
-            if (ValidUntilBlock <= height || ValidUntilBlock > height + MaxValidUntilBlockIncrement)
+            if (ValidUntilBlock <= height || ValidUntilBlock > height + settings.MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
             foreach (UInt160 hash in hashes)
@@ -362,7 +368,7 @@ namespace Neo.Network.P2P.Payloads
             foreach (TransactionAttribute attribute in Attributes)
             {
                 if (!attribute.Verify(snapshot, this))
-                    return VerifyResult.Invalid;
+                    return VerifyResult.InvalidAttribute;
                 if (attribute is NotaryAssisted)
                     notary_fee = (((NotaryAssisted)attribute).NKeys + 1) * NativeContract.Notary.GetNotaryServiceFeePerKey(snapshot);
             }
@@ -377,7 +383,9 @@ namespace Neo.Network.P2P.Payloads
                 if (witnesses[i].VerificationScript.IsSignatureContract())
                     net_fee -= execFeeFactor * SignatureContractCost();
                 else if (witnesses[i].VerificationScript.IsMultiSigContract(out int m, out int n))
+                {
                     net_fee -= execFeeFactor * MultiSignatureContractCost(m, n);
+                }
                 else
                 {
                     if (!this.VerifyWitness(settings, snapshot, hashes[i], witnesses[i], net_fee, out long fee))
@@ -396,26 +404,56 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The result of the verification.</returns>
         public virtual VerifyResult VerifyStateIndependent(ProtocolSettings settings)
         {
-            if (Size > MaxTransactionSize) return VerifyResult.Invalid;
+            if (Size > MaxTransactionSize) return VerifyResult.OverSize;
             try
             {
                 _ = new Script(Script, true);
             }
             catch (BadScriptException)
             {
-                return VerifyResult.Invalid;
+                return VerifyResult.InvalidScript;
             }
-            long net_fee = Math.Min(NetworkFee, MaxVerificationGas);
             UInt160[] hashes = GetScriptHashesForVerifying(null);
             for (int i = 0; i < hashes.Length; i++)
-                if (witnesses[i].VerificationScript.IsStandardContract())
-                    if (!this.VerifyWitness(settings, null, hashes[i], witnesses[i], net_fee, out long fee))
-                        return VerifyResult.Invalid;
-                    else
+            {
+                if (witnesses[i].VerificationScript.IsSignatureContract())
+                {
+                    if (hashes[i] != witnesses[i].ScriptHash) return VerifyResult.Invalid;
+                    var pubkey = witnesses[i].VerificationScript.AsSpan(2..35);
+                    try
                     {
-                        net_fee -= fee;
-                        if (net_fee < 0) return VerifyResult.InsufficientFunds;
+                        if (!Crypto.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript.AsSpan(2), pubkey, ECCurve.Secp256r1))
+                            return VerifyResult.InvalidSignature;
                     }
+                    catch
+                    {
+                        return VerifyResult.Invalid;
+                    }
+                }
+                else if (witnesses[i].VerificationScript.IsMultiSigContract(out var m, out ECPoint[] points))
+                {
+                    if (hashes[i] != witnesses[i].ScriptHash) return VerifyResult.Invalid;
+                    var signatures = GetMultiSignatures(witnesses[i].InvocationScript);
+                    if (signatures.Length != m) return VerifyResult.Invalid;
+                    var n = points.Length;
+                    var message = this.GetSignData(settings.Network);
+                    try
+                    {
+                        for (int x = 0, y = 0; x < m && y < n;)
+                        {
+                            if (Crypto.VerifySignature(message, signatures[x], points[y]))
+                                x++;
+                            y++;
+                            if (m - x > n - y)
+                                return VerifyResult.InvalidSignature;
+                        }
+                    }
+                    catch
+                    {
+                        return VerifyResult.Invalid;
+                    }
+                }
+            }
             return VerifyResult.Succeed;
         }
 
@@ -449,6 +487,21 @@ namespace Neo.Network.P2P.Payloads
                 ValidUntilBlock,
                 Script,
             });
+        }
+
+        private static byte[][] GetMultiSignatures(byte[] script)
+        {
+            int i = 0;
+            var signatures = new List<byte[]>();
+            while (i < script.Length)
+            {
+                if (script[i++] != (byte)OpCode.PUSHDATA1) return null;
+                if (i + 65 > script.Length) return null;
+                if (script[i++] != 64) return null;
+                signatures.Add(script[i..(i + 64)]);
+                i += 64;
+            }
+            return signatures.ToArray();
         }
     }
 }

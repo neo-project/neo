@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 #pragma warning disable IDE0051
 
 using Neo.Cryptography.ECC;
@@ -346,6 +356,18 @@ namespace Neo.SmartContract.Native
         public ECPoint[] GetCommittee(DataCache snapshot)
         {
             return GetCommitteeFromCache(snapshot).Select(p => p.PublicKey).OrderBy(p => p).ToArray();
+        }
+
+        /// <summary>
+        /// Get account state.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="account">account</param>
+        /// <returns>The state of the account.</returns>
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public NeoAccountState GetAccountState(DataCache snapshot, UInt160 account)
+        {
+            return snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account))?.GetInteroperable<NeoAccountState>();
         }
 
         /// <summary>

@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
@@ -7,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -28,6 +39,12 @@ namespace Neo.SmartContract
         /// Gets the name of the current platform.
         /// </summary>
         public static readonly InteropDescriptor System_Runtime_Platform = Register("System.Runtime.Platform", nameof(GetPlatform), 1 << 3, CallFlags.None);
+
+        /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Runtime.GetNetwork.
+        /// Gets the magic number of the current network.
+        /// </summary>
+        public static readonly InteropDescriptor System_Runtime_GetNetwork = Register("System.Runtime.GetNetwork", nameof(GetNetwork), 1 << 3, CallFlags.None);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.GetTrigger.
@@ -78,6 +95,12 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_GetInvocationCounter = Register("System.Runtime.GetInvocationCounter", nameof(GetInvocationCounter), 1 << 4, CallFlags.None);
 
         /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Runtime.GetRandom.
+        /// Gets the random number generated from the VRF.
+        /// </summary>
+        public static readonly InteropDescriptor System_Runtime_GetRandom = Register("System.Runtime.GetRandom", nameof(GetRandom), 1 << 4, CallFlags.None);
+
+        /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.Log.
         /// Writes a log.
         /// </summary>
@@ -115,6 +138,16 @@ namespace Neo.SmartContract
         internal protected static string GetPlatform()
         {
             return "NEO";
+        }
+
+        /// <summary>
+        /// The implementation of System.Runtime.GetNetwork.
+        /// Gets the magic number of the current network.
+        /// </summary>
+        /// <returns>The magic number of the current network.</returns>
+        internal protected uint GetNetwork()
+        {
+            return ProtocolSettings.Network;
         }
 
         /// <summary>
@@ -179,27 +212,10 @@ namespace Neo.SmartContract
                 }
                 Signer signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
                 if (signer is null) return false;
-                if (signer.Scopes == WitnessScope.Global) return true;
-                if (signer.Scopes.HasFlag(WitnessScope.CalledByEntry))
+                foreach (WitnessRule rule in signer.GetAllRules())
                 {
-                    if (CallingScriptHash == null || CallingScriptHash == EntryScriptHash)
-                        return true;
-                }
-                if (signer.Scopes.HasFlag(WitnessScope.CustomContracts))
-                {
-                    if (signer.AllowedContracts.Contains(CurrentScriptHash))
-                        return true;
-                }
-                if (signer.Scopes.HasFlag(WitnessScope.CustomGroups))
-                {
-                    // Check allow state callflag
-
-                    ValidateCallFlags(CallFlags.ReadStates);
-
-                    var contract = NativeContract.ContractManagement.GetContract(Snapshot, CallingScriptHash);
-                    // check if current group is the required one
-                    if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(signer.AllowedGroups).Any())
-                        return true;
+                    if (rule.Condition.Match(this))
+                        return rule.Action == WitnessRuleAction.Allow;
                 }
                 return false;
             }
@@ -226,6 +242,17 @@ namespace Neo.SmartContract
                 invocationCounter[CurrentScriptHash] = counter = 1;
             }
             return counter;
+        }
+
+        /// <summary>
+        /// The implementation of System.Runtime.GetRandom.
+        /// Gets the next random number.
+        /// </summary>
+        /// <returns>The next random number.</returns>
+        protected internal BigInteger GetRandom()
+        {
+            nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
+            return new BigInteger(nonceData, isUnsigned: true);
         }
 
         /// <summary>

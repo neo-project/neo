@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.IO;
 using Neo.VM;
 using Neo.VM.Types;
@@ -39,31 +49,31 @@ namespace Neo.SmartContract
         /// Deserializes a <see cref="StackItem"/> from byte array.
         /// </summary>
         /// <param name="data">The byte array to parse.</param>
-        /// <param name="maxArraySize">The maximum length of arrays during the deserialization.</param>
+        /// <param name="limits">The limits for the deserialization.</param>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(byte[] data, uint maxArraySize, ReferenceCounter referenceCounter = null)
+        public static StackItem Deserialize(byte[] data, ExecutionEngineLimits limits, ReferenceCounter referenceCounter = null)
         {
             using MemoryStream ms = new(data, false);
             using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
-            return Deserialize(reader, maxArraySize, (uint)data.Length, referenceCounter);
+            return Deserialize(reader, limits with { MaxItemSize = (uint)data.Length }, referenceCounter);
         }
 
         /// <summary>
         /// Deserializes a <see cref="StackItem"/> from byte array.
         /// </summary>
         /// <param name="data">The byte array to parse.</param>
-        /// <param name="maxArraySize">The maximum length of arrays during the deserialization.</param>
+        /// <param name="limits">The limits for the deserialization.</param>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static unsafe StackItem Deserialize(ReadOnlySpan<byte> data, uint maxArraySize, ReferenceCounter referenceCounter = null)
+        public static unsafe StackItem Deserialize(ReadOnlySpan<byte> data, ExecutionEngineLimits limits, ReferenceCounter referenceCounter = null)
         {
             if (data.IsEmpty) throw new FormatException();
             fixed (byte* pointer = data)
             {
                 using UnmanagedMemoryStream ms = new(pointer, data.Length);
                 using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
-                return Deserialize(reader, maxArraySize, (uint)data.Length, referenceCounter);
+                return Deserialize(reader, limits with { MaxItemSize = (uint)data.Length }, referenceCounter);
             }
         }
 
@@ -71,11 +81,10 @@ namespace Neo.SmartContract
         /// Deserializes a <see cref="StackItem"/> from <see cref="BinaryReader"/>.
         /// </summary>
         /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
-        /// <param name="maxArraySize">The maximum length of arrays during the deserialization.</param>
-        /// <param name="maxItemSize">The maximum size of <see cref="StackItem"/> during the deserialization.</param>
+        /// <param name="limits">The limits for the deserialization.</param>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(BinaryReader reader, uint maxArraySize, uint maxItemSize, ReferenceCounter referenceCounter)
+        public static StackItem Deserialize(BinaryReader reader, ExecutionEngineLimits limits, ReferenceCounter referenceCounter)
         {
             Stack<StackItem> deserialized = new();
             int undeserialized = 1;
@@ -94,24 +103,24 @@ namespace Neo.SmartContract
                         deserialized.Push(new BigInteger(reader.ReadVarBytes(Integer.MaxSize)));
                         break;
                     case StackItemType.ByteString:
-                        deserialized.Push(reader.ReadVarBytes((int)maxItemSize));
+                        deserialized.Push(reader.ReadVarBytes((int)limits.MaxItemSize));
                         break;
                     case StackItemType.Buffer:
-                        Buffer buffer = new((int)reader.ReadVarInt(maxItemSize));
+                        Buffer buffer = new((int)reader.ReadVarInt(limits.MaxItemSize));
                         reader.FillBuffer(buffer.InnerBuffer);
                         deserialized.Push(buffer);
                         break;
                     case StackItemType.Array:
                     case StackItemType.Struct:
                         {
-                            int count = (int)reader.ReadVarInt(maxArraySize);
+                            int count = (int)reader.ReadVarInt(limits.MaxStackSize);
                             deserialized.Push(new ContainerPlaceholder(type, count));
                             undeserialized += count;
                         }
                         break;
                     case StackItemType.Map:
                         {
-                            int count = (int)reader.ReadVarInt(maxArraySize);
+                            int count = (int)reader.ReadVarInt(limits.MaxStackSize);
                             deserialized.Push(new ContainerPlaceholder(type, count));
                             undeserialized += count * 2;
                         }
@@ -119,6 +128,7 @@ namespace Neo.SmartContract
                     default:
                         throw new FormatException();
                 }
+                if (deserialized.Count > limits.MaxStackSize) throw new FormatException();
             }
             Stack<StackItem> stack_temp = new();
             while (deserialized.Count > 0)

@@ -1,8 +1,19 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 #pragma warning disable IDE0051
 
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.VM;
 using System;
 using System.Linq;
 using System.Numerics;
@@ -26,9 +37,15 @@ namespace Neo.SmartContract.Native
 
         internal override ContractTask OnPersist(ApplicationEngine engine)
         {
+            TransactionState[] transactions = engine.PersistingBlock.Transactions.Select(p => new TransactionState
+            {
+                BlockIndex = engine.PersistingBlock.Index,
+                Transaction = p,
+                State = VMState.NONE
+            }).ToArray();
             engine.Snapshot.Add(CreateStorageKey(Prefix_BlockHash).AddBigEndian(engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray()));
             engine.Snapshot.Add(CreateStorageKey(Prefix_Block).Add(engine.PersistingBlock.Hash), new StorageItem(Trim(engine.PersistingBlock).ToArray()));
-            foreach (Transaction tx in engine.PersistingBlock.Transactions)
+            foreach (TransactionState tx in transactions)
             {
                 engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(tx.Hash), new StorageItem(new TransactionState
                 {
@@ -41,6 +58,7 @@ namespace Neo.SmartContract.Native
                     engine.Snapshot.Add(CreateStorageKey(Prefix_TrimmedTransaction).Add(hash), new StorageItem(engine.PersistingBlock.Index));
                 }
             }
+            engine.SetState(transactions);
             return ContractTask.CompletedTask;
         }
 
@@ -232,6 +250,14 @@ namespace Neo.SmartContract.Native
             TransactionState state = GetTransactionState(engine.Snapshot, hash);
             if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
             return state.Transaction;
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        private VMState GetTransactionVMState(ApplicationEngine engine, UInt256 hash)
+        {
+            TransactionState state = GetTransactionState(engine.Snapshot, hash);
+            if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return VMState.NONE;
+            return state.State;
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]

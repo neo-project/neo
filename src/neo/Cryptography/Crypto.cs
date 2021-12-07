@@ -1,4 +1,15 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using System;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
 namespace Neo.Cryptography
@@ -8,6 +19,8 @@ namespace Neo.Cryptography
     /// </summary>
     public static class Crypto
     {
+        private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+
         /// <summary>
         /// Calculates the 160-bit hash value of the specified message.
         /// </summary>
@@ -59,21 +72,43 @@ namespace Neo.Cryptography
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
         public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECC.ECPoint pubkey)
         {
-            ECCurve curve =
-                pubkey.Curve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
-                pubkey.Curve == ECC.ECCurve.Secp256k1 ? ECCurve.CreateFromFriendlyName("secP256k1") :
-                throw new NotSupportedException();
-            byte[] buffer = pubkey.EncodePoint(false);
-            using var ecdsa = ECDsa.Create(new ECParameters
+            if (signature.Length != 64) return false;
+
+            if (IsOSX && pubkey.Curve == ECC.ECCurve.Secp256k1)
             {
-                Curve = curve,
-                Q = new ECPoint
+                var curve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
+                var domain = new Org.BouncyCastle.Crypto.Parameters.ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H);
+                var point = curve.Curve.CreatePoint(
+                    new Org.BouncyCastle.Math.BigInteger(pubkey.X.Value.ToString()),
+                    new Org.BouncyCastle.Math.BigInteger(pubkey.Y.Value.ToString()));
+                var pubKey = new Org.BouncyCastle.Crypto.Parameters.ECPublicKeyParameters("ECDSA", point, domain);
+                var signer = new Org.BouncyCastle.Crypto.Signers.ECDsaSigner();
+                signer.Init(false, pubKey);
+
+                var sig = signature.ToArray();
+                var r = new Org.BouncyCastle.Math.BigInteger(1, sig, 0, 32);
+                var s = new Org.BouncyCastle.Math.BigInteger(1, sig, 32, 32);
+
+                return signer.VerifySignature(message.Sha256(), r, s);
+            }
+            else
+            {
+                ECCurve curve =
+                    pubkey.Curve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
+                    pubkey.Curve == ECC.ECCurve.Secp256k1 ? ECCurve.CreateFromFriendlyName("secP256k1") :
+                    throw new NotSupportedException();
+                byte[] buffer = pubkey.EncodePoint(false);
+                using var ecdsa = ECDsa.Create(new ECParameters
                 {
-                    X = buffer[1..33],
-                    Y = buffer[33..]
-                }
-            });
-            return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
+                    Curve = curve,
+                    Q = new ECPoint
+                    {
+                        X = buffer[1..33],
+                        Y = buffer[33..]
+                    }
+                });
+                return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
+            }
         }
 
         /// <summary>

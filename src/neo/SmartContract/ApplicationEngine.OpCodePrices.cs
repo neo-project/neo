@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.VM;
 using System.Collections.Generic;
 
@@ -160,7 +170,7 @@ namespace Neo.SmartContract
             [OpCode.DIV] = 1 << 3,
             [OpCode.MOD] = 1 << 3,
             [OpCode.POW] = 1 << 6,
-            [OpCode.SQRT] = 1 << 11,
+            [OpCode.SQRT] = 1 << 6,
             [OpCode.SHL] = 1 << 3,
             [OpCode.SHR] = 1 << 3,
             [OpCode.NOT] = 1 << 2,
@@ -176,6 +186,8 @@ namespace Neo.SmartContract
             [OpCode.MIN] = 1 << 3,
             [OpCode.MAX] = 1 << 3,
             [OpCode.WITHIN] = 1 << 3,
+            [OpCode.PACKMAP] = 1 << 11,
+            [OpCode.PACKSTRUCT] = 1 << 11,
             [OpCode.PACK] = 1 << 11,
             [OpCode.UNPACK] = 1 << 11,
             [OpCode.NEWARRAY0] = 1 << 4,

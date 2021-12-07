@@ -1,5 +1,16 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Microsoft.Extensions.Configuration;
 using Neo.Cryptography.ECC;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
@@ -53,6 +64,11 @@ namespace Neo
         public TimeSpan TimePerBlock => TimeSpan.FromMilliseconds(MillisecondsPerBlock);
 
         /// <summary>
+        /// The maximum increment of the <see cref="Transaction.ValidUntilBlock"/> field.
+        /// </summary>
+        public uint MaxValidUntilBlockIncrement => 86400000 / MillisecondsPerBlock;
+
+        /// <summary>
         /// Indicates the maximum number of transactions that can be contained in a block.
         /// </summary>
         public uint MaxTransactionsPerBlock { get; init; }
@@ -72,6 +88,11 @@ namespace Neo
         /// </summary>
         public IReadOnlyDictionary<string, uint[]> NativeUpdateHistory { get; init; }
 
+        /// <summary>
+        /// Indicates the amount of gas to distribute during initialization.
+        /// </summary>
+        public ulong InitialGasDistribution { get; init; }
+
         private IReadOnlyList<ECPoint> _standbyValidators;
         /// <summary>
         /// The public keys of the standby validators.
@@ -83,7 +104,7 @@ namespace Neo
         /// </summary>
         public static ProtocolSettings Default { get; } = new ProtocolSettings
         {
-            Network = 0x4F454Eu,
+            Network = 0x334F454Eu,
             AddressVersion = 0x35,
             StandbyCommittee = new[]
             {
@@ -124,6 +145,7 @@ namespace Neo
             MaxTransactionsPerBlock = 512,
             MemoryPoolMaxTransactions = 50_000,
             MaxTraceableBlocks = 2_102_400,
+            InitialGasDistribution = 52_000_000_00000000,
             NativeUpdateHistory = new Dictionary<string, uint[]>
             {
                 [nameof(ContractManagement)] = new[] { 0u },
@@ -174,6 +196,7 @@ namespace Neo
                 MaxTransactionsPerBlock = section.GetValue("MaxTransactionsPerBlock", Default.MaxTransactionsPerBlock),
                 MemoryPoolMaxTransactions = section.GetValue("MemoryPoolMaxTransactions", Default.MemoryPoolMaxTransactions),
                 MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", Default.MaxTraceableBlocks),
+                InitialGasDistribution = section.GetValue("InitialGasDistribution", Default.InitialGasDistribution),
                 NativeUpdateHistory = section.GetSection("NativeUpdateHistory").Exists()
                     ? section.GetSection("NativeUpdateHistory").GetChildren().ToDictionary(p => p.Key, p => p.GetChildren().Select(q => uint.Parse(q.Value)).ToArray())
                     : Default.NativeUpdateHistory

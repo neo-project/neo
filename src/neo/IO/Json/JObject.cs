@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.IO.Caching;
 using System;
 using System.Collections.Generic;
@@ -299,6 +309,33 @@ namespace Neo.IO.Json
             writer.WriteEndObject();
         }
 
+        /// <summary>
+        /// Creates a copy of the current JSON object.
+        /// </summary>
+        /// <returns>A copy of the current JSON object.</returns>
+        public virtual JObject Clone()
+        {
+            var cloned = new JObject();
+
+            foreach (KeyValuePair<string, JObject> pair in Properties)
+            {
+                cloned[pair.Key] = pair.Value != null ? pair.Value.Clone() : Null;
+            }
+
+            return cloned;
+        }
+
+        public JArray JsonPath(string expr)
+        {
+            JObject[] objects = { this };
+            if (expr.Length == 0) return objects;
+            Queue<JPathToken> tokens = new(JPathToken.Parse(expr));
+            JPathToken first = tokens.Dequeue();
+            if (first.Type != JPathTokenType.Root) throw new FormatException();
+            JPathToken.ProcessJsonPath(ref objects, tokens);
+            return objects;
+        }
+
         public static implicit operator JObject(Enum value)
         {
             return (JString)value;
@@ -322,22 +359,6 @@ namespace Neo.IO.Json
         public static implicit operator JObject(string value)
         {
             return (JString)value;
-        }
-
-        /// <summary>
-        /// Creates a copy of the current JSON object.
-        /// </summary>
-        /// <returns>A copy of the current JSON object.</returns>
-        public virtual JObject Clone()
-        {
-            var cloned = new JObject();
-
-            foreach (KeyValuePair<string, JObject> pair in Properties)
-            {
-                cloned[pair.Key] = pair.Value != null ? pair.Value.Clone() : Null;
-            }
-
-            return cloned;
         }
     }
 }

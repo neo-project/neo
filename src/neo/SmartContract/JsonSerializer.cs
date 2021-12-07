@@ -1,8 +1,19 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.IO.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -137,7 +148,7 @@ namespace Neo.SmartContract
                     default:
                         throw new InvalidOperationException();
                 }
-                if (ms.Position > maxSize) throw new InvalidOperationException();
+                if (ms.Position + writer.BytesPending > maxSize) throw new InvalidOperationException();
             }
             writer.Flush();
             if (ms.Position > maxSize) throw new InvalidOperationException();
@@ -148,10 +159,18 @@ namespace Neo.SmartContract
         /// Deserializes a <see cref="StackItem"/> from <see cref="JObject"/>.
         /// </summary>
         /// <param name="json">The <see cref="JObject"/> to deserialize.</param>
+        /// <param name="limits">The limits for the deserialization.</param>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(JObject json, ReferenceCounter referenceCounter = null)
+        public static StackItem Deserialize(JObject json, ExecutionEngineLimits limits, ReferenceCounter referenceCounter = null)
         {
+            uint maxStackSize = limits.MaxStackSize;
+            return Deserialize(json, ref maxStackSize, referenceCounter);
+        }
+
+        private static StackItem Deserialize(JObject json, ref uint maxStackSize, ReferenceCounter referenceCounter)
+        {
+            if (maxStackSize-- == 0) throw new FormatException();
             switch (json)
             {
                 case null:
@@ -160,7 +179,10 @@ namespace Neo.SmartContract
                     }
                 case JArray array:
                     {
-                        return new Array(referenceCounter, array.Select(p => Deserialize(p, referenceCounter)));
+                        List<StackItem> list = new(array.Count);
+                        foreach (JObject obj in array)
+                            list.Add(Deserialize(obj, ref maxStackSize, referenceCounter));
+                        return new Array(referenceCounter, list);
                     }
                 case JString str:
                     {
@@ -182,8 +204,10 @@ namespace Neo.SmartContract
 
                         foreach (var entry in obj.Properties)
                         {
+                            if (maxStackSize-- == 0) throw new FormatException();
+
                             var key = entry.Key;
-                            var value = Deserialize(entry.Value, referenceCounter);
+                            var value = Deserialize(entry.Value, ref maxStackSize, referenceCounter);
 
                             item[key] = value;
                         }

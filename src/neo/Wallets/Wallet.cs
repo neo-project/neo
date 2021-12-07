@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
@@ -81,6 +91,11 @@ namespace Neo.Wallets
         /// <param name="scriptHash">The hash of the account.</param>
         /// <returns>The created account.</returns>
         public abstract WalletAccount CreateAccount(UInt160 scriptHash);
+
+        /// <summary>
+        /// Deletes the entire database of the wallet.
+        /// </summary>
+        public abstract void Delete();
 
         /// <summary>
         /// Deletes an account from the wallet.
@@ -188,21 +203,24 @@ namespace Neo.Wallets
                         orderedAccounts.RemoveAt(i);
                         i--;
                     }
-                    for (i = 0; i < orderedAccounts.Count; i++)
+                    if (amount > 0)
                     {
-                        if (orderedAccounts[i].Value < amount)
-                            continue;
-                        if (orderedAccounts[i].Value == amount)
+                        for (i = 0; i < orderedAccounts.Count; i++)
                         {
-                            result.Add(orderedAccounts[i]);
-                            orderedAccounts.RemoveAt(i);
+                            if (orderedAccounts[i].Value < amount)
+                                continue;
+                            if (orderedAccounts[i].Value == amount)
+                            {
+                                result.Add(orderedAccounts[i]);
+                                orderedAccounts.RemoveAt(i);
+                            }
+                            else
+                            {
+                                result.Add((orderedAccounts[i].Account, amount));
+                                orderedAccounts[i] = (orderedAccounts[i].Account, orderedAccounts[i].Value - amount);
+                            }
+                            break;
                         }
-                        else
-                        {
-                            result.Add((orderedAccounts[i].Account, amount));
-                            orderedAccounts[i] = (orderedAccounts[i].Account, orderedAccounts[i].Value - amount);
-                        }
-                        break;
                     }
                 }
             }
@@ -252,7 +270,7 @@ namespace Neo.Wallets
                 sb.EmitDynamicCall(asset_id, "decimals", CallFlags.ReadOnly);
                 script = sb.ToArray();
             }
-            using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, settings: ProtocolSettings, gas: 20000000L * accounts.Length);
+            using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, settings: ProtocolSettings, gas: 0_60000000L * accounts.Length);
             if (engine.State == VMState.FAULT)
                 return new BigDecimal(BigInteger.Zero, 0);
             byte decimals = (byte)engine.ResultStack.Pop().GetInteger();
@@ -502,7 +520,7 @@ namespace Neo.Wallets
                     Version = 0,
                     Nonce = (uint)rand.Next(),
                     Script = script,
-                    ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + Transaction.MaxValidUntilBlockIncrement,
+                    ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + ProtocolSettings.MaxValidUntilBlockIncrement,
                     Signers = GetSigners(account, cosigners),
                     Attributes = attributes,
                 };
@@ -560,16 +578,18 @@ namespace Neo.Wallets
                     }
                 }
 
-                if (witness_script is null)
+                if (witness_script is null || witness_script.Length == 0)
                 {
                     var contract = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (contract is null)
                         throw new ArgumentException($"The smart contract or address {hash} is not found");
-                    var md = contract.Manifest.Abi.GetMethod("verify", 0);
+                    var md = contract.Manifest.Abi.GetMethod("verify", -1);
                     if (md is null)
-                        throw new ArgumentException($"The smart contract {contract.Hash} haven't got verify method without arguments");
+                        throw new ArgumentException($"The smart contract {contract.Hash} haven't got verify method");
                     if (md.ReturnType != ContractParameterType.Boolean)
                         throw new ArgumentException("The verify method doesn't return boolean value.");
+                    if (md.Parameters.Length > 0 && invocationScript is null)
+                        throw new ArgumentException("The verify method requires parameters that need to be passed via the witness' invocation script.");
 
                     // Empty verification and non-empty invocation scripts
                     var invSize = invocationScript != null ? invocationScript.GetVarSize() : Array.Empty<byte>().GetVarSize();

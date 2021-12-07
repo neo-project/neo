@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Akka.Actor;
 using Neo.Cryptography;
 using Neo.IO.Caching;
@@ -290,7 +300,6 @@ namespace Neo.Network.P2P
         private void OnHeadersMessageReceived(HeadersPayload payload)
         {
             UpdateLastBlockIndex(payload.Headers[^1].Index);
-            system.TaskManager.Tell(payload.Headers);
             system.Blockchain.Tell(payload.Headers);
         }
 
@@ -298,6 +307,7 @@ namespace Neo.Network.P2P
         {
             knownHashes.Add(inventory.Hash);
             pendingKnownHashes.Remove(inventory.Hash);
+            system.TaskManager.Tell(inventory);
             switch (inventory)
             {
                 case Transaction transaction:
@@ -313,7 +323,6 @@ namespace Neo.Network.P2P
                     system.Blockchain.Tell(inventory);
                     break;
             }
-            system.TaskManager.Tell(inventory);
         }
 
         private void OnInvMessageReceived(InvPayload payload)

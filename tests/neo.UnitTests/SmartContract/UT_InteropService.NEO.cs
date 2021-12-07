@@ -108,6 +108,7 @@ namespace Neo.UnitTests.SmartContract
             var nef = new NefFile()
             {
                 Script = Enumerable.Repeat((byte)OpCode.RET, byte.MaxValue).ToArray(),
+                Source = string.Empty,
                 Compiler = "",
                 Tokens = System.Array.Empty<MethodToken>()
             };
@@ -121,6 +122,7 @@ namespace Neo.UnitTests.SmartContract
             var script_exceedMaxLength = new NefFile()
             {
                 Script = new byte[NefFile.MaxScriptLength - 1],
+                Source = string.Empty,
                 Compiler = "",
                 Tokens = System.Array.Empty<MethodToken>()
             };
@@ -151,6 +153,7 @@ namespace Neo.UnitTests.SmartContract
             var nef = new NefFile()
             {
                 Script = new[] { (byte)OpCode.RET },
+                Source = string.Empty,
                 Compiler = "",
                 Tokens = System.Array.Empty<MethodToken>()
             };
@@ -201,6 +204,7 @@ namespace Neo.UnitTests.SmartContract
             var nefFile = new NefFile()
             {
                 Script = new byte[] { 0x01 },
+                Source = string.Empty,
                 Compiler = "",
                 Tokens = System.Array.Empty<MethodToken>()
             };
@@ -215,6 +219,7 @@ namespace Neo.UnitTests.SmartContract
             nefFile = new NefFile()
             {
                 Script = new byte[0],
+                Source = string.Empty,
                 Compiler = "",
                 Tokens = System.Array.Empty<MethodToken>()
             };

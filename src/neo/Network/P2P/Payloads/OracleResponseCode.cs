@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 namespace Neo.Network.P2P.Payloads
 {
     /// <summary>
@@ -44,6 +54,11 @@ namespace Neo.Network.P2P.Payloads
         /// Indicates that the request failed due to insufficient balance.
         /// </summary>
         InsufficientFunds = 0x1c,
+
+        /// <summary>
+        /// Indicates that the content-type of the request is not supported.
+        /// </summary>
+        ContentTypeNotSupported = 0x1f,
 
         /// <summary>
         /// Indicates that the request failed due to other errors.

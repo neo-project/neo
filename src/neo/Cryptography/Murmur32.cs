@@ -1,6 +1,16 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using System;
 using System.Buffers.Binary;
-using System.Runtime.CompilerServices;
+using System.Numerics;
 using System.Security.Cryptography;
 
 namespace Neo.Cryptography
@@ -8,7 +18,7 @@ namespace Neo.Cryptography
     /// <summary>
     /// Computes the murmur hash for the input data.
     /// </summary>
-    public sealed class Murmur3 : HashAlgorithm
+    public sealed class Murmur32 : HashAlgorithm
     {
         private const uint c1 = 0xcc9e2d51;
         private const uint c2 = 0x1b873593;
@@ -24,10 +34,10 @@ namespace Neo.Cryptography
         public override int HashSize => 32;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Murmur3"/> class with the specified seed.
+        /// Initializes a new instance of the <see cref="Murmur32"/> class with the specified seed.
         /// </summary>
         /// <param name="seed">The seed to be used.</param>
-        public Murmur3(uint seed)
+        public Murmur32(uint seed)
         {
             this.seed = seed;
             Initialize();
@@ -42,10 +52,10 @@ namespace Neo.Cryptography
             {
                 uint k = BinaryPrimitives.ReadUInt32LittleEndian(array.AsSpan(i));
                 k *= c1;
-                k = RotateLeft(k, r1);
+                k = BitOperations.RotateLeft(k, r1);
                 k *= c2;
                 hash ^= k;
-                hash = RotateLeft(hash, r2);
+                hash = BitOperations.RotateLeft(hash, r2);
                 hash = hash * m + n;
             }
             if (remainder > 0)
@@ -58,7 +68,7 @@ namespace Neo.Cryptography
                     case 1: remainingBytes ^= array[alignedLength]; break;
                 }
                 remainingBytes *= c1;
-                remainingBytes = RotateLeft(remainingBytes, r1);
+                remainingBytes = BitOperations.RotateLeft(remainingBytes, r1);
                 remainingBytes *= c2;
                 hash ^= remainingBytes;
             }
@@ -82,12 +92,6 @@ namespace Neo.Cryptography
         {
             hash = seed;
             length = 0;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static uint RotateLeft(uint x, byte n)
-        {
-            return (x << n) | (x >> (32 - n));
         }
     }
 }

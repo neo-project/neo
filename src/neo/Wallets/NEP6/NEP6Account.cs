@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.IO.Json;
 using System;
 using System.Threading;
@@ -33,7 +43,7 @@ namespace Neo.Wallets.NEP6
             return new NEP6Account(wallet, json["address"].GetString().ToScriptHash(wallet.ProtocolSettings.AddressVersion), json["key"]?.GetString())
             {
                 Label = json["label"]?.GetString(),
-                IsDefault = json["isdefault"].GetBoolean(),
+                IsDefault = json["isDefault"].GetBoolean(),
                 Lock = json["lock"].GetBoolean(),
                 Contract = NEP6Contract.FromJson(json["contract"]),
                 Extra = json["extra"]
@@ -65,7 +75,7 @@ namespace Neo.Wallets.NEP6
             JObject account = new();
             account["address"] = ScriptHash.ToAddress(ProtocolSettings.AddressVersion);
             account["label"] = Label;
-            account["isdefault"] = IsDefault;
+            account["isDefault"] = IsDefault;
             account["lock"] = Lock;
             account["key"] = nep2key;
             account["contract"] = ((NEP6Contract)Contract)?.ToJson();

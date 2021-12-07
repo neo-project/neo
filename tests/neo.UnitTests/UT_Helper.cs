@@ -20,7 +20,7 @@ namespace Neo.UnitTests
         {
             TestVerifiable verifiable = new();
             byte[] res = verifiable.GetSignData(ProtocolSettings.Default.Network);
-            res.ToHexString().Should().Be("4e454f0050b51da6bb366be3ea50140cda45ba7df575287c0371000b2037ed3898ff8bf5");
+            res.ToHexString().Should().Be("4e454f3350b51da6bb366be3ea50140cda45ba7df575287c0371000b2037ed3898ff8bf5");
         }
 
         [TestMethod]
