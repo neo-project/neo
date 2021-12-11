@@ -184,6 +184,11 @@ namespace Neo.Wallets.NEP6
             return new KeyPair(GetPrivateKeyFromNEP2(nep2key, password, ProtocolSettings.AddressVersion, Scrypt.N, Scrypt.R, Scrypt.P));
         }
 
+        public override void Delete()
+        {
+            if (File.Exists(Path)) File.Delete(Path);
+        }
+
         public override bool DeleteAccount(UInt160 scriptHash)
         {
             lock (accounts)
