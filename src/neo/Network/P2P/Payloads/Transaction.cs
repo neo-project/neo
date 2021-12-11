@@ -364,7 +364,7 @@ namespace Neo.Network.P2P.Payloads
             if (!(context?.CheckTransaction(this, snapshot) ?? true)) return VerifyResult.InsufficientFunds;
             foreach (TransactionAttribute attribute in Attributes)
                 if (!attribute.Verify(snapshot, this))
-                    return VerifyResult.Invalid;
+                    return VerifyResult.InvalidAttribute;
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
             if (net_fee < 0) return VerifyResult.InsufficientFunds;
 
@@ -396,14 +396,14 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The result of the verification.</returns>
         public virtual VerifyResult VerifyStateIndependent(ProtocolSettings settings)
         {
-            if (Size > MaxTransactionSize) return VerifyResult.Invalid;
+            if (Size > MaxTransactionSize) return VerifyResult.OverSize;
             try
             {
                 _ = new Script(Script, true);
             }
             catch (BadScriptException)
             {
-                return VerifyResult.Invalid;
+                return VerifyResult.InvalidScript;
             }
             UInt160[] hashes = GetScriptHashesForVerifying(null);
             for (int i = 0; i < hashes.Length; i++)
@@ -415,7 +415,7 @@ namespace Neo.Network.P2P.Payloads
                     try
                     {
                         if (!Crypto.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript.AsSpan(2), pubkey, ECCurve.Secp256r1))
-                            return VerifyResult.Invalid;
+                            return VerifyResult.InvalidSignature;
                     }
                     catch
                     {
@@ -437,7 +437,7 @@ namespace Neo.Network.P2P.Payloads
                                 x++;
                             y++;
                             if (m - x > n - y)
-                                return VerifyResult.Invalid;
+                                return VerifyResult.InvalidSignature;
                         }
                     }
                     catch

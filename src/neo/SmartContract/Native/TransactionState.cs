@@ -30,6 +30,11 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public Transaction Transaction;
 
+        /// <summary>
+        /// The execution state
+        /// </summary>
+        public VMState State;
+
         private StackItem _rawTransaction;
 
         void IInteroperable.FromStackItem(StackItem stackItem)
@@ -38,12 +43,13 @@ namespace Neo.SmartContract.Native
             BlockIndex = (uint)@struct[0].GetInteger();
             _rawTransaction = @struct[1];
             Transaction = _rawTransaction.GetSpan().AsSerializable<Transaction>();
+            State = (VMState)(byte)@struct[2].GetInteger();
         }
 
         StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
         {
             _rawTransaction ??= Transaction.ToArray();
-            return new Struct(referenceCounter) { BlockIndex, _rawTransaction };
+            return new Struct(referenceCounter) { BlockIndex, _rawTransaction, (byte)State };
         }
     }
 }

@@ -8,19 +8,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System.Collections.Generic;
+using Neo.IO.Caching;
 
-namespace Neo.IO.Caching
+namespace Neo.SmartContract
 {
-    internal abstract class FIFOCache<TKey, TValue> : Cache<TKey, TValue>
+    public class Diagnostic
     {
-        public FIFOCache(int max_capacity, IEqualityComparer<TKey> comparer = null)
-            : base(max_capacity, comparer)
-        {
-        }
-
-        protected override void OnAccess(CacheItem item)
-        {
-        }
+        public Tree<UInt160> InvocationTree { get; } = new();
     }
 }

@@ -186,6 +186,8 @@ namespace Neo.SmartContract
             [OpCode.MIN] = 1 << 3,
             [OpCode.MAX] = 1 << 3,
             [OpCode.WITHIN] = 1 << 3,
+            [OpCode.PACKMAP] = 1 << 11,
+            [OpCode.PACKSTRUCT] = 1 << 11,
             [OpCode.PACK] = 1 << 11,
             [OpCode.UNPACK] = 1 << 11,
             [OpCode.NEWARRAY0] = 1 << 4,
