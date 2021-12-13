@@ -62,5 +62,7 @@ namespace Neo.SmartContract.Iterators
                 return item;
             return new Struct(referenceCounter) { key, item };
         }
+
+        public void Reset() => enumerator.Reset();
     }
 }

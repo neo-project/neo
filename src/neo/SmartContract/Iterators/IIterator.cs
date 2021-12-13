@@ -29,5 +29,10 @@ namespace Neo.SmartContract.Iterators
         /// </summary>
         /// <returns>The element in the collection at the current position of the iterator.</returns>
         StackItem Value();
+
+        /// <summary>
+        /// Sets the iterator to its initial position, which is before the first element in the collection.
+        /// </summary>
+        void Reset();
     }
 }

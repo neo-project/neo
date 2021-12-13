@@ -28,6 +28,12 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Iterator_Value = Register("System.Iterator.Value", nameof(IteratorValue), 1 << 4, CallFlags.None);
 
         /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Iterator.Reset.
+        /// Sets the Iterator to its initial position, which is before the first element in the collection.
+        /// </summary>
+        public static readonly InteropDescriptor System_Iterator_Reset = Register("System.Iterator.Reset", nameof(IteratorReset), 1 << 15, CallFlags.None);
+
+        /// <summary>
         /// The implementation of System.Iterator.Next.
         /// Advances the iterator to the next element of the collection.
         /// </summary>
@@ -47,6 +53,16 @@ namespace Neo.SmartContract
         internal protected static StackItem IteratorValue(IIterator iterator)
         {
             return iterator.Value();
+        }
+
+        /// <summary>
+        /// The implementation of System.Iterator.Reset.
+        /// Sets the iterator to its initial position, which is before the first element in the collection.
+        /// </summary>
+        /// <param name="iterator">The iterator to be used.</param>
+        internal protected static void IteratorReset(IIterator iterator)
+        {
+            iterator.Reset();
         }
     }
 }
