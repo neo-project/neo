@@ -232,6 +232,11 @@ namespace Neo.SmartContract
             {
                 verifiable.DeserializeUnsigned(reader);
             }
+            if (json.ContainsProperty("hash"))
+            {
+                UInt256 hash = UInt256.Parse(json["hash"].GetString());
+                if (hash != verifiable.Hash) throw new FormatException();
+            }
             ContractParametersContext context = new(snapshot, verifiable, (uint)json["network"].GetInt32());
             foreach (var property in json["items"].Properties)
             {
@@ -332,6 +337,7 @@ namespace Neo.SmartContract
         {
             JObject json = new();
             json["type"] = Verifiable.GetType().FullName;
+            json["hash"] = Verifiable.Hash.ToString();
             using (MemoryStream ms = new())
             using (BinaryWriter writer = new(ms, Utility.StrictUTF8))
             {
