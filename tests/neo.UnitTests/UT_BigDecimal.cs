@@ -58,6 +58,10 @@ namespace Neo.UnitTests
             value = new BigDecimal(0M, 0);
             value.Value.Should().Be(new BigInteger(0));
             value.Decimals.Should().Be(0);
+
+            value = new BigDecimal(5.5M, 1);
+            var b = new BigDecimal(55M);
+            value.Value.Should().Be(b.Value);
         }
 
         [TestMethod]
@@ -69,6 +73,20 @@ namespace Neo.UnitTests
             value.Sign.Should().Be(0);
             value = new BigDecimal(new BigInteger(-10), 0);
             value.Sign.Should().Be(-1);
+        }
+
+        [TestMethod]
+        public void TestCompareDecimals()
+        {
+            BigDecimal a = new(5.5M, 1);
+            BigDecimal b = new(55M);
+            BigDecimal c = new(55M, 1);
+            a.Equals(b).Should().Be(false);
+            a.Equals(c).Should().Be(false);
+            b.Equals(c).Should().Be(true);
+            a.CompareTo(b).Should().Be(-1);
+            a.CompareTo(c).Should().Be(-1);
+            b.CompareTo(c).Should().Be(0);
         }
 
         [TestMethod]
