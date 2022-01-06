@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -23,7 +33,7 @@ namespace Neo.IO.Caching
         }
 
         protected readonly ReaderWriterLockSlim RwSyncRootLock = new(LockRecursionPolicy.SupportsRecursion);
-        protected readonly Dictionary<TKey, CacheItem> InnerDictionary = new();
+        protected readonly Dictionary<TKey, CacheItem> InnerDictionary;
         private readonly int max_capacity;
 
         public TValue this[TKey key]
@@ -62,9 +72,10 @@ namespace Neo.IO.Caching
 
         public bool IsReadOnly => false;
 
-        public Cache(int max_capacity)
+        public Cache(int max_capacity, IEqualityComparer<TKey> comparer = null)
         {
             this.max_capacity = max_capacity;
+            this.InnerDictionary = new Dictionary<TKey, CacheItem>(comparer);
         }
 
         public void Add(TValue item)

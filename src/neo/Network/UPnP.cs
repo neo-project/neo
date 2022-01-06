@@ -1,7 +1,18 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using System;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
 using System.Xml;
@@ -85,11 +96,7 @@ namespace Neo.Network
             try
             {
                 XmlDocument desc = new() { XmlResolver = null };
-                HttpWebRequest request = WebRequest.CreateHttp(resp);
-                using (WebResponse response = request.GetResponse())
-                {
-                    desc.Load(response.GetResponseStream());
-                }
+                desc.Load(resp);
                 XmlNamespaceManager nsMgr = new(desc.NameTable);
                 nsMgr.AddNamespace("tns", "urn:schemas-upnp-org:device-1-0");
                 XmlNode typen = desc.SelectSingleNode("//tns:device/tns:deviceType/text()", nsMgr);
@@ -170,17 +177,15 @@ namespace Neo.Network
             soap +
             "</s:Body>" +
             "</s:Envelope>";
-            HttpWebRequest r = WebRequest.CreateHttp(url);
-            r.Method = "POST";
-            byte[] b = Encoding.UTF8.GetBytes(req);
-            r.Headers["SOAPACTION"] = "\"urn:schemas-upnp-org:service:WANIPConnection:1#" + function + "\"";
-            r.ContentType = "text/xml; charset=\"utf-8\"";
-            using Stream reqs = r.GetRequestStream();
-            reqs.Write(b, 0, b.Length);
+            using HttpRequestMessage request = new(HttpMethod.Post, url);
+            request.Headers.Add("SOAPACTION", $"\"urn:schemas-upnp-org:service:WANIPConnection:1#{function}\"");
+            request.Headers.Add("Content-Type", "text/xml; charset=\"utf-8\"");
+            request.Content = new StringContent(req);
+            using HttpClient http = new();
+            using HttpResponseMessage response = http.Send(request);
+            using Stream stream = response.EnsureSuccessStatusCode().Content.ReadAsStream();
             XmlDocument resp = new() { XmlResolver = null };
-            WebResponse wres = r.GetResponse();
-            using Stream ress = wres.GetResponseStream();
-            resp.Load(ress);
+            resp.Load(stream);
             return resp;
         }
     }
