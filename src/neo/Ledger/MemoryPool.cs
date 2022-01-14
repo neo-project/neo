@@ -295,6 +295,7 @@ namespace Neo.Ledger
             {
                 VerifyResult result = tx.VerifyStateDependent(_system.Settings, snapshot, VerificationContext);
                 if (result != VerifyResult.Succeed) return result;
+                if (!CheckConflicts(tx)) return VerifyResult.Invalid;
 
                 _unsortedTransactions.Add(tx.Hash, poolItem);
                 VerificationContext.AddTransaction(tx);
@@ -318,6 +319,36 @@ namespace Neo.Ledger
 
             if (!_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.OutOfMemory;
             return VerifyResult.Succeed;
+        }
+
+        private bool CheckConflicts(Transaction tx)
+        {
+            List<PoolItem> to_removed = new();
+            foreach (var hash in tx.GetAttributes<ConflictAttribute>().Select(p => p.Hash))
+            {
+                if (_unsortedTransactions.TryGetValue(hash, out PoolItem item))
+                {
+                    if (!tx.Signers.Select(p => p.Account).Contains(item.Tx.Sender)) return false;
+                    if (tx.NetworkFee < item.Tx.NetworkFee) return false;
+                    to_removed.Add(item);
+                }
+            }
+            foreach (var item in _sortedTransactions)
+            {
+                var conflicts = item.Tx.GetAttributes<ConflictAttribute>().Select(p => p.Hash);
+                if (conflicts.Contains(tx.Hash))
+                {
+                    if (item.Tx.Signers.Select(p => p.Account).Contains(tx.Sender) && tx.NetworkFee < item.Tx.NetworkFee) return false;
+                    to_removed.Add(item);
+                }
+            }
+            foreach (var item in to_removed)
+            {
+                _unsortedTransactions.Remove(item.Tx.Hash);
+                _sortedTransactions.Remove(item);
+                VerificationContext.RemoveTransaction(item.Tx);
+            }
+            return true;
         }
 
         private List<Transaction> RemoveOverCapacity()
