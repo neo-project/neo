@@ -14,7 +14,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestFail()
         {
-            Assert.ThrowsException<ArgumentException>(() => new UInt256(new byte[UInt256.Length + 1]));
+            Assert.ThrowsException<FormatException>(() => new UInt256(new byte[UInt256.Length + 1]));
         }
 
         [TestMethod]

@@ -119,8 +119,8 @@ namespace Neo.UnitTests.SmartContract.Native
             // Bad inputs
 
             Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.GAS.Transfer(snapshot, from, to, BigInteger.MinusOne, true, persistingBlock));
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.GAS.Transfer(snapshot, new byte[19], to, BigInteger.One, false, persistingBlock));
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.GAS.Transfer(snapshot, from, new byte[19], BigInteger.One, false, persistingBlock));
+            Assert.ThrowsException<FormatException>(() => NativeContract.GAS.Transfer(snapshot, new byte[19], to, BigInteger.One, false, persistingBlock));
+            Assert.ThrowsException<FormatException>(() => NativeContract.GAS.Transfer(snapshot, from, new byte[19], BigInteger.One, false, persistingBlock));
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, uint key)
