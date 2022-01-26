@@ -10,6 +10,12 @@ namespace Neo.UnitTests.IO
     public class UT_UInt160
     {
         [TestMethod]
+        public void TestFail()
+        {
+            Assert.ThrowsException<ArgumentException>(() => new UInt160(new byte[UInt160.Length + 1]));
+        }
+
+        [TestMethod]
         public void TestGernerator1()
         {
             UInt160 uInt160 = new UInt160();

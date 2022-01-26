@@ -52,6 +52,7 @@ namespace Neo
         /// <param name="value">The value of the <see cref="UInt256"/>.</param>
         public unsafe UInt256(ReadOnlySpan<byte> value)
         {
+            if (value.Length != Length) throw new ArgumentException(nameof(value));
             fixed (ulong* p = &value1)
             {
                 Span<byte> dst = new(p, Length);

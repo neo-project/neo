@@ -12,6 +12,12 @@ namespace Neo.UnitTests.IO
     public class UT_UInt256
     {
         [TestMethod]
+        public void TestFail()
+        {
+            Assert.ThrowsException<ArgumentException>(() => new UInt256(new byte[UInt256.Length + 1]));
+        }
+
+        [TestMethod]
         public void TestGernerator1()
         {
             UInt256 uInt256 = new UInt256();
