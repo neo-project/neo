@@ -38,28 +38,35 @@ namespace Neo.SmartContract.Native
 
         internal override async ContractTask OnPersist(ApplicationEngine engine)
         {
+            //Console.WriteLine("notary on persist1");
             long nFees = 0;
             ECPoint[] notaries = null;
+            //Console.WriteLine("notary on persist2");
             foreach (Transaction tx in engine.PersistingBlock.Transactions)
             {
+                //Console.WriteLine("notary on persist2-1");
                 if (tx.GetAttribute<NotaryAssisted>() is not null)
                 {
                     if (notaries is null) notaries = GetNotaryNodes(engine.Snapshot);
-                }
-                var nKeys = tx.GetAttributes<NotaryAssisted>().ToArray()[0].NKeys;
-                nFees = (long)nKeys + 1;
-                if (tx.Sender == Notary.Hash)
-                {
-                    var payer = tx.Signers[1];
-                    var balance = GetDepositFor(engine.Snapshot, payer.Account);
-                    balance.amount -= tx.SystemFee + tx.NetworkFee;
-                    if (balance.amount.Sign == 0) RemoveDepositFor(engine.Snapshot, payer.Account);
-                    else PutDepositFor(engine, payer.Account, balance);
+                    //Console.WriteLine("notary on persist2-2");
+                    var nKeys = tx.GetAttributes<NotaryAssisted>().ToArray()[0].NKeys;
+                    nFees = (long)nKeys + 1;
+                    //Console.WriteLine("notary on persist2-3");
+                    if (tx.Sender == Notary.Hash)
+                    {
+                        var payer = tx.Signers[1];
+                        var balance = GetDepositFor(engine.Snapshot, payer.Account);
+                        balance.amount -= tx.SystemFee + tx.NetworkFee;
+                        if (balance.amount.Sign == 0) RemoveDepositFor(engine.Snapshot, payer.Account);
+                        else PutDepositFor(engine, payer.Account, balance);
+                    }
                 }
             }
             if (nFees == 0) return;
+            //Console.WriteLine("notary on persist3");
             var singleReward = CalculateNotaryReward(engine.Snapshot, nFees, notaries.Length);
             foreach (var notary in notaries) await GAS.Mint(engine, notary.EncodePoint(true).ToScriptHash(), singleReward, false);
+            //Console.WriteLine("notary on persist4");
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]

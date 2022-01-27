@@ -75,23 +75,30 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private void DesignateAsRole(ApplicationEngine engine, Role role, ECPoint[] nodes)
         {
+            Console.WriteLine("DesignateAsRole 1");
             if (nodes.Length == 0 || nodes.Length > 32)
                 throw new ArgumentException(null, nameof(nodes));
+            Console.WriteLine("DesignateAsRole 2");
             if (!Enum.IsDefined(typeof(Role), role))
                 throw new ArgumentOutOfRangeException(nameof(role));
+            Console.WriteLine("DesignateAsRole 3");
             if (!CheckCommittee(engine))
                 throw new InvalidOperationException(nameof(DesignateAsRole));
+            Console.WriteLine("DesignateAsRole 4");
             if (engine.PersistingBlock is null)
                 throw new InvalidOperationException(nameof(DesignateAsRole));
+            Console.WriteLine("DesignateAsRole 5");
             uint index = engine.PersistingBlock.Index + 1;
             var key = CreateStorageKey((byte)role).AddBigEndian(index);
             if (engine.Snapshot.Contains(key))
                 throw new InvalidOperationException();
+            Console.WriteLine("DesignateAsRole 6");
             NodeList list = new();
             list.AddRange(nodes);
             list.Sort();
             engine.Snapshot.Add(key, new StorageItem(list));
             engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, new StackItem[] { (int)role, engine.PersistingBlock.Index }));
+            Console.WriteLine("DesignateAsRole 7");
         }
 
         private class NodeList : InteroperableList<ECPoint>

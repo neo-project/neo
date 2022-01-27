@@ -51,7 +51,7 @@ namespace Neo.SmartContract.Native
                 foreach (var attr in tx.Transaction.GetAttributes<ConflictAttribute>())
                 {
                     var hash = ((ConflictAttribute)attr).Hash;
-                    engine.Snapshot.Add(CreateStorageKey(Prefix_TrimmedTransaction).Add(hash), new StorageItem(engine.PersistingBlock.Index));
+                    engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_TrimmedTransaction).Add(hash), () => new StorageItem(engine.PersistingBlock.Index));
                 }
             }
             engine.SetState(transactions);
@@ -132,7 +132,7 @@ namespace Neo.SmartContract.Native
         /// <returns><see langword="true"/> if the blockchain contains the transaction; otherwise, <see langword="false"/>.</returns>
         public bool ContainsTransaction(DataCache snapshot, UInt256 hash)
         {
-            return snapshot.Contains(CreateStorageKey(Prefix_Transaction).Add(hash));
+            return snapshot.Contains(CreateStorageKey(Prefix_Transaction).Add(hash)) || snapshot.Contains(CreateStorageKey(Prefix_TrimmedTransaction).Add(hash));
         }
 
         /// <summary>
