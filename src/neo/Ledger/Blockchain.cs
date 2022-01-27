@@ -405,25 +405,19 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
-            //Console.WriteLine("持久化一个区块1");
             using (SnapshotCache snapshot = system.GetSnapshot())
             {
-                //Console.WriteLine("持久化一个区块1-1");
                 List<ApplicationExecuted> all_application_executed = new();
                 TransactionState[] transactionStates;
-                //Console.WriteLine("持久化一个区块1-2");
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, system.Settings, 0))
                 {
                     engine.LoadScript(onPersistScript);
                     if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
-                    //Console.WriteLine("持久化一个区块1-3");
                     ApplicationExecuted application_executed = new(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                     transactionStates = engine.GetState<TransactionState[]>();
-                    //Console.WriteLine("持久化一个区块1-4");
                 }
-                //Console.WriteLine("持久化一个区块2");
                 DataCache clonedSnapshot = snapshot.CreateSnapshot();
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (TransactionState transactionState in transactionStates)
@@ -444,7 +438,6 @@ namespace Neo.Ledger
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
-                //Console.WriteLine("持久化一个区块3");
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, system.Settings, 0))
                 {
                     engine.LoadScript(postPersistScript);
@@ -460,11 +453,9 @@ namespace Neo.Ledger
             system.MemPool.UpdatePoolForBlockPersisted(block, system.StoreView);
             extensibleWitnessWhiteList = null;
             block_cache.Remove(block.PrevHash);
-            //Console.WriteLine("持久化一个区块5");
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
             if (system.HeaderCache.TryRemoveFirst(out Header header))
                 Debug.Assert(header.Index == block.Index);
-            //Console.WriteLine("持久化一个区块结束");
         }
 
         /// <summary>
