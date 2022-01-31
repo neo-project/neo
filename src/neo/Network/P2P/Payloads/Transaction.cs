@@ -464,7 +464,7 @@ namespace Neo.Network.P2P.Payloads
                 NetworkFee,
                 ValidUntilBlock,
                 Script,
-                new Array(referenceCounter, Signers.Select(u => new ByteString(u.ToArray())))
+                new Array(referenceCounter, Signers.Where(u => u.Scopes != WitnessScope.None).Select(u => new ByteString(u.ToArray())))
             });
         }
 
