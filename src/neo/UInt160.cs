@@ -51,6 +51,7 @@ namespace Neo
         /// <param name="value">The value of the <see cref="UInt160"/>.</param>
         public unsafe UInt160(ReadOnlySpan<byte> value)
         {
+            if (value.Length != Length) throw new FormatException();
             fixed (ulong* p = &value1)
             {
                 Span<byte> dst = new(p, Length);
