@@ -141,6 +141,25 @@ namespace Neo.Network.P2P.Payloads
         }
 
         /// <summary>
+        /// Converts the signer from a JSON object.
+        /// </summary>
+        /// <param name="json">The signer represented by a JSON object.</param>
+        /// <returns>The converted signer.</returns>
+        public static Signer FromJson(JObject json)
+        {
+            Signer signer = new();
+            signer.Account = UInt160.Parse(json["account"].GetString());
+            signer.Scopes = Enum.Parse<WitnessScope>(json["scopes"].GetString());
+            if (signer.Scopes.HasFlag(WitnessScope.CustomContracts))
+                signer.AllowedContracts = json["allowedcontracts"].GetArray().Select(p => UInt160.Parse(p.GetString())).ToArray();
+            if (signer.Scopes.HasFlag(WitnessScope.CustomGroups))
+                signer.AllowedGroups = json["allowedgroups"].GetArray().Select(p => ECPoint.Parse(p.GetString(), ECCurve.Secp256r1)).ToArray();
+            if (signer.Scopes.HasFlag(WitnessScope.WitnessRules))
+                signer.Rules = json["rules"].GetArray().Select(WitnessRule.FromJson).ToArray();
+            return signer;
+        }
+
+        /// <summary>
         /// Converts the signer to a JSON object.
         /// </summary>
         /// <returns>The signer represented by a JSON object.</returns>
