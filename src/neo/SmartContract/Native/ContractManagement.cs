@@ -155,13 +155,13 @@ namespace Neo.SmartContract.Native
             return snapshot.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>());
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        [ContractMethod(RequiredCallFlags = CallFlags.All)]
         private ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             return Deploy(engine, nefFile, manifest, StackItem.Null);
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        [ContractMethod(RequiredCallFlags = CallFlags.All)]
         private async ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
             if (engine.ScriptContainer is not Transaction tx)
@@ -201,13 +201,13 @@ namespace Neo.SmartContract.Native
             return contract;
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        [ContractMethod(RequiredCallFlags = CallFlags.All)]
         private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             return Update(engine, nefFile, manifest, StackItem.Null);
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        [ContractMethod(RequiredCallFlags = CallFlags.All)]
         private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
             if (nefFile is null && manifest is null) throw new ArgumentException();
