@@ -36,7 +36,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Verify(DataCache snapshot, Transaction tx)
         {
-            return NativeContract.Ledger.ContainsTransaction(snapshot, Hash);
+            return !NativeContract.Ledger.ContainsTransaction(snapshot, Hash);
         }
     }
 }
