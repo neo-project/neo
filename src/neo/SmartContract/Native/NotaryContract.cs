@@ -181,7 +181,7 @@ namespace Neo.SmartContract.Native
                 if (tx.Signers.Length != 2) return false;
                 var payer = tx.Signers[1].Account;
                 var balance = GetDepositFor(engine.Snapshot, payer);
-                if (balance is null || balance.amount.CompareTo((tx.NetworkFee + tx.SystemFee)) < 0) return false;
+                if (balance is null || balance.amount.CompareTo(tx.NetworkFee + tx.SystemFee) < 0) return false;
             }
             ECPoint[] notaries = GetNotaryNodes(engine.Snapshot);
             var hash = tx.GetSignData(engine.GetNetwork());
