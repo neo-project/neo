@@ -305,7 +305,7 @@ namespace Neo.SmartContract.Native
         public class Deposit : IInteroperable
         {
             public BigInteger amount;
-            public uint till;
+            public uint Till;
 
             public void FromStackItem(StackItem stackItem)
             {
