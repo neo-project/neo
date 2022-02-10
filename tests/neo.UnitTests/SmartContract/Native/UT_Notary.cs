@@ -24,13 +24,13 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_BalanceOf()
         {
-            Assert.ThrowsException<Exception>(() => NativeContract.Notary.BalanceOf(_snapshot, UInt160.Zero));
+            NativeContract.Notary.BalanceOf(_snapshot, UInt160.Zero).Should().Be(0);
         }
 
         [TestMethod]
         public void Check_ExpirationOf()
         {
-            Assert.ThrowsException<Exception>(() => NativeContract.Notary.ExpirationOf(_snapshot, UInt160.Zero));
+            NativeContract.Notary.ExpirationOf(_snapshot, UInt160.Zero).Should().Be(0);
         }
 
         [TestMethod]
