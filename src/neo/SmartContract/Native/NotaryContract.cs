@@ -52,8 +52,8 @@ namespace Neo.SmartContract.Native
                     {
                         var payer = tx.Signers[1];
                         var balance = GetDepositFor(engine.Snapshot, payer.Account);
-                        balance.amount -= tx.SystemFee + tx.NetworkFee;
-                        if (balance.amount.Sign == 0) RemoveDepositFor(engine.Snapshot, payer.Account);
+                        balance.Amount -= tx.SystemFee + tx.NetworkFee;
+                        if (balance.Amount.Sign == 0) RemoveDepositFor(engine.Snapshot, payer.Account);
                         else PutDepositFor(engine, payer.Account, balance);
                     }
                 }
@@ -77,16 +77,16 @@ namespace Neo.SmartContract.Native
             Deposit deposit = GetDepositFor(engine.Snapshot, to);
             var till = (uint)additionalParams[1].GetInteger();
             if (till < currentHeight) throw new Exception(string.Format("`till` shouldn't be less then the chain's height {0}", currentHeight));
-            if (deposit != null && till < deposit.till) throw new Exception(string.Format("`till` shouldn't be less then the previous value {0}", deposit.till));
+            if (deposit != null && till < deposit.Till) throw new Exception(string.Format("`till` shouldn't be less then the previous value {0}", deposit.Till));
             if (deposit is null)
             {
                 if ((long)amount < 2 * GetNotaryServiceFeePerKey(engine.Snapshot)) throw new Exception(string.Format("first deposit can not be less then {0}, got {1}", 2 * GetNotaryServiceFeePerKey(engine.Snapshot), amount));
-                deposit = new Deposit() { amount = 0, till = 0 };
+                deposit = new Deposit() { Amount = 0, Till = 0 };
                 if (!allowedChangeTill) till = currentHeight + DefaultDepositDeltaTill;
             }
-            else if (!allowedChangeTill) till = deposit.till;
-            deposit.amount += amount;
-            deposit.till = till;
+            else if (!allowedChangeTill) till = deposit.Till;
+            deposit.Amount += amount;
+            deposit.Till = till;
             PutDepositFor(engine, to, deposit);
         }
 
@@ -104,8 +104,8 @@ namespace Neo.SmartContract.Native
             if (till < Ledger.CurrentIndex(engine.Snapshot)) return false;
             Deposit deposit = GetDepositFor(engine.Snapshot, addr);
             if (deposit is null) return false;
-            if (till < deposit.till) return false;
-            deposit.till = till;
+            if (till < deposit.Till) return false;
+            deposit.Till = till;
             PutDepositFor(engine, addr, deposit);
             return true;
         }
@@ -123,9 +123,9 @@ namespace Neo.SmartContract.Native
             if (!engine.CheckWitnessInternal(from)) throw new InvalidOperationException(string.Format("Failed to check witness for {0}", from.ToString()));
             Deposit deposit = GetDepositFor(engine.Snapshot, from);
             if (deposit is null) throw new InvalidOperationException(string.Format("Deposit of {0} is null", from.ToString()));
-            if (Ledger.CurrentIndex(engine.Snapshot) < deposit.till) throw new InvalidOperationException(string.Format("Can't withdraw before {0}", deposit.till));
-            await GAS.Burn(engine, Hash, deposit.amount);
-            await GAS.Mint(engine, to, deposit.amount, true);
+            if (Ledger.CurrentIndex(engine.Snapshot) < deposit.Till) throw new InvalidOperationException(string.Format("Can't withdraw before {0}", deposit.Till));
+            await GAS.Burn(engine, Hash, deposit.Amount);
+            await GAS.Mint(engine, to, deposit.Amount, true);
             RemoveDepositFor(engine.Snapshot, from);
         }
 
@@ -140,7 +140,7 @@ namespace Neo.SmartContract.Native
         {
             Deposit deposit = GetDepositFor(snapshot, acc);
             if (deposit is null) return 0;
-            return deposit.amount;
+            return deposit.Amount;
         }
 
         /// <summary>
@@ -154,7 +154,7 @@ namespace Neo.SmartContract.Native
         {
             Deposit deposit = GetDepositFor(snapshot, acc);
             if (deposit is null) return 0;
-            return deposit.till;
+            return deposit.Till;
         }
 
         /// <summary>
@@ -181,7 +181,7 @@ namespace Neo.SmartContract.Native
                 if (tx.Signers.Length != 2) return false;
                 var payer = tx.Signers[1].Account;
                 var balance = GetDepositFor(engine.Snapshot, payer);
-                if (balance is null || balance.amount.CompareTo(tx.NetworkFee + tx.SystemFee) < 0) return false;
+                if (balance is null || balance.Amount.CompareTo(tx.NetworkFee + tx.SystemFee) < 0) return false;
             }
             ECPoint[] notaries = GetNotaryNodes(engine.Snapshot);
             var hash = tx.GetSignData(engine.GetNetwork());
@@ -205,7 +205,6 @@ namespace Neo.SmartContract.Native
         private ECPoint[] GetNotaryNodes(DataCache snapshot)
         {
             return RoleManagement.GetDesignatedByRole(snapshot, Role.Notary, Ledger.CurrentIndex(snapshot));
-            return nodes;
         }
 
         /// <summary>
@@ -310,13 +309,13 @@ namespace Neo.SmartContract.Native
             public void FromStackItem(StackItem stackItem)
             {
                 Struct @struct = (Struct)stackItem;
-                amount = @struct[0].GetInteger();
-                till = (uint)@struct[1].GetInteger();
+                Amount = @struct[0].GetInteger();
+                Till = (uint)@struct[1].GetInteger();
             }
 
             public StackItem ToStackItem(ReferenceCounter referenceCounter)
             {
-                return new Struct(referenceCounter) { amount, till };
+                return new Struct(referenceCounter) { Amount, Till };
             }
         }
     }
