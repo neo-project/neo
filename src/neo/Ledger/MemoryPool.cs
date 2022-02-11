@@ -295,7 +295,7 @@ namespace Neo.Ledger
             {
                 VerifyResult result = tx.VerifyStateDependent(_system.Settings, snapshot, VerificationContext);
                 if (result != VerifyResult.Succeed) return result;
-                if (!CheckConflicts(tx)) return VerifyResult.Invalid;
+                if (!CheckConflicts(tx)) return VerifyResult.Conflict;
 
                 _unsortedTransactions.Add(tx.Hash, poolItem);
                 VerificationContext.AddTransaction(tx);
