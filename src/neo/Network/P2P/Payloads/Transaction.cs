@@ -333,21 +333,6 @@ namespace Neo.Network.P2P.Payloads
         }
 
         /// <summary>
-        /// Verifies the transaction.
-        /// </summary>
-        /// <param name="settings">The <see cref="ProtocolSettings"/> used to verify the transaction.</param>
-        /// <param name="snapshot">The snapshot used to verify the transaction.</param>
-        /// <param name="context">The <see cref="TransactionVerificationContext"/> used to verify the transaction.</param>
-        /// <param name="mempool">The transactions used to verify the conflict.</param>
-        /// <returns>The result of the verification.</returns>
-        public VerifyResult Verify(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> mempool = null)
-        {
-            VerifyResult result = VerifyStateIndependent(settings);
-            if (result != VerifyResult.Succeed) return result;
-            return VerifyStateDependent(settings, snapshot, context, mempool);
-        }
-
-        /// <summary>
         /// Verifies the state-dependent part of the transaction.
         /// </summary>
         /// <param name="settings">The <see cref="ProtocolSettings"/> used to verify the transaction.</param>
@@ -355,7 +340,7 @@ namespace Neo.Network.P2P.Payloads
         /// <param name="context">The <see cref="TransactionVerificationContext"/> used to verify the transaction.</param>
         /// <param name="mempool">The transactions used to verify the conflict.</param>
         /// <returns>The result of the verification.</returns>
-        public virtual VerifyResult VerifyStateDependent(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> mempool = null)
+        public virtual VerifyResult VerifyStateDependent(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context)
         {
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);
             if (ValidUntilBlock <= height || ValidUntilBlock > height + settings.MaxValidUntilBlockIncrement)
@@ -373,7 +358,6 @@ namespace Neo.Network.P2P.Payloads
                 if (attribute is NotaryAssisted)
                     notary_fee = (((NotaryAssisted)attribute).NKeys + 1) * NativeContract.Notary.GetNotaryServiceFeePerKey(snapshot);
             }
-            if (mempool is not null && !VerifyConflicts(mempool)) return VerifyResult.Invalid;
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot) - notary_fee;
             if (net_fee < 0) return VerifyResult.InsufficientFunds;
 
