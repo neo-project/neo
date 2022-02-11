@@ -338,7 +338,6 @@ namespace Neo.Network.P2P.Payloads
         /// <param name="settings">The <see cref="ProtocolSettings"/> used to verify the transaction.</param>
         /// <param name="snapshot">The snapshot used to verify the transaction.</param>
         /// <param name="context">The <see cref="TransactionVerificationContext"/> used to verify the transaction.</param>
-        /// <param name="mempool">The transactions used to verify the conflict.</param>
         /// <returns>The result of the verification.</returns>
         public virtual VerifyResult VerifyStateDependent(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context)
         {
