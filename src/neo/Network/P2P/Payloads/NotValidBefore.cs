@@ -39,7 +39,7 @@ namespace Neo.Network.P2P.Payloads
             var block_height = NativeContract.Ledger.CurrentIndex(snapshot);
             if (block_height + maxNVBDelta < Height) return false;
             if (Height + maxNVBDelta < tx.ValidUntilBlock) return false;
-            if (block_height + maxNVBDelta < Height) return false;
+            if (block_height < Height) return false;
             return true;
         }
     }
