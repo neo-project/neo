@@ -33,6 +33,6 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Notary nodes
         /// </summary>
-        Notary = 128
+        Notary = 32
     }
 }

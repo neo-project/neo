@@ -126,7 +126,7 @@ namespace Neo.Network.P2P
         /// Sent to send an <see cref="NotaryRequest"/>.
         /// </summary>
         [ReflectionCache(typeof(NotaryRequest))]
-        Notary = 0x2d,
+        Notary = 0x50,
 
         /// <summary>
         /// Sent to send an <see cref="ExtensiblePayload"/>.

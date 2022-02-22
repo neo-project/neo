@@ -36,7 +36,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Verify(DataCache snapshot, Transaction tx)
         {
-            return tx.Signers.First(p => p.Account.Equals(NativeContract.Notary.Hash)) is not null;
+            return tx.Signers.Any(p => p.Account.Equals(NativeContract.Notary.Hash));
         }
     }
 }

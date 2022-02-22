@@ -111,24 +111,22 @@ namespace Neo.Network.P2P.Payloads
 
         public bool Verify(ProtocolSettings settings)
         {
-            var nKeysMain = MainTransaction.GetAttributes<NotaryAssisted>();
+            var nKeysMain = mainTransaction.GetAttributes<NotaryAssisted>();
             if (!nKeysMain.Any()) return false;
             if (nKeysMain.ToArray()[0].NKeys == 0) return false;
-            if (!fallbackTransaction.Script.SequenceEqual(FallbackFixedScript)) return false;
-            if (FallbackTransaction.Signers.Length != 2) return false;
-            if (fallbackTransaction.Signers[1].Scopes != WitnessScope.None) return false;
-            if (FallbackTransaction.Witnesses[0].InvocationScript.Length != 66
-                || FallbackTransaction.Witnesses[0].VerificationScript.Length != 0
-                || (FallbackTransaction.Witnesses[0].InvocationScript[0] != (byte)OpCode.PUSHDATA1 && FallbackTransaction.Witnesses[0].InvocationScript[1] != 64))
+            if (fallbackTransaction.Signers.Length != 2) return false;
+            if (fallbackTransaction.Witnesses[0].InvocationScript.Length != 66
+                || fallbackTransaction.Witnesses[0].VerificationScript.Length != 0
+                || (fallbackTransaction.Witnesses[0].InvocationScript[0] != (byte)OpCode.PUSHDATA1 && fallbackTransaction.Witnesses[0].InvocationScript[1] != 64))
                 return false;
-            if (FallbackTransaction.GetAttribute<NotValidBefore>() is null) return false;
-            var conflicts = FallbackTransaction.GetAttributes<ConflictAttribute>();
+            if (fallbackTransaction.GetAttribute<NotValidBefore>() is null) return false;
+            var conflicts = fallbackTransaction.GetAttributes<ConflictAttribute>();
             if (conflicts.Count() != 1) return false;
-            if (conflicts.ToArray()[0].Hash != MainTransaction.Hash) return false;
-            var nKeysFallback = FallbackTransaction.GetAttributes<NotaryAssisted>();
+            if (conflicts.ToArray()[0].Hash != mainTransaction.Hash) return false;
+            var nKeysFallback = fallbackTransaction.GetAttributes<NotaryAssisted>();
             if (!nKeysFallback.Any()) return false;
             if (nKeysFallback.ToArray()[0].NKeys != 0) return false;
-            if (MainTransaction.ValidUntilBlock != FallbackTransaction.ValidUntilBlock) return false;
+            if (mainTransaction.ValidUntilBlock != fallbackTransaction.ValidUntilBlock) return false;
             if (!fallbackTransaction.VerifyWitness(settings, null, fallbackTransaction.Signers[1].Account, fallbackTransaction.Witnesses[1], 0_02000000, out _)) return false;
             return this.VerifyWitnesses(settings, null, 0_02000000);
         }
