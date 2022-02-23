@@ -29,7 +29,6 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_CurrentBlock = 12;
         private const byte Prefix_Block = 5;
         private const byte Prefix_Transaction = 11;
-        private const byte Prefix_TrimmedTransaction = 3;
 
         internal LedgerContract()
         {
@@ -39,6 +38,7 @@ namespace Neo.SmartContract.Native
         {
             TransactionState[] transactions = engine.PersistingBlock.Transactions.Select(p => new TransactionState
             {
+                Trimmed = false,
                 BlockIndex = engine.PersistingBlock.Index,
                 Transaction = p,
                 State = VMState.NONE
@@ -50,8 +50,7 @@ namespace Neo.SmartContract.Native
                 engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(tx.Transaction.Hash), new StorageItem(tx));
                 foreach (var attr in tx.Transaction.GetAttributes<ConflictAttribute>())
                 {
-                    var hash = ((ConflictAttribute)attr).Hash;
-                    engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_TrimmedTransaction).Add(hash), () => new StorageItem(engine.PersistingBlock.Index));
+                    engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(attr.Hash), new StorageItem(new TransactionState { Trimmed = true }));
                 }
             }
             engine.SetState(transactions);
@@ -132,7 +131,7 @@ namespace Neo.SmartContract.Native
         /// <returns><see langword="true"/> if the blockchain contains the transaction; otherwise, <see langword="false"/>.</returns>
         public bool ContainsTransaction(DataCache snapshot, UInt256 hash)
         {
-            return snapshot.Contains(CreateStorageKey(Prefix_Transaction).Add(hash)) || snapshot.Contains(CreateStorageKey(Prefix_TrimmedTransaction).Add(hash));
+            return snapshot.Contains(CreateStorageKey(Prefix_Transaction).Add(hash));
         }
 
         /// <summary>
@@ -226,7 +225,9 @@ namespace Neo.SmartContract.Native
         /// <returns>The <see cref="TransactionState"/> with the specified hash.</returns>
         public TransactionState GetTransactionState(DataCache snapshot, UInt256 hash)
         {
-            return snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
+            var state = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
+            if (state is not null && state.Trimmed) return null;
+            return state;
         }
 
         /// <summary>
