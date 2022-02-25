@@ -38,10 +38,7 @@ namespace Neo.Network.P2P.Payloads
         {
             get
             {
-                if (hash == null)
-                {
-                    hash = this.CalculateHash();
-                }
+                    hash ??= this.CalculateHash();
                 return hash;
             }
         }
