@@ -122,16 +122,17 @@ namespace Neo.IO.Json
         public static void ProcessJsonPath(ref JObject[] objects, Queue<JPathToken> tokens)
         {
             int maxDepth = 6;
+            int maxObjects = 1024;
             while (tokens.Count > 0)
             {
                 JPathToken token = DequeueToken(tokens);
                 switch (token.Type)
                 {
                     case JPathTokenType.Dot:
-                        ProcessDot(ref objects, ref maxDepth, tokens);
+                        ProcessDot(ref objects, tokens, ref maxDepth, maxObjects);
                         break;
                     case JPathTokenType.LeftBracket:
-                        ProcessBracket(ref objects, ref maxDepth, tokens);
+                        ProcessBracket(ref objects, tokens, ref maxDepth, maxObjects);
                         break;
                     default:
                         throw new FormatException();
@@ -139,26 +140,26 @@ namespace Neo.IO.Json
             }
         }
 
-        private static void ProcessDot(ref JObject[] objects, ref int maxDepth, Queue<JPathToken> tokens)
+        private static void ProcessDot(ref JObject[] objects, Queue<JPathToken> tokens, ref int maxDepth, int maxObjects)
         {
             JPathToken token = DequeueToken(tokens);
             switch (token.Type)
             {
                 case JPathTokenType.Asterisk:
-                    Descent(ref objects, ref maxDepth);
+                    Descent(ref objects, ref maxDepth, maxObjects);
                     break;
                 case JPathTokenType.Dot:
-                    ProcessRecursiveDescent(ref objects, ref maxDepth, tokens);
+                    ProcessRecursiveDescent(ref objects, tokens, ref maxDepth, maxObjects);
                     break;
                 case JPathTokenType.Identifier:
-                    Descent(ref objects, ref maxDepth, token.Content);
+                    Descent(ref objects, ref maxDepth, maxObjects, token.Content);
                     break;
                 default:
                     throw new FormatException();
             }
         }
 
-        private static void ProcessBracket(ref JObject[] objects, ref int maxDepth, Queue<JPathToken> tokens)
+        private static void ProcessBracket(ref JObject[] objects, Queue<JPathToken> tokens, ref int maxDepth, int maxObjects)
         {
             JPathToken token = DequeueToken(tokens);
             switch (token.Type)
@@ -166,23 +167,23 @@ namespace Neo.IO.Json
                 case JPathTokenType.Asterisk:
                     if (DequeueToken(tokens).Type != JPathTokenType.RightBracket)
                         throw new FormatException();
-                    Descent(ref objects, ref maxDepth);
+                    Descent(ref objects, ref maxDepth, maxObjects);
                     break;
                 case JPathTokenType.Colon:
-                    ProcessSlice(ref objects, ref maxDepth, tokens, 0);
+                    ProcessSlice(ref objects, tokens, 0, ref maxDepth, maxObjects);
                     break;
                 case JPathTokenType.Number:
                     JPathToken next = DequeueToken(tokens);
                     switch (next.Type)
                     {
                         case JPathTokenType.Colon:
-                            ProcessSlice(ref objects, ref maxDepth, tokens, int.Parse(token.Content));
+                            ProcessSlice(ref objects, tokens, int.Parse(token.Content), ref maxDepth, maxObjects);
                             break;
                         case JPathTokenType.Comma:
-                            ProcessUnion(ref objects, ref maxDepth, tokens, token);
+                            ProcessUnion(ref objects, tokens, token, ref maxDepth, maxObjects);
                             break;
                         case JPathTokenType.RightBracket:
-                            Descent(ref objects, ref maxDepth, int.Parse(token.Content));
+                            Descent(ref objects, ref maxDepth, maxObjects, int.Parse(token.Content));
                             break;
                         default:
                             throw new FormatException();
@@ -193,10 +194,10 @@ namespace Neo.IO.Json
                     switch (next.Type)
                     {
                         case JPathTokenType.Comma:
-                            ProcessUnion(ref objects, ref maxDepth, tokens, token);
+                            ProcessUnion(ref objects, tokens, token, ref maxDepth, maxObjects);
                             break;
                         case JPathTokenType.RightBracket:
-                            Descent(ref objects, ref maxDepth, JObject.Parse($"\"{token.Content.Trim('\'')}\"").GetString());
+                            Descent(ref objects, ref maxDepth, maxObjects, JObject.Parse($"\"{token.Content.Trim('\'')}\"").GetString());
                             break;
                         default:
                             throw new FormatException();
@@ -207,7 +208,7 @@ namespace Neo.IO.Json
             }
         }
 
-        private static void ProcessRecursiveDescent(ref JObject[] objects, ref int maxDepth, Queue<JPathToken> tokens)
+        private static void ProcessRecursiveDescent(ref JObject[] objects, Queue<JPathToken> tokens, ref int maxDepth, int maxObjects)
         {
             List<JObject> results = new();
             JPathToken token = DequeueToken(tokens);
@@ -215,12 +216,13 @@ namespace Neo.IO.Json
             while (objects.Length > 0)
             {
                 results.AddRange(objects.Where(p => p is not null).SelectMany(p => p.Properties).Where(p => p.Key == token.Content).Select(p => p.Value));
-                Descent(ref objects, ref maxDepth);
+                Descent(ref objects, ref maxDepth, maxObjects);
+                if (results.Count > maxObjects) throw new InvalidOperationException(nameof(maxObjects));
             }
             objects = results.ToArray();
         }
 
-        private static void ProcessSlice(ref JObject[] objects, ref int maxDepth, Queue<JPathToken> tokens, int start)
+        private static void ProcessSlice(ref JObject[] objects, Queue<JPathToken> tokens, int start, ref int maxDepth, int maxObjects)
         {
             JPathToken token = DequeueToken(tokens);
             switch (token.Type)
@@ -228,17 +230,17 @@ namespace Neo.IO.Json
                 case JPathTokenType.Number:
                     if (DequeueToken(tokens).Type != JPathTokenType.RightBracket)
                         throw new FormatException();
-                    DescentRange(ref objects, ref maxDepth, start, int.Parse(token.Content));
+                    DescentRange(ref objects, start, int.Parse(token.Content), ref maxDepth, maxObjects);
                     break;
                 case JPathTokenType.RightBracket:
-                    DescentRange(ref objects, ref maxDepth, start, 0);
+                    DescentRange(ref objects, start, 0, ref maxDepth, maxObjects);
                     break;
                 default:
                     throw new FormatException();
             }
         }
 
-        private static void ProcessUnion(ref JObject[] objects, ref int maxDepth, Queue<JPathToken> tokens, JPathToken first)
+        private static void ProcessUnion(ref JObject[] objects, Queue<JPathToken> tokens, JPathToken first, ref int maxDepth, int maxObjects)
         {
             List<JPathToken> items = new() { first };
             while (true)
@@ -255,24 +257,25 @@ namespace Neo.IO.Json
             switch (first.Type)
             {
                 case JPathTokenType.Number:
-                    Descent(ref objects, ref maxDepth, items.Select(p => int.Parse(p.Content)).ToArray());
+                    Descent(ref objects, ref maxDepth, maxObjects, items.Select(p => int.Parse(p.Content)).ToArray());
                     break;
                 case JPathTokenType.String:
-                    Descent(ref objects, ref maxDepth, items.Select(p => JObject.Parse($"\"{p.Content.Trim('\'')}\"").GetString()).ToArray());
+                    Descent(ref objects, ref maxDepth, maxObjects, items.Select(p => JObject.Parse($"\"{p.Content.Trim('\'')}\"").GetString()).ToArray());
                     break;
                 default:
                     throw new FormatException();
             }
         }
 
-        private static void Descent(ref JObject[] objects, ref int maxDepth)
+        private static void Descent(ref JObject[] objects, ref int maxDepth, int maxObjects)
         {
             if (maxDepth <= 0) throw new InvalidOperationException();
             --maxDepth;
             objects = objects.Where(p => p is not null).SelectMany(p => p is JArray array ? array : p.Properties.Values).ToArray();
+            if (objects.Length > maxObjects) throw new InvalidOperationException(nameof(maxObjects));
         }
 
-        private static void Descent(ref JObject[] objects, ref int maxDepth, params string[] names)
+        private static void Descent(ref JObject[] objects, ref int maxDepth, int maxObjects, params string[] names)
         {
             static IEnumerable<JObject> GetProperties(JObject obj, string[] names)
             {
@@ -283,9 +286,10 @@ namespace Neo.IO.Json
             if (maxDepth <= 0) throw new InvalidOperationException();
             --maxDepth;
             objects = objects.SelectMany(p => GetProperties(p, names)).ToArray();
+            if (objects.Length > maxObjects) throw new InvalidOperationException(nameof(maxObjects));
         }
 
-        private static void Descent(ref JObject[] objects, ref int maxDepth, params int[] indexes)
+        private static void Descent(ref JObject[] objects, ref int maxDepth, int maxObjects, params int[] indexes)
         {
             static IEnumerable<JObject> GetElements(JArray array, int[] indexes)
             {
@@ -299,9 +303,10 @@ namespace Neo.IO.Json
             if (maxDepth <= 0) throw new InvalidOperationException();
             --maxDepth;
             objects = objects.OfType<JArray>().SelectMany(p => GetElements(p, indexes)).ToArray();
+            if (objects.Length > maxObjects) throw new InvalidOperationException(nameof(maxObjects));
         }
 
-        private static void DescentRange(ref JObject[] objects, ref int maxDepth, int start, int end)
+        private static void DescentRange(ref JObject[] objects, int start, int end, ref int maxDepth, int maxObjects)
         {
             if (maxDepth <= 0) throw new InvalidOperationException();
             --maxDepth;
@@ -313,6 +318,7 @@ namespace Neo.IO.Json
                 int count = iEnd - iStart;
                 return p.Skip(iStart).Take(count);
             }).ToArray();
+            if (objects.Length > maxObjects) throw new InvalidOperationException(nameof(maxObjects));
         }
     }
 }
