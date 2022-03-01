@@ -55,6 +55,8 @@ namespace Neo.UnitTests.SmartContract.Native
             // Transfer
 
             NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.Zero, true, persistingBlock).Should().BeTrue();
+            Assert.ThrowsException<ArgumentNullException>(() => NativeContract.NEO.Transfer(snapshot, from, null, BigInteger.Zero, true, persistingBlock));
+            Assert.ThrowsException<ArgumentNullException>(() => NativeContract.NEO.Transfer(snapshot, null, to, BigInteger.Zero, false, persistingBlock));
             NativeContract.NEO.BalanceOf(snapshot, from).Should().Be(100000000);
             NativeContract.NEO.BalanceOf(snapshot, to).Should().Be(0);
 
@@ -116,9 +118,9 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Bad inputs
 
-            NativeContract.GAS.Transfer(snapshot, from, to, BigInteger.MinusOne, true, persistingBlock).Should().BeFalse();
-            NativeContract.GAS.Transfer(snapshot, new byte[19], to, BigInteger.One, false, persistingBlock).Should().BeFalse();
-            NativeContract.GAS.Transfer(snapshot, from, new byte[19], BigInteger.One, false, persistingBlock).Should().BeFalse();
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.GAS.Transfer(snapshot, from, to, BigInteger.MinusOne, true, persistingBlock));
+            Assert.ThrowsException<FormatException>(() => NativeContract.GAS.Transfer(snapshot, new byte[19], to, BigInteger.One, false, persistingBlock));
+            Assert.ThrowsException<FormatException>(() => NativeContract.GAS.Transfer(snapshot, from, new byte[19], BigInteger.One, false, persistingBlock));
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, uint key)

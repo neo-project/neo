@@ -842,14 +842,16 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             tx2.NetworkFee.Should().Be(0x0000000000000001);
             tx2.ValidUntilBlock.Should().Be(0x01020304);
             tx2.Attributes.Should().BeEquivalentTo(Array.Empty<TransactionAttribute>());
-            tx2.Signers.Should().BeEquivalentTo(new Signer[] {
-                new Signer()
+            tx2.Signers.Should().BeEquivalentTo(new[]
+            {
+                new Signer
                 {
                     Account = UInt160.Zero,
                     AllowedContracts = Array.Empty<UInt160>(),
-                    AllowedGroups = Array.Empty<ECPoint>() }
+                    AllowedGroups = Array.Empty<ECPoint>(),
+                    Rules = Array.Empty<WitnessRule>()
                 }
-            );
+            });
             tx2.Script.Should().BeEquivalentTo(new byte[] { (byte)OpCode.PUSH1 });
             tx2.Witnesses.Should().BeEquivalentTo(new Witness[] { new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() } });
         }
@@ -1141,7 +1143,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     }
                 }
             };
-            tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Invalid);
+            tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.OverSize);
             tx.Script = Array.Empty<byte>();
             tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Succeed);
 

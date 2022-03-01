@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.Cryptography.ECC;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
@@ -222,6 +232,11 @@ namespace Neo.SmartContract
             {
                 verifiable.DeserializeUnsigned(reader);
             }
+            if (json.ContainsProperty("hash"))
+            {
+                UInt256 hash = UInt256.Parse(json["hash"].GetString());
+                if (hash != verifiable.Hash) throw new FormatException();
+            }
             ContractParametersContext context = new(snapshot, verifiable, (uint)json["network"].GetInt32());
             foreach (var property in json["items"].Properties)
             {
@@ -322,6 +337,7 @@ namespace Neo.SmartContract
         {
             JObject json = new();
             json["type"] = Verifiable.GetType().FullName;
+            json["hash"] = Verifiable.Hash.ToString();
             using (MemoryStream ms = new())
             using (BinaryWriter writer = new(ms, Utility.StrictUTF8))
             {

@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 #pragma warning disable IDE0051
 
 using Neo.IO;
@@ -144,13 +154,13 @@ namespace Neo.SmartContract.Native
             return snapshot.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>());
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        [ContractMethod(RequiredCallFlags = CallFlags.All)]
         private ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             return Deploy(engine, nefFile, manifest, StackItem.Null);
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        [ContractMethod(RequiredCallFlags = CallFlags.All)]
         private async ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
             if (engine.ScriptContainer is not Transaction tx)
@@ -190,13 +200,13 @@ namespace Neo.SmartContract.Native
             return contract;
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        [ContractMethod(RequiredCallFlags = CallFlags.All)]
         private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             return Update(engine, nefFile, manifest, StackItem.Null);
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        [ContractMethod(RequiredCallFlags = CallFlags.All)]
         private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
             if (nefFile is null && manifest is null) throw new ArgumentException();

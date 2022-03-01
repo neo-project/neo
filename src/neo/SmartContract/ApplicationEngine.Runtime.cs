@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
@@ -202,27 +212,10 @@ namespace Neo.SmartContract
                 }
                 Signer signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
                 if (signer is null) return false;
-                if (signer.Scopes == WitnessScope.Global) return true;
-                if (signer.Scopes.HasFlag(WitnessScope.CalledByEntry))
+                foreach (WitnessRule rule in signer.GetAllRules())
                 {
-                    if (CallingScriptHash == null || CallingScriptHash == EntryScriptHash)
-                        return true;
-                }
-                if (signer.Scopes.HasFlag(WitnessScope.CustomContracts))
-                {
-                    if (signer.AllowedContracts.Contains(CurrentScriptHash))
-                        return true;
-                }
-                if (signer.Scopes.HasFlag(WitnessScope.CustomGroups))
-                {
-                    // Check allow state callflag
-
-                    ValidateCallFlags(CallFlags.ReadStates);
-
-                    var contract = NativeContract.ContractManagement.GetContract(Snapshot, CallingScriptHash);
-                    // check if current group is the required one
-                    if (contract.Manifest.Groups.Select(p => p.PubKey).Intersect(signer.AllowedGroups).Any())
-                        return true;
+                    if (rule.Condition.Match(this))
+                        return rule.Action == WitnessRuleAction.Allow;
                 }
                 return false;
             }

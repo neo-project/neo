@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
@@ -81,6 +91,11 @@ namespace Neo.Wallets
         /// <param name="scriptHash">The hash of the account.</param>
         /// <returns>The created account.</returns>
         public abstract WalletAccount CreateAccount(UInt160 scriptHash);
+
+        /// <summary>
+        /// Deletes the entire database of the wallet.
+        /// </summary>
+        public abstract void Delete();
 
         /// <summary>
         /// Deletes an account from the wallet.
@@ -188,21 +203,24 @@ namespace Neo.Wallets
                         orderedAccounts.RemoveAt(i);
                         i--;
                     }
-                    for (i = 0; i < orderedAccounts.Count; i++)
+                    if (amount > 0)
                     {
-                        if (orderedAccounts[i].Value < amount)
-                            continue;
-                        if (orderedAccounts[i].Value == amount)
+                        for (i = 0; i < orderedAccounts.Count; i++)
                         {
-                            result.Add(orderedAccounts[i]);
-                            orderedAccounts.RemoveAt(i);
+                            if (orderedAccounts[i].Value < amount)
+                                continue;
+                            if (orderedAccounts[i].Value == amount)
+                            {
+                                result.Add(orderedAccounts[i]);
+                                orderedAccounts.RemoveAt(i);
+                            }
+                            else
+                            {
+                                result.Add((orderedAccounts[i].Account, amount));
+                                orderedAccounts[i] = (orderedAccounts[i].Account, orderedAccounts[i].Value - amount);
+                            }
+                            break;
                         }
-                        else
-                        {
-                            result.Add((orderedAccounts[i].Account, amount));
-                            orderedAccounts[i] = (orderedAccounts[i].Account, orderedAccounts[i].Value - amount);
-                        }
-                        break;
                     }
                 }
             }

@@ -399,9 +399,9 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Bad inputs
 
-            NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.MinusOne, true, persistingBlock).Should().BeFalse();
-            NativeContract.NEO.Transfer(snapshot, new byte[19], to, BigInteger.One, false, persistingBlock).Should().BeFalse();
-            NativeContract.NEO.Transfer(snapshot, from, new byte[19], BigInteger.One, false, persistingBlock).Should().BeFalse();
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.MinusOne, true, persistingBlock));
+            Assert.ThrowsException<FormatException>(() => NativeContract.NEO.Transfer(snapshot, new byte[19], to, BigInteger.One, false, persistingBlock));
+            Assert.ThrowsException<FormatException>(() => NativeContract.NEO.Transfer(snapshot, from, new byte[19], BigInteger.One, false, persistingBlock));
 
             // More than balance
 

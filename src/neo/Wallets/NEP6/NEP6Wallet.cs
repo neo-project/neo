@@ -1,3 +1,13 @@
+// Copyright (C) 2015-2021 The Neo Project.
+// 
+// The neo is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.IO.Json;
 using Neo.SmartContract;
 using System;
@@ -172,6 +182,11 @@ namespace Neo.Wallets.NEP6
         public KeyPair DecryptKey(string nep2key)
         {
             return new KeyPair(GetPrivateKeyFromNEP2(nep2key, password, ProtocolSettings.AddressVersion, Scrypt.N, Scrypt.R, Scrypt.P));
+        }
+
+        public override void Delete()
+        {
+            if (File.Exists(Path)) File.Delete(Path);
         }
 
         public override bool DeleteAccount(UInt160 scriptHash)
