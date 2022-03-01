@@ -1,6 +1,7 @@
 using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using System.IO;
@@ -26,7 +27,7 @@ namespace Neo.Network.P2P.Payloads
         private Transaction fallbackTransaction;
 
         /// <summary>
-        /// The witness of the payload. It must be one of multi-sig address of <see cref="MainTransaction"/>.
+        /// The witness of the payload. It is a witness of the fallback transaction's signer.
         /// </summary>
         private Witness witness;
         private UInt256 hash = null;
@@ -117,8 +118,9 @@ namespace Neo.Network.P2P.Payloads
             if (fallbackTransaction.Signers.Length != 2) return false;
             if (fallbackTransaction.Witnesses[0].InvocationScript.Length != 66
                 || fallbackTransaction.Witnesses[0].VerificationScript.Length != 0
-                || (fallbackTransaction.Witnesses[0].InvocationScript[0] != (byte)OpCode.PUSHDATA1 && fallbackTransaction.Witnesses[0].InvocationScript[1] != 64))
+                || fallbackTransaction.Witnesses[0].InvocationScript[0] != (byte)OpCode.PUSHDATA1 || fallbackTransaction.Witnesses[0].InvocationScript[1] != 64)
                 return false;
+            if (fallbackTransaction.Sender != NativeContract.Notary.Hash) return false;
             if (fallbackTransaction.GetAttribute<NotValidBefore>() is null) return false;
             var conflicts = fallbackTransaction.GetAttributes<ConflictAttribute>();
             if (conflicts.Count() != 1) return false;
@@ -127,8 +129,8 @@ namespace Neo.Network.P2P.Payloads
             if (!nKeysFallback.Any()) return false;
             if (nKeysFallback.ToArray()[0].NKeys != 0) return false;
             if (mainTransaction.ValidUntilBlock != fallbackTransaction.ValidUntilBlock) return false;
-            if (!fallbackTransaction.VerifyWitness(settings, null, fallbackTransaction.Signers[1].Account, fallbackTransaction.Witnesses[1], 0_02000000, out _)) return false;
-            return this.VerifyWitnesses(settings, null, 0_02000000);
+            if (!fallbackTransaction.VerifyWitness(settings, null, fallbackTransaction.Signers[1].Account, fallbackTransaction.Witnesses[1], SmartContract.Helper.MaxVerificationGas, out _)) return false;
+            return this.VerifyWitnesses(settings, null, SmartContract.Helper.MaxVerificationGas);
         }
     }
 }
