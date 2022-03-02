@@ -18,6 +18,7 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public sealed class NotaryContract : NativeContract
     {
+        private const long MaxNotaryServiceFeePerKey = 1_0000_0000;
         private const long DefaultNotaryServiceFeePerKey = 1000_0000;
         private const int DefaultDepositDeltaTill = 5760;
         private const int DefaultMaxNotValidBeforeDelta = 140;
@@ -118,15 +119,17 @@ namespace Neo.SmartContract.Native
         /// <param name="to">To Account</param>
         /// <returns>void</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private async ContractTask Withdraw(ApplicationEngine engine, UInt160 from, UInt160 to)
+        private async ContractTask<bool> Withdraw(ApplicationEngine engine, UInt160 from, UInt160 to)
         {
             if (!engine.CheckWitnessInternal(from)) throw new InvalidOperationException(string.Format("Failed to check witness for {0}", from.ToString()));
+            var receive = to is null ? from : to;
             Deposit deposit = GetDepositFor(engine.Snapshot, from);
             if (deposit is null) throw new InvalidOperationException(string.Format("Deposit of {0} is null", from.ToString()));
             if (Ledger.CurrentIndex(engine.Snapshot) < deposit.Till) throw new InvalidOperationException(string.Format("Can't withdraw before {0}", deposit.Till));
             await GAS.Burn(engine, Hash, deposit.Amount);
-            await GAS.Mint(engine, to, deposit.Amount, true);
+            await GAS.Mint(engine, receive, deposit.Amount, true);
             RemoveDepositFor(engine.Snapshot, from);
+            return true;
         }
 
         /// <summary>
@@ -250,7 +253,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetNotaryServiceFeePerKey(ApplicationEngine engine, long value)
         {
-            if (value < 0) throw new FormatException("NotaryServiceFeePerKey cannot be less than 0");
+            if (value < 0 || value > MaxNotaryServiceFeePerKey) throw new FormatException("NotaryServiceFeePerKey value is out of range");
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.Snapshot.GetAndChange(CreateStorageKey(PreNotaryServiceFeePerKey)).Set(value);
         }

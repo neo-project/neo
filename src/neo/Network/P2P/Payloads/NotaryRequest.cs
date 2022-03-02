@@ -12,11 +12,6 @@ namespace Neo.Network.P2P.Payloads
     public class NotaryRequest : IInventory
     {
         /// <summary>
-        /// Represents the fixed value of the <see cref="Transaction.Script"/> field of the fallback transaction.
-        /// </summary>
-        public static readonly byte[] FallbackFixedScript = new byte[] { (byte)OpCode.RET };
-
-        /// <summary>
         /// The transaction need Notary to collect signatures.
         /// </summary>
         private Transaction mainTransaction;
@@ -38,7 +33,7 @@ namespace Neo.Network.P2P.Payloads
         {
             get
             {
-                    hash ??= this.CalculateHash();
+                hash ??= this.CalculateHash();
                 return hash;
             }
         }
