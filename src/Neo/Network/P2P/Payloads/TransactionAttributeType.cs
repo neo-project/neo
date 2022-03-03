@@ -33,6 +33,12 @@ namespace Neo.Network.P2P.Payloads
         /// Indicates that the transaction is not valid before <see cref="NotValidBefore.Height"/>.
         /// </summary>
         [ReflectionCache(typeof(NotValidBefore))]
-        NotValidBefore = 0x20
+        NotValidBefore = 0x20,
+
+        /// <summary>
+        /// Indicates that the transaction is a reserved attribute.
+        /// </summary>
+        [ReflectionCache(typeof(ReservedAttribute))]
+        ReservedAttribute = 0xFF
     }
 }
