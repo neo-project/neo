@@ -102,7 +102,7 @@ namespace Neo.Network.P2P.Payloads
             return new UInt160[] { fallbackTransaction.Signers[1].Account };
         }
 
-        public bool Verify(ProtocolSettings settings)
+        public bool Verify(ProtocolSettings settings, DataCache snapshot)
         {
             var nKeysMain = mainTransaction.GetAttributes<NotaryAssisted>();
             if (!nKeysMain.Any()) return false;
@@ -113,7 +113,12 @@ namespace Neo.Network.P2P.Payloads
                 || fallbackTransaction.Witnesses[0].InvocationScript[0] != (byte)OpCode.PUSHDATA1 || fallbackTransaction.Witnesses[0].InvocationScript[1] != 64)
                 return false;
             if (fallbackTransaction.Sender != NativeContract.Notary.Hash) return false;
-            if (fallbackTransaction.GetAttribute<NotValidBefore>() is null) return false;
+            var nvb = fallbackTransaction.GetAttribute<NotValidBefore>();
+            if (nvb is null) return false;
+            var maxNVBDelta = NativeContract.Notary.GetMaxNotValidBeforeDelta(snapshot);
+            var block_height = NativeContract.Ledger.CurrentIndex(snapshot);
+            if (block_height + maxNVBDelta < nvb.Height) return false;
+            if (nvb.Height + maxNVBDelta < fallbackTransaction.ValidUntilBlock) return false;
             var conflicts = fallbackTransaction.GetAttributes<ConflictAttribute>();
             if (conflicts.Count() != 1) return false;
             if (conflicts.ToArray()[0].Hash != mainTransaction.Hash) return false;

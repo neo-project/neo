@@ -35,12 +35,8 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Verify(DataCache snapshot, Transaction tx)
         {
-            var maxNVBDelta = NativeContract.Notary.GetMaxNotValidBeforeDelta(snapshot);
             var block_height = NativeContract.Ledger.CurrentIndex(snapshot);
-            if (block_height + maxNVBDelta < Height) return false;
-            if (Height + maxNVBDelta < tx.ValidUntilBlock) return false;
-            if (block_height < Height) return false;
-            return true;
+            return block_height >= Height;
         }
     }
 }
