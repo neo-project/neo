@@ -52,7 +52,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Wrong type
 
             msRead.Seek(0, SeekOrigin.Begin);
-            msRead.WriteByte(0xff);
+            msRead.WriteByte(0xfe);
             msRead.Seek(0, SeekOrigin.Begin);
             Assert.ThrowsException<FormatException>(() => TransactionAttribute.DeserializeFrom(reader));
             msRead.Seek(0, SeekOrigin.Begin);
