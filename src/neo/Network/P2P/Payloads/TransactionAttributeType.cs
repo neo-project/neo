@@ -27,6 +27,12 @@ namespace Neo.Network.P2P.Payloads
         /// Indicates that the transaction is an oracle response.
         /// </summary>
         [ReflectionCache(typeof(OracleResponse))]
-        OracleResponse = 0x11
+        OracleResponse = 0x11,
+
+        /// <summary>
+        /// Indicates that the transaction is a reserved attribute.
+        /// </summary>
+        [ReflectionCache(typeof(ReservedAttribute))]
+        ReservedAttribute = 0xFF
     }
 }
