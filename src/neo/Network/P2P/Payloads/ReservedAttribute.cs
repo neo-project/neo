@@ -8,8 +8,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
 using System.IO;
 using Neo.IO;
+using Neo.IO.Json;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -31,6 +33,13 @@ namespace Neo.Network.P2P.Payloads
         protected override void SerializeWithoutType(BinaryWriter writer)
         {
             writer.WriteVarBytes(_reserved);
+        }
+
+        public override JObject ToJson()
+        {
+            var json = base.ToJson();
+            json["value"] = Convert.ToBase64String(_reserved);
+            return json;
         }
     }
 }
