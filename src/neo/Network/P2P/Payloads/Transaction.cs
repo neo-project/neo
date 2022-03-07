@@ -31,7 +31,7 @@ namespace Neo.Network.P2P.Payloads
     /// <summary>
     /// Represents a transaction.
     /// </summary>
-    public class Transaction : IEquatable<Transaction>, IInventory, IInteroperable
+    public partial class Transaction : IEquatable<Transaction>, IInventory, IInteroperable
     {
         /// <summary>
         /// The maximum size of a transaction.
@@ -370,8 +370,8 @@ namespace Neo.Network.P2P.Payloads
             {
                 if (!attribute.Verify(snapshot, this))
                     return VerifyResult.InvalidAttribute;
-                if (attribute is NotaryAssisted)
-                    notary_fee = (((NotaryAssisted)attribute).NKeys + 1) * NativeContract.Notary.GetNotaryServiceFeePerKey(snapshot);
+                if (attribute is NotaryAssisted notaryAssisted)
+                    notary_fee = (notaryAssisted.NKeys + 1) * NativeContract.Notary.GetNotaryServiceFeePerKey(snapshot);
             }
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot) - notary_fee;
             if (net_fee < 0) return VerifyResult.InsufficientFunds;

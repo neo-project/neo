@@ -337,7 +337,7 @@ namespace Neo.Ledger
 
         private VerifyResult OnNotaryRequest(NotaryRequest payload)
         {
-            if (!payload.Verify(system.Settings, system.StoreView)) return VerifyResult.Invalid;
+            if (!payload.VerifyStateIndependent(system.Settings)) return VerifyResult.Invalid;
             system.RelayCache.Add(payload);
             return VerifyResult.Succeed;
         }

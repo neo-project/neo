@@ -1,11 +1,12 @@
 using Neo.IO;
+using Neo.Ledger;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
-using System;
 using System.IO;
 using System.Linq;
+using static Neo.SmartContract.Helper;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -102,7 +103,7 @@ namespace Neo.Network.P2P.Payloads
             return new UInt160[] { fallbackTransaction.Signers[1].Account };
         }
 
-        public bool Verify(ProtocolSettings settings, DataCache snapshot)
+        public bool VerifyStateIndependent(ProtocolSettings settings)
         {
             var nKeysMain = mainTransaction.GetAttributes<NotaryAssisted>();
             if (!nKeysMain.Any()) return false;
@@ -113,12 +114,8 @@ namespace Neo.Network.P2P.Payloads
                 || fallbackTransaction.Witnesses[0].InvocationScript[0] != (byte)OpCode.PUSHDATA1 || fallbackTransaction.Witnesses[0].InvocationScript[1] != 64)
                 return false;
             if (fallbackTransaction.Sender != NativeContract.Notary.Hash) return false;
-            var nvb = fallbackTransaction.GetAttribute<NotValidBefore>();
-            if (nvb is null) return false;
-            var maxNVBDelta = NativeContract.Notary.GetMaxNotValidBeforeDelta(snapshot);
-            var block_height = NativeContract.Ledger.CurrentIndex(snapshot);
-            if (block_height + maxNVBDelta < nvb.Height) return false;
-            if (nvb.Height + maxNVBDelta < fallbackTransaction.ValidUntilBlock) return false;
+            if (fallbackTransaction.Signers[1].Account != witness.ScriptHash) return false;
+            if (fallbackTransaction.GetAttribute<NotValidBefore>() is null) return false;
             var conflicts = fallbackTransaction.GetAttributes<ConflictAttribute>();
             if (conflicts.Count() != 1) return false;
             if (conflicts.ToArray()[0].Hash != mainTransaction.Hash) return false;
@@ -126,8 +123,25 @@ namespace Neo.Network.P2P.Payloads
             if (!nKeysFallback.Any()) return false;
             if (nKeysFallback.ToArray()[0].NKeys != 0) return false;
             if (mainTransaction.ValidUntilBlock != fallbackTransaction.ValidUntilBlock) return false;
-            if (!fallbackTransaction.VerifyWitness(settings, null, fallbackTransaction.Signers[1].Account, fallbackTransaction.Witnesses[1], SmartContract.Helper.MaxVerificationGas, out _)) return false;
-            return this.VerifyWitnesses(settings, null, SmartContract.Helper.MaxVerificationGas);
+            if (!fallbackTransaction.VerifyPartialStateIndependent(settings)) return false;
+            if (!mainTransaction.VerifyPartialStateIndependent(settings)) return false;
+            return this.VerifyWitnesses(settings, null, MaxVerificationGas);
+        }
+
+        public bool VerifyStateDependent(ProtocolSettings settings, DataCache snapshot)
+        {
+            var balance = NativeContract.Notary.BalanceOf(snapshot, fallbackTransaction.Signers[1].Account);
+            if (fallbackTransaction.NetworkFee + fallbackTransaction.SystemFee > balance)
+                return false;
+            if (!fallbackTransaction.VerifyPartialStateDenpendent(settings, snapshot)) return false;
+            if (!mainTransaction.VerifyPartialStateDenpendent(settings, snapshot)) return false;
+            return true;
+        }
+
+        public bool Verify(ProtocolSettings settings, DataCache snapshot)
+        {
+            if (!VerifyStateIndependent(settings)) return false;
+            return VerifyStateDependent(settings, snapshot);
         }
     }
 }
