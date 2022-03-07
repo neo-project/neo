@@ -471,5 +471,56 @@ namespace Neo.VM
             }
             return stackItem;
         }
+
+        
+        public static JArray ToJson(this EvaluationStack stack, int maxSize=ushort.MaxValue)
+        {
+            var queue = new Queue<StackItem>(stack);
+            while (queue.TryDequeue(out var item))
+            {
+                int size = 0;
+                switch (item)
+                {
+                    case Boolean boolean:
+                        size = (boolean.GetBoolean() ? "true" : "false").Length;
+                        break;
+                    case Buffer _:
+                    case ByteString _:
+                        size = 2 + Convert.ToBase64String(item.GetSpan()).Length; // "x"
+                        break;
+                    case Integer integer:
+                        size = integer.GetInteger().ToString().Length;
+                        break;
+                    case Pointer pointer:
+                        size = pointer.Position.ToString().Length;
+                        break;
+                    case Array array:
+                        size += 2; // []
+                        foreach (var stackItem in array)
+                        {
+                            queue.Enqueue(stackItem);
+                        }
+                        break;
+                    case Map map:
+                        size += 2; // {}
+                        foreach (var keyValuePair in map)
+                        {
+                            size += 1; // x:z
+                            queue.Enqueue(keyValuePair.Key);
+                            queue.Enqueue(keyValuePair.Value);
+                        }
+                        break;
+                }
+                if (size > 0) size += 9; //,'value':y";
+                size += 11 + item.Type.ToString().Length; //"{'type':''}";
+                maxSize -= size;
+
+                if (maxSize < 0)
+                {
+                    throw new Exception("max stack size reached");
+                }
+            }
+            return new JArray(stack.Select(u => u.ToJson()));
+        }
     }
 }
