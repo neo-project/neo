@@ -472,6 +472,7 @@ namespace Neo.VM
             return stackItem;
         }
 
+        //https://github.com/neo-project/neo-modules/pull/696 from Shargon <shargon@gmail.com>
         public static JArray ToJson(this EvaluationStack stack, int maxSize = ushort.MaxValue)
         {
             var queue = new Queue<StackItem>(stack);
