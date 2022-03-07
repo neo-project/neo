@@ -472,8 +472,7 @@ namespace Neo.VM
             return stackItem;
         }
 
-        
-        public static JArray ToJson(this EvaluationStack stack, int maxSize=ushort.MaxValue)
+        public static JArray ToJson(this EvaluationStack stack, int maxSize = ushort.MaxValue)
         {
             var queue = new Queue<StackItem>(stack);
             while (queue.TryDequeue(out var item))
