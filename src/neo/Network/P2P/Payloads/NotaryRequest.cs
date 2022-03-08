@@ -124,7 +124,7 @@ namespace Neo.Network.P2P.Payloads
             if (nKeysFallback.ToArray()[0].NKeys != 0) return false;
             if (mainTransaction.ValidUntilBlock != fallbackTransaction.ValidUntilBlock) return false;
             if (!fallbackTransaction.VerifyPartialStateIndependent(settings)) return false;
-            if (!mainTransaction.VerifyPartialStateIndependent(settings)) return false;
+            if (!mainTransaction.VerifyPartialStateIndependent(settings, false)) return false;
             return this.VerifyWitnesses(settings, null, MaxVerificationGas);
         }
 

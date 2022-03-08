@@ -38,8 +38,7 @@ namespace Neo.Network.P2P.Payloads
             if (nvb is not null)
             {
                 var maxNVBDelta = NativeContract.Notary.GetMaxNotValidBeforeDelta(snapshot);
-                var block_height = NativeContract.Ledger.CurrentIndex(snapshot);
-                if (block_height + maxNVBDelta < nvb.Height) return false;
+                if (height + maxNVBDelta < nvb.Height) return false;
                 if (nvb.Height + maxNVBDelta < ValidUntilBlock) return false;
             }
             var notaryAssisted = GetAttribute<NotaryAssisted>();
@@ -67,7 +66,7 @@ namespace Neo.Network.P2P.Payloads
             return true;
         }
 
-        public bool VerifyPartialStateIndependent(ProtocolSettings settings)
+        public bool VerifyPartialStateIndependent(ProtocolSettings settings, bool verifySig = true)
         {
             if (Size > MaxTransactionSize) return false;
             try
@@ -78,6 +77,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 return false;
             }
+            if (!verifySig) return true;
             UInt160[] hashes = GetScriptHashesForVerifying(null);
             for (int i = 0; i < hashes.Length; i++)
             {
