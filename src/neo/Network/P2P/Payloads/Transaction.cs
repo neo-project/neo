@@ -451,6 +451,11 @@ namespace Neo.Network.P2P.Payloads
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
+            // Compute signers
+            var signers = new Map(referenceCounter);
+            foreach (var signer in Signers)
+                signers[signer.Account.ToArray()] = signer.ToArray();
+
             return new Array(referenceCounter, new StackItem[]
             {
                 // Computed properties
@@ -464,7 +469,7 @@ namespace Neo.Network.P2P.Payloads
                 NetworkFee,
                 ValidUntilBlock,
                 Script,
-                new Array(referenceCounter, Signers.Select(u => new ByteString(u.ToArray())))
+                signers
             });
         }
 
