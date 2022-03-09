@@ -281,45 +281,98 @@ namespace Neo.VM
         /// <returns>The <see cref="StackItem"/> represented by a JSON object.</returns>
         public static JObject ToJson(this StackItem item)
         {
-            return ToJson(item, null);
+            int maxSize = int.MaxValue;
+            return ToJson(item, null, ref maxSize);
         }
 
-        private static JObject ToJson(StackItem item, HashSet<StackItem> context)
+        /// <summary>
+        /// Converts the <see cref="EvaluationStack"/> to a JSON object.
+        /// </summary>
+        /// <param name="stack">The <see cref="EvaluationStack"/> to convert.</param>
+        /// <param name="maxSize">The maximum size in bytes of the result.</param>
+        /// <returns>The <see cref="EvaluationStack"/> represented by a JSON object.</returns>
+        public static JArray ToJson(this EvaluationStack stack, int maxSize = int.MaxValue)
+        {
+            if (maxSize <= 0) throw new ArgumentOutOfRangeException(nameof(maxSize));
+            maxSize -= 2/*[]*/+ (stack.Count - 1)/*,*/;
+            JArray result = new();
+            foreach (var item in stack)
+                result.Add(ToJson(item, null, ref maxSize));
+            if (maxSize < 0) throw new InvalidOperationException("Max size reached.");
+            return result;
+        }
+
+        private static JObject ToJson(StackItem item, HashSet<StackItem> context, ref int maxSize)
         {
             JObject json = new();
+            JObject value = null;
             json["type"] = item.Type;
+            maxSize -= 11/*{"type":""}*/+ item.Type.ToString().Length;
             switch (item)
             {
                 case Array array:
-                    context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
-                    if (!context.Add(array)) throw new InvalidOperationException();
-                    json["value"] = new JArray(array.Select(p => ToJson(p, context)));
-                    break;
+                    {
+                        context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
+                        if (!context.Add(array)) throw new InvalidOperationException();
+                        maxSize -= 2/*[]*/+ (array.Count - 1)/*,*/;
+                        JArray a = new();
+                        foreach (StackItem stackItem in array)
+                            a.Add(ToJson(stackItem, context, ref maxSize));
+                        value = a;
+                        break;
+                    }
                 case Boolean boolean:
-                    json["value"] = boolean.GetBoolean();
-                    break;
+                    {
+                        bool b = boolean.GetBoolean();
+                        maxSize -= b ? 4/*true*/: 5/*false*/;
+                        value = b;
+                        break;
+                    }
                 case Buffer _:
                 case ByteString _:
-                    json["value"] = Convert.ToBase64String(item.GetSpan());
-                    break;
-                case Integer integer:
-                    json["value"] = integer.GetInteger().ToString();
-                    break;
-                case Map map:
-                    context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
-                    if (!context.Add(map)) throw new InvalidOperationException();
-                    json["value"] = new JArray(map.Select(p =>
                     {
-                        JObject item = new();
-                        item["key"] = ToJson(p.Key, context);
-                        item["value"] = ToJson(p.Value, context);
-                        return item;
-                    }));
-                    break;
+                        string s = Convert.ToBase64String(item.GetSpan());
+                        maxSize -= 2/*""*/+ s.Length;
+                        value = s;
+                        break;
+                    }
+                case Integer integer:
+                    {
+                        string s = integer.GetInteger().ToString();
+                        maxSize -= 2/*""*/+ s.Length;
+                        value = s;
+                        break;
+                    }
+                case Map map:
+                    {
+                        context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
+                        if (!context.Add(map)) throw new InvalidOperationException();
+                        maxSize -= 2/*[]*/+ (map.Count - 1)/*,*/;
+                        JArray a = new();
+                        foreach (var (k, v) in map)
+                        {
+                            maxSize -= 17/*{"key":,"value":}*/;
+                            JObject i = new();
+                            i["key"] = ToJson(k, context, ref maxSize);
+                            i["value"] = ToJson(v, context, ref maxSize);
+                            a.Add(i);
+                        }
+                        value = a;
+                        break;
+                    }
                 case Pointer pointer:
-                    json["value"] = pointer.Position;
-                    break;
+                    {
+                        maxSize -= pointer.Position.ToString().Length;
+                        value = pointer.Position;
+                        break;
+                    }
             }
+            if (value is not null)
+            {
+                maxSize -= 9/*,"value":*/;
+                json["value"] = value;
+            }
+            if (maxSize < 0) throw new InvalidOperationException("Max size reached.");
             return json;
         }
 
