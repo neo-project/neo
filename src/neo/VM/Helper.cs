@@ -347,7 +347,7 @@ namespace Neo.VM
                     {
                         context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
                         if (!context.Add(map)) throw new InvalidOperationException();
-                        maxSize -= 2/*[]*/+ (map.Count - 1)/*,*/;
+                        maxSize -= 2/*[]*/+ Math.Max(0, (map.Count - 1))/*,*/;
                         JArray a = new();
                         foreach (var (k, v) in map)
                         {
