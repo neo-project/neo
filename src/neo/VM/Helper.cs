@@ -314,7 +314,7 @@ namespace Neo.VM
                     {
                         context ??= new HashSet<StackItem>(ReferenceEqualityComparer.Instance);
                         if (!context.Add(array)) throw new InvalidOperationException();
-                        maxSize -= 2/*[]*/+ (array.Count - 1)/*,*/;
+                        maxSize -= 2/*[]*/+ Math.Max(0, (array.Count - 1))/*,*/;
                         JArray a = new();
                         foreach (StackItem stackItem in array)
                             a.Add(ToJson(stackItem, context, ref maxSize));
