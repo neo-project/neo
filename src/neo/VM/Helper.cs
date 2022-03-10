@@ -294,7 +294,7 @@ namespace Neo.VM
         public static JArray ToJson(this EvaluationStack stack, int maxSize = int.MaxValue)
         {
             if (maxSize <= 0) throw new ArgumentOutOfRangeException(nameof(maxSize));
-            maxSize -= 2/*[]*/+ (stack.Count - 1)/*,*/;
+            maxSize -= 2/*[]*/+ Math.Max(0, (stack.Count - 1))/*,*/;
             JArray result = new();
             foreach (var item in stack)
                 result.Add(ToJson(item, null, ref maxSize));
