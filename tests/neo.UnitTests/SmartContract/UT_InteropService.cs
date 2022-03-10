@@ -324,9 +324,7 @@ namespace Neo.UnitTests.SmartContract
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             NativeContract.Ledger.GetBlock(engine.Snapshot, new UInt256(data1)).Should().BeNull();
-
-            byte[] data2 = new byte[] { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.Ledger.GetBlock(engine.Snapshot, new UInt256(data2)));
+            NativeContract.Ledger.GetBlock(engine.Snapshot, TestBlockchain.TheNeoSystem.GenesisBlock.Hash).Should().NotBeNull();
         }
 
         [TestMethod]
