@@ -26,7 +26,7 @@ namespace Neo.Network.P2P.Payloads
         /// The witness of the payload. It is a witness of the fallback transaction's signer.
         /// </summary>
         private Witness witness;
-        private UInt256 hash = null;
+        private UInt256 hash;
 
         public InventoryType InventoryType => InventoryType.Notary;
 
