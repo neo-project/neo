@@ -50,7 +50,7 @@ namespace Neo.SmartContract.Native
                 engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(tx.Transaction.Hash), new StorageItem(tx));
                 foreach (var attr in tx.Transaction.GetAttributes<ConflictAttribute>())
                 {
-                    engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(attr.Hash), new StorageItem(new TransactionState { Trimmed = true }));
+                    engine.Snapshot.GetOrAdd(CreateStorageKey(Prefix_Transaction).Add(attr.Hash), () => new StorageItem(new TransactionState { Trimmed = true }));
                 }
             }
             engine.SetState(transactions);
