@@ -130,8 +130,8 @@ namespace Neo.Network.P2P.Payloads
             var balance = NativeContract.Notary.BalanceOf(snapshot, fallbackTransaction.Signers[1].Account);
             if (fallbackTransaction.NetworkFee + fallbackTransaction.SystemFee > balance)
                 return false;
-            if (!fallbackTransaction.VerifyPartialStateDenpendent(settings, snapshot)) return false;
-            if (!mainTransaction.VerifyPartialStateDenpendent(settings, snapshot)) return false;
+            if (!fallbackTransaction.VerifyPartialStateDependent(settings, snapshot)) return false;
+            if (!mainTransaction.VerifyPartialStateDependent(settings, snapshot)) return false;
             return true;
         }
 
