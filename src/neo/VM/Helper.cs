@@ -304,9 +304,11 @@ namespace Neo.VM
 
         private static JObject ToJson(StackItem item, HashSet<StackItem> context, ref int maxSize)
         {
-            JObject json = new();
+            JObject json = new()
+            {
+                ["type"] = item.Type
+            };
             JObject value = null;
-            json["type"] = item.Type;
             maxSize -= 11/*{"type":""}*/+ item.Type.ToString().Length;
             switch (item)
             {
