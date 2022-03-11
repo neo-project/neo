@@ -15,6 +15,7 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
+using System.Linq;
 using static Neo.SmartContract.Helper;
 
 namespace Neo.Network.P2P.Payloads
