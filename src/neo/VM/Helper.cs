@@ -352,9 +352,11 @@ namespace Neo.VM
                         foreach (var (k, v) in map)
                         {
                             maxSize -= 17/*{"key":,"value":}*/;
-                            JObject i = new();
-                            i["key"] = ToJson(k, context, ref maxSize);
-                            i["value"] = ToJson(v, context, ref maxSize);
+                            JObject i = new()
+                            {
+                                ["key"] = ToJson(k, context, ref maxSize),
+                                ["value"] = ToJson(v, context, ref maxSize)
+                            };
                             a.Add(i);
                         }
                         value = a;
