@@ -137,8 +137,7 @@ namespace Neo.Network.P2P.Payloads
 
         public bool Verify(ProtocolSettings settings, DataCache snapshot)
         {
-            if (!VerifyStateIndependent(settings)) return false;
-            return VerifyStateDependent(settings, snapshot);
+            return VerifyStateIndependent(settings) && VerifyStateDependent(settings, snapshot);
         }
     }
 }
