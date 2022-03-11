@@ -45,10 +45,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 return new Witness[] { witness };
             }
-            set
-            {
-                witness = value[0];
-            }
+            set => witness = value[0];
         }
 
         public Transaction MainTransaction
