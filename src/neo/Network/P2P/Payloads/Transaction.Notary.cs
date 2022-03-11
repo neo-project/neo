@@ -24,7 +24,7 @@ namespace Neo.Network.P2P.Payloads
     /// </summary>
     public partial class Transaction : IEquatable<Transaction>, IInventory, IInteroperable
     {
-        public bool VerifyPartialStateDenpendent(ProtocolSettings settings, DataCache snapshot)
+        public bool VerifyPartialStateDependent(ProtocolSettings settings, DataCache snapshot)
         {
             if (NativeContract.Ledger.ContainsTransaction(snapshot, Hash)) return false;
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);
