@@ -31,9 +31,10 @@ namespace Neo.Network.P2P.Payloads
             if (ValidUntilBlock <= height || ValidUntilBlock > height + settings.MaxValidUntilBlockIncrement)
                 return false;
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
-            foreach (UInt160 hash in hashes)
-                if (NativeContract.Policy.IsBlocked(snapshot, hash))
-                    return false;
+            if (hashes.Any(hash => NativeContract.Policy.IsBlocked(snapshot, hash)))
+            {
+                return false;
+            }
             var nvb = GetAttribute<NotValidBefore>();
             if (nvb is not null)
             {
