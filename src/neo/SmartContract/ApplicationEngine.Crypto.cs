@@ -22,6 +22,8 @@ namespace Neo.SmartContract
         /// </summary>
         public const long CheckSigPrice = 1 << 15;
 
+        public const long Bls12381Price = 0;
+
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Crypto.CheckSig.
         /// Checks the signature for the current script container.
@@ -33,6 +35,15 @@ namespace Neo.SmartContract
         /// Checks the signatures for the current script container.
         /// </summary>
         public static readonly InteropDescriptor System_Crypto_CheckMultisig = Register("System.Crypto.CheckMultisig", nameof(CheckMultisig), 0, CallFlags.None);
+
+
+        public static readonly InteropDescriptor System_Crypto_Bls12381_Add = Register("System.Crypto.PoointAdd", nameof(Point_Add), Bls12381Price, CallFlags.None);
+
+        public static readonly InteropDescriptor System_Crypto_Bls12381_Mul = Register("System.Crypto.PoointMul", nameof(Point_Mul), Bls12381Price, CallFlags.None);
+
+        public static readonly InteropDescriptor System_Crypto_Bls12381_Pairing = Register("System.Crypto.Pairing", nameof(Point_Pairing), Bls12381Price, CallFlags.None);
+
+
 
         /// <summary>
         /// The implementation of System.Crypto.CheckSig.
@@ -82,6 +93,43 @@ namespace Neo.SmartContract
                 return false;
             }
             return true;
+        }
+
+        /// <summary>
+        /// The implementation of System.Crypto.PointAdd.
+        /// Add operation of two gt point
+        /// </summary>
+        /// <param name="gt1">gt1 point as byteArray</param>
+        /// <param name="gt2">gt1 point as byteArray</param>
+        /// <returns></returns>
+        protected internal byte[] Point_Add(byte[] gt1, byte[] gt2)
+        {
+            return Bls12381.Point_Add(gt1, gt2);
+        }
+
+        /// <summary>
+        /// The implementation of System.Crypto.PointMul.
+        /// Mul operation of gt point and integer
+        /// </summary>
+        /// <param name="gt">gt point as byteArray</param>
+        /// <param name="mul">the mulitiplier</param>
+        /// <returns></returns>
+        protected internal byte[] Point_Mul(byte[] gt, int mul)
+        {
+            return Bls12381.Point_Mul(gt, mul);
+        }
+
+
+        /// <summary>
+        /// The implementation of System.Crypto.PointPairing.
+        /// Pairing operation of g1 and g2
+        /// </summary>
+        /// <param name="g1_bytes"></param>
+        /// <param name="g2_bytes"></param>
+        /// <returns></returns>
+        public static byte[] Point_Pairing(byte[] g1_bytes, byte[] g2_bytes)
+        {
+            return Bls12381.Point_Pairing(g1_bytes, g2_bytes);
         }
     }
 }
