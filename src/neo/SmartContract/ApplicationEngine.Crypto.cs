@@ -106,7 +106,7 @@ namespace Neo.SmartContract
         /// <param name="gt1">gt1 point as byteArray</param>
         /// <param name="gt2">gt1 point as byteArray</param>
         /// <returns></returns>
-        protected internal byte[] PoointAdd(byte[] gt1, byte[] gt2)
+        protected internal byte[] PointAdd(byte[] gt1, byte[] gt2)
         {
             return Bls12381.Point_Add(gt1, gt2);
         }
