@@ -41,11 +41,11 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Crypto_CheckMultisig = Register("System.Crypto.CheckMultisig", nameof(CheckMultisig), 0, CallFlags.None);
 
 
-        public static readonly InteropDescriptor System_Crypto_Bls12381_Add = Register("System.Crypto.PoointAdd", nameof(PoointAdd), Bls12381AddPrice, CallFlags.None);
+        public static readonly InteropDescriptor System_Crypto_Bls12381_Add = Register("System.Crypto.Bls12381Add", nameof(Bls12381Add), Bls12381AddPrice, CallFlags.None);
 
-        public static readonly InteropDescriptor System_Crypto_Bls12381_Mul = Register("System.Crypto.PoointMul", nameof(PointMul), Bls12381MulPrice, CallFlags.None);
+        public static readonly InteropDescriptor System_Crypto_Bls12381_Mul = Register("System.Crypto.Bls12381Mul", nameof(Bls12381Mul), Bls12381MulPrice, CallFlags.None);
 
-        public static readonly InteropDescriptor System_Crypto_Bls12381_Pairing = Register("System.Crypto.PointPairing", nameof(PointPairing), Bls12381PairingPrice, CallFlags.None);
+        public static readonly InteropDescriptor System_Crypto_Bls12381_Pairing = Register("System.Crypto.Bls12381Pairing", nameof(Bls12381Pairing), Bls12381PairingPrice, CallFlags.None);
 
 
 
@@ -106,7 +106,7 @@ namespace Neo.SmartContract
         /// <param name="gt1">gt1 point as byteArray</param>
         /// <param name="gt2">gt1 point as byteArray</param>
         /// <returns></returns>
-        protected internal byte[] PointAdd(byte[] gt1, byte[] gt2)
+        protected internal byte[] Bls12381Add(byte[] gt1, byte[] gt2)
         {
             return Bls12381.Point_Add(gt1, gt2);
         }
@@ -118,7 +118,7 @@ namespace Neo.SmartContract
         /// <param name="gt">gt point as byteArray</param>
         /// <param name="mul">the mulitiplier</param>
         /// <returns></returns>
-        protected internal byte[] PointMul(byte[] gt, int mul)
+        protected internal byte[] Bls12381Mul(byte[] gt, int mul)
         {
             return Bls12381.Point_Mul(gt, mul);
         }
@@ -131,7 +131,7 @@ namespace Neo.SmartContract
         /// <param name="g1_bytes"></param>
         /// <param name="g2_bytes"></param>
         /// <returns></returns>
-        public static byte[] PointPairing(byte[] g1_bytes, byte[] g2_bytes)
+        public static byte[] Bls12381Pairing(byte[] g1_bytes, byte[] g2_bytes)
         {
             return Bls12381.Point_Pairing(g1_bytes, g2_bytes);
         }
