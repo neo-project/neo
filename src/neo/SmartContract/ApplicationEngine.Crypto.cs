@@ -131,7 +131,7 @@ namespace Neo.SmartContract
         /// <param name="g1_bytes"></param>
         /// <param name="g2_bytes"></param>
         /// <returns></returns>
-        public static byte[] Bls12381Pairing(byte[] g1_bytes, byte[] g2_bytes)
+        protected internal static byte[] Bls12381Pairing(byte[] g1_bytes, byte[] g2_bytes)
         {
             return Bls12381.Point_Pairing(g1_bytes, g2_bytes);
         }
