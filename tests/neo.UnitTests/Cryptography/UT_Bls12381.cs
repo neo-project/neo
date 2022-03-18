@@ -7,7 +7,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 namespace Neo.UnitTests.Cryptography
 {
-    
     [TestClass]
     public class UT_Bls12381
     {
@@ -31,12 +30,12 @@ namespace Neo.UnitTests.Cryptography
         }
 
         [TestMethod]
-        public void TestGtPairing(){
+        public void TestGtPairing()
+        {
 
-            IntPtr result_test = Bls12381.g1_g2_pairing(g1ptr,g2ptr);
+            IntPtr result_test = Bls12381.g1_g2_pairing(g1ptr, g2ptr);
             test_generator_pairing(result_test);
 
         }
-
     }
 }
