@@ -225,5 +225,33 @@ namespace Neo.Cryptography
             }
             return result.ToArray();
         }
+
+
+        internal static byte[] ToByteArray(this IntPtr data, int length)
+        {
+            if (data == IntPtr.Zero) return null;
+            byte[] buffer = new byte[length];
+            Marshal.Copy(data, buffer, 0, length);
+            return buffer;
+        }
+
+        internal static UInt64[] Int64ToUInt64(this Int64[] x)
+        {
+            int len = x.Length;
+            UInt64[] res = new UInt64[len];
+
+            for(int i = 0; i < len; i++)
+            {
+                if (x[i] >= 0) res[i] = Convert.ToUInt64(x[i]);
+                else
+                {
+                    UInt64 tmp = Convert.ToUInt64(-x[i]);
+                    res[i] = Convert.ToUInt64(UInt64.MaxValue - tmp);
+                }
+            }
+            return res;
+
+        }
+
     }
 }
