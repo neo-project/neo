@@ -193,5 +193,19 @@ namespace Neo.UnitTests.Wallets.SQLite
             wallet.VerifyPassword("123456").Should().BeTrue();
             wallet.VerifyPassword("123").Should().BeFalse();
         }
+
+        [TestMethod]
+        public void TestMigrate()
+        {
+            string path = GetRandomPath();
+            UserWallet uw = UserWallet.Create(path, "123", ProtocolSettings.Default);
+            uw.CreateAccount(keyPair.PrivateKey);
+            string npath = CreateWalletFile();  // Scrypt test values
+            NEP6Wallet nw = NEP6Wallet.Migrate(npath, path, "123", ProtocolSettings.Default);
+            bool result = nw.Contains(testScriptHash);
+            Assert.AreEqual(true, result);
+            uw.Delete();
+            nw.Delete();
+        }
     }
 }

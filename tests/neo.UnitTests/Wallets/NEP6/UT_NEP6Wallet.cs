@@ -5,7 +5,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
-using Neo.Wallets.SQLite;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -360,20 +359,6 @@ namespace Neo.UnitTests.Wallets.NEP6
             uut.DeleteAccount(testScriptHash);
             uut.Lock();
             Assert.ThrowsException<ArgumentNullException>(() => uut.CreateAccount(keyPair.PrivateKey));
-        }
-
-        [TestMethod]
-        public void TestMigrate()
-        {
-            string path = GetRandomPath();
-            UserWallet uw = UserWallet.Create(path, "123", ProtocolSettings.Default);
-            uw.CreateAccount(keyPair.PrivateKey);
-            string npath = CreateWalletFile();  // Scrypt test values
-            NEP6Wallet nw = NEP6Wallet.Migrate(npath, path, "123", ProtocolSettings.Default);
-            bool result = nw.Contains(testScriptHash);
-            Assert.AreEqual(true, result);
-            uw.Delete();
-            nw.Delete();
         }
 
         [TestMethod]
