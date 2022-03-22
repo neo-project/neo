@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\neo\neo.csproj" />
+    <ProjectReference Include="..\..\src\sqlite-wallet\sqlite-wallet.csproj" />
   </ItemGroup>
 
   <ItemGroup>

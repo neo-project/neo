@@ -369,7 +369,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             UserWallet uw = UserWallet.Create(path, "123", ProtocolSettings.Default);
             uw.CreateAccount(keyPair.PrivateKey);
             string npath = CreateWalletFile();  // Scrypt test values
-            NEP6Wallet nw = NEP6Wallet.Migrate(npath, path, "123", ProtocolSettings.Default);
+            NEP6Wallet nw = UserWallet.Migrate(npath, path, "123", ProtocolSettings.Default);
             bool result = nw.Contains(testScriptHash);
             Assert.AreEqual(true, result);
             uw.Delete();
