@@ -42,7 +42,7 @@ namespace Neo.UnitTests.Wallets
         public override WalletAccount CreateAccount(byte[] privateKey)
         {
             KeyPair key = new(privateKey);
-            Neo.Wallets.SQLite.VerificationContract contract = new()
+            Contract contract = new()
             {
                 Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
                 ParameterList = new[] { ContractParameterType.Signature }
