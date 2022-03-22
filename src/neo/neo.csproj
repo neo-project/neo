@@ -1,23 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Copyright>2015-2021 The Neo Project</Copyright>
     <AssemblyTitle>Neo</AssemblyTitle>
-    <VersionPrefix>3.1.0</VersionPrefix>
-    <Authors>The Neo Project</Authors>
-    <TargetFramework>net6.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>Neo</AssemblyName>
     <PackageId>Neo</PackageId>
-    <PackageTags>NEO;AntShares;Blockchain;Smart Contract</PackageTags>
-    <PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/neo-project/neo.git</RepositoryUrl>
     <RootNamespace>Neo</RootNamespace>
-    <Company>The Neo Project</Company>
-    <Description>Neo</Description>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

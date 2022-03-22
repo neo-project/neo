@@ -178,7 +178,7 @@ namespace Neo.Cryptography
             return false;
         }
 
-        internal static byte[] ToAesKey(this string password)
+        public static byte[] ToAesKey(this string password)
         {
             using SHA256 sha256 = SHA256.Create();
             byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
@@ -189,7 +189,7 @@ namespace Neo.Cryptography
             return passwordHash2;
         }
 
-        internal static byte[] ToAesKey(this SecureString password)
+        public static byte[] ToAesKey(this SecureString password)
         {
             using SHA256 sha256 = SHA256.Create();
             byte[] passwordBytes = password.ToArray();

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyTitle>Neo.Wallets.SQLite</AssemblyTitle>
+    <AssemblyName>Neo.Wallets.SQLite</AssemblyName>
+    <PackageId>Neo.Wallets.SQLite</PackageId>
+    <RootNamespace>Neo.Wallets.SQLite</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\neo\neo.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.0" />
+  </ItemGroup>
+
+</Project>

@@ -1,4 +1,4 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29519.87
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -9,6 +9,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B5339DF7-5D1D-43BA-B332-74B825E1770E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{EDE05FA8-8E73-4924-BC63-DD117127EEE1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqlite-wallet", "src\sqlite-wallet\sqlite-wallet.csproj", "{00A6328D-4FF9-4FAE-AB53-220448D5A235}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,6 +26,10 @@ Global
 		{5B783B30-B422-4C2F-AC22-187A8D1993F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B783B30-B422-4C2F-AC22-187A8D1993F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5B783B30-B422-4C2F-AC22-187A8D1993F4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00A6328D-4FF9-4FAE-AB53-220448D5A235}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00A6328D-4FF9-4FAE-AB53-220448D5A235}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00A6328D-4FF9-4FAE-AB53-220448D5A235}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00A6328D-4FF9-4FAE-AB53-220448D5A235}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -31,6 +37,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{36447A9B-0311-4D4D-A3D5-AECBE9C15BBC} = {B5339DF7-5D1D-43BA-B332-74B825E1770E}
 		{5B783B30-B422-4C2F-AC22-187A8D1993F4} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
+		{00A6328D-4FF9-4FAE-AB53-220448D5A235} = {B5339DF7-5D1D-43BA-B332-74B825E1770E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCBA19D9-F868-4C6D-8061-A2B91E06E3EC}
