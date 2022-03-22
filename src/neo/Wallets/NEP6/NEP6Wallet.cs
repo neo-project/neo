@@ -17,7 +17,6 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using UserWallet = Neo.Wallets.SQLite.UserWallet;
 
 namespace Neo.Wallets.NEP6
 {
@@ -292,28 +291,6 @@ namespace Neo.Wallets.NEP6
         internal void Lock()
         {
             password = null;
-        }
-
-        /// <summary>
-        /// Migrates the accounts from <see cref="UserWallet"/> to a new <see cref="NEP6Wallet"/>.
-        /// </summary>
-        /// <param name="path">The path of the new wallet file.</param>
-        /// <param name="db3path">The path of the db3 wallet file.</param>
-        /// <param name="password">The password of the wallets.</param>
-        /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
-        /// <returns>The created new wallet.</returns>
-        public static NEP6Wallet Migrate(string path, string db3path, string password, ProtocolSettings settings)
-        {
-            UserWallet wallet_old = UserWallet.Open(db3path, password, settings);
-            NEP6Wallet wallet_new = new(path, settings, wallet_old.Name);
-            using (wallet_new.Unlock(password))
-            {
-                foreach (WalletAccount account in wallet_old.GetAccounts())
-                {
-                    wallet_new.CreateAccount(account.Contract, account.GetKey());
-                }
-            }
-            return wallet_new;
         }
 
         /// <summary>
