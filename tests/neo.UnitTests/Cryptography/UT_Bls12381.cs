@@ -10,13 +10,13 @@ namespace Neo.UnitTests.Cryptography
     [TestClass]
     public class UT_Bls12381
     {
-        [DllImport("bls12381.dylib", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("bls12381", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr g1_object_generator();
 
-        [DllImport("bls12381.dylib", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("bls12381", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr g2_object_generator();
 
-        [DllImport("bls12381.dylib", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("bls12381", CallingConvention = CallingConvention.Cdecl)]
         public static extern void test_generator_pairing(IntPtr result_test);
 
         private IntPtr g1ptr = IntPtr.Zero;
