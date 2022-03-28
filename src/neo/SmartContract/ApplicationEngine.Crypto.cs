@@ -51,19 +51,19 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Crypto.Bls12381Add.
-        /// Add operation of two Bls12381 point
+        /// Add operation of gt point and integer
         /// </summary>
         public static readonly InteropDescriptor System_Crypto_Bls12381_Add = Register("System.Crypto.Bls12381Add", nameof(Bls12381Add), Bls12381AddPrice, CallFlags.None);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Crypto.Bls12381Mul.
-        /// Mul operation of Bls12381 point and integer.
+        /// Mul operation of gt point and integer
         /// </summary>
         public static readonly InteropDescriptor System_Crypto_Bls12381_Mul = Register("System.Crypto.Bls12381Mul", nameof(Bls12381Mul), Bls12381MulPrice, CallFlags.None);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Crypto.Bls12381Pairing.
-        /// Mul operation of two Bls12381 points
+        /// Pairing operation of gt point and integer
         /// </summary>
         public static readonly InteropDescriptor System_Crypto_Bls12381_Pairing = Register("System.Crypto.Bls12381Pairing", nameof(Bls12381Pairing), Bls12381PairingPrice, CallFlags.None);
 
@@ -136,7 +136,7 @@ namespace Neo.SmartContract
         /// <param name="gt">gt point as byteArray</param>
         /// <param name="mul">the mulitiplier</param>
         /// <returns></returns>
-        protected internal byte[] Bls12381Mul(byte[] gt, UInt64 mul)
+        protected internal byte[] Bls12381Mul(byte[] gt, long mul)
         {
             return Bls12381.Point_Mul(gt, mul);
         }
