@@ -25,16 +25,25 @@ namespace Neo.Cryptography
         public static extern IntPtr gt_mul(IntPtr gt, UInt64 multi);
 
         [DllImport("bls12381", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr gt_neg(IntPtr gt);
+
+        [DllImport("bls12381", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr g1_add(IntPtr g1_1, IntPtr g1_2);
 
         [DllImport("bls12381", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr g1_mul(IntPtr g1, UInt64 multi);
 
         [DllImport("bls12381", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr g1_neg(IntPtr g1);
+
+        [DllImport("bls12381", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr g2_add(IntPtr g2_1, IntPtr g2_2);
 
         [DllImport("bls12381", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr g2_mul(IntPtr g2, UInt64 multi);
+
+        [DllImport("bls12381", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr g2_neg(IntPtr g2);
 
         [DllImport("bls12381", CallingConvention = CallingConvention.Cdecl)]
         public static extern void gt_dispose(IntPtr rawPtr);
@@ -67,7 +76,7 @@ namespace Neo.Cryptography
             {
                 throw new Exception($"Bls12381 operation falut,type:dll-add,error:{e}");
             }
-            byte[] buffer = result.ToByteArray((int)GType.Gt);
+            byte[] buffer = result.ToByteArray((int)p1.type);
             return buffer;
         }
 
@@ -77,19 +86,30 @@ namespace Neo.Cryptography
         /// <param name="p_bytes">Gt point as byteArray</param>
         /// <param name="multi">Mulitiplier</param>
         /// <returns></returns>
-        public static byte[] Point_Mul(byte[] p_bytes, UInt64 multi)
+        public static byte[] Point_Mul(byte[] p_bytes, long multi)
         {
             GObject p = new GObject(p_bytes);
             IntPtr result = IntPtr.Zero;
             try
             {
-                result = GObject.Mul(p, multi);
+                UInt64 x = 0;
+                if (multi < 0)
+                {
+                    x = Convert.ToUInt64(-multi);
+                    p = GObject.Neg(p);
+                    result = GObject.Mul(p, x);
+                }
+                else
+                {
+                    x = Convert.ToUInt64(multi);
+                    result = GObject.Mul(p, x);
+                }
             }
             catch (Exception e)
             {
                 throw new Exception($"Bls12381 operation falut,type:dll-mul,error:{e}");
             }
-            byte[] buffer = result.ToByteArray((int)GType.Gt);
+            byte[] buffer = result.ToByteArray((int)p.type);
             return buffer;
         }
 
@@ -115,20 +135,27 @@ namespace Neo.Cryptography
             byte[] buffer = result.ToByteArray(576);
             return buffer;
         }
-
     }
 
     internal class GObject
     {
         public IntPtr ptr;
         public GType type;
+
+        public GObject(GType t,IntPtr ptr)
+        {
+            this.ptr = ptr;
+            this.type = t;
+        }
         public GObject(byte[] g)
         {
             int len = g.Length;
             if (len == (int)GType.G1 || len == (int)GType.G2 || len == (int)GType.Gt)
             {
-                Marshal.Copy(g, 0, ptr, len);
-                type = (GType)len;
+                IntPtr tmp = Marshal.AllocHGlobal(len);
+                Marshal.Copy(g, 0, tmp, len);
+                this.type = (GType)len;
+                this.ptr = tmp;
             }
             else throw new Exception($"Bls12381 operation falut,type:format,error:valid point length");
         }
@@ -157,6 +184,29 @@ namespace Neo.Cryptography
                 throw new Exception($"Bls12381 operation falut,type:format,error:valid point length");
             }
             return result;
+        }
+
+        public static GObject Neg(GObject p)
+        {
+            IntPtr result = IntPtr.Zero;
+            if (p.type == GType.G1)
+            {
+                result = Bls12381.g1_neg(p.ptr);
+            }
+            else if (p.type == GType.G2)
+            {
+                result = Bls12381.g2_neg(p.ptr);
+            }
+            else if (p.type == GType.Gt)
+            {
+                result = Bls12381.gt_neg(p.ptr);
+            }
+            else
+            {
+                throw new Exception("Bls12_381:valid point length");
+            }
+            GObject x = new GObject(p.type, result);
+            return x;
         }
 
         public static IntPtr Mul(GObject p, UInt64 x)
