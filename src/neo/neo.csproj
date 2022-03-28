@@ -32,4 +32,11 @@
     <PackageReference Include="Neo.VM" Version="3.1.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Cryptography\bls12381.dll">
+	  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+	  <TargetPath>bls12381.dll</TargetPath>
+	</None> 
+ </ItemGroup>
 </Project>
