@@ -119,10 +119,10 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// The implementation of System.Crypto.PointAdd.
-        /// Add operation of two Bls12381 point
+        /// Add operation of two gt point
         /// </summary>
-        /// <param name="gt1">Bls12381 point as byteArray</param>
-        /// <param name="gt2">Bls12381 point as byteArray</param>
+        /// <param name="gt1">gt1 point as byteArray</param>
+        /// <param name="gt2">gt1 point as byteArray</param>
         /// <returns></returns>
         protected internal byte[] Bls12381Add(byte[] gt1, byte[] gt2)
         {
@@ -131,22 +131,22 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// The implementation of System.Crypto.PointMul.
-        /// Mul operation of Bls12381 point and integer
+        /// Mul operation of gt point and integer
         /// </summary>
-        /// <param name="gt">Bls12381 point as byteArray</param>
+        /// <param name="gt">gt point as byteArray</param>
         /// <param name="mul">the mulitiplier</param>
         /// <returns></returns>
-        protected internal byte[] Bls12381Mul(byte[] gt, int mul)
+        protected internal byte[] Bls12381Mul(byte[] gt, UInt64 mul)
         {
             return Bls12381.Point_Mul(gt, mul);
         }
 
         /// <summary>
         /// The implementation of System.Crypto.PointPairing.
-        /// Mul operation of two Bls12381 points
+        /// Pairing operation of g1 and g2
         /// </summary>
-        /// <param name="g1_bytes">Bls12381 point as byteArray</param>
-        /// <param name="g2_bytes">Bls12381 point as byteArray</param>
+        /// <param name="g1_bytes"></param>
+        /// <param name="g2_bytes"></param>
         /// <returns></returns>
         protected internal byte[] Bls12381Pairing(byte[] g1_bytes, byte[] g2_bytes)
         {
