@@ -203,7 +203,7 @@ namespace Neo.Cryptography
             }
             else
             {
-                throw new Exception("Bls12_381:valid point length");
+                throw new Exception($"Bls12381 operation falut,type:format,error:valid point length");
             }
             GObject x = new GObject(p.type, result);
             return x;
