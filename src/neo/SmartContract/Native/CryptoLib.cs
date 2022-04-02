@@ -56,7 +56,7 @@ namespace Neo.SmartContract.Native
         /// <param name="data">The input to compute the hash code for.</param>
         /// <param name="seed">The seed of the murmur32 hash function</param>
         /// <returns>The computed hash code.</returns>
-        [ContractMethod(CpuFee = 1 << 4)]
+        [ContractMethod(CpuFee = 1 << 13)]
         public static byte[] Murmur32(byte[] data, uint seed)
         {
             using Murmur32 murmur = new(seed);
