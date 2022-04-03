@@ -30,17 +30,5 @@ namespace Neo.UnitTests.Wallets
             descriptor.Symbol.Should().Be("GAS");
             descriptor.Decimals.Should().Be(8);
         }
-
-        [TestMethod]
-        public void Check_NEO()
-        {
-            var snapshot = TestBlockchain.GetTestSnapshot();
-            var descriptor = new Neo.Wallets.AssetDescriptor(snapshot, ProtocolSettings.Default, NativeContract.NEO.Hash);
-            descriptor.AssetId.Should().Be(NativeContract.NEO.Hash);
-            descriptor.AssetName.Should().Be(nameof(NeoToken));
-            descriptor.ToString().Should().Be(nameof(NeoToken));
-            descriptor.Symbol.Should().Be("NEO");
-            descriptor.Decimals.Should().Be(0);
-        }
     }
 }

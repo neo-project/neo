@@ -64,7 +64,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.GetInteger().Should().Be(1000);
 
             // With signature
-            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            UInt160 committeeMultiSigAddr = NativeContract.RoleManagement.GetCommitteeAddress(snapshot, 1);
             ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
                 "setFeePerByte", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
             ret.IsNull.Should().BeTrue();
@@ -103,7 +103,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.GetInteger().Should().Be(30);
 
             // With signature, wrong value
-            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            UInt160 committeeMultiSigAddr = NativeContract.RoleManagement.GetCommitteeAddress(snapshot, 1);
             Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
             {
                 NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
@@ -153,7 +153,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.GetInteger().Should().Be(100000);
 
             // With signature, wrong value
-            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            UInt160 committeeMultiSigAddr = NativeContract.RoleManagement.GetCommitteeAddress(snapshot, 1);
             Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
             {
                 NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
@@ -201,7 +201,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // With signature
 
-            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            UInt160 committeeMultiSigAddr = NativeContract.RoleManagement.GetCommitteeAddress(snapshot, 1);
             var ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
               "blockAccount",
               new ContractParameter(ContractParameterType.ByteArray) { Value = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01").ToArray() });
@@ -245,7 +245,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     PrevHash = UInt256.Zero
                 }
             };
-            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            UInt160 committeeMultiSigAddr = NativeContract.RoleManagement.GetCommitteeAddress(snapshot, 1);
 
             // Block without signature
 

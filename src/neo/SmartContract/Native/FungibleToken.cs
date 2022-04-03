@@ -157,6 +157,7 @@ namespace Neo.SmartContract.Native
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (!from.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(from))
                 return false;
+            if (!Policy.TransferAllowed(engine, Hash, from, to)) return false;
             StorageKey key_from = CreateStorageKey(Prefix_Account).Add(from);
             StorageItem storage_from = engine.Snapshot.GetAndChange(key_from);
             if (amount.IsZero)

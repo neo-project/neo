@@ -52,6 +52,20 @@ namespace Neo.SmartContract.Native
             Manifest.Abi.Events = events.ToArray();
         }
 
+        internal override ContractTask Initialize(ApplicationEngine engine)
+        {
+            var key = CreateStorageKey((byte)Role.Committee).AddBigEndian(0);
+            NodeList list = new();
+            list.AddRange(engine.ProtocolSettings.StandbyCommittee);
+            list.Sort();
+            engine.Snapshot.Add(key, new StorageItem(list));
+            key = CreateStorageKey((byte)Role.Validator).AddBigEndian(0);
+            list.Clear();
+            list.AddRange(engine.ProtocolSettings.StandbyValidators);
+            engine.Snapshot.Add(key, new StorageItem(list));
+            return ContractTask.CompletedTask;
+        }
+
         /// <summary>
         /// Gets the list of nodes for the specified role.
         /// </summary>
@@ -93,6 +107,12 @@ namespace Neo.SmartContract.Native
             list.Sort();
             engine.Snapshot.Add(key, new StorageItem(list));
             engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, new StackItem[] { (int)role, engine.PersistingBlock.Index }));
+        }
+
+        public UInt160 GetCommitteeAddress(DataCache snapshot, uint index)
+        {
+            ECPoint[] committees = GetDesignatedByRole(snapshot, Role.Committee, index);
+            return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
         }
 
         private class NodeList : List<ECPoint>, IInteroperable

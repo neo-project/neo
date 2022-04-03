@@ -18,6 +18,7 @@ using Neo.IO.Caching;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
+using Neo.Wallets;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -36,6 +37,7 @@ namespace Neo.Network.P2P
 
         private readonly NeoSystem system;
         private readonly LocalNode localNode;
+        private readonly Wallet wallet;
         private readonly Queue<Message> message_queue_high = new();
         private readonly Queue<Message> message_queue_low = new();
         private DateTime lastSent = TimeProvider.Current.UtcNow;
@@ -75,13 +77,15 @@ namespace Neo.Network.P2P
         /// <param name="system">The <see cref="NeoSystem"/> object that contains the <paramref name="localNode"/>.</param>
         /// <param name="localNode">The <see cref="LocalNode"/> that manages the <see cref="RemoteNode"/>.</param>
         /// <param name="connection">The underlying connection object.</param>
+        /// <param name="wallet">wallet.</param>
         /// <param name="remote">The address of the remote node.</param>
         /// <param name="local">The address of the local node.</param>
-        public RemoteNode(NeoSystem system, LocalNode localNode, object connection, IPEndPoint remote, IPEndPoint local)
+        public RemoteNode(NeoSystem system, LocalNode localNode, Wallet wallet, object connection, IPEndPoint remote, IPEndPoint local)
             : base(connection, remote, local)
         {
             this.system = system;
             this.localNode = localNode;
+            this.wallet = wallet;
             this.knownHashes = new HashSetCache<UInt256>(system.MemPool.Capacity * 2 / 5);
             this.sentHashes = new HashSetCache<UInt256>(system.MemPool.Capacity * 2 / 5);
             localNode.RemoteNodes.TryAdd(Self, this);
@@ -210,7 +214,7 @@ namespace Neo.Network.P2P
             if (localNode.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)localNode.ListenerTcpPort));
             if (localNode.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)localNode.ListenerWsPort));
 
-            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(system.Settings.Network, LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
+            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(system.Settings.Network, LocalNode.Nonce, LocalNode.UserAgent, wallet, capabilities.ToArray())));
         }
 
         protected override void PostStop()
@@ -220,9 +224,9 @@ namespace Neo.Network.P2P
             base.PostStop();
         }
 
-        internal static Props Props(NeoSystem system, LocalNode localNode, object connection, IPEndPoint remote, IPEndPoint local)
+        internal static Props Props(NeoSystem system, LocalNode localNode, Wallet wallet, object connection, IPEndPoint remote, IPEndPoint local)
         {
-            return Akka.Actor.Props.Create(() => new RemoteNode(system, localNode, connection, remote, local)).WithMailbox("remote-node-mailbox");
+            return Akka.Actor.Props.Create(() => new RemoteNode(system, localNode, wallet, connection, remote, local)).WithMailbox("remote-node-mailbox");
         }
 
         private void SendMessage(Message message)

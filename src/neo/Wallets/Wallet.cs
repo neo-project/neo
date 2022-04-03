@@ -694,5 +694,17 @@ namespace Neo.Wallets
         /// <param name="password">The password to be checked.</param>
         /// <returns><see langword="true"/> if the password is correct; otherwise, <see langword="false"/>.</returns>
         public abstract bool VerifyPassword(string password);
+
+        public WalletAccount GetDefaultAccount()
+        {
+            WalletAccount first = null;
+
+            foreach (WalletAccount account in GetAccounts())
+            {
+                if (account.IsDefault) return account;
+                if (first == null) first = account;
+            }
+            return first;
+        }
     }
 }

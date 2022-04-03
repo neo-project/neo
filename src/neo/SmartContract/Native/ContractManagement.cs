@@ -252,5 +252,19 @@ namespace Neo.SmartContract.Native
                 engine.Snapshot.Delete(key);
             engine.SendNotification(Hash, "Destroy", new VM.Types.Array { hash.ToArray() });
         }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        private void Destroy(ApplicationEngine engine, UInt160 hash)
+        {
+            if (!CheckCommittee(engine)) throw new InvalidOperationException("permission denied");
+            if (!IsNative(hash)) throw new InvalidOperationException("could not destroy native contract");
+            StorageKey ckey = CreateStorageKey(Prefix_Contract).Add(hash);
+            ContractState contract = engine.Snapshot.TryGet(ckey)?.GetInteroperable<ContractState>();
+            if (contract is null) return;
+            engine.Snapshot.Delete(ckey);
+            foreach (var (key, _) in engine.Snapshot.Find(StorageKey.CreateSearchPrefix(contract.Id, ReadOnlySpan<byte>.Empty)))
+                engine.Snapshot.Delete(key);
+            engine.SendNotification(Hash, "Destroy", new VM.Types.Array { hash.ToArray() });
+        }
     }
 }

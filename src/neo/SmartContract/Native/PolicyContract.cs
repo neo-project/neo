@@ -10,8 +10,10 @@
 
 #pragma warning disable IDE0051
 
+using Neo.Cryptography.ECC;
 using Neo.Persistence;
 using System;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -46,6 +48,8 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public const uint MaxStoragePrice = 10000000;
 
+        private const byte Prefix_Node = 13;
+        private const byte Prefix_RestrictedAccount = 14;
         private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_ExecFeeFactor = 18;
@@ -60,6 +64,8 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem(DefaultFeePerByte));
             engine.Snapshot.Add(CreateStorageKey(Prefix_ExecFeeFactor), new StorageItem(DefaultExecFeeFactor));
             engine.Snapshot.Add(CreateStorageKey(Prefix_StoragePrice), new StorageItem(DefaultStoragePrice));
+            foreach (var n in engine.ProtocolSettings.StandbyCommittee.Union(engine.ProtocolSettings.StandbyValidators))
+                engine.Snapshot.Add(CreateStorageKey(Prefix_Node).Add(n), new(0));
             return ContractTask.CompletedTask;
         }
 
@@ -94,18 +100,6 @@ namespace Neo.SmartContract.Native
         public uint GetStoragePrice(DataCache snapshot)
         {
             return (uint)(BigInteger)snapshot[CreateStorageKey(Prefix_StoragePrice)];
-        }
-
-        /// <summary>
-        /// Determines whether the specified account is blocked.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="account">The account to be checked.</param>
-        /// <returns><see langword="true"/> if the account is blocked; otherwise, <see langword="false"/>.</returns>
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public bool IsBlocked(DataCache snapshot, UInt160 account)
-        {
-            return snapshot.Contains(CreateStorageKey(Prefix_BlockedAccount).Add(account));
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -145,6 +139,18 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
+        /// <summary>
+        /// Determines whether the specified account is blocked.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="account">The account to be checked.</param>
+        /// <returns><see langword="true"/> if the account is blocked; otherwise, <see langword="false"/>.</returns>
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public bool IsBlocked(DataCache snapshot, UInt160 account)
+        {
+            return snapshot.Contains(CreateStorageKey(Prefix_BlockedAccount).Add(account));
+        }
+
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private bool UnblockAccount(ApplicationEngine engine, UInt160 account)
         {
@@ -154,6 +160,81 @@ namespace Neo.SmartContract.Native
             if (!engine.Snapshot.Contains(key)) return false;
 
             engine.Snapshot.Delete(key);
+            return true;
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        public bool RestrictAccount(ApplicationEngine engine, UInt160 account)
+        {
+            if (!CheckCommittee(engine))
+                throw new InvalidOperationException(nameof(RestrictAccount) + " permission denied");
+            if (IsNative(account))
+                throw new InvalidOperationException("It's impossible to block a native contract.");
+            var key = CreateStorageKey(Prefix_RestrictedAccount).Add(account);
+            if (engine.Snapshot.Contains(key)) return false;
+            var height = Ledger.CurrentIndex(engine.Snapshot);
+            engine.Snapshot.Add(key, new(height));
+            return true;
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private bool UnrestrictAccount(ApplicationEngine engine, UInt160 account)
+        {
+            if (!CheckCommittee(engine))
+                throw new InvalidOperationException(nameof(UnrestrictAccount) + " permission denied");
+            var key = CreateStorageKey(Prefix_RestrictedAccount).Add(account);
+            if (!engine.Snapshot.Contains(key)) return false;
+            engine.Snapshot.Delete(key);
+            return true;
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public bool IsRestricted(DataCache snapshot, UInt160 account)
+        {
+            var key = CreateStorageKey(Prefix_RestrictedAccount).Add(account);
+            return snapshot.Contains(key);
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        public void AllowNode(ApplicationEngine engine, ECPoint node)
+        {
+            if (!CheckCommittee(engine))
+                throw new InvalidOperationException(nameof(AllowNode) + " permission denied");
+            var key = CreateStorageKey(Prefix_Node).Add(node);
+            if (engine.Snapshot.Contains(key)) return;
+            var height = Ledger.CurrentIndex(engine.Snapshot);
+            engine.Snapshot.Add(key, new(height));
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+        public bool UnallowNode(ApplicationEngine engine, ECPoint node)
+        {
+            if (!CheckCommittee(engine))
+                throw new InvalidOperationException(nameof(UnallowNode) + " permission denied");
+            var key = CreateStorageKey(Prefix_Node).Add(node);
+            if (RoleManagement.GetDesignatedByRole(engine.Snapshot, Role.Validator, engine.PersistingBlock.Index)
+                .Union(RoleManagement.GetDesignatedByRole(engine.Snapshot, Role.Committee, engine.PersistingBlock.Index))
+                .Union(RoleManagement.GetDesignatedByRole(engine.Snapshot, Role.StateValidator, engine.PersistingBlock.Index))
+                .Union(RoleManagement.GetDesignatedByRole(engine.Snapshot, Role.Oracle, engine.PersistingBlock.Index))
+                .Any(p => p == node))
+                throw new InvalidOperationException("Could not unallow a system node");
+            engine.Snapshot.Delete(key);
+            return true;
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public bool IsAllowed(DataCache snapshot, ECPoint node)
+        {
+            var key = CreateStorageKey(Prefix_Node).Add(node);
+            return snapshot.Contains(key);
+        }
+
+        public bool TransferAllowed(ApplicationEngine engine, UInt160 token, UInt160 from, UInt160 to)
+        {
+            if (IsBlocked(engine.Snapshot, token) || IsBlocked(engine.Snapshot, from)) return false;
+            if (IsRestricted(engine.Snapshot, from))
+                if (to != RoleManagement.GetCommitteeAddress(engine.Snapshot, engine.PersistingBlock.Index))
+                    return false;
             return true;
         }
     }

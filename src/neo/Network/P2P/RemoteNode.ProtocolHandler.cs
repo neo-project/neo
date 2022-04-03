@@ -375,6 +375,9 @@ namespace Neo.Network.P2P
 
         private void OnVersionMessageReceived(VersionPayload payload)
         {
+            if (knownHashes.Contains(payload.Hash)) return;
+            if (!payload.Verify(system.Settings, system.StoreView)) return;
+            knownHashes.Add(payload.Hash);
             Version = payload;
             foreach (NodeCapability capability in payload.Capabilities)
             {

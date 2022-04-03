@@ -51,11 +51,6 @@ namespace Neo.SmartContract.Native
         public static LedgerContract Ledger { get; } = new();
 
         /// <summary>
-        /// Gets the instance of the <see cref="NeoToken"/> class.
-        /// </summary>
-        public static NeoToken NEO { get; } = new();
-
-        /// <summary>
         /// Gets the instance of the <see cref="GasToken"/> class.
         /// </summary>
         public static GasToken GAS { get; } = new();
@@ -74,7 +69,7 @@ namespace Neo.SmartContract.Native
         /// Gets the instance of the <see cref="OracleContract"/> class.
         /// </summary>
         public static OracleContract Oracle { get; } = new();
-
+        
         #endregion
 
         /// <summary>
@@ -167,7 +162,7 @@ namespace Neo.SmartContract.Native
         /// <returns><see langword="true"/> if the committee has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
         protected static bool CheckCommittee(ApplicationEngine engine)
         {
-            UInt160 committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.Snapshot);
+            UInt160 committeeMultiSigAddr = RoleManagement.GetCommitteeAddress(engine.Snapshot, engine.PersistingBlock.Index);
             return engine.CheckWitnessInternal(committeeMultiSigAddr);
         }
 

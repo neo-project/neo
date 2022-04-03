@@ -10,7 +10,10 @@
 
 using Akka.Actor;
 using Neo.IO;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract.Native;
+using Neo.Wallets;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -18,6 +21,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
@@ -51,6 +55,7 @@ namespace Neo.Network.P2P
         private readonly IPEndPoint[] SeedList;
 
         private readonly NeoSystem system;
+        private readonly Wallet wallet;
         internal readonly ConcurrentDictionary<IActorRef, RemoteNode> RemoteNodes = new();
 
         /// <summary>
@@ -88,7 +93,7 @@ namespace Neo.Network.P2P
         {
             this.system = system;
             this.SeedList = new IPEndPoint[system.Settings.SeedList.Length];
-
+            Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
             // Start dns resolution in parallel
             string[] seedList = system.Settings.SeedList;
             for (int i = 0; i < seedList.Length; i++)
@@ -238,6 +243,18 @@ namespace Neo.Network.P2P
                 case GetInstance _:
                     Sender.Tell(this);
                     break;
+                case Blockchain.PersistCompleted _:
+                    OnPersistCompleted();
+                    break;
+            }
+        }
+
+        private void OnPersistCompleted()
+        {
+            foreach (var (remoteRef, remoteNode) in RemoteNodes)
+            {
+                if (!NativeContract.Policy.IsAllowed(system.StoreView, remoteNode.Version.Node))
+                    remoteRef.Tell(new RemoteNode.Close { Abort = true });
             }
         }
 
@@ -277,7 +294,7 @@ namespace Neo.Network.P2P
 
         protected override Props ProtocolProps(object connection, IPEndPoint remote, IPEndPoint local)
         {
-            return RemoteNode.Props(system, this, connection, remote, local);
+            return RemoteNode.Props(system, this, wallet, connection, remote, local);
         }
     }
 }

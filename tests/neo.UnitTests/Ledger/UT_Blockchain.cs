@@ -67,7 +67,7 @@ namespace Neo.UnitTests.Ledger
         {
             StorageKey storageKey = new()
             {
-                Id = NativeContract.NEO.Id,
+                Id = NativeContract.GAS.Id,
                 Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
             };
             storageKey.Key[0] = prefix;

@@ -8,8 +8,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.Numerics;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
+using Neo.VM.Types;
 
 namespace Neo.SmartContract.Native
 {
@@ -39,7 +42,7 @@ namespace Neo.SmartContract.Native
                 await Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
                 totalNetworkFee += tx.NetworkFee;
             }
-            ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings.ValidatorsCount);
+            ECPoint[] validators = RoleManagement.GetDesignatedByRole(engine.Snapshot, Role.Validator, engine.PersistingBlock.Index);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
             await Mint(engine, primary, totalNetworkFee, false);
         }

@@ -71,6 +71,7 @@ namespace Neo.SmartContract
         /// <param name="args">The arguments to be used.</param>
         protected internal void CallContract(UInt160 contractHash, string method, CallFlags callFlags, Array args)
         {
+            if (NativeContract.Policy.IsBlocked(Snapshot, contractHash)) throw new InvalidOperationException("contract is blocked");
             if (method.StartsWith('_')) throw new ArgumentException($"Invalid Method Name: {method}");
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
