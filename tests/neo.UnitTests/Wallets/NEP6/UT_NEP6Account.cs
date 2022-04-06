@@ -136,7 +136,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             nep6contract["deployed"] = false;
             _account.Contract = NEP6Contract.FromJson(nep6contract);
             JObject json = _account.ToJson();
-            json["address"].Should().Equals("AZk5bAanTtD6AvpeesmYgL8CLRYUt5JQsX");
+            json["address"].AsString().Should().Be("NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf");
             json["label"].Should().BeNull();
             json["isDefault"].ToString().Should().Be("false");
             json["lock"].ToString().Should().Be("false");
