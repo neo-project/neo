@@ -112,6 +112,10 @@ namespace Neo.SmartContract.Native
         public UInt160 GetCommitteeAddress(DataCache snapshot, uint index)
         {
             ECPoint[] committees = GetDesignatedByRole(snapshot, Role.Committee, index);
+            if (committees.Length == 1)
+            {
+                return Contract.CreateSignatureRedeemScript(committees[0]).ToScriptHash();
+            }
             return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
         }
 

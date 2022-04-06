@@ -18,6 +18,7 @@ using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -113,9 +114,10 @@ namespace Neo
         /// Initializes a new instance of the <see cref="NeoSystem"/> class.
         /// </summary>
         /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
+        /// <param name="wallet"> Wallet <see cref="Wallet"/>.</param>
         /// <param name="storageEngine">The storage engine used to create the <see cref="IStore"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
         /// <param name="storagePath">The path of the storage. If <paramref name="storageEngine"/> is the default in-memory storage engine, this parameter is ignored.</param>
-        public NeoSystem(ProtocolSettings settings, string storageEngine = null, string storagePath = null)
+        public NeoSystem(ProtocolSettings settings, Wallet wallet, string storageEngine = null, string storagePath = null)
         {
             this.Settings = settings;
             this.GenesisBlock = CreateGenesisBlock(settings);
@@ -123,7 +125,7 @@ namespace Neo
             this.store = LoadStore(storagePath);
             this.MemPool = new MemoryPool(this);
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
-            this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
+            this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this, wallet));
             this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
             this.TxRouter = ActorSystem.ActorOf(TransactionRouter.Props(this));
             foreach (var plugin in Plugin.Plugins)
