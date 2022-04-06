@@ -48,7 +48,7 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.GetAddressVersion.
-        /// Gets the magic number of the current network.
+        /// Gets the address version of the current network.
         /// </summary>
         public static readonly InteropDescriptor System_Runtime_GetAddressVersion = Register("System.Runtime.GetAddressVersion", nameof(GetAddressVersion), 1 << 3, CallFlags.None);
 
