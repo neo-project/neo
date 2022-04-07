@@ -348,11 +348,11 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets the first 100 registered candidates.
+        /// Gets votes from specific candidate.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="pubKey">Specific public key</param>
-        /// <returns>All the registered candidates.</returns>
+        /// <returns>Votes or -1 if it was not found.</returns>
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger GetCandidateVote(DataCache snapshot, ECPoint pubKey)
         {
