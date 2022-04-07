@@ -332,7 +332,7 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets all registered candidates.
+        /// Gets the first 100 registered candidates.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>All the registered candidates.</returns>
@@ -344,7 +344,26 @@ namespace Neo.SmartContract.Native
             (
                 p.Key.Key.AsSerializable<ECPoint>(1),
                 p.Value.GetInteroperable<CandidateState>()
-            )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes)).ToArray();
+            )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes)).Take(100).ToArray();
+        }
+
+        /// <summary>
+        /// Gets the first 100 registered candidates.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="pubKey">Specific public key</param>
+        /// <returns>All the registered candidates.</returns>
+        [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
+        public BigInteger GetCandidateVote(DataCache snapshot, ECPoint pubKey)
+        {
+            byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
+            var entry = snapshot.Find(prefix_key).Select(p =>
+             (
+                 p.Key.Key.AsSerializable<ECPoint>(1),
+                 p.Value.GetInteroperable<CandidateState>()
+             )).Where(p => p.Item2.Registered && p.Item1.Equals(pubKey)).FirstOrDefault();
+
+            return entry.Item2 == null ? -1 : entry.Item2.Votes;
         }
 
         /// <summary>
