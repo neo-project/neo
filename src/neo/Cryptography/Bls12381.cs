@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -192,23 +192,13 @@ namespace Neo.Cryptography
         public static IntPtr Mul(GObject p, UInt64 x)
         {
             IntPtr result = IntPtr.Zero;
-            if (p.type == GType.G1)
+            return result = p.type switch
             {
-                result = Bls12381.g1_mul(p.ptr, x);
-            }
-            else if (p.type == GType.G2)
-            {
-                result = Bls12381.g2_mul(p.ptr, x);
-            }
-            else if (p.type == GType.Gt)
-            {
-                result = Bls12381.gt_mul(p.ptr, x);
-            }
-            else
-            {
-                throw new Exception($"Bls12381 operation falut,type:format,error:valid point length");
-            }
-            return result;
+                GType.G1 => Bls12381.g1_mul(p.ptr, x),
+                GType.G2 => Bls12381.g2_mul(p.ptr, x),
+                GType.Gt => Bls12381.gt_mul(p.ptr, x),
+                _ => throw new Exception($"Bls12381 operation falut,type:format,error:valid point length")
+            };
         }
 
         ~GObject()
