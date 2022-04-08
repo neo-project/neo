@@ -189,22 +189,13 @@ namespace Neo.Cryptography
         public static GObject Neg(GObject p)
         {
             IntPtr result = IntPtr.Zero;
-            if (p.type == GType.G1)
+                       IntPtr result = p.type switch
             {
-                result = Bls12381.g1_neg(p.ptr);
-            }
-            else if (p.type == GType.G2)
-            {
-                result = Bls12381.g2_neg(p.ptr);
-            }
-            else if (p.type == GType.Gt)
-            {
-                result = Bls12381.gt_neg(p.ptr);
-            }
-            else
-            {
-                throw new Exception($"Bls12381 operation falut,type:format,error:valid point length");
-            }
+                GType.G1 => Bls12381.g1_neg(p.ptr),
+                GType.G2 => Bls12381.g2_neg(p.ptr),
+                GType.Gt => Bls12381.gt_neg(p.ptr),
+                _ => throw new Exception($"Bls12381 operation fault, type:format, error:valid point length")
+            };
             GObject x = new GObject(p.type, result);
             return x;
         }
