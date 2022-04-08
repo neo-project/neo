@@ -142,7 +142,7 @@ namespace Neo.Cryptography
         public IntPtr ptr;
         public GType type;
 
-        public GObject(GType t,IntPtr ptr)
+        public GObject(GType t, IntPtr ptr)
         {
             this.ptr = ptr;
             this.type = t;

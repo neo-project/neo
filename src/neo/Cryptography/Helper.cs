@@ -240,7 +240,7 @@ namespace Neo.Cryptography
             int len = x.Length;
             UInt64[] res = new UInt64[len];
 
-            for(int i = 0; i < len; i++)
+            for (int i = 0; i < len; i++)
             {
                 if (x[i] >= 0) res[i] = Convert.ToUInt64(x[i]);
                 else
