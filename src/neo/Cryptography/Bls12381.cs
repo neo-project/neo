@@ -74,7 +74,7 @@ namespace Neo.Cryptography
             }
             catch (Exception e)
             {
-                throw new Exception($"Bls12381 operation falut,type:dll-add,error:{e}");
+                throw new Exception($"Bls12381 operation fault, type:dll-add, error:{e}");
             }
             byte[] buffer = result.ToByteArray((int)p1.type);
             return buffer;
