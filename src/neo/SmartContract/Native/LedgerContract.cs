@@ -63,7 +63,8 @@ namespace Neo.SmartContract.Native
 
         private bool IsTraceableBlock(DataCache snapshot, uint index, uint maxTraceableBlocks)
         {
-            uint currentIndex = CurrentIndex(snapshot);
+            uint? currentIndex = CurrentIndex(snapshot);
+            if (currentIndex is null) return false;
             if (index > currentIndex) return false;
             return index + maxTraceableBlocks > currentIndex;
         }
@@ -89,7 +90,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public UInt256 CurrentHash(DataCache snapshot)
         {
-            return snapshot[CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>().Hash;
+            return snapshot.TryGet(CreateStorageKey(Prefix_CurrentBlock))?.GetInteroperable<HashIndexState>().Hash;
         }
 
         /// <summary>
@@ -98,9 +99,9 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The index of the current block.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint CurrentIndex(DataCache snapshot)
+        public uint? CurrentIndex(DataCache snapshot)
         {
-            return snapshot[CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>().Index;
+            return snapshot.TryGet(CreateStorageKey(Prefix_CurrentBlock))?.GetInteroperable<HashIndexState>().Index;
         }
 
         /// <summary>

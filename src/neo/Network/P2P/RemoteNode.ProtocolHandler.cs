@@ -186,7 +186,7 @@ namespace Neo.Network.P2P
             UInt256 hash = payload.HashStart;
             TrimmedBlock state = NativeContract.Ledger.GetTrimmedBlock(snapshot, hash);
             if (state == null) return;
-            uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
+            uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot) ?? 0;
             List<UInt256> hashes = new();
             for (uint i = 1; i <= count; i++)
             {
@@ -358,7 +358,7 @@ namespace Neo.Network.P2P
         private void OnPingMessageReceived(PingPayload payload)
         {
             UpdateLastBlockIndex(payload.LastBlockIndex);
-            EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(NativeContract.Ledger.CurrentIndex(system.StoreView), payload.Nonce)));
+            EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(NativeContract.Ledger.CurrentIndex(system.StoreView) ?? 0, payload.Nonce)));
         }
 
         private void OnPongMessageReceived(PingPayload payload)
@@ -411,7 +411,7 @@ namespace Neo.Network.P2P
                 pendingKnownHashes.RemoveAt(0);
             }
             if (oneMinuteAgo > lastSent)
-                EnqueueMessage(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(system.StoreView))));
+                EnqueueMessage(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(system.StoreView) ?? 0)));
         }
 
         private void UpdateLastBlockIndex(uint lastBlockIndex)

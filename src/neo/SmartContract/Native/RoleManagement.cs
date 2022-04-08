@@ -78,7 +78,8 @@ namespace Neo.SmartContract.Native
         {
             if (!Enum.IsDefined(typeof(Role), role))
                 throw new ArgumentOutOfRangeException(nameof(role));
-            if (Ledger.CurrentIndex(snapshot) + 1 < index)
+            if ((role != Role.Validator && Ledger.CurrentIndex(snapshot) + 1 < index)
+                || (role == Role.Validator && Ledger.CurrentIndex(snapshot) + 2 < index))
                 throw new ArgumentOutOfRangeException(nameof(index));
             byte[] key = CreateStorageKey((byte)role).AddBigEndian(index).ToArray();
             byte[] boundary = CreateStorageKey((byte)role).ToArray();
@@ -99,6 +100,7 @@ namespace Neo.SmartContract.Native
             if (engine.PersistingBlock is null)
                 throw new InvalidOperationException(nameof(DesignateAsRole));
             uint index = engine.PersistingBlock.Index + 1;
+            if (role == Role.Validator) index += 1;
             var key = CreateStorageKey((byte)role).AddBigEndian(index);
             if (engine.Snapshot.Contains(key))
                 throw new InvalidOperationException();

@@ -208,13 +208,13 @@ namespace Neo.Network.P2P
         {
             var capabilities = new List<NodeCapability>
             {
-                new FullNodeCapability(NativeContract.Ledger.CurrentIndex(system.StoreView))
+                new FullNodeCapability(NativeContract.Ledger.CurrentIndex(system.StoreView) ?? 0)
             };
 
             if (localNode.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)localNode.ListenerTcpPort));
             if (localNode.ListenerWsPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.WsServer, (ushort)localNode.ListenerWsPort));
 
-            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(system.Settings.Network, LocalNode.Nonce, LocalNode.UserAgent, wallet, capabilities.ToArray())));
+            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(system.StoreView, system.Settings.Network, LocalNode.Nonce, LocalNode.UserAgent, wallet, capabilities.ToArray())));
         }
 
         protected override void PostStop()

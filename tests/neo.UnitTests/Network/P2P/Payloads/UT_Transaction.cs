@@ -1026,7 +1026,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void Test_VerifyStateDependent()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
-            var height = NativeContract.Ledger.CurrentIndex(snapshot);
+            var height = (uint)NativeContract.Ledger.CurrentIndex(snapshot);
             var tx = new Transaction()
             {
                 Attributes = Array.Empty<TransactionAttribute>(),

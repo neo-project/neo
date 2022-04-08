@@ -354,7 +354,7 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The result of the verification.</returns>
         public virtual VerifyResult VerifyStateDependent(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context)
         {
-            uint height = NativeContract.Ledger.CurrentIndex(snapshot);
+            uint height = NativeContract.Ledger.CurrentIndex(snapshot) ?? 0;
             if (ValidUntilBlock <= height || ValidUntilBlock > height + settings.MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
             UInt160[] hashes = GetScriptHashesForVerifying(snapshot);

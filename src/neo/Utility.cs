@@ -25,7 +25,7 @@ namespace Neo
             public Logger()
             {
                 Receive<InitializeLogger>(_ => Sender.Tell(new LoggerInitialized()));
-                Receive<LogEvent>(e => Log(e.LogSource, (LogLevel)e.LogLevel(), e.Message));
+                Receive<LogEvent>(e => Log(e.LogSource, (LogLevel)e.LogLevel(), e.Cause));
             }
         }
 

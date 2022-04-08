@@ -33,7 +33,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Verify(DataCache snapshot, Transaction tx)
         {
-            var height = NativeContract.Ledger.CurrentIndex(snapshot);
+            var height = NativeContract.Ledger.CurrentIndex(snapshot) ?? 0;
             UInt160 committee = NativeContract.RoleManagement.GetCommitteeAddress(snapshot, height + 1);
             return tx.Signers.Any(p => p.Account.Equals(committee));
         }

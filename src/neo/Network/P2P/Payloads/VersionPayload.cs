@@ -102,13 +102,14 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// Creates a new instance of the <see cref="VersionPayload"/> class.
         /// </summary>
+        /// <param name="snapshot">snapshot.</param>
         /// <param name="network">The magic number of the network.</param>
         /// <param name="nonce">The random number used to identify the node.</param>
         /// <param name="userAgent">The <see cref="string"/> used to identify the client software of the node.</param>
         /// /// <param name="w">The <see cref="string"/> used to sign message.</param>
         /// <param name="capabilities">The capabilities of the node.</param>
         /// <returns></returns>
-        public static VersionPayload Create(uint network, uint nonce, string userAgent, Wallet w, params NodeCapability[] capabilities)
+        public static VersionPayload Create(DataCache snapshot, uint network, uint nonce, string userAgent, Wallet w, params NodeCapability[] capabilities)
         {
             var payload = new VersionPayload
             {
@@ -120,7 +121,9 @@ namespace Neo.Network.P2P.Payloads
                 Node = w.GetDefaultAccount().GetKey().PublicKey,
                 Capabilities = capabilities,
             };
-            payload.Sign(w.GetDefaultAccount().GetKey(), network);
+            ContractParametersContext sc = new(snapshot, payload, network);
+            w.Sign(sc);
+            payload.Witness = sc.GetWitnesses()[0];
             return payload;
         }
 
@@ -166,13 +169,14 @@ namespace Neo.Network.P2P.Payloads
         void ISerializable.Serialize(BinaryWriter writer)
         {
             SerializeUnsigned(writer);
-            writer.Write((byte)1); writer.Write(Witness);
+            writer.Write((byte)1);
+            writer.Write(Witness);
         }
 
         public bool Verify(ProtocolSettings settings, DataCache snapshot)
         {
             var now = DateTime.UtcNow.ToTimestamp();
-            if (Timestamp > now || now - Timestamp < 10) return false;
+            if (Timestamp > now || now - Timestamp > 10) return false;
             if (!NativeContract.Policy.IsAllowed(snapshot, Node)) return false;
             return this.VerifyWitnesses(settings, snapshot, 0_06000000L);
         }

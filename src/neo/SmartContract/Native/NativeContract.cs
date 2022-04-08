@@ -69,7 +69,7 @@ namespace Neo.SmartContract.Native
         /// Gets the instance of the <see cref="OracleContract"/> class.
         /// </summary>
         public static OracleContract Oracle { get; } = new();
-        
+
         #endregion
 
         /// <summary>

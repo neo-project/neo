@@ -146,7 +146,7 @@ namespace Neo.Ledger
 
         private void OnImport(IEnumerable<Block> blocks, bool verify)
         {
-            uint currentHeight = NativeContract.Ledger.CurrentIndex(system.StoreView);
+            uint currentHeight = NativeContract.Ledger.CurrentIndex(system.StoreView) ?? 0;
             foreach (Block block in blocks)
             {
                 if (block.Index <= currentHeight) continue;
@@ -237,7 +237,7 @@ namespace Neo.Ledger
         private VerifyResult OnNewBlock(Block block)
         {
             DataCache snapshot = system.StoreView;
-            uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
+            uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot) ?? 0;
             uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
             if (block.Index <= currentHeight)
                 return VerifyResult.AlreadyExists;
@@ -307,7 +307,7 @@ namespace Neo.Ledger
             if (!system.HeaderCache.Full)
             {
                 DataCache snapshot = system.StoreView;
-                uint headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
+                uint headerHeight = system.HeaderCache.Last?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot) ?? 0;
                 foreach (Header header in headers)
                 {
                     if (header.Index > headerHeight + 1) break;
@@ -398,7 +398,8 @@ namespace Neo.Ledger
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, system.Settings, 0))
                 {
                     engine.LoadScript(onPersistScript);
-                    if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
+                    if (engine.Execute() != VMState.HALT)
+                        throw new InvalidOperationException();
                     ApplicationExecuted application_executed = new(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
@@ -424,7 +425,8 @@ namespace Neo.Ledger
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, system.Settings, 0))
                 {
                     engine.LoadScript(postPersistScript);
-                    if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
+                    if (engine.Execute() != VMState.HALT)
+                        throw new InvalidOperationException();
                     ApplicationExecuted application_executed = new(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
@@ -483,7 +485,7 @@ namespace Neo.Ledger
 
         private static ImmutableHashSet<UInt160> UpdateExtensibleWitnessWhiteList(ProtocolSettings settings, DataCache snapshot)
         {
-            uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
+            uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot) ?? 0;
             var builder = ImmutableHashSet.CreateBuilder<UInt160>();
             builder.Add(NativeContract.RoleManagement.GetCommitteeAddress(snapshot, currentHeight + 1));
             var validators = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Validator, currentHeight + 1);

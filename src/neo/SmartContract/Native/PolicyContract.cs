@@ -11,8 +11,10 @@
 #pragma warning disable IDE0051
 
 using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.Persistence;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
@@ -172,7 +174,7 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException("It's impossible to block a native contract.");
             var key = CreateStorageKey(Prefix_RestrictedAccount).Add(account);
             if (engine.Snapshot.Contains(key)) return false;
-            var height = Ledger.CurrentIndex(engine.Snapshot);
+            var height = Ledger.CurrentIndex(engine.Snapshot) ?? 0;
             engine.Snapshot.Add(key, new(height));
             return true;
         }
@@ -202,7 +204,7 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException(nameof(AllowNode) + " permission denied");
             var key = CreateStorageKey(Prefix_Node).Add(node);
             if (engine.Snapshot.Contains(key)) return;
-            var height = Ledger.CurrentIndex(engine.Snapshot);
+            var height = Ledger.CurrentIndex(engine.Snapshot) ?? 0;
             engine.Snapshot.Add(key, new(height));
         }
 
@@ -229,12 +231,26 @@ namespace Neo.SmartContract.Native
             return snapshot.Contains(key);
         }
 
+        public List<ECPoint> NodesAllowed(DataCache snapshot)
+        {
+            var nodes = new List<ECPoint>();
+            byte[] prefix = CreateStorageKey(Prefix_Node).ToArray();
+            foreach (var (key, _) in snapshot.Find(prefix))
+            {
+                if (key.Key[0] == Prefix_Node)
+                    nodes.Add(key.Key[1..].AsSerializable<ECPoint>());
+                else
+                    break;
+            }
+            return nodes;
+        }
+
         public bool TransferAllowed(ApplicationEngine engine, UInt160 token, UInt160 from, UInt160 to)
         {
             if (IsBlocked(engine.Snapshot, token) || IsBlocked(engine.Snapshot, from)) return false;
-            if (IsRestricted(engine.Snapshot, from))
-                if (to != RoleManagement.GetCommitteeAddress(engine.Snapshot, engine.PersistingBlock.Index))
-                    return false;
+            if (IsRestricted(engine.Snapshot, from)
+                && to != RoleManagement.GetCommitteeAddress(engine.Snapshot, engine.PersistingBlock.Index))
+                return false;
             return true;
         }
     }

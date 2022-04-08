@@ -128,7 +128,7 @@ namespace Neo.Network.P2P.Payloads
 
         internal bool Verify(ProtocolSettings settings, DataCache snapshot, ISet<UInt160> extensibleWitnessWhiteList)
         {
-            uint height = NativeContract.Ledger.CurrentIndex(snapshot);
+            uint height = NativeContract.Ledger.CurrentIndex(snapshot) ?? 0;
             if (height < ValidBlockStart || height >= ValidBlockEnd) return false;
             if (!extensibleWitnessWhiteList.Contains(Sender)) return false;
             return this.VerifyWitnesses(settings, snapshot, 0_06000000L);

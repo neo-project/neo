@@ -253,10 +253,17 @@ namespace Neo.Network.P2P
 
         private void OnPersistCompleted()
         {
-            foreach (var (remoteRef, remoteNode) in RemoteNodes)
+            try
             {
-                if (!NativeContract.Policy.IsAllowed(system.StoreView, remoteNode.Version.Node))
-                    remoteRef.Tell(new RemoteNode.Close { Abort = true });
+                foreach (var (remoteRef, remoteNode) in RemoteNodes)
+                {
+                    if (!NativeContract.Policy.IsAllowed(system.StoreView, remoteNode.Version.Node))
+                        remoteRef.Tell(new RemoteNode.Close { Abort = true });
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
             }
         }
 
