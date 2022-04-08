@@ -235,21 +235,19 @@ namespace Neo.Cryptography
         {
             try
             {
-                if (type == GType.G1)
+                switch (type)
                 {
-                    Bls12381.g1_dispose(ptr);
-                }
-                else if (type == GType.G2)
-                {
-                    Bls12381.g2_dispose(ptr);
-                }
-                else if (type == GType.Gt)
-                {
-                    Bls12381.gt_dispose(ptr);
-                }
-                else
-                {
-                    throw new Exception($"Bls12381 operation falut,type:format,error:type missmatch");
+                    case GType.G1:
+                        Bls12381.g1_dispose(ptr);
+                        break;
+                    case GType.G2:
+                        Bls12381.g2_dispose(ptr);
+                        break;
+                    case GType.Gt:
+                        Bls12381.gt_dispose(ptr);
+                        break;
+                    default:
+                        throw new Exception($"Bls12381 operation fault, type:format, error:type missmatch");
                 }
 
             }
