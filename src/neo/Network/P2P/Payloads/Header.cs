@@ -17,6 +17,7 @@ using Neo.SmartContract.Native;
 using Neo.Wallets;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -237,7 +238,7 @@ namespace Neo.Network.P2P.Payloads
 
         internal bool Verify(ProtocolSettings settings, DataCache snapshot)
         {
-            if (primaryIndex >= settings.ValidatorsCount)
+            if (primaryIndex >= NativeContract.RoleManagement.GetValidators(snapshot, index).Length)
                 return false;
             TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
             if (prev is null) return false;
@@ -251,7 +252,7 @@ namespace Neo.Network.P2P.Payloads
         {
             Header prev = headerCache.Last;
             if (prev is null) return Verify(settings, snapshot);
-            if (primaryIndex >= settings.ValidatorsCount)
+            if (primaryIndex >= NativeContract.RoleManagement.GetValidators(snapshot, index).Length)
                 return false;
             if (prev.Hash != prevHash) return false;
             if (prev.index + 1 != index) return false;

@@ -54,15 +54,16 @@ namespace Neo.SmartContract.Native
 
         internal override ContractTask Initialize(ApplicationEngine engine)
         {
-            var key = CreateStorageKey((byte)Role.Committee).AddBigEndian(0);
-            NodeList list = new();
-            list.AddRange(engine.ProtocolSettings.StandbyCommittee);
-            list.Sort();
-            engine.Snapshot.Add(key, new StorageItem(list));
-            key = CreateStorageKey((byte)Role.Validator).AddBigEndian(0);
-            list.Clear();
-            list.AddRange(engine.ProtocolSettings.StandbyValidators);
-            engine.Snapshot.Add(key, new StorageItem(list));
+            var ckey = CreateStorageKey((byte)Role.Committee).AddBigEndian(0);
+            NodeList committee = new();
+            committee.AddRange(engine.ProtocolSettings.StandbyCommittee);
+            committee.Sort();
+            engine.Snapshot.Add(ckey, new StorageItem(committee));
+            var vkey = CreateStorageKey((byte)Role.Validator).AddBigEndian(0);
+            NodeList validators = new();
+            validators.AddRange(engine.ProtocolSettings.StandbyValidators);
+            validators.Sort();
+            engine.Snapshot.Add(vkey, new StorageItem(validators));
             return ContractTask.CompletedTask;
         }
 
@@ -119,6 +120,16 @@ namespace Neo.SmartContract.Native
                 return Contract.CreateSignatureRedeemScript(committees[0]).ToScriptHash();
             }
             return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
+        }
+
+        public ECPoint[] GetCommittee(DataCache snapshot, uint index)
+        {
+            return GetDesignatedByRole(snapshot, Role.Committee, index);
+        }
+
+        public ECPoint[] GetValidators(DataCache snapshot, uint index)
+        {
+            return GetDesignatedByRole(snapshot, Role.Validator, index);
         }
 
         private class NodeList : List<ECPoint>, IInteroperable
