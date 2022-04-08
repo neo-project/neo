@@ -26,7 +26,12 @@
 		<None Update="..\..\src\neo\Cryptography\bls12381.dll">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-			<TargetPath>bls12381.dll</TargetPath>
+			<TargetDir>bls12381.dll</TargetDir>
+		</None>
+		<None Update="..\..\src\neo\Cryptography\bls12381.dylib">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+			<TargetDir>bls12381.dylib</TargetDir>
 		</None>
 	</ItemGroup>
 

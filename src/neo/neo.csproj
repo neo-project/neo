@@ -1,42 +1,47 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <Copyright>2015-2021 The Neo Project</Copyright>
-    <AssemblyTitle>Neo</AssemblyTitle>
-    <VersionPrefix>3.1.0</VersionPrefix>
-    <Authors>The Neo Project</Authors>
-    <TargetFramework>net6.0</TargetFramework>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <AssemblyName>Neo</AssemblyName>
-    <PackageId>Neo</PackageId>
-    <PackageTags>NEO;AntShares;Blockchain;Smart Contract</PackageTags>
-    <PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/neo-project/neo.git</RepositoryUrl>
-    <RootNamespace>Neo</RootNamespace>
-    <Company>The Neo Project</Company>
-    <Description>Neo</Description>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-  </PropertyGroup>
+	<PropertyGroup>
+		<Copyright>2015-2021 The Neo Project</Copyright>
+		<AssemblyTitle>Neo</AssemblyTitle>
+		<VersionPrefix>3.1.0</VersionPrefix>
+		<Authors>The Neo Project</Authors>
+		<TargetFramework>net6.0</TargetFramework>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<AssemblyName>Neo</AssemblyName>
+		<PackageId>Neo</PackageId>
+		<PackageTags>NEO;AntShares;Blockchain;Smart Contract</PackageTags>
+		<PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<RepositoryType>git</RepositoryType>
+		<RepositoryUrl>https://github.com/neo-project/neo.git</RepositoryUrl>
+		<RootNamespace>Neo</RootNamespace>
+		<Company>The Neo Project</Company>
+		<Description>Neo</Description>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-  </ItemGroup>
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Akka" Version="1.4.28" />
-    <PackageReference Include="BouncyCastle.NetCore" Version="1.8.8" />
-    <PackageReference Include="K4os.Compression.LZ4" Version="1.2.15" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.0" />
-    <PackageReference Include="Neo.VM" Version="3.1.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Akka" Version="1.4.28" />
+		<PackageReference Include="BouncyCastle.NetCore" Version="1.8.8" />
+		<PackageReference Include="K4os.Compression.LZ4" Version="1.2.15" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.0" />
+		<PackageReference Include="Neo.VM" Version="3.1.0" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Update="Cryptography\bls12381.dll">
-	  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  <TargetPath>bls12381.dll</TargetPath>
-	</None> 
- </ItemGroup>
+	<ItemGroup>
+		<None Update="Cryptography\bls12381.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+			<TargetDir>bls12381.dll</TargetDir>
+		</None>
+		<None Update="Cryptography\bls12381.dylib">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+			<TargetDir>bls12381.dylib</TargetDir>
+		</None>
+	</ItemGroup>
 </Project>
