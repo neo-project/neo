@@ -178,7 +178,7 @@ namespace Neo.Cryptography
         public static GObject Neg(GObject p)
         {
             IntPtr result = IntPtr.Zero;
-                       IntPtr result = p.type switch
+            result = p.type switch
             {
                 GType.G1 => Bls12381.g1_neg(p.ptr),
                 GType.G2 => Bls12381.g2_neg(p.ptr),
