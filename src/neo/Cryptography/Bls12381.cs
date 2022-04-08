@@ -162,28 +162,17 @@ namespace Neo.Cryptography
 
         public static IntPtr Add(GObject p1, GObject p2)
         {
-            IntPtr result = IntPtr.Zero;
             if (p1.type != p2.type)
             {
-                throw new Exception($"Bls12381 operation falut,type:format,error:type missmatch");
+                throw new Exception($"Bls12381 operation fault, type:format, error:type missmatch");
             }
-            if (p1.type == GType.G1)
+            return p1.type switch
             {
-                result = Bls12381.g1_add(p1.ptr, p2.ptr);
-            }
-            else if (p1.type == GType.G2)
-            {
-                result = Bls12381.g2_add(p1.ptr, p2.ptr);
-            }
-            else if (p1.type == GType.Gt)
-            {
-                result = Bls12381.gt_add(p1.ptr, p2.ptr);
-            }
-            else
-            {
-                throw new Exception($"Bls12381 operation falut,type:format,error:valid point length");
-            }
-            return result;
+                GType.G1 => Bls12381.g1_add(p1.ptr, p2.ptr),
+                GType.G2 => Bls12381.g2_add(p1.ptr, p2.ptr),
+                GType.Gt => Bls12381.gt_add(p1.ptr, p2.ptr),
+                _ => throw new Exception($"Bls12381 operation fault,type:format,error:valid point length")
+            };
         }
 
         public static GObject Neg(GObject p)
