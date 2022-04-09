@@ -33,6 +33,11 @@
 		<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 		<TargetPath>bls12381.dylib</TargetPath>
 	</None>
+	<None Update="..\..\src\neo\Cryptography\bls12381.so">
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		<TargetPath>bls12381.so</TargetPath>
+	</None>
   </ItemGroup>
 	
   <ItemGroup>
