@@ -177,8 +177,7 @@ namespace Neo.Cryptography
 
         public static GObject Neg(GObject p)
         {
-            IntPtr result = IntPtr.Zero;
-            result = p.type switch
+            IntPtr result = p.type switch
             {
                 GType.G1 => Bls12381.g1_neg(p.ptr),
                 GType.G2 => Bls12381.g2_neg(p.ptr),
@@ -191,8 +190,7 @@ namespace Neo.Cryptography
 
         public static IntPtr Mul(GObject p, UInt64 x)
         {
-            IntPtr result = IntPtr.Zero;
-            return result = p.type switch
+            return p.type switch
             {
                 GType.G1 => Bls12381.g1_mul(p.ptr, x),
                 GType.G2 => Bls12381.g2_mul(p.ptr, x),
@@ -219,7 +217,6 @@ namespace Neo.Cryptography
                     default:
                         throw new Exception($"Bls12381 operation fault, type:format, error:type missmatch");
                 }
-
             }
             catch (Exception)
             {
