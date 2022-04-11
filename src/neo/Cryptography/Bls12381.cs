@@ -81,7 +81,7 @@ namespace Neo.Cryptography
         /// Mul operation of gt point and mulitiplier
         /// </summary>
         /// <param name="p_bytes">Gt point as byteArray</param>
-        /// <param name="multi">Mulitiplier</param>
+        /// <param name="multi">Multiplier</param>
         /// <returns></returns>
         public static byte[] Point_Mul(byte[] p_bytes, long multi)
         {
