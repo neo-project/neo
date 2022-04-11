@@ -85,10 +85,9 @@ namespace Neo.Cryptography
         /// <returns></returns>
         public static byte[] Point_Mul(byte[] p_bytes, long multi)
         {
-            GObject p = new GObject(p_bytes);
             try
             {
-                var p = multi < 0 ? new GObject(p_bytes).Neg() : new GObject(p_bytes);
+                GObject p = multi < 0 ? new GObject(p_bytes).Neg() : new GObject(p_bytes);
                 var x = Convert.ToUInt64(Math.Abs(multi));
                 return GObject.Mul(p, x).ToByteArray((int)p.type);
             }
