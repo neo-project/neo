@@ -106,19 +106,14 @@ namespace Neo.Cryptography
         /// <returns></returns>
         public static byte[] Point_Pairing(byte[] g1_bytes, byte[] g2_bytes)
         {
-            GObject g1 = new GObject(g1_bytes);
-            GObject g2 = new GObject(g2_bytes);
-            IntPtr result = IntPtr.Zero;
             try
             {
-                result = g1_g2_pairing(g1.ptr, g2.ptr);
+                return g1_g2_pairing(new GObject(g1_bytes).ptr, new GObject(g2_bytes).ptr).ToByteArray(576);
             }
             catch (Exception e)
             {
-                throw new Exception($"Bls12381 operation falut,type:dll-pairing,error:{e}");
+                throw new Exception($"Bls12381 operation fault, type:dll-pairing, error:{e}");
             }
-            byte[] buffer = result.ToByteArray(576);
-            return buffer;
         }
     }
 
