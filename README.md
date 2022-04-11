@@ -5,7 +5,7 @@
 * 共识和委员会不经过投票，直接由committee指定(RoleManagement.DesignateAsRole)
 * GAS在创世块直接mint到committee多签地址中
 * 当committee只有一个时，不用多签地址
-* Policy原生合约，除了可以block账户还增加了：
+* Policy原生合约：
   * 可以block账户：被block的账户，不能发交易, 不能转出gas，账户可以是合约，被block的合约不能被调用
   * 可以restrict账户：只能转出gas到committee多签
   * 可以allow node：指定可以加入网络的公钥
