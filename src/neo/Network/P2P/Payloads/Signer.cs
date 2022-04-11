@@ -190,6 +190,13 @@ namespace Neo.Network.P2P.Payloads
             {
                 Account.ToArray(),
                 (int)Scopes,
+                new VM.Types.Array(AllowedContracts.Select(u => new VM.Types.ByteString(u.ToArray()))),
+                new VM.Types.Array(AllowedGroups.Select(u => new VM.Types.ByteString(u.ToArray()))),
+                new VM.Types.Array(Rules.Select(u =>
+                    new VM.Types.Array(new VM.Types.StackItem []{
+                        new VM.Types.Integer((byte)u.Action),
+                        new VM.Types.ByteString(u.Condition.ToArray())
+                    }))),
                 this.ToArray(),
             });
         }
