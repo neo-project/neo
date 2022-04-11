@@ -86,28 +86,16 @@ namespace Neo.Cryptography
         public static byte[] Point_Mul(byte[] p_bytes, long multi)
         {
             GObject p = new GObject(p_bytes);
-            IntPtr result = IntPtr.Zero;
             try
             {
-                UInt64 x = 0;
-                if (multi < 0)
-                {
-                    x = Convert.ToUInt64(-multi);
-                    p = GObject.Neg(p);
-                    result = GObject.Mul(p, x);
-                }
-                else
-                {
-                    x = Convert.ToUInt64(multi);
-                    result = GObject.Mul(p, x);
-                }
+                var p = multi < 0 ? new GObject(p_bytes).Neg() : new GObject(p_bytes);
+                var x = Convert.ToUInt64(Math.Abs(multi));
+                return GObject.Mul(p, x).ToByteArray((int)p.type);
             }
             catch (Exception e)
             {
                 throw new Exception($"Bls12381 operation fault, type:dll-mul, error:{e}");
             }
-            byte[] buffer = result.ToByteArray((int)p.type);
-            return buffer;
         }
 
         /// <summary>
