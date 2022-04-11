@@ -8,6 +8,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
@@ -164,6 +165,15 @@ namespace Neo.SmartContract.Native
         {
             UInt160 committeeMultiSigAddr = RoleManagement.GetCommitteeAddress(engine.Snapshot, engine.PersistingBlock.Index);
             return engine.CheckWitnessInternal(committeeMultiSigAddr);
+        }
+
+        protected static UInt160 CalculateCommitteeAddress(ECPoint[] committees)
+        {
+            if (committees.Length == 1)
+            {
+                return Contract.CreateSignatureRedeemScript(committees[0]).ToScriptHash();
+            }
+            return Contract.CreateMultiSigRedeemScript(committees.Length - (committees.Length - 1) / 2, committees).ToScriptHash();
         }
 
         private protected KeyBuilder CreateStorageKey(byte prefix)

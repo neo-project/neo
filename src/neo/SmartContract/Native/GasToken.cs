@@ -9,6 +9,7 @@
 // modifications are permitted.
 
 using System;
+using System.Linq;
 using System.Numerics;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
@@ -31,7 +32,7 @@ namespace Neo.SmartContract.Native
 
         internal override ContractTask Initialize(ApplicationEngine engine)
         {
-            UInt160 account = Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators);
+            UInt160 account = CalculateCommitteeAddress(engine.ProtocolSettings.StandbyCommittee.ToArray());
             return Mint(engine, account, engine.ProtocolSettings.InitialGasDistribution, false);
         }
 
