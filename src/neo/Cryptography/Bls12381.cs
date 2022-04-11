@@ -149,7 +149,7 @@ namespace Neo.Cryptography
         {
             if (p1.type != p2.type)
             {
-                throw new Exception($"Bls12381 operation fault, type:format, error:type missmatch");
+                throw new Exception($"Bls12381 operation fault, type:format, error:type mismatch");
             }
             return p1.type switch
             {
