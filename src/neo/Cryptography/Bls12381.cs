@@ -157,15 +157,19 @@ namespace Neo.Cryptography
 
         public static GObject Neg(GObject p)
         {
-            IntPtr result = p.type switch
+            return p.Neg();
+        }
+
+        public GObject Neg()
+        {
+            ptr = type switch
             {
-                GType.G1 => Bls12381.g1_neg(p.ptr),
-                GType.G2 => Bls12381.g2_neg(p.ptr),
-                GType.Gt => Bls12381.gt_neg(p.ptr),
+                GType.G1 => Bls12381.g1_neg(ptr),
+                GType.G2 => Bls12381.g2_neg(ptr),
+                GType.Gt => Bls12381.gt_neg(ptr),
                 _ => throw new Exception($"Bls12381 operation fault, type:format, error:valid point length")
             };
-            GObject x = new GObject(p.type, result);
-            return x;
+            return this;
         }
 
         public static IntPtr Mul(GObject p, UInt64 x)
