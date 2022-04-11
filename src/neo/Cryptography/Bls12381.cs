@@ -60,13 +60,13 @@ namespace Neo.Cryptography
         /// <summary>
         /// Add operation of two gt point
         /// </summary>
-        /// <param name="p1_bytes">Gt point1 as byteArray</param>
-        /// <param name="p2_bytes">Gt point2 as byteArray</param>
+        /// <param name="p1Binary">Gt point1 as byteArray</param>
+        /// <param name="p2Binary">Gt point2 as byteArray</param>
         /// <returns></returns>
-        public static byte[] Point_Add(byte[] p1_bytes, byte[] p2_bytes)
+        public static byte[] PointAdd(byte[] p1Binary, byte[] p2Binary)
         {
-            GObject p1 = new GObject(p1_bytes);
-            GObject p2 = new GObject(p2_bytes);
+            GObject p1 = new GObject(p1Binary);
+            GObject p2 = new GObject(p2Binary);
             try
             {
                 return GObject.Add(p1, p2).ToByteArray((int)p1.type);
@@ -80,14 +80,14 @@ namespace Neo.Cryptography
         /// <summary>
         /// Mul operation of gt point and mulitiplier
         /// </summary>
-        /// <param name="p_bytes">Gt point as byteArray</param>
+        /// <param name="pBinary">Gt point as byteArray</param>
         /// <param name="multi">Multiplier</param>
         /// <returns></returns>
-        public static byte[] Point_Mul(byte[] p_bytes, long multi)
+        public static byte[] PointMul(byte[] pBinary, long multi)
         {
             try
             {
-                GObject p = multi < 0 ? new GObject(p_bytes).Neg() : new GObject(p_bytes);
+                GObject p = multi < 0 ? new GObject(pBinary).Neg() : new GObject(pBinary);
                 var x = Convert.ToUInt64(Math.Abs(multi));
                 return GObject.Mul(p, x).ToByteArray((int)p.type);
             }
@@ -100,14 +100,14 @@ namespace Neo.Cryptography
         /// <summary>
         /// Pairing operation of g1 and g2
         /// </summary>
-        /// <param name="g1_bytes">Gt point1 as byteArray</param>
-        /// <param name="g2_bytes">Gt point2 as byteArray</param>
+        /// <param name="g1Binary">Gt point1 as byteArray</param>
+        /// <param name="g2Binary">Gt point2 as byteArray</param>
         /// <returns></returns>
-        public static byte[] Point_Pairing(byte[] g1_bytes, byte[] g2_bytes)
+        public static byte[] PointPairing(byte[] g1Binary, byte[] g2Binary)
         {
             try
             {
-                return g1_g2_pairing(new GObject(g1_bytes).ptr, new GObject(g2_bytes).ptr).ToByteArray(576);
+                return g1_g2_pairing(new GObject(g1Binary).ptr, new GObject(g2Binary).ptr).ToByteArray(576);
             }
             catch (Exception e)
             {
