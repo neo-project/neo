@@ -199,7 +199,7 @@ namespace Neo.Cryptography
                         Bls12381.gt_dispose(ptr);
                         break;
                     default:
-                        throw new Exception($"Bls12381 operation fault, type:format, error:type missmatch");
+                        throw new Exception($"Bls12381 operation fault, type:format, error:type mismatch");
                 }
             }
             catch (Exception)
