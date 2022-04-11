@@ -130,7 +130,7 @@ namespace Neo.Cryptography
         public GObject(byte[] g)
         {
             int len = g.Length;
-            if (len == (int)GType.G1 || len == (int)GType.G2 || len == (int)GType.Gt)
+            if (len is (int)GType.G1 or (int)GType.G2 or (int)GType.Gt)
             {
                 IntPtr tmp = Marshal.AllocHGlobal(len);
                 Marshal.Copy(g, 0, tmp, len);
