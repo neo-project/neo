@@ -1,3 +1,29 @@
+# 酒泉链
+## 改动
+* 移除NeoToken
+* RoleManagement原生合约中增加`Vaidator` `Committee`两个角色
+* 共识和委员会不经过投票，直接由committee指定(RoleManagement.DesignateAsRole)
+* GAS在创世块直接mint到committee多签地址中
+* 当committee只有一个时，不用多签地址
+* Policy原生合约，除了可以block账户还增加了：
+  * 可以block账户：被block的账户，不能发交易, 不能转出gas，账户可以是合约，被block的合约不能被调用
+  * 可以restrict账户：只能转出gas到committee多签
+  * 可以allow node：指定可以加入网络的公钥
+* LocalNode每个区块确认后，重新检查节点准入，不允许的断开连接
+
+## 运行
+* neo-node  
+ https://github.com/neo-ngd/neo-node/tree/jiuquan
+* plugins  
+https://github.com/neo-ngd/neo-plugins/tree/jiuquan  
+DBFTPlugin已兼容  
+LevelDBStore兼容  
+RpcServer应该兼容  
+其他目前不需要的未修改验证，需要再修改测试  
+
+
+
+
 <p align="center">
   <a href="https://neo.org/">
       <img
