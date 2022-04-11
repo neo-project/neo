@@ -67,17 +67,14 @@ namespace Neo.Cryptography
         {
             GObject p1 = new GObject(p1_bytes);
             GObject p2 = new GObject(p2_bytes);
-            IntPtr result = IntPtr.Zero;
             try
             {
-                result = GObject.Add(p1, p2);
+                return GObject.Add(p1, p2).ToByteArray((int)p1.type);
             }
             catch (Exception e)
             {
                 throw new Exception($"Bls12381 operation fault, type:dll-add, error:{e}");
             }
-            byte[] buffer = result.ToByteArray((int)p1.type);
-            return buffer;
         }
 
         /// <summary>
