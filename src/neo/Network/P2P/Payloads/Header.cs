@@ -8,6 +8,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Ledger;
@@ -236,10 +237,22 @@ namespace Neo.Network.P2P.Payloads
             return json;
         }
 
-        internal bool Verify(ProtocolSettings settings, DataCache snapshot)
+        internal bool Verify(ProtocolSettings settings, DataCache snapshot, bool strict)
         {
-            if (primaryIndex >= NativeContract.RoleManagement.GetValidators(snapshot, index).Length)
-                return false;
+            if (strict)
+            {
+                ECPoint[] validators;
+                try
+                {
+                    validators = NativeContract.RoleManagement.GetValidators(snapshot, index);
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    return false;
+                }
+                if (primaryIndex >= validators.Length)
+                    return false;
+            }
             TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
             if (prev is null) return false;
             if (prev.Index + 1 != index) return false;
@@ -248,11 +261,11 @@ namespace Neo.Network.P2P.Payloads
             return true;
         }
 
-        internal bool Verify(ProtocolSettings settings, DataCache snapshot, HeaderCache headerCache)
+        internal bool Verify(ProtocolSettings settings, DataCache snapshot, HeaderCache headerCache, bool strict)
         {
             Header prev = headerCache.Last;
-            if (prev is null) return Verify(settings, snapshot);
-            if (primaryIndex >= NativeContract.RoleManagement.GetValidators(snapshot, index).Length)
+            if (prev is null) return Verify(settings, snapshot, strict);
+            if (strict && primaryIndex >= NativeContract.RoleManagement.GetValidators(snapshot, index).Length)
                 return false;
             if (prev.Hash != prevHash) return false;
             if (prev.index + 1 != index) return false;

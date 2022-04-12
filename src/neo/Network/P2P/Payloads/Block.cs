@@ -139,12 +139,12 @@ namespace Neo.Network.P2P.Payloads
 
         internal bool Verify(ProtocolSettings settings, DataCache snapshot)
         {
-            return Header.Verify(settings, snapshot);
+            return Header.Verify(settings, snapshot, true);
         }
 
         internal bool Verify(ProtocolSettings settings, DataCache snapshot, HeaderCache headerCache)
         {
-            return Header.Verify(settings, snapshot, headerCache);
+            return Header.Verify(settings, snapshot, headerCache, true);
         }
     }
 }

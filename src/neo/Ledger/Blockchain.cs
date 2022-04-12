@@ -316,7 +316,7 @@ namespace Neo.Ledger
                 {
                     if (header.Index > headerHeight + 1) break;
                     if (header.Index < headerHeight + 1) continue;
-                    if (!header.Verify(system.Settings, snapshot, system.HeaderCache)) break;
+                    if (!header.Verify(system.Settings, snapshot, system.HeaderCache, false)) break;
                     system.HeaderCache.Add(header);
                     ++headerHeight;
                 }
