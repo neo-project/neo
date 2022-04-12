@@ -227,10 +227,6 @@ namespace Neo.Ledger
                 ExtensiblePayload payload => OnNewExtensiblePayload(payload),
                 _ => throw new NotSupportedException()
             };
-            if (inventory is Block b)
-            {
-                Console.WriteLine($"on block, index={b.Index}, result={result}");
-            }
             if (result == VerifyResult.Succeed && relay)
             {
                 system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = inventory });
