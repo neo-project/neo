@@ -218,7 +218,7 @@ namespace Neo.SmartContract.Native
                 .Union(RoleManagement.GetDesignatedByRole(engine.Snapshot, Role.Committee, engine.PersistingBlock.Index))
                 .Union(RoleManagement.GetDesignatedByRole(engine.Snapshot, Role.StateValidator, engine.PersistingBlock.Index))
                 .Union(RoleManagement.GetDesignatedByRole(engine.Snapshot, Role.Oracle, engine.PersistingBlock.Index))
-                .Any(p => p == node))
+                .Any(p => p.Equals(node)))
                 throw new InvalidOperationException("Could not unallow a system node");
             engine.Snapshot.Delete(key);
             return true;

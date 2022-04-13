@@ -695,7 +695,7 @@ namespace Neo.Wallets
         /// <returns><see langword="true"/> if the password is correct; otherwise, <see langword="false"/>.</returns>
         public abstract bool VerifyPassword(string password);
 
-        public WalletAccount GetDefaultAccount()
+        public virtual WalletAccount GetDefaultAccount()
         {
             WalletAccount first = null;
 
