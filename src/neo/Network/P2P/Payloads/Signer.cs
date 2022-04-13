@@ -24,7 +24,7 @@ namespace Neo.Network.P2P.Payloads
     /// <summary>
     /// Represents a signer of a <see cref="Transaction"/>.
     /// </summary>
-    public class Signer : ISerializable, IInteroperable
+    public class Signer : IInteroperable, ISerializable
     {
         // This limits maximum number of AllowedContracts or AllowedGroups here
         private const int MaxSubitems = 16;
@@ -184,20 +184,16 @@ namespace Neo.Network.P2P.Payloads
             throw new NotSupportedException();
         }
 
-        public VM.Types.StackItem ToStackItem(ReferenceCounter referenceCounter)
+        VM.Types.StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
         {
             return new VM.Types.Array(referenceCounter, new VM.Types.StackItem[]
             {
+                this.ToArray(),
                 Account.ToArray(),
-                (int)Scopes,
+                (byte)Scopes,
                 new VM.Types.Array(AllowedContracts.Select(u => new VM.Types.ByteString(u.ToArray()))),
                 new VM.Types.Array(AllowedGroups.Select(u => new VM.Types.ByteString(u.ToArray()))),
-                new VM.Types.Array(Rules.Select(u =>
-                    new VM.Types.Array(new VM.Types.StackItem []{
-                        new VM.Types.Integer((byte)u.Action),
-                        new VM.Types.ByteString(u.Condition.ToArray())
-                    }))),
-                this.ToArray(),
+                new VM.Types.Array(Rules.Select(u => u.ToStackItem(referenceCounter)))
             });
         }
     }
