@@ -234,23 +234,18 @@ namespace Neo.SmartContract.Native
             return GetTransactionState(snapshot, hash)?.Transaction;
         }
 
-        /// <summary>
-        /// Gets a transaction signers with the specified hash.
-        /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <param name="hash">The hash of the transaction.</param>
-        /// <returns>The transaction signers with the specified hash.</returns>
-        public Signer[] GetTransactionSigners(DataCache snapshot, UInt256 hash)
-        {
-            return GetTransactionState(snapshot, hash)?.Transaction?.Signers;
-        }
-
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getTransaction")]
         private Transaction GetTransactionForContract(ApplicationEngine engine, UInt256 hash)
         {
             TransactionState state = GetTransactionState(engine.Snapshot, hash);
             if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
             return state.Transaction;
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        private Signer[] GetTransactionSigners(DataCache snapshot, UInt256 hash)
+        {
+            return GetTransactionState(snapshot, hash)?.Transaction.Signers;
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
