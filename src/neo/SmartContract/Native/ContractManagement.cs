@@ -257,7 +257,7 @@ namespace Neo.SmartContract.Native
         private void Destroy(ApplicationEngine engine, UInt160 hash)
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException("permission denied");
-            if (!IsNative(hash)) throw new InvalidOperationException("could not destroy native contract");
+            if (IsNative(hash)) throw new InvalidOperationException("could not destroy native contract");
             StorageKey ckey = CreateStorageKey(Prefix_Contract).Add(hash);
             ContractState contract = engine.Snapshot.TryGet(ckey)?.GetInteroperable<ContractState>();
             if (contract is null) return;
