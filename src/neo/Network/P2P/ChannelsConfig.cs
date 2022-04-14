@@ -9,6 +9,7 @@
 // modifications are permitted.
 
 using System.Net;
+using Neo.Wallets;
 
 namespace Neo.Network.P2P
 {

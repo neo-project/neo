@@ -147,6 +147,7 @@ namespace Neo.Network.P2P
             }
         }
 
+        protected bool paused;
         static Peer()
         {
             localAddresses.UnionWith(NetworkInterface.GetAllNetworkInterfaces().SelectMany(p => p.GetIPProperties().UnicastAddresses).Select(p => p.Address.Unmap()));
@@ -206,6 +207,14 @@ namespace Neo.Network.P2P
 
         protected override void OnReceive(object message)
         {
+            if (paused)
+            {
+                if (message is not ChannelsConfig
+                    && message is not Terminated
+                    && message is not Tcp.Bound
+                    && message is not Tcp.CommandFailed)
+                    return;
+            }
             switch (message)
             {
                 case ChannelsConfig config:

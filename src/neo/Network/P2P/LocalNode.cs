@@ -12,6 +12,7 @@ using Akka.Actor;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.Plugins;
 using Neo.SmartContract.Native;
 using Neo.Wallets;
 using System;
@@ -55,7 +56,8 @@ namespace Neo.Network.P2P
         private readonly IPEndPoint[] SeedList;
 
         private readonly NeoSystem system;
-        private readonly Wallet wallet;
+        private Wallet wallet;
+        private IWalletProvider walletProvider;
         internal readonly ConcurrentDictionary<IActorRef, RemoteNode> RemoteNodes = new();
 
         /// <summary>
@@ -89,19 +91,46 @@ namespace Neo.Network.P2P
         /// Initializes a new instance of the <see cref="LocalNode"/> class.
         /// </summary>
         /// <param name="system">The <see cref="NeoSystem"/> object that contains the <see cref="LocalNode"/>.</param>
-        /// <param name="wallet">The <see cref="Wallet"/> wallet </param>
-        public LocalNode(NeoSystem system, Wallet wallet)
+        public LocalNode(NeoSystem system)
         {
             this.system = system;
-            this.wallet = wallet;
             this.SeedList = new IPEndPoint[system.Settings.SeedList.Length];
+            paused = true;
             Context.System.EventStream.Subscribe(Self, typeof(Blockchain.PersistCompleted));
+            system.ServiceAdded += NeoSystem_ServiceAdded;
             // Start dns resolution in parallel
             string[] seedList = system.Settings.SeedList;
             for (int i = 0; i < seedList.Length; i++)
             {
                 int index = i;
                 Task.Run(() => SeedList[index] = GetIpEndPoint(seedList[index]));
+            }
+        }
+
+        private void NeoSystem_ServiceAdded(object sender, object service)
+        {
+            if (service is IWalletProvider)
+            {
+                walletProvider = service as IWalletProvider;
+                system.ServiceAdded -= NeoSystem_ServiceAdded;
+                walletProvider.WalletChanged += WalletProvider_WalletChanged;
+                wallet = walletProvider.GetWallet();
+                if (wallet is not null)
+                    paused = false;
+            }
+        }
+
+        private void WalletProvider_WalletChanged(object sender, Wallet wallet)
+        {
+            this.wallet = wallet;
+            if (wallet is null)
+                paused = true;
+            else
+                paused = false;
+            foreach (var (remoteRef, remoteNode) in RemoteNodes)
+            {
+                if (remoteNode.Version is not null)
+                    remoteRef.Tell(new RemoteNode.Close { Abort = true });
             }
         }
 
@@ -289,11 +318,10 @@ namespace Neo.Network.P2P
         /// Gets a <see cref="Akka.Actor.Props"/> object used for creating the <see cref="LocalNode"/> actor.
         /// </summary>
         /// <param name="system">The <see cref="NeoSystem"/> object that contains the <see cref="LocalNode"/>.</param>
-        /// <param name="wallet">The <see cref="Wallet"/> wallet </param>
         /// <returns>The <see cref="Akka.Actor.Props"/> object used for creating the <see cref="LocalNode"/> actor.</returns>
-        public static Props Props(NeoSystem system, Wallet wallet)
+        public static Props Props(NeoSystem system)
         {
-            return Akka.Actor.Props.Create(() => new LocalNode(system, wallet));
+            return Akka.Actor.Props.Create(() => new LocalNode(system));
         }
 
         protected override Props ProtocolProps(object connection, IPEndPoint remote, IPEndPoint local)
