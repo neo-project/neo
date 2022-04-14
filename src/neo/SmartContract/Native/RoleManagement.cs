@@ -128,6 +128,15 @@ namespace Neo.SmartContract.Native
             return GetDesignatedByRole(snapshot, Role.Validator, index);
         }
 
+        public ECPoint[] GetSystemAccounts(DataCache snapshot, uint index)
+        {
+            return GetDesignatedByRole(snapshot, Role.Validator, index)
+                .Union(GetDesignatedByRole(snapshot, Role.Committee, index))
+                .Union(GetDesignatedByRole(snapshot, Role.StateValidator, index))
+                .Union(GetDesignatedByRole(snapshot, Role.Oracle, index))
+                .ToArray();
+        }
+
         private class NodeList : List<ECPoint>, IInteroperable
         {
             public void FromStackItem(StackItem stackItem)

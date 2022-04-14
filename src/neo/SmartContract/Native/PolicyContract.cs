@@ -133,7 +133,10 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             if (IsNative(account)) throw new InvalidOperationException("It's impossible to block a native contract.");
-
+            if (RoleManagement.GetSystemAccounts(engine.Snapshot, engine.PersistingBlock.Index)
+                .Select(p => Contract.CreateSignatureRedeemScript(p).ToScriptHash())
+                .Contains(account))
+                throw new InvalidOperationException("It's impossible to block a system account.");
             var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
             if (engine.Snapshot.Contains(key)) return false;
 
@@ -172,6 +175,10 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException(nameof(RestrictAccount) + " permission denied");
             if (IsNative(account))
                 throw new InvalidOperationException("It's impossible to block a native contract.");
+            if (RoleManagement.GetSystemAccounts(engine.Snapshot, engine.PersistingBlock.Index)
+                .Select(p => Contract.CreateSignatureRedeemScript(p).ToScriptHash())
+                .Contains(account))
+                throw new InvalidOperationException("It's impossible to restrict a system account.");
             var key = CreateStorageKey(Prefix_RestrictedAccount).Add(account);
             if (engine.Snapshot.Contains(key)) return false;
             var height = Ledger.CurrentIndex(engine.Snapshot) ?? 0;
@@ -214,11 +221,7 @@ namespace Neo.SmartContract.Native
             if (!CheckCommittee(engine))
                 throw new InvalidOperationException(nameof(UnallowNode) + " permission denied");
             var key = CreateStorageKey(Prefix_Node).Add(node);
-            if (RoleManagement.GetDesignatedByRole(engine.Snapshot, Role.Validator, engine.PersistingBlock.Index)
-                .Union(RoleManagement.GetDesignatedByRole(engine.Snapshot, Role.Committee, engine.PersistingBlock.Index))
-                .Union(RoleManagement.GetDesignatedByRole(engine.Snapshot, Role.StateValidator, engine.PersistingBlock.Index))
-                .Union(RoleManagement.GetDesignatedByRole(engine.Snapshot, Role.Oracle, engine.PersistingBlock.Index))
-                .Any(p => p.Equals(node)))
+            if (RoleManagement.GetSystemAccounts(engine.Snapshot, engine.PersistingBlock.Index).Contains(node))
                 throw new InvalidOperationException("Could not unallow a system node");
             engine.Snapshot.Delete(key);
             return true;
