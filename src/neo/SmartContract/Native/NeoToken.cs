@@ -404,7 +404,11 @@ namespace Neo.SmartContract.Native
             var candidates = GetCandidates(snapshot);
             if (voterTurnout < EffectiveVoterTurnout || candidates.Length < settings.CommitteeMembersCount)
                 return settings.StandbyCommittee.Select(p => (p, candidates.FirstOrDefault(k => k.PublicKey.Equals(p)).Votes));
-            return candidates.OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Take(settings.CommitteeMembersCount);
+            return candidates
+                .OrderByDescending(p => p.Votes)
+                .ThenBy(p => p.PublicKey)
+                .Where(p => !Policy.IsBlocked(snapshot, Contract.CreateSignatureRedeemScript(p.PublicKey).ToScriptHash()))
+                .Take(settings.CommitteeMembersCount);
         }
 
         [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
