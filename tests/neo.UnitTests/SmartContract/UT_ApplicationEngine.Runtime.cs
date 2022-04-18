@@ -10,6 +10,16 @@ namespace Neo.UnitTests.SmartContract
     public partial class UT_ApplicationEngine
     {
         [TestMethod]
+        public void TestGetNetworkAndAddressVersion()
+        {
+            var tx = TestUtils.GetTransaction(UInt160.Zero);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+
+            engine.GetNetwork().Should().Be(TestBlockchain.TheNeoSystem.Settings.Network);
+            engine.GetAddressVersion().Should().Be(TestBlockchain.TheNeoSystem.Settings.AddressVersion);
+        }
+
+        [TestMethod]
         public void TestGetRandomSameBlock()
         {
             var tx = TestUtils.GetTransaction(UInt160.Zero);

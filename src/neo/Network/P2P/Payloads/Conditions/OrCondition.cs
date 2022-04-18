@@ -11,6 +11,8 @@
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.SmartContract;
+using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.IO;
 using System.Linq;
@@ -57,6 +59,13 @@ namespace Neo.Network.P2P.Payloads.Conditions
             JObject json = base.ToJson();
             json["expressions"] = Expressions.Select(p => p.ToJson()).ToArray();
             return json;
+        }
+
+        public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+        {
+            var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
+            result.Add(new VM.Types.Array(referenceCounter, Expressions.Select(p => p.ToStackItem(referenceCounter))));
+            return result;
         }
     }
 }
