@@ -30,7 +30,6 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_MinimumDeploymentFee = 20;
         private const byte Prefix_NextAvailableId = 15;
         private const byte Prefix_Contract = 8;
-        private const byte Prefix_NextVersion = 4;
 
         internal ContractManagement()
         {
@@ -105,36 +104,80 @@ namespace Neo.SmartContract.Native
             foreach (NativeContract contract in Contracts)
             {
                 uint[] updates = engine.ProtocolSettings.NativeUpdateHistory[contract.Name];
-                StorageKey versionKey = CreateStorageKey(Prefix_NextVersion).Add(contract.Hash);
-                StorageItem versionValue = engine.Snapshot.TryGet(versionKey);
-                uint version = versionValue == null ? 0 : (uint)(BigInteger)versionValue;
-                if (updates.Length <= version) continue;
-                if (updates[version] != engine.PersistingBlock.Index)
+                if (updates.Length == 0 || updates[0] != engine.PersistingBlock.Index)
                     continue;
+
+                ushort version = (ushort)((GetContract(engine.Snapshot, contract.Hash)?.UpdateCounter ?? 0) + 1);
+                var newManifest = new ContractManifest() // Get versioned Abi
+                {
+                    Abi = new ContractAbi()
+                    {
+                        Events = contract.Manifest.Abi.Events.Where(u => u.AvailableFromVersion <= version).ToArray(),
+                        Methods = contract.Manifest.Abi.Methods.Where(u => u.AvailableFromVersion <= version).ToArray()
+                    },
+                    Extra = contract.Manifest.Extra?.Clone(),
+                    Groups = contract.Manifest.Groups,
+                    Name = contract.Manifest.Name,
+                    Permissions = contract.Manifest.Permissions,
+                    SupportedStandards = contract.Manifest.SupportedStandards,
+                    Trusts = contract.Manifest.Trusts
+                };
+
                 engine.Snapshot.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
                 {
                     Id = contract.Id,
                     Nef = contract.Nef,
                     Hash = contract.Hash,
-                    UpdateCounter = (ushort)version,
-                    Manifest = new ContractManifest() // Get versioned Abi
-                    {
-                        Abi = new ContractAbi()
-                        {
-                            Events = contract.Manifest.Abi.Events.Where(u => u.AvailableFromVersion <= version).ToArray(),
-                            Methods = contract.Manifest.Abi.Methods.Where(u => u.AvailableFromVersion <= version).ToArray()
-                        },
-                        Extra = contract.Manifest.Extra?.Clone(),
-                        Groups = contract.Manifest.Groups,
-                        Name = contract.Manifest.Name,
-                        Permissions = contract.Manifest.Permissions,
-                        SupportedStandards = contract.Manifest.SupportedStandards,
-                        Trusts = contract.Manifest.Trusts
-                    }
+                    Manifest = newManifest,
+                    UpdateCounter = version
                 }));
-                engine.Snapshot.Add(versionKey, new StorageItem(new BigInteger(version + 1)));
                 await contract.Initialize(engine);
-                engine.SendNotification(Hash, version != 0 ? "Update" : "Deploy", new VM.Types.Array { contract.Hash.ToArray(), version });
+                engine.SendNotification(Hash, version > 1 ? "Update" : "Deploy", new VM.Types.Array { contract.Hash.ToArray(), version });
+            }
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        private async void UpdateNativeContract(ApplicationEngine engine)
+        {
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+
+            foreach (NativeContract contract in Contracts)
+            {
+                var contractData = GetContract(engine.Snapshot, contract.Hash);
+                if (contractData == null) continue;
+
+                ushort version = (ushort)(contractData.UpdateCounter + 1);
+                var newManifest = new ContractManifest() // Get versioned Abi
+                {
+                    Abi = new ContractAbi()
+                    {
+                        Events = contract.Manifest.Abi.Events.Where(u => u.AvailableFromVersion <= version).ToArray(),
+                        Methods = contract.Manifest.Abi.Methods.Where(u => u.AvailableFromVersion <= version).ToArray()
+                    },
+                    Extra = contract.Manifest.Extra?.Clone(),
+                    Groups = contract.Manifest.Groups,
+                    Name = contract.Manifest.Name,
+                    Permissions = contract.Manifest.Permissions,
+                    SupportedStandards = contract.Manifest.SupportedStandards,
+                    Trusts = contract.Manifest.Trusts
+                };
+
+                if (newManifest.ToString() == contract.Manifest.ToString())
+                {
+                    // Same manifest
+                    continue;
+                }
+
+                engine.Snapshot.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
+                {
+                    Id = contract.Id,
+                    Nef = contract.Nef,
+                    Hash = contract.Hash,
+                    UpdateCounter = version,
+                    Manifest = newManifest
+                }));
+                await contract.Initialize(engine);
+                engine.SendNotification(Hash, "Update", new VM.Types.Array { contract.Hash.ToArray(), version });
             }
         }
 
