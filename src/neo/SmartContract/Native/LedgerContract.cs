@@ -243,6 +243,12 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        private Signer[] GetTransactionSigners(DataCache snapshot, UInt256 hash)
+        {
+            return GetTransactionState(snapshot, hash)?.Transaction.Signers;
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private VMState GetTransactionVMState(ApplicationEngine engine, UInt256 hash)
         {
             TransactionState state = GetTransactionState(engine.Snapshot, hash);

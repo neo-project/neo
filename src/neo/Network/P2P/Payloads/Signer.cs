@@ -12,6 +12,8 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads.Conditions;
+using Neo.SmartContract;
+using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,7 +24,7 @@ namespace Neo.Network.P2P.Payloads
     /// <summary>
     /// Represents a signer of a <see cref="Transaction"/>.
     /// </summary>
-    public class Signer : ISerializable
+    public class Signer : IInteroperable, ISerializable
     {
         // This limits maximum number of AllowedContracts or AllowedGroups here
         private const int MaxSubitems = 16;
@@ -175,6 +177,24 @@ namespace Neo.Network.P2P.Payloads
             if (Scopes.HasFlag(WitnessScope.WitnessRules))
                 json["rules"] = Rules.Select(p => p.ToJson()).ToArray();
             return json;
+        }
+
+        void IInteroperable.FromStackItem(VM.Types.StackItem stackItem)
+        {
+            throw new NotSupportedException();
+        }
+
+        VM.Types.StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
+        {
+            return new VM.Types.Array(referenceCounter, new VM.Types.StackItem[]
+            {
+                this.ToArray(),
+                Account.ToArray(),
+                (byte)Scopes,
+                new VM.Types.Array(AllowedContracts.Select(u => new VM.Types.ByteString(u.ToArray()))),
+                new VM.Types.Array(AllowedGroups.Select(u => new VM.Types.ByteString(u.ToArray()))),
+                new VM.Types.Array(Rules.Select(u => u.ToStackItem(referenceCounter)))
+            });
         }
     }
 }

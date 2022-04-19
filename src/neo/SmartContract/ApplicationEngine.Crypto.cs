@@ -98,7 +98,7 @@ namespace Neo.SmartContract
             byte[] message = ScriptContainer.GetSignData(ProtocolSettings.Network);
             int m = signatures.Length, n = pubkeys.Length;
             if (n == 0 || m == 0 || m > n) throw new ArgumentException();
-            AddGas(CheckSigPrice * n * exec_fee_factor);
+            AddGas(CheckSigPrice * n * ExecFeeFactor);
             try
             {
                 for (int i = 0, j = 0; i < m && j < n;)
