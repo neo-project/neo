@@ -27,7 +27,7 @@ namespace Neo.Network.P2P.Payloads
 
         protected override void DeserializeWithoutType(BinaryReader reader)
         {
-            _reserved = reader.ReadVarBytes(Transaction.MaxTransactionSize);
+            _reserved = reader.ReadVarBytes(ushort.MaxValue);
         }
 
         protected override void SerializeWithoutType(BinaryWriter writer)
