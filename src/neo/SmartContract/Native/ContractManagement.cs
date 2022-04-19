@@ -136,7 +136,7 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private async void UpdateNativeContract(ApplicationEngine engine)
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
