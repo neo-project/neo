@@ -47,6 +47,12 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_GetNetwork = Register("System.Runtime.GetNetwork", nameof(GetNetwork), 1 << 3, CallFlags.None);
 
         /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Runtime.GetAddressVersion.
+        /// Gets the address version of the current network.
+        /// </summary>
+        public static readonly InteropDescriptor System_Runtime_GetAddressVersion = Register("System.Runtime.GetAddressVersion", nameof(GetAddressVersion), 1 << 3, CallFlags.None);
+
+        /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.GetTrigger.
         /// Gets the trigger of the execution.
         /// </summary>
@@ -148,6 +154,16 @@ namespace Neo.SmartContract
         internal protected uint GetNetwork()
         {
             return ProtocolSettings.Network;
+        }
+
+        /// <summary>
+        /// The implementation of System.Runtime.GetAddressVersion.
+        /// Gets the address version of the current network.
+        /// </summary>
+        /// <returns>The address version of the current network.</returns>
+        internal protected byte GetAddressVersion()
+        {
+            return ProtocolSettings.AddressVersion;
         }
 
         /// <summary>
