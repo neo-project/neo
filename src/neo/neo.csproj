@@ -26,28 +26,11 @@
 
   <ItemGroup>
     <PackageReference Include="Akka" Version="1.4.35" />
+    <PackageReference Include="BLS12381" Version="0.0.1" />
     <PackageReference Include="BouncyCastle.NetCore" Version="1.8.10" />
     <PackageReference Include="K4os.Compression.LZ4" Version="1.2.16" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.3" />
     <PackageReference Include="Neo.VM" Version="3.2.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-	<None Update="Cryptography\bls12381.dll">
-		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-		<TargetPath>bls12381.dll</TargetPath>
-	</None>
-	<None Update="Cryptography\bls12381.dylib">
-		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-		<TargetPath>bls12381.dylib</TargetPath>
-	</None>
-	<None Update="Cryptography\bls12381.so">
-		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-		<TargetPath>bls12381.so</TargetPath>
-	</None>
   </ItemGroup>
 
 </Project>

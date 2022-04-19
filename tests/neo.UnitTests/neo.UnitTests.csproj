@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="Akka.TestKit" Version="1.4.35" />
     <PackageReference Include="Akka.TestKit.Xunit2" Version="1.4.35" />
+    <PackageReference Include="BLS12381" Version="0.0.1" />
     <PackageReference Include="FluentAssertions" Version="6.6.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
     <PackageReference Include="Moq" Version="4.17.2" />
@@ -20,24 +21,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\neo\neo.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-	<None Update="..\..\src\neo\Cryptography\bls12381.dll">
-		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-		<TargetPath>bls12381.dll</TargetPath>
-	</None>
-	<None Update="..\..\src\neo\Cryptography\bls12381.dylib">
-		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-		<TargetPath>bls12381.dylib</TargetPath>
-	</None>
-	<None Update="..\..\src\neo\Cryptography\bls12381.so">
-		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-		<TargetPath>bls12381.so</TargetPath>
-	</None>
   </ItemGroup>
 	
   <ItemGroup>
