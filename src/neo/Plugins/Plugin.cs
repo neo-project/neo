@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Akka.Util.Internal;
 using static System.IO.Path;
 
 namespace Neo.Plugins
@@ -193,18 +194,21 @@ namespace Neo.Plugins
         {
             if (!Directory.Exists(PluginsDirectory)) return;
             List<Assembly> assemblies = new();
-            foreach (string filename in Directory.EnumerateFiles(PluginsDirectory, "*.dll", SearchOption.TopDirectoryOnly))
+            Directory.GetDirectories(PluginsDirectory).ForEach(plugin =>
             {
-                try
+                foreach (var filename in Directory.EnumerateFiles(plugin, "*.dll", SearchOption.TopDirectoryOnly))
                 {
-                    assemblies.Add(Assembly.Load(File.ReadAllBytes(filename)));
+                    try
+                    {
+                        assemblies.Add(Assembly.Load(File.ReadAllBytes(filename)));
+                    }
+                    catch { }
                 }
-                catch { }
-            }
-            foreach (Assembly assembly in assemblies)
-            {
-                LoadPlugin(assembly);
-            }
+                foreach (Assembly assembly in assemblies)
+                {
+                    LoadPlugin(assembly);
+                }
+            });
         }
 
         /// <summary>
