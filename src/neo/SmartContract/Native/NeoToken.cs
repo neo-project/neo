@@ -332,6 +332,18 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
+        /// Gets the registered candidates count.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>Count the registered candidates.</returns>
+        [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
+        public int GetCandidatesCount(DataCache snapshot)
+        {
+            byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
+            return snapshot.Find(prefix_key).Select(p => p.Value.GetInteroperable<CandidateState>()).Count(p => p.Registered);
+        }
+
+        /// <summary>
         /// Gets the first 100 registered candidates.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
@@ -339,12 +351,25 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
         public (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(DataCache snapshot)
         {
+            return GetCandidates(snapshot, 0, 100);
+        }
+
+        /// <summary>
+        /// Gets the first 100 registered candidates.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="skip">Number of candidates to skip</param>
+        /// <param name="count">Number of candidates to return</param>
+        /// <returns>All the registered candidates.</returns>
+        [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
+        public (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(DataCache snapshot, int skip, int count)
+        {
             byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
             return snapshot.Find(prefix_key).Select(p =>
             (
                 p.Key.Key.AsSerializable<ECPoint>(1),
                 p.Value.GetInteroperable<CandidateState>()
-            )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes)).Take(100).ToArray();
+            )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes)).Skip(skip).Take(count).ToArray();
         }
 
         /// <summary>
