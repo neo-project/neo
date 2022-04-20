@@ -12,6 +12,7 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P;
 using System;
+using BLS12381Extend;
 
 namespace Neo.SmartContract
 {
@@ -126,7 +127,7 @@ namespace Neo.SmartContract
         /// <returns></returns>
         protected internal byte[] Bls12381Add(byte[] gt1, byte[] gt2)
         {
-            return Bls12381.PointAdd(gt1, gt2);
+            return Bls12381Extend.PointAdd(gt1, gt2);
         }
 
         /// <summary>
@@ -138,7 +139,7 @@ namespace Neo.SmartContract
         /// <returns></returns>
         protected internal byte[] Bls12381Mul(byte[] gt, long mul)
         {
-            return Bls12381.PointMul(gt, mul);
+            return Bls12381Extend.PointMul(gt, mul);
         }
 
         /// <summary>
@@ -150,7 +151,7 @@ namespace Neo.SmartContract
         /// <returns></returns>
         protected internal byte[] Bls12381Pairing(byte[] g1Binary, byte[] g2Binary)
         {
-            return Bls12381.PointPairing(g1Binary, g2Binary);
+            return Bls12381Extend.PointPairing(g1Binary, g2Binary);
         }
     }
 }
