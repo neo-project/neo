@@ -252,8 +252,7 @@ namespace Neo.SmartContract.Native
             foreach (var (key, _) in engine.Snapshot.Find(StorageKey.CreateSearchPrefix(contract.Id, ReadOnlySpan<byte>.Empty)))
                 engine.Snapshot.Delete(key);
             // lock contract
-            var lockKey = new KeyBuilder(Policy.Id, PolicyContract.Prefix_BlockedAccount).Add(hash);
-            if (!engine.Snapshot.Contains(lockKey)) engine.Snapshot.Add(lockKey, new StorageItem(System.Array.Empty<byte>()));
+            Policy.BlockAccount(engine.Snapshot, hash);
             // emit event
             engine.SendNotification(Hash, "Destroy", new VM.Types.Array { hash.ToArray() });
         }
