@@ -38,15 +38,13 @@ namespace Neo.SmartContract.Native
 
         internal override async ContractTask OnPersist(ApplicationEngine engine)
         {
-            long totalNetworkFee = 0;
+            long totalFee = 0;
             foreach (Transaction tx in engine.PersistingBlock.Transactions)
             {
                 await Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
-                totalNetworkFee += tx.NetworkFee;
+                totalFee += tx.SystemFee + tx.NetworkFee;
             }
-            ECPoint[] validators = RoleManagement.GetDesignatedByRole(engine.Snapshot, Role.Validator, engine.PersistingBlock.Index);
-            UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
-            await Mint(engine, primary, totalNetworkFee, false);
+            await Mint(engine, RoleManagement.GetCommitteeAddress(engine.Snapshot, engine.PersistingBlock.Index), totalFee, false);
         }
     }
 }

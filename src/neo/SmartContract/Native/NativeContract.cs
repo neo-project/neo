@@ -163,7 +163,8 @@ namespace Neo.SmartContract.Native
         /// <returns><see langword="true"/> if the committee has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
         protected static bool CheckCommittee(ApplicationEngine engine)
         {
-            UInt160 committeeMultiSigAddr = RoleManagement.GetCommitteeAddress(engine.Snapshot, engine.PersistingBlock.Index);
+            var index = (uint)Ledger.CurrentIndex(engine.Snapshot);
+            UInt160 committeeMultiSigAddr = RoleManagement.GetCommitteeAddress(engine.Snapshot, index + 1);
             return engine.CheckWitnessInternal(committeeMultiSigAddr);
         }
 

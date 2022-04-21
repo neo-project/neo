@@ -100,6 +100,9 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException(nameof(DesignateAsRole));
             if (engine.PersistingBlock is null)
                 throw new InvalidOperationException(nameof(DesignateAsRole));
+            foreach (var n in nodes)
+                if (!Policy.IsAllowed(engine.Snapshot, n))
+                    throw new InvalidOperationException($"only allowed nodes should be designated");
             uint index = engine.PersistingBlock.Index + 1;
             if (role == Role.Validator) index += 1;
             var key = CreateStorageKey((byte)role).AddBigEndian(index);
@@ -128,12 +131,22 @@ namespace Neo.SmartContract.Native
             return GetDesignatedByRole(snapshot, Role.Validator, index);
         }
 
-        public ECPoint[] GetSystemAccounts(DataCache snapshot, uint index)
+        public ECPoint[] GetSystemKeys(DataCache snapshot)
         {
-            return GetDesignatedByRole(snapshot, Role.Validator, index)
-                .Union(GetDesignatedByRole(snapshot, Role.Committee, index))
-                .Union(GetDesignatedByRole(snapshot, Role.StateValidator, index))
-                .Union(GetDesignatedByRole(snapshot, Role.Oracle, index))
+            var index = (uint)Ledger.CurrentIndex(snapshot);
+            return GetDesignatedByRole(snapshot, Role.Validator, index + 1)
+                .Union(GetDesignatedByRole(snapshot, Role.Committee, index + 1))
+                .Union(GetDesignatedByRole(snapshot, Role.StateValidator, index + 1))
+                .Union(GetDesignatedByRole(snapshot, Role.Oracle, index + 1))
+                .ToArray();
+        }
+
+        public UInt160[] GetSystemAccounts(DataCache snapshot)
+        {
+            var index = (uint)Ledger.CurrentIndex(snapshot);
+            return GetSystemKeys(snapshot)
+                .Select(p => Contract.CreateSignatureRedeemScript(p).ToScriptHash())
+                .Append(RoleManagement.GetCommitteeAddress(snapshot, index + 1))
                 .ToArray();
         }
 

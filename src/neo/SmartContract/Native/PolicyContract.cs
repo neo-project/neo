@@ -51,7 +51,7 @@ namespace Neo.SmartContract.Native
         public const uint MaxStoragePrice = 10000000;
 
         private const byte Prefix_Node = 13;
-        private const byte Prefix_RestrictedAccount = 14;
+        private const byte Prefix_UnrestrictedAccount = 14;
         private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_ExecFeeFactor = 18;
@@ -133,9 +133,7 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             if (IsNative(account)) throw new InvalidOperationException("It's impossible to block a native contract.");
-            if (RoleManagement.GetSystemAccounts(engine.Snapshot, engine.PersistingBlock.Index)
-                .Select(p => Contract.CreateSignatureRedeemScript(p).ToScriptHash())
-                .Contains(account))
+            if (RoleManagement.GetSystemAccounts(engine.Snapshot).Contains(account))
                 throw new InvalidOperationException("It's impossible to block a system account.");
             var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
             if (engine.Snapshot.Contains(key)) return false;
@@ -169,17 +167,15 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        public bool RestrictAccount(ApplicationEngine engine, UInt160 account)
+        public bool UnrestrictAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine))
-                throw new InvalidOperationException(nameof(RestrictAccount) + " permission denied");
+                throw new InvalidOperationException(nameof(UnrestrictAccount) + " permission denied");
             if (IsNative(account))
-                throw new InvalidOperationException("It's impossible to block a native contract.");
-            if (RoleManagement.GetSystemAccounts(engine.Snapshot, engine.PersistingBlock.Index)
-                .Select(p => Contract.CreateSignatureRedeemScript(p).ToScriptHash())
-                .Contains(account))
-                throw new InvalidOperationException("It's impossible to restrict a system account.");
-            var key = CreateStorageKey(Prefix_RestrictedAccount).Add(account);
+                throw new InvalidOperationException("It's impossible to unrestrict a native contract.");
+            if (RoleManagement.GetSystemAccounts(engine.Snapshot).Contains(account))
+                throw new InvalidOperationException("system accounts are already unrestricted");
+            var key = CreateStorageKey(Prefix_UnrestrictedAccount).Add(account);
             if (engine.Snapshot.Contains(key)) return false;
             var height = Ledger.CurrentIndex(engine.Snapshot) ?? 0;
             engine.Snapshot.Add(key, new(height));
@@ -187,11 +183,15 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private bool UnrestrictAccount(ApplicationEngine engine, UInt160 account)
+        private bool RestrictAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine))
                 throw new InvalidOperationException(nameof(UnrestrictAccount) + " permission denied");
-            var key = CreateStorageKey(Prefix_RestrictedAccount).Add(account);
+            if (IsNative(account))
+                throw new InvalidOperationException("It's impossible to restrict a native contract.");
+            if (RoleManagement.GetSystemAccounts(engine.Snapshot).Contains(account))
+                throw new InvalidOperationException("It's impossible to restrict a system account.");
+            var key = CreateStorageKey(Prefix_UnrestrictedAccount).Add(account);
             if (!engine.Snapshot.Contains(key)) return false;
             engine.Snapshot.Delete(key);
             return true;
@@ -200,8 +200,10 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public bool IsRestricted(DataCache snapshot, UInt160 account)
         {
-            var key = CreateStorageKey(Prefix_RestrictedAccount).Add(account);
-            return snapshot.Contains(key);
+            if (RoleManagement.GetSystemAccounts(snapshot).Contains(account))
+                return false;
+            var key = CreateStorageKey(Prefix_UnrestrictedAccount).Add(account);
+            return !snapshot.Contains(key);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
@@ -221,7 +223,7 @@ namespace Neo.SmartContract.Native
             if (!CheckCommittee(engine))
                 throw new InvalidOperationException(nameof(UnallowNode) + " permission denied");
             var key = CreateStorageKey(Prefix_Node).Add(node);
-            if (RoleManagement.GetSystemAccounts(engine.Snapshot, engine.PersistingBlock.Index).Contains(node))
+            if (RoleManagement.GetSystemKeys(engine.Snapshot).Contains(node))
                 throw new InvalidOperationException("Could not unallow a system node");
             engine.Snapshot.Delete(key);
             return true;
@@ -232,6 +234,14 @@ namespace Neo.SmartContract.Native
         {
             var key = CreateStorageKey(Prefix_Node).Add(node);
             return snapshot.Contains(key);
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public async void GasMint(ApplicationEngine engine, BigInteger amount)
+        {
+            if (!CheckCommittee(engine))
+                throw new InvalidOperationException(nameof(GasMint) + " permission denied");
+            await GAS.Mint(engine, RoleManagement.GetCommitteeAddress(engine.Snapshot, engine.PersistingBlock.Index), amount, false);
         }
 
         public List<ECPoint> NodesAllowed(DataCache snapshot)
@@ -251,10 +261,12 @@ namespace Neo.SmartContract.Native
         public bool TransferAllowed(ApplicationEngine engine, UInt160 token, UInt160 from, UInt160 to)
         {
             if (IsBlocked(engine.Snapshot, token) || IsBlocked(engine.Snapshot, from)) return false;
-            if (IsRestricted(engine.Snapshot, from)
-                && to != RoleManagement.GetCommitteeAddress(engine.Snapshot, engine.PersistingBlock.Index))
-                return false;
-            return true;
+            var systemAccounts = RoleManagement.GetSystemAccounts(engine.Snapshot);
+            if (systemAccounts.Contains(from)
+                || systemAccounts.Contains(to)
+                || !IsRestricted(engine.Snapshot, from))
+                return true;
+            return false;
         }
     }
 }
