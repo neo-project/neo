@@ -29,11 +29,6 @@ namespace Neo.Plugins
         /// </summary>
         public static readonly List<Plugin> Plugins = new();
 
-        /// <summary>
-        /// Assemblies of plugin files
-        /// </summary>
-        public static readonly Dictionary<string, (Assembly, int)> Assemblies = new();
-
         internal static readonly List<ILogPlugin> Loggers = new();
         internal static readonly Dictionary<string, IStorageProvider> Storages = new();
         internal static readonly List<IPersistencePlugin> PersistencePlugins = new();
@@ -202,27 +197,19 @@ namespace Neo.Plugins
         internal static void LoadPlugins()
         {
             if (!Directory.Exists(PluginsDirectory)) return;
+            List<Assembly> assemblies = new();
             foreach (string rootPath in Directory.GetDirectories(PluginsDirectory))
             {
                 foreach (var filename in Directory.EnumerateFiles(rootPath, "*.dll", SearchOption.TopDirectoryOnly))
                 {
                     try
                     {
-                        if (Assemblies.ContainsKey(filename))
-                        {
-                            Assemblies[filename] = (Assemblies[filename].Item1, Assemblies[filename].Item2 + 1);
-                        }
-                        else
-                        {
-                            var assembly = Assembly.Load(File.ReadAllBytes(filename));
-                            Assemblies.Add(filename, (assembly, 1));
-                            LoadPlugin(assembly);
-                        }
+                        assemblies.Add(Assembly.Load(File.ReadAllBytes(filename)));
                     }
                     catch { }
                 }
             }
-            foreach (var (_, (assembly, _)) in Assemblies)
+            foreach (Assembly assembly in assemblies)
             {
                 LoadPlugin(assembly);
             }
