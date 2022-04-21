@@ -44,9 +44,14 @@ namespace Neo.Plugins
         private static readonly FileSystemWatcher configWatcher;
 
         /// <summary>
+        /// Indicates the root path of the plugin.
+        /// </summary>
+        public string RootPath => Combine(PluginsDirectory, GetType().Assembly.GetName().Name);
+
+        /// <summary>
         /// Indicates the location of the plugin configuration file.
         /// </summary>
-        public virtual string ConfigFile => Combine(PluginsDirectory, GetType().Assembly.GetName().Name, "config.json");
+        public virtual string ConfigFile => Combine(RootPath, "config.json");
 
         /// <summary>
         /// Indicates the name of the plugin.
@@ -61,7 +66,7 @@ namespace Neo.Plugins
         /// <summary>
         /// Indicates the location of the plugin dll file.
         /// </summary>
-        public virtual string Path => Combine(PluginsDirectory, GetType().Assembly.ManifestModule.ScopeName);
+        public virtual string Path => Combine(RootPath, GetType().Assembly.ManifestModule.ScopeName);
 
         /// <summary>
         /// Indicates the version of the plugin.
@@ -119,7 +124,7 @@ namespace Neo.Plugins
                     break;
                 case ".dll":
                     if (e.ChangeType != WatcherChangeTypes.Created) return;
-                    if (GetDirectoryName(e.FullPath) != PluginsDirectory) return;
+                    if (GetDirectoryName(GetDirectoryName(e.FullPath)) != PluginsDirectory) return;
                     try
                     {
                         LoadPlugin(Assembly.Load(File.ReadAllBytes(e.FullPath)));
