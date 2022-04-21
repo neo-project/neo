@@ -226,7 +226,6 @@ namespace Neo.Cryptography
             return result.ToArray();
         }
 
-
         internal static byte[] ToByteArray(this IntPtr data, int length)
         {
             if (data == IntPtr.Zero) return null;
