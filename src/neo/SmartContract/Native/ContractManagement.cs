@@ -179,6 +179,10 @@ namespace Neo.SmartContract.Native
             ContractManifest parsedManifest = ContractManifest.Parse(manifest);
             Helper.Check(nef.Script, parsedManifest.Abi);
             UInt160 hash = Helper.GetContractHash(tx.Sender, nef.CheckSum, parsedManifest.Name);
+
+            if (Policy.IsBlocked(engine.Snapshot, hash))
+                throw new InvalidOperationException($"The contract {hash} has been blocked.");
+
             StorageKey key = CreateStorageKey(Prefix_Contract).Add(hash);
             if (engine.Snapshot.Contains(key))
                 throw new InvalidOperationException($"Contract Already Exists: {hash}");
