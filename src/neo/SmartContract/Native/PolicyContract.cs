@@ -173,8 +173,8 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException(nameof(UnrestrictAccount) + " permission denied");
             if (IsNative(account))
                 throw new InvalidOperationException("It's impossible to unrestrict a native contract.");
-            if (RoleManagement.GetSystemAccounts(engine.Snapshot).Contains(account))
-                throw new InvalidOperationException("system accounts are already unrestricted");
+            if (RoleManagement.GetAdminAccounts(engine.Snapshot).Contains(account))
+                throw new InvalidOperationException("admin accounts are already unrestricted");
             var key = CreateStorageKey(Prefix_UnrestrictedAccount).Add(account);
             if (engine.Snapshot.Contains(key)) return false;
             var height = Ledger.CurrentIndex(engine.Snapshot) ?? 0;
@@ -189,8 +189,8 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException(nameof(UnrestrictAccount) + " permission denied");
             if (IsNative(account))
                 throw new InvalidOperationException("It's impossible to restrict a native contract.");
-            if (RoleManagement.GetSystemAccounts(engine.Snapshot).Contains(account))
-                throw new InvalidOperationException("It's impossible to restrict a system account.");
+            if (RoleManagement.GetAdminAccounts(engine.Snapshot).Contains(account))
+                throw new InvalidOperationException("It's impossible to restrict an admin account.");
             var key = CreateStorageKey(Prefix_UnrestrictedAccount).Add(account);
             if (!engine.Snapshot.Contains(key)) return false;
             engine.Snapshot.Delete(key);
@@ -200,7 +200,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public bool IsRestricted(DataCache snapshot, UInt160 account)
         {
-            if (RoleManagement.GetSystemAccounts(snapshot).Contains(account))
+            if (RoleManagement.GetAdminAccounts(snapshot).Contains(account))
                 return false;
             var key = CreateStorageKey(Prefix_UnrestrictedAccount).Add(account);
             return !snapshot.Contains(key);
@@ -261,7 +261,7 @@ namespace Neo.SmartContract.Native
         public bool TransferAllowed(ApplicationEngine engine, UInt160 token, UInt160 from, UInt160 to)
         {
             if (IsBlocked(engine.Snapshot, token) || IsBlocked(engine.Snapshot, from)) return false;
-            var systemAccounts = RoleManagement.GetSystemAccounts(engine.Snapshot);
+            var systemAccounts = RoleManagement.GetAdminAccounts(engine.Snapshot);
             if (systemAccounts.Contains(from)
                 || systemAccounts.Contains(to)
                 || !IsRestricted(engine.Snapshot, from))

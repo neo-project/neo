@@ -3,12 +3,12 @@
   <PropertyGroup>
     <Copyright>2015-2021 The Neo Project</Copyright>
     <AssemblyTitle>NeoJQ</AssemblyTitle>
-    <VersionPrefix>1.1</VersionPrefix>
+    <VersionPrefix>1.1.1</VersionPrefix>
     <Authors>The Neo Project</Authors>
     <TargetFramework>net6.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <AssemblyName>Neo</AssemblyName>
-    <PackageId>Neo</PackageId>
+    <AssemblyName>NeoJQ</AssemblyName>
+    <PackageId>NeoJQ</PackageId>
     <PackageTags>NEO;AntShares;Blockchain;Smart Contract</PackageTags>
     <PackageProjectUrl>https://github.com/neo-ngd/neo/tree/jiuquan</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

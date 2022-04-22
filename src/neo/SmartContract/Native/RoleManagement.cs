@@ -150,6 +150,15 @@ namespace Neo.SmartContract.Native
                 .ToArray();
         }
 
+        public UInt160[] GetAdminAccounts(DataCache snapshot)
+        {
+            var index = (uint)Ledger.CurrentIndex(snapshot);
+            return GetCommittee(snapshot, index + 1)
+                .Select(p => Contract.CreateSignatureRedeemScript(p).ToScriptHash())
+                .Append(GetCommitteeAddress(snapshot, index + 1))
+                .ToArray();
+        }
+
         private class NodeList : List<ECPoint>, IInteroperable
         {
             public void FromStackItem(StackItem stackItem)
