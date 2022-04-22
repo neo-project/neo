@@ -10,10 +10,10 @@
     <AssemblyName>Neo</AssemblyName>
     <PackageId>Neo</PackageId>
     <PackageTags>NEO;AntShares;Blockchain;Smart Contract</PackageTags>
-    <PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/neo-ngd/neo/tree/jiuquan</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/neo-project/neo.git</RepositoryUrl>
+    <RepositoryUrl>https://github.com/neo-ngd/neo.git</RepositoryUrl>
     <RootNamespace>Neo</RootNamespace>
     <Company>The Neo Project</Company>
     <Description>Neo</Description>
