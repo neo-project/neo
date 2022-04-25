@@ -243,9 +243,11 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private Signer[] GetTransactionSigners(DataCache snapshot, UInt256 hash)
+        private Signer[] GetTransactionSigners(ApplicationEngine engine, UInt256 hash)
         {
-            return GetTransactionState(snapshot, hash)?.Transaction.Signers;
+            TransactionState state = GetTransactionState(engine.Snapshot, hash);
+            if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
+            return state.Transaction.Signers;
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
