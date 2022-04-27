@@ -344,7 +344,7 @@ namespace Neo.SmartContract.Native
             (
                 p.Key.Key.AsSerializable<ECPoint>(1),
                 p.Value.GetInteroperable<CandidateState>()
-            )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes)).ToArray();
+            )).Where(p => p.Item2.Registered && !Policy.IsBlocked(snapshot, Contract.CreateSignatureRedeemScript(p.Item1).ToScriptHash())).Select(p => (p.Item1, p.Item2.Votes)).ToArray();
         }
 
         /// <summary>
@@ -401,8 +401,7 @@ namespace Neo.SmartContract.Native
         {
             decimal votersCount = (decimal)(BigInteger)snapshot[CreateStorageKey(Prefix_VotersCount)];
             decimal voterTurnout = votersCount / (decimal)TotalAmount;
-            var candidates = GetCandidates(snapshot)
-                .Where(p => !Policy.IsBlocked(snapshot, Contract.CreateSignatureRedeemScript(p.PublicKey).ToScriptHash())).ToArray();
+            var candidates = GetCandidates(snapshot);
             if (voterTurnout < EffectiveVoterTurnout || candidates.Length < settings.CommitteeMembersCount)
                 return settings.StandbyCommittee.Select(p => (p, candidates.FirstOrDefault(k => k.PublicKey.Equals(p)).Votes));
             return candidates
