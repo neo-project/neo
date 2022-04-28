@@ -340,12 +340,8 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
         public (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(DataCache snapshot)
         {
-            byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
-            return snapshot.Find(prefix_key)
-                .Select(p => (p.Key.Key.AsSerializable<ECPoint>(1), p.Value.GetInteroperable<CandidateState>()))
-                .Where(p => p.Item2.Registered)
-                .Where(p => !Policy.IsBlocked(snapshot, Contract.CreateSignatureRedeemScript(p.Item1).ToScriptHash()))
-                .Select(p => (p.Item1, p.Item2.Votes))
+            return GetCandidatesInternal(snapshot)
+                .Select(p => (p.PublicKey, p.State.Votes))
                 .Take(256)
                 .ToArray();
         }
@@ -356,17 +352,22 @@ namespace Neo.SmartContract.Native
         /// <param name="engine">The <see cref="ApplicationEngine"/> that is executing the contract.</param>
         /// <returns>All the registered candidates.</returns>
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
-        public IIterator GetCandidatesIterator(ApplicationEngine engine)
+        public IIterator GetAllCandidates(ApplicationEngine engine)
         {
             const FindOptions options = FindOptions.RemovePrefix | FindOptions.DeserializeValues | FindOptions.PickField1;
-            byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
-            var enumerator = engine.Snapshot.Find(prefix_key)
-                .Select(p => (p.Key, PublicKey: p.Key.Key.AsSerializable<ECPoint>(1), Item: p.Value, State: p.Value.GetInteroperable<CandidateState>()))
-                .Where(p => p.State.Registered)
-                .Where(p => !Policy.IsBlocked(engine.Snapshot, Contract.CreateSignatureRedeemScript(p.PublicKey).ToScriptHash()))
-                .Select(p => (p.Key, p.Item))
+            var enumerator = GetCandidatesInternal(engine.Snapshot)
+                .Select(p => (p.Key, p.Value))
                 .GetEnumerator();
             return new StorageIterator(enumerator, 1, options, engine.ReferenceCounter);
+        }
+
+        private IEnumerable<(StorageKey Key, StorageItem Value, ECPoint PublicKey, CandidateState State)> GetCandidatesInternal(DataCache snapshot)
+        {
+            byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
+            return snapshot.Find(prefix_key)
+                .Select(p => (p.Key, p.Value, PublicKey: p.Key.Key.AsSerializable<ECPoint>(1), State: p.Value.GetInteroperable<CandidateState>()))
+                .Where(p => p.State.Registered)
+                .Where(p => !Policy.IsBlocked(snapshot, Contract.CreateSignatureRedeemScript(p.PublicKey).ToScriptHash()));
         }
 
         /// <summary>
