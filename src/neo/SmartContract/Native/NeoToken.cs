@@ -438,7 +438,9 @@ namespace Neo.SmartContract.Native
         {
             decimal votersCount = (decimal)(BigInteger)snapshot[CreateStorageKey(Prefix_VotersCount)];
             decimal voterTurnout = votersCount / (decimal)TotalAmount;
-            var candidates = GetCandidates(snapshot);
+            var candidates = GetCandidatesInternal(snapshot)
+                .Select(p => (p.PublicKey, p.State.Votes))
+                .ToArray();
             if (voterTurnout < EffectiveVoterTurnout || candidates.Length < settings.CommitteeMembersCount)
                 return settings.StandbyCommittee.Select(p => (p, candidates.FirstOrDefault(k => k.PublicKey.Equals(p)).Votes));
             return candidates
