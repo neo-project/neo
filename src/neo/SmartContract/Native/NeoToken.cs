@@ -376,7 +376,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="pubKey">Specific public key</param>
         /// <returns>Votes or -1 if it was not found.</returns>
-        [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger GetCandidateVote(DataCache snapshot, ECPoint pubKey)
         {
             StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_Candidate).Add(pubKey));
