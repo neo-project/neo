@@ -338,7 +338,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>All the registered candidates.</returns>
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
-        public (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(DataCache snapshot)
+        private (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(DataCache snapshot)
         {
             return GetCandidatesInternal(snapshot)
                 .Select(p => (p.PublicKey, p.State.Votes))
@@ -352,7 +352,7 @@ namespace Neo.SmartContract.Native
         /// <param name="engine">The <see cref="ApplicationEngine"/> that is executing the contract.</param>
         /// <returns>All the registered candidates.</returns>
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
-        public IIterator GetAllCandidates(ApplicationEngine engine)
+        private IIterator GetAllCandidates(ApplicationEngine engine)
         {
             const FindOptions options = FindOptions.RemovePrefix | FindOptions.DeserializeValues | FindOptions.PickField1;
             var enumerator = GetCandidatesInternal(engine.Snapshot)
@@ -361,7 +361,7 @@ namespace Neo.SmartContract.Native
             return new StorageIterator(enumerator, 1, options, engine.ReferenceCounter);
         }
 
-        private IEnumerable<(StorageKey Key, StorageItem Value, ECPoint PublicKey, CandidateState State)> GetCandidatesInternal(DataCache snapshot)
+        internal IEnumerable<(StorageKey Key, StorageItem Value, ECPoint PublicKey, CandidateState State)> GetCandidatesInternal(DataCache snapshot)
         {
             byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
             return snapshot.Find(prefix_key)

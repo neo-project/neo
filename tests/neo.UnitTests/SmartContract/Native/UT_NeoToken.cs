@@ -227,8 +227,8 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Check GetRegisteredValidators
 
-            var members = NativeContract.NEO.GetCandidates(snapshot);
-            Assert.AreEqual(2, members.Length);
+            var members = NativeContract.NEO.GetCandidatesInternal(snapshot);
+            Assert.AreEqual(2, members.Count());
         }
 
         [TestMethod]
@@ -252,8 +252,8 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.State.Should().BeTrue();
             ret.Result.Should().BeTrue();
 
-            var members = NativeContract.NEO.GetCandidates(snapshot);
-            Assert.AreEqual(1, members.Length);
+            var members = NativeContract.NEO.GetCandidatesInternal(snapshot);
+            Assert.AreEqual(1, members.Count());
             snapshot.GetChangeSet().Count().Should().Be(keyCount + 1);
             StorageKey key = CreateStorageKey(33, point);
             snapshot.TryGet(key).Should().NotBeNull();
@@ -263,8 +263,8 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.Result.Should().BeTrue();
             snapshot.GetChangeSet().Count().Should().Be(keyCount);
 
-            members = NativeContract.NEO.GetCandidates(snapshot);
-            Assert.AreEqual(0, members.Length);
+            members = NativeContract.NEO.GetCandidatesInternal(snapshot);
+            Assert.AreEqual(0, members.Count());
             snapshot.TryGet(key).Should().BeNull();
 
             //register with votes, then unregister
@@ -567,12 +567,12 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestGetCandidates2()
         {
             var snapshot = _snapshot.CreateSnapshot();
-            var result = NativeContract.NEO.GetCandidates(snapshot);
-            result.Length.Should().Be(0);
+            var result = NativeContract.NEO.GetCandidatesInternal(snapshot);
+            result.Count().Should().Be(0);
 
             StorageKey key = NativeContract.NEO.CreateStorageKey(33, ECCurve.Secp256r1.G);
             snapshot.Add(key, new StorageItem(new CandidateState()));
-            NativeContract.NEO.GetCandidates(snapshot).Length.Should().Be(1);
+            NativeContract.NEO.GetCandidatesInternal(snapshot).Count().Should().Be(1);
         }
 
         [TestMethod]
