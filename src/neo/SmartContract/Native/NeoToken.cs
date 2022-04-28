@@ -341,11 +341,13 @@ namespace Neo.SmartContract.Native
         public (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(DataCache snapshot)
         {
             byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
-            return snapshot.Find(prefix_key).Select(p =>
-            (
-                p.Key.Key.AsSerializable<ECPoint>(1),
-                p.Value.GetInteroperable<CandidateState>()
-            )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes)).Take(256).ToArray();
+            return snapshot.Find(prefix_key)
+                .Select(p => (p.Key.Key.AsSerializable<ECPoint>(1), p.Value.GetInteroperable<CandidateState>()))
+                .Where(p => p.Item2.Registered)
+                .Where(p => !Policy.IsBlocked(snapshot, Contract.CreateSignatureRedeemScript(p.Item1).ToScriptHash()))
+                .Select(p => (p.Item1, p.Item2.Votes))
+                .Take(256)
+                .ToArray();
         }
 
         /// <summary>
@@ -440,7 +442,10 @@ namespace Neo.SmartContract.Native
             var candidates = GetCandidates(snapshot);
             if (voterTurnout < EffectiveVoterTurnout || candidates.Length < settings.CommitteeMembersCount)
                 return settings.StandbyCommittee.Select(p => (p, candidates.FirstOrDefault(k => k.PublicKey.Equals(p)).Votes));
-            return candidates.OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Take(settings.CommitteeMembersCount);
+            return candidates
+                .OrderByDescending(p => p.Votes)
+                .ThenBy(p => p.PublicKey)
+                .Take(settings.CommitteeMembersCount);
         }
 
         [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]

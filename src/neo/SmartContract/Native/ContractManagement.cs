@@ -179,6 +179,10 @@ namespace Neo.SmartContract.Native
             ContractManifest parsedManifest = ContractManifest.Parse(manifest);
             Helper.Check(nef.Script, parsedManifest.Abi);
             UInt160 hash = Helper.GetContractHash(tx.Sender, nef.CheckSum, parsedManifest.Name);
+
+            if (Policy.IsBlocked(engine.Snapshot, hash))
+                throw new InvalidOperationException($"The contract {hash} has been blocked.");
+
             StorageKey key = CreateStorageKey(Prefix_Contract).Add(hash);
             if (engine.Snapshot.Contains(key))
                 throw new InvalidOperationException($"Contract Already Exists: {hash}");
@@ -215,6 +219,7 @@ namespace Neo.SmartContract.Native
 
             var contract = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Contract).Add(engine.CallingScriptHash))?.GetInteroperable<ContractState>();
             if (contract is null) throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
+            if (contract.UpdateCounter == ushort.MaxValue) throw new InvalidOperationException($"The contract reached the maximum number of updates.");
 
             if (nefFile != null)
             {
@@ -250,6 +255,9 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.Delete(ckey);
             foreach (var (key, _) in engine.Snapshot.Find(StorageKey.CreateSearchPrefix(contract.Id, ReadOnlySpan<byte>.Empty)))
                 engine.Snapshot.Delete(key);
+            // lock contract
+            Policy.BlockAccount(engine.Snapshot, hash);
+            // emit event
             engine.SendNotification(Hash, "Destroy", new VM.Types.Array { hash.ToArray() });
         }
     }
