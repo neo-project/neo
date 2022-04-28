@@ -41,13 +41,13 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Contract.CreateStandardAccount.
         /// Calculates corresponding account scripthash for the given public key.
         /// </summary>
-        public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 1 << 8, CallFlags.None);
+        public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), CheckSigPrice, CallFlags.None);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Contract.CreateMultisigAccount.
         /// Calculates corresponding multisig account scripthash for the given public keys.
         /// </summary>
-        public static readonly InteropDescriptor System_Contract_CreateMultisigAccount = Register("System.Contract.CreateMultisigAccount", nameof(CreateMultisigAccount), 1 << 8, CallFlags.None);
+        public static readonly InteropDescriptor System_Contract_CreateMultisigAccount = Register("System.Contract.CreateMultisigAccount", nameof(CreateMultisigAccount), 0, CallFlags.None);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Contract.NativeOnPersist.
@@ -132,8 +132,9 @@ namespace Neo.SmartContract
         /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="pubKeys">The public keys of the account.</param>
         /// <returns>The hash of the account.</returns>
-        internal protected static UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
+        internal protected UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
         {
+            AddGas(CheckSigPrice * pubKeys.Length * ExecFeeFactor);
             return Contract.CreateMultiSigRedeemScript(m, pubKeys).ToScriptHash();
         }
 
