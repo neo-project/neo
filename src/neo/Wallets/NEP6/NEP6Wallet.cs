@@ -321,13 +321,14 @@ namespace Neo.Wallets.NEP6
         /// </summary>
         public JObject ToJson()
         {
-            JObject wallet = new();
-            wallet["name"] = name;
-            wallet["version"] = version.ToString();
-            wallet["scrypt"] = Scrypt.ToJson();
-            wallet["accounts"] = new JArray(accounts.Values.Select(p => p.ToJson()));
-            wallet["extra"] = extra;
-            return wallet;
+            return new()
+            {
+                ["name"] = name,
+                ["version"] = version.ToString(),
+                ["scrypt"] = Scrypt.ToJson(),
+                ["accounts"] = accounts.Values.Select(p => p.ToJson()).ToArray(),
+                ["extra"] = extra
+            };
         }
 
         /// <summary>
@@ -335,8 +336,7 @@ namespace Neo.Wallets.NEP6
         /// </summary>
         public void Save()
         {
-            var wallet = ToJson();
-            File.WriteAllText(Path, wallet.ToString());
+            File.WriteAllText(Path, ToJson().ToString());
         }
 
         /// <summary>
