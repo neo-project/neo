@@ -379,14 +379,9 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger GetCandidateVote(DataCache snapshot, ECPoint pubKey)
         {
-            byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
-            var entry = snapshot.Find(prefix_key).Select(p =>
-             (
-                 p.Key.Key.AsSerializable<ECPoint>(1),
-                 p.Value.GetInteroperable<CandidateState>()
-             )).Where(p => p.Item2.Registered && p.Item1.Equals(pubKey)).FirstOrDefault();
-
-            return entry.Item2 == null ? -1 : entry.Item2.Votes;
+            StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_Candidate).Add(pubKey));
+            CandidateState state = storage?.GetInteroperable<CandidateState>();
+            return state?.Registered == true ? state.Votes : -1;
         }
 
         /// <summary>
