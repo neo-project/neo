@@ -358,12 +358,15 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
         public IIterator GetCandidatesIterator(ApplicationEngine engine)
         {
+            const FindOptions options = FindOptions.RemovePrefix | FindOptions.DeserializeValues | FindOptions.PickField1;
             byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
-            return new KeyValueIterator(engine.Snapshot.Find(prefix_key).Select(p =>
-            (
-                p.Key.Key.AsSerializable<ECPoint>(1),
-                p.Value.GetInteroperable<CandidateState>()
-            )).Where(p => p.Item2.Registered).Select(p => ((StackItem)new ByteString(p.Item1.ToArray()), (StackItem)new Integer(p.Item2.Votes))).GetEnumerator(), engine.ReferenceCounter);
+            var enumerator = engine.Snapshot.Find(prefix_key)
+                .Select(p => (p.Key, PublicKey: p.Key.Key.AsSerializable<ECPoint>(1), Item: p.Value, State: p.Value.GetInteroperable<CandidateState>()))
+                .Where(p => p.State.Registered)
+                .Where(p => !Policy.IsBlocked(engine.Snapshot, Contract.CreateSignatureRedeemScript(p.PublicKey).ToScriptHash()))
+                .Select(p => (p.Key, p.Item))
+                .GetEnumerator();
+            return new StorageIterator(enumerator, 1, options, engine.ReferenceCounter);
         }
 
         /// <summary>
