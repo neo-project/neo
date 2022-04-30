@@ -41,7 +41,7 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Contract.CreateStandardAccount.
         /// Calculates corresponding account scripthash for the given public key.
         /// </summary>
-        public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), CheckSigPrice, CallFlags.None);
+        public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 0, CallFlags.None);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Contract.CreateMultisigAccount.
@@ -120,8 +120,14 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="pubKey">The public key of the account.</param>
         /// <returns>The hash of the account.</returns>
-        internal protected static UInt160 CreateStandardAccount(ECPoint pubKey)
+        internal protected UInt160 CreateStandardAccount(ECPoint pubKey)
         {
+            long fee = ProtocolSettings.GetHardfork(PersistingBlock) switch
+            {
+                0 => 1 << 8,
+                _ => CheckSigPrice
+            };
+            AddGas(fee * ExecFeeFactor);
             return Contract.CreateSignatureRedeemScript(pubKey).ToScriptHash();
         }
 
@@ -134,7 +140,12 @@ namespace Neo.SmartContract
         /// <returns>The hash of the account.</returns>
         internal protected UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
         {
-            AddGas(CheckSigPrice * pubKeys.Length * ExecFeeFactor);
+            long fee = ProtocolSettings.GetHardfork(PersistingBlock) switch
+            {
+                0 => 1 << 8,
+                _ => CheckSigPrice * pubKeys.Length
+            };
+            AddGas(fee * ExecFeeFactor);
             return Contract.CreateMultiSigRedeemScript(m, pubKeys).ToScriptHash();
         }
 

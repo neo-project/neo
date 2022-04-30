@@ -88,6 +88,8 @@ namespace Neo
         /// </summary>
         public IReadOnlyDictionary<string, uint[]> NativeUpdateHistory { get; init; }
 
+        public uint[] Hardforks { get; init; }
+
         /// <summary>
         /// Indicates the amount of gas to distribute during initialization.
         /// </summary>
@@ -157,7 +159,8 @@ namespace Neo
                 [nameof(PolicyContract)] = new[] { 0u },
                 [nameof(RoleManagement)] = new[] { 0u },
                 [nameof(OracleContract)] = new[] { 0u }
-            }
+            },
+            Hardforks = new[] { 0u }
         };
 
         /// <summary>
@@ -198,8 +201,23 @@ namespace Neo
                 InitialGasDistribution = section.GetValue("InitialGasDistribution", Default.InitialGasDistribution),
                 NativeUpdateHistory = section.GetSection("NativeUpdateHistory").Exists()
                     ? section.GetSection("NativeUpdateHistory").GetChildren().ToDictionary(p => p.Key, p => p.GetChildren().Select(q => uint.Parse(q.Value)).ToArray())
-                    : Default.NativeUpdateHistory
+                    : Default.NativeUpdateHistory,
+                Hardforks = section.GetSection("Hardforks").Exists()
+                    ? section.GetSection("Hardforks").GetChildren().Select(p => p.Get<uint>()).ToArray()
+                    : Default.Hardforks
             };
+        }
+
+        public int GetHardfork(Block block)
+        {
+            return GetHardfork(block?.Index);
+        }
+
+        public int GetHardfork(uint? blockIndex)
+        {
+            if (!blockIndex.HasValue) return Hardforks.Length;
+            int index = Array.BinarySearch(Hardforks, blockIndex.Value);
+            return index >= 0 ? index + 1 : ~index;
         }
     }
 }
