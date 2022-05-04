@@ -122,11 +122,9 @@ namespace Neo.SmartContract
         /// <returns>The hash of the account.</returns>
         internal protected UInt160 CreateStandardAccount(ECPoint pubKey)
         {
-            long fee = ProtocolSettings.GetHardfork(PersistingBlock) switch
-            {
-                0 => 1 << 8,
-                _ => CheckSigPrice
-            };
+            long fee = IsHardforkEnabled(Hardfork.HF_2712_FixSyscallFees)
+                ? CheckSigPrice
+                : 1 << 8;
             AddGas(fee * ExecFeeFactor);
             return Contract.CreateSignatureRedeemScript(pubKey).ToScriptHash();
         }
@@ -140,11 +138,9 @@ namespace Neo.SmartContract
         /// <returns>The hash of the account.</returns>
         internal protected UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
         {
-            long fee = ProtocolSettings.GetHardfork(PersistingBlock) switch
-            {
-                0 => 1 << 8,
-                _ => CheckSigPrice * pubKeys.Length
-            };
+            long fee = IsHardforkEnabled(Hardfork.HF_2712_FixSyscallFees)
+                ? CheckSigPrice * pubKeys.Length
+                : 1 << 8;
             AddGas(fee * ExecFeeFactor);
             return Contract.CreateMultiSigRedeemScript(m, pubKeys).ToScriptHash();
         }
