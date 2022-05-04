@@ -580,7 +580,7 @@ namespace Neo.SmartContract
             states[typeof(T)] = state;
         }
 
-        internal bool IsHardforkEnabled(Hardfork hardfork)
+        private bool IsHardforkEnabled(Hardfork hardfork)
         {
             if (PersistingBlock is null)
                 return true;

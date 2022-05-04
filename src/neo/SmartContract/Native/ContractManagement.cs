@@ -14,7 +14,6 @@ using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -155,23 +154,15 @@ namespace Neo.SmartContract.Native
             return snapshot.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>());
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.None)]
+        [ContractMethod(RequiredCallFlags = CallFlags.All)]
         private ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             return Deploy(engine, nefFile, manifest, StackItem.Null);
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.None)]
+        [ContractMethod(RequiredCallFlags = CallFlags.All)]
         private async ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
-            CallFlags requiredCallFlags = engine.IsHardforkEnabled(Hardfork.HF_2653_DeployUpdateCallFlags)
-                ? CallFlags.All
-                : CallFlags.States | CallFlags.AllowNotify;
-
-            ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();
-            if (!state.CallFlags.HasFlag(requiredCallFlags))
-                throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
-
             if (engine.ScriptContainer is not Transaction tx)
                 throw new InvalidOperationException();
             if (nefFile.Length == 0)
@@ -213,23 +204,15 @@ namespace Neo.SmartContract.Native
             return contract;
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.None)]
+        [ContractMethod(RequiredCallFlags = CallFlags.All)]
         private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
             return Update(engine, nefFile, manifest, StackItem.Null);
         }
 
-        [ContractMethod(RequiredCallFlags = CallFlags.None)]
+        [ContractMethod(RequiredCallFlags = CallFlags.All)]
         private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
-            CallFlags requiredCallFlags = engine.IsHardforkEnabled(Hardfork.HF_2653_DeployUpdateCallFlags)
-                ? CallFlags.All
-                : CallFlags.States | CallFlags.AllowNotify;
-
-            ExecutionContextState state = engine.CurrentContext.GetState<ExecutionContextState>();
-            if (!state.CallFlags.HasFlag(requiredCallFlags))
-                throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
-
             if (nefFile is null && manifest is null) throw new ArgumentException();
 
             engine.AddGas(engine.StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
