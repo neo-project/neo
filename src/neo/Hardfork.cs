@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -12,6 +12,7 @@ namespace Neo
 {
     public enum Hardfork : byte
     {
-        HF_2712_FixSyscallFees
+        HF_2712_FixSyscallFees,
+        HF_2653_DeployUpdateCallFlags
     }
 }
