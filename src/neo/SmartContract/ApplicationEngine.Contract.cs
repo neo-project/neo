@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -11,6 +11,7 @@
 using Neo.Cryptography.ECC;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 using Array = Neo.VM.Types.Array;
@@ -71,14 +72,14 @@ namespace Neo.SmartContract
         /// <param name="args">The arguments to be used.</param>
         protected internal void CallContract(UInt160 contractHash, string method, CallFlags callFlags, Array args)
         {
-            if (method.StartsWith('_')) throw new ArgumentException($"Invalid Method Name: {method}");
+            if (method.StartsWith('_')) throw new CatchableException($"Invalid method name: {method}");
             if ((callFlags & ~CallFlags.All) != 0)
-                throw new ArgumentOutOfRangeException(nameof(callFlags));
+                throw new CatchableException($"Argument out of range: {nameof(callFlags)}");
 
             ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
-            if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
+            if (contract is null) throw new CatchableException($"Contract doesn't exist: {contractHash}");
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method, args.Count);
-            if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
+            if (md is null) throw new CatchableException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
             bool hasReturnValue = md.ReturnType != ContractParameterType.Void;
 
             if (!hasReturnValue) CurrentContext.EvaluationStack.Push(StackItem.Null);

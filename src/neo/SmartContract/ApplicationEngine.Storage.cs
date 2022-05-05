@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -10,7 +10,7 @@
 
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Native;
-using System;
+using Neo.VM;
 using System.Linq;
 
 namespace Neo.SmartContract
@@ -143,15 +143,15 @@ namespace Neo.SmartContract
         protected internal IIterator Find(StorageContext context, byte[] prefix, FindOptions options)
         {
             if ((options & ~FindOptions.All) != 0)
-                throw new ArgumentOutOfRangeException(nameof(options));
+                throw new CatchableException($"Argument out of range: {nameof(options)}");
             if (options.HasFlag(FindOptions.KeysOnly) && (options.HasFlag(FindOptions.ValuesOnly) || options.HasFlag(FindOptions.DeserializeValues) || options.HasFlag(FindOptions.PickField0) || options.HasFlag(FindOptions.PickField1)))
-                throw new ArgumentException(null, nameof(options));
+                throw new CatchableException($"Argument incorrect: {nameof(options)}");
             if (options.HasFlag(FindOptions.ValuesOnly) && (options.HasFlag(FindOptions.KeysOnly) || options.HasFlag(FindOptions.RemovePrefix)))
-                throw new ArgumentException(null, nameof(options));
+                throw new CatchableException($"Argument incorrect: {nameof(options)}");
             if (options.HasFlag(FindOptions.PickField0) && options.HasFlag(FindOptions.PickField1))
-                throw new ArgumentException(null, nameof(options));
+                throw new CatchableException($"Argument incorrect: {nameof(options)}");
             if ((options.HasFlag(FindOptions.PickField0) || options.HasFlag(FindOptions.PickField1)) && !options.HasFlag(FindOptions.DeserializeValues))
-                throw new ArgumentException(null, nameof(options));
+                throw new CatchableException($"Argument incorrect: {nameof(options)}");
             byte[] prefix_key = StorageKey.CreateSearchPrefix(context.Id, prefix);
             return new StorageIterator(Snapshot.Find(prefix_key).GetEnumerator(), prefix.Length, options, ReferenceCounter);
         }
@@ -165,8 +165,12 @@ namespace Neo.SmartContract
         /// <param name="value">The value of the entry.</param>
         protected internal void Put(StorageContext context, byte[] key, byte[] value)
         {
-            if (key.Length > MaxStorageKeySize || value.Length > MaxStorageValueSize || context.IsReadOnly)
-                throw new ArgumentException();
+            if (context.IsReadOnly)
+                throw new CatchableException("The context is readonly.");
+            if (key.Length > MaxStorageKeySize)
+                throw new CatchableException($"The length of key should be less then {MaxStorageKeySize}.");
+            if (value.Length > MaxStorageValueSize)
+                throw new CatchableException($"The length of value should be less then {MaxStorageValueSize}.");
 
             int newDataSize;
             StorageKey skey = new()
@@ -204,7 +208,8 @@ namespace Neo.SmartContract
         /// <param name="key">The key of the entry.</param>
         protected internal void Delete(StorageContext context, byte[] key)
         {
-            if (context.IsReadOnly) throw new ArgumentException(null, nameof(context));
+            if (context.IsReadOnly)
+                throw new CatchableException("The context is readonly.");
             Snapshot.Delete(new StorageKey
             {
                 Id = context.Id,

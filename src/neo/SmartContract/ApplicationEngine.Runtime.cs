@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -12,6 +12,7 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -183,8 +184,12 @@ namespace Neo.SmartContract
         /// <returns>The current script container.</returns>
         protected internal StackItem GetScriptContainer()
         {
-            if (ScriptContainer is not IInteroperable interop) throw new InvalidOperationException();
-            return interop.ToStackItem(ReferenceCounter);
+            return ScriptContainer switch
+            {
+                IInteroperable interop => interop.ToStackItem(ReferenceCounter),
+                null => null,
+                _ => throw new CatchableException("The script container cann't be converted to an IInteroperable object.")
+            };
         }
 
         /// <summary>
@@ -199,7 +204,7 @@ namespace Neo.SmartContract
             {
                 20 => new UInt160(hashOrPubkey),
                 33 => Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(hashOrPubkey, ECCurve.Secp256r1)).ToScriptHash(),
-                _ => throw new ArgumentException(null, nameof(hashOrPubkey))
+                _ => throw new CatchableException("The argument should be a script hash or public key.")
             };
             return CheckWitnessInternal(hash);
         }
@@ -278,7 +283,8 @@ namespace Neo.SmartContract
         /// <param name="state">The message of the log.</param>
         protected internal void RuntimeLog(byte[] state)
         {
-            if (state.Length > MaxNotificationSize) throw new ArgumentException(null, nameof(state));
+            if (state.Length > MaxNotificationSize)
+                throw new CatchableException($"The length of {nameof(state)} should be less then {MaxNotificationSize}.");
             string message = Utility.StrictUTF8.GetString(state);
             Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash, message));
         }
@@ -291,7 +297,8 @@ namespace Neo.SmartContract
         /// <param name="state">The arguments of the event.</param>
         protected internal void RuntimeNotify(byte[] eventName, Array state)
         {
-            if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
+            if (eventName.Length > MaxEventName)
+                throw new CatchableException($"The length of {nameof(eventName)} should be less then {MaxEventName}.");
             using MemoryStream ms = new(MaxNotificationSize);
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             BinarySerializer.Serialize(writer, state, MaxNotificationSize);
@@ -324,7 +331,8 @@ namespace Neo.SmartContract
             if (hash != null) // must filter by scriptHash
                 notifications = notifications.Where(p => p.ScriptHash == hash);
             NotifyEventArgs[] array = notifications.ToArray();
-            if (array.Length > Limits.MaxStackSize) throw new InvalidOperationException();
+            if (array.Length > Limits.MaxStackSize)
+                throw new CatchableException("The items are too many.");
             return array;
         }
 
