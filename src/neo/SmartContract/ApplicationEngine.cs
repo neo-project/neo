@@ -579,5 +579,14 @@ namespace Neo.SmartContract
             states ??= new Dictionary<Type, object>();
             states[typeof(T)] = state;
         }
+
+        private bool IsHardforkEnabled(Hardfork hardfork)
+        {
+            if (PersistingBlock is null)
+                return true;
+            if (!ProtocolSettings.Hardforks.TryGetValue(hardfork, out uint height))
+                return true;
+            return PersistingBlock.Index >= height;
+        }
     }
 }
