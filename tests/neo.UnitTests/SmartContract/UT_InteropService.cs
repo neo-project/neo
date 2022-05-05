@@ -258,7 +258,7 @@ namespace Neo.UnitTests.SmartContract
             engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeFalse();
 
             Action action = () => engine.CheckWitness(System.Array.Empty<byte>());
-            action.Should().Throw<ArgumentException>();
+            action.Should().Throw<CatchableException>();
         }
 
         [TestMethod]
@@ -445,18 +445,18 @@ namespace Neo.UnitTests.SmartContract
             //key.Length > MaxStorageKeySize
             key = new byte[ApplicationEngine.MaxStorageKeySize + 1];
             value = new byte[] { 0x02 };
-            Assert.ThrowsException<ArgumentException>(() => engine.Put(storageContext, key, value));
+            Assert.ThrowsException<CatchableException>(() => engine.Put(storageContext, key, value));
 
             //value.Length > MaxStorageValueSize
             key = new byte[] { 0x01 };
             value = new byte[ushort.MaxValue + 1];
-            Assert.ThrowsException<ArgumentException>(() => engine.Put(storageContext, key, value));
+            Assert.ThrowsException<CatchableException>(() => engine.Put(storageContext, key, value));
 
             //context.IsReadOnly
             key = new byte[] { 0x01 };
             value = new byte[] { 0x02 };
             storageContext.IsReadOnly = true;
-            Assert.ThrowsException<ArgumentException>(() => engine.Put(storageContext, key, value));
+            Assert.ThrowsException<CatchableException>(() => engine.Put(storageContext, key, value));
 
             //storage value is constant
             var snapshot = TestBlockchain.GetTestSnapshot();
@@ -514,7 +514,7 @@ namespace Neo.UnitTests.SmartContract
 
             //context is readonly
             storageContext.IsReadOnly = true;
-            Assert.ThrowsException<ArgumentException>(() => engine.Delete(storageContext, key));
+            Assert.ThrowsException<CatchableException>(() => engine.Delete(storageContext, key));
         }
 
         [TestMethod]
@@ -551,7 +551,7 @@ namespace Neo.UnitTests.SmartContract
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.CreateWildcard();
             engine.CallContract(state.Hash, method, CallFlags.All, args);
 
-            Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(UInt160.Zero, method, CallFlags.All, args));
+            Assert.ThrowsException<CatchableException>(() => engine.CallContract(UInt160.Zero, method, CallFlags.All, args));
         }
 
         [TestMethod]
