@@ -61,6 +61,7 @@ namespace Neo.SmartContract
         internal readonly uint ExecFeeFactor;
         internal readonly uint StoragePrice;
         private byte[] nonceData;
+        private uint[]? _maxOpCodes;
 
         /// <summary>
         /// Gets the descriptors of all interoperable services available in NEO.
@@ -493,9 +494,24 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction()
         {
             if (CurrentContext.InstructionPointer < CurrentContext.Script.Length)
-                AddGas(ExecFeeFactor * OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
+                AddGas(ExecFeeFactor * GetOpCodePrice(CurrentContext.CurrentInstruction.OpCode));
         }
 
+        private long GetOpCodePrice(OpCode opCode)
+        {
+            if (_maxOpCodes == null)
+            {
+                _maxOpCodes = new uint[byte.MaxValue];
+                Array.Clear(_maxOpCodes, 0, _maxOpCodes.Length);
+            }
+            _maxOpCodes[(byte)opCode]++;
+            return _maxOpCodes[(byte)opCode] switch
+            {
+                < 1024 * 10 => OpCodePrices[opCode],
+                >= 1024 * 10 and < 1024 * 100 => OpCodePrices[opCode] * 10,
+                _ => throw new InvalidOperationException($"MaxOpCodeSize exceed: {ReferenceCounter.Count}")
+            };
+        }
         private static Block CreateDummyBlock(DataCache snapshot, ProtocolSettings settings)
         {
             UInt256 hash = NativeContract.Ledger.CurrentHash(snapshot);
