@@ -50,20 +50,21 @@ namespace Neo.UnitTests.VMT
         [TestMethod]
         public void TestEmitAppCall1()
         {
-            ScriptBuilder sb = new ScriptBuilder();
+            ScriptBuilder sb = new();
             sb.EmitDynamicCall(UInt160.Zero, "AAAAA");
-            byte[] tempArray = new byte[36];
+            byte[] tempArray = new byte[37];
             tempArray[0] = (byte)OpCode.NEWARRAY0;
-            tempArray[1] = (byte)OpCode.PUSH15;//(byte)CallFlags.All;
-            tempArray[2] = (byte)OpCode.PUSHDATA1;
-            tempArray[3] = 5;//operation.Length
-            Array.Copy(Encoding.UTF8.GetBytes("AAAAA"), 0, tempArray, 4, 5);//operation.data
-            tempArray[9] = (byte)OpCode.PUSHDATA1;
-            tempArray[10] = 0x14;//scriptHash.Length
-            Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 11, 20);//operation.data
+            tempArray[1] = (byte)OpCode.PUSHINT8;
+            tempArray[2] = (byte)CallFlags.All;
+            tempArray[3] = (byte)OpCode.PUSHDATA1;
+            tempArray[4] = 5;//operation.Length
+            Array.Copy(Encoding.UTF8.GetBytes("AAAAA"), 0, tempArray, 5, 5);//operation.data
+            tempArray[10] = (byte)OpCode.PUSHDATA1;
+            tempArray[11] = 0x14;//scriptHash.Length
+            Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 12, 20);//operation.data
             uint api = ApplicationEngine.System_Contract_Call;
-            tempArray[31] = (byte)OpCode.SYSCALL;
-            Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 32, 4);//api.data
+            tempArray[32] = (byte)OpCode.SYSCALL;
+            Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 33, 4);//api.data
             Assert.AreEqual(tempArray.ToHexString(), sb.ToArray().ToHexString());
         }
 
@@ -112,44 +113,46 @@ namespace Neo.UnitTests.VMT
         [TestMethod]
         public void TestEmitAppCall2()
         {
-            ScriptBuilder sb = new ScriptBuilder();
+            ScriptBuilder sb = new();
             sb.EmitDynamicCall(UInt160.Zero, "AAAAA", new ContractParameter[] { new ContractParameter(ContractParameterType.Integer) });
-            byte[] tempArray = new byte[38];
+            byte[] tempArray = new byte[39];
             tempArray[0] = (byte)OpCode.PUSH0;
             tempArray[1] = (byte)OpCode.PUSH1;
             tempArray[2] = (byte)OpCode.PACK;
-            tempArray[3] = (byte)OpCode.PUSH15;//(byte)CallFlags.All;
-            tempArray[4] = (byte)OpCode.PUSHDATA1;
-            tempArray[5] = 0x05;//operation.Length
-            Array.Copy(Encoding.UTF8.GetBytes("AAAAA"), 0, tempArray, 6, 5);//operation.data
-            tempArray[11] = (byte)OpCode.PUSHDATA1;
-            tempArray[12] = 0x14;//scriptHash.Length
-            Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 13, 20);//operation.data
+            tempArray[3] = (byte)OpCode.PUSHINT8;
+            tempArray[4] = (byte)CallFlags.All;
+            tempArray[5] = (byte)OpCode.PUSHDATA1;
+            tempArray[6] = 0x05;//operation.Length
+            Array.Copy(Encoding.UTF8.GetBytes("AAAAA"), 0, tempArray, 7, 5);//operation.data
+            tempArray[12] = (byte)OpCode.PUSHDATA1;
+            tempArray[13] = 0x14;//scriptHash.Length
+            Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 14, 20);//operation.data
             uint api = ApplicationEngine.System_Contract_Call;
-            tempArray[33] = (byte)OpCode.SYSCALL;
-            Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 34, 4);//api.data
+            tempArray[34] = (byte)OpCode.SYSCALL;
+            Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 35, 4);//api.data
             Assert.AreEqual(tempArray.ToHexString(), sb.ToArray().ToHexString());
         }
 
         [TestMethod]
         public void TestEmitAppCall3()
         {
-            ScriptBuilder sb = new ScriptBuilder();
+            ScriptBuilder sb = new();
             sb.EmitDynamicCall(UInt160.Zero, "AAAAA", true);
-            byte[] tempArray = new byte[38];
+            byte[] tempArray = new byte[39];
             tempArray[0] = (byte)OpCode.PUSH1;
             tempArray[1] = (byte)OpCode.PUSH1;//arg.Length 
             tempArray[2] = (byte)OpCode.PACK;
-            tempArray[3] = (byte)OpCode.PUSH15;//(byte)CallFlags.All;
-            tempArray[4] = (byte)OpCode.PUSHDATA1;
-            tempArray[5] = 0x05;//operation.Length
-            Array.Copy(Encoding.UTF8.GetBytes("AAAAA"), 0, tempArray, 6, 5);//operation.data
-            tempArray[11] = (byte)OpCode.PUSHDATA1;
-            tempArray[12] = 0x14;//scriptHash.Length
-            Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 13, 20);//operation.data
+            tempArray[3] = (byte)OpCode.PUSHINT8;
+            tempArray[4] = (byte)CallFlags.All;
+            tempArray[5] = (byte)OpCode.PUSHDATA1;
+            tempArray[6] = 0x05;//operation.Length
+            Array.Copy(Encoding.UTF8.GetBytes("AAAAA"), 0, tempArray, 7, 5);//operation.data
+            tempArray[12] = (byte)OpCode.PUSHDATA1;
+            tempArray[13] = 0x14;//scriptHash.Length
+            Array.Copy(UInt160.Zero.ToArray(), 0, tempArray, 14, 20);//operation.data
             uint api = ApplicationEngine.System_Contract_Call;
-            tempArray[33] = (byte)OpCode.SYSCALL;
-            Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 34, 4);//api.data
+            tempArray[34] = (byte)OpCode.SYSCALL;
+            Array.Copy(BitConverter.GetBytes(api), 0, tempArray, 35, 4);//api.data
             Assert.AreEqual(tempArray.ToHexString(), sb.ToArray().ToHexString());
         }
 
@@ -158,7 +161,7 @@ namespace Neo.UnitTests.VMT
         {
             byte[] testScript = NativeContract.GAS.Hash.MakeScript("balanceOf", UInt160.Zero);
 
-            Assert.AreEqual("0c14000000000000000000000000000000000000000011c01f0c0962616c616e63654f660c14cf76e28bd0062c4a478ee35561011319f3cfa4d241627d5b52",
+            Assert.AreEqual("0c14000000000000000000000000000000000000000011c0001f0c0962616c616e63654f660c14cf76e28bd0062c4a478ee35561011319f3cfa4d241627d5b52",
                             testScript.ToHexString());
         }
 
