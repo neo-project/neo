@@ -514,11 +514,16 @@ namespace Neo.SmartContract
             }
             _opCodeCounter[(byte)opCode]++;
 
+            // if the opcode is more expensive, it takes longer to execute
+            // then it's borderMax should be smaller.
+            // I set the borderMax of cheapest OpCode to 1024 * 1024 cause
+            // if this value is too small, it might cause existing transactions
+            // fail to execute due to the change of gas cost.
             var borderMax = 1024 * 1024 / (OpCodePrices[opCode] == 0 ? 1 : OpCodePrices[opCode]);
             if (_opCodeCounter[(byte)opCode] < borderMax) return OpCodePrices[opCode];
 
             // Price increase fraction
-            var fraction = 3;
+            const int fraction = 3;
             // if the opcode is used for too many times
             // 100% - 110% borderMax => (1 + fraction) * price
             // 110% - 120% borderMax => (1 + 2fraction) * price
