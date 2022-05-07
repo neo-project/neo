@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -224,10 +224,11 @@ namespace Neo.SmartContract
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             UInt160 callingScriptHash = state.ScriptHash;
             CallFlags callingFlags = state.CallFlags;
+            const CallFlags unlocks = CallFlags.AllowExceptions;
 
             if (args.Count != method.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {method.Parameters.Length} Arguments But Receives {args.Count} Arguments");
             if (hasReturnValue ^ (method.ReturnType != ContractParameterType.Void)) throw new InvalidOperationException("The return value type does not match.");
-            ExecutionContext context_new = LoadContract(contract, method, flags & callingFlags);
+            ExecutionContext context_new = LoadContract(contract, method, flags & (callingFlags | unlocks));
             state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
 
@@ -262,10 +263,18 @@ namespace Neo.SmartContract
             base.ContextUnloaded(context);
             if (Diagnostic is not null)
                 currentNodeOfInvocationTree = currentNodeOfInvocationTree.Parent;
-            if (!contractTasks.Remove(context, out var awaiter)) return;
-            if (UncaughtException is not null)
-                throw new VMUnhandledException(UncaughtException);
-            awaiter.SetResult(this);
+            if (UncaughtException is not null && CurrentContext is not null && context.Script != CurrentContext.Script)
+            {
+                ExecutionContextState state = context.GetState<ExecutionContextState>();
+                if (!state.CallFlags.HasFlag(CallFlags.AllowExceptions))
+                    throw new VMUnhandledException(UncaughtException);
+            }
+            if (contractTasks.Remove(context, out var awaiter))
+            {
+                if (UncaughtException is not null)
+                    throw new VMUnhandledException(UncaughtException);
+                awaiter.SetResult(this);
+            }
         }
 
         /// <summary>

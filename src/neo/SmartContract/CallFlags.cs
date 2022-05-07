@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -44,6 +44,11 @@ namespace Neo.SmartContract
         AllowNotify = 0b00001000,
 
         /// <summary>
+        /// Indicates that the called contract is allowed to throw exceptions.
+        /// </summary>
+        AllowExceptions = 0b00010000,
+
+        /// <summary>
         /// Indicates that the called contract is allowed to read or write states.
         /// </summary>
         States = ReadStates | WriteStates,
@@ -56,6 +61,6 @@ namespace Neo.SmartContract
         /// <summary>
         /// All flags are set.
         /// </summary>
-        All = States | AllowCall | AllowNotify
+        All = States | AllowCall | AllowNotify | AllowExceptions
     }
 }
