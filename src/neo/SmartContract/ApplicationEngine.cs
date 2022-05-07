@@ -8,6 +8,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#nullable enable
 using Neo.IO;
 using Neo.IO.Caching;
 using Neo.IO.Json;
