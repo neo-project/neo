@@ -62,7 +62,7 @@ namespace Neo.SmartContract
         internal readonly uint ExecFeeFactor;
         internal readonly uint StoragePrice;
         private byte[] nonceData;
-        private uint[]? _maxOpCodes;
+        private uint[]? _opCodeCounter;
 
         /// <summary>
         /// Gets the descriptors of all interoperable services available in NEO.
@@ -498,20 +498,31 @@ namespace Neo.SmartContract
                 AddGas(ExecFeeFactor * GetOpCodePrice(CurrentContext.CurrentInstruction.OpCode));
         }
 
+        /// <summary>
+        /// To prevent DOS attacks mentioned in issue 2723
+        /// and mitigate further potential DOS attacks, adopt dynamic opcode price.
+        /// </summary>
+        /// <param name="opCode">OpCode</param>
+        /// <returns>the price of the opcode</returns>
+        /// <exception cref="InvalidOperationException">if the opcode is used for too many times, FAULT the transaction</exception>
         private long GetOpCodePrice(OpCode opCode)
         {
-            if (_maxOpCodes == null)
+            // different engines should have different opcode counter
+            if (_opCodeCounter == null)
             {
-                _maxOpCodes = new uint[byte.MaxValue];
-                Array.Clear(_maxOpCodes, 0, _maxOpCodes.Length);
+                _opCodeCounter = new uint[byte.MaxValue];
+                Array.Clear(_opCodeCounter, 0, _opCodeCounter.Length);
             }
-            _maxOpCodes[(byte)opCode]++;
-            return _maxOpCodes[(byte)opCode] switch
-            {
-                < 1024 * 10 => OpCodePrices[opCode],
-                >= 1024 * 10 and < 1024 * 100 => OpCodePrices[opCode] * 10,
-                _ => throw new InvalidOperationException($"MaxOpCodeSize exceed: {ReferenceCounter.Count}")
-            };
+            _opCodeCounter[(byte)opCode]++;
+
+            var borderMax = 1024 * 1024 / (OpCodePrices[opCode] == 0 ? 1 : OpCodePrices[opCode]);
+            if (_opCodeCounter[(byte)opCode] < borderMax) return OpCodePrices[opCode];
+
+            // if the opcode is used for too many times, then the price becomes 10 times
+            if (borderMax <= _opCodeCounter[(byte)opCode] && _opCodeCounter[(byte)opCode] < borderMax * 2) return OpCodePrices[opCode] * 10;
+
+            // you shall not use the same opcode for infinite times.
+            throw new InvalidOperationException($"MaxOpCodeCount exceed: {_opCodeCounter[(byte)opCode]}");
         }
         private static Block CreateDummyBlock(DataCache snapshot, ProtocolSettings settings)
         {
