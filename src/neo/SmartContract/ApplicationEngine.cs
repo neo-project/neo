@@ -524,11 +524,12 @@ namespace Neo.SmartContract
             // 110% - 120% borderMax => (1 + 2fraction) * price
             // ...
             // 180% - 190% borderMax => (1 + 9fraction)) * price
+            // 190% - 200% borderMax => (1 + 10fraction)) * price
             if (borderMax <= _opCodeCounter[(byte)opCode] && _opCodeCounter[(byte)opCode] < borderMax * 2)
                 return OpCodePrices[opCode] * (1 + fraction * (10 * _opCodeCounter[(byte)opCode] - 9 * borderMax) / borderMax);
 
             // you shall not use the same opcode for infinite times.
-            // >190% borderMax, exception
+            // >200% borderMax, exception
             throw new InvalidOperationException($"MaxOpCodeCount exceed: {_opCodeCounter[(byte)opCode]}");
         }
         private static Block CreateDummyBlock(DataCache snapshot, ProtocolSettings settings)
