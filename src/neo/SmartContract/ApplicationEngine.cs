@@ -52,7 +52,7 @@ namespace Neo.SmartContract
 
         private static IApplicationEngineProvider applicationEngineProvider;
         private static Dictionary<uint, InteropDescriptor> services;
-        private TreeNode<UInt160> currentNodeOfInvocationTree = null;
+        private TreeNode<UInt160>? currentNodeOfInvocationTree = null;
         private readonly long gas_amount;
         private Dictionary<Type, object> states;
         private List<NotifyEventArgs> notifications;
@@ -281,7 +281,7 @@ namespace Neo.SmartContract
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
-        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, Diagnostic diagnostic = null)
+        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block? persistingBlock = null, ProtocolSettings? settings = null, long gas = TestModeGas, Diagnostic? diagnostic = null)
         {
             return applicationEngineProvider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic);
@@ -349,7 +349,7 @@ namespace Neo.SmartContract
         /// <param name="initialPosition">The initial position of the instruction pointer.</param>
         /// <param name="configureState">The action used to configure the state of the loaded context.</param>
         /// <returns>The loaded context.</returns>
-        public ExecutionContext LoadScript(Script script, int rvcount = -1, int initialPosition = 0, Action<ExecutionContextState> configureState = null)
+        public ExecutionContext LoadScript(Script script, int rvcount = -1, int initialPosition = 0, Action<ExecutionContextState>? configureState = null)
         {
             // Create and configure context
             ExecutionContext context = CreateContext(script, rvcount, initialPosition);
@@ -581,7 +581,7 @@ namespace Neo.SmartContract
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
-        public static ApplicationEngine Run(byte[] script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, ProtocolSettings settings = null, int offset = 0, long gas = TestModeGas, Diagnostic diagnostic = null)
+        public static ApplicationEngine Run(byte[] script, DataCache snapshot, IVerifiable? container = null, Block? persistingBlock = null, ProtocolSettings? settings = null, int offset = 0, long gas = TestModeGas, Diagnostic? diagnostic = null)
         {
             persistingBlock ??= CreateDummyBlock(snapshot, settings ?? ProtocolSettings.Default);
             ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, persistingBlock, settings, gas, diagnostic);
@@ -595,7 +595,7 @@ namespace Neo.SmartContract
             return CompareExchange(ref applicationEngineProvider, provider, null) is null;
         }
 
-        public T GetState<T>()
+        public T? GetState<T>()
         {
             if (states is null) return default;
             if (!states.TryGetValue(typeof(T), out object state)) return default;
