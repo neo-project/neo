@@ -537,6 +537,7 @@ namespace Neo.SmartContract
             // >200% borderMax, exception
             throw new InvalidOperationException($"MaxOpCodeCount exceed: {_opCodeCounter[(byte)opCode]}");
         }
+
         private static Block CreateDummyBlock(DataCache snapshot, ProtocolSettings settings)
         {
             UInt256 hash = NativeContract.Ledger.CurrentHash(snapshot);
