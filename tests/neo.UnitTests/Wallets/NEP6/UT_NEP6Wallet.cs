@@ -397,6 +397,13 @@ namespace Neo.UnitTests.Wallets.NEP6
         }
 
         [TestMethod]
+        public void TestToJson()
+        {
+            var json = uut.ToJson();
+            json.ToString().Should().Be("{\"name\":\"noname\",\"version\":\"1.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}");
+        }
+
+        [TestMethod]
         public void TestUnlock()
         {
             Assert.ThrowsException<ArgumentNullException>(() => uut.CreateAccount(keyPair.PrivateKey));

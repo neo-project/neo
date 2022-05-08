@@ -317,17 +317,26 @@ namespace Neo.Wallets.NEP6
         }
 
         /// <summary>
+        /// Exports the wallet as JSON
+        /// </summary>
+        public JObject ToJson()
+        {
+            return new()
+            {
+                ["name"] = name,
+                ["version"] = version.ToString(),
+                ["scrypt"] = Scrypt.ToJson(),
+                ["accounts"] = accounts.Values.Select(p => p.ToJson()).ToArray(),
+                ["extra"] = extra
+            };
+        }
+
+        /// <summary>
         /// Saves the wallet to the file.
         /// </summary>
         public void Save()
         {
-            JObject wallet = new();
-            wallet["name"] = name;
-            wallet["version"] = version.ToString();
-            wallet["scrypt"] = Scrypt.ToJson();
-            wallet["accounts"] = new JArray(accounts.Values.Select(p => p.ToJson()));
-            wallet["extra"] = extra;
-            File.WriteAllText(Path, wallet.ToString());
+            File.WriteAllText(Path, ToJson().ToString());
         }
 
         /// <summary>
