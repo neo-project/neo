@@ -96,6 +96,10 @@ namespace Neo.UnitTests.Wallets
         {
             return true;
         }
+
+        public override void Save()
+        {
+        }
     }
 
     [TestClass]
@@ -241,13 +245,7 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestGetPrivateKeyFromNEP2()
         {
-            Action action = () => Wallet.GetPrivateKeyFromNEP2(null, null, ProtocolSettings.Default.AddressVersion, 2, 1, 1);
-            action.Should().Throw<ArgumentNullException>();
-
-            action = () => Wallet.GetPrivateKeyFromNEP2("TestGetPrivateKeyFromNEP2", null, ProtocolSettings.Default.AddressVersion, 2, 1, 1);
-            action.Should().Throw<ArgumentNullException>();
-
-            action = () => Wallet.GetPrivateKeyFromNEP2("3vQB7B6MrGQZaxCuFg4oh", "TestGetPrivateKeyFromNEP2", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
+            Action action = () => Wallet.GetPrivateKeyFromNEP2("3vQB7B6MrGQZaxCuFg4oh", "TestGetPrivateKeyFromNEP2", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
             action.Should().Throw<FormatException>();
 
             action = () => Wallet.GetPrivateKeyFromNEP2(nep2Key, "Test", ProtocolSettings.Default.AddressVersion, 2, 1, 1);

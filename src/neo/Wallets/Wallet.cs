@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -238,6 +238,21 @@ namespace Neo.Wallets
         }
 
         /// <summary>
+        /// Gets the default account of the wallet.
+        /// </summary>
+        /// <returns>The default account of the wallet.</returns>
+        public virtual WalletAccount GetDefaultAccount()
+        {
+            WalletAccount first = null;
+            foreach (WalletAccount account in GetAccounts())
+            {
+                if (account.IsDefault) return account;
+                if (first == null) first = account;
+            }
+            return first;
+        }
+
+        /// <summary>
         /// Gets the available balance for the specified asset in the wallet.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
@@ -300,6 +315,29 @@ namespace Neo.Wallets
         /// <returns>The decoded private key.</returns>
         public static byte[] GetPrivateKeyFromNEP2(string nep2, string passphrase, byte version, int N = 16384, int r = 8, int p = 8)
         {
+            byte[] passphrasedata = Encoding.UTF8.GetBytes(passphrase);
+            try
+            {
+                return GetPrivateKeyFromNEP2(nep2, passphrasedata, version, N, r, p);
+            }
+            finally
+            {
+                passphrasedata.AsSpan().Clear();
+            }
+        }
+
+        /// <summary>
+        /// Decodes a private key from the specified NEP-2 string.
+        /// </summary>
+        /// <param name="nep2">The NEP-2 string to be decoded.</param>
+        /// <param name="passphrase">The passphrase of the private key.</param>
+        /// <param name="version">The address version of NEO system.</param>
+        /// <param name="N">The N field of the <see cref="ScryptParameters"/> to be used.</param>
+        /// <param name="r">The R field of the <see cref="ScryptParameters"/> to be used.</param>
+        /// <param name="p">The P field of the <see cref="ScryptParameters"/> to be used.</param>
+        /// <returns>The decoded private key.</returns>
+        public static byte[] GetPrivateKeyFromNEP2(string nep2, byte[] passphrase, byte version, int N = 16384, int r = 8, int p = 8)
+        {
             if (nep2 == null) throw new ArgumentNullException(nameof(nep2));
             if (passphrase == null) throw new ArgumentNullException(nameof(passphrase));
             byte[] data = nep2.Base58CheckDecode();
@@ -307,9 +345,7 @@ namespace Neo.Wallets
                 throw new FormatException();
             byte[] addresshash = new byte[4];
             Buffer.BlockCopy(data, 3, addresshash, 0, 4);
-            byte[] datapassphrase = Encoding.UTF8.GetBytes(passphrase);
-            byte[] derivedkey = SCrypt.Generate(datapassphrase, addresshash, N, r, p, 64);
-            Array.Clear(datapassphrase, 0, datapassphrase.Length);
+            byte[] derivedkey = SCrypt.Generate(passphrase, addresshash, N, r, p, 64);
             byte[] derivedhalf1 = derivedkey[..32];
             byte[] derivedhalf2 = derivedkey[32..];
             Array.Clear(derivedkey, 0, derivedkey.Length);
@@ -694,5 +730,10 @@ namespace Neo.Wallets
         /// <param name="password">The password to be checked.</param>
         /// <returns><see langword="true"/> if the password is correct; otherwise, <see langword="false"/>.</returns>
         public abstract bool VerifyPassword(string password);
+
+        /// <summary>
+        /// Saves the wallet file to the disk. It uses the value of <see cref="Path"/> property.
+        /// </summary>
+        public abstract void Save();
     }
 }

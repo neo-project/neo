@@ -32,13 +32,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var address = new WalletAccount[pubKeys];
             var wallets = new NEP6Wallet[pubKeys];
-            var walletsUnlocks = new IDisposable[pubKeys];
             var snapshot = TestBlockchain.GetTestSnapshot();
 
             for (int x = 0; x < pubKeys; x++)
             {
-                wallets[x] = TestUtils.GenerateTestWallet();
-                walletsUnlocks[x] = wallets[x].Unlock("123");
+                wallets[x] = TestUtils.GenerateTestWallet("123");
                 address[x] = wallets[x].CreateAccount();
             }
 

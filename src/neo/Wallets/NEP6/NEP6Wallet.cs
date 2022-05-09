@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -17,7 +17,6 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using UserWallet = Neo.Wallets.SQLite.UserWallet;
 
 namespace Neo.Wallets.NEP6
 {
@@ -49,10 +48,12 @@ namespace Neo.Wallets.NEP6
         /// Loads or creates a wallet at the specified path.
         /// </summary>
         /// <param name="path">The path of the wallet file.</param>
+        /// <param name="password">The password of the wallet.</param>
         /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
         /// <param name="name">The name of the wallet. If the wallet is loaded from an existing file, this parameter is ignored.</param>
-        public NEP6Wallet(string path, ProtocolSettings settings, string name = null) : base(path, settings)
+        public NEP6Wallet(string path, string password, ProtocolSettings settings, string name = null) : base(path, settings)
         {
+            this.password = password;
             if (File.Exists(path))
             {
                 JObject wallet = JObject.Parse(File.ReadAllBytes(path));
@@ -72,10 +73,12 @@ namespace Neo.Wallets.NEP6
         /// Loads the wallet with the specified JSON string.
         /// </summary>
         /// <param name="path">The path of the wallet.</param>
+        /// <param name="password">The password of the wallet.</param>
         /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
         /// <param name="json">The JSON object representing the wallet.</param>
-        public NEP6Wallet(string path, ProtocolSettings settings, JObject json) : base(path, settings)
+        public NEP6Wallet(string path, string password, ProtocolSettings settings, JObject json) : base(path, settings)
         {
+            this.password = password;
             LoadFromJson(json, out Scrypt, out accounts, out extra);
         }
 
@@ -86,6 +89,8 @@ namespace Neo.Wallets.NEP6
             scrypt = ScryptParameters.FromJson(wallet["scrypt"]);
             accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson(p, this)).ToDictionary(p => p.ScriptHash);
             extra = wallet["extra"];
+            if (!VerifyPasswordInternal(password))
+                throw new InvalidOperationException("Wrong password.");
         }
 
         private void AddAccount(NEP6Account account)
@@ -179,7 +184,7 @@ namespace Neo.Wallets.NEP6
         /// </summary>
         /// <param name="nep2key">The NEP-2 string to decrypt.</param>
         /// <returns>The decrypted private key.</returns>
-        public KeyPair DecryptKey(string nep2key)
+        internal KeyPair DecryptKey(string nep2key)
         {
             return new KeyPair(GetPrivateKeyFromNEP2(nep2key, password, ProtocolSettings.AddressVersion, Scrypt.N, Scrypt.R, Scrypt.P));
         }
@@ -213,20 +218,6 @@ namespace Neo.Wallets.NEP6
                 foreach (NEP6Account account in accounts.Values)
                     yield return account;
             }
-        }
-
-        public WalletAccount GetDefaultAccount()
-        {
-            NEP6Account first = null;
-            lock (accounts)
-            {
-                foreach (NEP6Account account in accounts.Values)
-                {
-                    if (account.IsDefault) return account;
-                    if (first == null) first = account;
-                }
-            }
-            return first;
         }
 
         public override WalletAccount Import(X509Certificate2 cert)
@@ -289,29 +280,20 @@ namespace Neo.Wallets.NEP6
             return account;
         }
 
-        internal void Lock()
-        {
-            password = null;
-        }
-
         /// <summary>
-        /// Migrates the accounts from <see cref="UserWallet"/> to a new <see cref="NEP6Wallet"/>.
+        /// Migrates the accounts from old wallet to a new <see cref="NEP6Wallet"/>.
         /// </summary>
-        /// <param name="path">The path of the new wallet file.</param>
-        /// <param name="db3path">The path of the db3 wallet file.</param>
+        /// <param name="oldWallet">The old wallet to migrate.</param>
         /// <param name="password">The password of the wallets.</param>
+        /// <param name="path">The path of the new wallet file.</param>
         /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
         /// <returns>The created new wallet.</returns>
-        public static NEP6Wallet Migrate(string path, string db3path, string password, ProtocolSettings settings)
+        public static NEP6Wallet Migrate(Wallet oldWallet, string password, string path, ProtocolSettings settings)
         {
-            UserWallet wallet_old = UserWallet.Open(db3path, password, settings);
-            NEP6Wallet wallet_new = new(path, settings, wallet_old.Name);
-            using (wallet_new.Unlock(password))
+            NEP6Wallet wallet_new = new(path, password, settings, oldWallet.Name);
+            foreach (WalletAccount account in oldWallet.GetAccounts())
             {
-                foreach (WalletAccount account in wallet_old.GetAccounts())
-                {
-                    wallet_new.CreateAccount(account.Contract, account.GetKey());
-                }
+                wallet_new.CreateAccount(account.Contract, account.GetKey());
             }
             return wallet_new;
         }
@@ -331,28 +313,17 @@ namespace Neo.Wallets.NEP6
             };
         }
 
-        /// <summary>
-        /// Saves the wallet to the file.
-        /// </summary>
-        public void Save()
+        public override void Save()
         {
             File.WriteAllText(Path, ToJson().ToString());
         }
 
-        /// <summary>
-        /// Unlocks the wallet with the specified password.
-        /// </summary>
-        /// <param name="password">The password of the wallet.</param>
-        /// <returns>The object that can be disposed to lock the wallet again.</returns>
-        public IDisposable Unlock(string password)
+        public override bool VerifyPassword(string password)
         {
-            if (!VerifyPassword(password))
-                throw new CryptographicException();
-            this.password = password;
-            return new WalletLocker(this);
+            return this.password == password;
         }
 
-        public override bool VerifyPassword(string password)
+        private bool VerifyPasswordInternal(string password)
         {
             lock (accounts)
             {
@@ -399,8 +370,7 @@ namespace Neo.Wallets.NEP6
             {
                 foreach (NEP6Account account in accounts.Values)
                     account.ChangePasswordCommit();
-                if (password != null)
-                    password = newPassword;
+                password = newPassword;
             }
             else
             {
