@@ -262,10 +262,16 @@ namespace Neo.SmartContract
             base.ContextUnloaded(context);
             if (Diagnostic is not null)
                 currentNodeOfInvocationTree = currentNodeOfInvocationTree.Parent;
-            if (!contractTasks.Remove(context, out var awaiter)) return;
-            if (UncaughtException is not null)
+            if (UncaughtException is not null && CurrentContext is not null && context.Script != CurrentContext.Script)
+            {
                 throw new VMUnhandledException(UncaughtException);
-            awaiter.SetResult(this);
+            }
+            if (contractTasks.Remove(context, out var awaiter))
+            {
+                if (UncaughtException is not null)
+                    throw new VMUnhandledException(UncaughtException);
+                awaiter.SetResult(this);
+            }
         }
 
         /// <summary>
