@@ -8,7 +8,6 @@ using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
 using System.Linq;
-using System.Security;
 using System.Text;
 
 namespace Neo.UnitTests.Cryptography
@@ -127,54 +126,6 @@ namespace Neo.UnitTests.Cryptography
             string string1 = "bc62d4b80d9e36da29c16c5d4d9f11731f36052c72401a76c23c0fb5a9b74423";
             byte[] byteArray = string1.HexToBytes();
             password.ToAesKey().Should().Equal(byteArray);
-        }
-
-        [TestMethod]
-        public void TestSecureStringToAesKey()
-        {
-            var password = new SecureString();
-            password.AppendChar('h');
-            password.AppendChar('e');
-            password.AppendChar('l');
-            password.AppendChar('l');
-            password.AppendChar('o');
-            password.AppendChar(' ');
-            password.AppendChar('w');
-            password.AppendChar('o');
-            password.AppendChar('r');
-            password.AppendChar('l');
-            password.AppendChar('d');
-            string string1 = "bc62d4b80d9e36da29c16c5d4d9f11731f36052c72401a76c23c0fb5a9b74423";
-            byte[] byteArray = string1.HexToBytes();
-            password.ToAesKey().Should().Equal(byteArray);
-        }
-
-        [TestMethod]
-        public void TestToArray()
-        {
-            var password = new SecureString();
-            password.AppendChar('h');
-            password.AppendChar('e');
-            password.AppendChar('l');
-            password.AppendChar('l');
-            password.AppendChar('o');
-            password.AppendChar(' ');
-            password.AppendChar('w');
-            password.AppendChar('o');
-            password.AppendChar('r');
-            password.AppendChar('l');
-            password.AppendChar('d');
-            byte[] byteArray = { 0x68, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x77, 0x6F, 0x72, 0x6C, 0x64 };
-            password.ToArray().Should().Equal(byteArray);
-
-            SecureString nullString = null;
-            Action action = () => nullString.ToArray();
-            action.Should().Throw<NullReferenceException>();
-
-            var zeroString = new SecureString();
-            var result = zeroString.ToArray();
-            byteArray = Array.Empty<byte>();
-            result.Should().Equal(byteArray);
         }
     }
 }

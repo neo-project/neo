@@ -281,24 +281,6 @@ namespace Neo.Wallets.NEP6
         }
 
         /// <summary>
-        /// Migrates the accounts from old wallet to a new <see cref="NEP6Wallet"/>.
-        /// </summary>
-        /// <param name="oldWallet">The old wallet to migrate.</param>
-        /// <param name="password">The password of the wallets.</param>
-        /// <param name="path">The path of the new wallet file.</param>
-        /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
-        /// <returns>The created new wallet.</returns>
-        public static NEP6Wallet Migrate(Wallet oldWallet, string password, string path, ProtocolSettings settings)
-        {
-            NEP6Wallet wallet_new = new(path, password, settings, oldWallet.Name);
-            foreach (WalletAccount account in oldWallet.GetAccounts())
-            {
-                wallet_new.CreateAccount(account.Contract, account.GetKey());
-            }
-            return wallet_new;
-        }
-
-        /// <summary>
         /// Exports the wallet as JSON
         /// </summary>
         public JObject ToJson()

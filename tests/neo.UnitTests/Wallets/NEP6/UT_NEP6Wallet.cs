@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.Threading;
 using Contract = Neo.SmartContract.Contract;
 
 namespace Neo.UnitTests.Wallets.NEP6
@@ -26,10 +25,11 @@ namespace Neo.UnitTests.Wallets.NEP6
         private static UInt160 testScriptHash;
         private string rootPath;
 
-        public static string GetRandomPath()
+        public static string GetRandomPath(string ext = null)
         {
-            string threadName = Thread.CurrentThread.ManagedThreadId.ToString();
-            return Path.GetFullPath(string.Format("Wallet_{0}", new Random().Next(1, 1000000).ToString("X8")) + threadName);
+            int rnd = new Random().Next(1, 1000000);
+            string threadName = Environment.CurrentManagedThreadId.ToString();
+            return Path.GetFullPath($"Wallet_{rnd:X8}{threadName}{ext}");
         }
 
         [ClassInitialize]
@@ -336,11 +336,11 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestMigrate()
         {
-            string path = GetRandomPath();
+            string path = GetRandomPath(".db3");
             UserWallet uw = UserWallet.Create(path, "123", ProtocolSettings.Default);
             uw.CreateAccount(keyPair.PrivateKey);
-            string npath = CreateWalletFile();  // Scrypt test values
-            NEP6Wallet nw = NEP6Wallet.Migrate(uw, "123", npath, ProtocolSettings.Default);
+            string npath = GetRandomPath(".json");
+            Wallet nw = Wallet.Migrate(npath, path, "123", ProtocolSettings.Default);
             bool result = nw.Contains(testScriptHash);
             Assert.AreEqual(true, result);
             uw.Delete();

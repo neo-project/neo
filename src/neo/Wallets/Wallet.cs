@@ -12,6 +12,7 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -735,5 +736,56 @@ namespace Neo.Wallets
         /// Saves the wallet file to the disk. It uses the value of <see cref="Path"/> property.
         /// </summary>
         public abstract void Save();
+
+        public static Wallet Create(string name, string path, string password, ProtocolSettings settings)
+        {
+            return GetFactory(path)?.CreateWallet(name, path, password, settings);
+        }
+
+        public static Wallet Open(string path, string password, ProtocolSettings settings)
+        {
+            return GetFactory(path)?.OpenWallet(path, password, settings);
+        }
+
+        /// <summary>
+        /// Migrates the accounts from old wallet to a new <see cref="NEP6Wallet"/>.
+        /// </summary>
+        /// <param name="password">The password of the wallets.</param>
+        /// <param name="path">The path of the new wallet file.</param>
+        /// <param name="oldPath">The path of the old wallet file.</param>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
+        /// <returns>The created new wallet.</returns>
+        public static Wallet Migrate(string path, string oldPath, string password, ProtocolSettings settings)
+        {
+            IWalletFactory factoryOld = GetFactory(oldPath);
+            if (factoryOld is null)
+                throw new InvalidOperationException("The old wallet file format is not supported.");
+            IWalletFactory factoryNew = GetFactory(path);
+            if (factoryNew is null)
+                throw new InvalidOperationException("The new wallet file format is not supported.");
+
+            Wallet oldWallet = factoryOld.OpenWallet(oldPath, password, settings);
+            Wallet newWallet = factoryNew.CreateWallet(oldWallet.Name, path, password, settings);
+
+            foreach (WalletAccount account in oldWallet.GetAccounts())
+            {
+                newWallet.CreateAccount(account.Contract, account.GetKey());
+            }
+            return newWallet;
+        }
+
+        private static IWalletFactory GetFactory(string path)
+        {
+            string filename = System.IO.Path.GetFileName(path);
+            return GetFactories().FirstOrDefault(p => p.Handle(filename));
+        }
+
+        private static IEnumerable<IWalletFactory> GetFactories()
+        {
+            return Plugin.Plugins
+                .OfType<IWalletFactory>()
+                .Append(NEP6WalletFactory.Instance)
+                .Append(SQLite.SQLiteWalletFactory.Instance);
+        }
     }
 }

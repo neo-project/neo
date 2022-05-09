@@ -18,7 +18,6 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Security;
 using System.Security.Cryptography;
 using static System.IO.Path;
 
@@ -207,19 +206,6 @@ namespace Neo.Wallets.SQLite
             return new UserWallet(path, password.ToAesKey(), settings, scrypt ?? ScryptParameters.Default);
         }
 
-        /// <summary>
-        /// Creates a new wallet at the specified path.
-        /// </summary>
-        /// <param name="path">The path of the wallet.</param>
-        /// <param name="password">The password of the wallet.</param>
-        /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
-        /// <param name="scrypt">The parameters of the SCrypt algorithm used for encrypting and decrypting the private keys in the wallet.</param>
-        /// <returns>The created wallet.</returns>
-        public static UserWallet Create(string path, SecureString password, ProtocolSettings settings, ScryptParameters scrypt = null)
-        {
-            return new UserWallet(path, password.ToAesKey(), settings, scrypt ?? ScryptParameters.Default);
-        }
-
         public override WalletAccount CreateAccount(byte[] privateKey)
         {
             KeyPair key = new(privateKey);
@@ -349,19 +335,7 @@ namespace Neo.Wallets.SQLite
         /// <param name="password">The password of the wallet.</param>
         /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
         /// <returns>The opened wallet.</returns>
-        public static UserWallet Open(string path, string password, ProtocolSettings settings)
-        {
-            return new UserWallet(path, password.ToAesKey(), settings);
-        }
-
-        /// <summary>
-        /// Opens a wallet at the specified path.
-        /// </summary>
-        /// <param name="path">The path of the wallet.</param>
-        /// <param name="password">The password of the wallet.</param>
-        /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
-        /// <returns>The opened wallet.</returns>
-        public static UserWallet Open(string path, SecureString password, ProtocolSettings settings)
+        public static new UserWallet Open(string path, string password, ProtocolSettings settings)
         {
             return new UserWallet(path, password.ToAesKey(), settings);
         }
