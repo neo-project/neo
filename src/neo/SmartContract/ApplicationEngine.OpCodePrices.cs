@@ -171,7 +171,7 @@ namespace Neo.SmartContract
             [OpCode.MOD] = 1 << 3,
             [OpCode.POW] = 1 << 6,
             [OpCode.SQRT] = 1 << 6,
-            [OpCode.MODMUL] = 1 << 4,
+            [OpCode.MODMUL] = 1 << 5,
             [OpCode.MODPOW] = 1 << 6,
             [OpCode.SHL] = 1 << 3,
             [OpCode.SHR] = 1 << 3,
