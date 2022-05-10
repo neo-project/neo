@@ -96,7 +96,7 @@ namespace Neo.SmartContract.Native
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy", 2);
             if (md is not null)
                 await engine.CallFromNativeContract(Hash, contract.Hash, md.Name, data, update);
-            engine.SendNotification(Hash, update ? "Update" : "Deploy", new VM.Types.Array { contract.Hash.ToArray() });
+            engine.SendNotification(Hash, update ? "Update" : "Deploy", new VM.Types.Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
         }
 
         internal override async ContractTask OnPersist(ApplicationEngine engine)
@@ -258,7 +258,7 @@ namespace Neo.SmartContract.Native
             // lock contract
             Policy.BlockAccount(engine.Snapshot, hash);
             // emit event
-            engine.SendNotification(Hash, "Destroy", new VM.Types.Array { hash.ToArray() });
+            engine.SendNotification(Hash, "Destroy", new VM.Types.Array(engine.ReferenceCounter) { hash.ToArray() });
         }
     }
 }
