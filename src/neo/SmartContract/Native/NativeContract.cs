@@ -200,25 +200,19 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
                 engine.AddGas(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
                 List<object> parameters = new();
-                List<VM.Types.StackItem> native_stack = new();
                 if (method.NeedApplicationEngine) parameters.Add(engine);
                 if (method.NeedSnapshot) parameters.Add(engine.Snapshot);
                 for (int i = 0; i < method.Parameters.Length; i++)
-                {
-                    var item = context.EvaluationStack.Pop();
-                    engine.ReferenceCounter.AddStackReference(item);
-                    native_stack.Add(item);
-                    parameters.Add(engine.Convert(item, method.Parameters[i]));
-                }
+                    parameters.Add(engine.Convert(context.EvaluationStack.Peek(i), method.Parameters[i]));
                 object returnValue = method.Handler.Invoke(this, parameters.ToArray());
                 if (returnValue is ContractTask task)
                 {
                     await task;
                     returnValue = task.GetResult();
                 }
-                foreach (var item in native_stack)
+                for (int i = 0; i < method.Parameters.Length; i++)
                 {
-                    engine.ReferenceCounter.RemoveStackReference(item);
+                    context.EvaluationStack.Pop();
                 }
                 if (method.Handler.ReturnType != typeof(void) && method.Handler.ReturnType != typeof(ContractTask))
                 {
