@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -200,15 +200,25 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
                 engine.AddGas(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
                 List<object> parameters = new();
+                List<VM.Types.StackItem> native_stack = new();
                 if (method.NeedApplicationEngine) parameters.Add(engine);
                 if (method.NeedSnapshot) parameters.Add(engine.Snapshot);
                 for (int i = 0; i < method.Parameters.Length; i++)
-                    parameters.Add(engine.Convert(context.EvaluationStack.Pop(), method.Parameters[i]));
+                {
+                    var item = context.EvaluationStack.Pop();
+                    engine.ReferenceCounter.AddStackReference(item);
+                    native_stack.Add(item);
+                    parameters.Add(engine.Convert(item, method.Parameters[i]));
+                }
                 object returnValue = method.Handler.Invoke(this, parameters.ToArray());
                 if (returnValue is ContractTask task)
                 {
                     await task;
                     returnValue = task.GetResult();
+                }
+                foreach (var item in native_stack)
+                {
+                    engine.ReferenceCounter.RemoveStackReference(item);
                 }
                 if (method.Handler.ReturnType != typeof(void) && method.Handler.ReturnType != typeof(ContractTask))
                 {
