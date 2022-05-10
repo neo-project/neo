@@ -263,9 +263,18 @@ namespace Neo.SmartContract
             base.ContextUnloaded(context);
             if (Diagnostic is not null)
                 currentNodeOfInvocationTree = currentNodeOfInvocationTree.Parent;
-            if (context.Script != CurrentContext?.Script && UncaughtException is null)
+            if (context.Script != CurrentContext?.Script)
             {
-                context.GetState<ExecutionContextState>().Snapshot?.Commit();
+                ExecutionContextState state = context.GetState<ExecutionContextState>();
+                if (UncaughtException is null)
+                {
+                    state.Snapshot?.Commit();
+                }
+                else
+                {
+                    if (state.NotificationCount > 0)
+                        notifications.RemoveRange(notifications.Count - state.NotificationCount, state.NotificationCount);
+                }
             }
             if (contractTasks.Remove(context, out var awaiter))
             {

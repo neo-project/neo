@@ -35,7 +35,6 @@ namespace Neo.UnitTests.Ledger
         private const byte Prefix_FeePerByte = 10;
         private readonly UInt160 senderAccount = UInt160.Zero;
         private MemoryPool _unit;
-        private MemoryPool _unit2;
         private TestIMemoryPoolTxObserverPlugin plugin;
 
         [ClassInitialize]
@@ -64,7 +63,6 @@ namespace Neo.UnitTests.Ledger
             _unit.VerifiedCount.Should().Be(0);
             _unit.UnVerifiedCount.Should().Be(0);
             _unit.Count.Should().Be(0);
-            _unit2 = new MemoryPool(new NeoSystem(ProtocolSettings.Default with { MemoryPoolMaxTransactions = 0 }));
             plugin = new TestIMemoryPoolTxObserverPlugin();
         }
 
@@ -227,11 +225,12 @@ namespace Neo.UnitTests.Ledger
             var snapshot = GetSnapshot();
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            engine.LoadScript(Array.Empty<byte>());
             await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 70, true);
 
             long txFee = 1;
-            AddTransactionsWithBalanceVerify(70, txFee, snapshot);
+            AddTransactionsWithBalanceVerify(70, txFee, engine.Snapshot);
 
             _unit.SortedTxCount.Should().Be(70);
 
@@ -245,11 +244,12 @@ namespace Neo.UnitTests.Ledger
             UInt160 sender = block.Transactions[0].Sender;
 
             ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.All, block, snapshot, block, settings: TestBlockchain.TheNeoSystem.Settings, gas: (long)balance);
+            applicationEngine.LoadScript(Array.Empty<byte>());
             await NativeContract.GAS.Burn(applicationEngine, sender, NativeContract.GAS.BalanceOf(snapshot, sender));
             _ = NativeContract.GAS.Mint(applicationEngine, sender, txFee * 30, true); // Set the balance to meet 30 txs only
 
             // Persist block and reverify all the txs in mempool, but half of the txs will be discarded
-            _unit.UpdatePoolForBlockPersisted(block, snapshot);
+            _unit.UpdatePoolForBlockPersisted(block, applicationEngine.Snapshot);
             _unit.SortedTxCount.Should().Be(30);
             _unit.UnverifiedSortedTxCount.Should().Be(0);
 
@@ -484,7 +484,6 @@ namespace Neo.UnitTests.Ledger
             var tx1 = CreateTransaction();
             _unit.TryAdd(tx1, snapshot).Should().Be(VerifyResult.Succeed);
             _unit.TryAdd(tx1, snapshot).Should().NotBe(VerifyResult.Succeed);
-            _unit2.TryAdd(tx1, snapshot).Should().NotBe(VerifyResult.Succeed);
         }
 
         [TestMethod]

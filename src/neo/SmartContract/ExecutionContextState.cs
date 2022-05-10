@@ -39,5 +39,7 @@ namespace Neo.SmartContract
         public CallFlags CallFlags { get; set; } = CallFlags.All;
 
         public DataCache Snapshot { get; set; }
+
+        public int NotificationCount { get; set; }
     }
 }
