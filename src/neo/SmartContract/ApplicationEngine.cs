@@ -54,7 +54,7 @@ namespace Neo.SmartContract
         private TreeNode<UInt160> currentNodeOfInvocationTree = null;
         private readonly long gas_amount;
         private Dictionary<Type, object> states;
-        private readonly Stack<DataCache> snapshots;
+        private readonly DataCache originalSnapshot;
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
@@ -88,7 +88,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The snapshot used to read or write data.
         /// </summary>
-        public DataCache Snapshot => snapshots?.Peek();
+        public DataCache Snapshot => CurrentContext?.GetState<ExecutionContextState>().Snapshot ?? originalSnapshot;
 
         /// <summary>
         /// The block being persisted. This field could be <see langword="null"/> if the <see cref="Trigger"/> is <see cref="TriggerType.Verification"/>.
@@ -149,11 +149,7 @@ namespace Neo.SmartContract
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
-            if (snapshot is not null)
-            {
-                this.snapshots = new();
-                this.snapshots.Push(snapshot);
-            }
+            this.originalSnapshot = snapshot;
             this.PersistingBlock = persistingBlock;
             this.ProtocolSettings = settings;
             this.gas_amount = gas;
@@ -267,11 +263,9 @@ namespace Neo.SmartContract
             base.ContextUnloaded(context);
             if (Diagnostic is not null)
                 currentNodeOfInvocationTree = currentNodeOfInvocationTree.Parent;
-            if (snapshots is not null && context.Script != CurrentContext?.Script)
+            if (context.Script != CurrentContext?.Script && UncaughtException is null)
             {
-                DataCache snapshot = snapshots.Pop();
-                if (UncaughtException is null)
-                    snapshot.Commit();
+                context.GetState<ExecutionContextState>().Snapshot?.Commit();
             }
             if (contractTasks.Remove(context, out var awaiter))
             {
@@ -364,11 +358,12 @@ namespace Neo.SmartContract
         {
             // Create and configure context
             ExecutionContext context = CreateContext(script, rvcount, initialPosition);
-            configureState?.Invoke(context.GetState<ExecutionContextState>());
+            ExecutionContextState state = context.GetState<ExecutionContextState>();
+            state.Snapshot = Snapshot?.CreateSnapshot();
+            configureState?.Invoke(state);
+
             // Load context
             LoadContext(context);
-            // Create snapshot
-            snapshots?.Push(Snapshot.CreateSnapshot());
             return context;
         }
 
