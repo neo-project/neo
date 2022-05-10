@@ -8,6 +8,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 
@@ -28,6 +29,6 @@ namespace Neo.SmartContract.Iterators
         /// Gets the element in the collection at the current position of the iterator.
         /// </summary>
         /// <returns>The element in the collection at the current position of the iterator.</returns>
-        StackItem Value();
+        StackItem Value(ReferenceCounter referenceCounter);
     }
 }
