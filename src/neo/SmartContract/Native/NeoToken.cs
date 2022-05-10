@@ -349,16 +349,16 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Gets the registered candidates iterator.
         /// </summary>
-        /// <param name="engine">The <see cref="ApplicationEngine"/> that is executing the contract.</param>
+        /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>All the registered candidates.</returns>
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
-        private IIterator GetAllCandidates(ApplicationEngine engine)
+        private IIterator GetAllCandidates(DataCache snapshot)
         {
             const FindOptions options = FindOptions.RemovePrefix | FindOptions.DeserializeValues | FindOptions.PickField1;
-            var enumerator = GetCandidatesInternal(engine.Snapshot)
+            var enumerator = GetCandidatesInternal(snapshot)
                 .Select(p => (p.Key, p.Value))
                 .GetEnumerator();
-            return new StorageIterator(enumerator, 1, options, engine.ReferenceCounter);
+            return new StorageIterator(enumerator, 1, options);
         }
 
         internal IEnumerable<(StorageKey Key, StorageItem Value, ECPoint PublicKey, CandidateState State)> GetCandidatesInternal(DataCache snapshot)
