@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -54,6 +54,7 @@ namespace Neo.SmartContract
         private TreeNode<UInt160> currentNodeOfInvocationTree = null;
         private readonly long gas_amount;
         private Dictionary<Type, object> states;
+        private readonly Stack<DataCache> snapshots = new();
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
@@ -87,7 +88,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The snapshot used to read or write data.
         /// </summary>
-        public DataCache Snapshot { get; }
+        public DataCache Snapshot => snapshots.Peek();
 
         /// <summary>
         /// The block being persisted. This field could be <see langword="null"/> if the <see cref="Trigger"/> is <see cref="TriggerType.Verification"/>.
@@ -148,13 +149,13 @@ namespace Neo.SmartContract
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
-            this.Snapshot = snapshot;
+            this.snapshots.Push(snapshot);
             this.PersistingBlock = persistingBlock;
             this.ProtocolSettings = settings;
             this.gas_amount = gas;
             this.Diagnostic = diagnostic;
-            this.ExecFeeFactor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(Snapshot);
-            this.StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(Snapshot);
+            this.ExecFeeFactor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(snapshot);
+            this.StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(snapshot);
             this.nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
             if (persistingBlock is not null)
             {
@@ -262,10 +263,18 @@ namespace Neo.SmartContract
             base.ContextUnloaded(context);
             if (Diagnostic is not null)
                 currentNodeOfInvocationTree = currentNodeOfInvocationTree.Parent;
-            if (!contractTasks.Remove(context, out var awaiter)) return;
-            if (UncaughtException is not null)
-                throw new VMUnhandledException(UncaughtException);
-            awaiter.SetResult(this);
+            if (context.Script != CurrentContext?.Script)
+            {
+                DataCache snapshot = snapshots.Pop();
+                if (UncaughtException is null)
+                    snapshot.Commit();
+            }
+            if (contractTasks.Remove(context, out var awaiter))
+            {
+                if (UncaughtException is not null)
+                    throw new VMUnhandledException(UncaughtException);
+                awaiter.SetResult(this);
+            }
         }
 
         /// <summary>
@@ -354,6 +363,8 @@ namespace Neo.SmartContract
             configureState?.Invoke(context.GetState<ExecutionContextState>());
             // Load context
             LoadContext(context);
+            // Create snapshot
+            snapshots.Push(Snapshot.CreateSnapshot());
             return context;
         }
 
