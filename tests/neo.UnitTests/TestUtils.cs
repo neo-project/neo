@@ -121,22 +121,39 @@ namespace Neo.UnitTests
 
         internal static ContractState GetContract(string method = "test", int parametersCount = 0)
         {
+            NefFile nef = new()
+            {
+                Compiler = "",
+                Source = "",
+                Tokens = Array.Empty<MethodToken>(),
+                Script = new byte[] { 0x01, 0x01, 0x01, 0x01 }
+            };
+            nef.CheckSum = NefFile.ComputeChecksum(nef);
             return new ContractState
             {
                 Id = 0x43000000,
-                Nef = new NefFile { Script = new byte[] { 0x01, 0x01, 0x01, 0x01 } },
-                Hash = new byte[] { 0x01, 0x01, 0x01, 0x01 }.ToScriptHash(),
+                Nef = nef,
+                Hash = nef.Script.ToScriptHash(),
                 Manifest = CreateManifest(method, ContractParameterType.Any, Enumerable.Repeat(ContractParameterType.Any, parametersCount).ToArray())
             };
         }
 
-        internal static ContractState GetContract(byte[] script)
+        internal static ContractState GetContract(byte[] script, ContractManifest manifest = null)
         {
+            NefFile nef = new()
+            {
+                Compiler = "",
+                Source = "",
+                Tokens = Array.Empty<MethodToken>(),
+                Script = script
+            };
+            nef.CheckSum = NefFile.ComputeChecksum(nef);
             return new ContractState
             {
                 Id = 1,
-                Nef = new NefFile { Script = script },
-                Manifest = CreateDefaultManifest()
+                Hash = script.ToScriptHash(),
+                Nef = nef,
+                Manifest = manifest ?? CreateDefaultManifest()
             };
         }
 
