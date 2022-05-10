@@ -204,7 +204,7 @@ namespace Neo.SmartContract.Native
             // Send notification
 
             engine.SendNotification(Hash, "Transfer",
-                new Array { from?.ToArray() ?? StackItem.Null, to?.ToArray() ?? StackItem.Null, amount });
+                new Array(engine.ReferenceCounter) { from?.ToArray() ?? StackItem.Null, to?.ToArray() ?? StackItem.Null, amount });
 
             // Check if it's a wallet or smart contract
 
