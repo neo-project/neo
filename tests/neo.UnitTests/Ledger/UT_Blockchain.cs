@@ -40,9 +40,7 @@ namespace Neo.UnitTests.Ledger
         public void TestValidTransaction()
         {
             var snapshot = TestBlockchain.TheNeoSystem.GetSnapshot();
-            var walletA = TestUtils.GenerateTestWallet();
-
-            using var unlockA = walletA.Unlock("123");
+            var walletA = TestUtils.GenerateTestWallet("123");
             var acc = walletA.CreateAccount();
 
             // Fake balance
