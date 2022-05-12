@@ -269,6 +269,11 @@ namespace Neo.SmartContract
                 if (UncaughtException is null)
                 {
                     state.Snapshot?.Commit();
+                    if (CurrentContext != null)
+                    {
+                        ExecutionContextState contextState = CurrentContext.GetState<ExecutionContextState>();
+                        contextState.NotificationCount += state.NotificationCount;
+                    }
                 }
                 else
                 {
