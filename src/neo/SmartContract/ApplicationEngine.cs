@@ -180,6 +180,7 @@ namespace Neo.SmartContract
         protected override void OnFault(Exception ex)
         {
             FaultException = ex;
+            notifications = null;
             base.OnFault(ex);
         }
 

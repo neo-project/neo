@@ -64,9 +64,7 @@ namespace Neo.Ledger
                 GasConsumed = engine.GasConsumed;
                 Exception = engine.FaultException;
                 Stack = engine.ResultStack.ToArray();
-                Notifications = engine.State == VMState.HALT
-                    ? engine.Notifications.ToArray()
-                    : System.Array.Empty<NotifyEventArgs>();
+                Notifications = engine.Notifications.ToArray();
             }
         }
     }
