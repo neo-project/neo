@@ -196,7 +196,7 @@ namespace Neo.SmartContract
                     }
                 case JBoolean boolean:
                     {
-                        return new Boolean(boolean.Value);
+                        return boolean.Value ? StackItem.True : StackItem.False;
                     }
                 case JObject obj:
                     {
