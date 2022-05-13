@@ -11,7 +11,6 @@
 using Neo.IO;
 using Neo.VM;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 
@@ -38,7 +37,6 @@ namespace Neo.SmartContract
                 {
                     BigInteger bi => bi.ToByteArrayStandard(),
                     IInteroperable interoperable => BinarySerializer.Serialize(interoperable.ToStackItem(null), 1024 * 1024),
-                    IReadOnlyCollection<ISerializable> list => list.ToByteArray(),
                     null => null,
                     _ => throw new InvalidCastException()
                 };
@@ -132,18 +130,6 @@ namespace Neo.SmartContract
             }
             value = null;
             return (T)cache;
-        }
-
-        /// <summary>
-        /// Gets a list of <see cref="ISerializable"/> from the storage.
-        /// </summary>
-        /// <typeparam name="T">The type of the <see cref="ISerializable"/>.</typeparam>
-        /// <returns>The list of the <see cref="ISerializable"/>.</returns>
-        public List<T> GetSerializableList<T>() where T : ISerializable, new()
-        {
-            cache ??= new List<T>(value.AsSerializableArray<T>());
-            value = null;
-            return (List<T>)cache;
         }
 
         public void Serialize(BinaryWriter writer)
