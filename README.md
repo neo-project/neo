@@ -112,10 +112,6 @@ This repository contain main classes of the
 Visit the [documentation](https://docs.neo.org/docs/en-us/index.html) to get started.
 
 
-*Note: This is Neo 3 branch, currently under development. For the current stable version, please [click here.](https://github.com/neo-project/neo/tree/master-2.x)*
-
-
-
 ## Project structure
 An overview of the project folders can be seen below.
 

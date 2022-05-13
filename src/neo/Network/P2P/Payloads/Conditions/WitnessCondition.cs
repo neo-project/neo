@@ -12,12 +12,14 @@ using Neo.IO;
 using Neo.IO.Caching;
 using Neo.IO.Json;
 using Neo.SmartContract;
+using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
-    public abstract class WitnessCondition : ISerializable
+    public abstract class WitnessCondition : IInteroperable, ISerializable
     {
         private const int MaxSubitems = 16;
         internal const int MaxNestingDepth = 2;
@@ -90,6 +92,24 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <param name="writer">The <see cref="BinaryWriter"/> for writing data.</param>
         protected abstract void SerializeWithoutType(BinaryWriter writer);
 
+        private protected virtual void ParseJson(JObject json)
+        {
+        }
+
+        /// <summary>
+        /// Converts the <see cref="WitnessCondition"/> from a JSON object.
+        /// </summary>
+        /// <param name="json">The <see cref="WitnessCondition"/> represented by a JSON object.</param>
+        /// <returns>The converted <see cref="WitnessCondition"/>.</returns>
+        public static WitnessCondition FromJson(JObject json)
+        {
+            WitnessConditionType type = Enum.Parse<WitnessConditionType>(json["type"].GetString());
+            if (ReflectionCache<WitnessConditionType>.CreateInstance(type) is not WitnessCondition condition)
+                throw new FormatException("Invalid WitnessConditionType.");
+            condition.ParseJson(json);
+            return condition;
+        }
+
         /// <summary>
         /// Converts the condition to a JSON object.
         /// </summary>
@@ -100,6 +120,16 @@ namespace Neo.Network.P2P.Payloads.Conditions
             {
                 ["type"] = Type
             };
+        }
+
+        void IInteroperable.FromStackItem(StackItem stackItem)
+        {
+            throw new NotSupportedException();
+        }
+
+        public virtual StackItem ToStackItem(ReferenceCounter referenceCounter)
+        {
+            return new VM.Types.Array(referenceCounter, new StackItem[] { (byte)Type });
         }
     }
 }

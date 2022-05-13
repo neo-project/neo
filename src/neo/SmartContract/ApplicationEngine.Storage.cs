@@ -153,7 +153,7 @@ namespace Neo.SmartContract
             if ((options.HasFlag(FindOptions.PickField0) || options.HasFlag(FindOptions.PickField1)) && !options.HasFlag(FindOptions.DeserializeValues))
                 throw new ArgumentException(null, nameof(options));
             byte[] prefix_key = StorageKey.CreateSearchPrefix(context.Id, prefix);
-            return new StorageIterator(Snapshot.Find(prefix_key).GetEnumerator(), prefix.Length, options, ReferenceCounter);
+            return new StorageIterator(Snapshot.Find(prefix_key).GetEnumerator(), prefix.Length, options);
         }
 
         /// <summary>

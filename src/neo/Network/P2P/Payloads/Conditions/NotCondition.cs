@@ -11,6 +11,8 @@
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.SmartContract;
+using Neo.VM;
+using Neo.VM.Types;
 using System;
 using System.IO;
 
@@ -45,11 +47,23 @@ namespace Neo.Network.P2P.Payloads.Conditions
             writer.Write(Expression);
         }
 
+        private protected override void ParseJson(JObject json)
+        {
+            Expression = FromJson(json["expression"]);
+        }
+
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
             json["expression"] = Expression.ToJson();
             return json;
+        }
+
+        public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+        {
+            var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
+            result.Add(Expression.ToStackItem(referenceCounter));
+            return result;
         }
     }
 }

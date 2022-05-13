@@ -53,11 +53,12 @@ namespace Neo.SmartContract
         private static Dictionary<uint, InteropDescriptor> services;
         private TreeNode<UInt160> currentNodeOfInvocationTree = null;
         private readonly long gas_amount;
+        private Dictionary<Type, object> states;
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
         private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
-        private readonly uint exec_fee_factor;
+        internal readonly uint ExecFeeFactor;
         internal readonly uint StoragePrice;
         private byte[] nonceData;
 
@@ -152,7 +153,7 @@ namespace Neo.SmartContract
             this.ProtocolSettings = settings;
             this.gas_amount = gas;
             this.Diagnostic = diagnostic;
-            this.exec_fee_factor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(Snapshot);
+            this.ExecFeeFactor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(Snapshot);
             this.StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(Snapshot);
             this.nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
             if (persistingBlock is not null)
@@ -478,7 +479,7 @@ namespace Neo.SmartContract
         protected virtual void OnSysCall(InteropDescriptor descriptor)
         {
             ValidateCallFlags(descriptor.RequiredCallFlags);
-            AddGas(descriptor.FixedPrice * exec_fee_factor);
+            AddGas(descriptor.FixedPrice * ExecFeeFactor);
 
             object[] parameters = new object[descriptor.Parameters.Count];
             for (int i = 0; i < parameters.Length; i++)
@@ -492,7 +493,7 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction()
         {
             if (CurrentContext.InstructionPointer < CurrentContext.Script.Length)
-                AddGas(exec_fee_factor * OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
+                AddGas(ExecFeeFactor * OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
         }
 
         private static Block CreateDummyBlock(DataCache snapshot, ProtocolSettings settings)
@@ -564,6 +565,28 @@ namespace Neo.SmartContract
         internal static bool SetApplicationEngineProvider(IApplicationEngineProvider provider)
         {
             return CompareExchange(ref applicationEngineProvider, provider, null) is null;
+        }
+
+        public T GetState<T>()
+        {
+            if (states is null) return default;
+            if (!states.TryGetValue(typeof(T), out object state)) return default;
+            return (T)state;
+        }
+
+        public void SetState<T>(T state)
+        {
+            states ??= new Dictionary<Type, object>();
+            states[typeof(T)] = state;
+        }
+
+        private bool IsHardforkEnabled(Hardfork hardfork)
+        {
+            if (PersistingBlock is null)
+                return true;
+            if (!ProtocolSettings.Hardforks.TryGetValue(hardfork, out uint height))
+                return true;
+            return PersistingBlock.Index >= height;
         }
     }
 }

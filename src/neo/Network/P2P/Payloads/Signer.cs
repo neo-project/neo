@@ -12,6 +12,8 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads.Conditions;
+using Neo.SmartContract;
+using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,7 +24,7 @@ namespace Neo.Network.P2P.Payloads
     /// <summary>
     /// Represents a signer of a <see cref="Transaction"/>.
     /// </summary>
-    public class Signer : ISerializable
+    public class Signer : IInteroperable, ISerializable
     {
         // This limits maximum number of AllowedContracts or AllowedGroups here
         private const int MaxSubitems = 16;
@@ -141,6 +143,25 @@ namespace Neo.Network.P2P.Payloads
         }
 
         /// <summary>
+        /// Converts the signer from a JSON object.
+        /// </summary>
+        /// <param name="json">The signer represented by a JSON object.</param>
+        /// <returns>The converted signer.</returns>
+        public static Signer FromJson(JObject json)
+        {
+            Signer signer = new();
+            signer.Account = UInt160.Parse(json["account"].GetString());
+            signer.Scopes = Enum.Parse<WitnessScope>(json["scopes"].GetString());
+            if (signer.Scopes.HasFlag(WitnessScope.CustomContracts))
+                signer.AllowedContracts = json["allowedcontracts"].GetArray().Select(p => UInt160.Parse(p.GetString())).ToArray();
+            if (signer.Scopes.HasFlag(WitnessScope.CustomGroups))
+                signer.AllowedGroups = json["allowedgroups"].GetArray().Select(p => ECPoint.Parse(p.GetString(), ECCurve.Secp256r1)).ToArray();
+            if (signer.Scopes.HasFlag(WitnessScope.WitnessRules))
+                signer.Rules = json["rules"].GetArray().Select(WitnessRule.FromJson).ToArray();
+            return signer;
+        }
+
+        /// <summary>
         /// Converts the signer to a JSON object.
         /// </summary>
         /// <returns>The signer represented by a JSON object.</returns>
@@ -156,6 +177,24 @@ namespace Neo.Network.P2P.Payloads
             if (Scopes.HasFlag(WitnessScope.WitnessRules))
                 json["rules"] = Rules.Select(p => p.ToJson()).ToArray();
             return json;
+        }
+
+        void IInteroperable.FromStackItem(VM.Types.StackItem stackItem)
+        {
+            throw new NotSupportedException();
+        }
+
+        VM.Types.StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
+        {
+            return new VM.Types.Array(referenceCounter, new VM.Types.StackItem[]
+            {
+                this.ToArray(),
+                Account.ToArray(),
+                (byte)Scopes,
+                new VM.Types.Array(referenceCounter, AllowedContracts.Select(u => new VM.Types.ByteString(u.ToArray()))),
+                new VM.Types.Array(referenceCounter, AllowedGroups.Select(u => new VM.Types.ByteString(u.ToArray()))),
+                new VM.Types.Array(referenceCounter, Rules.Select(u => u.ToStackItem(referenceCounter)))
+            });
         }
     }
 }

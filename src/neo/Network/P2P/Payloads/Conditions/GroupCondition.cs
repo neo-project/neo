@@ -13,6 +13,8 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
+using Neo.VM.Types;
 using System.IO;
 using System.Linq;
 
@@ -45,11 +47,23 @@ namespace Neo.Network.P2P.Payloads.Conditions
             writer.Write(Group);
         }
 
+        private protected override void ParseJson(JObject json)
+        {
+            Group = ECPoint.Parse(json["group"].GetString(), ECCurve.Secp256r1);
+        }
+
         public override JObject ToJson()
         {
             JObject json = base.ToJson();
             json["group"] = Group.ToString();
             return json;
+        }
+
+        public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+        {
+            var result = (Array)base.ToStackItem(referenceCounter);
+            result.Add(Group.ToArray());
+            return result;
         }
     }
 }

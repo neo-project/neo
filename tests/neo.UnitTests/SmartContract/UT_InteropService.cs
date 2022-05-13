@@ -324,9 +324,7 @@ namespace Neo.UnitTests.SmartContract
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             NativeContract.Ledger.GetBlock(engine.Snapshot, new UInt256(data1)).Should().BeNull();
-
-            byte[] data2 = new byte[] { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.Ledger.GetBlock(engine.Snapshot, new UInt256(data2)));
+            NativeContract.Ledger.GetBlock(engine.Snapshot, TestBlockchain.TheNeoSystem.GenesisBlock.Hash).Should().NotBeNull();
         }
 
         [TestMethod]
@@ -588,7 +586,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestContract_CreateStandardAccount()
         {
             ECPoint pubkey = ECPoint.Parse("024b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e", ECCurve.Secp256r1);
-            ApplicationEngine.CreateStandardAccount(pubkey).ToArray().ToHexString().Should().Be("c44ea575c5f79638f0e73f39d7bd4b3337c81691");
+            GetEngine().CreateStandardAccount(pubkey).ToArray().ToHexString().Should().Be("c44ea575c5f79638f0e73f39d7bd4b3337c81691");
         }
 
         public static void LogEvent(object sender, LogEventArgs args)

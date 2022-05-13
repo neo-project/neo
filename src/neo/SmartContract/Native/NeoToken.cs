@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -13,6 +13,7 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Persistence;
+using Neo.SmartContract.Iterators;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -354,19 +355,55 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets all registered candidates.
+        /// Gets the first 256 registered candidates.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>All the registered candidates.</returns>
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
-        public (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(DataCache snapshot)
+        private (ECPoint PublicKey, BigInteger Votes)[] GetCandidates(DataCache snapshot)
+        {
+            return GetCandidatesInternal(snapshot)
+                .Select(p => (p.PublicKey, p.State.Votes))
+                .Take(256)
+                .ToArray();
+        }
+
+        /// <summary>
+        /// Gets the registered candidates iterator.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>All the registered candidates.</returns>
+        [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
+        private IIterator GetAllCandidates(DataCache snapshot)
+        {
+            const FindOptions options = FindOptions.RemovePrefix | FindOptions.DeserializeValues | FindOptions.PickField1;
+            var enumerator = GetCandidatesInternal(snapshot)
+                .Select(p => (p.Key, p.Value))
+                .GetEnumerator();
+            return new StorageIterator(enumerator, 1, options);
+        }
+
+        internal IEnumerable<(StorageKey Key, StorageItem Value, ECPoint PublicKey, CandidateState State)> GetCandidatesInternal(DataCache snapshot)
         {
             byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
-            return snapshot.Find(prefix_key).Select(p =>
-            (
-                p.Key.Key.AsSerializable<ECPoint>(1),
-                p.Value.GetInteroperable<CandidateState>()
-            )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes)).ToArray();
+            return snapshot.Find(prefix_key)
+                .Select(p => (p.Key, p.Value, PublicKey: p.Key.Key.AsSerializable<ECPoint>(1), State: p.Value.GetInteroperable<CandidateState>()))
+                .Where(p => p.State.Registered)
+                .Where(p => !Policy.IsBlocked(snapshot, Contract.CreateSignatureRedeemScript(p.PublicKey).ToScriptHash()));
+        }
+
+        /// <summary>
+        /// Gets votes from specific candidate.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="pubKey">Specific public key</param>
+        /// <returns>Votes or -1 if it was not found.</returns>
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public BigInteger GetCandidateVote(DataCache snapshot, ECPoint pubKey)
+        {
+            StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_Candidate).Add(pubKey));
+            CandidateState state = storage?.GetInteroperable<CandidateState>();
+            return state?.Registered == true ? state.Votes : -1;
         }
 
         /// <summary>
@@ -423,10 +460,15 @@ namespace Neo.SmartContract.Native
         {
             decimal votersCount = (decimal)(BigInteger)snapshot[CreateStorageKey(Prefix_VotersCount)];
             decimal voterTurnout = votersCount / (decimal)TotalAmount;
-            var candidates = GetCandidates(snapshot);
+            var candidates = GetCandidatesInternal(snapshot)
+                .Select(p => (p.PublicKey, p.State.Votes))
+                .ToArray();
             if (voterTurnout < EffectiveVoterTurnout || candidates.Length < settings.CommitteeMembersCount)
                 return settings.StandbyCommittee.Select(p => (p, candidates.FirstOrDefault(k => k.PublicKey.Equals(p)).Votes));
-            return candidates.OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Take(settings.CommitteeMembersCount);
+            return candidates
+                .OrderByDescending(p => p.Votes)
+                .ThenBy(p => p.PublicKey)
+                .Take(settings.CommitteeMembersCount);
         }
 
         [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
