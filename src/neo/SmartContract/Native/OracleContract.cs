@@ -272,15 +272,15 @@ namespace Neo.SmartContract.Native
             return tx?.GetAttribute<OracleResponse>() != null;
         }
 
-        private class IdList : List<ulong>, IInteroperable
+        private class IdList : InteroperableList<ulong>
         {
-            public void FromStackItem(StackItem stackItem)
+            public override void FromStackItem(StackItem stackItem)
             {
                 foreach (StackItem item in (VM.Types.Array)stackItem)
                     Add((ulong)item.GetInteger());
             }
 
-            public StackItem ToStackItem(ReferenceCounter referenceCounter)
+            public override StackItem ToStackItem(ReferenceCounter referenceCounter)
             {
                 return new VM.Types.Array(referenceCounter, this.Select(p => (Integer)p));
             }
