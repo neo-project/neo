@@ -96,6 +96,7 @@ namespace Neo.SmartContract.Manifest
             json["returntype"] = ReturnType.ToString();
             json["offset"] = Offset;
             json["safe"] = Safe;
+            json["allowCrossThrows"] = AllowCrossThrows;
             return json;
         }
     }
