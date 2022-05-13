@@ -174,7 +174,7 @@ namespace Neo.SmartContract.Native
             int index = (int)(engine.PersistingBlock.Index % (uint)m);
             var gasPerBlock = GetGasPerBlock(engine.Snapshot);
             var committee = GetCommitteeFromCache(engine.Snapshot);
-            var pubkey = committee.ElementAt(index).PublicKey;
+            var pubkey = committee[index].PublicKey;
             var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
             await GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100, false);
 
@@ -185,7 +185,7 @@ namespace Neo.SmartContract.Native
                 BigInteger voterRewardOfEachCommittee = gasPerBlock * VoterRewardRatio * 100000000L * m / (m + n) / 100; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
                 for (index = 0; index < committee.Count; index++)
                 {
-                    var member = committee.ElementAt(index);
+                    var member = committee[index];
                     var factor = index < n ? 2 : 1; // The `voter` rewards of validator will double than other committee's
                     if (member.Votes > 0)
                     {
@@ -520,17 +520,12 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        internal class CachedCommittee : List<(ECPoint PublicKey, BigInteger Votes)>, IInteroperable
+        internal class CachedCommittee : InteroperableList<(ECPoint PublicKey, BigInteger Votes)>
         {
-            public CachedCommittee()
-            {
-            }
+            public CachedCommittee() { }
+            public CachedCommittee(IEnumerable<(ECPoint, BigInteger)> collection) => AddRange(collection);
 
-            public CachedCommittee(IEnumerable<(ECPoint PublicKey, BigInteger Votes)> collection) : base(collection)
-            {
-            }
-
-            public void FromStackItem(StackItem stackItem)
+            public override void FromStackItem(StackItem stackItem)
             {
                 foreach (StackItem item in (VM.Types.Array)stackItem)
                 {
@@ -539,7 +534,7 @@ namespace Neo.SmartContract.Native
                 }
             }
 
-            public StackItem ToStackItem(ReferenceCounter referenceCounter)
+            public override StackItem ToStackItem(ReferenceCounter referenceCounter)
             {
                 return new VM.Types.Array(referenceCounter, this.Select(p => new Struct(referenceCounter, new StackItem[] { p.PublicKey.ToArray(), p.Votes })));
             }

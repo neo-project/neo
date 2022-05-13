@@ -95,10 +95,12 @@ namespace Neo.SmartContract
         /// <returns>The created <see cref="StorageItem"/>.</returns>
         public StorageItem Clone()
         {
-            return new StorageItem
-            {
-                Value = Value
-            };
+            StorageItem item = new();
+            if (value != null)
+                item.value = value;
+            else
+                item.cache = cache is IInteroperable interoperable ? interoperable.Clone() : cache;
+            return item;
         }
 
         public void Deserialize(BinaryReader reader)
@@ -112,7 +114,26 @@ namespace Neo.SmartContract
         /// <param name="replica">The instance to be copied.</param>
         public void FromReplica(StorageItem replica)
         {
-            Value = replica.Value;
+            if (replica.value != null)
+            {
+                value = replica.value;
+                cache = null;
+            }
+            else
+            {
+                value = null;
+                if (replica.cache is IInteroperable interoperable)
+                {
+                    if (cache?.GetType() == interoperable.GetType())
+                        ((IInteroperable)cache).FromReplica(interoperable);
+                    else
+                        cache = interoperable.Clone();
+                }
+                else
+                {
+                    cache = replica.cache;
+                }
+            }
         }
 
         /// <summary>
