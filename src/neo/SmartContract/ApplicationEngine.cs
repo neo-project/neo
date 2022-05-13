@@ -161,6 +161,7 @@ namespace Neo.SmartContract
                     *(ulong*)p ^= persistingBlock.Nonce;
                 }
             }
+            diagnostic?.Initialized(this);
         }
 
         /// <summary>
@@ -436,6 +437,7 @@ namespace Neo.SmartContract
 
         public override void Dispose()
         {
+            Diagnostic?.Dispose();
             if (disposables != null)
             {
                 foreach (IDisposable disposable in disposables)

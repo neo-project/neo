@@ -10,15 +10,33 @@
 
 using Neo.IO.Caching;
 using Neo.VM;
+using System.Collections.Generic;
 
 namespace Neo.SmartContract
 {
     public class Diagnostic
     {
         public Tree<UInt160> InvocationTree { get; } = new();
-        private TreeNode<UInt160> currentNodeOfInvocationTree = null;
+        public List<NotifyEventArgs> Notifications { get; } = new();
+        public List<LogEventArgs> Logs { get; } = new();
 
-        public void ContextLoaded(ExecutionContext context)
+        private ApplicationEngine engine;
+        private TreeNode<UInt160> currentNodeOfInvocationTree;
+
+        internal void Initialized(ApplicationEngine engine)
+        {
+            this.engine = engine;
+            ApplicationEngine.Notify += ApplicationEngine_Notify;
+            ApplicationEngine.Log += ApplicationEngine_Log;
+        }
+
+        internal void Dispose()
+        {
+            ApplicationEngine.Notify -= ApplicationEngine_Notify;
+            ApplicationEngine.Log -= ApplicationEngine_Log;
+        }
+
+        internal void ContextLoaded(ExecutionContext context)
         {
             var state = context.GetState<ExecutionContextState>();
             if (currentNodeOfInvocationTree is null)
@@ -27,9 +45,21 @@ namespace Neo.SmartContract
                 currentNodeOfInvocationTree = currentNodeOfInvocationTree.AddChild(state.ScriptHash);
         }
 
-        public void ContextUnloaded(ExecutionContext context)
+        internal void ContextUnloaded(ExecutionContext context)
         {
             currentNodeOfInvocationTree = currentNodeOfInvocationTree.Parent;
+        }
+
+        private void ApplicationEngine_Notify(object sender, NotifyEventArgs e)
+        {
+            if (sender != engine) return;
+            Notifications.Add(e);
+        }
+
+        private void ApplicationEngine_Log(object sender, LogEventArgs e)
+        {
+            if (sender != engine) return;
+            Logs.Add(e);
         }
     }
 }
