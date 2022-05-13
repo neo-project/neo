@@ -9,7 +9,6 @@
 // modifications are permitted.
 
 using Neo.IO;
-using Neo.IO.Caching;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -51,7 +50,6 @@ namespace Neo.SmartContract
 
         private static IApplicationEngineProvider applicationEngineProvider;
         private static Dictionary<uint, InteropDescriptor> services;
-        private TreeNode<UInt160> currentNodeOfInvocationTree = null;
         private readonly long gas_amount;
         private Dictionary<Type, object> states;
         private List<NotifyEventArgs> notifications;
@@ -70,7 +68,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The diagnostic used by the engine. This property can be <see langword="null"/>.
         /// </summary>
-        public Diagnostic Diagnostic { get; }
+        public IDiagnostic Diagnostic { get; }
 
         private List<IDisposable> Disposables => disposables ??= new List<IDisposable>();
 
@@ -144,7 +142,7 @@ namespace Neo.SmartContract
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
-        protected unsafe ApplicationEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, Diagnostic diagnostic)
+        protected unsafe ApplicationEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
@@ -163,6 +161,7 @@ namespace Neo.SmartContract
                     *(ulong*)p ^= persistingBlock.Nonce;
                 }
             }
+            diagnostic?.Initialized(this);
         }
 
         /// <summary>
@@ -260,8 +259,7 @@ namespace Neo.SmartContract
         protected override void ContextUnloaded(ExecutionContext context)
         {
             base.ContextUnloaded(context);
-            if (Diagnostic is not null)
-                currentNodeOfInvocationTree = currentNodeOfInvocationTree.Parent;
+            Diagnostic?.ContextUnloaded(context);
             if (!contractTasks.Remove(context, out var awaiter)) return;
             if (UncaughtException is not null)
                 throw new VMUnhandledException(UncaughtException);
@@ -279,7 +277,7 @@ namespace Neo.SmartContract
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
-        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, Diagnostic diagnostic = null)
+        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, IDiagnostic diagnostic = null)
         {
             return applicationEngineProvider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic);
@@ -291,16 +289,8 @@ namespace Neo.SmartContract
             var state = context.GetState<ExecutionContextState>();
             state.ScriptHash ??= ((byte[])context.Script).ToScriptHash();
             invocationCounter.TryAdd(state.ScriptHash, 1);
-
-            if (Diagnostic is not null)
-            {
-                if (currentNodeOfInvocationTree is null)
-                    currentNodeOfInvocationTree = Diagnostic.InvocationTree.AddRoot(state.ScriptHash);
-                else
-                    currentNodeOfInvocationTree = currentNodeOfInvocationTree.AddChild(state.ScriptHash);
-            }
-
             base.LoadContext(context);
+            Diagnostic?.ContextLoaded(context);
         }
 
         /// <summary>
@@ -447,6 +437,7 @@ namespace Neo.SmartContract
 
         public override void Dispose()
         {
+            Diagnostic?.Disposed();
             if (disposables != null)
             {
                 foreach (IDisposable disposable in disposables)
@@ -492,8 +483,15 @@ namespace Neo.SmartContract
 
         protected override void PreExecuteInstruction()
         {
+            Diagnostic?.PreExecuteInstruction();
             if (CurrentContext.InstructionPointer < CurrentContext.Script.Length)
                 AddGas(ExecFeeFactor * OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
+        }
+
+        protected override void PostExecuteInstruction()
+        {
+            base.PostExecuteInstruction();
+            Diagnostic?.PostExecuteInstruction();
         }
 
         private static Block CreateDummyBlock(DataCache snapshot, ProtocolSettings settings)
@@ -553,7 +551,7 @@ namespace Neo.SmartContract
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
-        public static ApplicationEngine Run(byte[] script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, ProtocolSettings settings = null, int offset = 0, long gas = TestModeGas, Diagnostic diagnostic = null)
+        public static ApplicationEngine Run(byte[] script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, ProtocolSettings settings = null, int offset = 0, long gas = TestModeGas, IDiagnostic diagnostic = null)
         {
             persistingBlock ??= CreateDummyBlock(snapshot, settings ?? ProtocolSettings.Default);
             ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, persistingBlock, settings, gas, diagnostic);
