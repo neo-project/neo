@@ -2,7 +2,6 @@ using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Neo.Cryptography;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -547,15 +546,14 @@ namespace Neo.UnitTests.Ledger
 
         public static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
         {
-            StorageKey storageKey = new()
+            byte[] buffer = GC.AllocateUninitializedArray<byte>(sizeof(byte) + (key?.Length ?? 0));
+            buffer[0] = prefix;
+            key?.CopyTo(buffer.AsSpan(1));
+            return new()
             {
                 Id = 0,
-                Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
+                Key = buffer
             };
-            storageKey.Key[0] = prefix;
-            if (key != null)
-                Buffer.BlockCopy(key, 0, storageKey.Key, 1, key.Length);
-            return storageKey;
         }
     }
 }

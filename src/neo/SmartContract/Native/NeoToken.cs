@@ -248,7 +248,7 @@ namespace Neo.SmartContract.Native
             byte[] key = CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(end).ToArray();
             byte[] boundary = CreateStorageKey(Prefix_GasPerBlock).ToArray();
             return snapshot.FindRange(key, boundary, SeekDirection.Backward)
-                .Select(u => (BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.AsSpan(^sizeof(uint))), (BigInteger)u.Value));
+                .Select(u => (BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.Span[^sizeof(uint)..]), (BigInteger)u.Value));
         }
 
         /// <summary>
@@ -365,7 +365,7 @@ namespace Neo.SmartContract.Native
         {
             byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
             return snapshot.Find(prefix_key)
-                .Select(p => (p.Key, p.Value, PublicKey: p.Key.Key.AsSerializable<ECPoint>(1), State: p.Value.GetInteroperable<CandidateState>()))
+                .Select(p => (p.Key, p.Value, PublicKey: p.Key.Key.Span[1..].AsSerializable<ECPoint>(), State: p.Value.GetInteroperable<CandidateState>()))
                 .Where(p => p.State.Registered)
                 .Where(p => !Policy.IsBlocked(snapshot, Contract.CreateSignatureRedeemScript(p.PublicKey).ToScriptHash()));
         }
