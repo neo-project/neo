@@ -264,7 +264,8 @@ namespace Neo.SmartContract
                 currentNodeOfInvocationTree = currentNodeOfInvocationTree.Parent;
             if (UncaughtException is not null && CurrentContext is not null && context.Script != CurrentContext.Script)
             {
-                throw new VMUnhandledException(UncaughtException);
+                ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
+                if (!state.AllowCrossThrows) throw new VMUnhandledException(UncaughtException);
             }
             if (contractTasks.Remove(context, out var awaiter))
             {
@@ -325,6 +326,7 @@ namespace Neo.SmartContract
                 {
                     p.CallFlags = callFlags;
                     p.ScriptHash = contract.Hash;
+                    p.AllowCrossThrows = method.AllowCrossThrows;
                     p.Contract = new ContractState
                     {
                         Id = contract.Id,

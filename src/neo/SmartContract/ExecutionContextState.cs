@@ -36,5 +36,11 @@ namespace Neo.SmartContract
         /// The <see cref="SmartContract.CallFlags"/> of the current context.
         /// </summary>
         public CallFlags CallFlags { get; set; } = CallFlags.All;
+
+        /// <summary>
+        /// Indicates whether the method allow to throw exceptions from external contract.
+        /// False by default
+        /// </summary>
+        public bool AllowCrossThrows { get; set; } = false;
     }
 }

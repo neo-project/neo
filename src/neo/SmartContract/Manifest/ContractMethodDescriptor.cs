@@ -37,6 +37,12 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public bool Safe { get; set; }
 
+        /// <summary>
+        /// Indicates whether the method allow to throw exceptions from external contract.
+        /// False by default
+        /// </summary>
+        public bool AllowCrossThrows { get; set; }
+
         public override void FromStackItem(StackItem stackItem)
         {
             base.FromStackItem(stackItem);
@@ -44,6 +50,7 @@ namespace Neo.SmartContract.Manifest
             ReturnType = (ContractParameterType)(byte)@struct[2].GetInteger();
             Offset = (int)@struct[3].GetInteger();
             Safe = @struct[4].GetBoolean();
+            AllowCrossThrows = @struct.Count > 5 && @struct[5].GetBoolean();
         }
 
         public override StackItem ToStackItem(ReferenceCounter referenceCounter)
@@ -52,6 +59,7 @@ namespace Neo.SmartContract.Manifest
             @struct.Add((byte)ReturnType);
             @struct.Add(Offset);
             @struct.Add(Safe);
+            @struct.Add(AllowCrossThrows);
             return @struct;
         }
 
@@ -68,7 +76,8 @@ namespace Neo.SmartContract.Manifest
                 Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson(u)).ToArray(),
                 ReturnType = Enum.Parse<ContractParameterType>(json["returntype"].GetString()),
                 Offset = json["offset"].GetInt32(),
-                Safe = json["safe"].GetBoolean()
+                Safe = json["safe"].GetBoolean(),
+                AllowCrossThrows = json["allowCrossThrows"]?.GetBoolean() == true
             };
             if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException();
             _ = descriptor.Parameters.ToDictionary(p => p.Name);
