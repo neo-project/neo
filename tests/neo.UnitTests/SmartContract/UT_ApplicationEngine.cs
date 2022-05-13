@@ -50,11 +50,10 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
             byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
-            ApplicationEngine engine = ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshot, diagnostic: new Diagnostic());
+            ApplicationEngine engine = ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshot);
             engine.PersistingBlock.Version.Should().Be(0);
             engine.PersistingBlock.PrevHash.Should().Be(TestBlockchain.TheNeoSystem.GenesisBlock.Hash);
             engine.PersistingBlock.MerkleRoot.Should().Be(new UInt256());
-            string.Join(",", engine.Diagnostic.InvocationTree.GetItems()).Should().Be("0x67bd6dffcf36468c9ffbe6cc4cd0cb7108304d24");
         }
     }
 }
