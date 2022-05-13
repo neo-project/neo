@@ -9,7 +9,6 @@
 // modifications are permitted.
 
 using Neo.IO;
-using Neo.IO.Caching;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -51,7 +50,6 @@ namespace Neo.SmartContract
 
         private static IApplicationEngineProvider applicationEngineProvider;
         private static Dictionary<uint, InteropDescriptor> services;
-        private TreeNode<UInt160> currentNodeOfInvocationTree = null;
         private readonly long gas_amount;
         private Dictionary<Type, object> states;
         private List<NotifyEventArgs> notifications;
@@ -260,8 +258,7 @@ namespace Neo.SmartContract
         protected override void ContextUnloaded(ExecutionContext context)
         {
             base.ContextUnloaded(context);
-            if (Diagnostic is not null)
-                currentNodeOfInvocationTree = currentNodeOfInvocationTree.Parent;
+            Diagnostic?.ContextUnloaded(context);
             if (!contractTasks.Remove(context, out var awaiter)) return;
             if (UncaughtException is not null)
                 throw new VMUnhandledException(UncaughtException);
@@ -291,16 +288,8 @@ namespace Neo.SmartContract
             var state = context.GetState<ExecutionContextState>();
             state.ScriptHash ??= ((byte[])context.Script).ToScriptHash();
             invocationCounter.TryAdd(state.ScriptHash, 1);
-
-            if (Diagnostic is not null)
-            {
-                if (currentNodeOfInvocationTree is null)
-                    currentNodeOfInvocationTree = Diagnostic.InvocationTree.AddRoot(state.ScriptHash);
-                else
-                    currentNodeOfInvocationTree = currentNodeOfInvocationTree.AddChild(state.ScriptHash);
-            }
-
             base.LoadContext(context);
+            Diagnostic?.ContextLoaded(context);
         }
 
         /// <summary>

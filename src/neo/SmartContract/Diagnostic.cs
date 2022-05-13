@@ -9,11 +9,27 @@
 // modifications are permitted.
 
 using Neo.IO.Caching;
+using Neo.VM;
 
 namespace Neo.SmartContract
 {
     public class Diagnostic
     {
         public Tree<UInt160> InvocationTree { get; } = new();
+        private TreeNode<UInt160> currentNodeOfInvocationTree = null;
+
+        public void ContextLoaded(ExecutionContext context)
+        {
+            var state = context.GetState<ExecutionContextState>();
+            if (currentNodeOfInvocationTree is null)
+                currentNodeOfInvocationTree = InvocationTree.AddRoot(state.ScriptHash);
+            else
+                currentNodeOfInvocationTree = currentNodeOfInvocationTree.AddChild(state.ScriptHash);
+        }
+
+        public void ContextUnloaded(ExecutionContext context)
+        {
+            currentNodeOfInvocationTree = currentNodeOfInvocationTree.Parent;
+        }
     }
 }
