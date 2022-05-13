@@ -84,7 +84,6 @@ namespace Neo.SmartContract.Native
         {
             await base.PostTransfer(engine, from, to, amount, data, callOnPayment);
             var list = engine.CurrentContext.GetState<List<GasDistribution>>();
-            if (list is null) return;
             foreach (var distribution in list)
                 await GAS.Mint(engine, distribution.Account, distribution.Amount, callOnPayment);
         }
