@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -38,7 +38,7 @@ namespace Neo.SmartContract.Manifest
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
-            PubKey = @struct[0].GetSpan().AsSerializable<ECPoint>();
+            PubKey = ECPoint.DecodePoint(@struct[0].GetSpan(), ECCurve.Secp256r1);
             Signature = @struct[1].GetSpan().ToArray();
         }
 

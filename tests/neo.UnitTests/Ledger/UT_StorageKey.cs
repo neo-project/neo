@@ -2,8 +2,6 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.SmartContract;
-using System;
-using System.IO;
 
 namespace Neo.UnitTests.Ledger
 {
@@ -129,24 +127,6 @@ namespace Neo.UnitTests.Ledger
         {
             uut.Equals(1u).Should().BeFalse();
             uut.Equals((object)uut).Should().BeTrue();
-        }
-
-        [TestMethod]
-        public void TestDeserialize()
-        {
-            using (MemoryStream ms = new MemoryStream(1024))
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            using (BinaryReader reader = new BinaryReader(ms))
-            {
-                uut.Id = 0x42000000;
-                uut.Key = TestUtils.GetByteArray(10, 0x42);
-                ((ISerializable)uut).Serialize(writer);
-                ms.Seek(0, SeekOrigin.Begin);
-                StorageKey dest = new StorageKey();
-                ((ISerializable)dest).Deserialize(reader);
-                dest.Id.Should().Be(uut.Id);
-                dest.Key.Span.SequenceEqual(uut.Key.Span).Should().BeTrue();
-            }
         }
     }
 }

@@ -9,7 +9,6 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets.NEP6;
 using System;
-using System.IO;
 using System.Linq;
 
 namespace Neo.UnitTests
@@ -225,12 +224,8 @@ namespace Neo.UnitTests
 
         public static T CopyMsgBySerialization<T>(T serializableObj, T newObj) where T : ISerializable
         {
-            using (MemoryStream ms = new MemoryStream(serializableObj.ToArray(), false))
-            using (BinaryReader reader = new BinaryReader(ms))
-            {
-                newObj.Deserialize(reader);
-            }
-
+            MemoryReader reader = new(serializableObj.ToArray());
+            newObj.Deserialize(ref reader);
             return newObj;
         }
     }

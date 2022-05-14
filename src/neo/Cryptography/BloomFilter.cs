@@ -57,9 +57,9 @@ namespace Neo.Cryptography
         /// Adds an element to the <see cref="BloomFilter"/>.
         /// </summary>
         /// <param name="element">The object to add to the <see cref="BloomFilter"/>.</param>
-        public void Add(byte[] element)
+        public void Add(ReadOnlyMemory<byte> element)
         {
-            foreach (uint i in seeds.AsParallel().Select(s => element.Murmur32(s)))
+            foreach (uint i in seeds.AsParallel().Select(s => element.Span.Murmur32(s)))
                 bits.Set((int)(i % (uint)bits.Length), true);
         }
 

@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Network.P2P.Capabilities;
 using System;
-using System.IO;
 
 namespace Neo.UnitTests.Network.P2P.Capabilities
 {
@@ -26,30 +25,44 @@ namespace Neo.UnitTests.Network.P2P.Capabilities
             var test = new ServerCapability(NodeCapabilityType.WsServer) { Port = 2 };
             var buffer = test.ToArray();
 
-            using var br = new BinaryReader(new MemoryStream(buffer));
-            var clone = (ServerCapability)ServerCapability.DeserializeFrom(br);
+            var br = new MemoryReader(buffer);
+            var clone = (ServerCapability)NodeCapability.DeserializeFrom(ref br);
 
             Assert.AreEqual(test.Port, clone.Port);
             Assert.AreEqual(test.Type, clone.Type);
 
             clone = new ServerCapability(NodeCapabilityType.WsServer, 123);
-            br.BaseStream.Seek(0, SeekOrigin.Begin);
-            ((ISerializable)clone).Deserialize(br);
+            br = new MemoryReader(buffer);
+            ((ISerializable)clone).Deserialize(ref br);
 
             Assert.AreEqual(test.Port, clone.Port);
             Assert.AreEqual(test.Type, clone.Type);
 
             clone = new ServerCapability(NodeCapabilityType.TcpServer, 123);
 
-            br.BaseStream.Seek(0, SeekOrigin.Begin);
-            Assert.ThrowsException<FormatException>(() => ((ISerializable)clone).Deserialize(br));
-            Assert.ThrowsException<ArgumentException>(() => new ServerCapability(NodeCapabilityType.FullNode));
+            br = new MemoryReader(buffer);
+            try
+            {
+                ((ISerializable)clone).Deserialize(ref br);
+                Assert.Fail();
+            }
+            catch (FormatException) { }
+            try
+            {
+                _ = new ServerCapability(NodeCapabilityType.FullNode);
+                Assert.Fail();
+            }
+            catch (ArgumentException) { }
 
             // Wrog type
-            br.BaseStream.Seek(0, SeekOrigin.Begin);
-            br.BaseStream.WriteByte(0xFF);
-            br.BaseStream.Seek(0, SeekOrigin.Begin);
-            Assert.ThrowsException<FormatException>(() => ServerCapability.DeserializeFrom(br));
+            buffer[0] = 0xFF;
+            br = new MemoryReader(buffer);
+            try
+            {
+                NodeCapability.DeserializeFrom(ref br);
+                Assert.Fail();
+            }
+            catch (FormatException) { }
         }
     }
 }

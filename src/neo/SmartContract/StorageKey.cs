@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -31,7 +31,7 @@ namespace Neo.SmartContract
         /// </summary>
         public ReadOnlyMemory<byte> Key;
 
-        private byte[] cache = null;
+        private byte[] cache;
 
         int ISerializable.Size => sizeof(int) + Key.Length;
 
@@ -58,13 +58,9 @@ namespace Neo.SmartContract
             return buffer;
         }
 
-        //If the base stream of the reader doesn't support seeking, a NotSupportedException is thrown.
-        //But StorageKey never works with NetworkStream, so it doesn't matter.
-        void ISerializable.Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(ref MemoryReader reader)
         {
-            cache = reader.ReadBytes((int)(reader.BaseStream.Length - reader.BaseStream.Position));
-            Id = BinaryPrimitives.ReadInt32LittleEndian(cache);
-            Key = cache.AsMemory(sizeof(int));
+            throw new NotSupportedException();
         }
 
         public bool Equals(StorageKey other)

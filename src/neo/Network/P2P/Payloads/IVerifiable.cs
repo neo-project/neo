@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -32,8 +32,8 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// Deserializes the part of the <see cref="IVerifiable"/> object other than <see cref="Witnesses"/>.
         /// </summary>
-        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
-        void DeserializeUnsigned(BinaryReader reader);
+        /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
+        void DeserializeUnsigned(ref MemoryReader reader);
 
         /// <summary>
         /// Gets the script hashes that should be verified for this <see cref="IVerifiable"/> object.

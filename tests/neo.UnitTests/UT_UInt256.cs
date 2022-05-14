@@ -47,12 +47,15 @@ namespace Neo.UnitTests.IO
         {
             using MemoryStream stream = new MemoryStream();
             using BinaryWriter writer = new BinaryWriter(stream);
-            using BinaryReader reader = new BinaryReader(stream);
             writer.Write(new byte[20]);
-            stream.Seek(0, SeekOrigin.Begin);
+            MemoryReader reader = new(stream.ToArray());
             UInt256 uInt256 = new UInt256();
-            Action action = () => ((ISerializable)uInt256).Deserialize(reader);
-            action.Should().Throw<EndOfStreamException>();
+            try
+            {
+                ((ISerializable)uInt256).Deserialize(ref reader);
+                Assert.Fail();
+            }
+            catch (FormatException) { }
         }
 
         [TestMethod]

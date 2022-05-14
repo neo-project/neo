@@ -268,7 +268,7 @@ namespace Neo.UnitTests.SmartContract
             string message = "hello";
             ApplicationEngine.Log += LogEvent;
             engine.RuntimeLog(Encoding.UTF8.GetBytes(message));
-            ((Transaction)engine.ScriptContainer).Script.ToHexString().Should().Be(new byte[] { 0x01, 0x02, 0x03 }.ToHexString());
+            ((Transaction)engine.ScriptContainer).Script.Span.ToHexString().Should().Be(new byte[] { 0x01, 0x02, 0x03 }.ToHexString());
             ApplicationEngine.Log -= LogEvent;
         }
 
@@ -423,7 +423,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 Id = state.Id,
                 IsReadOnly = false
-            }, new byte[] { 0x01 }).ToHexString().Should().Be(storageItem.Value.ToHexString());
+            }, new byte[] { 0x01 }).Value.Span.ToHexString().Should().Be(storageItem.Value.Span.ToHexString());
         }
 
         [TestMethod]

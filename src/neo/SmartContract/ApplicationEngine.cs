@@ -287,7 +287,7 @@ namespace Neo.SmartContract
         {
             // Set default execution context state
             var state = context.GetState<ExecutionContextState>();
-            state.ScriptHash ??= ((byte[])context.Script).ToScriptHash();
+            state.ScriptHash ??= ((ReadOnlyMemory<byte>)context.Script).Span.ToScriptHash();
             invocationCounter.TryAdd(state.ScriptHash, 1);
             base.LoadContext(context);
             Diagnostic?.ContextLoaded(context);
@@ -384,6 +384,7 @@ namespace Neo.SmartContract
                 ulong i => i,
                 Enum e => Convert(System.Convert.ChangeType(e, e.GetTypeCode())),
                 byte[] data => data,
+                ReadOnlyMemory<byte> m => m,
                 string s => s,
                 BigInteger i => i,
                 JObject o => o.ToByteArray(false),

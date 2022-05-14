@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -34,8 +34,7 @@ namespace Neo.IO
         /// <returns>The converted <see cref="ISerializable"/> object.</returns>
         public static T AsSerializable<T>(this byte[] value, int start = 0) where T : ISerializable, new()
         {
-            using MemoryStream ms = new(value, start, value.Length - start, false);
-            using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
+            MemoryReader reader = new(value.AsMemory(start));
             return reader.ReadSerializable<T>();
         }
 
@@ -45,15 +44,11 @@ namespace Neo.IO
         /// <typeparam name="T">The type to convert to.</typeparam>
         /// <param name="value">The byte array to be converted.</param>
         /// <returns>The converted <see cref="ISerializable"/> object.</returns>
-        public static unsafe T AsSerializable<T>(this ReadOnlySpan<byte> value) where T : ISerializable, new()
+        public static unsafe T AsSerializable<T>(this ReadOnlyMemory<byte> value) where T : ISerializable, new()
         {
             if (value.IsEmpty) throw new FormatException();
-            fixed (byte* pointer = value)
-            {
-                using UnmanagedMemoryStream ms = new(pointer, value.Length);
-                using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
-                return reader.ReadSerializable<T>();
-            }
+            MemoryReader reader = new(value);
+            return reader.ReadSerializable<T>();
         }
 
         /// <summary>
@@ -67,9 +62,8 @@ namespace Neo.IO
             if (!typeof(ISerializable).GetTypeInfo().IsAssignableFrom(type))
                 throw new InvalidCastException();
             ISerializable serializable = (ISerializable)Activator.CreateInstance(type);
-            using MemoryStream ms = new(value, false);
-            using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
-            serializable.Deserialize(reader);
+            MemoryReader reader = new(value);
+            serializable.Deserialize(ref reader);
             return serializable;
         }
 
@@ -82,8 +76,7 @@ namespace Neo.IO
         /// <returns>The converted <see cref="ISerializable"/> array.</returns>
         public static T[] AsSerializableArray<T>(this byte[] value, int max = 0x1000000) where T : ISerializable, new()
         {
-            using MemoryStream ms = new(value, false);
-            using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
+            MemoryReader reader = new(value);
             return reader.ReadSerializableArray<T>(max);
         }
 
@@ -94,15 +87,11 @@ namespace Neo.IO
         /// <param name="value">The byte array to be converted.</param>
         /// <param name="max">The maximum number of elements contained in the converted array.</param>
         /// <returns>The converted <see cref="ISerializable"/> array.</returns>
-        public static unsafe T[] AsSerializableArray<T>(this ReadOnlySpan<byte> value, int max = 0x1000000) where T : ISerializable, new()
+        public static unsafe T[] AsSerializableArray<T>(this ReadOnlyMemory<byte> value, int max = 0x1000000) where T : ISerializable, new()
         {
             if (value.IsEmpty) throw new FormatException();
-            fixed (byte* pointer = value)
-            {
-                using UnmanagedMemoryStream ms = new(pointer, value.Length);
-                using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
-                return reader.ReadSerializableArray<T>(max);
-            }
+            MemoryReader reader = new(value);
+            return reader.ReadSerializableArray<T>(max);
         }
 
         /// <summary>
@@ -135,21 +124,6 @@ namespace Neo.IO
             if (LZ4Codec.Decode(data.AsSpan(4), result) != length)
                 throw new FormatException();
             return result;
-        }
-
-        /// <summary>
-        /// Fills the buffer with the data in the specified <see cref="BinaryReader"/>.
-        /// </summary>
-        /// <param name="reader">The <see cref="BinaryReader"/> to be used.</param>
-        /// <param name="buffer">The buffer used to store data.</param>
-        public static void FillBuffer(this BinaryReader reader, Span<byte> buffer)
-        {
-            while (!buffer.IsEmpty)
-            {
-                int count = reader.Read(buffer);
-                if (count == 0) throw new EndOfStreamException();
-                buffer = buffer[count..];
-            }
         }
 
         /// <summary>
@@ -203,6 +177,16 @@ namespace Neo.IO
         }
 
         /// <summary>
+        /// Gets the size of the specified array encoded in variable-length encoding.
+        /// </summary>
+        /// <param name="value">The specified array.</param>
+        /// <returns>The size of the array.</returns>
+        public static int GetVarSize(this ReadOnlyMemory<byte> value)
+        {
+            return GetVarSize(value.Length) + value.Length;
+        }
+
+        /// <summary>
         /// Gets the size of the specified <see cref="string"/> encoded in variable-length encoding.
         /// </summary>
         /// <param name="value">The specified <see cref="string"/>.</param>
@@ -241,25 +225,13 @@ namespace Neo.IO
         }
 
         /// <summary>
-        /// Reads a <see cref="string"/> of the specified length from a <see cref="BinaryReader"/>.
-        /// </summary>
-        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
-        /// <param name="length">The length of the <see cref="string"/>.</param>
-        /// <returns>The <see cref="string"/> read from the <see cref="BinaryReader"/>.</returns>
-        public static string ReadFixedString(this BinaryReader reader, int length)
-        {
-            byte[] data = reader.ReadFixedBytes(length);
-            return Utility.StrictUTF8.GetString(data.TakeWhile(p => p != 0).ToArray());
-        }
-
-        /// <summary>
-        /// Reads an <see cref="ISerializable"/> array from a <see cref="BinaryReader"/>.
+        /// Reads an <see cref="ISerializable"/> array from a <see cref="MemoryReader"/>.
         /// </summary>
         /// <typeparam name="T">The type of the array element.</typeparam>
-        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
+        /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
         /// <param name="max">The maximum number of elements in the array.</param>
-        /// <returns>The array read from the <see cref="BinaryReader"/>.</returns>
-        public static T[] ReadNullableArray<T>(this BinaryReader reader, int max = 0x1000000) where T : class, ISerializable, new()
+        /// <returns>The array read from the <see cref="MemoryReader"/>.</returns>
+        public static T[] ReadNullableArray<T>(this MemoryReader reader, int max = 0x1000000) where T : class, ISerializable, new()
         {
             T[] array = new T[reader.ReadVarInt((ulong)max)];
             for (int i = 0; i < array.Length; i++)
@@ -268,32 +240,32 @@ namespace Neo.IO
         }
 
         /// <summary>
-        /// Reads an <see cref="ISerializable"/> object from a <see cref="BinaryReader"/>.
+        /// Reads an <see cref="ISerializable"/> object from a <see cref="MemoryReader"/>.
         /// </summary>
         /// <typeparam name="T">The type of the <see cref="ISerializable"/> object.</typeparam>
-        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
-        /// <returns>The object read from the <see cref="BinaryReader"/>.</returns>
-        public static T ReadSerializable<T>(this BinaryReader reader) where T : ISerializable, new()
+        /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
+        /// <returns>The object read from the <see cref="MemoryReader"/>.</returns>
+        public static T ReadSerializable<T>(this ref MemoryReader reader) where T : ISerializable, new()
         {
             T obj = new();
-            obj.Deserialize(reader);
+            obj.Deserialize(ref reader);
             return obj;
         }
 
         /// <summary>
-        /// Reads an <see cref="ISerializable"/> array from a <see cref="BinaryReader"/>.
+        /// Reads an <see cref="ISerializable"/> array from a <see cref="MemoryReader"/>.
         /// </summary>
         /// <typeparam name="T">The type of the array element.</typeparam>
-        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
+        /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
         /// <param name="max">The maximum number of elements in the array.</param>
-        /// <returns>The array read from the <see cref="BinaryReader"/>.</returns>
-        public static T[] ReadSerializableArray<T>(this BinaryReader reader, int max = 0x1000000) where T : ISerializable, new()
+        /// <returns>The array read from the <see cref="MemoryReader"/>.</returns>
+        public static T[] ReadSerializableArray<T>(this ref MemoryReader reader, int max = 0x1000000) where T : ISerializable, new()
         {
             T[] array = new T[reader.ReadVarInt((ulong)max)];
             for (int i = 0; i < array.Length; i++)
             {
                 array[i] = new T();
-                array[i].Deserialize(reader);
+                array[i].Deserialize(ref reader);
             }
             return array;
         }
@@ -329,17 +301,6 @@ namespace Neo.IO
                 value = fb;
             if (value > max) throw new FormatException();
             return value;
-        }
-
-        /// <summary>
-        /// Reads a <see cref="string"/> from a <see cref="BinaryReader"/>.
-        /// </summary>
-        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
-        /// <param name="max">The maximum size of the <see cref="string"/>.</param>
-        /// <returns>The <see cref="string"/> read from the <see cref="BinaryReader"/>.</returns>
-        public static string ReadVarString(this BinaryReader reader, int max = 0x1000000)
-        {
-            return Utility.StrictUTF8.GetString(reader.ReadVarBytes(max));
         }
 
         /// <summary>

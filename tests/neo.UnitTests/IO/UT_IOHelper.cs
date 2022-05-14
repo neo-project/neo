@@ -81,20 +81,19 @@ namespace Neo.UnitTests.IO
 
             // Read Error
 
-            using (var stream = new MemoryStream(data))
-            using (var reader = new BinaryReader(stream))
+            var reader = new MemoryReader(data);
+            try
             {
-                Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.ReadNullableArray<UInt160>(reader, 2));
+                reader.ReadNullableArray<UInt160>(2);
+                Assert.Fail();
             }
+            catch (FormatException) { }
 
             // Read 100%
 
-            using (var stream = new MemoryStream(data))
-            using (var reader = new BinaryReader(stream))
-            {
-                var read = Neo.IO.Helper.ReadNullableArray<UInt160>(reader);
-                CollectionAssert.AreEqual(caseArray, read);
-            }
+            reader = new MemoryReader(data);
+            var read = Neo.IO.Helper.ReadNullableArray<UInt160>(reader);
+            CollectionAssert.AreEqual(caseArray, read);
         }
 
         [TestMethod]
@@ -317,26 +316,13 @@ namespace Neo.UnitTests.IO
         }
 
         [TestMethod]
-        public void TestReadFixedString()
-        {
-            MemoryStream stream = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(stream);
-            Neo.IO.Helper.WriteFixedString(writer, "AA", Encoding.UTF8.GetBytes("AA").Length + 1);
-            stream.Seek(0, SeekOrigin.Begin);
-            BinaryReader reader = new BinaryReader(stream);
-            string result = Neo.IO.Helper.ReadFixedString(reader, Encoding.UTF8.GetBytes("AA").Length + 1);
-            Assert.AreEqual("AA", result);
-        }
-
-        [TestMethod]
         public void TestReadSerializable()
         {
             MemoryStream stream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(stream);
             Neo.IO.Helper.Write(writer, UInt160.Zero);
-            stream.Seek(0, SeekOrigin.Begin);
-            BinaryReader reader = new BinaryReader(stream);
-            UInt160 result = Neo.IO.Helper.ReadSerializable<UInt160>(reader);
+            MemoryReader reader = new(stream.ToArray());
+            UInt160 result = Neo.IO.Helper.ReadSerializable<UInt160>(ref reader);
             Assert.AreEqual(UInt160.Zero, result);
         }
 
@@ -346,9 +332,8 @@ namespace Neo.UnitTests.IO
             MemoryStream stream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(stream);
             Neo.IO.Helper.Write(writer, new UInt160[] { UInt160.Zero });
-            stream.Seek(0, SeekOrigin.Begin);
-            BinaryReader reader = new BinaryReader(stream);
-            UInt160[] resultArray = Neo.IO.Helper.ReadSerializableArray<UInt160>(reader);
+            MemoryReader reader = new(stream.ToArray());
+            UInt160[] resultArray = Neo.IO.Helper.ReadSerializableArray<UInt160>(ref reader);
             Assert.AreEqual(1, resultArray.Length);
             Assert.AreEqual(UInt160.Zero, resultArray[0]);
         }
@@ -401,19 +386,6 @@ namespace Neo.UnitTests.IO
                     action.Should().Throw<FormatException>();
                 }
             }
-        }
-
-        [TestMethod]
-        public void TestReadVarString()
-        {
-            MemoryStream stream = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(stream);
-            Neo.IO.Helper.WriteVarString(writer, "AAAAAAA");
-            stream.Seek(0, SeekOrigin.Begin);
-            BinaryReader reader = new BinaryReader(stream);
-            string result = Neo.IO.Helper.ReadVarString(reader, 10);
-            stream.Seek(0, SeekOrigin.Begin);
-            Assert.AreEqual("AAAAAAA", result);
         }
 
         [TestMethod]

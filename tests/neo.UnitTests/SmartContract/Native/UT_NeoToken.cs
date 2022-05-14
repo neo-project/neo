@@ -768,7 +768,7 @@ namespace Neo.UnitTests.SmartContract.Native
             NativeContract.NEO.BalanceOf(snapshot, Contract.CreateSignatureContract(accountA).ScriptHash).Should().Be(0);
 
             StorageItem storageItem = snapshot.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(accountA).AddBigEndian(1));
-            new BigInteger(storageItem.Value).Should().Be(30000000000);
+            ((BigInteger)storageItem).Should().Be(30000000000);
 
             snapshot.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(accountB).AddBigEndian(uint.MaxValue - 1)).Should().BeNull();
 
@@ -791,7 +791,7 @@ namespace Neo.UnitTests.SmartContract.Native
             NativeContract.NEO.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[1]).ScriptHash).Should().Be(0);
 
             storageItem = snapshot.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[1]).AddBigEndian(1));
-            new BigInteger(storageItem.Value).Should().Be(30000000000);
+            ((BigInteger)storageItem).Should().Be(30000000000);
 
             // Next block
 
@@ -813,7 +813,7 @@ namespace Neo.UnitTests.SmartContract.Native
             NativeContract.NEO.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[2]).ScriptHash).Should().Be(0);
 
             storageItem = snapshot.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[2]).AddBigEndian(22));
-            new BigInteger(storageItem.Value).Should().Be(30000000000 * 2);
+            ((BigInteger)storageItem).Should().Be(30000000000 * 2);
 
             // Claim GAS
 
@@ -1016,7 +1016,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var result = engine.ResultStack.Pop();
             result.Should().BeOfType(typeof(VM.Types.Array));
 
-            return (result as VM.Types.Array).Select(u => u.GetSpan().AsSerializable<ECPoint>()).ToArray();
+            return (result as VM.Types.Array).Select(u => ECPoint.DecodePoint(u.GetSpan(), ECCurve.Secp256r1)).ToArray();
         }
 
         internal static (BigInteger Value, bool State) Check_UnclaimedGas(DataCache snapshot, byte[] address, Block persistingBlock)
@@ -1040,7 +1040,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static void CheckValidator(ECPoint eCPoint, DataCache.Trackable trackable)
         {
-            var st = new BigInteger(trackable.Item.Value);
+            BigInteger st = trackable.Item;
             st.Should().Be(0);
 
             trackable.Key.Key.Should().BeEquivalentTo(new byte[] { 33 }.Concat(eCPoint.EncodePoint(true)));
@@ -1055,7 +1055,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             st[0].GetInteger().Should().Be(balance); // Balance
             st[1].GetInteger().Should().Be(height);  // BalanceHeight
-            st[2].GetSpan().AsSerializable<ECPoint>().Should().BeEquivalentTo(voteTo);  // Votes
+            ECPoint.DecodePoint(st[2].GetSpan(), ECCurve.Secp256r1).Should().BeEquivalentTo(voteTo);  // Votes
 
             trackable.Key.Key.Should().BeEquivalentTo(new byte[] { 20 }.Concat(account));
         }

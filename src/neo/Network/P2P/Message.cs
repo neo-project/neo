@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -9,7 +9,6 @@
 // modifications are permitted.
 
 using Akka.IO;
-using Neo.Cryptography;
 using Neo.IO;
 using Neo.IO.Caching;
 using System;
@@ -21,7 +20,7 @@ namespace Neo.Network.P2P
     /// <summary>
     /// Represents a message on the NEO network.
     /// </summary>
-    public class Message : ISerializable
+    public class Message
     {
         /// <summary>
         /// Indicates the maximum size of <see cref="Payload"/>.
@@ -99,19 +98,15 @@ namespace Neo.Network.P2P
             Payload = ReflectionCache<MessageCommand>.CreateSerializable(Command, decompressed);
         }
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        public byte[] ToArray()
         {
-            Flags = (MessageFlags)reader.ReadByte();
-            Command = (MessageCommand)reader.ReadByte();
-            _payload_compressed = reader.ReadVarBytes(PayloadMaxSize);
-            DecompressPayload();
-        }
-
-        void ISerializable.Serialize(BinaryWriter writer)
-        {
+            using MemoryStream ms = new();
+            using BinaryWriter writer = new(ms);
             writer.Write((byte)Flags);
             writer.Write((byte)Command);
             writer.WriteVarBytes(_payload_compressed);
+            writer.Flush();
+            return ms.ToArray();
         }
 
         internal static int TryDeserialize(ByteString data, out Message msg)

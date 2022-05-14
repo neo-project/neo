@@ -596,8 +596,8 @@ namespace Neo.Wallets
             foreach (UInt160 hash in hashes)
             {
                 index++;
-                byte[] witness_script = GetAccount(hash)?.Contract?.Script;
-                byte[] invocationScript = null;
+                ReadOnlyMemory<byte>? witness_script = GetAccount(hash)?.Contract?.Script;
+                ReadOnlyMemory<byte>? invocationScript = null;
 
                 if (tx.Witnesses != null)
                 {
@@ -607,7 +607,7 @@ namespace Neo.Wallets
                         Witness witness = tx.Witnesses[index];
                         witness_script = witness?.VerificationScript;
 
-                        if (witness_script is null || witness_script.Length == 0)
+                        if (witness_script is null || witness_script.Value.Length == 0)
                         {
                             // Then it's a contract-based witness, so try to get the corresponding invocation script for it
                             invocationScript = witness?.InvocationScript;
@@ -615,7 +615,7 @@ namespace Neo.Wallets
                     }
                 }
 
-                if (witness_script is null || witness_script.Length == 0)
+                if (witness_script is null || witness_script.Value.Length == 0)
                 {
                     var contract = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (contract is null)
@@ -629,7 +629,7 @@ namespace Neo.Wallets
                         throw new ArgumentException("The verify method requires parameters that need to be passed via the witness' invocation script.");
 
                     // Empty verification and non-empty invocation scripts
-                    var invSize = invocationScript != null ? invocationScript.GetVarSize() : Array.Empty<byte>().GetVarSize();
+                    var invSize = invocationScript?.GetVarSize() ?? Array.Empty<byte>().GetVarSize();
                     size += Array.Empty<byte>().GetVarSize() + invSize;
 
                     // Check verify cost
@@ -641,15 +641,15 @@ namespace Neo.Wallets
 
                     networkFee += engine.GasConsumed;
                 }
-                else if (witness_script.IsSignatureContract())
+                else if (IsSignatureContract(witness_script.Value.Span))
                 {
-                    size += 67 + witness_script.GetVarSize();
+                    size += 67 + witness_script.Value.GetVarSize();
                     networkFee += exec_fee_factor * SignatureContractCost();
                 }
-                else if (witness_script.IsMultiSigContract(out int m, out int n))
+                else if (IsMultiSigContract(witness_script.Value.Span, out int m, out int n))
                 {
                     int size_inv = 66 * m;
-                    size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
+                    size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.Value.GetVarSize();
                     networkFee += exec_fee_factor * MultiSignatureContractCost(m, n);
                 }
                 else
@@ -681,7 +681,7 @@ namespace Neo.Wallets
                     Contract multiSigContract = account.Contract;
 
                     if (multiSigContract != null &&
-                        multiSigContract.Script.IsMultiSigContract(out int m, out ECPoint[] points))
+                        IsMultiSigContract(multiSigContract.Script, out int m, out ECPoint[] points))
                     {
                         foreach (var point in points)
                         {
