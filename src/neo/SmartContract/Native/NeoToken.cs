@@ -63,9 +63,14 @@ namespace Neo.SmartContract.Native
             return TotalAmount;
         }
 
-        internal override async ContractTask OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
+        internal override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
         {
-            await DistributeGas(engine, account, state);
+            GasDistribution distribution = DistributeGas(engine, account, state);
+            if (distribution is not null)
+            {
+                var list = engine.CurrentContext.GetState<List<GasDistribution>>();
+                list.Add(distribution);
+            }
             if (amount.IsZero) return;
             if (state.VoteTo is null) return;
             engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_VotersCount)).Add(amount);
@@ -75,14 +80,28 @@ namespace Neo.SmartContract.Native
             CheckCandidate(engine.Snapshot, state.VoteTo, candidate);
         }
 
-        private async ContractTask DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
+        private protected override async ContractTask PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data, bool callOnPayment)
+        {
+            await base.PostTransfer(engine, from, to, amount, data, callOnPayment);
+            var list = engine.CurrentContext.GetState<List<GasDistribution>>();
+            foreach (var distribution in list)
+                await GAS.Mint(engine, distribution.Account, distribution.Amount, callOnPayment);
+        }
+
+        private GasDistribution DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
         {
             // PersistingBlock is null when running under the debugger
-            if (engine.PersistingBlock is null) return;
+            if (engine.PersistingBlock is null) return null;
 
             BigInteger gas = CalculateBonus(engine.Snapshot, state.VoteTo, state.Balance, state.BalanceHeight, engine.PersistingBlock.Index);
             state.BalanceHeight = engine.PersistingBlock.Index;
-            await GAS.Mint(engine, account, gas, true);
+
+            if (gas == 0) return null;
+            return new GasDistribution
+            {
+                Account = account,
+                Amount = gas
+            };
         }
 
         private BigInteger CalculateBonus(DataCache snapshot, ECPoint vote, BigInteger value, uint start, uint end)
@@ -315,7 +334,7 @@ namespace Neo.SmartContract.Native
                 else
                     item.Add(-state_account.Balance);
             }
-            await DistributeGas(engine, account, state_account);
+            GasDistribution gasDistribution = DistributeGas(engine, account, state_account);
             if (state_account.VoteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate).Add(state_account.VoteTo);
@@ -329,6 +348,8 @@ namespace Neo.SmartContract.Native
             {
                 validator_new.Votes += state_account.Balance;
             }
+            if (gasDistribution is not null)
+                await GAS.Mint(engine, gasDistribution.Account, gasDistribution.Amount, true);
             return true;
         }
 
@@ -349,16 +370,16 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Gets the registered candidates iterator.
         /// </summary>
-        /// <param name="engine">The <see cref="ApplicationEngine"/> that is executing the contract.</param>
+        /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>All the registered candidates.</returns>
         [ContractMethod(CpuFee = 1 << 22, RequiredCallFlags = CallFlags.ReadStates)]
-        private IIterator GetAllCandidates(ApplicationEngine engine)
+        private IIterator GetAllCandidates(DataCache snapshot)
         {
             const FindOptions options = FindOptions.RemovePrefix | FindOptions.DeserializeValues | FindOptions.PickField1;
-            var enumerator = GetCandidatesInternal(engine.Snapshot)
+            var enumerator = GetCandidatesInternal(snapshot)
                 .Select(p => (p.Key, p.Value))
                 .GetEnumerator();
-            return new StorageIterator(enumerator, 1, options, engine.ReferenceCounter);
+            return new StorageIterator(enumerator, 1, options);
         }
 
         internal IEnumerable<(StorageKey Key, StorageItem Value, ECPoint PublicKey, CandidateState State)> GetCandidatesInternal(DataCache snapshot)
@@ -543,6 +564,12 @@ namespace Neo.SmartContract.Native
             {
                 return new VM.Types.Array(referenceCounter, this.Select(p => new Struct(referenceCounter, new StackItem[] { p.PublicKey.ToArray(), p.Votes })));
             }
+        }
+
+        private record GasDistribution
+        {
+            public UInt160 Account { get; init; }
+            public BigInteger Amount { get; init; }
         }
     }
 }

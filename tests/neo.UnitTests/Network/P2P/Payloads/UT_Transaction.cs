@@ -102,12 +102,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsMultiSigContract()
         {
-            var walletA = TestUtils.GenerateTestWallet();
-            var walletB = TestUtils.GenerateTestWallet();
+            var walletA = TestUtils.GenerateTestWallet("123");
+            var walletB = TestUtils.GenerateTestWallet("123");
             var snapshot = TestBlockchain.GetTestSnapshot();
 
-            using var unlockA = walletA.Unlock("123");
-            using var unlockB = walletB.Unlock("123");
             var a = walletA.CreateAccount();
             var b = walletB.CreateAccount();
 
@@ -183,10 +181,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContractDetailed()
         {
-            var wallet = TestUtils.GenerateTestWallet();
+            var wallet = TestUtils.GenerateTestWallet("123");
             var snapshot = TestBlockchain.GetTestSnapshot();
-
-            using var unlock = wallet.Unlock("123");
             var acc = wallet.CreateAccount();
 
             // Fake balance
@@ -288,11 +284,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContract_TestScope_Global()
         {
-            var wallet = TestUtils.GenerateTestWallet();
+            var wallet = TestUtils.GenerateTestWallet("");
             var snapshot = TestBlockchain.GetTestSnapshot();
-
-            // no password on this wallet
-            using var unlock = wallet.Unlock("");
             var acc = wallet.CreateAccount();
 
             // Fake balance
@@ -370,11 +363,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContract_TestScope_CurrentHash_GAS()
         {
-            var wallet = TestUtils.GenerateTestWallet();
+            var wallet = TestUtils.GenerateTestWallet("");
             var snapshot = TestBlockchain.GetTestSnapshot();
-
-            // no password on this wallet
-            using var unlock = wallet.Unlock("");
             var acc = wallet.CreateAccount();
 
             // Fake balance
@@ -453,11 +443,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContract_TestScope_CalledByEntry_Plus_GAS()
         {
-            var wallet = TestUtils.GenerateTestWallet();
+            var wallet = TestUtils.GenerateTestWallet("");
             var snapshot = TestBlockchain.GetTestSnapshot();
-
-            // no password on this wallet
-            using var unlock = wallet.Unlock("");
             var acc = wallet.CreateAccount();
 
             // Fake balance
@@ -539,11 +526,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContract_TestScope_CurrentHash_NEO_FAULT()
         {
-            var wallet = TestUtils.GenerateTestWallet();
+            var wallet = TestUtils.GenerateTestWallet("");
             var snapshot = TestBlockchain.GetTestSnapshot();
-
-            // no password on this wallet
-            using var unlock = wallet.Unlock("");
             var acc = wallet.CreateAccount();
 
             // Fake balance
@@ -587,11 +571,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContract_TestScope_CurrentHash_NEO_GAS()
         {
-            var wallet = TestUtils.GenerateTestWallet();
+            var wallet = TestUtils.GenerateTestWallet("");
             var snapshot = TestBlockchain.GetTestSnapshot();
-
-            // no password on this wallet
-            using var unlock = wallet.Unlock("");
             var acc = wallet.CreateAccount();
 
             // Fake balance
@@ -675,11 +656,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContract_TestScope_NoScopeFAULT()
         {
-            var wallet = TestUtils.GenerateTestWallet();
+            var wallet = TestUtils.GenerateTestWallet("");
             var snapshot = TestBlockchain.GetTestSnapshot();
-
-            // no password on this wallet
-            using var unlock = wallet.Unlock("");
             var acc = wallet.CreateAccount();
 
             // Fake balance
@@ -724,11 +702,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContract_UnexistingVerificationContractFAULT()
         {
-            var wallet = TestUtils.GenerateTestWallet();
+            var wallet = TestUtils.GenerateTestWallet("");
             var snapshot = TestBlockchain.GetTestSnapshot();
-
-            // no password on this wallet
-            using var unlock = wallet.Unlock("");
             var acc = wallet.CreateAccount();
 
             // Fake balance
@@ -762,7 +737,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 } };
 
             // creating new wallet with missing account for test
-            var walletWithoutAcc = TestUtils.GenerateTestWallet();
+            var walletWithoutAcc = TestUtils.GenerateTestWallet("");
 
             // using this...
 
@@ -987,11 +962,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Signer cosigner = new();
             cosigner.Scopes.Should().Be(WitnessScope.None);
 
-            var wallet = TestUtils.GenerateTestWallet();
+            var wallet = TestUtils.GenerateTestWallet("");
             var snapshot = TestBlockchain.GetTestSnapshot();
-
-            // no password on this wallet
-            using var unlock = wallet.Unlock("");
             var acc = wallet.CreateAccount();
 
             // Fake balance
@@ -1147,12 +1119,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             tx.Script = Array.Empty<byte>();
             tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Succeed);
 
-            var walletA = TestUtils.GenerateTestWallet();
-            var walletB = TestUtils.GenerateTestWallet();
+            var walletA = TestUtils.GenerateTestWallet("123");
+            var walletB = TestUtils.GenerateTestWallet("123");
             var snapshot = TestBlockchain.GetTestSnapshot();
 
-            using var unlockA = walletA.Unlock("123");
-            using var unlockB = walletB.Unlock("123");
             var a = walletA.CreateAccount();
             var b = walletB.CreateAccount();
 
@@ -1239,11 +1209,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             tx.SystemFee = 10;
             tx.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.InsufficientFunds);
 
-            var walletA = TestUtils.GenerateTestWallet();
-            var walletB = TestUtils.GenerateTestWallet();
+            var walletA = TestUtils.GenerateTestWallet("123");
+            var walletB = TestUtils.GenerateTestWallet("123");
 
-            using var unlockA = walletA.Unlock("123");
-            using var unlockB = walletB.Unlock("123");
             var a = walletA.CreateAccount();
             var b = walletB.CreateAccount();
 
