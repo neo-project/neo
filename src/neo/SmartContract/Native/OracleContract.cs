@@ -274,15 +274,14 @@ namespace Neo.SmartContract.Native
 
         private class IdList : InteroperableList<ulong>
         {
-            public override void FromStackItem(StackItem stackItem)
+            protected override ulong ElementFromStackItem(StackItem item)
             {
-                foreach (StackItem item in (VM.Types.Array)stackItem)
-                    Add((ulong)item.GetInteger());
+                return (ulong)item.GetInteger();
             }
 
-            public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+            protected override StackItem ElementToStackItem(ulong element, ReferenceCounter referenceCounter)
             {
-                return new VM.Types.Array(referenceCounter, this.Select(p => (Integer)p));
+                return element;
             }
         }
     }

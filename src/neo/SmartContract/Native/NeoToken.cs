@@ -525,18 +525,15 @@ namespace Neo.SmartContract.Native
             public CachedCommittee() { }
             public CachedCommittee(IEnumerable<(ECPoint, BigInteger)> collection) => AddRange(collection);
 
-            public override void FromStackItem(StackItem stackItem)
+            protected override (ECPoint, BigInteger) ElementFromStackItem(StackItem item)
             {
-                foreach (StackItem item in (VM.Types.Array)stackItem)
-                {
-                    Struct @struct = (Struct)item;
-                    Add((@struct[0].GetSpan().AsSerializable<ECPoint>(), @struct[1].GetInteger()));
-                }
+                Struct @struct = (Struct)item;
+                return (@struct[0].GetSpan().AsSerializable<ECPoint>(), @struct[1].GetInteger());
             }
 
-            public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+            protected override StackItem ElementToStackItem((ECPoint PublicKey, BigInteger Votes) element, ReferenceCounter referenceCounter)
             {
-                return new VM.Types.Array(referenceCounter, this.Select(p => new Struct(referenceCounter, new StackItem[] { p.PublicKey.ToArray(), p.Votes })));
+                return new Struct(referenceCounter) { element.PublicKey.ToArray(), element.Votes };
             }
         }
     }

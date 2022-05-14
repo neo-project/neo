@@ -96,15 +96,14 @@ namespace Neo.SmartContract.Native
 
         private class NodeList : InteroperableList<ECPoint>
         {
-            public override void FromStackItem(StackItem stackItem)
+            protected override ECPoint ElementFromStackItem(StackItem item)
             {
-                foreach (StackItem item in (VM.Types.Array)stackItem)
-                    Add(item.GetSpan().AsSerializable<ECPoint>());
+                return item.GetSpan().AsSerializable<ECPoint>();
             }
 
-            public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+            protected override StackItem ElementToStackItem(ECPoint element, ReferenceCounter referenceCounter)
             {
-                return new VM.Types.Array(referenceCounter, this.Select(p => (StackItem)p.ToArray()));
+                return element.ToArray();
             }
         }
     }

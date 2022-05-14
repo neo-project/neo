@@ -2,6 +2,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Neo.SmartContract.Native
 {
@@ -27,7 +28,20 @@ namespace Neo.SmartContract.Native
         public void RemoveAt(int index) => List.RemoveAt(index);
         public void Sort() => List.Sort();
 
-        public abstract void FromStackItem(StackItem stackItem);
-        public abstract StackItem ToStackItem(ReferenceCounter referenceCounter);
+        protected abstract T ElementFromStackItem(StackItem item);
+        protected abstract StackItem ElementToStackItem(T element, ReferenceCounter referenceCounter);
+
+        public void FromStackItem(StackItem stackItem)
+        {
+            foreach (StackItem item in (Array)stackItem)
+            {
+                Add(ElementFromStackItem(item));
+            }
+        }
+
+        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        {
+            return new Array(referenceCounter, this.Select(p => ElementToStackItem(p, referenceCounter)));
+        }
     }
 }
