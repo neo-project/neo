@@ -44,7 +44,7 @@ namespace Neo.IO
         /// <typeparam name="T">The type to convert to.</typeparam>
         /// <param name="value">The byte array to be converted.</param>
         /// <returns>The converted <see cref="ISerializable"/> object.</returns>
-        public static unsafe T AsSerializable<T>(this ReadOnlyMemory<byte> value) where T : ISerializable, new()
+        public static T AsSerializable<T>(this ReadOnlyMemory<byte> value) where T : ISerializable, new()
         {
             if (value.IsEmpty) throw new FormatException();
             MemoryReader reader = new(value);
@@ -87,7 +87,7 @@ namespace Neo.IO
         /// <param name="value">The byte array to be converted.</param>
         /// <param name="max">The maximum number of elements contained in the converted array.</param>
         /// <returns>The converted <see cref="ISerializable"/> array.</returns>
-        public static unsafe T[] AsSerializableArray<T>(this ReadOnlyMemory<byte> value, int max = 0x1000000) where T : ISerializable, new()
+        public static T[] AsSerializableArray<T>(this ReadOnlyMemory<byte> value, int max = 0x1000000) where T : ISerializable, new()
         {
             if (value.IsEmpty) throw new FormatException();
             MemoryReader reader = new(value);
