@@ -35,8 +35,7 @@ namespace Neo.Plugins
         /// </summary>
         /// <param name="system">The <see cref="NeoSystem"/> object that contains the blockchain.</param>
         /// <param name="block">The block being persisted.</param>
-        /// <param name="snapshot">The snapshot used for persistence.</param>
-        void OnCommit(NeoSystem system, Block block, DataCache snapshot) { }
+        void OnCommit(NeoSystem system, Block block) { }
 
         /// <summary>
         /// Indicates whether to allow exceptions to be thrown from the plugin when committing.
