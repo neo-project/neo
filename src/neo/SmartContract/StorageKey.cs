@@ -104,12 +104,9 @@ namespace Neo.SmartContract
         {
             if (cache is null)
             {
-                using MemoryStream ms = new(sizeof(int) + Key.Length);
-                using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
-                writer.Write(Id);
-                writer.Write(Key.Span);
-                writer.Flush();
-                cache = ms.ToArray();
+                cache = GC.AllocateUninitializedArray<byte>(sizeof(int) + Key.Length);
+                BinaryPrimitives.WriteInt32LittleEndian(cache, Id);
+                Key.CopyTo(cache.AsMemory(sizeof(int)));
             }
             return cache;
         }
