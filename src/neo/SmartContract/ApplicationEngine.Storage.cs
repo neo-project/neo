@@ -11,7 +11,6 @@
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Native;
 using System;
-using System.Linq;
 
 namespace Neo.SmartContract
 {
@@ -128,7 +127,7 @@ namespace Neo.SmartContract
             return Snapshot.TryGet(new StorageKey
             {
                 Id = context.Id,
-                Key = key.ToArray()
+                Key = key
             })?.Value;
         }
 

@@ -10,6 +10,7 @@
 
 using Neo.VM;
 using Neo.VM.Types;
+using System;
 using System.Collections.Generic;
 
 namespace Neo.SmartContract.Iterators
@@ -39,7 +40,7 @@ namespace Neo.SmartContract.Iterators
 
         public StackItem Value(ReferenceCounter referenceCounter)
         {
-            byte[] key = enumerator.Current.Key.Key;
+            ReadOnlyMemory<byte> key = enumerator.Current.Key.Key;
             byte[] value = enumerator.Current.Value.Value;
 
             if (options.HasFlag(FindOptions.RemovePrefix))
@@ -50,9 +51,9 @@ namespace Neo.SmartContract.Iterators
                 : value;
 
             if (options.HasFlag(FindOptions.PickField0))
-                item = ((Array)item)[0];
+                item = ((VM.Types.Array)item)[0];
             else if (options.HasFlag(FindOptions.PickField1))
-                item = ((Array)item)[1];
+                item = ((VM.Types.Array)item)[1];
 
             if (options.HasFlag(FindOptions.KeysOnly))
                 return key;

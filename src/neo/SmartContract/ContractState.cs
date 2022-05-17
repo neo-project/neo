@@ -53,6 +53,28 @@ namespace Neo.SmartContract
         /// </summary>
         public byte[] Script => Nef.Script;
 
+        IInteroperable IInteroperable.Clone()
+        {
+            return new ContractState
+            {
+                Id = Id,
+                UpdateCounter = UpdateCounter,
+                Hash = Hash,
+                Nef = Nef,
+                Manifest = Manifest
+            };
+        }
+
+        void IInteroperable.FromReplica(IInteroperable replica)
+        {
+            ContractState from = (ContractState)replica;
+            Id = from.Id;
+            UpdateCounter = from.UpdateCounter;
+            Hash = from.Hash;
+            Nef = from.Nef;
+            Manifest = from.Manifest;
+        }
+
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             Array array = (Array)stackItem;

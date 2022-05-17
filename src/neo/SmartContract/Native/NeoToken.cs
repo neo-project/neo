@@ -193,7 +193,7 @@ namespace Neo.SmartContract.Native
             int index = (int)(engine.PersistingBlock.Index % (uint)m);
             var gasPerBlock = GetGasPerBlock(engine.Snapshot);
             var committee = GetCommitteeFromCache(engine.Snapshot);
-            var pubkey = committee.ElementAt(index).PublicKey;
+            var pubkey = committee[index].PublicKey;
             var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
             await GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100, false);
 
@@ -204,7 +204,7 @@ namespace Neo.SmartContract.Native
                 BigInteger voterRewardOfEachCommittee = gasPerBlock * VoterRewardRatio * 100000000L * m / (m + n) / 100; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
                 for (index = 0; index < committee.Count; index++)
                 {
-                    var member = committee.ElementAt(index);
+                    var member = committee[index];
                     var factor = index < n ? 2 : 1; // The `voter` rewards of validator will double than other committee's
                     if (member.Votes > 0)
                     {
@@ -267,7 +267,7 @@ namespace Neo.SmartContract.Native
             byte[] key = CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(end).ToArray();
             byte[] boundary = CreateStorageKey(Prefix_GasPerBlock).ToArray();
             return snapshot.FindRange(key, boundary, SeekDirection.Backward)
-                .Select(u => (BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.AsSpan(^sizeof(uint))), (BigInteger)u.Value));
+                .Select(u => (BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.Span[^sizeof(uint)..]), (BigInteger)u.Value));
         }
 
         /// <summary>
@@ -386,7 +386,7 @@ namespace Neo.SmartContract.Native
         {
             byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
             return snapshot.Find(prefix_key)
-                .Select(p => (p.Key, p.Value, PublicKey: p.Key.Key.AsSerializable<ECPoint>(1), State: p.Value.GetInteroperable<CandidateState>()))
+                .Select(p => (p.Key, p.Value, PublicKey: p.Key.Key.Span[1..].AsSerializable<ECPoint>(), State: p.Value.GetInteroperable<CandidateState>()))
                 .Where(p => p.State.Registered)
                 .Where(p => !Policy.IsBlocked(snapshot, Contract.CreateSignatureRedeemScript(p.PublicKey).ToScriptHash()));
         }
@@ -541,28 +541,20 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        internal class CachedCommittee : List<(ECPoint PublicKey, BigInteger Votes)>, IInteroperable
+        internal class CachedCommittee : InteroperableList<(ECPoint PublicKey, BigInteger Votes)>
         {
-            public CachedCommittee()
+            public CachedCommittee() { }
+            public CachedCommittee(IEnumerable<(ECPoint, BigInteger)> collection) => AddRange(collection);
+
+            protected override (ECPoint, BigInteger) ElementFromStackItem(StackItem item)
             {
+                Struct @struct = (Struct)item;
+                return (@struct[0].GetSpan().AsSerializable<ECPoint>(), @struct[1].GetInteger());
             }
 
-            public CachedCommittee(IEnumerable<(ECPoint PublicKey, BigInteger Votes)> collection) : base(collection)
+            protected override StackItem ElementToStackItem((ECPoint PublicKey, BigInteger Votes) element, ReferenceCounter referenceCounter)
             {
-            }
-
-            public void FromStackItem(StackItem stackItem)
-            {
-                foreach (StackItem item in (VM.Types.Array)stackItem)
-                {
-                    Struct @struct = (Struct)item;
-                    Add((@struct[0].GetSpan().AsSerializable<ECPoint>(), @struct[1].GetInteger()));
-                }
-            }
-
-            public StackItem ToStackItem(ReferenceCounter referenceCounter)
-            {
-                return new VM.Types.Array(referenceCounter, this.Select(p => new Struct(referenceCounter, new StackItem[] { p.PublicKey.ToArray(), p.Votes })));
+                return new Struct(referenceCounter) { element.PublicKey.ToArray(), element.Votes };
             }
         }
 

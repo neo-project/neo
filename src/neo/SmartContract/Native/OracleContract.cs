@@ -153,7 +153,7 @@ namespace Neo.SmartContract.Native
         /// <returns>All the pending requests.</returns>
         public IEnumerable<(ulong, OracleRequest)> GetRequests(DataCache snapshot)
         {
-            return snapshot.Find(CreateStorageKey(Prefix_Request).ToArray()).Select(p => (BinaryPrimitives.ReadUInt64BigEndian(p.Key.Key.AsSpan(1)), p.Value.GetInteroperable<OracleRequest>()));
+            return snapshot.Find(CreateStorageKey(Prefix_Request).ToArray()).Select(p => (BinaryPrimitives.ReadUInt64BigEndian(p.Key.Key.Span[1..]), p.Value.GetInteroperable<OracleRequest>()));
         }
 
         /// <summary>
@@ -272,17 +272,16 @@ namespace Neo.SmartContract.Native
             return tx?.GetAttribute<OracleResponse>() != null;
         }
 
-        private class IdList : List<ulong>, IInteroperable
+        private class IdList : InteroperableList<ulong>
         {
-            public void FromStackItem(StackItem stackItem)
+            protected override ulong ElementFromStackItem(StackItem item)
             {
-                foreach (StackItem item in (VM.Types.Array)stackItem)
-                    Add((ulong)item.GetInteger());
+                return (ulong)item.GetInteger();
             }
 
-            public StackItem ToStackItem(ReferenceCounter referenceCounter)
+            protected override StackItem ElementToStackItem(ulong element, ReferenceCounter referenceCounter)
             {
-                return new VM.Types.Array(referenceCounter, this.Select(p => (Integer)p));
+                return element;
             }
         }
     }
