@@ -23,7 +23,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The data of the <see cref="BloomFilter"/>.
         /// </summary>
-        public byte[] Filter;
+        public ReadOnlyMemory<byte> Filter;
 
         /// <summary>
         /// The number of hash functions used by the <see cref="BloomFilter"/>.
@@ -56,7 +56,7 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Deserialize(ref MemoryReader reader)
         {
-            Filter = reader.ReadVarMemory(36000).ToArray();
+            Filter = reader.ReadVarMemory(36000);
             K = reader.ReadByte();
             if (K > 50) throw new FormatException();
             Tweak = reader.ReadUInt32();
@@ -64,7 +64,7 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.WriteVarBytes(Filter);
+            writer.WriteVarBytes(Filter.Span);
             writer.Write(K);
             writer.Write(Tweak);
         }
