@@ -33,6 +33,7 @@ namespace Neo.SmartContract.Native
 
         public void FromStackItem(StackItem stackItem)
         {
+            List.Clear();
             foreach (StackItem item in (Array)stackItem)
             {
                 Add(ElementFromStackItem(item));
