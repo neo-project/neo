@@ -93,6 +93,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = Check_Vote(snapshot, from, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
             ret.Result.Should().BeTrue();
             ret.State.Should().BeTrue();
+            accountState = snapshot.TryGet(CreateStorageKey(20, from)).GetInteroperable<NeoAccountState>();
             accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
         }
 
@@ -109,6 +110,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var ret = Check_Vote(snapshot, from, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
             ret.Result.Should().BeTrue();
             ret.State.Should().BeTrue();
+            accountState = snapshot.TryGet(CreateStorageKey(20, from)).GetInteroperable<NeoAccountState>();
             accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
 
             //two account vote for the same account
@@ -121,6 +123,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = Check_Vote(snapshot, G_Account, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
             ret.Result.Should().BeTrue();
             ret.State.Should().BeTrue();
+            stateValidator = snapshot.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
             stateValidator.Votes.Should().Be(300);
         }
 
@@ -139,6 +142,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var ret = Check_Vote(snapshot, from_Account, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
             ret.Result.Should().BeTrue();
             ret.State.Should().BeTrue();
+            accountState = snapshot.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
             accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
 
             //from change vote to itself
@@ -150,6 +154,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = Check_Vote(snapshot, from_Account, from, true, persistingBlock);
             ret.Result.Should().BeTrue();
             ret.State.Should().BeTrue();
+            G_stateValidator = snapshot.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
             G_stateValidator.Votes.Should().Be(0);
             var from_stateValidator = snapshot.GetAndChange(CreateStorageKey(33, from)).GetInteroperable<CandidateState>();
             from_stateValidator.Votes.Should().Be(100);
@@ -170,6 +175,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var ret = Check_Vote(snapshot, from_Account, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
             ret.Result.Should().BeTrue();
             ret.State.Should().BeTrue();
+            accountState = snapshot.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
             accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
 
             //from vote to null account G votes becomes 0
@@ -181,7 +187,9 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = Check_Vote(snapshot, from_Account, null, true, persistingBlock);
             ret.Result.Should().BeTrue();
             ret.State.Should().BeTrue();
+            G_stateValidator = snapshot.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
             G_stateValidator.Votes.Should().Be(0);
+            accountState = snapshot.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
             accountState.VoteTo.Should().Be(null);
         }
 
@@ -287,6 +295,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = Check_Vote(snapshot, G_Account, ProtocolSettings.Default.StandbyValidators[0].ToArray(), true, _persistingBlock);
             ret.State.Should().BeTrue();
             ret.Result.Should().BeFalse();
+            accountState = snapshot.TryGet(CreateStorageKey(20, G_Account)).GetInteroperable<NeoAccountState>();
             accountState.VoteTo.Should().Be(ProtocolSettings.Default.StandbyValidators[0]);
         }
 
