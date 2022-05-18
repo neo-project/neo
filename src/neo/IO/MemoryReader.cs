@@ -198,6 +198,9 @@ namespace Neo.IO
             int i = pos;
             while (i < end && span[i] != 0) i++;
             ReadOnlySpan<byte> data = span[pos..i];
+            for (; i < end; i++)
+                if (span[i] != 0)
+                    throw new FormatException();
             pos = end;
             return Utility.StrictUTF8.GetString(data);
         }
