@@ -225,6 +225,7 @@ namespace Neo.SmartContract
         private long GetOpCodePrice(OpCode opCode)
         {
             long price = OpCodePrices[opCode];
+            if (price == 0) return 0;
             uint count = ++_opCodeCounter[(byte)opCode];
 
             // if the opcode is more expensive, it takes longer to execute
@@ -232,7 +233,7 @@ namespace Neo.SmartContract
             // I set the borderMax of cheapest OpCode to 1024 * 1024 cause
             // if this value is too small, it might cause existing transactions
             // fail to execute due to the change of gas cost.
-            var borderMax = 1024 * 1024 / (price == 0 ? 1 : price);
+            var borderMax = 1024 * 1024 / price;
             if (count < borderMax) return price;
 
             // Price increase fraction
