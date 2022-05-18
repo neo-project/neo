@@ -418,8 +418,9 @@ namespace Neo.Wallets
         /// <param name="outputs">The array of <see cref="TransferOutput"/> that contain the asset, amount, and targets of the transfer.</param>
         /// <param name="from">The account to transfer from.</param>
         /// <param name="cosigners">The cosigners to be added to the transction.</param>
+        /// <param name="block">The block environment to execute the transaction. If null, <see cref="ApplicationEngine.CreateDummyBlock"></see> will be used.</param>
         /// <returns>The created transction.</returns>
-        public Transaction MakeTransaction(DataCache snapshot, TransferOutput[] outputs, UInt160 from = null, Signer[] cosigners = null)
+        public Transaction MakeTransaction(DataCache snapshot, TransferOutput[] outputs, UInt160 from = null, Signer[] cosigners = null, Block block = null)
         {
             UInt160[] accounts;
             if (from is null)
@@ -442,7 +443,7 @@ namespace Neo.Wallets
                     {
                         using ScriptBuilder sb2 = new();
                         sb2.EmitDynamicCall(assetId, "balanceOf", CallFlags.ReadOnly, account);
-                        using ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot, settings: ProtocolSettings);
+                        using ApplicationEngine engine = ApplicationEngine.Run(sb2.ToArray(), snapshot, settings: ProtocolSettings, persistingBlock: block);
                         if (engine.State != VMState.HALT)
                             throw new InvalidOperationException($"Execution for {assetId}.balanceOf('{account}' fault");
                         BigInteger value = engine.ResultStack.Pop().GetInteger();
@@ -482,7 +483,7 @@ namespace Neo.Wallets
             if (balances_gas is null)
                 balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
 
-            return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), Array.Empty<TransactionAttribute>(), balances_gas);
+            return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), Array.Empty<TransactionAttribute>(), balances_gas, block: block);
         }
 
         /// <summary>
@@ -494,8 +495,9 @@ namespace Neo.Wallets
         /// <param name="cosigners">The cosigners to be added to the transction.</param>
         /// <param name="attributes">The attributes to be added to the transction.</param>
         /// <param name="maxGas">The maximum gas that can be spent to execute the script.</param>
+        /// <param name="block">The block environment to execute the transaction. If null, <see cref="ApplicationEngine.CreateDummyBlock"></see> will be used.</param>
         /// <returns>The created transction.</returns>
-        public Transaction MakeTransaction(DataCache snapshot, byte[] script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null, long maxGas = ApplicationEngine.TestModeGas)
+        public Transaction MakeTransaction(DataCache snapshot, byte[] script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null, long maxGas = ApplicationEngine.TestModeGas, Block block = null)
         {
             UInt160[] accounts;
             if (sender is null)
@@ -507,10 +509,10 @@ namespace Neo.Wallets
                 accounts = new[] { sender };
             }
             var balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
-            return MakeTransaction(snapshot, script, cosigners ?? Array.Empty<Signer>(), attributes ?? Array.Empty<TransactionAttribute>(), balances_gas, maxGas);
+            return MakeTransaction(snapshot, script, cosigners ?? Array.Empty<Signer>(), attributes ?? Array.Empty<TransactionAttribute>(), balances_gas, maxGas, block: block);
         }
 
-        private Transaction MakeTransaction(DataCache snapshot, byte[] script, Signer[] cosigners, TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balances_gas, long maxGas = ApplicationEngine.TestModeGas)
+        private Transaction MakeTransaction(DataCache snapshot, byte[] script, Signer[] cosigners, TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balances_gas, long maxGas = ApplicationEngine.TestModeGas, Block block = null)
         {
             Random rand = new();
             foreach (var (account, value) in balances_gas)
@@ -526,7 +528,7 @@ namespace Neo.Wallets
                 };
 
                 // will try to execute 'transfer' script to check if it works 
-                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.CreateSnapshot(), tx, settings: ProtocolSettings, gas: maxGas))
+                using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.CreateSnapshot(), tx, settings: ProtocolSettings, gas: maxGas, persistingBlock: block))
                 {
                     if (engine.State == VMState.FAULT)
                     {
