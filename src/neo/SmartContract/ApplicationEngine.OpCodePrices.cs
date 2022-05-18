@@ -224,15 +224,16 @@ namespace Neo.SmartContract
         /// <exception cref="InvalidOperationException">if the opcode is used for too many times, FAULT the transaction</exception>
         private long GetOpCodePrice(OpCode opCode)
         {
-            _opCodeCounter[(byte)opCode]++;
+            long price = OpCodePrices[opCode];
+            uint count = ++_opCodeCounter[(byte)opCode];
 
             // if the opcode is more expensive, it takes longer to execute
             // then it's borderMax should be smaller.
             // I set the borderMax of cheapest OpCode to 1024 * 1024 cause
             // if this value is too small, it might cause existing transactions
             // fail to execute due to the change of gas cost.
-            var borderMax = 1024 * 1024 / (OpCodePrices[opCode] == 0 ? 1 : OpCodePrices[opCode]);
-            if (_opCodeCounter[(byte)opCode] < borderMax) return OpCodePrices[opCode];
+            var borderMax = 1024 * 1024 / (price == 0 ? 1 : price);
+            if (count < borderMax) return price;
 
             // Price increase fraction
             const int fraction = 3;
@@ -242,12 +243,12 @@ namespace Neo.SmartContract
             // ...
             // 180% - 190% borderMax => (1 + 9fraction)) * price
             // 190% - 200% borderMax => (1 + 10fraction)) * price
-            if (borderMax <= _opCodeCounter[(byte)opCode] && _opCodeCounter[(byte)opCode] < borderMax * 2)
-                return OpCodePrices[opCode] * (1 + fraction * (10 * _opCodeCounter[(byte)opCode] - 9 * borderMax) / borderMax);
+            if (borderMax <= count && count < borderMax * 2)
+                return price * (1 + fraction * (10 * count - 9 * borderMax) / borderMax);
 
             // you shall not use the same opcode for infinite times.
             // >200% borderMax, exception
-            throw new InvalidOperationException($"MaxOpCodeCount exceed: {_opCodeCounter[(byte)opCode]}");
+            throw new InvalidOperationException($"MaxOpCodeCount exceed: {count}");
         }
     }
 }
