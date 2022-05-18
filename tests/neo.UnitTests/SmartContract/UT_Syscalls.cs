@@ -88,6 +88,7 @@ namespace Neo.UnitTests.SmartContract
 
             // With block
 
+            height = snapshot[NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>();
             height.Index = block.Index;
 
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
@@ -203,9 +204,9 @@ namespace Neo.UnitTests.SmartContract
             {
                 script.EmitSysCall(ApplicationEngine.System_Runtime_GetInvocationCounter);
 
-                contractA = new ContractState() { Nef = new NefFile { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP }.Concat(script.ToArray()).ToArray() } };
-                contractB = new ContractState() { Nef = new NefFile { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() } };
-                contractC = new ContractState() { Nef = new NefFile { Script = new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray() } };
+                contractA = TestUtils.GetContract(new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP }.Concat(script.ToArray()).ToArray());
+                contractB = TestUtils.GetContract(new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray());
+                contractC = TestUtils.GetContract(new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray());
                 contractA.Hash = contractA.Script.Span.ToScriptHash();
                 contractB.Hash = contractB.Script.Span.ToScriptHash();
                 contractC.Hash = contractC.Script.Span.ToScriptHash();

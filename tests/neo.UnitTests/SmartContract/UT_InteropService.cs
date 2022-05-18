@@ -45,12 +45,7 @@ namespace Neo.UnitTests.SmartContract
                 scriptHash2 = script.ToArray().ToScriptHash();
 
                 snapshot.DeleteContract(scriptHash2);
-                snapshot.AddContract(scriptHash2, new ContractState()
-                {
-                    Nef = new NefFile { Script = script.ToArray() },
-                    Hash = script.ToArray().ToScriptHash(),
-                    Manifest = TestUtils.CreateManifest("test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer),
-                });
+                snapshot.AddContract(scriptHash2, TestUtils.GetContract(script.ToArray(), TestUtils.CreateManifest("test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer)));
             }
 
             // Wrong length
@@ -209,12 +204,7 @@ namespace Neo.UnitTests.SmartContract
             scriptA.Emit(OpCode.DROP); // Drop method
             scriptA.EmitSysCall(ApplicationEngine.System_Runtime_GetCallingScriptHash);
 
-            var contract = new ContractState()
-            {
-                Manifest = TestUtils.CreateManifest("test", ContractParameterType.Any, ContractParameterType.String, ContractParameterType.Integer),
-                Nef = new NefFile { Script = scriptA.ToArray() },
-                Hash = scriptA.ToArray().ToScriptHash()
-            };
+            var contract = TestUtils.GetContract(scriptA.ToArray(), TestUtils.CreateManifest("test", ContractParameterType.Any, ContractParameterType.String, ContractParameterType.Integer));
             engine = GetEngine(true, true, addScript: false);
             engine.Snapshot.AddContract(contract.Hash, contract);
 
@@ -375,7 +365,7 @@ namespace Neo.UnitTests.SmartContract
             snapshot.AddContract(state.Hash, state);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
-            NativeContract.ContractManagement.GetContract(engine.Snapshot, state.Hash).Should().BeSameAs(state);
+            NativeContract.ContractManagement.GetContract(engine.Snapshot, state.Hash).Hash.Should().Be(state.Hash);
         }
 
         [TestMethod]
@@ -537,20 +527,26 @@ namespace Neo.UnitTests.SmartContract
             var args = new VM.Types.Array { 0, 1 };
             var state = TestUtils.GetContract(method, args.Count);
 
-            snapshot.AddContract(state.Hash, state);
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
+            engine.Snapshot.AddContract(state.Hash, state);
 
             engine.CallContract(state.Hash, method, CallFlags.All, args);
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[0]);
             engine.CurrentContext.EvaluationStack.Pop().Should().Be(args[1]);
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.Create("a");
+            engine.Snapshot.DeleteContract(state.Hash);
+            engine.Snapshot.AddContract(state.Hash, state);
             Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(state.Hash, method, CallFlags.All, args));
 
             state.Manifest.Permissions[0].Methods = WildcardContainer<string>.CreateWildcard();
+            engine.Snapshot.DeleteContract(state.Hash);
+            engine.Snapshot.AddContract(state.Hash, state);
             engine.CallContract(state.Hash, method, CallFlags.All, args);
 
+            engine.Snapshot.DeleteContract(state.Hash);
+            engine.Snapshot.AddContract(state.Hash, state);
             Assert.ThrowsException<InvalidOperationException>(() => engine.CallContract(UInt160.Zero, method, CallFlags.All, args));
         }
 

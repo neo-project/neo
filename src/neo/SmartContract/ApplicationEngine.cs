@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -52,6 +52,7 @@ namespace Neo.SmartContract
         private static Dictionary<uint, InteropDescriptor> services;
         private readonly long gas_amount;
         private Dictionary<Type, object> states;
+        private readonly DataCache originalSnapshot;
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
@@ -85,7 +86,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The snapshot used to read or write data.
         /// </summary>
-        public DataCache Snapshot { get; }
+        public DataCache Snapshot => CurrentContext?.GetState<ExecutionContextState>().Snapshot ?? originalSnapshot;
 
         /// <summary>
         /// The block being persisted. This field could be <see langword="null"/> if the <see cref="Trigger"/> is <see cref="TriggerType.Verification"/>.
@@ -146,13 +147,13 @@ namespace Neo.SmartContract
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
-            this.Snapshot = snapshot;
+            this.originalSnapshot = snapshot;
             this.PersistingBlock = persistingBlock;
             this.ProtocolSettings = settings;
             this.gas_amount = gas;
             this.Diagnostic = diagnostic;
-            this.ExecFeeFactor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(Snapshot);
-            this.StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(Snapshot);
+            this.ExecFeeFactor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(snapshot);
+            this.StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(snapshot);
             this.nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
             if (persistingBlock is not null)
             {
@@ -178,6 +179,7 @@ namespace Neo.SmartContract
         protected override void OnFault(Exception ex)
         {
             FaultException = ex;
+            notifications = null;
             base.OnFault(ex);
         }
 
@@ -259,11 +261,31 @@ namespace Neo.SmartContract
         protected override void ContextUnloaded(ExecutionContext context)
         {
             base.ContextUnloaded(context);
+            if (context.Script != CurrentContext?.Script)
+            {
+                ExecutionContextState state = context.GetState<ExecutionContextState>();
+                if (UncaughtException is null)
+                {
+                    state.Snapshot?.Commit();
+                    if (CurrentContext != null)
+                    {
+                        ExecutionContextState contextState = CurrentContext.GetState<ExecutionContextState>();
+                        contextState.NotificationCount += state.NotificationCount;
+                    }
+                }
+                else
+                {
+                    if (state.NotificationCount > 0)
+                        notifications.RemoveRange(notifications.Count - state.NotificationCount, state.NotificationCount);
+                }
+            }
             Diagnostic?.ContextUnloaded(context);
-            if (!contractTasks.Remove(context, out var awaiter)) return;
-            if (UncaughtException is not null)
-                throw new VMUnhandledException(UncaughtException);
-            awaiter.SetResult(this);
+            if (contractTasks.Remove(context, out var awaiter))
+            {
+                if (UncaughtException is not null)
+                    throw new VMUnhandledException(UncaughtException);
+                awaiter.SetResult(this);
+            }
         }
 
         /// <summary>
@@ -341,7 +363,10 @@ namespace Neo.SmartContract
         {
             // Create and configure context
             ExecutionContext context = CreateContext(script, rvcount, initialPosition);
-            configureState?.Invoke(context.GetState<ExecutionContextState>());
+            ExecutionContextState state = context.GetState<ExecutionContextState>();
+            state.Snapshot = Snapshot?.CreateSnapshot();
+            configureState?.Invoke(state);
+
             // Load context
             LoadContext(context);
             return context;

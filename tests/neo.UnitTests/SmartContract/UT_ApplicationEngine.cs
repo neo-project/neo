@@ -15,6 +15,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine.LoadScript(System.Array.Empty<byte>());
             ApplicationEngine.Notify += Test_Notify1;
             const string notifyEvent = "TestEvent";
 
