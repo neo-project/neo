@@ -132,7 +132,7 @@ namespace Neo.UnitTests
             {
                 Id = 0x43000000,
                 Nef = nef,
-                Hash = nef.Script.ToScriptHash(),
+                Hash = nef.Script.Span.ToScriptHash(),
                 Manifest = CreateManifest(method, ContractParameterType.Any, Enumerable.Repeat(ContractParameterType.Any, parametersCount).ToArray())
             };
         }
