@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -9,6 +9,7 @@
 // modifications are permitted.
 
 using Neo.VM;
+using System;
 using System.Collections.Generic;
 
 namespace Neo.SmartContract
@@ -211,5 +212,42 @@ namespace Neo.SmartContract
             [OpCode.ISTYPE] = 1 << 1,
             [OpCode.CONVERT] = 1 << 13,
         };
+
+        private uint[] _opCodeCounter = new uint[256];
+
+        /// <summary>
+        /// To prevent DOS attacks mentioned in issue 2723
+        /// and mitigate further potential DOS attacks, adopt dynamic opcode price.
+        /// </summary>
+        /// <param name="opCode">OpCode</param>
+        /// <returns>the price of the opcode</returns>
+        /// <exception cref="InvalidOperationException">if the opcode is used for too many times, FAULT the transaction</exception>
+        private long GetOpCodePrice(OpCode opCode)
+        {
+            _opCodeCounter[(byte)opCode]++;
+
+            // if the opcode is more expensive, it takes longer to execute
+            // then it's borderMax should be smaller.
+            // I set the borderMax of cheapest OpCode to 1024 * 1024 cause
+            // if this value is too small, it might cause existing transactions
+            // fail to execute due to the change of gas cost.
+            var borderMax = 1024 * 1024 / (OpCodePrices[opCode] == 0 ? 1 : OpCodePrices[opCode]);
+            if (_opCodeCounter[(byte)opCode] < borderMax) return OpCodePrices[opCode];
+
+            // Price increase fraction
+            const int fraction = 3;
+            // if the opcode is used for too many times
+            // 100% - 110% borderMax => (1 + fraction) * price
+            // 110% - 120% borderMax => (1 + 2fraction) * price
+            // ...
+            // 180% - 190% borderMax => (1 + 9fraction)) * price
+            // 190% - 200% borderMax => (1 + 10fraction)) * price
+            if (borderMax <= _opCodeCounter[(byte)opCode] && _opCodeCounter[(byte)opCode] < borderMax * 2)
+                return OpCodePrices[opCode] * (1 + fraction * (10 * _opCodeCounter[(byte)opCode] - 9 * borderMax) / borderMax);
+
+            // you shall not use the same opcode for infinite times.
+            // >200% borderMax, exception
+            throw new InvalidOperationException($"MaxOpCodeCount exceed: {_opCodeCounter[(byte)opCode]}");
+        }
     }
 }
