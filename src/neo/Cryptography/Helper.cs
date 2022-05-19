@@ -11,6 +11,9 @@
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Wallets;
+using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Modes;
+using Org.BouncyCastle.Crypto.Parameters;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -125,11 +128,18 @@ namespace Neo.Cryptography
         public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[] associatedData = null)
         {
             if (nonce.Length != 12) throw new ArgumentOutOfRangeException(nameof(nonce));
-            var cipherBytes = new byte[plainData.Length];
             var tag = new byte[16];
-            using var cipher = new AesGcm(key);
-            cipher.Encrypt(nonce, plainData, cipherBytes, tag, associatedData);
-            return Concat(nonce, cipherBytes, tag);
+            var cipher = new GcmBlockCipher(new AesEngine());
+            var parameters = new AeadParameters(
+                new KeyParameter(key),
+                128, //128 = 16 * 8 => (tag size * 8)
+                nonce,
+                associatedData);
+            cipher.Init(true, parameters);
+            var cipherData = new byte[cipher.GetOutputSize(plainData.Length)];
+            var length = cipher.ProcessBytes(plainData, 0, plainData.Length, cipherData, 0);
+            cipher.DoFinal(cipherData, length);
+            return Concat(nonce, cipherData, tag);
         }
 
         public static byte[] AES256Decrypt(this byte[] encryptedData, byte[] key, byte[] associatedData = null)
@@ -138,9 +148,16 @@ namespace Neo.Cryptography
             var nonce = encrypted[..12];
             var cipherBytes = encrypted[12..^16];
             var tag = encrypted[^16..];
-            var decryptedData = new byte[cipherBytes.Length];
-            using var cipher = new AesGcm(key);
-            cipher.Decrypt(nonce, cipherBytes, tag, decryptedData, associatedData);
+            var cipher = new GcmBlockCipher(new AesEngine());
+            var parameters = new AeadParameters(
+                new KeyParameter(key),
+                128,  //128 = 16 * 8 => (tag size * 8)
+                nonce.ToArray(),
+                associatedData);
+            cipher.Init(false, parameters);
+            var decryptedData = new byte[cipher.GetOutputSize(cipherBytes.Length)];
+            var length = cipher.ProcessBytes(cipherBytes.ToArray(), 0, cipherBytes.Length, decryptedData, 0);
+            cipher.DoFinal(decryptedData, length);
             return decryptedData;
         }
 
