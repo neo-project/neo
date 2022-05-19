@@ -57,6 +57,22 @@ namespace Neo.SmartContract.Native
             writer.Write(Hashes);
         }
 
+        IInteroperable IInteroperable.Clone()
+        {
+            return new TrimmedBlock
+            {
+                Header = Header,
+                Hashes = Hashes
+            };
+        }
+
+        void IInteroperable.FromReplica(IInteroperable replica)
+        {
+            TrimmedBlock from = (TrimmedBlock)replica;
+            Header = from.Header;
+            Hashes = from.Hashes;
+        }
+
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             throw new NotSupportedException();

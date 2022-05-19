@@ -38,18 +38,18 @@ namespace Neo.UnitTests.IO.Caching
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.Write(Key);
+            writer.Write(Key.Span);
         }
         public bool Equals(MyKey other)
         {
             if (other == null) return false;
-            return Id == other.Id && Key.SequenceEqual(other.Key);
+            return Id == other.Id && Key.Span.SequenceEqual(other.Key.Span);
         }
 
         public override bool Equals(object obj)
         {
             if (obj is not MyKey other) return false;
-            return Id == other.Id && Key.SequenceEqual(other.Key);
+            return Id == other.Id && Key.Span.SequenceEqual(other.Key.Span);
         }
 
         public override int GetHashCode()
@@ -67,7 +67,7 @@ namespace Neo.UnitTests.IO.Caching
             if (obj is null) throw new Exception();
             int ret = Id.CompareTo(obj.Id);
             if (ret != 0) return ret;
-            return Encoding.UTF8.GetString(Key).CompareTo(Encoding.UTF8.GetString(obj.Key));
+            return Encoding.UTF8.GetString(Key.Span).CompareTo(Encoding.UTF8.GetString(obj.Key.Span));
         }
 
         public int CompareTo(object obj)

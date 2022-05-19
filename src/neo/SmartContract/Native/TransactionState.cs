@@ -37,6 +37,26 @@ namespace Neo.SmartContract.Native
 
         private StackItem _rawTransaction;
 
+        IInteroperable IInteroperable.Clone()
+        {
+            return new TransactionState
+            {
+                BlockIndex = BlockIndex,
+                Transaction = Transaction,
+                State = State,
+                _rawTransaction = _rawTransaction
+            };
+        }
+
+        void IInteroperable.FromReplica(IInteroperable replica)
+        {
+            TransactionState from = (TransactionState)replica;
+            BlockIndex = from.BlockIndex;
+            Transaction = from.Transaction;
+            State = from.State;
+            _rawTransaction ??= from._rawTransaction;
+        }
+
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
