@@ -5,7 +5,6 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -31,15 +30,6 @@ namespace Neo.UnitTests.IO.Caching
             Key = Encoding.UTF8.GetBytes(val);
         }
 
-        public void Deserialize(BinaryReader reader)
-        {
-            Key = Encoding.UTF8.GetBytes(reader.ReadString());
-        }
-
-        public void Serialize(BinaryWriter writer)
-        {
-            writer.Write(Key.Span);
-        }
         public bool Equals(MyKey other)
         {
             if (other == null) return false;
