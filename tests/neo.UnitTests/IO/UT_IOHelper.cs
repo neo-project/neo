@@ -123,7 +123,7 @@ namespace Neo.UnitTests.IO
         {
             var data = new byte[] { 1, 2, 3, 4 };
             var byteArray = Neo.IO.Helper.CompressLz4(data);
-            var result = Neo.IO.Helper.DecompressLz4(byteArray, byte.MaxValue);
+            var result = Neo.IO.Helper.DecompressLz4(byteArray.Span, byte.MaxValue);
 
             CollectionAssert.AreEqual(result, data);
 
@@ -133,20 +133,21 @@ namespace Neo.UnitTests.IO
             for (int x = 0; x < data.Length; x++) data[x] = 1;
 
             byteArray = Neo.IO.Helper.CompressLz4(data);
-            result = Neo.IO.Helper.DecompressLz4(byteArray, byte.MaxValue);
+            result = Neo.IO.Helper.DecompressLz4(byteArray.Span, byte.MaxValue);
 
             Assert.IsTrue(byteArray.Length < result.Length);
             CollectionAssert.AreEqual(result, data);
 
             // Error max length
 
-            Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.DecompressLz4(byteArray, byte.MaxValue - 1));
-            Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.DecompressLz4(byteArray, -1));
+            Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.DecompressLz4(byteArray.Span, byte.MaxValue - 1));
+            Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.DecompressLz4(byteArray.Span, -1));
 
             // Error length
 
-            byteArray[0]++;
-            Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.DecompressLz4(byteArray, byte.MaxValue));
+            byte[] data_wrong = byteArray.ToArray();
+            data_wrong[0]++;
+            Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.DecompressLz4(data_wrong, byte.MaxValue));
         }
 
         [TestMethod]

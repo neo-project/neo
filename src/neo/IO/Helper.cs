@@ -10,7 +10,6 @@
 
 using K4os.Compression.LZ4;
 using System;
-using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
@@ -57,7 +56,7 @@ namespace Neo.IO
         /// <param name="value">The byte array to be converted.</param>
         /// <param name="type">The type to convert to.</param>
         /// <returns>The converted <see cref="ISerializable"/> object.</returns>
-        public static ISerializable AsSerializable(this byte[] value, Type type)
+        public static ISerializable AsSerializable(this ReadOnlyMemory<byte> value, Type type)
         {
             if (!typeof(ISerializable).GetTypeInfo().IsAssignableFrom(type))
                 throw new InvalidCastException();
@@ -99,15 +98,13 @@ namespace Neo.IO
         /// </summary>
         /// <param name="data">The data to be compressed.</param>
         /// <returns>The compressed data.</returns>
-        public static byte[] CompressLz4(this byte[] data)
+        public static ReadOnlyMemory<byte> CompressLz4(this ReadOnlySpan<byte> data)
         {
             int maxLength = LZ4Codec.MaximumOutputSize(data.Length);
-            using var buffer = MemoryPool<byte>.Shared.Rent(maxLength);
-            int length = LZ4Codec.Encode(data, buffer.Memory.Span);
-            byte[] result = new byte[sizeof(uint) + length];
-            BinaryPrimitives.WriteInt32LittleEndian(result, data.Length);
-            buffer.Memory[..length].CopyTo(result.AsMemory(4));
-            return result;
+            byte[] buffer = GC.AllocateUninitializedArray<byte>(sizeof(uint) + maxLength);
+            BinaryPrimitives.WriteInt32LittleEndian(buffer, data.Length);
+            int length = LZ4Codec.Encode(data, buffer.AsSpan(sizeof(uint)));
+            return buffer.AsMemory(0, sizeof(uint) + length);
         }
 
         /// <summary>
@@ -116,12 +113,12 @@ namespace Neo.IO
         /// <param name="data">The compressed data.</param>
         /// <param name="maxOutput">The maximum data size after decompression.</param>
         /// <returns>The original data.</returns>
-        public static byte[] DecompressLz4(this byte[] data, int maxOutput)
+        public static byte[] DecompressLz4(this ReadOnlySpan<byte> data, int maxOutput)
         {
             int length = BinaryPrimitives.ReadInt32LittleEndian(data);
             if (length < 0 || length > maxOutput) throw new FormatException();
-            byte[] result = new byte[length];
-            if (LZ4Codec.Decode(data.AsSpan(4), result) != length)
+            byte[] result = GC.AllocateUninitializedArray<byte>(length);
+            if (LZ4Codec.Decode(data[4..], result) != length)
                 throw new FormatException();
             return result;
         }
