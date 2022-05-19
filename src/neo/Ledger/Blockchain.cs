@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -436,27 +436,27 @@ namespace Neo.Ledger
                 foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
                     plugin.OnPersist(system, block, snapshot, all_application_executed);
                 snapshot.Commit();
-                List<Exception> commitExceptions = null;
-                foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
+            }
+            List<Exception> commitExceptions = null;
+            foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
+            {
+                try
                 {
-                    try
+                    plugin.OnCommit(system, block);
+                }
+                catch (Exception ex)
+                {
+                    if (plugin.ShouldThrowExceptionFromCommit(ex))
                     {
-                        plugin.OnCommit(system, block, snapshot);
-                    }
-                    catch (Exception ex)
-                    {
-                        if (plugin.ShouldThrowExceptionFromCommit(ex))
-                        {
-                            if (commitExceptions == null)
-                                commitExceptions = new List<Exception>();
+                        if (commitExceptions == null)
+                            commitExceptions = new List<Exception>();
 
-                            commitExceptions.Add(ex);
-                        }
+                        commitExceptions.Add(ex);
                     }
                 }
-                if (commitExceptions != null) throw new AggregateException(commitExceptions);
-                system.MemPool.UpdatePoolForBlockPersisted(block, snapshot);
             }
+            if (commitExceptions != null) throw new AggregateException(commitExceptions);
+            system.MemPool.UpdatePoolForBlockPersisted(block, system.StoreView);
             extensibleWitnessWhiteList = null;
             block_cache.Remove(block.PrevHash);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });

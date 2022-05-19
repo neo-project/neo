@@ -10,6 +10,7 @@
 
 using Neo.VM;
 using Neo.VM.Types;
+using System;
 using System.Collections.Generic;
 
 namespace Neo.SmartContract.Iterators
@@ -19,14 +20,12 @@ namespace Neo.SmartContract.Iterators
         private readonly IEnumerator<(StorageKey Key, StorageItem Value)> enumerator;
         private readonly int prefixLength;
         private readonly FindOptions options;
-        private readonly ReferenceCounter referenceCounter;
 
-        public StorageIterator(IEnumerator<(StorageKey, StorageItem)> enumerator, int prefixLength, FindOptions options, ReferenceCounter referenceCounter)
+        public StorageIterator(IEnumerator<(StorageKey, StorageItem)> enumerator, int prefixLength, FindOptions options)
         {
             this.enumerator = enumerator;
             this.prefixLength = prefixLength;
             this.options = options;
-            this.referenceCounter = referenceCounter;
         }
 
         public void Dispose()
@@ -39,9 +38,9 @@ namespace Neo.SmartContract.Iterators
             return enumerator.MoveNext();
         }
 
-        public StackItem Value()
+        public StackItem Value(ReferenceCounter referenceCounter)
         {
-            byte[] key = enumerator.Current.Key.Key;
+            ReadOnlyMemory<byte> key = enumerator.Current.Key.Key;
             byte[] value = enumerator.Current.Value.Value;
 
             if (options.HasFlag(FindOptions.RemovePrefix))
@@ -52,9 +51,9 @@ namespace Neo.SmartContract.Iterators
                 : value;
 
             if (options.HasFlag(FindOptions.PickField0))
-                item = ((Array)item)[0];
+                item = ((VM.Types.Array)item)[0];
             else if (options.HasFlag(FindOptions.PickField1))
-                item = ((Array)item)[1];
+                item = ((VM.Types.Array)item)[1];
 
             if (options.HasFlag(FindOptions.KeysOnly))
                 return key;
