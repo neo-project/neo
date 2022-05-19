@@ -84,7 +84,7 @@ namespace Neo.SmartContract
 
         public override int GetHashCode()
         {
-            return Id.GetHashCode() + (int)Key.Span.Murmur32(0);
+            return Id + (int)Key.Span.Murmur32(0);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
