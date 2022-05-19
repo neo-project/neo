@@ -9,17 +9,15 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
-using Neo.IO;
 using System;
 using System.Buffers.Binary;
-using System.IO;
 
 namespace Neo.SmartContract
 {
     /// <summary>
     /// Represents the keys in contract storage.
     /// </summary>
-    public class StorageKey : IEquatable<StorageKey>, ISerializable
+    public class StorageKey : IEquatable<StorageKey>
     {
         /// <summary>
         /// The id of the contract.
@@ -32,8 +30,6 @@ namespace Neo.SmartContract
         public ReadOnlyMemory<byte> Key;
 
         private byte[] cache;
-
-        int ISerializable.Size => sizeof(int) + Key.Length;
 
         public StorageKey() { }
 
@@ -58,11 +54,6 @@ namespace Neo.SmartContract
             return buffer;
         }
 
-        void ISerializable.Deserialize(ref MemoryReader reader)
-        {
-            throw new NotSupportedException();
-        }
-
         public bool Equals(StorageKey other)
         {
             if (other is null)
@@ -81,19 +72,6 @@ namespace Neo.SmartContract
         public override int GetHashCode()
         {
             return Id.GetHashCode() + (int)Key.Span.Murmur32(0);
-        }
-
-        void ISerializable.Serialize(BinaryWriter writer)
-        {
-            if (cache != null)
-            {
-                writer.Write(cache);
-            }
-            else
-            {
-                writer.Write(Id);
-                writer.Write(Key.Span);
-            }
         }
 
         public byte[] ToArray()

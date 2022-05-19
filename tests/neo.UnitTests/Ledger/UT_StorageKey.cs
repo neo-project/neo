@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO;
 using Neo.SmartContract;
 
 namespace Neo.UnitTests.Ledger
@@ -20,19 +19,6 @@ namespace Neo.UnitTests.Ledger
         public void Id_Get()
         {
             uut.Id.Should().Be(0);
-        }
-
-        [TestMethod]
-        public void Size()
-        {
-            var ut = new StorageKey() { Key = new byte[17], Id = 0 };
-            ut.ToArray().Length.Should().Be(((ISerializable)ut).Size);
-
-            ut = new StorageKey() { Key = new byte[0], Id = 0 };
-            ut.ToArray().Length.Should().Be(((ISerializable)ut).Size);
-
-            ut = new StorageKey() { Key = new byte[16], Id = 0 };
-            ut.ToArray().Length.Should().Be(((ISerializable)ut).Size);
         }
 
         [TestMethod]
