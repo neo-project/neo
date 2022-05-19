@@ -136,6 +136,12 @@ namespace Neo.UnitTests.Network.P2P
             buffer = msg.ToArray();
 
             buffer.Length.Should().Be(30);
+            msg.Flags.HasFlag(MessageFlags.Compressed).Should().BeTrue();
+
+            _ = Message.TryDeserialize(ByteString.CopyFrom(msg.ToArray()), out var copy);
+            Assert.IsNotNull(copy);
+
+            copy.Flags.HasFlag(MessageFlags.Compressed).Should().BeTrue();
         }
     }
 }
