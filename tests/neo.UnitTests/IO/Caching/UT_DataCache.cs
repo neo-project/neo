@@ -245,6 +245,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestCommit()
         {
+            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));   // trackable.State = TrackState.Added
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));   // trackable.State = TrackState.Added    
 
             myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
