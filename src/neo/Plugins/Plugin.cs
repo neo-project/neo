@@ -36,16 +36,21 @@ namespace Neo.Plugins
         internal static readonly List<IMemoryPoolTxObserverPlugin> TxObserverPlugins = new();
 
         /// <summary>
-        /// The directory containing the plugin dll files. Files can be contained in any subdirectory.
+        /// The directory containing the plugin folders. Files can be contained in any subdirectory.
         /// </summary>
         public static readonly string PluginsDirectory = Combine(GetDirectoryName(Assembly.GetEntryAssembly().Location), "Plugins");
 
         private static readonly FileSystemWatcher configWatcher;
 
         /// <summary>
+        /// Indicates the root path of the plugin.
+        /// </summary>
+        public string RootPath => Combine(PluginsDirectory, GetType().Assembly.GetName().Name);
+
+        /// <summary>
         /// Indicates the location of the plugin configuration file.
         /// </summary>
-        public virtual string ConfigFile => Combine(PluginsDirectory, GetType().Assembly.GetName().Name, "config.json");
+        public virtual string ConfigFile => Combine(RootPath, "config.json");
 
         /// <summary>
         /// Indicates the name of the plugin.
@@ -60,7 +65,7 @@ namespace Neo.Plugins
         /// <summary>
         /// Indicates the location of the plugin dll file.
         /// </summary>
-        public virtual string Path => Combine(PluginsDirectory, GetType().Assembly.ManifestModule.ScopeName);
+        public virtual string Path => Combine(RootPath, GetType().Assembly.ManifestModule.ScopeName);
 
         /// <summary>
         /// Indicates the version of the plugin.
@@ -69,18 +74,16 @@ namespace Neo.Plugins
 
         static Plugin()
         {
-            if (Directory.Exists(PluginsDirectory))
+            if (!Directory.Exists(PluginsDirectory)) return;
+            configWatcher = new FileSystemWatcher(PluginsDirectory)
             {
-                configWatcher = new FileSystemWatcher(PluginsDirectory)
-                {
-                    EnableRaisingEvents = true,
-                    IncludeSubdirectories = true,
-                    NotifyFilter = NotifyFilters.CreationTime | NotifyFilters.LastWrite | NotifyFilters.Size,
-                };
-                configWatcher.Changed += ConfigWatcher_Changed;
-                configWatcher.Created += ConfigWatcher_Changed;
-                AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
-            }
+                EnableRaisingEvents = true,
+                IncludeSubdirectories = true,
+                NotifyFilter = NotifyFilters.CreationTime | NotifyFilters.LastWrite | NotifyFilters.Size,
+            };
+            configWatcher.Changed += ConfigWatcher_Changed;
+            configWatcher.Created += ConfigWatcher_Changed;
+            AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
         }
 
         /// <summary>
@@ -120,7 +123,7 @@ namespace Neo.Plugins
                     break;
                 case ".dll":
                     if (e.ChangeType != WatcherChangeTypes.Created) return;
-                    if (GetDirectoryName(e.FullPath) != PluginsDirectory) return;
+                    if (GetDirectoryName(GetDirectoryName(e.FullPath)) != PluginsDirectory) return;
                     try
                     {
                         LoadPlugin(Assembly.Load(File.ReadAllBytes(e.FullPath)));
@@ -137,9 +140,8 @@ namespace Neo.Plugins
 
             AssemblyName an = new(args.Name);
 
-            Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name);
-            if (assembly is null)
-                assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == an.Name);
+            Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name) ??
+                                AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == an.Name);
             if (assembly != null) return assembly;
 
             string filename = an.Name + ".dll";
@@ -196,13 +198,16 @@ namespace Neo.Plugins
         {
             if (!Directory.Exists(PluginsDirectory)) return;
             List<Assembly> assemblies = new();
-            foreach (string filename in Directory.EnumerateFiles(PluginsDirectory, "*.dll", SearchOption.TopDirectoryOnly))
+            foreach (string rootPath in Directory.GetDirectories(PluginsDirectory))
             {
-                try
+                foreach (var filename in Directory.EnumerateFiles(rootPath, "*.dll", SearchOption.TopDirectoryOnly))
                 {
-                    assemblies.Add(Assembly.Load(File.ReadAllBytes(filename)));
+                    try
+                    {
+                        assemblies.Add(Assembly.Load(File.ReadAllBytes(filename)));
+                    }
+                    catch { }
                 }
-                catch { }
             }
             foreach (Assembly assembly in assemblies)
             {
@@ -235,7 +240,7 @@ namespace Neo.Plugins
         /// Called when a <see cref="NeoSystem"/> is loaded.
         /// </summary>
         /// <param name="system">The loaded <see cref="NeoSystem"/>.</param>
-        internal protected virtual void OnSystemLoaded(NeoSystem system)
+        protected internal virtual void OnSystemLoaded(NeoSystem system)
         {
         }
 
@@ -246,10 +251,7 @@ namespace Neo.Plugins
         /// <returns><see langword="true"/> if the <paramref name="message"/> is handled by a plugin; otherwise, <see langword="false"/>.</returns>
         public static bool SendMessage(object message)
         {
-            foreach (Plugin plugin in Plugins)
-                if (plugin.OnMessage(message))
-                    return true;
-            return false;
+            return Plugins.Any(plugin => plugin.OnMessage(message));
         }
     }
 }

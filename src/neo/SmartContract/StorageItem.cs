@@ -11,7 +11,6 @@
 using Neo.IO;
 using Neo.VM;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 
@@ -38,7 +37,6 @@ namespace Neo.SmartContract
                 {
                     BigInteger bi => bi.ToByteArrayStandard(),
                     IInteroperable interoperable => BinarySerializer.Serialize(interoperable.ToStackItem(null), 1024 * 1024),
-                    IReadOnlyCollection<ISerializable> list => list.ToByteArray(),
                     null => null,
                     _ => throw new InvalidCastException()
                 };
@@ -97,10 +95,12 @@ namespace Neo.SmartContract
         /// <returns>The created <see cref="StorageItem"/>.</returns>
         public StorageItem Clone()
         {
-            return new StorageItem
-            {
-                Value = Value
-            };
+            StorageItem item = new();
+            if (value != null)
+                item.value = value;
+            else
+                item.cache = cache is IInteroperable interoperable ? interoperable.Clone() : cache;
+            return item;
         }
 
         public void Deserialize(BinaryReader reader)
@@ -114,7 +114,26 @@ namespace Neo.SmartContract
         /// <param name="replica">The instance to be copied.</param>
         public void FromReplica(StorageItem replica)
         {
-            Value = replica.Value;
+            if (replica.value != null)
+            {
+                value = replica.value;
+                cache = null;
+            }
+            else
+            {
+                value = null;
+                if (replica.cache is IInteroperable interoperable)
+                {
+                    if (cache?.GetType() == interoperable.GetType())
+                        ((IInteroperable)cache).FromReplica(interoperable);
+                    else
+                        cache = interoperable.Clone();
+                }
+                else
+                {
+                    cache = replica.cache;
+                }
+            }
         }
 
         /// <summary>
@@ -132,18 +151,6 @@ namespace Neo.SmartContract
             }
             value = null;
             return (T)cache;
-        }
-
-        /// <summary>
-        /// Gets a list of <see cref="ISerializable"/> from the storage.
-        /// </summary>
-        /// <typeparam name="T">The type of the <see cref="ISerializable"/>.</typeparam>
-        /// <returns>The list of the <see cref="ISerializable"/>.</returns>
-        public List<T> GetSerializableList<T>() where T : ISerializable, new()
-        {
-            cache ??= new List<T>(value.AsSerializableArray<T>());
-            value = null;
-            return (List<T>)cache;
         }
 
         public void Serialize(BinaryWriter writer)

@@ -29,9 +29,20 @@ namespace Neo.SmartContract
         /// <summary>
         /// The key of the storage entry.
         /// </summary>
-        public byte[] Key;
+        public ReadOnlyMemory<byte> Key;
+
+        private byte[] cache = null;
 
         int ISerializable.Size => sizeof(int) + Key.Length;
+
+        public StorageKey() { }
+
+        internal StorageKey(byte[] cache)
+        {
+            this.cache = cache;
+            Id = BinaryPrimitives.ReadInt32LittleEndian(cache);
+            Key = cache.AsMemory(sizeof(int));
+        }
 
         /// <summary>
         /// Creates a search prefix for a contract.
@@ -51,8 +62,9 @@ namespace Neo.SmartContract
         //But StorageKey never works with NetworkStream, so it doesn't matter.
         void ISerializable.Deserialize(BinaryReader reader)
         {
-            Id = reader.ReadInt32();
-            Key = reader.ReadBytes((int)(reader.BaseStream.Length - reader.BaseStream.Position));
+            cache = reader.ReadBytes((int)(reader.BaseStream.Length - reader.BaseStream.Position));
+            Id = BinaryPrimitives.ReadInt32LittleEndian(cache);
+            Key = cache.AsMemory(sizeof(int));
         }
 
         public bool Equals(StorageKey other)
@@ -61,7 +73,7 @@ namespace Neo.SmartContract
                 return false;
             if (ReferenceEquals(this, other))
                 return true;
-            return Id == other.Id && MemoryExtensions.SequenceEqual<byte>(Key, other.Key);
+            return Id == other.Id && Key.Span.SequenceEqual(other.Key.Span);
         }
 
         public override bool Equals(object obj)
@@ -72,13 +84,31 @@ namespace Neo.SmartContract
 
         public override int GetHashCode()
         {
-            return Id.GetHashCode() + (int)Key.Murmur32(0);
+            return Id.GetHashCode() + (int)Key.Span.Murmur32(0);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write(Id);
-            writer.Write(Key);
+            if (cache != null)
+            {
+                writer.Write(cache);
+            }
+            else
+            {
+                writer.Write(Id);
+                writer.Write(Key.Span);
+            }
+        }
+
+        public byte[] ToArray()
+        {
+            if (cache is null)
+            {
+                cache = GC.AllocateUninitializedArray<byte>(sizeof(int) + Key.Length);
+                BinaryPrimitives.WriteInt32LittleEndian(cache, Id);
+                Key.CopyTo(cache.AsMemory(sizeof(int)));
+            }
+            return cache;
         }
     }
 }

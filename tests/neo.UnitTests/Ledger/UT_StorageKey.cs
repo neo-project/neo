@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.SmartContract;
+using System;
 using System.IO;
 
 namespace Neo.UnitTests.Ledger
@@ -45,19 +46,13 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
-        public void Key_Get()
-        {
-            uut.Key.Should().BeNull();
-        }
-
-        [TestMethod]
         public void Key_Set()
         {
             byte[] val = new byte[] { 0x42, 0x32 };
             uut.Key = val;
             uut.Key.Length.Should().Be(2);
-            uut.Key[0].Should().Be(val[0]);
-            uut.Key[1].Should().Be(val[1]);
+            uut.Key.Span[0].Should().Be(val[0]);
+            uut.Key.Span[1].Should().Be(val[1]);
         }
 
         [TestMethod]
@@ -150,7 +145,7 @@ namespace Neo.UnitTests.Ledger
                 StorageKey dest = new StorageKey();
                 ((ISerializable)dest).Deserialize(reader);
                 dest.Id.Should().Be(uut.Id);
-                dest.Key.Should().BeEquivalentTo(uut.Key);
+                dest.Key.Span.SequenceEqual(uut.Key.Span).Should().BeTrue();
             }
         }
     }

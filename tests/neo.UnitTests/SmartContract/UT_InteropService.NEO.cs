@@ -255,7 +255,7 @@ namespace Neo.UnitTests.SmartContract
                 IsReadOnly = false
             }, new byte[] { 0x01 }, FindOptions.ValuesOnly);
             iterator.Next();
-            var ele = iterator.Value();
+            var ele = iterator.Value(null);
             ele.GetSpan().ToHexString().Should().Be(storageItem.Value.ToHexString());
         }
     }
