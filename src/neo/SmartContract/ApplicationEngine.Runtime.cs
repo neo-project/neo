@@ -308,11 +308,8 @@ namespace Neo.SmartContract
                     case Map map:
                         if (!compounds.Add(map))
                             throw new InvalidOperationException();
-                        foreach (var (k, v) in map)
-                        {
-                            queue.Enqueue(k);
+                        foreach (var (_, v) in map)
                             queue.Enqueue(v);
-                        }
                         break;
                     case VM.Types.Buffer:
                     case InteropInterface:
