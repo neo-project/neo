@@ -11,9 +11,13 @@
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Wallets;
+using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Modes;
+using Org.BouncyCastle.Crypto.Parameters;
 using System;
 using System.Buffers.Binary;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using static Neo.Helper;
@@ -26,6 +30,7 @@ namespace Neo.Cryptography
     /// </summary>
     public static class Helper
     {
+        private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
         /// <summary>
         /// Computes the hash value for the specified byte array using the ripemd160 algorithm.
         /// </summary>
@@ -136,10 +141,26 @@ namespace Neo.Cryptography
         public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[] associatedData = null)
         {
             if (nonce.Length != 12) throw new ArgumentOutOfRangeException(nameof(nonce));
-            var cipherBytes = new byte[plainData.Length];
             var tag = new byte[16];
-            using var cipher = new AesGcm(key);
-            cipher.Encrypt(nonce, plainData, cipherBytes, tag, associatedData);
+            var cipherBytes = new byte[plainData.Length];
+            if (!IsOSX)
+            {
+                using var cipher = new AesGcm(key);
+                cipher.Encrypt(nonce, plainData, cipherBytes, tag, associatedData);
+            }
+            else
+            {
+                var cipher = new GcmBlockCipher(new AesEngine());
+                var parameters = new AeadParameters(
+                    new KeyParameter(key),
+                    128, //128 = 16 * 8 => (tag size * 8)
+                    nonce,
+                    associatedData);
+                cipher.Init(true, parameters);
+                cipherBytes = new byte[cipher.GetOutputSize(plainData.Length)];
+                var length = cipher.ProcessBytes(plainData, 0, plainData.Length, cipherBytes, 0);
+                cipher.DoFinal(cipherBytes, length);
+            }
             return Concat(nonce, cipherBytes, tag);
         }
 
@@ -150,8 +171,24 @@ namespace Neo.Cryptography
             var cipherBytes = encrypted[12..^16];
             var tag = encrypted[^16..];
             var decryptedData = new byte[cipherBytes.Length];
-            using var cipher = new AesGcm(key);
-            cipher.Decrypt(nonce, cipherBytes, tag, decryptedData, associatedData);
+            if (!IsOSX)
+            {
+                using var cipher = new AesGcm(key);
+                cipher.Decrypt(nonce, cipherBytes, tag, decryptedData, associatedData);
+            }
+            else
+            {
+                var cipher = new GcmBlockCipher(new AesEngine());
+                var parameters = new AeadParameters(
+                    new KeyParameter(key),
+                    128,  //128 = 16 * 8 => (tag size * 8)
+                    nonce.ToArray(),
+                    associatedData);
+                cipher.Init(false, parameters);
+                decryptedData = new byte[cipher.GetOutputSize(cipherBytes.Length)];
+                var length = cipher.ProcessBytes(cipherBytes.ToArray(), 0, cipherBytes.Length, decryptedData, 0);
+                cipher.DoFinal(decryptedData, length);
+            }
             return decryptedData;
         }
 
