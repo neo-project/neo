@@ -95,7 +95,6 @@ namespace Neo.Persistence
                     {
                         TrackState.Deleted => TrackState.Changed,
                         TrackState.NotFound => TrackState.Added,
-                        TrackState.Added => TrackState.Added,
                         _ => throw new ArgumentException()
                     };
                 }

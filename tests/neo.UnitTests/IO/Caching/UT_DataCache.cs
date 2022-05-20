@@ -247,7 +247,7 @@ namespace Neo.UnitTests.IO.Caching
         {
             myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
             Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key1"))).Select(u => u.State).FirstOrDefault());
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
+            Assert.ThrowsException<ArgumentException>(() => myDataCache.Add(new MyKey("key1"), new MyValue("value1")));
             Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key1"))).Select(u => u.State).FirstOrDefault());
 
             myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
