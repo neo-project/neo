@@ -245,17 +245,24 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestCommit()
         {
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));   // trackable.State = TrackState.Added
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));   // trackable.State = TrackState.Added    
+            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key1"))).Select(u => u.State).FirstOrDefault());
+            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key1"))).Select(u => u.State).FirstOrDefault());
 
             myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
-            myDataCache.Delete(new MyKey("key2"));       // trackable.State = TrackState.Deleted    
+            myDataCache.Delete(new MyKey("key2"));
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key2"))).Select(u => u.State).FirstOrDefault());
 
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
-            myDataCache.Delete(new MyKey("key3"));                      // trackable.State = TrackState.Deleted    
-            myDataCache.Add(new MyKey("key3"), new MyValue("value4"));  // trackable.State = TrackState.Changed
+            Assert.AreEqual(TrackState.None, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key3"))).Select(u => u.State).FirstOrDefault());
+            myDataCache.Delete(new MyKey("key3"));
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key3"))).Select(u => u.State).FirstOrDefault());
+            myDataCache.Add(new MyKey("key3"), new MyValue("value4"));
+            Assert.AreEqual(TrackState.Changed, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key3"))).Select(u => u.State).FirstOrDefault());
 
             myDataCache.Commit();
+            Assert.AreEqual(0, myDataCache.GetChangeSet().Count());
 
             myDataCache.InnerDict[new MyKey("key1")].Should().Be(new MyValue("value1"));
             myDataCache.InnerDict.ContainsKey(new MyKey("key2")).Should().BeFalse();
