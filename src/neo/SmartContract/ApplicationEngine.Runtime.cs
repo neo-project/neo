@@ -292,7 +292,9 @@ namespace Neo.SmartContract
         protected internal void RuntimeNotify(byte[] eventName, Array state)
         {
             if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
-            HashSet<CompoundType> compounds = new(ReferenceEqualityComparer.Instance);
+            using MemoryStream ms = new(MaxNotificationSize);
+            using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
+            BinarySerializer.Serialize(writer, state, MaxNotificationSize);
             Queue<StackItem> queue = new();
             queue.Enqueue(state);
             while (queue.TryDequeue(out var item))
@@ -300,14 +302,10 @@ namespace Neo.SmartContract
                 switch (item)
                 {
                     case Array array:
-                        if (!compounds.Add(array))
-                            throw new InvalidOperationException();
                         foreach (var subItem in array)
                             queue.Enqueue(subItem);
                         break;
                     case Map map:
-                        if (!compounds.Add(map))
-                            throw new InvalidOperationException();
                         foreach (var (_, v) in map)
                             queue.Enqueue(v);
                         break;
@@ -317,9 +315,6 @@ namespace Neo.SmartContract
                         throw new InvalidOperationException();
                 }
             }
-            using MemoryStream ms = new(MaxNotificationSize);
-            using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
-            BinarySerializer.Serialize(writer, state, MaxNotificationSize);
             SendNotification(CurrentScriptHash, Utility.StrictUTF8.GetString(eventName), state);
         }
 
