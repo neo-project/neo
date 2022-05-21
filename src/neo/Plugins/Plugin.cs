@@ -35,6 +35,8 @@ namespace Neo.Plugins
         internal static readonly List<IP2PPlugin> P2PPlugins = new();
         internal static readonly List<IMemoryPoolTxObserverPlugin> TxObserverPlugins = new();
 
+        public Dictionary<object, object> PluginHooks = new();
+
         /// <summary>
         /// The directory containing the plugin dll files. Files can be contained in any subdirectory.
         /// </summary>
