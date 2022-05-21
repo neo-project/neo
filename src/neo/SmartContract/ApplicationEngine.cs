@@ -60,6 +60,7 @@ namespace Neo.SmartContract
         internal readonly uint ExecFeeFactor;
         internal readonly uint StoragePrice;
         private byte[] nonceData;
+        private int random_times = 0;
 
         /// <summary>
         /// Gets the descriptors of all interoperable services available in NEO.

@@ -42,11 +42,11 @@ namespace Neo.UnitTests.SmartContract
             var rand_9 = engine_2.GetRandom();
             var rand_10 = engine_2.GetRandom();
 
-            rand_1.Should().Be(BigInteger.Parse("271339657438512451304577787170704246350"));
-            rand_2.Should().Be(BigInteger.Parse("3519468259280385525954723453894821326"));
-            rand_3.Should().Be(BigInteger.Parse("109167038153789065876532298231776118857"));
-            rand_4.Should().Be(BigInteger.Parse("278188388582393629262399165075733096984"));
-            rand_5.Should().Be(BigInteger.Parse("252973537848551880583287107760169066816"));
+            rand_1.Should().Be(BigInteger.Parse("31587335074692941288112769511622258554"));
+            rand_2.Should().Be(BigInteger.Parse("271578055527893482379434067372984306367"));
+            rand_3.Should().Be(BigInteger.Parse("284055352147715071733739392710638465015"));
+            rand_4.Should().Be(BigInteger.Parse("220780840346506586687419158499081023958"));
+            rand_5.Should().Be(BigInteger.Parse("221293616923999762530337256333737481726"));
 
             rand_1.Should().Be(rand_6);
             rand_2.Should().Be(rand_7);
@@ -89,11 +89,11 @@ namespace Neo.UnitTests.SmartContract
             var rand_9 = engine_2.GetRandom();
             var rand_10 = engine_2.GetRandom();
 
-            rand_1.Should().Be(BigInteger.Parse("271339657438512451304577787170704246350"));
-            rand_2.Should().Be(BigInteger.Parse("3519468259280385525954723453894821326"));
-            rand_3.Should().Be(BigInteger.Parse("109167038153789065876532298231776118857"));
-            rand_4.Should().Be(BigInteger.Parse("278188388582393629262399165075733096984"));
-            rand_5.Should().Be(BigInteger.Parse("252973537848551880583287107760169066816"));
+            rand_1.Should().Be(BigInteger.Parse("31587335074692941288112769511622258554"));
+            rand_2.Should().Be(BigInteger.Parse("271578055527893482379434067372984306367"));
+            rand_3.Should().Be(BigInteger.Parse("284055352147715071733739392710638465015"));
+            rand_4.Should().Be(BigInteger.Parse("220780840346506586687419158499081023958"));
+            rand_5.Should().Be(BigInteger.Parse("221293616923999762530337256333737481726"));
 
             rand_1.Should().NotBe(rand_6);
             rand_2.Should().NotBe(rand_7);
