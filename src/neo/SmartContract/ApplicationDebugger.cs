@@ -16,11 +16,11 @@ namespace Neo.SmartContract
 {
     public class ApplicationDebugger : ApplicationEngine
     {
-        protected ApplicationDebugger(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, Diagnostic diagnostic) : base(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic)
+        protected ApplicationDebugger(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic) : base(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic)
         {
         }
 
-        public static new ApplicationDebugger Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, Diagnostic diagnostic = null)
+        public static new ApplicationDebugger Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, IDiagnostic diagnostic = null)
         {
             return new ApplicationDebugger(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic);
         }
