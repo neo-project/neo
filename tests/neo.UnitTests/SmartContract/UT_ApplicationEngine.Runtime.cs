@@ -20,6 +20,40 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void TestNotSupportedNotification()
+        {
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+
+            // circular
+
+            VM.Types.Array array = new();
+            array.Add(array);
+
+            Assert.ThrowsException<NotSupportedException>(() => engine.RuntimeNotify(new byte[] { 0x01 }, array));
+
+            // Buffer
+
+            array.Clear();
+            array.Add(new VM.Types.Buffer(1));
+
+            Assert.ThrowsException<InvalidOperationException>(() => engine.RuntimeNotify(new byte[] { 0x01 }, array));
+
+            // Pointer
+
+            array.Clear();
+            array.Add(new VM.Types.Pointer(Array.Empty<byte>(), 1));
+
+            Assert.ThrowsException<NotSupportedException>(() => engine.RuntimeNotify(new byte[] { 0x01 }, array));
+
+            // InteropInterface
+
+            array.Clear();
+            array.Add(new VM.Types.InteropInterface(new object()));
+
+            Assert.ThrowsException<NotSupportedException>(() => engine.RuntimeNotify(new byte[] { 0x01 }, array));
+        }
+
+        [TestMethod]
         public void TestGetRandomSameBlock()
         {
             var tx = TestUtils.GetTransaction(UInt160.Zero);
