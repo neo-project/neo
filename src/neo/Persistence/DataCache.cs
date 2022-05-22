@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -59,7 +59,7 @@ namespace Neo.Persistence
                 {
                     if (dictionary.TryGetValue(key, out Trackable trackable))
                     {
-                        if (trackable.State == TrackState.Deleted)
+                        if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
                             throw new KeyNotFoundException();
                     }
                     else
@@ -88,14 +88,25 @@ namespace Neo.Persistence
         {
             lock (dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable) && trackable.State != TrackState.Deleted)
-                    throw new ArgumentException();
-                dictionary[key] = new Trackable
+                if (dictionary.TryGetValue(key, out Trackable trackable))
                 {
-                    Key = key,
-                    Item = value,
-                    State = trackable == null ? TrackState.Added : TrackState.Changed
-                };
+                    trackable.Item = value;
+                    trackable.State = trackable.State switch
+                    {
+                        TrackState.Deleted => TrackState.Changed,
+                        TrackState.NotFound => TrackState.Added,
+                        _ => throw new ArgumentException()
+                    };
+                }
+                else
+                {
+                    dictionary[key] = new Trackable
+                    {
+                        Key = key,
+                        Item = value,
+                        State = TrackState.Added
+                    };
+                }
                 changeSet.Add(key);
             }
         }
@@ -157,10 +168,10 @@ namespace Neo.Persistence
                 {
                     if (trackable.State == TrackState.Added)
                     {
-                        dictionary.Remove(key);
+                        trackable.State = TrackState.NotFound;
                         changeSet.Remove(key);
                     }
-                    else
+                    else if (trackable.State != TrackState.NotFound)
                     {
                         trackable.State = TrackState.Deleted;
                         changeSet.Add(key);
@@ -243,10 +254,7 @@ namespace Neo.Persistence
             lock (dictionary)
             {
                 if (dictionary.TryGetValue(key, out Trackable trackable))
-                {
-                    if (trackable.State == TrackState.Deleted) return false;
-                    return true;
-                }
+                    return trackable.State != TrackState.Deleted && trackable.State != TrackState.NotFound;
                 return ContainsInternal(key);
             }
         }
@@ -277,11 +285,19 @@ namespace Neo.Persistence
             {
                 if (dictionary.TryGetValue(key, out Trackable trackable))
                 {
-                    if (trackable.State == TrackState.Deleted)
+                    if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
                     {
                         if (factory == null) return null;
                         trackable.Item = factory();
-                        trackable.State = TrackState.Changed;
+                        if (trackable.State == TrackState.Deleted)
+                        {
+                            trackable.State = TrackState.Changed;
+                        }
+                        else
+                        {
+                            trackable.State = TrackState.Added;
+                            changeSet.Add(key);
+                        }
                     }
                     else if (trackable.State == TrackState.None)
                     {
@@ -325,10 +341,18 @@ namespace Neo.Persistence
             {
                 if (dictionary.TryGetValue(key, out Trackable trackable))
                 {
-                    if (trackable.State == TrackState.Deleted)
+                    if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
                     {
                         trackable.Item = factory();
-                        trackable.State = TrackState.Changed;
+                        if (trackable.State == TrackState.Deleted)
+                        {
+                            trackable.State = TrackState.Changed;
+                        }
+                        else
+                        {
+                            trackable.State = TrackState.Added;
+                            changeSet.Add(key);
+                        }
                     }
                 }
                 else
@@ -368,7 +392,7 @@ namespace Neo.Persistence
             lock (dictionary)
             {
                 cached = dictionary
-                    .Where(p => p.Value.State != TrackState.Deleted && (keyOrPrefix == null || comparer.Compare(p.Key.ToArray(), keyOrPrefix) >= 0))
+                    .Where(p => p.Value.State != TrackState.Deleted && p.Value.State != TrackState.NotFound && (keyOrPrefix == null || comparer.Compare(p.Key.ToArray(), keyOrPrefix) >= 0))
                     .Select(p =>
                     (
                         KeyBytes: p.Key.ToArray(),
@@ -430,7 +454,8 @@ namespace Neo.Persistence
             {
                 if (dictionary.TryGetValue(key, out Trackable trackable))
                 {
-                    if (trackable.State == TrackState.Deleted) return null;
+                    if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
+                        return null;
                     return trackable.Item;
                 }
                 StorageItem value = TryGetInternal(key);
