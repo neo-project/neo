@@ -40,29 +40,23 @@ namespace Neo.UnitTests.Network.P2P.Capabilities
 
             clone = new ServerCapability(NodeCapabilityType.TcpServer, 123);
 
-            br = new MemoryReader(buffer);
-            try
+            Assert.ThrowsException<FormatException>(() =>
             {
-                ((ISerializable)clone).Deserialize(ref br);
-                Assert.Fail();
-            }
-            catch (FormatException) { }
-            try
+                var br2 = new MemoryReader(buffer);
+                ((ISerializable)clone).Deserialize(ref br2);
+            });
+            Assert.ThrowsException<ArgumentException>(() =>
             {
                 _ = new ServerCapability(NodeCapabilityType.FullNode);
-                Assert.Fail();
-            }
-            catch (ArgumentException) { }
+            });
 
             // Wrog type
             buffer[0] = 0xFF;
-            br = new MemoryReader(buffer);
-            try
+            Assert.ThrowsException<FormatException>(() =>
             {
-                NodeCapability.DeserializeFrom(ref br);
-                Assert.Fail();
-            }
-            catch (FormatException) { }
+                var br2 = new MemoryReader(buffer);
+                NodeCapability.DeserializeFrom(ref br2);
+            });
         }
     }
 }

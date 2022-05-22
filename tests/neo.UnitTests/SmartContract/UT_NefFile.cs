@@ -34,14 +34,13 @@ namespace Neo.UnitTests.SmartContract
                 ((ISerializable)file).Serialize(writer);
                 ms.Seek(0, SeekOrigin.Begin);
                 ms.Write(wrongMagic, 0, 4);
-                MemoryReader reader = new(ms.ToArray());
                 ISerializable newFile = new NefFile();
-                try
+                Assert.ThrowsException<FormatException>(() =>
                 {
+                    MemoryReader reader = new(ms.ToArray());
                     newFile.Deserialize(ref reader);
                     Assert.Fail();
-                }
-                catch (FormatException) { }
+                });
             }
 
             file.CheckSum = 0;
@@ -49,14 +48,13 @@ namespace Neo.UnitTests.SmartContract
             using (BinaryWriter writer = new(ms))
             {
                 ((ISerializable)file).Serialize(writer);
-                MemoryReader reader = new(ms.ToArray());
                 ISerializable newFile = new NefFile();
-                try
+                Assert.ThrowsException<FormatException>(() =>
                 {
+                    MemoryReader reader = new(ms.ToArray());
                     newFile.Deserialize(ref reader);
                     Assert.Fail();
-                }
-                catch (FormatException) { }
+                });
             }
 
             file.Script = Array.Empty<byte>();
@@ -65,14 +63,13 @@ namespace Neo.UnitTests.SmartContract
             using (BinaryWriter writer = new(ms))
             {
                 ((ISerializable)file).Serialize(writer);
-                MemoryReader reader = new(ms.ToArray());
                 ISerializable newFile = new NefFile();
-                try
+                Assert.ThrowsException<ArgumentException>(() =>
                 {
+                    MemoryReader reader = new(ms.ToArray());
                     newFile.Deserialize(ref reader);
                     Assert.Fail();
-                }
-                catch (ArgumentException) { }
+                });
             }
 
             file.Script = new byte[] { 0x01, 0x02, 0x03 };

@@ -30,7 +30,7 @@ namespace Neo.UnitTests.IO
 
             // Less data
 
-            using (var reader = new BinaryReader(new MemoryStream(data), Encoding.UTF8, false))
+            using (BinaryReader reader = new(new MemoryStream(data), Encoding.UTF8, false))
             {
                 byte[] result = Neo.IO.Helper.ReadFixedBytes(reader, 3);
 
@@ -40,7 +40,7 @@ namespace Neo.UnitTests.IO
 
             // Same data
 
-            using (var reader = new BinaryReader(new MemoryStream(data), Encoding.UTF8, false))
+            using (BinaryReader reader = new(new MemoryStream(data), Encoding.UTF8, false))
             {
                 byte[] result = Neo.IO.Helper.ReadFixedBytes(reader, 4);
 
@@ -50,7 +50,7 @@ namespace Neo.UnitTests.IO
 
             // More data
 
-            using (var reader = new BinaryReader(new MemoryStream(data), Encoding.UTF8, false))
+            using (BinaryReader reader = new(new MemoryStream(data), Encoding.UTF8, false))
             {
                 Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.ReadFixedBytes(reader, 5));
                 Assert.AreEqual(4, reader.BaseStream.Position);
@@ -72,8 +72,8 @@ namespace Neo.UnitTests.IO
             };
 
             byte[] data;
-            using (var stream = new MemoryStream())
-            using (var writter = new BinaryWriter(stream))
+            using (MemoryStream stream = new())
+            using (BinaryWriter writter = new(stream))
             {
                 Neo.IO.Helper.WriteNullableArray(writter, caseArray);
                 data = stream.ToArray();
@@ -81,17 +81,16 @@ namespace Neo.UnitTests.IO
 
             // Read Error
 
-            var reader = new MemoryReader(data);
-            try
+            Assert.ThrowsException<FormatException>(() =>
             {
+                var reader = new MemoryReader(data);
                 reader.ReadNullableArray<UInt160>(2);
                 Assert.Fail();
-            }
-            catch (FormatException) { }
+            });
 
             // Read 100%
 
-            reader = new MemoryReader(data);
+            MemoryReader reader = new(data);
             var read = Neo.IO.Helper.ReadNullableArray<UInt160>(reader);
             CollectionAssert.AreEqual(caseArray, read);
         }
@@ -112,7 +111,7 @@ namespace Neo.UnitTests.IO
                 }
                 else
                 {
-                    Action action = () => Neo.IO.Helper.AsSerializable(new byte[0], typeof(Double));
+                    Action action = () => Neo.IO.Helper.AsSerializable(Array.Empty<byte>(), typeof(double));
                     action.Should().Throw<InvalidCastException>();
                 }
             }
@@ -228,7 +227,7 @@ namespace Neo.UnitTests.IO
                 }
                 else if (i == 1)//sbyte
                 {
-                    List<TestEnum0> initList = new List<TestEnum0>
+                    List<TestEnum0> initList = new()
                     {
                         TestEnum0.case1
                     };
@@ -238,7 +237,7 @@ namespace Neo.UnitTests.IO
                 }
                 else if (i == 2)//byte
                 {
-                    List<TestEnum1> initList = new List<TestEnum1>
+                    List<TestEnum1> initList = new()
                     {
                         TestEnum1.case1
                     };
@@ -248,7 +247,7 @@ namespace Neo.UnitTests.IO
                 }
                 else if (i == 3)//short
                 {
-                    List<TestEnum2> initList = new List<TestEnum2>
+                    List<TestEnum2> initList = new()
                     {
                         TestEnum2.case1
                     };
@@ -258,7 +257,7 @@ namespace Neo.UnitTests.IO
                 }
                 else if (i == 4)//ushort
                 {
-                    List<TestEnum3> initList = new List<TestEnum3>
+                    List<TestEnum3> initList = new()
                     {
                         TestEnum3.case1
                     };
@@ -268,7 +267,7 @@ namespace Neo.UnitTests.IO
                 }
                 else if (i == 5)//int
                 {
-                    List<TestEnum4> initList = new List<TestEnum4>
+                    List<TestEnum4> initList = new()
                     {
                         TestEnum4.case1
                     };
@@ -278,7 +277,7 @@ namespace Neo.UnitTests.IO
                 }
                 else if (i == 6)//uint
                 {
-                    List<TestEnum5> initList = new List<TestEnum5>
+                    List<TestEnum5> initList = new()
                     {
                         TestEnum5.case1
                     };
@@ -288,7 +287,7 @@ namespace Neo.UnitTests.IO
                 }
                 else if (i == 7)//long
                 {
-                    List<TestEnum6> initList = new List<TestEnum6>
+                    List<TestEnum6> initList = new()
                     {
                         TestEnum6.case1
                     };
@@ -298,7 +297,7 @@ namespace Neo.UnitTests.IO
                 }
                 else if (i == 8)
                 {
-                    List<int> initList = new List<int>
+                    List<int> initList = new()
                     {
                         1
                     };
@@ -319,8 +318,8 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestReadSerializable()
         {
-            MemoryStream stream = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(stream);
+            MemoryStream stream = new();
+            BinaryWriter writer = new(stream);
             Neo.IO.Helper.Write(writer, UInt160.Zero);
             MemoryReader reader = new(stream.ToArray());
             UInt160 result = Neo.IO.Helper.ReadSerializable<UInt160>(ref reader);
@@ -330,8 +329,8 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestReadSerializableArray()
         {
-            MemoryStream stream = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(stream);
+            MemoryStream stream = new();
+            BinaryWriter writer = new(stream);
             Neo.IO.Helper.Write(writer, new UInt160[] { UInt160.Zero });
             MemoryReader reader = new(stream.ToArray());
             UInt160[] resultArray = Neo.IO.Helper.ReadSerializableArray<UInt160>(ref reader);
@@ -342,11 +341,11 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestReadVarBytes()
         {
-            MemoryStream stream = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(stream);
+            MemoryStream stream = new();
+            BinaryWriter writer = new(stream);
             Neo.IO.Helper.WriteVarBytes(writer, new byte[] { 0xAA, 0xAA });
             stream.Seek(0, SeekOrigin.Begin);
-            BinaryReader reader = new BinaryReader(stream);
+            BinaryReader reader = new(stream);
             byte[] byteArray = Neo.IO.Helper.ReadVarBytes(reader, 10);
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0xAA, 0xAA }), Encoding.Default.GetString(byteArray));
         }
@@ -358,31 +357,31 @@ namespace Neo.UnitTests.IO
             {
                 if (i == 0)
                 {
-                    MemoryStream stream = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(stream);
+                    MemoryStream stream = new();
+                    BinaryWriter writer = new(stream);
                     Neo.IO.Helper.WriteVarInt(writer, 0xFFFF);
                     stream.Seek(0, SeekOrigin.Begin);
-                    BinaryReader reader = new BinaryReader(stream);
+                    BinaryReader reader = new(stream);
                     ulong result = Neo.IO.Helper.ReadVarInt(reader, 0xFFFF);
                     Assert.AreEqual((ulong)0xFFFF, result);
                 }
                 else if (i == 1)
                 {
-                    MemoryStream stream = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(stream);
+                    MemoryStream stream = new();
+                    BinaryWriter writer = new(stream);
                     Neo.IO.Helper.WriteVarInt(writer, 0xFFFFFFFF);
                     stream.Seek(0, SeekOrigin.Begin);
-                    BinaryReader reader = new BinaryReader(stream);
+                    BinaryReader reader = new(stream);
                     ulong result = Neo.IO.Helper.ReadVarInt(reader, 0xFFFFFFFF);
                     Assert.AreEqual(0xFFFFFFFF, result);
                 }
                 else
                 {
-                    MemoryStream stream = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(stream);
+                    MemoryStream stream = new();
+                    BinaryWriter writer = new(stream);
                     Neo.IO.Helper.WriteVarInt(writer, 0xFFFFFFFFFF);
                     stream.Seek(0, SeekOrigin.Begin);
-                    BinaryReader reader = new BinaryReader(stream);
+                    BinaryReader reader = new(stream);
                     Action action = () => Neo.IO.Helper.ReadVarInt(reader, 0xFFFFFFFF);
                     action.Should().Throw<FormatException>();
                 }
@@ -412,8 +411,8 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestWrite()
         {
-            MemoryStream stream = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(stream);
+            MemoryStream stream = new();
+            BinaryWriter writer = new(stream);
             Neo.IO.Helper.Write(writer, UInt160.Zero);
             stream.Seek(0, SeekOrigin.Begin);
             byte[] byteArray = new byte[stream.Length];
@@ -427,8 +426,8 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestWriteGeneric()
         {
-            MemoryStream stream = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(stream);
+            MemoryStream stream = new();
+            BinaryWriter writer = new(stream);
             Neo.IO.Helper.Write(writer, new UInt160[] { UInt160.Zero });
             stream.Seek(0, SeekOrigin.Begin);
             byte[] byteArray = new byte[stream.Length];
@@ -446,29 +445,29 @@ namespace Neo.UnitTests.IO
             {
                 if (i == 0)
                 {
-                    MemoryStream stream = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(stream);
+                    MemoryStream stream = new();
+                    BinaryWriter writer = new(stream);
                     Action action = () => Neo.IO.Helper.WriteFixedString(writer, null, 0);
                     action.Should().Throw<ArgumentNullException>();
                 }
                 else if (i == 1)
                 {
-                    MemoryStream stream = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(stream);
+                    MemoryStream stream = new();
+                    BinaryWriter writer = new(stream);
                     Action action = () => Neo.IO.Helper.WriteFixedString(writer, "AA", Encoding.UTF8.GetBytes("AA").Length - 1);
                     action.Should().Throw<ArgumentException>();
                 }
                 else if (i == 2)
                 {
-                    MemoryStream stream = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(stream);
+                    MemoryStream stream = new();
+                    BinaryWriter writer = new(stream);
                     Action action = () => Neo.IO.Helper.WriteFixedString(writer, "拉拉", Encoding.UTF8.GetBytes("拉拉").Length - 1);
                     action.Should().Throw<ArgumentException>();
                 }
                 else if (i == 3)
                 {
-                    MemoryStream stream = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(stream);
+                    MemoryStream stream = new();
+                    BinaryWriter writer = new(stream);
                     Neo.IO.Helper.WriteFixedString(writer, "AA", Encoding.UTF8.GetBytes("AA").Length + 1);
                     stream.Seek(0, SeekOrigin.Begin);
                     byte[] byteArray = new byte[stream.Length];
@@ -483,8 +482,8 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestWriteVarBytes()
         {
-            MemoryStream stream = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(stream);
+            MemoryStream stream = new();
+            BinaryWriter writer = new(stream);
             Neo.IO.Helper.WriteVarBytes(writer, new byte[] { 0xAA });
             stream.Seek(0, SeekOrigin.Begin);
             byte[] byteArray = new byte[stream.Length];
@@ -499,15 +498,15 @@ namespace Neo.UnitTests.IO
             {
                 if (i == 0)
                 {
-                    MemoryStream stream = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(stream);
+                    MemoryStream stream = new();
+                    BinaryWriter writer = new(stream);
                     Action action = () => Neo.IO.Helper.WriteVarInt(writer, -1);
                     action.Should().Throw<ArgumentOutOfRangeException>();
                 }
                 else if (i == 1)
                 {
-                    MemoryStream stream = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(stream);
+                    MemoryStream stream = new();
+                    BinaryWriter writer = new(stream);
                     Neo.IO.Helper.WriteVarInt(writer, 0xFC);
                     stream.Seek(0, SeekOrigin.Begin);
                     byte[] byteArray = new byte[stream.Length];
@@ -516,8 +515,8 @@ namespace Neo.UnitTests.IO
                 }
                 else if (i == 2)
                 {
-                    MemoryStream stream = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(stream);
+                    MemoryStream stream = new();
+                    BinaryWriter writer = new(stream);
                     Neo.IO.Helper.WriteVarInt(writer, 0xFFFF);
                     stream.Seek(0, SeekOrigin.Begin);
                     byte[] byteArray = new byte[stream.Length];
@@ -527,8 +526,8 @@ namespace Neo.UnitTests.IO
                 }
                 else if (i == 3)
                 {
-                    MemoryStream stream = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(stream);
+                    MemoryStream stream = new();
+                    BinaryWriter writer = new(stream);
                     Neo.IO.Helper.WriteVarInt(writer, 0xFFFFFFFF);
                     stream.Seek(0, SeekOrigin.Begin);
                     byte[] byteArray = new byte[stream.Length];
@@ -538,8 +537,8 @@ namespace Neo.UnitTests.IO
                 }
                 else
                 {
-                    MemoryStream stream = new MemoryStream();
-                    BinaryWriter writer = new BinaryWriter(stream);
+                    MemoryStream stream = new();
+                    BinaryWriter writer = new(stream);
                     Neo.IO.Helper.WriteVarInt(writer, 0xAEFFFFFFFF);
                     stream.Seek(0, SeekOrigin.Begin);
                     byte[] byteArray = new byte[stream.Length];
@@ -553,8 +552,8 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestWriteVarString()
         {
-            MemoryStream stream = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(stream);
+            MemoryStream stream = new();
+            BinaryWriter writer = new(stream);
             Neo.IO.Helper.WriteVarString(writer, "a");
             stream.Seek(0, SeekOrigin.Begin);
             byte[] byteArray = new byte[stream.Length];

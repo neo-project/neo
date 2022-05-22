@@ -20,14 +20,14 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestGernerator1()
         {
-            UInt256 uInt256 = new UInt256();
+            UInt256 uInt256 = new();
             Assert.IsNotNull(uInt256);
         }
 
         [TestMethod]
         public void TestGernerator2()
         {
-            UInt256 uInt256 = new UInt256(new byte[32]);
+            UInt256 uInt256 = new(new byte[32]);
             Assert.IsNotNull(uInt256);
         }
 
@@ -36,7 +36,7 @@ namespace Neo.UnitTests.IO
         {
             byte[] temp = new byte[32];
             temp[31] = 0x01;
-            UInt256 result = new UInt256(temp);
+            UInt256 result = new(temp);
             Assert.AreEqual(0, UInt256.Zero.CompareTo(UInt256.Zero));
             Assert.AreEqual(-1, UInt256.Zero.CompareTo(result));
             Assert.AreEqual(1, result.CompareTo(UInt256.Zero));
@@ -45,17 +45,15 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestDeserialize()
         {
-            using MemoryStream stream = new MemoryStream();
-            using BinaryWriter writer = new BinaryWriter(stream);
+            using MemoryStream stream = new();
+            using BinaryWriter writer = new(stream);
             writer.Write(new byte[20]);
-            MemoryReader reader = new(stream.ToArray());
-            UInt256 uInt256 = new UInt256();
-            try
+            UInt256 uInt256 = new();
+            Assert.ThrowsException<FormatException>(() =>
             {
+                MemoryReader reader = new(stream.ToArray());
                 ((ISerializable)uInt256).Deserialize(ref reader);
-                Assert.Fail();
-            }
-            catch (FormatException) { }
+            });
         }
 
         [TestMethod]
@@ -63,7 +61,7 @@ namespace Neo.UnitTests.IO
         {
             byte[] temp = new byte[32];
             temp[31] = 0x01;
-            UInt256 result = new UInt256(temp);
+            UInt256 result = new(temp);
             Assert.AreEqual(true, UInt256.Zero.Equals(UInt256.Zero));
             Assert.AreEqual(false, UInt256.Zero.Equals(result));
             Assert.AreEqual(false, result.Equals(null));
@@ -72,9 +70,9 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestEquals1()
         {
-            UInt256 temp1 = new UInt256();
-            UInt256 temp2 = new UInt256();
-            UInt160 temp3 = new UInt160();
+            UInt256 temp1 = new();
+            UInt256 temp2 = new();
+            UInt160 temp3 = new();
             Assert.AreEqual(false, temp1.Equals(null));
             Assert.AreEqual(true, temp1.Equals(temp1));
             Assert.AreEqual(true, temp1.Equals(temp2));
@@ -84,9 +82,9 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestEquals2()
         {
-            UInt256 temp1 = new UInt256();
+            UInt256 temp1 = new();
             object temp2 = null;
-            object temp3 = new object();
+            object temp3 = new();
             Assert.AreEqual(false, temp1.Equals(temp2));
             Assert.AreEqual(false, temp1.Equals(temp3));
         }
