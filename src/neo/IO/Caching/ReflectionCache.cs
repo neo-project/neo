@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -43,7 +43,7 @@ namespace Neo.IO.Caching
             return def;
         }
 
-        public static ISerializable CreateSerializable(T key, byte[] data)
+        public static ISerializable CreateSerializable(T key, ReadOnlyMemory<byte> data)
         {
             if (dictionary.TryGetValue(key, out Type t))
                 return data.AsSerializable(t);

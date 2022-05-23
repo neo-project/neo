@@ -82,7 +82,7 @@ namespace Neo.SmartContract.Native
         {
             StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_BlockHash).AddBigEndian(index));
             if (item is null) return null;
-            return new UInt256(item.Value);
+            return new UInt256(item.Value.Span);
         }
 
         /// <summary>

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -9,6 +9,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -18,6 +19,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using static Neo.SmartContract.Helper;
 
 namespace Neo.SmartContract
 {
@@ -153,7 +155,7 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the signature is added successfully; otherwise, <see langword="false"/>.</returns>
         public bool AddSignature(Contract contract, ECPoint pubkey, byte[] signature)
         {
-            if (contract.Script.IsMultiSigContract(out _, out ECPoint[] points))
+            if (IsMultiSigContract(contract.Script, out _, out ECPoint[] points))
             {
                 if (!points.Contains(pubkey)) return false;
                 ContextItem item = CreateItem(contract);
@@ -227,11 +229,9 @@ namespace Neo.SmartContract
             if (!typeof(IVerifiable).IsAssignableFrom(type)) throw new FormatException();
 
             var verifiable = (IVerifiable)Activator.CreateInstance(type);
-            using (MemoryStream ms = new(Convert.FromBase64String(json["data"].AsString()), false))
-            using (BinaryReader reader = new(ms, Utility.StrictUTF8))
-            {
-                verifiable.DeserializeUnsigned(reader);
-            }
+            byte[] data = Convert.FromBase64String(json["data"].AsString());
+            MemoryReader reader = new(data);
+            verifiable.DeserializeUnsigned(ref reader);
             if (json.ContainsProperty("hash"))
             {
                 UInt256 hash = UInt256.Parse(json["hash"].GetString());

@@ -195,7 +195,7 @@ namespace Neo.UnitTests.SmartContract
             ret.UpdateCounter.Should().Be(1);
             ret.Id.Should().Be(state.Id);
             ret.Manifest.ToJson().ToString().Should().Be(manifest.ToJson().ToString());
-            ret.Script.ToHexString().Should().Be(nef.Script.ToHexString().ToString());
+            ret.Script.Span.ToHexString().Should().Be(nef.Script.Span.ToHexString().ToString());
         }
 
         [TestMethod]
@@ -256,7 +256,7 @@ namespace Neo.UnitTests.SmartContract
             }, new byte[] { 0x01 }, FindOptions.ValuesOnly);
             iterator.Next();
             var ele = iterator.Value(null);
-            ele.GetSpan().ToHexString().Should().Be(storageItem.Value.ToHexString());
+            ele.GetSpan().ToHexString().Should().Be(storageItem.Value.Span.ToHexString());
         }
     }
 }

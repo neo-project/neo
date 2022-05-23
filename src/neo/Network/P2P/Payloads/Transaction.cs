@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -50,7 +50,7 @@ namespace Neo.Network.P2P.Payloads
         private uint validUntilBlock;
         private Signer[] _signers;
         private TransactionAttribute[] attributes;
-        private byte[] script;
+        private ReadOnlyMemory<byte> script;
         private Witness[] witnesses;
 
         /// <summary>
@@ -114,7 +114,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The script of the transaction.
         /// </summary>
-        public byte[] Script
+        public ReadOnlyMemory<byte> Script
         {
             get => script;
             set { script = value; _hash = null; _size = 0; }
@@ -185,45 +185,46 @@ namespace Neo.Network.P2P.Payloads
             set { witnesses = value; _size = 0; }
         }
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(ref MemoryReader reader)
         {
-            int startPosition = -1;
-            if (reader.BaseStream.CanSeek)
-                startPosition = (int)reader.BaseStream.Position;
-            DeserializeUnsigned(reader);
+            int startPosition = reader.Position;
+            DeserializeUnsigned(ref reader);
             Witnesses = reader.ReadSerializableArray<Witness>(Signers.Length);
             if (Witnesses.Length != Signers.Length) throw new FormatException();
-            if (startPosition >= 0)
-                _size = (int)reader.BaseStream.Position - startPosition;
+            _size = reader.Position - startPosition;
         }
 
-        private static IEnumerable<TransactionAttribute> DeserializeAttributes(BinaryReader reader, int maxCount)
+        private static TransactionAttribute[] DeserializeAttributes(ref MemoryReader reader, int maxCount)
         {
             int count = (int)reader.ReadVarInt((ulong)maxCount);
+            TransactionAttribute[] attributes = new TransactionAttribute[count];
             HashSet<TransactionAttributeType> hashset = new();
-            while (count-- > 0)
+            for (int i = 0; i < count; i++)
             {
-                TransactionAttribute attribute = TransactionAttribute.DeserializeFrom(reader);
+                TransactionAttribute attribute = TransactionAttribute.DeserializeFrom(ref reader);
                 if (!attribute.AllowMultiple && !hashset.Add(attribute.Type))
                     throw new FormatException();
-                yield return attribute;
+                attributes[i] = attribute;
             }
+            return attributes;
         }
 
-        private static IEnumerable<Signer> DeserializeSigners(BinaryReader reader, int maxCount)
+        private static Signer[] DeserializeSigners(ref MemoryReader reader, int maxCount)
         {
             int count = (int)reader.ReadVarInt((ulong)maxCount);
             if (count == 0) throw new FormatException();
+            Signer[] signers = new Signer[count];
             HashSet<UInt160> hashset = new();
             for (int i = 0; i < count; i++)
             {
                 Signer signer = reader.ReadSerializable<Signer>();
                 if (!hashset.Add(signer.Account)) throw new FormatException();
-                yield return signer;
+                signers[i] = signer;
             }
+            return signers;
         }
 
-        public void DeserializeUnsigned(BinaryReader reader)
+        public void DeserializeUnsigned(ref MemoryReader reader)
         {
             Version = reader.ReadByte();
             if (Version > 0) throw new FormatException();
@@ -234,9 +235,9 @@ namespace Neo.Network.P2P.Payloads
             if (NetworkFee < 0) throw new FormatException();
             if (SystemFee + NetworkFee < SystemFee) throw new FormatException();
             ValidUntilBlock = reader.ReadUInt32();
-            Signers = DeserializeSigners(reader, MaxTransactionAttributes).ToArray();
-            Attributes = DeserializeAttributes(reader, MaxTransactionAttributes - Signers.Length).ToArray();
-            Script = reader.ReadVarBytes(ushort.MaxValue);
+            Signers = DeserializeSigners(ref reader, MaxTransactionAttributes);
+            Attributes = DeserializeAttributes(ref reader, MaxTransactionAttributes - Signers.Length);
+            Script = reader.ReadVarMemory(ushort.MaxValue);
             if (Script.Length == 0) throw new FormatException();
         }
 
@@ -305,7 +306,7 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(ValidUntilBlock);
             writer.Write(Signers);
             writer.Write(Attributes);
-            writer.WriteVarBytes(Script);
+            writer.WriteVarBytes(Script.Span);
         }
 
         /// <summary>
@@ -326,7 +327,7 @@ namespace Neo.Network.P2P.Payloads
             json["validuntilblock"] = ValidUntilBlock;
             json["signers"] = Signers.Select(p => p.ToJson()).ToArray();
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
-            json["script"] = Convert.ToBase64String(Script);
+            json["script"] = Convert.ToBase64String(Script.Span);
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
             return json;
         }
@@ -372,9 +373,9 @@ namespace Neo.Network.P2P.Payloads
             uint execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (witnesses[i].VerificationScript.IsSignatureContract())
+                if (IsSignatureContract(witnesses[i].VerificationScript.Span))
                     net_fee -= execFeeFactor * SignatureContractCost();
-                else if (witnesses[i].VerificationScript.IsMultiSigContract(out int m, out int n))
+                else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out int m, out int n))
                 {
                     net_fee -= execFeeFactor * MultiSignatureContractCost(m, n);
                 }
@@ -408,13 +409,13 @@ namespace Neo.Network.P2P.Payloads
             UInt160[] hashes = GetScriptHashesForVerifying(null);
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (witnesses[i].VerificationScript.IsSignatureContract())
+                if (IsSignatureContract(witnesses[i].VerificationScript.Span))
                 {
                     if (hashes[i] != witnesses[i].ScriptHash) return VerifyResult.Invalid;
-                    var pubkey = witnesses[i].VerificationScript.AsSpan(2..35);
+                    var pubkey = witnesses[i].VerificationScript.Span[2..35];
                     try
                     {
-                        if (!Crypto.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript.AsSpan(2), pubkey, ECCurve.Secp256r1))
+                        if (!Crypto.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript.Span[2..], pubkey, ECCurve.Secp256r1))
                             return VerifyResult.InvalidSignature;
                     }
                     catch
@@ -422,7 +423,7 @@ namespace Neo.Network.P2P.Payloads
                         return VerifyResult.Invalid;
                     }
                 }
-                else if (witnesses[i].VerificationScript.IsMultiSigContract(out var m, out ECPoint[] points))
+                else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out var m, out ECPoint[] points))
                 {
                     if (hashes[i] != witnesses[i].ScriptHash) return VerifyResult.Invalid;
                     var signatures = GetMultiSignatures(witnesses[i].InvocationScript);
@@ -433,7 +434,7 @@ namespace Neo.Network.P2P.Payloads
                     {
                         for (int x = 0, y = 0; x < m && y < n;)
                         {
-                            if (Crypto.VerifySignature(message, signatures[x], points[y]))
+                            if (Crypto.VerifySignature(message, signatures[x].Span, points[y]))
                                 x++;
                             y++;
                             if (m - x > n - y)
@@ -467,15 +468,16 @@ namespace Neo.Network.P2P.Payloads
             });
         }
 
-        private static byte[][] GetMultiSignatures(byte[] script)
+        private static ReadOnlyMemory<byte>[] GetMultiSignatures(ReadOnlyMemory<byte> script)
         {
+            ReadOnlySpan<byte> span = script.Span;
             int i = 0;
-            var signatures = new List<byte[]>();
+            var signatures = new List<ReadOnlyMemory<byte>>();
             while (i < script.Length)
             {
-                if (script[i++] != (byte)OpCode.PUSHDATA1) return null;
+                if (span[i++] != (byte)OpCode.PUSHDATA1) return null;
                 if (i + 65 > script.Length) return null;
-                if (script[i++] != 64) return null;
+                if (span[i++] != 64) return null;
                 signatures.Add(script[i..(i + 64)]);
                 i += 64;
             }

@@ -1,11 +1,11 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
-using System.IO;
 
 namespace Neo.UnitTests.Ledger
 {
@@ -36,15 +36,11 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestDeserialize()
         {
-            using MemoryStream ms = new MemoryStream(1024);
-            using BinaryReader reader = new BinaryReader(ms);
-
             var data = BinarySerializer.Serialize(((IInteroperable)origin).ToStackItem(null), 1024);
-            ms.Write(data);
-            ms.Seek(0, SeekOrigin.Begin);
+            var reader = new MemoryReader(data);
 
             TransactionState dest = new TransactionState();
-            ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(reader, ExecutionEngineLimits.Default, null));
+            ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(ref reader, ExecutionEngineLimits.Default, null));
 
             dest.BlockIndex.Should().Be(origin.BlockIndex);
             dest.Transaction.Hash.Should().Be(origin.Transaction.Hash);

@@ -89,7 +89,7 @@ namespace Neo.UnitTests.IO.Caching
             Value = Encoding.Default.GetBytes(val);
         }
 
-        public MyValue(byte[] val)
+        public MyValue(ReadOnlyMemory<byte> val)
         {
             Value = val;
         }
@@ -102,19 +102,19 @@ namespace Neo.UnitTests.IO.Caching
         public bool Equals(StorageItem other)
         {
             if (other == null) return false;
-            return (Value == null && other.Value == null) || Value.SequenceEqual(other.Value);
+            return Value.Span.SequenceEqual(other.Value.Span);
         }
 
         public bool Equals(MyValue other)
         {
             if (other == null) return false;
-            return (Value == null && other.Value == null) || Value.SequenceEqual(other.Value);
+            return Value.Span.SequenceEqual(other.Value.Span);
         }
 
         public override bool Equals(object obj)
         {
             if (obj is not StorageItem other) return false;
-            return (Value == null && other.Value == null) || Value.SequenceEqual(other.Value);
+            return Value.Span.SequenceEqual(other.Value.Span);
         }
 
         public override int GetHashCode()
