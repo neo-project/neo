@@ -188,7 +188,6 @@ namespace Neo.Network.P2P.Payloads
         {
             return new VM.Types.Array(referenceCounter, new VM.Types.StackItem[]
             {
-                this.ToArray(),
                 Account.ToArray(),
                 (byte)Scopes,
                 new VM.Types.Array(referenceCounter, AllowedContracts.Select(u => new VM.Types.ByteString(u.ToArray()))),
