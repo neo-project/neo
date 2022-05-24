@@ -271,6 +271,11 @@ namespace Neo.SmartContract
                     {
                         ExecutionContextState contextState = CurrentContext.GetState<ExecutionContextState>();
                         contextState.NotificationCount += state.NotificationCount;
+                        if (contextState.RequireReturnValue)
+                        {
+                            Push(StackItem.Null);
+                            contextState.RequireReturnValue = false;
+                        }
                     }
                 }
                 else
