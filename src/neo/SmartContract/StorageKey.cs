@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -9,17 +9,15 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
-using Neo.IO;
 using System;
 using System.Buffers.Binary;
-using System.IO;
 
 namespace Neo.SmartContract
 {
     /// <summary>
     /// Represents the keys in contract storage.
     /// </summary>
-    public class StorageKey : IEquatable<StorageKey>, ISerializable
+    public class StorageKey : IEquatable<StorageKey>
     {
         /// <summary>
         /// The id of the contract.
@@ -31,9 +29,7 @@ namespace Neo.SmartContract
         /// </summary>
         public ReadOnlyMemory<byte> Key;
 
-        private byte[] cache = null;
-
-        int ISerializable.Size => sizeof(int) + Key.Length;
+        private byte[] cache;
 
         public StorageKey() { }
 
@@ -58,15 +54,6 @@ namespace Neo.SmartContract
             return buffer;
         }
 
-        //If the base stream of the reader doesn't support seeking, a NotSupportedException is thrown.
-        //But StorageKey never works with NetworkStream, so it doesn't matter.
-        void ISerializable.Deserialize(BinaryReader reader)
-        {
-            cache = reader.ReadBytes((int)(reader.BaseStream.Length - reader.BaseStream.Position));
-            Id = BinaryPrimitives.ReadInt32LittleEndian(cache);
-            Key = cache.AsMemory(sizeof(int));
-        }
-
         public bool Equals(StorageKey other)
         {
             if (other is null)
@@ -85,19 +72,6 @@ namespace Neo.SmartContract
         public override int GetHashCode()
         {
             return Id.GetHashCode() + (int)Key.Span.Murmur32(0);
-        }
-
-        void ISerializable.Serialize(BinaryWriter writer)
-        {
-            if (cache != null)
-            {
-                writer.Write(cache);
-            }
-            else
-            {
-                writer.Write(Id);
-                writer.Write(Key.Span);
-            }
         }
 
         public byte[] ToArray()

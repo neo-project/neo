@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -12,6 +12,7 @@ using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
 
 namespace Neo.SmartContract.Native
 {
@@ -35,7 +36,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public VMState State;
 
-        private StackItem _rawTransaction;
+        private ReadOnlyMemory<byte> _rawTransaction;
 
         IInteroperable IInteroperable.Clone()
         {
@@ -54,21 +55,23 @@ namespace Neo.SmartContract.Native
             BlockIndex = from.BlockIndex;
             Transaction = from.Transaction;
             State = from.State;
-            _rawTransaction ??= from._rawTransaction;
+            if (_rawTransaction.IsEmpty)
+                _rawTransaction = from._rawTransaction;
         }
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
             BlockIndex = (uint)@struct[0].GetInteger();
-            _rawTransaction = @struct[1];
-            Transaction = _rawTransaction.GetSpan().AsSerializable<Transaction>();
+            _rawTransaction = ((ByteString)@struct[1]).Memory;
+            Transaction = _rawTransaction.AsSerializable<Transaction>();
             State = (VMState)(byte)@struct[2].GetInteger();
         }
 
         StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
         {
-            _rawTransaction ??= Transaction.ToArray();
+            if (_rawTransaction.IsEmpty)
+                _rawTransaction = Transaction.ToArray();
             return new Struct(referenceCounter) { BlockIndex, _rawTransaction, (byte)State };
         }
     }

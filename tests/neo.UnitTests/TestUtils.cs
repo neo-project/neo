@@ -9,7 +9,6 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets.NEP6;
 using System;
-using System.IO;
 using System.Linq;
 
 namespace Neo.UnitTests
@@ -133,7 +132,7 @@ namespace Neo.UnitTests
             {
                 Id = 0x43000000,
                 Nef = nef,
-                Hash = nef.Script.ToScriptHash(),
+                Hash = nef.Script.Span.ToScriptHash(),
                 Manifest = CreateManifest(method, ContractParameterType.Any, Enumerable.Repeat(ContractParameterType.Any, parametersCount).ToArray())
             };
         }
@@ -242,12 +241,8 @@ namespace Neo.UnitTests
 
         public static T CopyMsgBySerialization<T>(T serializableObj, T newObj) where T : ISerializable
         {
-            using (MemoryStream ms = new MemoryStream(serializableObj.ToArray(), false))
-            using (BinaryReader reader = new BinaryReader(ms))
-            {
-                newObj.Deserialize(reader);
-            }
-
+            MemoryReader reader = new(serializableObj.ToArray());
+            newObj.Deserialize(ref reader);
             return newObj;
         }
     }

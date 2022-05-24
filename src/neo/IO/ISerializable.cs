@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -29,9 +29,9 @@ namespace Neo.IO
         void Serialize(BinaryWriter writer);
 
         /// <summary>
-        /// Deserializes the object using the specified <see cref="BinaryReader"/>.
+        /// Deserializes the object using the specified <see cref="MemoryReader"/>.
         /// </summary>
-        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
-        void Deserialize(BinaryReader reader);
+        /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
+        void Deserialize(ref MemoryReader reader);
     }
 }

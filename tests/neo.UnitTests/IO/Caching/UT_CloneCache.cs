@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract;
 using System;
@@ -36,7 +35,7 @@ namespace Neo.UnitTests.IO.Caching
             clonedCache[new MyKey("key1")].Should().Be(new MyValue("value1"));
 
             clonedCache.Commit();
-            Assert.IsTrue(myDataCache[new MyKey("key1")].Value.SequenceEqual(new MyValue("value1").Value));
+            Assert.IsTrue(myDataCache[new MyKey("key1")].Value.Span.SequenceEqual(new MyValue("value1").Value.Span));
         }
 
         [TestMethod]
@@ -149,10 +148,10 @@ namespace Neo.UnitTests.IO.Caching
             item.Value = new byte[] { 0x06 };
 
             var res = snapshot.TryGet(new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 });
-            Assert.AreEqual("05", res.Value.ToHexString());
+            Assert.AreEqual("05", res.Value.Span.ToHexString());
             storages.Commit();
             res = snapshot.TryGet(new StorageKey() { Key = new byte[] { 0x01, 0x01 }, Id = 0 });
-            Assert.AreEqual("06", res.Value.ToHexString());
+            Assert.AreEqual("06", res.Value.Span.ToHexString());
         }
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -20,16 +20,17 @@ namespace Neo.Wallets.SQLite
     {
         public int Size => ParameterList.GetVarSize() + Script.GetVarSize();
 
-        public void Deserialize(BinaryReader reader)
+        public void Deserialize(ref MemoryReader reader)
         {
-            ParameterList = reader.ReadVarBytes().Select(p =>
+            ReadOnlySpan<byte> span = reader.ReadVarMemory().Span;
+            ParameterList = new ContractParameterType[span.Length];
+            for (int i = 0; i < span.Length; i++)
             {
-                var ret = (ContractParameterType)p;
-                if (!Enum.IsDefined(typeof(ContractParameterType), ret))
+                ParameterList[i] = (ContractParameterType)span[i];
+                if (!Enum.IsDefined(typeof(ContractParameterType), ParameterList[i]))
                     throw new FormatException();
-                return ret;
-            }).ToArray();
-            Script = reader.ReadVarBytes();
+            }
+            Script = reader.ReadVarMemory().ToArray();
         }
 
         public bool Equals(VerificationContract other)

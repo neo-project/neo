@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -148,15 +148,15 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        public void Deserialize(BinaryReader reader)
+        public void Deserialize(ref MemoryReader reader)
         {
-            ((IVerifiable)this).DeserializeUnsigned(reader);
+            ((IVerifiable)this).DeserializeUnsigned(ref reader);
             Witness[] witnesses = reader.ReadSerializableArray<Witness>(1);
             if (witnesses.Length != 1) throw new FormatException();
             Witness = witnesses[0];
         }
 
-        void IVerifiable.DeserializeUnsigned(BinaryReader reader)
+        void IVerifiable.DeserializeUnsigned(ref MemoryReader reader)
         {
             _hash = null;
             version = reader.ReadUInt32();
