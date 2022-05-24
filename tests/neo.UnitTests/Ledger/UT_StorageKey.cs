@@ -18,10 +18,7 @@ namespace Neo.UnitTests.Ledger
         public void Id_Set()
         {
             int val = 1;
-            StorageKey uut = new()
-            {
-                Id = val
-            };
+            StorageKey uut = new() { Id = val };
             uut.Id.Should().Be(val);
         }
 
@@ -29,10 +26,7 @@ namespace Neo.UnitTests.Ledger
         public void Key_Set()
         {
             byte[] val = new byte[] { 0x42, 0x32 };
-            StorageKey uut = new()
-            {
-                Key = val
-            };
+            StorageKey uut = new() { Key = val };
             uut.Key.Length.Should().Be(2);
             uut.Key.Span[0].Should().Be(val[0]);
             uut.Key.Span[1].Should().Be(val[1]);
