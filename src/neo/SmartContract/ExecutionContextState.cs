@@ -41,5 +41,7 @@ namespace Neo.SmartContract
         public DataCache Snapshot { get; set; }
 
         public int NotificationCount { get; set; }
+
+        public bool RequireReturnValue { get; set; }
     }
 }
