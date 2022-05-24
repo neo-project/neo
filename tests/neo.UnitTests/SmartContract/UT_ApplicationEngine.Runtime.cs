@@ -23,6 +23,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestNotSupportedNotification()
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            engine.LoadScript(Array.Empty<byte>());
 
             // circular
 
@@ -36,7 +37,8 @@ namespace Neo.UnitTests.SmartContract
             array.Clear();
             array.Add(new VM.Types.Buffer(1));
 
-            Assert.ThrowsException<InvalidOperationException>(() => engine.RuntimeNotify(new byte[] { 0x01 }, array));
+            engine.RuntimeNotify(new byte[] { 0x01 }, array);
+            engine.Notifications[0].State[0].Type.Should().Be(VM.Types.StackItemType.ByteString);
 
             // Pointer
 
