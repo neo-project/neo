@@ -1,6 +1,9 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.SmartContract;
+using System;
+using System.IO;
 
 namespace Neo.UnitTests.Ledger
 {
@@ -31,7 +34,10 @@ namespace Neo.UnitTests.Ledger
         public void Id_Set()
         {
             int val = 1;
-            uut.Id = val;
+            StorageKey uut = new()
+            {
+                Id = val
+            };
             uut.Id.Should().Be(val);
         }
 
@@ -39,7 +45,10 @@ namespace Neo.UnitTests.Ledger
         public void Key_Set()
         {
             byte[] val = new byte[] { 0x42, 0x32 };
-            uut.Key = val;
+            StorageKey uut = new()
+            {
+                Key = val
+            };
             uut.Key.Length.Should().Be(2);
             uut.Key.Span[0].Should().Be(val[0]);
             uut.Key.Span[1].Should().Be(val[1]);
@@ -121,13 +130,13 @@ namespace Neo.UnitTests.Ledger
         {
             using MemoryStream ms = new(1024);
             using BinaryWriter writer = new(ms);
-            using BinaryReader reader = new(ms);
 
             StorageKey uut = new(0x42000000, TestUtils.GetByteArray(10, 0x42));
             ((ISerializable)uut).Serialize(writer);
-            ms.Seek(0, SeekOrigin.Begin);
+
+            MemoryReader reader = new(ms.ToArray());
             StorageKey dest = new StorageKey();
-            ((ISerializable)dest).Deserialize(reader);
+            ((ISerializable)dest).Deserialize(ref reader);
             dest.Id.Should().Be(uut.Id);
             dest.Key.Span.SequenceEqual(uut.Key.Span).Should().BeTrue();
         }
