@@ -11,7 +11,7 @@
 using Neo.Cryptography.ECC;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
-using Neo.VM.Types;
+using Neo.VM;
 using System;
 using Array = Neo.VM.Types.Array;
 
@@ -81,8 +81,8 @@ namespace Neo.SmartContract
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
             bool hasReturnValue = md.ReturnType != ContractParameterType.Void;
 
-            if (!hasReturnValue) CurrentContext.GetState<ExecutionContextState>().RequireReturnValue = true;
-            CallContractInternal(contract, md, callFlags, hasReturnValue, args);
+            ExecutionContext context = CallContractInternal(contract, md, callFlags, hasReturnValue, args);
+            if (!hasReturnValue) context.GetState<ExecutionContextState>().PushNullWhenReturn = true;
         }
 
         /// <summary>
