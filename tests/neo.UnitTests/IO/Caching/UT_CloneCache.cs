@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract;
 using System;
@@ -12,18 +13,24 @@ namespace Neo.UnitTests.IO.Caching
     [TestClass]
     public class UT_CloneCache
     {
-        ClonedCache clonedCache;
-        MyDataCache myDataCache;
+        private readonly MemoryStore store = new();
+        private SnapshotCache myDataCache;
+        private ClonedCache clonedCache;
 
         private static readonly StorageKey key1 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key1") };
         private static readonly StorageKey key2 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key2") };
         private static readonly StorageKey key3 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key3") };
         private static readonly StorageKey key4 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key4") };
 
+        private static readonly StorageItem value1 = new(Encoding.UTF8.GetBytes("value1"));
+        private static readonly StorageItem value2 = new(Encoding.UTF8.GetBytes("value2"));
+        private static readonly StorageItem value3 = new(Encoding.UTF8.GetBytes("value3"));
+        private static readonly StorageItem value4 = new(Encoding.UTF8.GetBytes("value4"));
+
         [TestInitialize]
         public void Init()
         {
-            myDataCache = new MyDataCache();
+            myDataCache = new(store);
             clonedCache = new ClonedCache(myDataCache);
         }
 
@@ -36,17 +43,17 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestAddInternal()
         {
-            clonedCache.Add(key1, new MyValue("value1"));
-            clonedCache[key1].Should().Be(new MyValue("value1"));
+            clonedCache.Add(key1, value1);
+            clonedCache[key1].Should().Be(value1);
 
             clonedCache.Commit();
-            Assert.IsTrue(myDataCache[key1].Value.Span.SequenceEqual(new MyValue("value1").Value.Span));
+            Assert.IsTrue(myDataCache[key1].Value.Span.SequenceEqual(value1.Value.Span));
         }
 
         [TestMethod]
         public void TestDeleteInternal()
         {
-            myDataCache.Add(key1, new MyValue("value1"));
+            myDataCache.Add(key1, value1);
             clonedCache.Delete(key1);   //  trackable.State = TrackState.Deleted
             clonedCache.Commit();
 
@@ -57,23 +64,23 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestFindInternal()
         {
-            clonedCache.Add(key1, new MyValue("value1"));
-            myDataCache.Add(key2, new MyValue("value2"));
-            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
+            clonedCache.Add(key1, value1);
+            myDataCache.Add(key2, value2);
+            store.Put(key3.ToArray(), value3.ToArray());
 
             var items = clonedCache.Find(key1.ToArray());
             items.ElementAt(0).Key.Should().Be(key1);
-            items.ElementAt(0).Value.Should().Be(new MyValue("value1"));
+            items.ElementAt(0).Value.Should().Be(value1);
             items.Count().Should().Be(1);
 
             items = clonedCache.Find(key2.ToArray());
             items.ElementAt(0).Key.Should().Be(key2);
-            new MyValue("value2").Should().Be(items.ElementAt(0).Value);
+            value2.EqualsTo(items.ElementAt(0).Value).Should().BeTrue();
             items.Count().Should().Be(1);
 
             items = clonedCache.Find(key3.ToArray());
             items.ElementAt(0).Key.Should().Be(key3);
-            new MyValue("value3").Should().Be(items.ElementAt(0).Value);
+            value3.EqualsTo(items.ElementAt(0).Value).Should().BeTrue();
             items.Count().Should().Be(1);
 
             items = clonedCache.Find(key4.ToArray());
@@ -83,13 +90,13 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestGetInternal()
         {
-            clonedCache.Add(key1, new MyValue("value1"));
-            myDataCache.Add(key2, new MyValue("value2"));
-            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
+            clonedCache.Add(key1, value1);
+            myDataCache.Add(key2, value2);
+            store.Put(key3.ToArray(), value3.ToArray());
 
-            new MyValue("value1").Should().Be(clonedCache[key1]);
-            new MyValue("value2").Should().Be(clonedCache[key2]);
-            new MyValue("value3").Should().Be(clonedCache[key3]);
+            value1.EqualsTo(clonedCache[key1]).Should().BeTrue();
+            value2.EqualsTo(clonedCache[key2]).Should().BeTrue();
+            value3.EqualsTo(clonedCache[key3]).Should().BeTrue();
 
             Action action = () =>
             {
@@ -101,22 +108,22 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestTryGetInternal()
         {
-            clonedCache.Add(key1, new MyValue("value1"));
-            myDataCache.Add(key2, new MyValue("value2"));
-            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
+            clonedCache.Add(key1, value1);
+            myDataCache.Add(key2, value2);
+            store.Put(key3.ToArray(), value3.ToArray());
 
-            new MyValue("value1").Should().Be(clonedCache.TryGet(key1));
-            new MyValue("value2").Should().Be(clonedCache.TryGet(key2));
-            new MyValue("value3").Should().Be(clonedCache.TryGet(key3));
+            value1.EqualsTo(clonedCache.TryGet(key1)).Should().BeTrue();
+            value2.EqualsTo(clonedCache.TryGet(key2)).Should().BeTrue();
+            value3.EqualsTo(clonedCache.TryGet(key3)).Should().BeTrue();
             clonedCache.TryGet(key4).Should().BeNull();
         }
 
         [TestMethod]
         public void TestUpdateInternal()
         {
-            clonedCache.Add(key1, new MyValue("value1"));
-            myDataCache.Add(key2, new MyValue("value2"));
-            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
+            clonedCache.Add(key1, value1);
+            myDataCache.Add(key2, value2);
+            store.Put(key3.ToArray(), value3.ToArray());
 
             clonedCache.GetAndChange(key1).Value = Encoding.Default.GetBytes("value_new_1");
             clonedCache.GetAndChange(key2).Value = Encoding.Default.GetBytes("value_new_2");
@@ -124,10 +131,14 @@ namespace Neo.UnitTests.IO.Caching
 
             clonedCache.Commit();
 
-            new MyValue("value_new_1").Should().Be(clonedCache[key1]);
-            new MyValue("value_new_2").Should().Be(clonedCache[key2]);
-            new MyValue("value_new_3").Should().Be(clonedCache[key3]);
-            new MyValue("value_new_2").Should().Be(clonedCache[key2]);
+            StorageItem value_new_1 = new(Encoding.UTF8.GetBytes("value_new_1"));
+            StorageItem value_new_2 = new(Encoding.UTF8.GetBytes("value_new_2"));
+            StorageItem value_new_3 = new(Encoding.UTF8.GetBytes("value_new_3"));
+
+            value_new_1.EqualsTo(clonedCache[key1]).Should().BeTrue();
+            value_new_2.EqualsTo(clonedCache[key2]).Should().BeTrue();
+            value_new_3.EqualsTo(clonedCache[key3]).Should().BeTrue();
+            value_new_2.EqualsTo(clonedCache[key2]).Should().BeTrue();
         }
 
         [TestMethod]
