@@ -15,6 +15,11 @@ namespace Neo.UnitTests.IO.Caching
         ClonedCache clonedCache;
         MyDataCache myDataCache;
 
+        private static readonly StorageKey key1 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key1") };
+        private static readonly StorageKey key2 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key2") };
+        private static readonly StorageKey key3 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key3") };
+        private static readonly StorageKey key4 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key4") };
+
         [TestInitialize]
         public void Init()
         {
@@ -31,64 +36,64 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestAddInternal()
         {
-            clonedCache.Add(new MyKey("key1"), new MyValue("value1"));
-            clonedCache[new MyKey("key1")].Should().Be(new MyValue("value1"));
+            clonedCache.Add(key1, new MyValue("value1"));
+            clonedCache[key1].Should().Be(new MyValue("value1"));
 
             clonedCache.Commit();
-            Assert.IsTrue(myDataCache[new MyKey("key1")].Value.Span.SequenceEqual(new MyValue("value1").Value.Span));
+            Assert.IsTrue(myDataCache[key1].Value.Span.SequenceEqual(new MyValue("value1").Value.Span));
         }
 
         [TestMethod]
         public void TestDeleteInternal()
         {
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-            clonedCache.Delete(new MyKey("key1"));   //  trackable.State = TrackState.Deleted
+            myDataCache.Add(key1, new MyValue("value1"));
+            clonedCache.Delete(key1);   //  trackable.State = TrackState.Deleted
             clonedCache.Commit();
 
-            clonedCache.TryGet(new MyKey("key1")).Should().BeNull();
-            myDataCache.TryGet(new MyKey("key1")).Should().BeNull();
+            clonedCache.TryGet(key1).Should().BeNull();
+            myDataCache.TryGet(key1).Should().BeNull();
         }
 
         [TestMethod]
         public void TestFindInternal()
         {
-            clonedCache.Add(new MyKey("key1"), new MyValue("value1"));
-            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
-            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
+            clonedCache.Add(key1, new MyValue("value1"));
+            myDataCache.Add(key2, new MyValue("value2"));
+            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
 
-            var items = clonedCache.Find(new MyKey("key1").ToArray());
-            items.ElementAt(0).Key.Should().Be(new MyKey("key1"));
+            var items = clonedCache.Find(key1.ToArray());
+            items.ElementAt(0).Key.Should().Be(key1);
             items.ElementAt(0).Value.Should().Be(new MyValue("value1"));
             items.Count().Should().Be(1);
 
-            items = clonedCache.Find(new MyKey("key2").ToArray());
-            items.ElementAt(0).Key.Should().Be(new MyKey("key2"));
+            items = clonedCache.Find(key2.ToArray());
+            items.ElementAt(0).Key.Should().Be(key2);
             new MyValue("value2").Should().Be(items.ElementAt(0).Value);
             items.Count().Should().Be(1);
 
-            items = clonedCache.Find(new MyKey("key3").ToArray());
-            items.ElementAt(0).Key.Should().Be(new MyKey("key3"));
+            items = clonedCache.Find(key3.ToArray());
+            items.ElementAt(0).Key.Should().Be(key3);
             new MyValue("value3").Should().Be(items.ElementAt(0).Value);
             items.Count().Should().Be(1);
 
-            items = clonedCache.Find(new MyKey("key4").ToArray());
+            items = clonedCache.Find(key4.ToArray());
             items.Count().Should().Be(0);
         }
 
         [TestMethod]
         public void TestGetInternal()
         {
-            clonedCache.Add(new MyKey("key1"), new MyValue("value1"));
-            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
-            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
+            clonedCache.Add(key1, new MyValue("value1"));
+            myDataCache.Add(key2, new MyValue("value2"));
+            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
 
-            new MyValue("value1").Should().Be(clonedCache[new MyKey("key1")]);
-            new MyValue("value2").Should().Be(clonedCache[new MyKey("key2")]);
-            new MyValue("value3").Should().Be(clonedCache[new MyKey("key3")]);
+            new MyValue("value1").Should().Be(clonedCache[key1]);
+            new MyValue("value2").Should().Be(clonedCache[key2]);
+            new MyValue("value3").Should().Be(clonedCache[key3]);
 
             Action action = () =>
             {
-                var item = clonedCache[new MyKey("key4")];
+                var item = clonedCache[key4];
             };
             action.Should().Throw<KeyNotFoundException>();
         }
@@ -96,33 +101,33 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestTryGetInternal()
         {
-            clonedCache.Add(new MyKey("key1"), new MyValue("value1"));
-            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
-            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
+            clonedCache.Add(key1, new MyValue("value1"));
+            myDataCache.Add(key2, new MyValue("value2"));
+            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
 
-            new MyValue("value1").Should().Be(clonedCache.TryGet(new MyKey("key1")));
-            new MyValue("value2").Should().Be(clonedCache.TryGet(new MyKey("key2")));
-            new MyValue("value3").Should().Be(clonedCache.TryGet(new MyKey("key3")));
-            clonedCache.TryGet(new MyKey("key4")).Should().BeNull();
+            new MyValue("value1").Should().Be(clonedCache.TryGet(key1));
+            new MyValue("value2").Should().Be(clonedCache.TryGet(key2));
+            new MyValue("value3").Should().Be(clonedCache.TryGet(key3));
+            clonedCache.TryGet(key4).Should().BeNull();
         }
 
         [TestMethod]
         public void TestUpdateInternal()
         {
-            clonedCache.Add(new MyKey("key1"), new MyValue("value1"));
-            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
-            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
+            clonedCache.Add(key1, new MyValue("value1"));
+            myDataCache.Add(key2, new MyValue("value2"));
+            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
 
-            clonedCache.GetAndChange(new MyKey("key1")).Value = Encoding.Default.GetBytes("value_new_1");
-            clonedCache.GetAndChange(new MyKey("key2")).Value = Encoding.Default.GetBytes("value_new_2");
-            clonedCache.GetAndChange(new MyKey("key3")).Value = Encoding.Default.GetBytes("value_new_3");
+            clonedCache.GetAndChange(key1).Value = Encoding.Default.GetBytes("value_new_1");
+            clonedCache.GetAndChange(key2).Value = Encoding.Default.GetBytes("value_new_2");
+            clonedCache.GetAndChange(key3).Value = Encoding.Default.GetBytes("value_new_3");
 
             clonedCache.Commit();
 
-            new MyValue("value_new_1").Should().Be(clonedCache[new MyKey("key1")]);
-            new MyValue("value_new_2").Should().Be(clonedCache[new MyKey("key2")]);
-            new MyValue("value_new_3").Should().Be(clonedCache[new MyKey("key3")]);
-            new MyValue("value_new_2").Should().Be(clonedCache[new MyKey("key2")]);
+            new MyValue("value_new_1").Should().Be(clonedCache[key1]);
+            new MyValue("value_new_2").Should().Be(clonedCache[key2]);
+            new MyValue("value_new_3").Should().Be(clonedCache[key3]);
+            new MyValue("value_new_2").Should().Be(clonedCache[key2]);
         }
 
         [TestMethod]

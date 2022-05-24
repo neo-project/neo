@@ -10,63 +10,6 @@ using System.Text;
 
 namespace Neo.UnitTests.IO.Caching
 {
-    class MyKey : StorageKey, IEquatable<MyKey>, IComparable<MyKey>, IComparable<StorageKey>, IEquatable<StorageKey>, IComparable
-    {
-        public int Size => Key.Length;
-
-        public MyKey(UInt256 hash)
-        {
-            Key = hash.ToArray();
-        }
-
-        public MyKey(StorageKey key)
-        {
-            Id = key.Id;
-            Key = key.Key;
-        }
-
-        public MyKey(string val)
-        {
-            Key = Encoding.UTF8.GetBytes(val);
-        }
-
-        public bool Equals(MyKey other)
-        {
-            if (other == null) return false;
-            return Id == other.Id && Key.Span.SequenceEqual(other.Key.Span);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj is not MyKey other) return false;
-            return Id == other.Id && Key.Span.SequenceEqual(other.Key.Span);
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(Id, Key.Length);
-        }
-
-        public int CompareTo(MyKey obj)
-        {
-            return CompareTo((StorageKey)obj);
-        }
-
-        public int CompareTo(StorageKey obj)
-        {
-            if (obj is null) throw new Exception();
-            int ret = Id.CompareTo(obj.Id);
-            if (ret != 0) return ret;
-            return Encoding.UTF8.GetString(Key.Span).CompareTo(Encoding.UTF8.GetString(obj.Key.Span));
-        }
-
-        public int CompareTo(object obj)
-        {
-            if (obj is not StorageKey key) throw new Exception();
-            return CompareTo(key);
-        }
-    }
-
     public class MyValue : StorageItem, ISerializable, IEquatable<MyValue>, IEquatable<StorageItem>
     {
         public MyValue(UInt256 hash)
@@ -173,6 +116,12 @@ namespace Neo.UnitTests.IO.Caching
     {
         MyDataCache myDataCache;
 
+        private static readonly StorageKey key1 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key1") };
+        private static readonly StorageKey key2 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key2") };
+        private static readonly StorageKey key3 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key3") };
+        private static readonly StorageKey key4 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key4") };
+        private static readonly StorageKey key5 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key5") };
+
         [TestInitialize]
         public void Initialize()
         {
@@ -182,14 +131,14 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestAccessByKey()
         {
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
+            myDataCache.Add(key1, new MyValue("value1"));
+            myDataCache.Add(key2, new MyValue("value2"));
 
-            myDataCache[new MyKey("key1")].Should().Be(new MyValue("value1"));
+            myDataCache[key1].Should().Be(new MyValue("value1"));
 
             // case 2 read from inner
-            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
-            myDataCache[new MyKey("key3")].Should().Be(new MyValue("value3"));
+            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
+            myDataCache[key3].Should().Be(new MyValue("value3"));
         }
 
         [TestMethod]
@@ -197,7 +146,7 @@ namespace Neo.UnitTests.IO.Caching
         {
             Action action = () =>
             {
-                var item = myDataCache[new MyKey("key1")];
+                var item = myDataCache[key1];
             };
             action.Should().Throw<KeyNotFoundException>();
         }
@@ -205,12 +154,12 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestAccessByDeletedKey()
         {
-            myDataCache.InnerDict.Add(new MyKey("key1"), new MyValue("value1"));
-            myDataCache.Delete(new MyKey("key1"));
+            myDataCache.InnerDict.Add(key1, new MyValue("value1"));
+            myDataCache.Delete(key1);
 
             Action action = () =>
             {
-                var item = myDataCache[new MyKey("key1")];
+                var item = myDataCache[key1];
             };
             action.Should().Throw<KeyNotFoundException>();
         }
@@ -218,45 +167,45 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestAdd()
         {
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-            myDataCache[new MyKey("key1")].Should().Be(new MyValue("value1"));
+            myDataCache.Add(key1, new MyValue("value1"));
+            myDataCache[key1].Should().Be(new MyValue("value1"));
 
-            Action action = () => myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
+            Action action = () => myDataCache.Add(key1, new MyValue("value1"));
             action.Should().Throw<ArgumentException>();
 
-            myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
-            myDataCache.Delete(new MyKey("key2"));
-            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key2"))).Select(u => u.State).FirstOrDefault());
-            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
-            Assert.AreEqual(TrackState.Changed, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key2"))).Select(u => u.State).FirstOrDefault());
+            myDataCache.InnerDict.Add(key2, new MyValue("value2"));
+            myDataCache.Delete(key2);
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key2)).Select(u => u.State).FirstOrDefault());
+            myDataCache.Add(key2, new MyValue("value2"));
+            Assert.AreEqual(TrackState.Changed, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key2)).Select(u => u.State).FirstOrDefault());
 
-            action = () => myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
+            action = () => myDataCache.Add(key2, new MyValue("value2"));
             action.Should().Throw<ArgumentException>();
         }
 
         [TestMethod]
         public void TestCommit()
         {
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key1"))).Select(u => u.State).FirstOrDefault());
+            myDataCache.Add(key1, new MyValue("value1"));
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key1)).Select(u => u.State).FirstOrDefault());
 
-            myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
-            myDataCache.Delete(new MyKey("key2"));
-            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key2"))).Select(u => u.State).FirstOrDefault());
+            myDataCache.InnerDict.Add(key2, new MyValue("value2"));
+            myDataCache.Delete(key2);
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key2)).Select(u => u.State).FirstOrDefault());
 
-            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
-            Assert.AreEqual(TrackState.None, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key3"))).Select(u => u.State).FirstOrDefault());
-            myDataCache.Delete(new MyKey("key3"));
-            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key3"))).Select(u => u.State).FirstOrDefault());
-            myDataCache.Add(new MyKey("key3"), new MyValue("value4"));
-            Assert.AreEqual(TrackState.Changed, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key3"))).Select(u => u.State).FirstOrDefault());
+            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
+            Assert.AreEqual(TrackState.None, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.State).FirstOrDefault());
+            myDataCache.Delete(key3);
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.State).FirstOrDefault());
+            myDataCache.Add(key3, new MyValue("value4"));
+            Assert.AreEqual(TrackState.Changed, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.State).FirstOrDefault());
 
             myDataCache.Commit();
             Assert.AreEqual(0, myDataCache.GetChangeSet().Count());
 
-            myDataCache.InnerDict[new MyKey("key1")].Should().Be(new MyValue("value1"));
-            myDataCache.InnerDict.ContainsKey(new MyKey("key2")).Should().BeFalse();
-            myDataCache.InnerDict[new MyKey("key3")].Should().Be(new MyValue("value4"));
+            myDataCache.InnerDict[key1].Should().Be(new MyValue("value1"));
+            myDataCache.InnerDict.ContainsKey(key2).Should().BeFalse();
+            myDataCache.InnerDict[key3].Should().Be(new MyValue("value4"));
         }
 
         [TestMethod]
@@ -268,100 +217,100 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestDelete()
         {
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-            myDataCache.Delete(new MyKey("key1"));
-            myDataCache.InnerDict.ContainsKey(new MyKey("key1")).Should().BeFalse();
+            myDataCache.Add(key1, new MyValue("value1"));
+            myDataCache.Delete(key1);
+            myDataCache.InnerDict.ContainsKey(key1).Should().BeFalse();
 
-            myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
-            myDataCache.Delete(new MyKey("key2"));
+            myDataCache.InnerDict.Add(key2, new MyValue("value2"));
+            myDataCache.Delete(key2);
             myDataCache.Commit();
-            myDataCache.InnerDict.ContainsKey(new MyKey("key2")).Should().BeFalse();
+            myDataCache.InnerDict.ContainsKey(key2).Should().BeFalse();
         }
 
         [TestMethod]
         public void TestFind()
         {
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
+            myDataCache.Add(key1, new MyValue("value1"));
+            myDataCache.Add(key2, new MyValue("value2"));
 
-            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
-            myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4"));
+            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
+            myDataCache.InnerDict.Add(key4, new MyValue("value4"));
 
-            var items = myDataCache.Find(new MyKey("key1").ToArray());
-            new MyKey("key1").Should().Be(items.ElementAt(0).Key);
+            var items = myDataCache.Find(key1.ToArray());
+            key1.Should().Be(items.ElementAt(0).Key);
             new MyValue("value1").Should().Be(items.ElementAt(0).Value);
             items.Count().Should().Be(1);
 
-            items = myDataCache.Find(new MyKey("key5").ToArray());
+            items = myDataCache.Find(key5.ToArray());
             items.Count().Should().Be(0);
         }
 
         [TestMethod]
         public void TestSeek()
         {
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
+            myDataCache.Add(key1, new MyValue("value1"));
+            myDataCache.Add(key2, new MyValue("value2"));
 
-            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
-            myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4"));
+            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
+            myDataCache.InnerDict.Add(key4, new MyValue("value4"));
 
-            var items = myDataCache.Seek(new MyKey("key3").ToArray(), SeekDirection.Backward).ToArray();
-            new MyKey("key3").Should().Be(items[0].Key);
+            var items = myDataCache.Seek(key3.ToArray(), SeekDirection.Backward).ToArray();
+            key3.Should().Be(items[0].Key);
             new MyValue("value3").Should().Be(items[0].Value);
-            new MyKey("key2").Should().Be(items[1].Key);
+            key2.Should().Be(items[1].Key);
             new MyValue("value2").Should().Be(items[1].Value);
             items.Length.Should().Be(3);
 
-            items = myDataCache.Seek(new MyKey("key5").ToArray(), SeekDirection.Forward).ToArray();
+            items = myDataCache.Seek(key5.ToArray(), SeekDirection.Forward).ToArray();
             items.Length.Should().Be(0);
         }
 
         [TestMethod]
         public void TestFindRange()
         {
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
+            myDataCache.Add(key1, new MyValue("value1"));
+            myDataCache.Add(key2, new MyValue("value2"));
 
-            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
-            myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4"));
+            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
+            myDataCache.InnerDict.Add(key4, new MyValue("value4"));
 
-            var items = myDataCache.FindRange(new MyKey("key3").ToArray(), new MyKey("key5").ToArray()).ToArray();
-            new MyKey("key3").Should().Be(items[0].Key);
+            var items = myDataCache.FindRange(key3.ToArray(), key5.ToArray()).ToArray();
+            key3.Should().Be(items[0].Key);
             new MyValue("value3").Should().Be(items[0].Value);
-            new MyKey("key4").Should().Be(items[1].Key);
+            key4.Should().Be(items[1].Key);
             new MyValue("value4").Should().Be(items[1].Value);
             items.Length.Should().Be(2);
 
             // case 2 Need to sort the cache of myDataCache
 
             myDataCache = new MyDataCache();
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
+            myDataCache.Add(key1, new MyValue("value1"));
+            myDataCache.Add(key2, new MyValue("value2"));
 
-            myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4"));
-            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
+            myDataCache.InnerDict.Add(key4, new MyValue("value4"));
+            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
 
-            items = myDataCache.FindRange(new MyKey("key3").ToArray(), new MyKey("key5").ToArray()).ToArray();
-            new MyKey("key3").Should().Be(items[0].Key);
+            items = myDataCache.FindRange(key3.ToArray(), key5.ToArray()).ToArray();
+            key3.Should().Be(items[0].Key);
             new MyValue("value3").Should().Be(items[0].Value);
-            new MyKey("key4").Should().Be(items[1].Key);
+            key4.Should().Be(items[1].Key);
             new MyValue("value4").Should().Be(items[1].Value);
             items.Length.Should().Be(2);
 
             // case 3 FindRange by Backward
 
             myDataCache = new MyDataCache();
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
+            myDataCache.Add(key1, new MyValue("value1"));
+            myDataCache.Add(key2, new MyValue("value2"));
 
-            myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4"));
-            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
-            myDataCache.InnerDict.Add(new MyKey("key5"), new MyValue("value5"));
+            myDataCache.InnerDict.Add(key4, new MyValue("value4"));
+            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
+            myDataCache.InnerDict.Add(key5, new MyValue("value5"));
 
-            items = myDataCache.FindRange(new MyKey("key5").ToArray(), new MyKey("key3").ToArray(), SeekDirection.Backward).ToArray();
-            new MyKey("key5").Should().Be(items[0].Key);
+            items = myDataCache.FindRange(key5.ToArray(), key3.ToArray(), SeekDirection.Backward).ToArray();
+            key5.Should().Be(items[0].Key);
             new MyValue("value5").Should().Be(items[0].Value);
-            new MyKey("key4").Should().Be(items[1].Key);
+            key4.Should().Be(items[1].Key);
             new MyValue("value4").Should().Be(items[1].Value);
             items.Length.Should().Be(2);
         }
@@ -369,24 +318,25 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestGetChangeSet()
         {
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key1"))).Select(u => u.State).FirstOrDefault());
-            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
-            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key2"))).Select(u => u.State).FirstOrDefault());
+            myDataCache.Add(key1, new MyValue("value1"));
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key1)).Select(u => u.State).FirstOrDefault());
+            myDataCache.Add(key2, new MyValue("value2"));
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key2)).Select(u => u.State).FirstOrDefault());
 
-            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
-            myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4"));
-            myDataCache.Delete(new MyKey("key3"));
-            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key3"))).Select(u => u.State).FirstOrDefault());
-            myDataCache.Delete(new MyKey("key4"));
-            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key4"))).Select(u => u.State).FirstOrDefault());
+            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
+            myDataCache.InnerDict.Add(key4, new MyValue("value4"));
+            myDataCache.Delete(key3);
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.State).FirstOrDefault());
+            myDataCache.Delete(key4);
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key4)).Select(u => u.State).FirstOrDefault());
 
             var items = myDataCache.GetChangeSet();
             int i = 0;
             foreach (var item in items)
             {
                 i++;
-                new MyKey("key" + i).Should().Be(item.Key);
+                StorageKey key = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key" + i) };
+                key.Should().Be(item.Key);
                 new MyValue("value" + i).Should().Be(item.Item);
             }
             i.Should().Be(4);
@@ -395,72 +345,72 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestGetAndChange()
         {
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key1"))).Select(u => u.State).FirstOrDefault());
-            myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
-            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
-            myDataCache.Delete(new MyKey("key3"));
-            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key3"))).Select(u => u.State).FirstOrDefault());
+            myDataCache.Add(key1, new MyValue("value1"));
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key1)).Select(u => u.State).FirstOrDefault());
+            myDataCache.InnerDict.Add(key2, new MyValue("value2"));
+            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
+            myDataCache.Delete(key3);
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.State).FirstOrDefault());
 
-            myDataCache.GetAndChange(new MyKey("key1"), () => new MyValue("value_bk_1")).Should().Be(new MyValue("value1"));
-            myDataCache.GetAndChange(new MyKey("key2"), () => new MyValue("value_bk_2")).Should().Be(new MyValue("value2"));
-            myDataCache.GetAndChange(new MyKey("key3"), () => new MyValue("value_bk_3")).Should().Be(new MyValue("value_bk_3"));
-            myDataCache.GetAndChange(new MyKey("key4"), () => new MyValue("value_bk_4")).Should().Be(new MyValue("value_bk_4"));
+            myDataCache.GetAndChange(key1, () => new MyValue("value_bk_1")).Should().Be(new MyValue("value1"));
+            myDataCache.GetAndChange(key2, () => new MyValue("value_bk_2")).Should().Be(new MyValue("value2"));
+            myDataCache.GetAndChange(key3, () => new MyValue("value_bk_3")).Should().Be(new MyValue("value_bk_3"));
+            myDataCache.GetAndChange(key4, () => new MyValue("value_bk_4")).Should().Be(new MyValue("value_bk_4"));
         }
 
         [TestMethod]
         public void TestGetOrAdd()
         {
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key1"))).Select(u => u.State).FirstOrDefault());
-            myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
-            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
-            myDataCache.Delete(new MyKey("key3"));
-            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key3"))).Select(u => u.State).FirstOrDefault());
+            myDataCache.Add(key1, new MyValue("value1"));
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key1)).Select(u => u.State).FirstOrDefault());
+            myDataCache.InnerDict.Add(key2, new MyValue("value2"));
+            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
+            myDataCache.Delete(key3);
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.State).FirstOrDefault());
 
-            myDataCache.GetOrAdd(new MyKey("key1"), () => new MyValue("value_bk_1")).Should().Be(new MyValue("value1"));
-            myDataCache.GetOrAdd(new MyKey("key2"), () => new MyValue("value_bk_2")).Should().Be(new MyValue("value2"));
-            myDataCache.GetOrAdd(new MyKey("key3"), () => new MyValue("value_bk_3")).Should().Be(new MyValue("value_bk_3"));
-            myDataCache.GetOrAdd(new MyKey("key4"), () => new MyValue("value_bk_4")).Should().Be(new MyValue("value_bk_4"));
+            myDataCache.GetOrAdd(key1, () => new MyValue("value_bk_1")).Should().Be(new MyValue("value1"));
+            myDataCache.GetOrAdd(key2, () => new MyValue("value_bk_2")).Should().Be(new MyValue("value2"));
+            myDataCache.GetOrAdd(key3, () => new MyValue("value_bk_3")).Should().Be(new MyValue("value_bk_3"));
+            myDataCache.GetOrAdd(key4, () => new MyValue("value_bk_4")).Should().Be(new MyValue("value_bk_4"));
         }
 
         [TestMethod]
         public void TestTryGet()
         {
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
-            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key1"))).Select(u => u.State).FirstOrDefault());
-            myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
-            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
-            myDataCache.Delete(new MyKey("key3"));
-            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key3"))).Select(u => u.State).FirstOrDefault());
+            myDataCache.Add(key1, new MyValue("value1"));
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key1)).Select(u => u.State).FirstOrDefault());
+            myDataCache.InnerDict.Add(key2, new MyValue("value2"));
+            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
+            myDataCache.Delete(key3);
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(key3)).Select(u => u.State).FirstOrDefault());
 
-            myDataCache.TryGet(new MyKey("key1")).Should().Be(new MyValue("value1"));
-            myDataCache.TryGet(new MyKey("key2")).Should().Be(new MyValue("value2"));
-            myDataCache.TryGet(new MyKey("key3")).Should().BeNull();
+            myDataCache.TryGet(key1).Should().Be(new MyValue("value1"));
+            myDataCache.TryGet(key2).Should().Be(new MyValue("value2"));
+            myDataCache.TryGet(key3).Should().BeNull();
         }
 
         [TestMethod]
         public void TestFindInvalid()
         {
             var myDataCache = new MyDataCache();
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
+            myDataCache.Add(key1, new MyValue("value1"));
 
-            myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
-            myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
-            myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value3"));
+            myDataCache.InnerDict.Add(key2, new MyValue("value2"));
+            myDataCache.InnerDict.Add(key3, new MyValue("value3"));
+            myDataCache.InnerDict.Add(key4, new MyValue("value3"));
 
             var items = myDataCache.Find().GetEnumerator();
             items.MoveNext().Should().Be(true);
-            items.Current.Key.Should().Be(new MyKey("key1"));
+            items.Current.Key.Should().Be(key1);
 
-            myDataCache.TryGet(new MyKey("key3")); // GETLINE
+            myDataCache.TryGet(key3); // GETLINE
 
             items.MoveNext().Should().Be(true);
-            items.Current.Key.Should().Be(new MyKey("key2"));
+            items.Current.Key.Should().Be(key2);
             items.MoveNext().Should().Be(true);
-            items.Current.Key.Should().Be(new MyKey("key3"));
+            items.Current.Key.Should().Be(key3);
             items.MoveNext().Should().Be(true);
-            items.Current.Key.Should().Be(new MyKey("key4"));
+            items.Current.Key.Should().Be(key4);
             items.MoveNext().Should().Be(false);
         }
     }

@@ -1,9 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO;
 using Neo.SmartContract;
-using System;
-using System.IO;
 
 namespace Neo.UnitTests.Ledger
 {
@@ -13,21 +10,8 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Id_Get()
         {
-            var uut = new StorageKey(1, new byte[] { 0x01 });
+            var uut = new StorageKey { Id = 1, Key = new byte[] { 0x01 } };
             uut.Id.Should().Be(1);
-        }
-
-        [TestMethod]
-        public void Size()
-        {
-            var ut = new StorageKey() { Key = new byte[17], Id = 0 };
-            ut.ToArray().Length.Should().Be(((ISerializable)ut).Size);
-
-            ut = new StorageKey() { Key = Array.Empty<byte>(), Id = 0 };
-            ut.ToArray().Length.Should().Be(((ISerializable)ut).Size);
-
-            ut = new StorageKey() { Key = new byte[16], Id = 0 };
-            ut.ToArray().Length.Should().Be(((ISerializable)ut).Size);
         }
 
         [TestMethod]
@@ -78,7 +62,7 @@ namespace Neo.UnitTests.Ledger
                 Id = val,
                 Key = keyVal
             };
-            StorageKey uut = new(val, keyVal);
+            StorageKey uut = new() { Id = val, Key = keyVal };
             uut.Equals(newSk).Should().BeTrue();
         }
 
@@ -92,7 +76,7 @@ namespace Neo.UnitTests.Ledger
                 Id = val,
                 Key = keyVal
             };
-            StorageKey uut = new(0x78000000, keyVal);
+            StorageKey uut = new() { Id = 0x78000000, Key = keyVal };
             uut.Equals(newSk).Should().BeFalse();
         }
 
@@ -106,14 +90,14 @@ namespace Neo.UnitTests.Ledger
                 Id = val,
                 Key = keyVal
             };
-            StorageKey uut = new(val, TestUtils.GetByteArray(10, 0x88));
+            StorageKey uut = new() { Id = val, Key = TestUtils.GetByteArray(10, 0x88) };
             uut.Equals(newSk).Should().BeFalse();
         }
 
         [TestMethod]
         public void GetHashCode_Get()
         {
-            StorageKey uut = new(0x42000000, TestUtils.GetByteArray(10, 0x42));
+            StorageKey uut = new() { Id = 0x42000000, Key = TestUtils.GetByteArray(10, 0x42) };
             uut.GetHashCode().Should().Be(1374529787);
         }
 
@@ -123,22 +107,6 @@ namespace Neo.UnitTests.Ledger
             StorageKey uut = new();
             uut.Equals(1u).Should().BeFalse();
             uut.Equals((object)uut).Should().BeTrue();
-        }
-
-        [TestMethod]
-        public void TestDeserialize()
-        {
-            using MemoryStream ms = new(1024);
-            using BinaryWriter writer = new(ms);
-
-            StorageKey uut = new(0x42000000, TestUtils.GetByteArray(10, 0x42));
-            ((ISerializable)uut).Serialize(writer);
-
-            MemoryReader reader = new(ms.ToArray());
-            StorageKey dest = new StorageKey();
-            ((ISerializable)dest).Deserialize(ref reader);
-            dest.Id.Should().Be(uut.Id);
-            dest.Key.Span.SequenceEqual(uut.Key.Span).Should().BeTrue();
         }
     }
 }
