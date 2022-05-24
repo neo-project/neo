@@ -79,7 +79,7 @@ namespace Neo.UnitTests.IO.Caching
             Value = Encoding.Default.GetBytes(val);
         }
 
-        public MyValue(byte[] val)
+        public MyValue(ReadOnlyMemory<byte> val)
         {
             Value = val;
         }
@@ -92,19 +92,19 @@ namespace Neo.UnitTests.IO.Caching
         public bool Equals(StorageItem other)
         {
             if (other == null) return false;
-            return (Value == null && other.Value == null) || Value.SequenceEqual(other.Value);
+            return Value.Span.SequenceEqual(other.Value.Span);
         }
 
         public bool Equals(MyValue other)
         {
             if (other == null) return false;
-            return (Value == null && other.Value == null) || Value.SequenceEqual(other.Value);
+            return Value.Span.SequenceEqual(other.Value.Span);
         }
 
         public override bool Equals(object obj)
         {
             if (obj is not StorageItem other) return false;
-            return (Value == null && other.Value == null) || Value.SequenceEqual(other.Value);
+            return Value.Span.SequenceEqual(other.Value.Span);
         }
 
         public override int GetHashCode()
@@ -225,8 +225,10 @@ namespace Neo.UnitTests.IO.Caching
             action.Should().Throw<ArgumentException>();
 
             myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
-            myDataCache.Delete(new MyKey("key2"));                      // trackable.State = TrackState.Deleted    
-            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));  // trackable.State = TrackState.Changed
+            myDataCache.Delete(new MyKey("key2"));
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key2"))).Select(u => u.State).FirstOrDefault());
+            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
+            Assert.AreEqual(TrackState.Changed, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key2"))).Select(u => u.State).FirstOrDefault());
 
             action = () => myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
             action.Should().Throw<ArgumentException>();
@@ -235,16 +237,22 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestCommit()
         {
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));   // trackable.State = TrackState.Added    
+            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key1"))).Select(u => u.State).FirstOrDefault());
 
             myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
-            myDataCache.Delete(new MyKey("key2"));       // trackable.State = TrackState.Deleted    
+            myDataCache.Delete(new MyKey("key2"));
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key2"))).Select(u => u.State).FirstOrDefault());
 
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
-            myDataCache.Delete(new MyKey("key3"));                      // trackable.State = TrackState.Deleted    
-            myDataCache.Add(new MyKey("key3"), new MyValue("value4"));  // trackable.State = TrackState.Changed
+            Assert.AreEqual(TrackState.None, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key3"))).Select(u => u.State).FirstOrDefault());
+            myDataCache.Delete(new MyKey("key3"));
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key3"))).Select(u => u.State).FirstOrDefault());
+            myDataCache.Add(new MyKey("key3"), new MyValue("value4"));
+            Assert.AreEqual(TrackState.Changed, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key3"))).Select(u => u.State).FirstOrDefault());
 
             myDataCache.Commit();
+            Assert.AreEqual(0, myDataCache.GetChangeSet().Count());
 
             myDataCache.InnerDict[new MyKey("key1")].Should().Be(new MyValue("value1"));
             myDataCache.InnerDict.ContainsKey(new MyKey("key2")).Should().BeFalse();
@@ -361,13 +369,17 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestGetChangeSet()
         {
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));  // trackable.State = TrackState.Added 
-            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));  // trackable.State = TrackState.Added 
+            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key1"))).Select(u => u.State).FirstOrDefault());
+            myDataCache.Add(new MyKey("key2"), new MyValue("value2"));
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key2"))).Select(u => u.State).FirstOrDefault());
 
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
             myDataCache.InnerDict.Add(new MyKey("key4"), new MyValue("value4"));
-            myDataCache.Delete(new MyKey("key3"));      // trackable.State = TrackState.Deleted 
-            myDataCache.Delete(new MyKey("key4"));      // trackable.State = TrackState.Deleted 
+            myDataCache.Delete(new MyKey("key3"));
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key3"))).Select(u => u.State).FirstOrDefault());
+            myDataCache.Delete(new MyKey("key4"));
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key4"))).Select(u => u.State).FirstOrDefault());
 
             var items = myDataCache.GetChangeSet();
             int i = 0;
@@ -383,10 +395,12 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestGetAndChange()
         {
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));                  //  trackable.State = TrackState.Added 
+            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key1"))).Select(u => u.State).FirstOrDefault());
             myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
-            myDataCache.Delete(new MyKey("key3"));                                      //  trackable.State = TrackState.Deleted 
+            myDataCache.Delete(new MyKey("key3"));
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key3"))).Select(u => u.State).FirstOrDefault());
 
             myDataCache.GetAndChange(new MyKey("key1"), () => new MyValue("value_bk_1")).Should().Be(new MyValue("value1"));
             myDataCache.GetAndChange(new MyKey("key2"), () => new MyValue("value_bk_2")).Should().Be(new MyValue("value2"));
@@ -397,10 +411,12 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestGetOrAdd()
         {
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));                  //  trackable.State = TrackState.Added 
+            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key1"))).Select(u => u.State).FirstOrDefault());
             myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
-            myDataCache.Delete(new MyKey("key3"));                                      //  trackable.State = TrackState.Deleted 
+            myDataCache.Delete(new MyKey("key3"));
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key3"))).Select(u => u.State).FirstOrDefault());
 
             myDataCache.GetOrAdd(new MyKey("key1"), () => new MyValue("value_bk_1")).Should().Be(new MyValue("value1"));
             myDataCache.GetOrAdd(new MyKey("key2"), () => new MyValue("value_bk_2")).Should().Be(new MyValue("value2"));
@@ -411,10 +427,12 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestTryGet()
         {
-            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));                  //  trackable.State = TrackState.Added 
+            myDataCache.Add(new MyKey("key1"), new MyValue("value1"));
+            Assert.AreEqual(TrackState.Added, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key1"))).Select(u => u.State).FirstOrDefault());
             myDataCache.InnerDict.Add(new MyKey("key2"), new MyValue("value2"));
             myDataCache.InnerDict.Add(new MyKey("key3"), new MyValue("value3"));
-            myDataCache.Delete(new MyKey("key3"));                                      //  trackable.State = TrackState.Deleted 
+            myDataCache.Delete(new MyKey("key3"));
+            Assert.AreEqual(TrackState.Deleted, myDataCache.GetChangeSet().Where(u => u.Key.Equals(new MyKey("key3"))).Select(u => u.State).FirstOrDefault());
 
             myDataCache.TryGet(new MyKey("key1")).Should().Be(new MyValue("value1"));
             myDataCache.TryGet(new MyKey("key2")).Should().Be(new MyValue("value2"));

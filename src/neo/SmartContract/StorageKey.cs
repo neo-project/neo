@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -9,10 +9,8 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
-using Neo.IO;
 using System;
 using System.Buffers.Binary;
-using System.IO;
 
 namespace Neo.SmartContract
 {

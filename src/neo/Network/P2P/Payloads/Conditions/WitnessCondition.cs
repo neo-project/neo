@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -31,47 +31,47 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public virtual int Size => sizeof(WitnessConditionType);
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(ref MemoryReader reader)
         {
             if (reader.ReadByte() != (byte)Type) throw new FormatException();
-            DeserializeWithoutType(reader, MaxNestingDepth);
+            DeserializeWithoutType(ref reader, MaxNestingDepth);
         }
 
         /// <summary>
-        /// Deserializes an <see cref="WitnessCondition"/> array from a <see cref="BinaryReader"/>.
+        /// Deserializes an <see cref="WitnessCondition"/> array from a <see cref="MemoryReader"/>.
         /// </summary>
-        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
+        /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
         /// <param name="maxNestDepth">The maximum nesting depth allowed during deserialization.</param>
         /// <returns>The deserialized <see cref="WitnessCondition"/> array.</returns>
-        protected static WitnessCondition[] DeserializeConditions(BinaryReader reader, int maxNestDepth)
+        protected static WitnessCondition[] DeserializeConditions(ref MemoryReader reader, int maxNestDepth)
         {
             WitnessCondition[] conditions = new WitnessCondition[reader.ReadVarInt(MaxSubitems)];
             for (int i = 0; i < conditions.Length; i++)
-                conditions[i] = DeserializeFrom(reader, maxNestDepth);
+                conditions[i] = DeserializeFrom(ref reader, maxNestDepth);
             return conditions;
         }
 
         /// <summary>
-        /// Deserializes an <see cref="WitnessCondition"/> object from a <see cref="BinaryReader"/>.
+        /// Deserializes an <see cref="WitnessCondition"/> object from a <see cref="MemoryReader"/>.
         /// </summary>
-        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
+        /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
         /// <param name="maxNestDepth">The maximum nesting depth allowed during deserialization.</param>
         /// <returns>The deserialized <see cref="WitnessCondition"/>.</returns>
-        public static WitnessCondition DeserializeFrom(BinaryReader reader, int maxNestDepth)
+        public static WitnessCondition DeserializeFrom(ref MemoryReader reader, int maxNestDepth)
         {
             WitnessConditionType type = (WitnessConditionType)reader.ReadByte();
             if (ReflectionCache<WitnessConditionType>.CreateInstance(type) is not WitnessCondition condition)
                 throw new FormatException();
-            condition.DeserializeWithoutType(reader, maxNestDepth);
+            condition.DeserializeWithoutType(ref reader, maxNestDepth);
             return condition;
         }
 
         /// <summary>
-        /// Deserializes the <see cref="WitnessCondition"/> object from a <see cref="BinaryReader"/>.
+        /// Deserializes the <see cref="WitnessCondition"/> object from a <see cref="MemoryReader"/>.
         /// </summary>
-        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
+        /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
         /// <param name="maxNestDepth">The maximum nesting depth allowed during deserialization.</param>
-        protected abstract void DeserializeWithoutType(BinaryReader reader, int maxNestDepth);
+        protected abstract void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth);
 
         /// <summary>
         /// Checks whether the current context matches the condition.
