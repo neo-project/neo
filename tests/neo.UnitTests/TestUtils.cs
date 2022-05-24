@@ -245,5 +245,10 @@ namespace Neo.UnitTests
             newObj.Deserialize(ref reader);
             return newObj;
         }
+
+        public static bool EqualsTo(this StorageItem item, StorageItem other)
+        {
+            return item.Value.Span.SequenceEqual(other.Value.Span);
+        }
     }
 }
