@@ -12,7 +12,6 @@ namespace Neo
 {
     public enum Hardfork : byte
     {
-        HF_2693_FixGetRandom,
-        HF_2712_FixSyscallFees
+        HF_Aspidochelone
     }
 }

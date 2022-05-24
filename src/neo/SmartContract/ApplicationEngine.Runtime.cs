@@ -268,7 +268,7 @@ namespace Neo.SmartContract
         /// <returns>The next random number.</returns>
         protected internal BigInteger GetRandom()
         {
-            if (IsHardforkEnabled(Hardfork.HF_2693_FixGetRandom))
+            if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
             {
                 Span<byte> buffer = stackalloc byte[nonceData.Length + sizeof(int)];
                 nonceData.AsSpan().CopyTo(buffer);
