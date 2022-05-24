@@ -106,7 +106,7 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Runtime.GetRandom.
         /// Gets the random number generated from the VRF.
         /// </summary>
-        public static readonly InteropDescriptor System_Runtime_GetRandom = Register("System.Runtime.GetRandom", nameof(GetRandom), 1 << 4, CallFlags.None);
+        public static readonly InteropDescriptor System_Runtime_GetRandom = Register("System.Runtime.GetRandom", nameof(GetRandom), 0, CallFlags.None);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.Log.
@@ -269,16 +269,20 @@ namespace Neo.SmartContract
         /// <returns>The next random number.</returns>
         protected internal BigInteger GetRandom()
         {
+            byte[] buffer;
+            long price;
             if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
             {
-                byte[] buffer = Cryptography.Helper.Murmur128(nonceData, random_times++);
-                return new BigInteger(buffer, isUnsigned: true);
+                buffer = Cryptography.Helper.Murmur128(nonceData, random_times++);
+                price = 1 << 13;
             }
             else
             {
-                nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
-                return new BigInteger(nonceData, isUnsigned: true);
+                buffer = nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
+                price = 1 << 4;
             }
+            AddGas(price * ExecFeeFactor);
+            return new BigInteger(buffer, isUnsigned: true);
         }
 
         /// <summary>
