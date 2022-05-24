@@ -271,7 +271,13 @@ namespace Neo.SmartContract
                     {
                         ExecutionContextState contextState = CurrentContext.GetState<ExecutionContextState>();
                         contextState.NotificationCount += state.NotificationCount;
-                        if (state.PushNullWhenReturn) Push(StackItem.Null);
+                        if (state.IsDynamicCall)
+                        {
+                            if (context.EvaluationStack.Count == 0)
+                                Push(StackItem.Null);
+                            else if (context.EvaluationStack.Count > 1)
+                                throw new NotSupportedException("Multiple return values are not allowed in cross-contract calls.");
+                        }
                     }
                 }
                 else

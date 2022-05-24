@@ -42,6 +42,6 @@ namespace Neo.SmartContract
 
         public int NotificationCount { get; set; }
 
-        public bool PushNullWhenReturn { get; set; }
+        public bool IsDynamicCall { get; set; }
     }
 }

@@ -198,18 +198,17 @@ namespace Neo.SmartContract
         /// The implementation of System.Runtime.LoadScript.
         /// Loads a script at rumtime.
         /// </summary>
-        protected internal void RuntimeLoadScript(byte[] script, int rvcount, CallFlags callFlags, Array args)
+        protected internal void RuntimeLoadScript(byte[] script, CallFlags callFlags, Array args)
         {
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
-            if (rvcount < 0 || rvcount > ushort.MaxValue)
-                throw new ArgumentOutOfRangeException(nameof(rvcount));
 
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
-            ExecutionContext context = LoadScript(script, rvcount, configureState: p =>
+            ExecutionContext context = LoadScript(script, configureState: p =>
             {
                 p.CallingScriptHash = state.ScriptHash;
                 p.CallFlags = callFlags & state.CallFlags;
+                p.IsDynamicCall = true;
             });
 
             for (int i = args.Count - 1; i >= 0; i--)
