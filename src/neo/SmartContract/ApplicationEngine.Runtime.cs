@@ -14,7 +14,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.VM.Types;
 using System;
-using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -34,6 +33,8 @@ namespace Neo.SmartContract
         /// The maximum size of notification objects.
         /// </summary>
         public const int MaxNotificationSize = 1024;
+
+        private uint random_times = 0;
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.Platform.
@@ -270,10 +271,7 @@ namespace Neo.SmartContract
         {
             if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
             {
-                Span<byte> buffer = stackalloc byte[nonceData.Length + sizeof(int)];
-                nonceData.AsSpan().CopyTo(buffer);
-                BinaryPrimitives.WriteInt32LittleEndian(buffer[nonceData.Length..], random_times++);
-                buffer = Cryptography.Helper.Murmur128(buffer, ProtocolSettings.Network);
+                byte[] buffer = Cryptography.Helper.Murmur128(nonceData, random_times++);
                 return new BigInteger(buffer, isUnsigned: true);
             }
             else
