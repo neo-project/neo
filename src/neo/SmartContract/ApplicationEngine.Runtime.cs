@@ -306,7 +306,7 @@ namespace Neo.SmartContract
         /// <param name="state">The arguments of the event.</param>
         protected internal void SendNotification(UInt160 hash, string eventName, Array state)
         {
-            NotifyEventArgs notification = new(ScriptContainer, hash, eventName, (Array)state.DeepCopy());
+            NotifyEventArgs notification = new(ScriptContainer, hash, eventName, (Array)state.DeepCopy(asImmutable: true));
             Notify?.Invoke(this, notification);
             notifications ??= new List<NotifyEventArgs>();
             notifications.Add(notification);
