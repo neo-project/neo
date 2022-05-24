@@ -295,26 +295,6 @@ namespace Neo.SmartContract
             using MemoryStream ms = new(MaxNotificationSize);
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             BinarySerializer.Serialize(writer, state, MaxNotificationSize);
-            Queue<StackItem> queue = new();
-            queue.Enqueue(state);
-            while (queue.TryDequeue(out var item))
-            {
-                switch (item)
-                {
-                    case Array array:
-                        foreach (var subItem in array)
-                            queue.Enqueue(subItem);
-                        break;
-                    case Map map:
-                        foreach (var (_, v) in map)
-                            queue.Enqueue(v);
-                        break;
-                    case VM.Types.Buffer:
-                    case InteropInterface:
-                    case Pointer:
-                        throw new InvalidOperationException();
-                }
-            }
             SendNotification(CurrentScriptHash, Utility.StrictUTF8.GetString(eventName), state);
         }
 
@@ -326,7 +306,7 @@ namespace Neo.SmartContract
         /// <param name="state">The arguments of the event.</param>
         protected internal void SendNotification(UInt160 hash, string eventName, Array state)
         {
-            NotifyEventArgs notification = new(ScriptContainer, hash, eventName, (Array)state.DeepCopy());
+            NotifyEventArgs notification = new(ScriptContainer, hash, eventName, (Array)state.DeepCopy(asImmutable: true));
             Notify?.Invoke(this, notification);
             notifications ??= new List<NotifyEventArgs>();
             notifications.Add(notification);
