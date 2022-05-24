@@ -62,13 +62,18 @@ namespace Neo.SmartContract.Native
             {
                 new ContractEventDescriptor
                 {
-                    Name = "CandidateRegistered",
+                    Name = "CandidateStateChanged",
                     Parameters = new ContractParameterDefinition[]
                     {
                         new ContractParameterDefinition()
                         {
                             Name = "pubkey",
                             Type = ContractParameterType.PublicKey
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "registered",
+                            Type = ContractParameterType.Boolean
                         },
                         new ContractParameterDefinition()
                         {
@@ -79,24 +84,7 @@ namespace Neo.SmartContract.Native
                 },
                 new ContractEventDescriptor
                 {
-                    Name = "CandidateUnregistered",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                            Name = "pubkey",
-                            Type = ContractParameterType.PublicKey
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "votes",
-                            Type = ContractParameterType.Integer
-                        }
-                    }
-                },
-                new ContractEventDescriptor
-                {
-                    Name = "VoteCasted",
+                    Name = "Vote",
                     Parameters = new ContractParameterDefinition[]
                     {
                         new ContractParameterDefinition()
@@ -365,8 +353,8 @@ namespace Neo.SmartContract.Native
             CandidateState state = item.GetInteroperable<CandidateState>();
             if (state.Registered) return true;
             state.Registered = true;
-            engine.SendNotification(Hash, "CandidateRegistered",
-                new VM.Types.Array(engine.ReferenceCounter) { pubkey.ToArray(), state.Votes });
+            engine.SendNotification(Hash, "CandidateStateChanged",
+                new VM.Types.Array(engine.ReferenceCounter) { pubkey.ToArray(), true, state.Votes });
             return true;
         }
 
@@ -382,8 +370,8 @@ namespace Neo.SmartContract.Native
             if (!state.Registered) return true;
             state.Registered = false;
             CheckCandidate(engine.Snapshot, pubkey, state);
-            engine.SendNotification(Hash, "CandidateUnregistered",
-                new VM.Types.Array(engine.ReferenceCounter) { pubkey.ToArray(), state.Votes });
+            engine.SendNotification(Hash, "CandidateStateChanged",
+                new VM.Types.Array(engine.ReferenceCounter) { pubkey.ToArray(), false, state.Votes });
             return true;
         }
 
@@ -424,7 +412,7 @@ namespace Neo.SmartContract.Native
             }
             if (gasDistribution is not null)
                 await GAS.Mint(engine, gasDistribution.Account, gasDistribution.Amount, true);
-            engine.SendNotification(Hash, "VoteCasted",
+            engine.SendNotification(Hash, "Vote",
                 new VM.Types.Array(engine.ReferenceCounter) { account.ToArray(), voteTo?.ToArray() ?? StackItem.Null, state_account.Balance, validator_new?.Votes ?? StackItem.Null });
             return true;
         }
