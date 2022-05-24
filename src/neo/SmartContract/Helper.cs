@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -117,7 +117,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="script">The script of the contract.</param>
         /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
-        public static bool IsMultiSigContract(this byte[] script)
+        public static bool IsMultiSigContract(ReadOnlySpan<byte> script)
         {
             return IsMultiSigContract(script, out _, out _, null);
         }
@@ -129,7 +129,7 @@ namespace Neo.SmartContract
         /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="n">The number of public keys in the account.</param>
         /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
-        public static bool IsMultiSigContract(this byte[] script, out int m, out int n)
+        public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out int n)
         {
             return IsMultiSigContract(script, out m, out n, null);
         }
@@ -141,7 +141,7 @@ namespace Neo.SmartContract
         /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="points">The public keys in the account.</param>
         /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
-        public static bool IsMultiSigContract(this byte[] script, out int m, out ECPoint[] points)
+        public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out ECPoint[] points)
         {
             List<ECPoint> list = new();
             if (IsMultiSigContract(script, out m, out _, list))
@@ -156,7 +156,7 @@ namespace Neo.SmartContract
             }
         }
 
-        private static bool IsMultiSigContract(byte[] script, out int m, out int n, List<ECPoint> points)
+        private static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out int n, List<ECPoint> points)
         {
             m = 0; n = 0;
             int i = 0;
@@ -168,7 +168,7 @@ namespace Neo.SmartContract
                     ++i;
                     break;
                 case (byte)OpCode.PUSHINT16:
-                    m = BinaryPrimitives.ReadUInt16LittleEndian(script.AsSpan(++i));
+                    m = BinaryPrimitives.ReadUInt16LittleEndian(script[++i..]);
                     i += 2;
                     break;
                 case byte b when b >= (byte)OpCode.PUSH1 && b <= (byte)OpCode.PUSH16:
@@ -183,7 +183,7 @@ namespace Neo.SmartContract
             {
                 if (script.Length <= i + 35) return false;
                 if (script[++i] != 33) return false;
-                points?.Add(ECPoint.DecodePoint(script.AsSpan(i + 1, 33), ECCurve.Secp256r1));
+                points?.Add(ECPoint.DecodePoint(script.Slice(i + 1, 33), ECCurve.Secp256r1));
                 i += 34;
                 ++n;
             }
@@ -195,7 +195,7 @@ namespace Neo.SmartContract
                     ++i;
                     break;
                 case (byte)OpCode.PUSHINT16:
-                    if (script.Length < i + 3 || n != BinaryPrimitives.ReadUInt16LittleEndian(script.AsSpan(++i))) return false;
+                    if (script.Length < i + 3 || n != BinaryPrimitives.ReadUInt16LittleEndian(script[++i..])) return false;
                     i += 2;
                     break;
                 case byte b when b >= (byte)OpCode.PUSH1 && b <= (byte)OpCode.PUSH16:
@@ -207,7 +207,7 @@ namespace Neo.SmartContract
             }
             if (script.Length != i + 5) return false;
             if (script[i++] != (byte)OpCode.SYSCALL) return false;
-            if (BinaryPrimitives.ReadUInt32LittleEndian(script.AsSpan(i)) != ApplicationEngine.System_Crypto_CheckMultisig)
+            if (BinaryPrimitives.ReadUInt32LittleEndian(script[i..]) != ApplicationEngine.System_Crypto_CheckMultisig)
                 return false;
             return true;
         }
@@ -217,13 +217,13 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="script">The script of the contract.</param>
         /// <returns><see langword="true"/> if the contract is a signature contract; otherwise, <see langword="false"/>.</returns>
-        public static bool IsSignatureContract(this byte[] script)
+        public static bool IsSignatureContract(ReadOnlySpan<byte> script)
         {
             if (script.Length != 40) return false;
             if (script[0] != (byte)OpCode.PUSHDATA1
                 || script[1] != 33
                 || script[35] != (byte)OpCode.SYSCALL
-                || BinaryPrimitives.ReadUInt32LittleEndian(script.AsSpan(36)) != ApplicationEngine.System_Crypto_CheckSig)
+                || BinaryPrimitives.ReadUInt32LittleEndian(script[36..]) != ApplicationEngine.System_Crypto_CheckSig)
                 return false;
             return true;
         }
@@ -233,9 +233,9 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="script">The script of the contract.</param>
         /// <returns><see langword="true"/> if the contract is a standard contract; otherwise, <see langword="false"/>.</returns>
-        public static bool IsStandardContract(this byte[] script)
+        public static bool IsStandardContract(ReadOnlySpan<byte> script)
         {
-            return script.IsSignatureContract() || script.IsMultiSigContract();
+            return IsSignatureContract(script) || IsMultiSigContract(script);
         }
 
         /// <summary>

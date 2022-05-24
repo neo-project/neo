@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Network.P2P.Capabilities;
-using System.IO;
 
 namespace Neo.UnitTests.Network.P2P.Capabilities
 {
@@ -25,8 +24,8 @@ namespace Neo.UnitTests.Network.P2P.Capabilities
             var test = new FullNodeCapability() { StartHeight = uint.MaxValue };
             var buffer = test.ToArray();
 
-            using var br = new BinaryReader(new MemoryStream(buffer));
-            var clone = (FullNodeCapability)NodeCapability.DeserializeFrom(br);
+            var br = new MemoryReader(buffer);
+            var clone = (FullNodeCapability)NodeCapability.DeserializeFrom(ref br);
 
             Assert.AreEqual(test.StartHeight, clone.StartHeight);
         }

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -41,7 +41,7 @@ namespace Neo.SmartContract.Iterators
         public StackItem Value(ReferenceCounter referenceCounter)
         {
             ReadOnlyMemory<byte> key = enumerator.Current.Key.Key;
-            byte[] value = enumerator.Current.Value.Value;
+            ReadOnlyMemory<byte> value = enumerator.Current.Value.Value;
 
             if (options.HasFlag(FindOptions.RemovePrefix))
                 key = key[prefixLength..];

@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
-using System.IO;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -97,9 +96,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var hex = "0000000000000000000000000000000000000000000000000000000000000000000000006c23be5d32679baa9c5c2aa0d329fd2a2441d7875d0f34d42f58f70428fbbbb9e913ff854c00000000000000000000000000000000000000000000000000000000000000000000000001000111010000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000001000112010000";
 
-            using MemoryStream ms = new(hex.HexToBytes(), false);
-            using BinaryReader reader = new(ms);
-            uut.Deserialize(reader);
+            MemoryReader reader = new(hex.HexToBytes());
+            uut.Deserialize(ref reader);
             UInt256 merkRoot = uut.MerkleRoot;
 
             AssertStandardBlockTestVals(val256, merkRoot, val160, timestampVal, indexVal, nonceVal, scriptVal, transactionsVal);
@@ -115,7 +113,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.NextConsensus.Should().Be(val160);
             uut.Witness.InvocationScript.Length.Should().Be(0);
             uut.Witness.Size.Should().Be(scriptVal.Size);
-            uut.Witness.VerificationScript[0].Should().Be(scriptVal.VerificationScript[0]);
+            uut.Witness.VerificationScript.Span[0].Should().Be(scriptVal.VerificationScript.Span[0]);
             if (testTransactions)
             {
                 uut.Transactions.Length.Should().Be(1);

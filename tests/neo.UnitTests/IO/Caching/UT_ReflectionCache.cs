@@ -9,7 +9,7 @@ namespace Neo.UnitTests.IO.Caching
     public class TestItem : ISerializable
     {
         public int Size => 0;
-        public void Deserialize(BinaryReader reader) { }
+        public void Deserialize(ref MemoryReader reader) { }
         public void Serialize(BinaryWriter writer) { }
     }
 
