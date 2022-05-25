@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -34,32 +34,32 @@ namespace Neo.Network.P2P.Payloads
 
         public virtual int Size => sizeof(TransactionAttributeType);
 
-        public void Deserialize(BinaryReader reader)
+        public void Deserialize(ref MemoryReader reader)
         {
             if (reader.ReadByte() != (byte)Type)
                 throw new FormatException();
-            DeserializeWithoutType(reader);
+            DeserializeWithoutType(ref reader);
         }
 
         /// <summary>
-        /// Deserializes an <see cref="TransactionAttribute"/> object from a <see cref="BinaryReader"/>.
+        /// Deserializes an <see cref="TransactionAttribute"/> object from a <see cref="MemoryReader"/>.
         /// </summary>
-        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
+        /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
         /// <returns>The deserialized attribute.</returns>
-        public static TransactionAttribute DeserializeFrom(BinaryReader reader)
+        public static TransactionAttribute DeserializeFrom(ref MemoryReader reader)
         {
             TransactionAttributeType type = (TransactionAttributeType)reader.ReadByte();
             if (ReflectionCache<TransactionAttributeType>.CreateInstance(type) is not TransactionAttribute attribute)
                 throw new FormatException();
-            attribute.DeserializeWithoutType(reader);
+            attribute.DeserializeWithoutType(ref reader);
             return attribute;
         }
 
         /// <summary>
-        /// Deserializes the <see cref="TransactionAttribute"/> object from a <see cref="BinaryReader"/>.
+        /// Deserializes the <see cref="TransactionAttribute"/> object from a <see cref="MemoryReader"/>.
         /// </summary>
-        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
-        protected abstract void DeserializeWithoutType(BinaryReader reader);
+        /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
+        protected abstract void DeserializeWithoutType(ref MemoryReader reader);
 
         /// <summary>
         /// Converts the attribute to a JSON object.

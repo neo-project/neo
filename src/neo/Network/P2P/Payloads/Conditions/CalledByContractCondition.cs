@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -27,7 +27,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public override int Size => base.Size + UInt160.Length;
         public override WitnessConditionType Type => WitnessConditionType.CalledByContract;
 
-        protected override void DeserializeWithoutType(BinaryReader reader, int maxNestDepth)
+        protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth)
         {
             Hash = reader.ReadSerializable<UInt160>();
         }

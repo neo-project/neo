@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -36,12 +36,12 @@ namespace Neo.Network.P2P.Payloads
 
         int ISerializable.Size => sizeof(WitnessRuleAction) + Condition.Size;
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(ref MemoryReader reader)
         {
             Action = (WitnessRuleAction)reader.ReadByte();
             if (Action != WitnessRuleAction.Allow && Action != WitnessRuleAction.Deny)
                 throw new FormatException();
-            Condition = WitnessCondition.DeserializeFrom(reader, WitnessCondition.MaxNestingDepth);
+            Condition = WitnessCondition.DeserializeFrom(ref reader, WitnessCondition.MaxNestingDepth);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

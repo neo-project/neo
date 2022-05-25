@@ -124,7 +124,7 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Runtime.GetNotifications.
         /// Gets the notifications sent by the specified contract during the execution.
         /// </summary>
-        public static readonly InteropDescriptor System_Runtime_GetNotifications = Register("System.Runtime.GetNotifications", nameof(GetNotifications), 1 << 8, CallFlags.None);
+        public static readonly InteropDescriptor System_Runtime_GetNotifications = Register("System.Runtime.GetNotifications", nameof(GetNotifications), 1 << 12, CallFlags.None);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.GasLeft.
@@ -320,7 +320,7 @@ namespace Neo.SmartContract
         /// <param name="state">The arguments of the event.</param>
         protected internal void SendNotification(UInt160 hash, string eventName, Array state)
         {
-            NotifyEventArgs notification = new(ScriptContainer, hash, eventName, (Array)state.DeepCopy());
+            NotifyEventArgs notification = new(ScriptContainer, hash, eventName, (Array)state.DeepCopy(asImmutable: true));
             Notify?.Invoke(this, notification);
             notifications ??= new List<NotifyEventArgs>();
             notifications.Add(notification);

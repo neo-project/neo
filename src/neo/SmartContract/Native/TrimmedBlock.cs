@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -45,7 +45,7 @@ namespace Neo.SmartContract.Native
 
         public int Size => Header.Size + Hashes.GetVarSize();
 
-        public void Deserialize(BinaryReader reader)
+        public void Deserialize(ref MemoryReader reader)
         {
             Header = reader.ReadSerializable<Header>();
             Hashes = reader.ReadSerializableArray<UInt256>(ushort.MaxValue);
