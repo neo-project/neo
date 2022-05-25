@@ -273,7 +273,7 @@ namespace Neo.SmartContract
             long price;
             if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
             {
-                buffer = Cryptography.Helper.Murmur128(nonceData, random_times++);
+                buffer = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + random_times++);
                 price = 1 << 13;
             }
             else
