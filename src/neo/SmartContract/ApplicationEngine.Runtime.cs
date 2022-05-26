@@ -34,6 +34,8 @@ namespace Neo.SmartContract
         /// </summary>
         public const int MaxNotificationSize = 1024;
 
+        private uint random_times = 0;
+
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.Platform.
         /// Gets the name of the current platform.
@@ -104,7 +106,7 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Runtime.GetRandom.
         /// Gets the random number generated from the VRF.
         /// </summary>
-        public static readonly InteropDescriptor System_Runtime_GetRandom = Register("System.Runtime.GetRandom", nameof(GetRandom), 1 << 4, CallFlags.None);
+        public static readonly InteropDescriptor System_Runtime_GetRandom = Register("System.Runtime.GetRandom", nameof(GetRandom), 0, CallFlags.None);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.Log.
@@ -267,8 +269,20 @@ namespace Neo.SmartContract
         /// <returns>The next random number.</returns>
         protected internal BigInteger GetRandom()
         {
-            nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
-            return new BigInteger(nonceData, isUnsigned: true);
+            byte[] buffer;
+            long price;
+            if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
+            {
+                buffer = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + random_times++);
+                price = 1 << 13;
+            }
+            else
+            {
+                buffer = nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
+                price = 1 << 4;
+            }
+            AddGas(price * ExecFeeFactor);
+            return new BigInteger(buffer, isUnsigned: true);
         }
 
         /// <summary>

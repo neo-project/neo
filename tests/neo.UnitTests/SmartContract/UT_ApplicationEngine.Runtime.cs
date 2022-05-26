@@ -79,10 +79,10 @@ namespace Neo.UnitTests.SmartContract
             var rand_10 = engine_2.GetRandom();
 
             rand_1.Should().Be(BigInteger.Parse("271339657438512451304577787170704246350"));
-            rand_2.Should().Be(BigInteger.Parse("3519468259280385525954723453894821326"));
-            rand_3.Should().Be(BigInteger.Parse("109167038153789065876532298231776118857"));
-            rand_4.Should().Be(BigInteger.Parse("278188388582393629262399165075733096984"));
-            rand_5.Should().Be(BigInteger.Parse("252973537848551880583287107760169066816"));
+            rand_2.Should().Be(BigInteger.Parse("98548189559099075644778613728143131367"));
+            rand_3.Should().Be(BigInteger.Parse("247654688993873392544380234598471205121"));
+            rand_4.Should().Be(BigInteger.Parse("291082758879475329976578097236212073607"));
+            rand_5.Should().Be(BigInteger.Parse("247152297361212656635216876565962360375"));
 
             rand_1.Should().Be(rand_6);
             rand_2.Should().Be(rand_7);
@@ -126,10 +126,10 @@ namespace Neo.UnitTests.SmartContract
             var rand_10 = engine_2.GetRandom();
 
             rand_1.Should().Be(BigInteger.Parse("271339657438512451304577787170704246350"));
-            rand_2.Should().Be(BigInteger.Parse("3519468259280385525954723453894821326"));
-            rand_3.Should().Be(BigInteger.Parse("109167038153789065876532298231776118857"));
-            rand_4.Should().Be(BigInteger.Parse("278188388582393629262399165075733096984"));
-            rand_5.Should().Be(BigInteger.Parse("252973537848551880583287107760169066816"));
+            rand_2.Should().Be(BigInteger.Parse("98548189559099075644778613728143131367"));
+            rand_3.Should().Be(BigInteger.Parse("247654688993873392544380234598471205121"));
+            rand_4.Should().Be(BigInteger.Parse("291082758879475329976578097236212073607"));
+            rand_5.Should().Be(BigInteger.Parse("247152297361212656635216876565962360375"));
 
             rand_1.Should().NotBe(rand_6);
             rand_2.Should().NotBe(rand_7);
