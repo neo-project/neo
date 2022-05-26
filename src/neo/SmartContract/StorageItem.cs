@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -11,7 +11,6 @@
 using Neo.IO;
 using Neo.VM;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 
@@ -22,7 +21,7 @@ namespace Neo.SmartContract
     /// </summary>
     public class StorageItem : ISerializable
     {
-        private byte[] value;
+        private ReadOnlyMemory<byte> value;
         private object cache;
 
         public int Size => Value.GetVarSize();
@@ -30,16 +29,15 @@ namespace Neo.SmartContract
         /// <summary>
         /// The byte array value of the <see cref="StorageItem"/>.
         /// </summary>
-        public byte[] Value
+        public ReadOnlyMemory<byte> Value
         {
             get
             {
-                return value ??= cache switch
+                return !value.IsEmpty ? value : value = cache switch
                 {
                     BigInteger bi => bi.ToByteArrayStandard(),
                     IInteroperable interoperable => BinarySerializer.Serialize(interoperable.ToStackItem(null), 1024 * 1024),
-                    IReadOnlyCollection<ISerializable> list => list.ToByteArray(),
-                    null => null,
+                    null => ReadOnlyMemory<byte>.Empty,
                     _ => throw new InvalidCastException()
                 };
             }
@@ -97,15 +95,16 @@ namespace Neo.SmartContract
         /// <returns>The created <see cref="StorageItem"/>.</returns>
         public StorageItem Clone()
         {
-            return new StorageItem
+            return new()
             {
-                Value = Value
+                value = value,
+                cache = cache is IInteroperable interoperable ? interoperable.Clone() : cache
             };
         }
 
-        public void Deserialize(BinaryReader reader)
+        public void Deserialize(ref MemoryReader reader)
         {
-            Value = reader.ReadBytes((int)(reader.BaseStream.Length));
+            Value = reader.ReadToEnd();
         }
 
         /// <summary>
@@ -114,7 +113,18 @@ namespace Neo.SmartContract
         /// <param name="replica">The instance to be copied.</param>
         public void FromReplica(StorageItem replica)
         {
-            Value = replica.Value;
+            value = replica.value;
+            if (replica.cache is IInteroperable interoperable)
+            {
+                if (cache?.GetType() == interoperable.GetType())
+                    ((IInteroperable)cache).FromReplica(interoperable);
+                else
+                    cache = interoperable.Clone();
+            }
+            else
+            {
+                cache = replica.cache;
+            }
         }
 
         /// <summary>
@@ -134,21 +144,9 @@ namespace Neo.SmartContract
             return (T)cache;
         }
 
-        /// <summary>
-        /// Gets a list of <see cref="ISerializable"/> from the storage.
-        /// </summary>
-        /// <typeparam name="T">The type of the <see cref="ISerializable"/>.</typeparam>
-        /// <returns>The list of the <see cref="ISerializable"/>.</returns>
-        public List<T> GetSerializableList<T>() where T : ISerializable, new()
-        {
-            cache ??= new List<T>(value.AsSerializableArray<T>());
-            value = null;
-            return (List<T>)cache;
-        }
-
         public void Serialize(BinaryWriter writer)
         {
-            writer.Write(Value);
+            writer.Write(Value.Span);
         }
 
         /// <summary>
@@ -163,7 +161,7 @@ namespace Neo.SmartContract
 
         public static implicit operator BigInteger(StorageItem item)
         {
-            item.cache ??= new BigInteger(item.value);
+            item.cache ??= new BigInteger(item.value.Span);
             return (BigInteger)item.cache;
         }
     }

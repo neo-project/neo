@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -11,12 +11,13 @@
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Wallets;
+using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Modes;
+using Org.BouncyCastle.Crypto.Parameters;
 using System;
 using System.Buffers.Binary;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using static Neo.Helper;
@@ -29,6 +30,7 @@ namespace Neo.Cryptography
     /// </summary>
     public static class Helper
     {
+        private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
         /// <summary>
         /// Computes the hash value for the specified byte array using the ripemd160 algorithm.
         /// </summary>
@@ -64,6 +66,20 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
+        /// Computes the hash value for the specified byte array using the murmur algorithm.
+        /// </summary>
+        /// <param name="value">The input to compute the hash code for.</param>
+        /// <param name="seed">The seed used by the murmur algorithm.</param>
+        /// <returns>The computed hash code.</returns>
+        public static uint Murmur32(this ReadOnlySpan<byte> value, uint seed)
+        {
+            Span<byte> buffer = stackalloc byte[sizeof(uint)];
+            using Murmur32 murmur = new(seed);
+            murmur.TryComputeHash(value, buffer, out _);
+            return BinaryPrimitives.ReadUInt32LittleEndian(buffer);
+        }
+
+        /// <summary>
         /// Computes the 128-bit hash value for the specified byte array using the murmur algorithm.
         /// </summary>
         /// <param name="value">The input to compute the hash code for.</param>
@@ -73,6 +89,20 @@ namespace Neo.Cryptography
         {
             using Murmur128 murmur = new(seed);
             return murmur.ComputeHash(value);
+        }
+
+        /// <summary>
+        /// Computes the 128-bit hash value for the specified byte array using the murmur algorithm.
+        /// </summary>
+        /// <param name="value">The input to compute the hash code for.</param>
+        /// <param name="seed">The seed used by the murmur algorithm.</param>
+        /// <returns>The computed hash code.</returns>
+        public static byte[] Murmur128(this ReadOnlySpan<byte> value, uint seed)
+        {
+            byte[] buffer = GC.AllocateUninitializedArray<byte>(16);
+            using Murmur128 murmur = new(seed);
+            murmur.TryComputeHash(value, buffer, out _);
+            return buffer;
         }
 
         /// <summary>
@@ -125,10 +155,26 @@ namespace Neo.Cryptography
         public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[] associatedData = null)
         {
             if (nonce.Length != 12) throw new ArgumentOutOfRangeException(nameof(nonce));
-            var cipherBytes = new byte[plainData.Length];
             var tag = new byte[16];
-            using var cipher = new AesGcm(key);
-            cipher.Encrypt(nonce, plainData, cipherBytes, tag, associatedData);
+            var cipherBytes = new byte[plainData.Length];
+            if (!IsOSX)
+            {
+                using var cipher = new AesGcm(key);
+                cipher.Encrypt(nonce, plainData, cipherBytes, tag, associatedData);
+            }
+            else
+            {
+                var cipher = new GcmBlockCipher(new AesEngine());
+                var parameters = new AeadParameters(
+                    new KeyParameter(key),
+                    128, //128 = 16 * 8 => (tag size * 8)
+                    nonce,
+                    associatedData);
+                cipher.Init(true, parameters);
+                cipherBytes = new byte[cipher.GetOutputSize(plainData.Length)];
+                var length = cipher.ProcessBytes(plainData, 0, plainData.Length, cipherBytes, 0);
+                cipher.DoFinal(cipherBytes, length);
+            }
             return Concat(nonce, cipherBytes, tag);
         }
 
@@ -139,8 +185,24 @@ namespace Neo.Cryptography
             var cipherBytes = encrypted[12..^16];
             var tag = encrypted[^16..];
             var decryptedData = new byte[cipherBytes.Length];
-            using var cipher = new AesGcm(key);
-            cipher.Decrypt(nonce, cipherBytes, tag, decryptedData, associatedData);
+            if (!IsOSX)
+            {
+                using var cipher = new AesGcm(key);
+                cipher.Decrypt(nonce, cipherBytes, tag, decryptedData, associatedData);
+            }
+            else
+            {
+                var cipher = new GcmBlockCipher(new AesEngine());
+                var parameters = new AeadParameters(
+                    new KeyParameter(key),
+                    128,  //128 = 16 * 8 => (tag size * 8)
+                    nonce.ToArray(),
+                    associatedData);
+                cipher.Init(false, parameters);
+                decryptedData = new byte[cipher.GetOutputSize(cipherBytes.Length)];
+                var length = cipher.ProcessBytes(cipherBytes.ToArray(), 0, cipherBytes.Length, decryptedData, 0);
+                cipher.DoFinal(decryptedData, length);
+            }
             return decryptedData;
         }
 
@@ -187,51 +249,6 @@ namespace Neo.Cryptography
             Array.Clear(passwordBytes, 0, passwordBytes.Length);
             Array.Clear(passwordHash, 0, passwordHash.Length);
             return passwordHash2;
-        }
-
-        internal static byte[] ToAesKey(this SecureString password)
-        {
-            using SHA256 sha256 = SHA256.Create();
-            byte[] passwordBytes = password.ToArray();
-            byte[] passwordHash = sha256.ComputeHash(passwordBytes);
-            byte[] passwordHash2 = sha256.ComputeHash(passwordHash);
-            Array.Clear(passwordBytes, 0, passwordBytes.Length);
-            Array.Clear(passwordHash, 0, passwordHash.Length);
-            return passwordHash2;
-        }
-
-        internal static byte[] ToArray(this SecureString s)
-        {
-            if (s == null)
-                throw new NullReferenceException();
-            if (s.Length == 0)
-                return Array.Empty<byte>();
-            List<byte> result = new();
-            IntPtr ptr = SecureStringMarshal.SecureStringToGlobalAllocAnsi(s);
-            try
-            {
-                int i = 0;
-                do
-                {
-                    byte b = Marshal.ReadByte(ptr, i++);
-                    if (b == 0)
-                        break;
-                    result.Add(b);
-                } while (true);
-            }
-            finally
-            {
-                Marshal.ZeroFreeGlobalAllocAnsi(ptr);
-            }
-            return result.ToArray();
-        }
-
-        internal static byte[] ToByteArray(this IntPtr data, int length)
-        {
-            if (data == IntPtr.Zero) return null;
-            byte[] buffer = new byte[length];
-            Marshal.Copy(data, buffer, 0, length);
-            return buffer;
         }
     }
 }

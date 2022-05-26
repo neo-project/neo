@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -32,10 +32,10 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public override int Size => base.Size + Expressions.GetVarSize();
         public override WitnessConditionType Type => WitnessConditionType.Or;
 
-        protected override void DeserializeWithoutType(BinaryReader reader, int maxNestDepth)
+        protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth)
         {
             if (maxNestDepth <= 0) throw new FormatException();
-            Expressions = DeserializeConditions(reader, maxNestDepth - 1);
+            Expressions = DeserializeConditions(ref reader, maxNestDepth - 1);
             if (Expressions.Length == 0) throw new FormatException();
         }
 

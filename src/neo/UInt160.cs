@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -68,7 +68,7 @@ namespace Neo
             return value1.CompareTo(other.value1);
         }
 
-        public void Deserialize(BinaryReader reader)
+        public void Deserialize(ref MemoryReader reader)
         {
             value1 = reader.ReadUInt64();
             value2 = reader.ReadUInt64();

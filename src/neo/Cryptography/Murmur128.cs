@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -49,12 +49,18 @@ namespace Neo.Cryptography
 
         protected override void HashCore(byte[] array, int ibStart, int cbSize)
         {
+            HashCore(array.AsSpan(ibStart, cbSize));
+        }
+
+        protected override void HashCore(ReadOnlySpan<byte> source)
+        {
+            int cbSize = source.Length;
             length += cbSize;
             int remainder = cbSize & 15;
-            int alignedLength = ibStart + (cbSize - remainder);
-            for (int i = ibStart; i < alignedLength; i += 16)
+            int alignedLength = cbSize - remainder;
+            for (int i = 0; i < alignedLength; i += 16)
             {
-                ulong k1 = BinaryPrimitives.ReadUInt64LittleEndian(array.AsSpan(i));
+                ulong k1 = BinaryPrimitives.ReadUInt64LittleEndian(source[i..]);
                 k1 *= c1;
                 k1 = BitOperations.RotateLeft(k1, r1);
                 k1 *= c2;
@@ -63,7 +69,7 @@ namespace Neo.Cryptography
                 H1 += H2;
                 H1 = H1 * m + n1;
 
-                ulong k2 = BinaryPrimitives.ReadUInt64LittleEndian(array.AsSpan(i + 8));
+                ulong k2 = BinaryPrimitives.ReadUInt64LittleEndian(source[(i + 8)..]);
                 k2 *= c2;
                 k2 = BitOperations.RotateLeft(k2, r2);
                 k2 *= c1;
@@ -78,21 +84,21 @@ namespace Neo.Cryptography
                 ulong remainingBytesL = 0, remainingBytesH = 0;
                 switch (remainder)
                 {
-                    case 15: remainingBytesH ^= (ulong)array[alignedLength + 14] << 48; goto case 14;
-                    case 14: remainingBytesH ^= (ulong)array[alignedLength + 13] << 40; goto case 13;
-                    case 13: remainingBytesH ^= (ulong)array[alignedLength + 12] << 32; goto case 12;
-                    case 12: remainingBytesH ^= (ulong)array[alignedLength + 11] << 24; goto case 11;
-                    case 11: remainingBytesH ^= (ulong)array[alignedLength + 10] << 16; goto case 10;
-                    case 10: remainingBytesH ^= (ulong)array[alignedLength + 9] << 8; goto case 9;
-                    case 9: remainingBytesH ^= (ulong)array[alignedLength + 8] << 0; goto case 8;
-                    case 8: remainingBytesL ^= (ulong)array[alignedLength + 7] << 56; goto case 7;
-                    case 7: remainingBytesL ^= (ulong)array[alignedLength + 6] << 48; goto case 6;
-                    case 6: remainingBytesL ^= (ulong)array[alignedLength + 5] << 40; goto case 5;
-                    case 5: remainingBytesL ^= (ulong)array[alignedLength + 4] << 32; goto case 4;
-                    case 4: remainingBytesL ^= (ulong)array[alignedLength + 3] << 24; goto case 3;
-                    case 3: remainingBytesL ^= (ulong)array[alignedLength + 2] << 16; goto case 2;
-                    case 2: remainingBytesL ^= (ulong)array[alignedLength + 1] << 8; goto case 1;
-                    case 1: remainingBytesL ^= (ulong)array[alignedLength] << 0; break;
+                    case 15: remainingBytesH ^= (ulong)source[alignedLength + 14] << 48; goto case 14;
+                    case 14: remainingBytesH ^= (ulong)source[alignedLength + 13] << 40; goto case 13;
+                    case 13: remainingBytesH ^= (ulong)source[alignedLength + 12] << 32; goto case 12;
+                    case 12: remainingBytesH ^= (ulong)source[alignedLength + 11] << 24; goto case 11;
+                    case 11: remainingBytesH ^= (ulong)source[alignedLength + 10] << 16; goto case 10;
+                    case 10: remainingBytesH ^= (ulong)source[alignedLength + 9] << 8; goto case 9;
+                    case 9: remainingBytesH ^= (ulong)source[alignedLength + 8] << 0; goto case 8;
+                    case 8: remainingBytesL ^= (ulong)source[alignedLength + 7] << 56; goto case 7;
+                    case 7: remainingBytesL ^= (ulong)source[alignedLength + 6] << 48; goto case 6;
+                    case 6: remainingBytesL ^= (ulong)source[alignedLength + 5] << 40; goto case 5;
+                    case 5: remainingBytesL ^= (ulong)source[alignedLength + 4] << 32; goto case 4;
+                    case 4: remainingBytesL ^= (ulong)source[alignedLength + 3] << 24; goto case 3;
+                    case 3: remainingBytesL ^= (ulong)source[alignedLength + 2] << 16; goto case 2;
+                    case 2: remainingBytesL ^= (ulong)source[alignedLength + 1] << 8; goto case 1;
+                    case 1: remainingBytesL ^= (ulong)source[alignedLength] << 0; break;
                 }
 
                 H2 ^= BitOperations.RotateLeft(remainingBytesH * c2, r2) * c1;
@@ -101,6 +107,13 @@ namespace Neo.Cryptography
         }
 
         protected override byte[] HashFinal()
+        {
+            byte[] buffer = GC.AllocateUninitializedArray<byte>(sizeof(ulong) * 2);
+            TryHashFinal(buffer, out _);
+            return buffer;
+        }
+
+        protected override bool TryHashFinal(Span<byte> destination, out int bytesWritten)
         {
             ulong len = (ulong)length;
             H1 ^= len; H2 ^= len;
@@ -114,13 +127,11 @@ namespace Neo.Cryptography
             H1 += H2;
             H2 += H1;
 
-            var buffer = new byte[sizeof(ulong) * 2];
-            Span<byte> bytes = buffer;
+            if (BinaryPrimitives.TryWriteUInt64LittleEndian(destination, H1))
+                BinaryPrimitives.TryWriteUInt64LittleEndian(destination[sizeof(ulong)..], H2);
 
-            BinaryPrimitives.WriteUInt64LittleEndian(bytes, H1);
-            BinaryPrimitives.WriteUInt64LittleEndian(bytes[sizeof(ulong)..], H2);
-
-            return buffer;
+            bytesWritten = Math.Min(destination.Length, sizeof(ulong) * 2);
+            return bytesWritten == sizeof(ulong) * 2;
         }
 
         public override void Initialize()

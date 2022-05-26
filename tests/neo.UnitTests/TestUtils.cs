@@ -9,7 +9,6 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets.NEP6;
 using System;
-using System.IO;
 using System.Linq;
 
 namespace Neo.UnitTests
@@ -88,7 +87,7 @@ namespace Neo.UnitTests
             return array;
         }
 
-        public static NEP6Wallet GenerateTestWallet()
+        public static NEP6Wallet GenerateTestWallet(string password)
         {
             JObject wallet = new JObject();
             wallet["name"] = "noname";
@@ -97,7 +96,7 @@ namespace Neo.UnitTests
             wallet["accounts"] = new JArray();
             wallet["extra"] = null;
             wallet.ToString().Should().Be("{\"name\":\"noname\",\"version\":\"1.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}");
-            return new NEP6Wallet(null, ProtocolSettings.Default, wallet);
+            return new NEP6Wallet(null, password, ProtocolSettings.Default, wallet);
         }
 
         public static Transaction GetTransaction(UInt160 sender)
@@ -121,22 +120,39 @@ namespace Neo.UnitTests
 
         internal static ContractState GetContract(string method = "test", int parametersCount = 0)
         {
+            NefFile nef = new()
+            {
+                Compiler = "",
+                Source = "",
+                Tokens = Array.Empty<MethodToken>(),
+                Script = new byte[] { 0x01, 0x01, 0x01, 0x01 }
+            };
+            nef.CheckSum = NefFile.ComputeChecksum(nef);
             return new ContractState
             {
                 Id = 0x43000000,
-                Nef = new NefFile { Script = new byte[] { 0x01, 0x01, 0x01, 0x01 } },
-                Hash = new byte[] { 0x01, 0x01, 0x01, 0x01 }.ToScriptHash(),
+                Nef = nef,
+                Hash = nef.Script.Span.ToScriptHash(),
                 Manifest = CreateManifest(method, ContractParameterType.Any, Enumerable.Repeat(ContractParameterType.Any, parametersCount).ToArray())
             };
         }
 
-        internal static ContractState GetContract(byte[] script)
+        internal static ContractState GetContract(byte[] script, ContractManifest manifest = null)
         {
+            NefFile nef = new()
+            {
+                Compiler = "",
+                Source = "",
+                Tokens = Array.Empty<MethodToken>(),
+                Script = script
+            };
+            nef.CheckSum = NefFile.ComputeChecksum(nef);
             return new ContractState
             {
                 Id = 1,
-                Nef = new NefFile { Script = script },
-                Manifest = CreateDefaultManifest()
+                Hash = script.ToScriptHash(),
+                Nef = nef,
+                Manifest = manifest ?? CreateDefaultManifest()
             };
         }
 
@@ -225,13 +241,14 @@ namespace Neo.UnitTests
 
         public static T CopyMsgBySerialization<T>(T serializableObj, T newObj) where T : ISerializable
         {
-            using (MemoryStream ms = new MemoryStream(serializableObj.ToArray(), false))
-            using (BinaryReader reader = new BinaryReader(ms))
-            {
-                newObj.Deserialize(reader);
-            }
-
+            MemoryReader reader = new(serializableObj.ToArray());
+            newObj.Deserialize(ref reader);
             return newObj;
+        }
+
+        public static bool EqualsTo(this StorageItem item, StorageItem other)
+        {
+            return item.Value.Span.SequenceEqual(other.Value.Span);
         }
     }
 }

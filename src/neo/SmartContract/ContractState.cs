@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -13,6 +13,7 @@ using Neo.IO.Json;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
 using System.Linq;
 using Array = Neo.VM.Types.Array;
 
@@ -51,7 +52,29 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script of the contract.
         /// </summary>
-        public byte[] Script => Nef.Script;
+        public ReadOnlyMemory<byte> Script => Nef.Script;
+
+        IInteroperable IInteroperable.Clone()
+        {
+            return new ContractState
+            {
+                Id = Id,
+                UpdateCounter = UpdateCounter,
+                Hash = Hash,
+                Nef = Nef,
+                Manifest = Manifest
+            };
+        }
+
+        void IInteroperable.FromReplica(IInteroperable replica)
+        {
+            ContractState from = (ContractState)replica;
+            Id = from.Id;
+            UpdateCounter = from.UpdateCounter;
+            Hash = from.Hash;
+            Nef = from.Nef;
+            Manifest = from.Manifest;
+        }
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
@@ -59,7 +82,7 @@ namespace Neo.SmartContract
             Id = (int)array[0].GetInteger();
             UpdateCounter = (ushort)array[1].GetInteger();
             Hash = new UInt160(array[2].GetSpan());
-            Nef = array[3].GetSpan().AsSerializable<NefFile>();
+            Nef = ((ByteString)array[3]).Memory.AsSerializable<NefFile>();
             Manifest = array[4].ToInteroperable<ContractManifest>();
         }
 

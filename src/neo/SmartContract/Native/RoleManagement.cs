@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -8,7 +8,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Persistence;
@@ -95,17 +94,16 @@ namespace Neo.SmartContract.Native
             engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, new StackItem[] { (int)role, engine.PersistingBlock.Index }));
         }
 
-        private class NodeList : List<ECPoint>, IInteroperable
+        private class NodeList : InteroperableList<ECPoint>
         {
-            public void FromStackItem(StackItem stackItem)
+            protected override ECPoint ElementFromStackItem(StackItem item)
             {
-                foreach (StackItem item in (VM.Types.Array)stackItem)
-                    Add(item.GetSpan().AsSerializable<ECPoint>());
+                return ECPoint.DecodePoint(item.GetSpan(), ECCurve.Secp256r1);
             }
 
-            public StackItem ToStackItem(ReferenceCounter referenceCounter)
+            protected override StackItem ElementToStackItem(ECPoint element, ReferenceCounter referenceCounter)
             {
-                return new VM.Types.Array(referenceCounter, this.Select(p => (StackItem)p.ToArray()));
+                return element.ToArray();
             }
         }
     }

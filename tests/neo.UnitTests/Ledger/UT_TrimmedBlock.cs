@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.SmartContract;
@@ -69,8 +70,8 @@ namespace Neo.UnitTests.Ledger
             block.MerkleRoot.Should().Be(UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"));
             block.Transactions.Length.Should().Be(2);
             block.Transactions[0].Hash.Should().Be(tx1.Hash);
-            block.Witness.InvocationScript.ToHexString().Should().Be(tblock.Header.Witness.InvocationScript.ToHexString());
-            block.Witness.VerificationScript.ToHexString().Should().Be(tblock.Header.Witness.VerificationScript.ToHexString());
+            block.Witness.InvocationScript.Span.ToHexString().Should().Be(tblock.Header.Witness.InvocationScript.Span.ToHexString());
+            block.Witness.VerificationScript.Span.ToHexString().Should().Be(tblock.Header.Witness.VerificationScript.Span.ToHexString());
         }
 
         [TestMethod]
@@ -98,11 +99,10 @@ namespace Neo.UnitTests.Ledger
             var newBlock = new TrimmedBlock();
             using (MemoryStream ms = new(1024))
             using (BinaryWriter writer = new(ms))
-            using (BinaryReader reader = new(ms))
             {
                 tblock.Serialize(writer);
-                ms.Seek(0, SeekOrigin.Begin);
-                newBlock.Deserialize(reader);
+                MemoryReader reader = new(ms.ToArray());
+                newBlock.Deserialize(ref reader);
             }
             tblock.Hashes.Length.Should().Be(newBlock.Hashes.Length);
             tblock.Header.ToJson(ProtocolSettings.Default).ToString().Should().Be(newBlock.Header.ToJson(ProtocolSettings.Default).ToString());
