@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -10,11 +10,12 @@
 
 using Akka.Actor;
 using Akka.Event;
-using Neo.Plugins;
 using System.Text;
 
 namespace Neo
 {
+    public delegate void LogEventHandler(string source, LogLevel level, object message);
+
     /// <summary>
     /// A utility class that provides common functions.
     /// </summary>
@@ -28,6 +29,8 @@ namespace Neo
                 Receive<LogEvent>(e => Log(e.LogSource, (LogLevel)e.LogLevel(), e.Message));
             }
         }
+
+        public static event LogEventHandler Logging;
 
         /// <summary>
         /// A strict UTF8 encoding used in NEO system.
@@ -49,8 +52,7 @@ namespace Neo
         /// <param name="message">The message of the log.</param>
         public static void Log(string source, LogLevel level, object message)
         {
-            foreach (ILogPlugin plugin in Plugin.Loggers)
-                plugin.Log(source, level, message);
+            Logging?.Invoke(source, level, message);
         }
     }
 }
