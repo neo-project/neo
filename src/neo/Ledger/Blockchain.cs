@@ -15,7 +15,6 @@ using Neo.IO.Actors;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -27,6 +26,9 @@ using System.Linq;
 
 namespace Neo.Ledger
 {
+    public delegate void CommittingHandler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList);
+    public delegate void CommittedHandler(NeoSystem system, Block block);
+
     /// <summary>
     /// Actor used to verify and relay <see cref="IInventory"/>.
     /// </summary>
@@ -113,6 +115,9 @@ namespace Neo.Ledger
 
         internal class Initialize { }
         private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new(); public HashSet<IActorRef> Nodes = new(); }
+
+        public static event CommittingHandler Committing;
+        public static event CommittedHandler Committed;
 
         private readonly static Script onPersistScript, postPersistScript;
         private const int MaxTxToReverifyPerIdle = 10;
@@ -433,29 +438,10 @@ namespace Neo.Ledger
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
-                foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
-                    plugin.OnPersist(system, block, snapshot, all_application_executed);
+                Committing?.Invoke(system, block, snapshot, all_application_executed);
                 snapshot.Commit();
             }
-            List<Exception> commitExceptions = null;
-            foreach (IPersistencePlugin plugin in Plugin.PersistencePlugins)
-            {
-                try
-                {
-                    plugin.OnCommit(system, block);
-                }
-                catch (Exception ex)
-                {
-                    if (plugin.ShouldThrowExceptionFromCommit(ex))
-                    {
-                        if (commitExceptions == null)
-                            commitExceptions = new List<Exception>();
-
-                        commitExceptions.Add(ex);
-                    }
-                }
-            }
-            if (commitExceptions != null) throw new AggregateException(commitExceptions);
+            Committed?.Invoke(system, block);
             system.MemPool.UpdatePoolForBlockPersisted(block, system.StoreView);
             extensibleWitnessWhiteList = null;
             block_cache.Remove(block.PrevHash);
