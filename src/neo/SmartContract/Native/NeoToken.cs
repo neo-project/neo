@@ -94,17 +94,17 @@ namespace Neo.SmartContract.Native
                         },
                         new ContractParameterDefinition()
                         {
-                            Name = "voteTo",
+                            Name = "from",
                             Type = ContractParameterType.PublicKey
                         },
                         new ContractParameterDefinition()
                         {
-                            Name = "balance",
-                            Type = ContractParameterType.Integer
+                            Name = "to",
+                            Type = ContractParameterType.PublicKey
                         },
                         new ContractParameterDefinition()
                         {
-                            Name = "votes",
+                            Name = "amount",
                             Type = ContractParameterType.Integer
                         }
                     }
@@ -405,13 +405,14 @@ namespace Neo.SmartContract.Native
                 state_validator.Votes -= state_account.Balance;
                 CheckCandidate(engine.Snapshot, state_account.VoteTo, state_validator);
             }
+            ECPoint from = state_account.VoteTo;
             state_account.VoteTo = voteTo;
             if (validator_new != null)
             {
                 validator_new.Votes += state_account.Balance;
             }
             engine.SendNotification(Hash, "Vote",
-                new VM.Types.Array(engine.ReferenceCounter) { account.ToArray(), voteTo?.ToArray() ?? StackItem.Null, state_account.Balance, validator_new?.Votes ?? StackItem.Null });
+                new VM.Types.Array(engine.ReferenceCounter) { account.ToArray(), from?.ToArray() ?? StackItem.Null, voteTo?.ToArray() ?? StackItem.Null, validator_new?.Votes ?? Integer.Zero });
             if (gasDistribution is not null)
                 await GAS.Mint(engine, gasDistribution.Account, gasDistribution.Amount, true);
             return true;
