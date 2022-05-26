@@ -381,6 +381,7 @@ namespace Neo.SmartContract.Native
             if (!engine.CheckWitnessInternal(account)) return false;
             NeoAccountState state_account = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Account).Add(account))?.GetInteroperable<NeoAccountState>();
             if (state_account is null) return false;
+            if (state_account.Balance == 0) return false;
             CandidateState validator_new = null;
             if (voteTo != null)
             {
