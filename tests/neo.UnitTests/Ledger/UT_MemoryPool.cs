@@ -6,7 +6,6 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System;
@@ -18,13 +17,6 @@ using System.Threading.Tasks;
 
 namespace Neo.UnitTests.Ledger
 {
-    internal class TestIMemoryPoolTxObserverPlugin : Plugin, IMemoryPoolTxObserverPlugin
-    {
-        protected override void Configure() { }
-        public void TransactionAdded(NeoSystem system, Transaction tx) { }
-        public void TransactionsRemoved(NeoSystem system, MemoryPoolTxRemovalReason reason, IEnumerable<Transaction> transactions) { }
-    }
-
     [TestClass]
     public class UT_MemoryPool : TestKit
     {
@@ -34,7 +26,6 @@ namespace Neo.UnitTests.Ledger
         private const byte Prefix_FeePerByte = 10;
         private readonly UInt160 senderAccount = UInt160.Zero;
         private MemoryPool _unit;
-        private TestIMemoryPoolTxObserverPlugin plugin;
 
         [ClassInitialize]
         public static void TestSetup(TestContext ctx)
@@ -62,13 +53,6 @@ namespace Neo.UnitTests.Ledger
             _unit.VerifiedCount.Should().Be(0);
             _unit.UnVerifiedCount.Should().Be(0);
             _unit.Count.Should().Be(0);
-            plugin = new TestIMemoryPoolTxObserverPlugin();
-        }
-
-        [TestCleanup]
-        public void CleanUp()
-        {
-            Plugin.TxObserverPlugins.Remove(plugin);
         }
 
         private static long LongRandom(long min, long max, Random rand)

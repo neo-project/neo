@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -12,7 +12,6 @@ using Akka.Util.Internal;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.Plugins;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -27,6 +26,9 @@ namespace Neo.Ledger
     /// </summary>
     public class MemoryPool : IReadOnlyCollection<Transaction>
     {
+        public event EventHandler<Transaction> TransactionAdded;
+        public event EventHandler<TransactionRemovedEventArgs> TransactionRemoved;
+
         // Allow a reverified transaction to be rebroadcasted if it has been this many block times since last broadcast.
         private const int BlocksTillRebroadcast = 10;
         private int RebroadcastMultiplierThreshold => Capacity / 10;
@@ -306,12 +308,14 @@ namespace Neo.Ledger
                 _txRwLock.ExitWriteLock();
             }
 
-            foreach (IMemoryPoolTxObserverPlugin plugin in Plugin.TxObserverPlugins)
-            {
-                plugin.TransactionAdded(_system, poolItem.Tx);
-                if (removedTransactions != null)
-                    plugin.TransactionsRemoved(_system, MemoryPoolTxRemovalReason.CapacityExceeded, removedTransactions);
-            }
+            TransactionAdded?.Invoke(this, poolItem.Tx);
+            if (removedTransactions != null)
+                foreach (Transaction removed in removedTransactions)
+                    TransactionRemoved?.Invoke(this, new()
+                    {
+                        Transaction = removed,
+                        Reason = TransactionRemovalReason.CapacityExceeded
+                    });
 
             if (!_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.OutOfMemory;
             return VerifyResult.Succeed;
@@ -476,8 +480,12 @@ namespace Neo.Ledger
             }
 
             var invalidTransactions = invalidItems.Select(p => p.Tx).ToArray();
-            foreach (IMemoryPoolTxObserverPlugin plugin in Plugin.TxObserverPlugins)
-                plugin.TransactionsRemoved(_system, MemoryPoolTxRemovalReason.NoLongerValid, invalidTransactions);
+            foreach (Transaction tx in invalidTransactions)
+                TransactionRemoved?.Invoke(this, new()
+                {
+                    Transaction = tx,
+                    Reason = TransactionRemovalReason.NoLongerValid
+                });
 
             return reverifiedItems.Count;
         }
