@@ -413,7 +413,7 @@ namespace Neo.SmartContract.Native
                 validator_new.Votes += state_account.Balance;
             }
             engine.SendNotification(Hash, "Vote",
-                new VM.Types.Array(engine.ReferenceCounter) { account.ToArray(), from?.ToArray() ?? StackItem.Null, voteTo?.ToArray() ?? StackItem.Null, validator_new?.Votes ?? Integer.Zero });
+                new VM.Types.Array(engine.ReferenceCounter) { account.ToArray(), from?.ToArray() ?? StackItem.Null, voteTo?.ToArray() ?? StackItem.Null, state_account.Balance });
             if (gasDistribution is not null)
                 await GAS.Mint(engine, gasDistribution.Account, gasDistribution.Amount, true);
             return true;
