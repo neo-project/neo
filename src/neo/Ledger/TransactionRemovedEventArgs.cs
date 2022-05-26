@@ -9,6 +9,7 @@
 // modifications are permitted.
 
 using Neo.Network.P2P.Payloads;
+using System.Collections.Generic;
 
 namespace Neo.Ledger;
 
@@ -18,9 +19,9 @@ namespace Neo.Ledger;
 public sealed class TransactionRemovedEventArgs
 {
     /// <summary>
-    /// The <see cref="Transaction"/> that is being removed.
+    /// The <see cref="Transaction"/>s that is being removed.
     /// </summary>
-    public Transaction Transaction { get; init; }
+    public IReadOnlyCollection<Transaction> Transactions { get; init; }
 
     /// <summary>
     /// The reason a transaction was removed.

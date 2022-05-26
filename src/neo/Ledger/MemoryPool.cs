@@ -310,12 +310,11 @@ namespace Neo.Ledger
 
             TransactionAdded?.Invoke(this, poolItem.Tx);
             if (removedTransactions != null)
-                foreach (Transaction removed in removedTransactions)
-                    TransactionRemoved?.Invoke(this, new()
-                    {
-                        Transaction = removed,
-                        Reason = TransactionRemovalReason.CapacityExceeded
-                    });
+                TransactionRemoved?.Invoke(this, new()
+                {
+                    Transactions = removedTransactions,
+                    Reason = TransactionRemovalReason.CapacityExceeded
+                });
 
             if (!_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.OutOfMemory;
             return VerifyResult.Succeed;
@@ -480,12 +479,11 @@ namespace Neo.Ledger
             }
 
             var invalidTransactions = invalidItems.Select(p => p.Tx).ToArray();
-            foreach (Transaction tx in invalidTransactions)
-                TransactionRemoved?.Invoke(this, new()
-                {
-                    Transaction = tx,
-                    Reason = TransactionRemovalReason.NoLongerValid
-                });
+            TransactionRemoved?.Invoke(this, new()
+            {
+                Transactions = invalidTransactions,
+                Reason = TransactionRemovalReason.NoLongerValid
+            });
 
             return reverifiedItems.Count;
         }
