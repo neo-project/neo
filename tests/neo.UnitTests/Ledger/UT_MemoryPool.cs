@@ -516,10 +516,8 @@ namespace Neo.UnitTests.Ledger
             {
                 Value = feePerByte
             };
-            var key1 = CreateStorageKey(Prefix_MaxTransactionsPerBlock);
-            var key2 = CreateStorageKey(Prefix_FeePerByte);
-            key1.Id = NativeContract.Policy.Id;
-            key2.Id = NativeContract.Policy.Id;
+            var key1 = CreateStorageKey(NativeContract.Policy.Id, Prefix_MaxTransactionsPerBlock);
+            var key2 = CreateStorageKey(NativeContract.Policy.Id, Prefix_FeePerByte);
             snapshot.Add(key1, item1);
             snapshot.Add(key2, item2);
 
@@ -543,14 +541,14 @@ namespace Neo.UnitTests.Ledger
             _unit.VerifiedCount.Should().Be(0);
         }
 
-        public static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
+        public static StorageKey CreateStorageKey(int id, byte prefix, byte[] key = null)
         {
             byte[] buffer = GC.AllocateUninitializedArray<byte>(sizeof(byte) + (key?.Length ?? 0));
             buffer[0] = prefix;
             key?.CopyTo(buffer.AsSpan(1));
             return new()
             {
-                Id = 0,
+                Id = id,
                 Key = buffer
             };
         }

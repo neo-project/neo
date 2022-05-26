@@ -46,11 +46,10 @@ namespace Neo.UnitTests
             };
             MemoryStream stream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(stream);
-            BinaryReader reader = new BinaryReader(stream);
             contract1.Serialize(writer);
-            stream.Seek(0, SeekOrigin.Begin);
+            MemoryReader reader = new(stream.ToArray());
             VerificationContract contract2 = new VerificationContract();
-            contract2.Deserialize(reader);
+            contract2.Deserialize(ref reader);
             Assert.AreEqual(Encoding.Default.GetString(contract2.Script), Encoding.Default.GetString(contract1.Script));
             Assert.AreEqual(1, contract2.ParameterList.Length);
             Assert.AreEqual(ContractParameterType.Signature, contract2.ParameterList[0]);

@@ -32,6 +32,28 @@ namespace Neo.UnitTests.Network.P2P
         }
 
         [TestMethod]
+        public void Serialize_Deserialize_WithoutPayload()
+        {
+            var msg = Message.Create(MessageCommand.GetAddr);
+            var buffer = msg.ToArray();
+            var copy = buffer.AsSerializable<Message>();
+
+            copy.Command.Should().Be(msg.Command);
+            copy.Flags.Should().Be(msg.Flags);
+            copy.Payload.Should().Be(null);
+        }
+
+        [TestMethod]
+        public void ToArray()
+        {
+            var payload = PingPayload.Create(uint.MaxValue);
+            var msg = Message.Create(MessageCommand.Ping, payload);
+            _ = msg.ToArray();
+
+            msg.Size.Should().Be(payload.Size + 3);
+        }
+
+        [TestMethod]
         public void Serialize_Deserialize_ByteString()
         {
             var payload = PingPayload.Create(uint.MaxValue);
@@ -52,15 +74,10 @@ namespace Neo.UnitTests.Network.P2P
         }
 
         [TestMethod]
-        public void Serialize_Deserialize_WithoutPayload()
+        public void ToArray_WithoutPayload()
         {
             var msg = Message.Create(MessageCommand.GetAddr);
-            var buffer = msg.ToArray();
-            var copy = buffer.AsSerializable<Message>();
-
-            copy.Command.Should().Be(msg.Command);
-            copy.Flags.Should().Be(msg.Flags);
-            copy.Payload.Should().Be(null);
+            _ = msg.ToArray();
         }
 
         [TestMethod]
@@ -142,20 +159,19 @@ namespace Neo.UnitTests.Network.P2P
 
             buffer.Length.Should().Be(56);
 
-            payload.Script = new byte[100];
-            for (int i = 0; i < payload.Script.Length; i++) payload.Script[i] = (byte)OpCode.PUSH2;
+            byte[] script = new byte[100];
+            Array.Fill(script, (byte)OpCode.PUSH2);
+            payload.Script = script;
             msg = Message.Create(MessageCommand.Transaction, payload);
             buffer = msg.ToArray();
 
             buffer.Length.Should().Be(30);
+            msg.Flags.HasFlag(MessageFlags.Compressed).Should().BeTrue();
 
-            var copy = buffer.AsSerializable<Message>();
-            var payloadCopy = (Transaction)copy.Payload;
+            _ = Message.TryDeserialize(ByteString.CopyFrom(msg.ToArray()), out var copy);
+            Assert.IsNotNull(copy);
 
-            copy.Command.Should().Be(msg.Command);
-            copy.Flags.Should().HaveFlag(MessageFlags.Compressed);
-
-            payloadCopy.ToArray().ToHexString().Should().Be(payload.ToArray().ToHexString());
+            copy.Flags.HasFlag(MessageFlags.Compressed).Should().BeTrue();
         }
     }
 }

@@ -271,6 +271,7 @@ namespace Neo.SmartContract
                     {
                         ExecutionContextState contextState = CurrentContext.GetState<ExecutionContextState>();
                         contextState.NotificationCount += state.NotificationCount;
+                        if (state.PushNullWhenReturn) Push(StackItem.Null);
                     }
                 }
                 else
@@ -309,7 +310,7 @@ namespace Neo.SmartContract
         {
             // Set default execution context state
             var state = context.GetState<ExecutionContextState>();
-            state.ScriptHash ??= ((byte[])context.Script).ToScriptHash();
+            state.ScriptHash ??= ((ReadOnlyMemory<byte>)context.Script).Span.ToScriptHash();
             invocationCounter.TryAdd(state.ScriptHash, 1);
             base.LoadContext(context);
             Diagnostic?.ContextLoaded(context);
@@ -409,6 +410,7 @@ namespace Neo.SmartContract
                 ulong i => i,
                 Enum e => Convert(System.Convert.ChangeType(e, e.GetTypeCode())),
                 byte[] data => data,
+                ReadOnlyMemory<byte> m => m,
                 string s => s,
                 BigInteger i => i,
                 JObject o => o.ToByteArray(false),
@@ -576,7 +578,7 @@ namespace Neo.SmartContract
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
-        public static ApplicationEngine Run(byte[] script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, ProtocolSettings settings = null, int offset = 0, long gas = TestModeGas, IDiagnostic diagnostic = null)
+        public static ApplicationEngine Run(ReadOnlyMemory<byte> script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, ProtocolSettings settings = null, int offset = 0, long gas = TestModeGas, IDiagnostic diagnostic = null)
         {
             persistingBlock ??= CreateDummyBlock(snapshot, settings ?? ProtocolSettings.Default);
             ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, persistingBlock, settings, gas, diagnostic);

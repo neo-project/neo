@@ -49,7 +49,7 @@ namespace Neo.UnitTests.SmartContract
             IInteroperable newContract = new ContractState();
             newContract.FromStackItem(contract.ToStackItem(null));
             ((ContractState)newContract).Manifest.ToJson().ToString().Should().Be(contract.Manifest.ToJson().ToString());
-            ((ContractState)newContract).Script.Should().BeEquivalentTo(contract.Script);
+            ((ContractState)newContract).Script.Span.SequenceEqual(contract.Script.Span).Should().BeTrue();
         }
 
         [TestMethod]

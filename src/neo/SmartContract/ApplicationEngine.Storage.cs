@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -122,7 +122,7 @@ namespace Neo.SmartContract
         /// <param name="context">The context of the storage.</param>
         /// <param name="key">The key of the entry.</param>
         /// <returns>The value of the entry. Or <see langword="null"/> if the entry doesn't exist.</returns>
-        protected internal byte[] Get(StorageContext context, byte[] key)
+        protected internal ReadOnlyMemory<byte>? Get(StorageContext context, byte[] key)
         {
             return Snapshot.TryGet(new StorageKey
             {

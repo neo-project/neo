@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -35,22 +35,22 @@ namespace Neo.Network.P2P.Capabilities
             this.Type = type;
         }
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(ref MemoryReader reader)
         {
             if (reader.ReadByte() != (byte)Type)
             {
                 throw new FormatException();
             }
 
-            DeserializeWithoutType(reader);
+            DeserializeWithoutType(ref reader);
         }
 
         /// <summary>
-        /// Deserializes an <see cref="NodeCapability"/> object from a <see cref="BinaryReader"/>.
+        /// Deserializes an <see cref="NodeCapability"/> object from a <see cref="MemoryReader"/>.
         /// </summary>
-        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
+        /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
         /// <returns>The deserialized <see cref="NodeCapability"/>.</returns>
-        public static NodeCapability DeserializeFrom(BinaryReader reader)
+        public static NodeCapability DeserializeFrom(ref MemoryReader reader)
         {
             NodeCapabilityType type = (NodeCapabilityType)reader.ReadByte();
             NodeCapability capability = type switch
@@ -59,15 +59,15 @@ namespace Neo.Network.P2P.Capabilities
                 NodeCapabilityType.FullNode => new FullNodeCapability(),
                 _ => throw new FormatException(),
             };
-            capability.DeserializeWithoutType(reader);
+            capability.DeserializeWithoutType(ref reader);
             return capability;
         }
 
         /// <summary>
-        /// Deserializes the <see cref="NodeCapability"/> object from a <see cref="BinaryReader"/>.
+        /// Deserializes the <see cref="NodeCapability"/> object from a <see cref="MemoryReader"/>.
         /// </summary>
-        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
-        protected abstract void DeserializeWithoutType(BinaryReader reader);
+        /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
+        protected abstract void DeserializeWithoutType(ref MemoryReader reader);
 
         void ISerializable.Serialize(BinaryWriter writer)
         {

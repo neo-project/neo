@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -11,7 +11,7 @@
 using Neo.Cryptography.ECC;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
-using Neo.VM.Types;
+using Neo.VM;
 using System;
 using Array = Neo.VM.Types.Array;
 
@@ -81,8 +81,8 @@ namespace Neo.SmartContract
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
             bool hasReturnValue = md.ReturnType != ContractParameterType.Void;
 
-            if (!hasReturnValue) CurrentContext.EvaluationStack.Push(StackItem.Null);
-            CallContractInternal(contract, md, callFlags, hasReturnValue, args);
+            ExecutionContext context = CallContractInternal(contract, md, callFlags, hasReturnValue, args);
+            if (!hasReturnValue) context.GetState<ExecutionContextState>().PushNullWhenReturn = true;
         }
 
         /// <summary>
@@ -122,7 +122,7 @@ namespace Neo.SmartContract
         /// <returns>The hash of the account.</returns>
         internal protected UInt160 CreateStandardAccount(ECPoint pubKey)
         {
-            long fee = IsHardforkEnabled(Hardfork.HF_2712_FixSyscallFees)
+            long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                 ? CheckSigPrice
                 : 1 << 8;
             AddGas(fee * ExecFeeFactor);
@@ -138,7 +138,7 @@ namespace Neo.SmartContract
         /// <returns>The hash of the account.</returns>
         internal protected UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
         {
-            long fee = IsHardforkEnabled(Hardfork.HF_2712_FixSyscallFees)
+            long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                 ? CheckSigPrice * pubKeys.Length
                 : 1 << 8;
             AddGas(fee * ExecFeeFactor);

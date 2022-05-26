@@ -452,7 +452,7 @@ namespace Neo.SmartContract.Native
         {
             byte[] prefix_key = CreateStorageKey(Prefix_Candidate).ToArray();
             return snapshot.Find(prefix_key)
-                .Select(p => (p.Key, p.Value, PublicKey: p.Key.Key.Span[1..].AsSerializable<ECPoint>(), State: p.Value.GetInteroperable<CandidateState>()))
+                .Select(p => (p.Key, p.Value, PublicKey: p.Key.Key[1..].AsSerializable<ECPoint>(), State: p.Value.GetInteroperable<CandidateState>()))
                 .Where(p => p.State.Registered)
                 .Where(p => !Policy.IsBlocked(snapshot, Contract.CreateSignatureRedeemScript(p.PublicKey).ToScriptHash()));
         }
@@ -577,7 +577,7 @@ namespace Neo.SmartContract.Native
                 base.FromStackItem(stackItem);
                 Struct @struct = (Struct)stackItem;
                 BalanceHeight = (uint)@struct[1].GetInteger();
-                VoteTo = @struct[2].IsNull ? null : @struct[2].GetSpan().AsSerializable<ECPoint>();
+                VoteTo = @struct[2].IsNull ? null : ECPoint.DecodePoint(@struct[2].GetSpan(), ECCurve.Secp256r1);
             }
 
             public override StackItem ToStackItem(ReferenceCounter referenceCounter)
@@ -615,7 +615,7 @@ namespace Neo.SmartContract.Native
             protected override (ECPoint, BigInteger) ElementFromStackItem(StackItem item)
             {
                 Struct @struct = (Struct)item;
-                return (@struct[0].GetSpan().AsSerializable<ECPoint>(), @struct[1].GetInteger());
+                return (ECPoint.DecodePoint(@struct[0].GetSpan(), ECCurve.Secp256r1), @struct[1].GetInteger());
             }
 
             protected override StackItem ElementToStackItem((ECPoint PublicKey, BigInteger Votes) element, ReferenceCounter referenceCounter)
