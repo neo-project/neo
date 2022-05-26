@@ -127,7 +127,7 @@ namespace Neo.SmartContract
         /// <returns></returns>
         protected internal byte[] Bls12381Add(byte[] gt1, byte[] gt2)
         {
-            return Bls12381Wrapper.PointAdd(gt1, gt2);
+            return GObject.Add(new GObject(gt1), new GObject(gt2)).ToByteArray();
         }
 
         /// <summary>
@@ -139,7 +139,9 @@ namespace Neo.SmartContract
         /// <returns></returns>
         protected internal byte[] Bls12381Mul(byte[] gt, long mul)
         {
-            return Bls12381Wrapper.PointMul(gt, mul);
+            GObject p = mul < 0 ? new GObject(gt).Neg() : new GObject(gt);
+            var x = System.Convert.ToUInt64(Math.Abs(mul));
+            return GObject.Mul(p, x).ToByteArray();
         }
 
         /// <summary>
@@ -151,7 +153,7 @@ namespace Neo.SmartContract
         /// <returns></returns>
         protected internal byte[] Bls12381Pairing(byte[] g1Binary, byte[] g2Binary)
         {
-            return Bls12381Wrapper.PointPairing(g1Binary, g2Binary);
+            return GObject.Pairing(new GObject(g1Binary), new GObject(g2Binary)).ToByteArray();
         }
     }
 }
