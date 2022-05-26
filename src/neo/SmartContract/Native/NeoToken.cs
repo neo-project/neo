@@ -14,6 +14,7 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -56,6 +57,61 @@ namespace Neo.SmartContract.Native
         internal NeoToken()
         {
             this.TotalAmount = 100000000 * Factor;
+
+            var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
+            {
+                new ContractEventDescriptor
+                {
+                    Name = "CandidateStateChanged",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "pubkey",
+                            Type = ContractParameterType.PublicKey
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "registered",
+                            Type = ContractParameterType.Boolean
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "votes",
+                            Type = ContractParameterType.Integer
+                        }
+                    }
+                },
+                new ContractEventDescriptor
+                {
+                    Name = "Vote",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "account",
+                            Type = ContractParameterType.Hash160
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "from",
+                            Type = ContractParameterType.PublicKey
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "to",
+                            Type = ContractParameterType.PublicKey
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "amount",
+                            Type = ContractParameterType.Integer
+                        }
+                    }
+                }
+            };
+
+            Manifest.Abi.Events = events.ToArray();
         }
 
         public override BigInteger TotalSupply(DataCache snapshot)
@@ -295,7 +351,10 @@ namespace Neo.SmartContract.Native
             StorageKey key = CreateStorageKey(Prefix_Candidate).Add(pubkey);
             StorageItem item = engine.Snapshot.GetAndChange(key, () => new StorageItem(new CandidateState()));
             CandidateState state = item.GetInteroperable<CandidateState>();
+            if (state.Registered) return true;
             state.Registered = true;
+            engine.SendNotification(Hash, "CandidateStateChanged",
+                new VM.Types.Array(engine.ReferenceCounter) { pubkey.ToArray(), true, state.Votes });
             return true;
         }
 
@@ -308,8 +367,11 @@ namespace Neo.SmartContract.Native
             if (engine.Snapshot.TryGet(key) is null) return true;
             StorageItem item = engine.Snapshot.GetAndChange(key);
             CandidateState state = item.GetInteroperable<CandidateState>();
+            if (!state.Registered) return true;
             state.Registered = false;
             CheckCandidate(engine.Snapshot, pubkey, state);
+            engine.SendNotification(Hash, "CandidateStateChanged",
+                new VM.Types.Array(engine.ReferenceCounter) { pubkey.ToArray(), false, state.Votes });
             return true;
         }
 
@@ -319,6 +381,7 @@ namespace Neo.SmartContract.Native
             if (!engine.CheckWitnessInternal(account)) return false;
             NeoAccountState state_account = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Account).Add(account))?.GetInteroperable<NeoAccountState>();
             if (state_account is null) return false;
+            if (state_account.Balance == 0) return false;
             CandidateState validator_new = null;
             if (voteTo != null)
             {
@@ -343,11 +406,14 @@ namespace Neo.SmartContract.Native
                 state_validator.Votes -= state_account.Balance;
                 CheckCandidate(engine.Snapshot, state_account.VoteTo, state_validator);
             }
+            ECPoint from = state_account.VoteTo;
             state_account.VoteTo = voteTo;
             if (validator_new != null)
             {
                 validator_new.Votes += state_account.Balance;
             }
+            engine.SendNotification(Hash, "Vote",
+                new VM.Types.Array(engine.ReferenceCounter) { account.ToArray(), from?.ToArray() ?? StackItem.Null, voteTo?.ToArray() ?? StackItem.Null, state_account.Balance });
             if (gasDistribution is not null)
                 await GAS.Mint(engine, gasDistribution.Account, gasDistribution.Amount, true);
             return true;
