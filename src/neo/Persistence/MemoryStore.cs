@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -9,6 +9,7 @@
 // modifications are permitted.
 
 using Neo.IO;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,7 +39,8 @@ namespace Neo.Persistence
 
         public void Put(byte[] key, byte[] value)
         {
-            innerData[key.EnsureNotNull()] = value;
+            if (value is null) throw new ArgumentNullException(nameof(value));
+            innerData[key.EnsureNotNull()[..]] = value[..];
         }
 
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
@@ -51,13 +53,13 @@ namespace Neo.Persistence
                 records = records.Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
             records = records.OrderBy(p => p.Key, comparer);
             foreach (var pair in records)
-                yield return (pair.Key, pair.Value);
+                yield return (pair.Key[..], pair.Value[..]);
         }
 
         public byte[] TryGet(byte[] key)
         {
             innerData.TryGetValue(key.EnsureNotNull(), out byte[] value);
-            return value;
+            return value?[..];
         }
 
         public bool Contains(byte[] key)
