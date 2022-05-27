@@ -9,7 +9,6 @@
 // modifications are permitted.
 
 using Neo.IO;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,7 +24,7 @@ namespace Neo.Persistence
 
         public void Delete(byte[] key)
         {
-            innerData.TryRemove(key.EnsureNotNull(), out _);
+            innerData.TryRemove(key, out _);
         }
 
         public void Dispose()
@@ -39,8 +38,7 @@ namespace Neo.Persistence
 
         public void Put(byte[] key, byte[] value)
         {
-            if (value is null) throw new ArgumentNullException(nameof(value));
-            innerData[key.EnsureNotNull()[..]] = value[..];
+            innerData[key[..]] = value[..];
         }
 
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
@@ -58,13 +56,13 @@ namespace Neo.Persistence
 
         public byte[] TryGet(byte[] key)
         {
-            innerData.TryGetValue(key.EnsureNotNull(), out byte[] value);
+            innerData.TryGetValue(key, out byte[] value);
             return value?[..];
         }
 
         public bool Contains(byte[] key)
         {
-            return innerData.ContainsKey(key.EnsureNotNull());
+            return innerData.ContainsKey(key);
         }
     }
 }

@@ -9,7 +9,6 @@
 // modifications are permitted.
 
 using Neo.IO;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -41,7 +40,7 @@ namespace Neo.Persistence
 
         public void Delete(byte[] key)
         {
-            writeBatch[key.EnsureNotNull()] = null;
+            writeBatch[key] = null;
         }
 
         public void Dispose()
@@ -50,8 +49,7 @@ namespace Neo.Persistence
 
         public void Put(byte[] key, byte[] value)
         {
-            if (value is null) throw new ArgumentNullException(nameof(value));
-            writeBatch[key.EnsureNotNull()[..]] = value[..];
+            writeBatch[key[..]] = value[..];
         }
 
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
@@ -66,13 +64,13 @@ namespace Neo.Persistence
 
         public byte[] TryGet(byte[] key)
         {
-            immutableData.TryGetValue(key.EnsureNotNull(), out byte[] value);
+            immutableData.TryGetValue(key, out byte[] value);
             return value?[..];
         }
 
         public bool Contains(byte[] key)
         {
-            return immutableData.ContainsKey(key.EnsureNotNull());
+            return immutableData.ContainsKey(key);
         }
     }
 }
