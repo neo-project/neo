@@ -26,17 +26,17 @@ namespace Neo.SmartContract
         /// <summary>
         /// The price of System.Crypto.Bls12381Add.
         /// </summary>
-        public const long Bls12381AddPrice = 1 << 15;
+        public const long Bls12381AddPrice = 1 << 19;
 
         /// <summary>
         /// The price of System.Crypto.Bls12381Mul.
         /// </summary>
-        public const long Bls12381MulPrice = 1 << 15;
+        public const long Bls12381MulPrice = 1 << 21;
 
         /// <summary>
         /// The price of System.Crypto.Bls12381Pairing.
         /// </summary>
-        public const long Bls12381PairingPrice = 1 << 15;
+        public const long Bls12381PairingPrice = 1 << 23;
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Crypto.CheckSig.
