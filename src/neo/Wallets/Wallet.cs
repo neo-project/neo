@@ -12,7 +12,6 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -36,6 +35,8 @@ namespace Neo.Wallets
     /// </summary>
     public abstract class Wallet
     {
+        private static readonly List<IWalletFactory> factories = new() { NEP6WalletFactory.Instance, SQLite.SQLiteWalletFactory.Instance };
+
         /// <summary>
         /// The <see cref="Neo.ProtocolSettings"/> to be used by the wallet.
         /// </summary>
@@ -779,15 +780,12 @@ namespace Neo.Wallets
         private static IWalletFactory GetFactory(string path)
         {
             string filename = System.IO.Path.GetFileName(path);
-            return GetFactories().FirstOrDefault(p => p.Handle(filename));
+            return factories.FirstOrDefault(p => p.Handle(filename));
         }
 
-        private static IEnumerable<IWalletFactory> GetFactories()
+        public static void RegisterFactory(IWalletFactory factory)
         {
-            return Plugin.Plugins
-                .OfType<IWalletFactory>()
-                .Append(NEP6WalletFactory.Instance)
-                .Append(SQLite.SQLiteWalletFactory.Instance);
+            factories.Add(factory);
         }
     }
 }

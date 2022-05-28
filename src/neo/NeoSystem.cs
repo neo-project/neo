@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -119,7 +119,7 @@ namespace Neo
         {
             this.Settings = settings;
             this.GenesisBlock = CreateGenesisBlock(settings);
-            this.storage_engine = storageEngine;
+            this.storage_engine = storageEngine ?? nameof(MemoryStore);
             this.store = LoadStore(storagePath);
             this.MemPool = new MemoryPool(this);
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
@@ -217,9 +217,7 @@ namespace Neo
         /// <returns>The loaded <see cref="IStore"/>.</returns>
         public IStore LoadStore(string path)
         {
-            return string.IsNullOrEmpty(storage_engine) || storage_engine == nameof(MemoryStore)
-                ? new MemoryStore()
-                : Plugin.Storages[storage_engine].GetStore(path);
+            return StoreFactory.GetStore(storage_engine, path);
         }
 
         /// <summary>

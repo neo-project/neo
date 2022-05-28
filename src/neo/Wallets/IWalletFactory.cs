@@ -8,9 +8,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Wallets;
-
-namespace Neo.Plugins
+namespace Neo.Wallets
 {
     public interface IWalletFactory
     {
