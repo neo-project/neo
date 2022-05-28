@@ -12,7 +12,6 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P;
 using System;
-using Neo.Cryptography.BLS12_381;
 
 namespace Neo.SmartContract
 {
@@ -22,21 +21,6 @@ namespace Neo.SmartContract
         /// The price of System.Crypto.CheckSig.
         /// </summary>
         public const long CheckSigPrice = 1 << 15;
-
-        /// <summary>
-        /// The price of System.Crypto.Bls12381Add.
-        /// </summary>
-        public const long Bls12381AddPrice = 1 << 19;
-
-        /// <summary>
-        /// The price of System.Crypto.Bls12381Mul.
-        /// </summary>
-        public const long Bls12381MulPrice = 1 << 21;
-
-        /// <summary>
-        /// The price of System.Crypto.Bls12381Pairing.
-        /// </summary>
-        public const long Bls12381PairingPrice = 1 << 23;
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Crypto.CheckSig.
@@ -49,24 +33,6 @@ namespace Neo.SmartContract
         /// Checks the signatures for the current script container.
         /// </summary>
         public static readonly InteropDescriptor System_Crypto_CheckMultisig = Register("System.Crypto.CheckMultisig", nameof(CheckMultisig), 0, CallFlags.None);
-
-        /// <summary>
-        /// The <see cref="InteropDescriptor"/> of System.Crypto.Bls12381Add.
-        /// Add operation of gt point and integer
-        /// </summary>
-        public static readonly InteropDescriptor System_Crypto_Bls12381_Add = Register("System.Crypto.Bls12381Add", nameof(Bls12381Add), Bls12381AddPrice, CallFlags.None);
-
-        /// <summary>
-        /// The <see cref="InteropDescriptor"/> of System.Crypto.Bls12381Mul.
-        /// Mul operation of gt point and integer
-        /// </summary>
-        public static readonly InteropDescriptor System_Crypto_Bls12381_Mul = Register("System.Crypto.Bls12381Mul", nameof(Bls12381Mul), Bls12381MulPrice, CallFlags.None);
-
-        /// <summary>
-        /// The <see cref="InteropDescriptor"/> of System.Crypto.Bls12381Pairing.
-        /// Pairing operation of gt point and integer
-        /// </summary>
-        public static readonly InteropDescriptor System_Crypto_Bls12381_Pairing = Register("System.Crypto.Bls12381Pairing", nameof(Bls12381Pairing), Bls12381PairingPrice, CallFlags.None);
 
         /// <summary>
         /// The implementation of System.Crypto.CheckSig.
@@ -116,44 +82,6 @@ namespace Neo.SmartContract
                 return false;
             }
             return true;
-        }
-
-        /// <summary>
-        /// The implementation of System.Crypto.PointAdd.
-        /// Add operation of two gt points.
-        /// </summary>
-        /// <param name="gt1">Gt1 point as byteArray</param>
-        /// <param name="gt2">Gt1 point as byteArray</param>
-        /// <returns></returns>
-        protected internal byte[] Bls12381Add(byte[] gt1, byte[] gt2)
-        {
-            return GObject.Add(new GObject(gt1), new GObject(gt2)).ToByteArray();
-        }
-
-        /// <summary>
-        /// The implementation of System.Crypto.PointMul.
-        /// Mul operation of gt point and mulitiplier
-        /// </summary>
-        /// <param name="gt">Gt point as byteArray</param>
-        /// <param name="mul">Mulitiplier</param>
-        /// <returns></returns>
-        protected internal byte[] Bls12381Mul(byte[] gt, long mul)
-        {
-            GObject p = mul < 0 ? new GObject(gt).Neg() : new GObject(gt);
-            var x = System.Convert.ToUInt64(Math.Abs(mul));
-            return GObject.Mul(p, x).ToByteArray();
-        }
-
-        /// <summary>
-        /// The implementation of System.Crypto.PointPairing.
-        /// Pairing operation of g1 and g2
-        /// </summary>
-        /// <param name="g1Binary">Gt point1 as byteArray</param>
-        /// <param name="g2Binary">Gt point2 as byteArray</param>
-        /// <returns></returns>
-        protected internal byte[] Bls12381Pairing(byte[] g1Binary, byte[] g2Binary)
-        {
-            return GObject.Pairing(new GObject(g1Binary), new GObject(g2Binary)).ToByteArray();
         }
     }
 }

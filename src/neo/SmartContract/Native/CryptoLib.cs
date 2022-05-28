@@ -9,6 +9,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
+using Neo.Cryptography.BLS12_381;
 using Neo.Cryptography.ECC;
 using System;
 using System.Collections.Generic;
@@ -82,6 +83,47 @@ namespace Neo.SmartContract.Native
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// The implementation of System.Crypto.PointAdd.
+        /// Add operation of two gt points.
+        /// </summary>
+        /// <param name="gt1">Gt1 point as byteArray</param>
+        /// <param name="gt2">Gt1 point as byteArray</param>
+        /// <returns></returns>
+        [ContractMethod(CpuFee = 1 << 19)]
+        public static byte[] Bls12381Add(byte[] gt1, byte[] gt2)
+        {
+            return GObject.Add(new GObject(gt1), new GObject(gt2)).ToByteArray();
+        }
+
+        /// <summary>
+        /// The implementation of System.Crypto.PointMul.
+        /// Mul operation of gt point and mulitiplier
+        /// </summary>
+        /// <param name="gt">Gt point as byteArray</param>
+        /// <param name="mul">Mulitiplier</param>
+        /// <returns></returns>
+        [ContractMethod(CpuFee = 1 << 21)]
+        public static byte[] Bls12381Mul(byte[] gt, long mul)
+        {
+            GObject p = mul < 0 ? new GObject(gt).Neg() : new GObject(gt);
+            var x = System.Convert.ToUInt64(Math.Abs(mul));
+            return GObject.Mul(p, x).ToByteArray();
+        }
+
+        /// <summary>
+        /// The implementation of System.Crypto.PointPairing.
+        /// Pairing operation of g1 and g2
+        /// </summary>
+        /// <param name="g1Binary">Gt point1 as byteArray</param>
+        /// <param name="g2Binary">Gt point2 as byteArray</param>
+        /// <returns></returns>
+        [ContractMethod(CpuFee = 1 << 23)]
+        public static byte[] Bls12381Pairing(byte[] g1Binary, byte[] g2Binary)
+        {
+            return GObject.Pairing(new GObject(g1Binary), new GObject(g2Binary)).ToByteArray();
         }
     }
 }
