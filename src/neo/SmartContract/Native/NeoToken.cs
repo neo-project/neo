@@ -108,6 +108,23 @@ namespace Neo.SmartContract.Native
                             Type = ContractParameterType.Integer
                         }
                     }
+                },
+                new ContractEventDescriptor
+                {
+                    Name = "CommitteeChanged",
+                    Parameters = new ContractParameterDefinition[]
+                    {
+                        new ContractParameterDefinition()
+                        {
+                            Name = "newAccount",
+                            Type = ContractParameterType.Hash160
+                        },
+                        new ContractParameterDefinition()
+                        {
+                            Name = "previousAccount",
+                            Type = ContractParameterType.Hash160
+                        }
+                    }
                 }
             };
 
@@ -232,10 +249,18 @@ namespace Neo.SmartContract.Native
             // Set next committee
             if (ShouldRefreshCommittee(engine.PersistingBlock.Index, engine.ProtocolSettings.CommitteeMembersCount))
             {
+                var prevCommittee = GetCommitteeAddress(engine.Snapshot);
+
                 StorageItem storageItem = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Committee));
                 var cachedCommittee = storageItem.GetInteroperable<CachedCommittee>();
                 cachedCommittee.Clear();
                 cachedCommittee.AddRange(ComputeCommitteeMembers(engine.Snapshot, engine.ProtocolSettings));
+
+                var newCommittee = GetCommitteeAddress(engine.Snapshot);
+                if (newCommittee != prevCommittee)
+                {
+                    engine.SendNotification(Hash, "CommitteeChanged", new VM.Types.Array(engine.ReferenceCounter) { newCommittee.ToArray(), prevCommittee.ToArray() });
+                }
             }
             return ContractTask.CompletedTask;
         }
