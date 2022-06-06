@@ -1,3 +1,4 @@
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using System;
@@ -17,12 +18,12 @@ namespace Neo.UnitTests
 
         public int Size => throw new NotImplementedException();
 
-        public void Deserialize(BinaryReader reader)
+        public void Deserialize(ref MemoryReader reader)
         {
             throw new NotImplementedException();
         }
 
-        public void DeserializeUnsigned(BinaryReader reader)
+        public void DeserializeUnsigned(ref MemoryReader reader)
         {
             throw new NotImplementedException();
         }

@@ -82,7 +82,7 @@ namespace Neo.SmartContract.Native
         {
             StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_BlockHash).AddBigEndian(index));
             if (item is null) return null;
-            return new UInt256(item.Value);
+            return new UInt256(item.Value.Span);
         }
 
         /// <summary>
@@ -240,6 +240,14 @@ namespace Neo.SmartContract.Native
             TransactionState state = GetTransactionState(engine.Snapshot, hash);
             if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
             return state.Transaction;
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        private Signer[] GetTransactionSigners(ApplicationEngine engine, UInt256 hash)
+        {
+            TransactionState state = GetTransactionState(engine.Snapshot, hash);
+            if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
+            return state.Transaction.Signers;
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]

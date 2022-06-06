@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -11,7 +11,7 @@
 using Neo.Cryptography.ECC;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
-using Neo.VM.Types;
+using Neo.VM;
 using System;
 using Array = Neo.VM.Types.Array;
 
@@ -41,13 +41,13 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Contract.CreateStandardAccount.
         /// Calculates corresponding account scripthash for the given public key.
         /// </summary>
-        public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 1 << 8, CallFlags.None);
+        public static readonly InteropDescriptor System_Contract_CreateStandardAccount = Register("System.Contract.CreateStandardAccount", nameof(CreateStandardAccount), 0, CallFlags.None);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Contract.CreateMultisigAccount.
         /// Calculates corresponding multisig account scripthash for the given public keys.
         /// </summary>
-        public static readonly InteropDescriptor System_Contract_CreateMultisigAccount = Register("System.Contract.CreateMultisigAccount", nameof(CreateMultisigAccount), 1 << 8, CallFlags.None);
+        public static readonly InteropDescriptor System_Contract_CreateMultisigAccount = Register("System.Contract.CreateMultisigAccount", nameof(CreateMultisigAccount), 0, CallFlags.None);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Contract.NativeOnPersist.
@@ -81,8 +81,8 @@ namespace Neo.SmartContract
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
             bool hasReturnValue = md.ReturnType != ContractParameterType.Void;
 
-            if (!hasReturnValue) CurrentContext.EvaluationStack.Push(StackItem.Null);
-            CallContractInternal(contract, md, callFlags, hasReturnValue, args);
+            ExecutionContext context = CallContractInternal(contract, md, callFlags, hasReturnValue, args);
+            if (!hasReturnValue) context.GetState<ExecutionContextState>().PushNullWhenReturn = true;
         }
 
         /// <summary>
@@ -120,8 +120,12 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="pubKey">The public key of the account.</param>
         /// <returns>The hash of the account.</returns>
-        internal protected static UInt160 CreateStandardAccount(ECPoint pubKey)
+        internal protected UInt160 CreateStandardAccount(ECPoint pubKey)
         {
+            long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
+                ? CheckSigPrice
+                : 1 << 8;
+            AddGas(fee * ExecFeeFactor);
             return Contract.CreateSignatureRedeemScript(pubKey).ToScriptHash();
         }
 
@@ -132,8 +136,12 @@ namespace Neo.SmartContract
         /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="pubKeys">The public keys of the account.</param>
         /// <returns>The hash of the account.</returns>
-        internal protected static UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
+        internal protected UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
         {
+            long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
+                ? CheckSigPrice * pubKeys.Length
+                : 1 << 8;
+            AddGas(fee * ExecFeeFactor);
             return Contract.CreateMultiSigRedeemScript(m, pubKeys).ToScriptHash();
         }
 

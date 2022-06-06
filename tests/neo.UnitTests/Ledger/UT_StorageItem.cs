@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.IO;
 using Neo.SmartContract;
 using System.IO;
 using System.Text;
@@ -20,7 +21,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Value_Get()
         {
-            uut.Value.Should().BeNull();
+            uut.Value.IsEmpty.Should().BeTrue();
         }
 
         [TestMethod]
@@ -29,8 +30,8 @@ namespace Neo.UnitTests.Ledger
             byte[] val = new byte[] { 0x42, 0x32 };
             uut.Value = val;
             uut.Value.Length.Should().Be(2);
-            uut.Value[0].Should().Be(val[0]);
-            uut.Value[1].Should().Be(val[1]);
+            uut.Value.Span[0].Should().Be(val[0]);
+            uut.Value.Span[1].Should().Be(val[1]);
         }
 
         [TestMethod]
@@ -53,11 +54,12 @@ namespace Neo.UnitTests.Ledger
             uut.Value = TestUtils.GetByteArray(10, 0x42);
 
             StorageItem newSi = uut.Clone();
-            newSi.Value.Length.Should().Be(10);
-            newSi.Value[0].Should().Be(0x42);
+            var span = newSi.Value.Span;
+            span.Length.Should().Be(10);
+            span[0].Should().Be(0x42);
             for (int i = 1; i < 10; i++)
             {
-                newSi.Value[i].Should().Be(0x20);
+                span[i].Should().Be(0x20);
             }
         }
 
@@ -65,19 +67,14 @@ namespace Neo.UnitTests.Ledger
         public void Deserialize()
         {
             byte[] data = new byte[] { 66, 32, 32, 32, 32, 32, 32, 32, 32, 32 };
-            int index = 0;
-            using (MemoryStream ms = new MemoryStream(data, index, data.Length - index, false))
-            {
-                using (BinaryReader reader = new BinaryReader(ms))
-                {
-                    uut.Deserialize(reader);
-                }
-            }
-            uut.Value.Length.Should().Be(10);
-            uut.Value[0].Should().Be(0x42);
+            MemoryReader reader = new(data);
+            uut.Deserialize(ref reader);
+            var span = uut.Value.Span;
+            span.Length.Should().Be(10);
+            span[0].Should().Be(0x42);
             for (int i = 1; i < 10; i++)
             {
-                uut.Value[i].Should().Be(0x20);
+                span[i].Should().Be(0x20);
             }
         }
 

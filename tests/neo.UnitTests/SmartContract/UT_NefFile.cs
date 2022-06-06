@@ -30,40 +30,46 @@ namespace Neo.UnitTests.SmartContract
             byte[] wrongMagic = { 0x00, 0x00, 0x00, 0x00 };
             using (MemoryStream ms = new(1024))
             using (BinaryWriter writer = new(ms))
-            using (BinaryReader reader = new(ms))
             {
                 ((ISerializable)file).Serialize(writer);
                 ms.Seek(0, SeekOrigin.Begin);
                 ms.Write(wrongMagic, 0, 4);
-                ms.Seek(0, SeekOrigin.Begin);
                 ISerializable newFile = new NefFile();
-                Action action = () => newFile.Deserialize(reader);
-                action.Should().Throw<FormatException>();
+                Assert.ThrowsException<FormatException>(() =>
+                {
+                    MemoryReader reader = new(ms.ToArray());
+                    newFile.Deserialize(ref reader);
+                    Assert.Fail();
+                });
             }
 
             file.CheckSum = 0;
             using (MemoryStream ms = new(1024))
             using (BinaryWriter writer = new(ms))
-            using (BinaryReader reader = new(ms))
             {
                 ((ISerializable)file).Serialize(writer);
-                ms.Seek(0, SeekOrigin.Begin);
                 ISerializable newFile = new NefFile();
-                Action action = () => newFile.Deserialize(reader);
-                action.Should().Throw<FormatException>();
+                Assert.ThrowsException<FormatException>(() =>
+                {
+                    MemoryReader reader = new(ms.ToArray());
+                    newFile.Deserialize(ref reader);
+                    Assert.Fail();
+                });
             }
 
             file.Script = Array.Empty<byte>();
             file.CheckSum = NefFile.ComputeChecksum(file);
             using (MemoryStream ms = new(1024))
             using (BinaryWriter writer = new(ms))
-            using (BinaryReader reader = new(ms))
             {
                 ((ISerializable)file).Serialize(writer);
-                ms.Seek(0, SeekOrigin.Begin);
                 ISerializable newFile = new NefFile();
-                Action action = () => newFile.Deserialize(reader);
-                action.Should().Throw<ArgumentException>();
+                Assert.ThrowsException<ArgumentException>(() =>
+                {
+                    MemoryReader reader = new(ms.ToArray());
+                    newFile.Deserialize(ref reader);
+                    Assert.Fail();
+                });
             }
 
             file.Script = new byte[] { 0x01, 0x02, 0x03 };
@@ -72,7 +78,7 @@ namespace Neo.UnitTests.SmartContract
             var newFile1 = data.AsSerializable<NefFile>();
             newFile1.Compiler.Should().Be(file.Compiler);
             newFile1.CheckSum.Should().Be(file.CheckSum);
-            newFile1.Script.Should().BeEquivalentTo(file.Script);
+            newFile1.Script.Span.SequenceEqual(file.Script.Span).Should().BeTrue();
         }
 
         [TestMethod]
@@ -98,7 +104,7 @@ namespace Neo.UnitTests.SmartContract
             file = data.AsSerializable<NefFile>();
 
             Assert.AreEqual("".PadLeft(32, ' '), file.Compiler);
-            CollectionAssert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }, file.Script);
+            CollectionAssert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }, file.Script.ToArray());
         }
 
         [TestMethod]

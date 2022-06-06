@@ -1,74 +1,48 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO;
 using Neo.SmartContract;
-using System.IO;
 
 namespace Neo.UnitTests.Ledger
 {
     [TestClass]
     public class UT_StorageKey
     {
-        StorageKey uut;
-
-        [TestInitialize]
-        public void TestSetup()
-        {
-            uut = new StorageKey();
-        }
-
         [TestMethod]
         public void Id_Get()
         {
-            uut.Id.Should().Be(0);
-        }
-
-        [TestMethod]
-        public void Size()
-        {
-            var ut = new StorageKey() { Key = new byte[17], Id = 0 };
-            ut.ToArray().Length.Should().Be(((ISerializable)ut).Size);
-
-            ut = new StorageKey() { Key = new byte[0], Id = 0 };
-            ut.ToArray().Length.Should().Be(((ISerializable)ut).Size);
-
-            ut = new StorageKey() { Key = new byte[16], Id = 0 };
-            ut.ToArray().Length.Should().Be(((ISerializable)ut).Size);
+            var uut = new StorageKey { Id = 1, Key = new byte[] { 0x01 } };
+            uut.Id.Should().Be(1);
         }
 
         [TestMethod]
         public void Id_Set()
         {
             int val = 1;
-            uut.Id = val;
+            StorageKey uut = new() { Id = val };
             uut.Id.Should().Be(val);
-        }
-
-        [TestMethod]
-        public void Key_Get()
-        {
-            uut.Key.Should().BeNull();
         }
 
         [TestMethod]
         public void Key_Set()
         {
             byte[] val = new byte[] { 0x42, 0x32 };
-            uut.Key = val;
+            StorageKey uut = new() { Key = val };
             uut.Key.Length.Should().Be(2);
-            uut.Key[0].Should().Be(val[0]);
-            uut.Key[1].Should().Be(val[1]);
+            uut.Key.Span[0].Should().Be(val[0]);
+            uut.Key.Span[1].Should().Be(val[1]);
         }
 
         [TestMethod]
         public void Equals_SameObj()
         {
+            StorageKey uut = new();
             uut.Equals(uut).Should().BeTrue();
         }
 
         [TestMethod]
         public void Equals_Null()
         {
+            StorageKey uut = new();
             uut.Equals(null).Should().BeFalse();
         }
 
@@ -82,9 +56,7 @@ namespace Neo.UnitTests.Ledger
                 Id = val,
                 Key = keyVal
             };
-            uut.Id = val;
-            uut.Key = keyVal;
-
+            StorageKey uut = new() { Id = val, Key = keyVal };
             uut.Equals(newSk).Should().BeTrue();
         }
 
@@ -98,12 +70,9 @@ namespace Neo.UnitTests.Ledger
                 Id = val,
                 Key = keyVal
             };
-            uut.Id = 0x78000000;
-            uut.Key = keyVal;
-
+            StorageKey uut = new() { Id = 0x78000000, Key = keyVal };
             uut.Equals(newSk).Should().BeFalse();
         }
-
 
         [TestMethod]
         public void Equals_SameHash_DiffKey()
@@ -115,43 +84,23 @@ namespace Neo.UnitTests.Ledger
                 Id = val,
                 Key = keyVal
             };
-            uut.Id = val;
-            uut.Key = TestUtils.GetByteArray(10, 0x88);
-
+            StorageKey uut = new() { Id = val, Key = TestUtils.GetByteArray(10, 0x88) };
             uut.Equals(newSk).Should().BeFalse();
         }
 
         [TestMethod]
         public void GetHashCode_Get()
         {
-            uut.Id = 0x42000000;
-            uut.Key = TestUtils.GetByteArray(10, 0x42);
+            StorageKey uut = new() { Id = 0x42000000, Key = TestUtils.GetByteArray(10, 0x42) };
             uut.GetHashCode().Should().Be(1374529787);
         }
 
         [TestMethod]
         public void Equals_Obj()
         {
+            StorageKey uut = new();
             uut.Equals(1u).Should().BeFalse();
             uut.Equals((object)uut).Should().BeTrue();
-        }
-
-        [TestMethod]
-        public void TestDeserialize()
-        {
-            using (MemoryStream ms = new MemoryStream(1024))
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            using (BinaryReader reader = new BinaryReader(ms))
-            {
-                uut.Id = 0x42000000;
-                uut.Key = TestUtils.GetByteArray(10, 0x42);
-                ((ISerializable)uut).Serialize(writer);
-                ms.Seek(0, SeekOrigin.Begin);
-                StorageKey dest = new StorageKey();
-                ((ISerializable)dest).Deserialize(reader);
-                dest.Id.Should().Be(uut.Id);
-                dest.Key.Should().BeEquivalentTo(uut.Key);
-            }
         }
     }
 }
