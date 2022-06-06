@@ -873,6 +873,7 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.Delete(keyAccount);
             snapshot.GetAndChange(keyAccount, () => new StorageItem(new NeoAccountState
             {
+                Balance = 1,
                 VoteTo = ECCurve.Secp256r1.G
             }));
             snapshot.Add(keyValidator, new StorageItem(new CandidateState()));

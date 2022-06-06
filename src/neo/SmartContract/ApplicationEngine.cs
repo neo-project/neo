@@ -12,7 +12,6 @@ using Neo.IO;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.Plugins;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -22,7 +21,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
-using static System.Threading.Interlocked;
 using Array = System.Array;
 using VMArray = Neo.VM.Types.Array;
 
@@ -48,7 +46,6 @@ namespace Neo.SmartContract
         /// </summary>
         public static event EventHandler<LogEventArgs> Log;
 
-        private static IApplicationEngineProvider applicationEngineProvider;
         private static Dictionary<uint, InteropDescriptor> services;
         private readonly long gas_amount;
         private Dictionary<Type, object> states;
@@ -60,6 +57,11 @@ namespace Neo.SmartContract
         internal readonly uint ExecFeeFactor;
         internal readonly uint StoragePrice;
         private byte[] nonceData;
+
+        /// <summary>
+        /// Gets or sets the provider used to create the <see cref="ApplicationEngine"/>.
+        /// </summary>
+        public static IApplicationEngineProvider Provider { get; set; }
 
         /// <summary>
         /// Gets the descriptors of all interoperable services available in NEO.
@@ -302,7 +304,7 @@ namespace Neo.SmartContract
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, IDiagnostic diagnostic = null)
         {
-            return applicationEngineProvider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic)
+            return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic);
         }
 
@@ -561,11 +563,6 @@ namespace Neo.SmartContract
             return descriptor;
         }
 
-        internal static void ResetApplicationEngineProvider()
-        {
-            Exchange(ref applicationEngineProvider, null);
-        }
-
         /// <summary>
         /// Creates a new instance of the <see cref="ApplicationEngine"/> class, and use it to run the specified script.
         /// </summary>
@@ -585,11 +582,6 @@ namespace Neo.SmartContract
             engine.LoadScript(script, initialPosition: offset);
             engine.Execute();
             return engine;
-        }
-
-        internal static bool SetApplicationEngineProvider(IApplicationEngineProvider provider)
-        {
-            return CompareExchange(ref applicationEngineProvider, provider, null) is null;
         }
 
         public T GetState<T>()

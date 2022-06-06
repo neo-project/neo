@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.Plugins;
 using Neo.SmartContract;
 
 namespace Neo.UnitTests.SmartContract
@@ -13,20 +12,19 @@ namespace Neo.UnitTests.SmartContract
         [TestInitialize]
         public void TestInitialize()
         {
-            ApplicationEngine.ResetApplicationEngineProvider();
+            ApplicationEngine.Provider = null;
         }
 
         [TestCleanup]
         public void TestCleanup()
         {
-            ApplicationEngine.ResetApplicationEngineProvider();
+            ApplicationEngine.Provider = null;
         }
 
         [TestMethod]
         public void TestSetAppEngineProvider()
         {
-            var provider = new TestProvider();
-            ApplicationEngine.SetApplicationEngineProvider(provider).Should().BeTrue();
+            ApplicationEngine.Provider = new TestProvider();
 
             using var appEngine = ApplicationEngine.Create(TriggerType.Application, null, null, gas: 0, settings: TestBlockchain.TheNeoSystem.Settings);
             (appEngine is TestEngine).Should().BeTrue();
@@ -37,28 +35,6 @@ namespace Neo.UnitTests.SmartContract
         {
             using var appEngine = ApplicationEngine.Create(TriggerType.Application, null, null, gas: 0, settings: TestBlockchain.TheNeoSystem.Settings);
             (appEngine is ApplicationEngine).Should().BeTrue();
-        }
-
-        [TestMethod]
-        public void TestCantSetAppEngineProviderTwice()
-        {
-            var provider = new TestProvider();
-            ApplicationEngine.SetApplicationEngineProvider(provider).Should().BeTrue();
-
-            var provider2 = new TestProvider();
-            ApplicationEngine.SetApplicationEngineProvider(provider2).Should().BeFalse();
-        }
-
-        [TestMethod]
-        public void TestCanResetAppEngineProviderTwice()
-        {
-            var provider = new TestProvider();
-            ApplicationEngine.SetApplicationEngineProvider(provider).Should().BeTrue();
-
-            ApplicationEngine.ResetApplicationEngineProvider();
-
-            var provider2 = new TestProvider();
-            ApplicationEngine.SetApplicationEngineProvider(provider2).Should().BeTrue();
         }
 
         class TestProvider : IApplicationEngineProvider
