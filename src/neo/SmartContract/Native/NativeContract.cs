@@ -119,7 +119,7 @@ namespace Neo.SmartContract.Native
                 if (attribute is null) continue;
                 descriptors.Add(new ContractMethodMetadata(member, attribute));
             }
-            descriptors = descriptors.OrderBy(p => p.Name).ThenBy(p => p.Parameters.Length).ToList();
+            descriptors = descriptors.OrderBy(p => p.Name, StringComparer.Ordinal).ThenBy(p => p.Parameters.Length).ToList();
             byte[] script;
             using (ScriptBuilder sb = new())
             {
