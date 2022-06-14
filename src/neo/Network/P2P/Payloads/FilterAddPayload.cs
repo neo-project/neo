@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -10,6 +10,7 @@
 
 using Neo.Cryptography;
 using Neo.IO;
+using System;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads
@@ -22,18 +23,18 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The items to be added.
         /// </summary>
-        public byte[] Data;
+        public ReadOnlyMemory<byte> Data;
 
         public int Size => Data.GetVarSize();
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(ref MemoryReader reader)
         {
-            Data = reader.ReadVarBytes(520);
+            Data = reader.ReadVarMemory(520);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.WriteVarBytes(Data);
+            writer.WriteVarBytes(Data.Span);
         }
     }
 }

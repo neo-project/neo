@@ -5,7 +5,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.SmartContract;
 using System;
-using System.IO;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -68,7 +67,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             header.Timestamp.Should().Be(uut.Timestamp);
             header.Index.Should().Be(uut.Index);
             header.NextConsensus.Should().Be(uut.NextConsensus);
-            header.Witness.Should().BeEquivalentTo(uut.Witness);
+            header.Witness.InvocationScript.Span.SequenceEqual(uut.Witness.InvocationScript.Span).Should().BeTrue();
+            header.Witness.VerificationScript.Span.SequenceEqual(uut.Witness.VerificationScript.Span).Should().BeTrue();
             trim.Hashes.Length.Should().Be(0);
         }
 
@@ -82,9 +82,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var hex = "0000000000000000000000000000000000000000000000000000000000000000000000007227ba7b747f1a98f68679d4a98b68927646ab195a6f56b542ca5a0e6a412662e913ff854c00000000000000000000000000000000000000000000000000000000000000000000000001000111";
 
-            using MemoryStream ms = new(hex.HexToBytes(), false);
-            using BinaryReader reader = new(ms);
-            uut.Deserialize(reader);
+            MemoryReader reader = new(hex.HexToBytes());
+            uut.Deserialize(ref reader);
 
             AssertStandardHeaderTestVals(val256, merkRoot, val160, timestampVal, nonceVal, indexVal, scriptVal);
         }
@@ -99,7 +98,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut.NextConsensus.Should().Be(val160);
             uut.Witness.InvocationScript.Length.Should().Be(0);
             uut.Witness.Size.Should().Be(scriptVal.Size);
-            uut.Witness.VerificationScript[0].Should().Be(scriptVal.VerificationScript[0]);
+            uut.Witness.VerificationScript.Span[0].Should().Be(scriptVal.VerificationScript.Span[0]);
         }
 
         [TestMethod]

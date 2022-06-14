@@ -82,7 +82,7 @@ namespace Neo.UnitTests.SmartContract
             StackItem result1 = BinarySerializer.Deserialize(byteArray1, ExecutionEngineLimits.Default);
             Assert.AreEqual(stackItem1, result1);
 
-            StackItem stackItem2 = new VM.Types.Boolean(true);
+            StackItem stackItem2 = StackItem.True;
             byte[] byteArray2 = BinarySerializer.Serialize(stackItem2, MaxItemSize);
             StackItem result2 = BinarySerializer.Deserialize(byteArray2, ExecutionEngineLimits.Default);
             Assert.AreEqual(stackItem2, result2);

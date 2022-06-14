@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -34,6 +34,8 @@ namespace Neo.SmartContract
         /// </summary>
         public const int MaxNotificationSize = 1024;
 
+        private uint random_times = 0;
+
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.Platform.
         /// Gets the name of the current platform.
@@ -45,6 +47,12 @@ namespace Neo.SmartContract
         /// Gets the magic number of the current network.
         /// </summary>
         public static readonly InteropDescriptor System_Runtime_GetNetwork = Register("System.Runtime.GetNetwork", nameof(GetNetwork), 1 << 3, CallFlags.None);
+
+        /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Runtime.GetAddressVersion.
+        /// Gets the address version of the current network.
+        /// </summary>
+        public static readonly InteropDescriptor System_Runtime_GetAddressVersion = Register("System.Runtime.GetAddressVersion", nameof(GetAddressVersion), 1 << 3, CallFlags.None);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.GetTrigger.
@@ -98,7 +106,7 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Runtime.GetRandom.
         /// Gets the random number generated from the VRF.
         /// </summary>
-        public static readonly InteropDescriptor System_Runtime_GetRandom = Register("System.Runtime.GetRandom", nameof(GetRandom), 1 << 4, CallFlags.None);
+        public static readonly InteropDescriptor System_Runtime_GetRandom = Register("System.Runtime.GetRandom", nameof(GetRandom), 0, CallFlags.None);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.Log.
@@ -116,7 +124,7 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Runtime.GetNotifications.
         /// Gets the notifications sent by the specified contract during the execution.
         /// </summary>
-        public static readonly InteropDescriptor System_Runtime_GetNotifications = Register("System.Runtime.GetNotifications", nameof(GetNotifications), 1 << 8, CallFlags.None);
+        public static readonly InteropDescriptor System_Runtime_GetNotifications = Register("System.Runtime.GetNotifications", nameof(GetNotifications), 1 << 12, CallFlags.None);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.GasLeft.
@@ -148,6 +156,16 @@ namespace Neo.SmartContract
         internal protected uint GetNetwork()
         {
             return ProtocolSettings.Network;
+        }
+
+        /// <summary>
+        /// The implementation of System.Runtime.GetAddressVersion.
+        /// Gets the address version of the current network.
+        /// </summary>
+        /// <returns>The address version of the current network.</returns>
+        internal protected byte GetAddressVersion()
+        {
+            return ProtocolSettings.AddressVersion;
         }
 
         /// <summary>
@@ -251,8 +269,20 @@ namespace Neo.SmartContract
         /// <returns>The next random number.</returns>
         protected internal BigInteger GetRandom()
         {
-            nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
-            return new BigInteger(nonceData, isUnsigned: true);
+            byte[] buffer;
+            long price;
+            if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
+            {
+                buffer = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + random_times++);
+                price = 1 << 13;
+            }
+            else
+            {
+                buffer = nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
+                price = 1 << 4;
+            }
+            AddGas(price * ExecFeeFactor);
+            return new BigInteger(buffer, isUnsigned: true);
         }
 
         /// <summary>
@@ -290,10 +320,11 @@ namespace Neo.SmartContract
         /// <param name="state">The arguments of the event.</param>
         protected internal void SendNotification(UInt160 hash, string eventName, Array state)
         {
-            NotifyEventArgs notification = new(ScriptContainer, hash, eventName, (Array)state.DeepCopy());
+            NotifyEventArgs notification = new(ScriptContainer, hash, eventName, (Array)state.DeepCopy(asImmutable: true));
             Notify?.Invoke(this, notification);
             notifications ??= new List<NotifyEventArgs>();
             notifications.Add(notification);
+            CurrentContext.GetState<ExecutionContextState>().NotificationCount++;
         }
 
         /// <summary>

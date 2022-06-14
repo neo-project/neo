@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -8,15 +8,18 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Persistence;
-
-namespace Neo.Plugins
+namespace Neo.Persistence
 {
     /// <summary>
     /// A provider used to create <see cref="IStore"/> instances.
     /// </summary>
-    public interface IStorageProvider
+    public interface IStoreProvider
     {
+        /// <summary>
+        /// Gets the name of the <see cref="IStoreProvider"/>.
+        /// </summary>
+        string Name { get; }
+
         /// <summary>
         /// Creates a new instance of the <see cref="IStore"/> interface.
         /// </summary>

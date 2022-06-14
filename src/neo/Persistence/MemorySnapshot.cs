@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -40,7 +40,7 @@ namespace Neo.Persistence
 
         public void Delete(byte[] key)
         {
-            writeBatch[key.EnsureNotNull()] = null;
+            writeBatch[key] = null;
         }
 
         public void Dispose()
@@ -49,7 +49,7 @@ namespace Neo.Persistence
 
         public void Put(byte[] key, byte[] value)
         {
-            writeBatch[key.EnsureNotNull()] = value;
+            writeBatch[key[..]] = value[..];
         }
 
         public IEnumerable<(byte[] Key, byte[] Value)> Seek(byte[] keyOrPrefix, SeekDirection direction = SeekDirection.Forward)
@@ -59,18 +59,18 @@ namespace Neo.Persistence
             if (keyOrPrefix?.Length > 0)
                 records = records.Where(p => comparer.Compare(p.Key, keyOrPrefix) >= 0);
             records = records.OrderBy(p => p.Key, comparer);
-            return records.Select(p => (p.Key, p.Value));
+            return records.Select(p => (p.Key[..], p.Value[..]));
         }
 
         public byte[] TryGet(byte[] key)
         {
-            immutableData.TryGetValue(key.EnsureNotNull(), out byte[] value);
-            return value;
+            immutableData.TryGetValue(key, out byte[] value);
+            return value?[..];
         }
 
         public bool Contains(byte[] key)
         {
-            return innerData.ContainsKey(key.EnsureNotNull());
+            return immutableData.ContainsKey(key);
         }
     }
 }

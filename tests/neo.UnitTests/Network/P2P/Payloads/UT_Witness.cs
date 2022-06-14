@@ -25,20 +25,18 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void InvocationScript_Get()
         {
-            uut.InvocationScript.Should().BeNull();
+            uut.InvocationScript.IsEmpty.Should().BeTrue();
         }
 
         private static Witness PrepareDummyWitness(int pubKeys, int m)
         {
             var address = new WalletAccount[pubKeys];
             var wallets = new NEP6Wallet[pubKeys];
-            var walletsUnlocks = new IDisposable[pubKeys];
             var snapshot = TestBlockchain.GetTestSnapshot();
 
             for (int x = 0; x < pubKeys; x++)
             {
-                wallets[x] = TestUtils.GenerateTestWallet();
-                walletsUnlocks[x] = wallets[x].Unlock("123");
+                wallets[x] = TestUtils.GenerateTestWallet("123");
                 address[x] = wallets[x].CreateAccount();
             }
 
@@ -92,8 +90,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var copy = witness.ToArray().AsSerializable<Witness>();
 
-            CollectionAssert.AreEqual(witness.InvocationScript, copy.InvocationScript);
-            CollectionAssert.AreEqual(witness.VerificationScript, copy.VerificationScript);
+            Assert.IsTrue(witness.InvocationScript.Span.SequenceEqual(copy.InvocationScript.Span));
+            Assert.IsTrue(witness.VerificationScript.Span.SequenceEqual(copy.VerificationScript.Span));
         }
 
         [TestMethod]
@@ -122,7 +120,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             byte[] dataArray = new byte[] { 0, 32, 32, 20, 32, 32 };
             uut.InvocationScript = dataArray;
             uut.InvocationScript.Length.Should().Be(6);
-            Assert.AreEqual(uut.InvocationScript.ToHexString(), "002020142020");
+            Assert.AreEqual(uut.InvocationScript.Span.ToHexString(), "002020142020");
         }
 
         private static void SetupWitnessWithValues(Witness uut, int lenghtInvocation, int lengthVerification, out byte[] invocationScript, out byte[] verificationScript)

@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -24,9 +25,9 @@ namespace Neo.UnitTests.Extensions
                 _hashForVerify = hashForVerify ?? System.Array.Empty<UInt160>();
             }
 
-            public void Deserialize(BinaryReader reader) { }
+            public void Deserialize(ref MemoryReader reader) { }
 
-            public void DeserializeUnsigned(BinaryReader reader) { }
+            public void DeserializeUnsigned(ref MemoryReader reader) { }
 
             public UInt160[] GetScriptHashesForVerifying(DataCache snapshot) => _hashForVerify;
 

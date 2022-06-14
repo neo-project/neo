@@ -62,17 +62,21 @@ namespace Neo.Persistence
 
         protected override StorageItem GetInternal(StorageKey key)
         {
-            return store.TryGet(key.ToArray()).AsSerializable<StorageItem>();
+            byte[] value = store.TryGet(key.ToArray());
+            if (value == null) throw new KeyNotFoundException();
+            return new(value);
         }
 
         protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction)
         {
-            return store.Seek(keyOrPrefix, direction).Select(p => (p.Key.AsSerializable<StorageKey>(), p.Value.AsSerializable<StorageItem>()));
+            return store.Seek(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key), new StorageItem(p.Value)));
         }
 
         protected override StorageItem TryGetInternal(StorageKey key)
         {
-            return store.TryGet(key.ToArray())?.AsSerializable<StorageItem>();
+            byte[] value = store.TryGet(key.ToArray());
+            if (value == null) return null;
+            return new(value);
         }
 
         protected override void UpdateInternal(StorageKey key, StorageItem value)

@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -10,6 +10,7 @@
 
 using Neo.VM;
 using Neo.VM.Types;
+using System.Runtime.Serialization;
 
 namespace Neo.SmartContract
 {
@@ -30,5 +31,17 @@ namespace Neo.SmartContract
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The converted <see cref="StackItem"/>.</returns>
         StackItem ToStackItem(ReferenceCounter referenceCounter);
+
+        public IInteroperable Clone()
+        {
+            IInteroperable result = (IInteroperable)FormatterServices.GetUninitializedObject(GetType());
+            result.FromStackItem(ToStackItem(null));
+            return result;
+        }
+
+        public void FromReplica(IInteroperable replica)
+        {
+            FromStackItem(replica.ToStackItem(null));
+        }
     }
 }

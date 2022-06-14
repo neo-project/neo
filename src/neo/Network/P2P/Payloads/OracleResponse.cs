@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -48,7 +48,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The result for the oracle request.
         /// </summary>
-        public byte[] Result;
+        public ReadOnlyMemory<byte> Result;
 
         public override TransactionAttributeType Type => TransactionAttributeType.OracleResponse;
         public override bool AllowMultiple => false;
@@ -65,13 +65,13 @@ namespace Neo.Network.P2P.Payloads
             FixedScript = sb.ToArray();
         }
 
-        protected override void DeserializeWithoutType(BinaryReader reader)
+        protected override void DeserializeWithoutType(ref MemoryReader reader)
         {
             Id = reader.ReadUInt64();
             Code = (OracleResponseCode)reader.ReadByte();
             if (!Enum.IsDefined(typeof(OracleResponseCode), Code))
                 throw new FormatException();
-            Result = reader.ReadVarBytes(MaxResultSize);
+            Result = reader.ReadVarMemory(MaxResultSize);
             if (Code != OracleResponseCode.Success && Result.Length > 0)
                 throw new FormatException();
         }
@@ -80,7 +80,7 @@ namespace Neo.Network.P2P.Payloads
         {
             writer.Write(Id);
             writer.Write((byte)Code);
-            writer.WriteVarBytes(Result);
+            writer.WriteVarBytes(Result.Span);
         }
 
         public override JObject ToJson()
@@ -88,14 +88,14 @@ namespace Neo.Network.P2P.Payloads
             JObject json = base.ToJson();
             json["id"] = Id;
             json["code"] = Code;
-            json["result"] = Convert.ToBase64String(Result);
+            json["result"] = Convert.ToBase64String(Result.Span);
             return json;
         }
 
         public override bool Verify(DataCache snapshot, Transaction tx)
         {
             if (tx.Signers.Any(p => p.Scopes != WitnessScope.None)) return false;
-            if (!tx.Script.AsSpan().SequenceEqual(FixedScript)) return false;
+            if (!tx.Script.Span.SequenceEqual(FixedScript)) return false;
             OracleRequest request = NativeContract.Oracle.GetRequest(snapshot, Id);
             if (request is null) return false;
             if (tx.NetworkFee + tx.SystemFee != request.GasForResponse) return false;

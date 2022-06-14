@@ -97,7 +97,7 @@ namespace Neo.SmartContract.Native
             if (amount.IsZero) return;
             StorageItem storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Account).Add(account), () => new StorageItem(new TState()));
             TState state = storage.GetInteroperable<TState>();
-            await OnBalanceChanging(engine, account, state, amount);
+            OnBalanceChanging(engine, account, state, amount);
             state.Balance += amount;
             storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem(BigInteger.Zero));
             storage.Add(amount);
@@ -112,7 +112,7 @@ namespace Neo.SmartContract.Native
             StorageItem storage = engine.Snapshot.GetAndChange(key);
             TState state = storage.GetInteroperable<TState>();
             if (state.Balance < amount) throw new InvalidOperationException();
-            await OnBalanceChanging(engine, account, state, -amount);
+            OnBalanceChanging(engine, account, state, -amount);
             if (state.Balance == amount)
                 engine.Snapshot.Delete(key);
             else
@@ -164,7 +164,7 @@ namespace Neo.SmartContract.Native
                 if (storage_from != null)
                 {
                     TState state_from = storage_from.GetInteroperable<TState>();
-                    await OnBalanceChanging(engine, from, state_from, amount);
+                    OnBalanceChanging(engine, from, state_from, amount);
                 }
             }
             else
@@ -174,11 +174,11 @@ namespace Neo.SmartContract.Native
                 if (state_from.Balance < amount) return false;
                 if (from.Equals(to))
                 {
-                    await OnBalanceChanging(engine, from, state_from, BigInteger.Zero);
+                    OnBalanceChanging(engine, from, state_from, BigInteger.Zero);
                 }
                 else
                 {
-                    await OnBalanceChanging(engine, from, state_from, -amount);
+                    OnBalanceChanging(engine, from, state_from, -amount);
                     if (state_from.Balance == amount)
                         engine.Snapshot.Delete(key_from);
                     else
@@ -186,7 +186,7 @@ namespace Neo.SmartContract.Native
                     StorageKey key_to = CreateStorageKey(Prefix_Account).Add(to);
                     StorageItem storage_to = engine.Snapshot.GetAndChange(key_to, () => new StorageItem(new TState()));
                     TState state_to = storage_to.GetInteroperable<TState>();
-                    await OnBalanceChanging(engine, to, state_to, amount);
+                    OnBalanceChanging(engine, to, state_to, amount);
                     state_to.Balance += amount;
                 }
             }
@@ -194,17 +194,16 @@ namespace Neo.SmartContract.Native
             return true;
         }
 
-        internal virtual ContractTask OnBalanceChanging(ApplicationEngine engine, UInt160 account, TState state, BigInteger amount)
+        internal virtual void OnBalanceChanging(ApplicationEngine engine, UInt160 account, TState state, BigInteger amount)
         {
-            return ContractTask.CompletedTask;
         }
 
-        private async ContractTask PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data, bool callOnPayment)
+        private protected virtual async ContractTask PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data, bool callOnPayment)
         {
             // Send notification
 
             engine.SendNotification(Hash, "Transfer",
-                new Array { from?.ToArray() ?? StackItem.Null, to?.ToArray() ?? StackItem.Null, amount });
+                new Array(engine.ReferenceCounter) { from?.ToArray() ?? StackItem.Null, to?.ToArray() ?? StackItem.Null, amount });
 
             // Check if it's a wallet or smart contract
 

@@ -6,7 +6,6 @@ using Neo.Wallets.NEP6;
 using Neo.Wallets.SQLite;
 using System;
 using System.IO;
-using System.Security;
 using System.Security.Cryptography;
 using System.Threading;
 using Contract = Neo.SmartContract.Contract;
@@ -120,28 +119,6 @@ namespace Neo.UnitTests.Wallets.SQLite
             account2.Should().Be(dbAccount2);
             wallet.DeleteAccount(account.ScriptHash);
             wallet.DeleteAccount(account2.ScriptHash);
-        }
-
-        [TestMethod]
-        public void TestCreateAndOpenSecureString()
-        {
-            string myPath = GetRandomPath();
-            var ss = new SecureString();
-            ss.AppendChar('a');
-            ss.AppendChar('b');
-            ss.AppendChar('c');
-
-            var w1 = UserWallet.Create(myPath, ss, ProtocolSettings.Default, new ScryptParameters(0, 0, 0));
-            w1.Should().NotBeNull();
-
-            var w2 = UserWallet.Open(myPath, ss, ProtocolSettings.Default);
-            w2.Should().NotBeNull();
-
-            ss.AppendChar('d');
-            Action action = () => UserWallet.Open(myPath, ss, ProtocolSettings.Default);
-            action.Should().Throw<CryptographicException>();
-
-            w1.Delete();
         }
 
         [TestMethod]

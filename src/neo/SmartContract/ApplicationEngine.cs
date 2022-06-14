@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -9,11 +9,9 @@
 // modifications are permitted.
 
 using Neo.IO;
-using Neo.IO.Caching;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.Plugins;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -23,7 +21,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
-using static System.Threading.Interlocked;
 using Array = System.Array;
 using VMArray = Neo.VM.Types.Array;
 
@@ -49,18 +46,22 @@ namespace Neo.SmartContract
         /// </summary>
         public static event EventHandler<LogEventArgs> Log;
 
-        private static IApplicationEngineProvider applicationEngineProvider;
         private static Dictionary<uint, InteropDescriptor> services;
-        private TreeNode<UInt160> currentNodeOfInvocationTree = null;
         private readonly long gas_amount;
         private Dictionary<Type, object> states;
+        private readonly DataCache originalSnapshot;
         private List<NotifyEventArgs> notifications;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
         private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
-        private readonly uint exec_fee_factor;
+        internal readonly uint ExecFeeFactor;
         internal readonly uint StoragePrice;
         private byte[] nonceData;
+
+        /// <summary>
+        /// Gets or sets the provider used to create the <see cref="ApplicationEngine"/>.
+        /// </summary>
+        public static IApplicationEngineProvider Provider { get; set; }
 
         /// <summary>
         /// Gets the descriptors of all interoperable services available in NEO.
@@ -70,7 +71,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The diagnostic used by the engine. This property can be <see langword="null"/>.
         /// </summary>
-        public Diagnostic Diagnostic { get; }
+        public IDiagnostic Diagnostic { get; }
 
         private List<IDisposable> Disposables => disposables ??= new List<IDisposable>();
 
@@ -87,7 +88,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The snapshot used to read or write data.
         /// </summary>
-        public DataCache Snapshot { get; }
+        public DataCache Snapshot => CurrentContext?.GetState<ExecutionContextState>().Snapshot ?? originalSnapshot;
 
         /// <summary>
         /// The block being persisted. This field could be <see langword="null"/> if the <see cref="Trigger"/> is <see cref="TriggerType.Verification"/>.
@@ -144,17 +145,17 @@ namespace Neo.SmartContract
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
-        protected unsafe ApplicationEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, Diagnostic diagnostic)
+        protected unsafe ApplicationEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
-            this.Snapshot = snapshot;
+            this.originalSnapshot = snapshot;
             this.PersistingBlock = persistingBlock;
             this.ProtocolSettings = settings;
             this.gas_amount = gas;
             this.Diagnostic = diagnostic;
-            this.exec_fee_factor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(Snapshot);
-            this.StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(Snapshot);
+            this.ExecFeeFactor = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultExecFeeFactor : NativeContract.Policy.GetExecFeeFactor(snapshot);
+            this.StoragePrice = snapshot is null || persistingBlock?.Index == 0 ? PolicyContract.DefaultStoragePrice : NativeContract.Policy.GetStoragePrice(snapshot);
             this.nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
             if (persistingBlock is not null)
             {
@@ -163,6 +164,7 @@ namespace Neo.SmartContract
                     *(ulong*)p ^= persistingBlock.Nonce;
                 }
             }
+            diagnostic?.Initialized(this);
         }
 
         /// <summary>
@@ -179,6 +181,7 @@ namespace Neo.SmartContract
         protected override void OnFault(Exception ex)
         {
             FaultException = ex;
+            notifications = null;
             base.OnFault(ex);
         }
 
@@ -260,12 +263,32 @@ namespace Neo.SmartContract
         protected override void ContextUnloaded(ExecutionContext context)
         {
             base.ContextUnloaded(context);
-            if (Diagnostic is not null)
-                currentNodeOfInvocationTree = currentNodeOfInvocationTree.Parent;
-            if (!contractTasks.Remove(context, out var awaiter)) return;
-            if (UncaughtException is not null)
-                throw new VMUnhandledException(UncaughtException);
-            awaiter.SetResult(this);
+            if (context.Script != CurrentContext?.Script)
+            {
+                ExecutionContextState state = context.GetState<ExecutionContextState>();
+                if (UncaughtException is null)
+                {
+                    state.Snapshot?.Commit();
+                    if (CurrentContext != null)
+                    {
+                        ExecutionContextState contextState = CurrentContext.GetState<ExecutionContextState>();
+                        contextState.NotificationCount += state.NotificationCount;
+                        if (state.PushNullWhenReturn) Push(StackItem.Null);
+                    }
+                }
+                else
+                {
+                    if (state.NotificationCount > 0)
+                        notifications.RemoveRange(notifications.Count - state.NotificationCount, state.NotificationCount);
+                }
+            }
+            Diagnostic?.ContextUnloaded(context);
+            if (contractTasks.Remove(context, out var awaiter))
+            {
+                if (UncaughtException is not null)
+                    throw new VMUnhandledException(UncaughtException);
+                awaiter.SetResult(this);
+            }
         }
 
         /// <summary>
@@ -279,9 +302,9 @@ namespace Neo.SmartContract
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
-        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, Diagnostic diagnostic = null)
+        public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, IDiagnostic diagnostic = null)
         {
-            return applicationEngineProvider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic)
+            return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic);
         }
 
@@ -289,18 +312,10 @@ namespace Neo.SmartContract
         {
             // Set default execution context state
             var state = context.GetState<ExecutionContextState>();
-            state.ScriptHash ??= ((byte[])context.Script).ToScriptHash();
+            state.ScriptHash ??= ((ReadOnlyMemory<byte>)context.Script).Span.ToScriptHash();
             invocationCounter.TryAdd(state.ScriptHash, 1);
-
-            if (Diagnostic is not null)
-            {
-                if (currentNodeOfInvocationTree is null)
-                    currentNodeOfInvocationTree = Diagnostic.InvocationTree.AddRoot(state.ScriptHash);
-                else
-                    currentNodeOfInvocationTree = currentNodeOfInvocationTree.AddChild(state.ScriptHash);
-            }
-
             base.LoadContext(context);
+            Diagnostic?.ContextLoaded(context);
         }
 
         /// <summary>
@@ -351,7 +366,10 @@ namespace Neo.SmartContract
         {
             // Create and configure context
             ExecutionContext context = CreateContext(script, rvcount, initialPosition);
-            configureState?.Invoke(context.GetState<ExecutionContextState>());
+            ExecutionContextState state = context.GetState<ExecutionContextState>();
+            state.Snapshot = Snapshot?.CreateSnapshot();
+            configureState?.Invoke(state);
+
             // Load context
             LoadContext(context);
             return context;
@@ -394,6 +412,7 @@ namespace Neo.SmartContract
                 ulong i => i,
                 Enum e => Convert(System.Convert.ChangeType(e, e.GetTypeCode())),
                 byte[] data => data,
+                ReadOnlyMemory<byte> m => m,
                 string s => s,
                 BigInteger i => i,
                 JObject o => o.ToByteArray(false),
@@ -447,6 +466,7 @@ namespace Neo.SmartContract
 
         public override void Dispose()
         {
+            Diagnostic?.Disposed();
             if (disposables != null)
             {
                 foreach (IDisposable disposable in disposables)
@@ -479,7 +499,7 @@ namespace Neo.SmartContract
         protected virtual void OnSysCall(InteropDescriptor descriptor)
         {
             ValidateCallFlags(descriptor.RequiredCallFlags);
-            AddGas(descriptor.FixedPrice * exec_fee_factor);
+            AddGas(descriptor.FixedPrice * ExecFeeFactor);
 
             object[] parameters = new object[descriptor.Parameters.Count];
             for (int i = 0; i < parameters.Length; i++)
@@ -492,8 +512,15 @@ namespace Neo.SmartContract
 
         protected override void PreExecuteInstruction()
         {
+            Diagnostic?.PreExecuteInstruction();
             if (CurrentContext.InstructionPointer < CurrentContext.Script.Length)
-                AddGas(exec_fee_factor * OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
+                AddGas(ExecFeeFactor * OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
+        }
+
+        protected override void PostExecuteInstruction()
+        {
+            base.PostExecuteInstruction();
+            Diagnostic?.PostExecuteInstruction();
         }
 
         private static Block CreateDummyBlock(DataCache snapshot, ProtocolSettings settings)
@@ -536,11 +563,6 @@ namespace Neo.SmartContract
             return descriptor;
         }
 
-        internal static void ResetApplicationEngineProvider()
-        {
-            Exchange(ref applicationEngineProvider, null);
-        }
-
         /// <summary>
         /// Creates a new instance of the <see cref="ApplicationEngine"/> class, and use it to run the specified script.
         /// </summary>
@@ -553,18 +575,13 @@ namespace Neo.SmartContract
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
-        public static ApplicationEngine Run(byte[] script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, ProtocolSettings settings = null, int offset = 0, long gas = TestModeGas, Diagnostic diagnostic = null)
+        public static ApplicationEngine Run(ReadOnlyMemory<byte> script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, ProtocolSettings settings = null, int offset = 0, long gas = TestModeGas, IDiagnostic diagnostic = null)
         {
             persistingBlock ??= CreateDummyBlock(snapshot, settings ?? ProtocolSettings.Default);
             ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, persistingBlock, settings, gas, diagnostic);
             engine.LoadScript(script, initialPosition: offset);
             engine.Execute();
             return engine;
-        }
-
-        internal static bool SetApplicationEngineProvider(IApplicationEngineProvider provider)
-        {
-            return CompareExchange(ref applicationEngineProvider, provider, null) is null;
         }
 
         public T GetState<T>()
@@ -578,6 +595,15 @@ namespace Neo.SmartContract
         {
             states ??= new Dictionary<Type, object>();
             states[typeof(T)] = state;
+        }
+
+        private bool IsHardforkEnabled(Hardfork hardfork)
+        {
+            if (PersistingBlock is null)
+                return true;
+            if (!ProtocolSettings.Hardforks.TryGetValue(hardfork, out uint height))
+                return true;
+            return PersistingBlock.Index >= height;
         }
     }
 }

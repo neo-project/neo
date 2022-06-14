@@ -4,7 +4,6 @@ using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using System;
-using System.IO;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -36,27 +35,28 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // As transactionAttribute
 
-            using var msRead = new MemoryStream();
-            using var msWrite = new MemoryStream();
-            using (var stream = new BinaryWriter(msWrite))
-            {
-                var data = (test as TransactionAttribute).ToArray();
-                msRead.Write(data);
-                msRead.Seek(0, SeekOrigin.Begin);
-            }
-
-            using var reader = new BinaryReader(msRead);
-            clone = TransactionAttribute.DeserializeFrom(reader) as HighPriorityAttribute;
+            byte[] buffer = test.ToArray();
+            var reader = new MemoryReader(buffer);
+            clone = TransactionAttribute.DeserializeFrom(ref reader) as HighPriorityAttribute;
             Assert.AreEqual(clone.Type, test.Type);
 
             // Wrong type
 
-            msRead.Seek(0, SeekOrigin.Begin);
-            msRead.WriteByte(0xff);
-            msRead.Seek(0, SeekOrigin.Begin);
-            Assert.ThrowsException<FormatException>(() => TransactionAttribute.DeserializeFrom(reader));
-            msRead.Seek(0, SeekOrigin.Begin);
-            Assert.ThrowsException<FormatException>(() => new HighPriorityAttribute().Deserialize(reader));
+            buffer[0] = 0xff;
+            reader = new MemoryReader(buffer);
+            try
+            {
+                TransactionAttribute.DeserializeFrom(ref reader);
+                Assert.Fail();
+            }
+            catch (FormatException) { }
+            reader = new MemoryReader(buffer);
+            try
+            {
+                new HighPriorityAttribute().Deserialize(ref reader);
+                Assert.Fail();
+            }
+            catch (FormatException) { }
         }
 
         [TestMethod]

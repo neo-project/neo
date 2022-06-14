@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -64,7 +64,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script of the contract.
         /// </summary>
-        public byte[] Script { get; set; }
+        public ReadOnlyMemory<byte> Script { get; set; }
 
         /// <summary>
         /// The checksum of the nef file.
@@ -96,7 +96,7 @@ namespace Neo.SmartContract
             writer.Write((byte)0);
             writer.Write(Tokens);
             writer.Write((short)0);
-            writer.WriteVarBytes(Script ?? Array.Empty<byte>());
+            writer.WriteVarBytes(Script.Span);
             writer.Write(CheckSum);
         }
 
@@ -106,7 +106,7 @@ namespace Neo.SmartContract
             writer.WriteFixedString(Compiler, 64);
         }
 
-        public void Deserialize(BinaryReader reader)
+        public void Deserialize(ref MemoryReader reader)
         {
             if (reader.ReadUInt32() != Magic) throw new FormatException("Wrong magic");
             Compiler = reader.ReadFixedString(64);
@@ -114,7 +114,7 @@ namespace Neo.SmartContract
             if (reader.ReadByte() != 0) throw new FormatException("Reserved bytes must be 0");
             Tokens = reader.ReadSerializableArray<MethodToken>(128);
             if (reader.ReadUInt16() != 0) throw new FormatException("Reserved bytes must be 0");
-            Script = reader.ReadVarBytes(MaxScriptLength);
+            Script = reader.ReadVarMemory(MaxScriptLength);
             if (Script.Length == 0) throw new ArgumentException($"Script can't be empty");
             CheckSum = reader.ReadUInt32();
             if (CheckSum != ComputeChecksum(this)) throw new FormatException("CRC verification fail");
@@ -142,7 +142,7 @@ namespace Neo.SmartContract
                 ["compiler"] = Compiler,
                 ["source"] = Source,
                 ["tokens"] = new JArray(Tokens.Select(p => p.ToJson())),
-                ["script"] = Convert.ToBase64String(Script),
+                ["script"] = Convert.ToBase64String(Script.Span),
                 ["checksum"] = CheckSum
             };
         }

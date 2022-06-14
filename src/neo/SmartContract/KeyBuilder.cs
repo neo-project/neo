@@ -19,7 +19,6 @@ namespace Neo.SmartContract
     /// </summary>
     public class KeyBuilder
     {
-        private readonly int id;
         private readonly MemoryStream stream = new();
 
         /// <summary>
@@ -29,7 +28,7 @@ namespace Neo.SmartContract
         /// <param name="prefix">The prefix of the key.</param>
         public KeyBuilder(int id, byte prefix)
         {
-            this.id = id;
+            Add(id);
             this.stream.WriteByte(prefix);
         }
 
@@ -92,7 +91,7 @@ namespace Neo.SmartContract
         {
             using (stream)
             {
-                return StorageKey.CreateSearchPrefix(id, stream.ToArray());
+                return stream.ToArray();
             }
         }
 
@@ -100,11 +99,7 @@ namespace Neo.SmartContract
         {
             using (builder.stream)
             {
-                return new StorageKey
-                {
-                    Id = builder.id,
-                    Key = builder.stream.ToArray()
-                };
+                return new StorageKey(builder.stream.ToArray());
             }
         }
     }

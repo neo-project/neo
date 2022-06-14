@@ -43,12 +43,27 @@ namespace Neo.Cryptography
         /// <param name="m">The size of the bit array used by the bloom filter.</param>
         /// <param name="k">The number of hash functions used by the bloom filter.</param>
         /// <param name="nTweak">Used to generate the seeds of the murmur hash functions.</param>
-        /// <param name="elements">The initial elements contained in this <see cref="BloomFilter"/> object.</param>
-        public BloomFilter(int m, int k, uint nTweak, byte[] elements = null)
+        public BloomFilter(int m, int k, uint nTweak)
         {
             if (k < 0 || m < 0) throw new ArgumentOutOfRangeException();
             this.seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
-            this.bits = elements == null ? new BitArray(m) : new BitArray(elements);
+            this.bits = new BitArray(m);
+            this.bits.Length = m;
+            this.Tweak = nTweak;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BloomFilter"/> class.
+        /// </summary>
+        /// <param name="m">The size of the bit array used by the bloom filter.</param>
+        /// <param name="k">The number of hash functions used by the bloom filter.</param>
+        /// <param name="nTweak">Used to generate the seeds of the murmur hash functions.</param>
+        /// <param name="elements">The initial elements contained in this <see cref="BloomFilter"/> object.</param>
+        public BloomFilter(int m, int k, uint nTweak, ReadOnlyMemory<byte> elements)
+        {
+            if (k < 0 || m < 0) throw new ArgumentOutOfRangeException();
+            this.seeds = Enumerable.Range(0, k).Select(p => (uint)p * 0xFBA4C795 + nTweak).ToArray();
+            this.bits = new BitArray(elements.ToArray());
             this.bits.Length = m;
             this.Tweak = nTweak;
         }
@@ -57,9 +72,9 @@ namespace Neo.Cryptography
         /// Adds an element to the <see cref="BloomFilter"/>.
         /// </summary>
         /// <param name="element">The object to add to the <see cref="BloomFilter"/>.</param>
-        public void Add(byte[] element)
+        public void Add(ReadOnlyMemory<byte> element)
         {
-            foreach (uint i in seeds.AsParallel().Select(s => element.Murmur32(s)))
+            foreach (uint i in seeds.AsParallel().Select(s => element.Span.Murmur32(s)))
                 bits.Set((int)(i % (uint)bits.Length), true);
         }
 

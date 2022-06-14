@@ -6,6 +6,7 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
 using System;
+using static Neo.SmartContract.Helper;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -48,7 +49,7 @@ namespace Neo.UnitTests.SmartContract
                 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
                 255, 255, 255, 255, 255, 255, 255, 255, 0,
             };
-            Assert.IsFalse(case1.IsMultiSigContract());
+            Assert.IsFalse(IsMultiSigContract(case1));
 
             var case2 = new byte[]
             {
@@ -57,7 +58,7 @@ namespace Neo.UnitTests.SmartContract
                 29, 173, 212, 53, 25, 230, 150, 14, 10, 133, 180, 26, 105, 160, 92, 50, 129, 3, 170, 43, 206, 21, 148,
                 202, 22, 18
             };
-            Assert.IsFalse(case2.IsMultiSigContract());
+            Assert.IsFalse(IsMultiSigContract(case2));
         }
 
         [TestMethod]

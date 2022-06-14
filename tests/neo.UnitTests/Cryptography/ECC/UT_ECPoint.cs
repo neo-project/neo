@@ -84,22 +84,40 @@ namespace Neo.UnitTests.Cryptography.ECC
         public void TestDeserializeFrom()
         {
             byte[] input1 = { 0 };
-            Action action = () => ECPoint.DeserializeFrom(new BinaryReader(new MemoryStream(input1)), ECCurve.Secp256k1);
-            action.Should().Throw<FormatException>();
+            MemoryReader reader1 = new(input1);
+            try
+            {
+                ECPoint.DeserializeFrom(ref reader1, ECCurve.Secp256k1);
+                Assert.Fail();
+            }
+            catch (FormatException) { }
 
             byte[] input2 = { 4, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152, 72,
                 58, 218, 119, 38, 163, 196, 101, 93, 164, 251, 252, 14, 17, 8, 168, 253, 23, 180, 72, 166, 133, 84, 25, 156, 71, 208, 143, 251, 16, 212, 184 };
-            ECPoint.DeserializeFrom(new BinaryReader(new MemoryStream(input2)), ECCurve.Secp256k1).Should().Be(ECCurve.Secp256k1.G);
-            action = () => ECPoint.DeserializeFrom(new BinaryReader(new MemoryStream(input2.Take(32).ToArray())), ECCurve.Secp256k1).Should().Be(ECCurve.Secp256k1.G);
-            action.Should().Throw<FormatException>();
+            MemoryReader reader2 = new(input2);
+            ECPoint.DeserializeFrom(ref reader2, ECCurve.Secp256k1).Should().Be(ECCurve.Secp256k1.G);
+            reader2 = new(input2.Take(32).ToArray());
+            try
+            {
+                ECPoint.DeserializeFrom(ref reader2, ECCurve.Secp256k1);
+                Assert.Fail();
+            }
+            catch (FormatException) { }
 
             byte[] input3 = { 2, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152 };
-            ECPoint.DeserializeFrom(new BinaryReader(new MemoryStream(input3)), ECCurve.Secp256k1).Should().Be(ECCurve.Secp256k1.G);
+            MemoryReader reader3 = new(input3);
+            ECPoint.DeserializeFrom(ref reader3, ECCurve.Secp256k1).Should().Be(ECCurve.Secp256k1.G);
             byte[] input4 = { 3, 107, 23, 209, 242, 225, 44, 66, 71, 248, 188, 230, 229, 99, 164, 64, 242, 119, 3, 125, 129, 45, 235, 51, 160, 244, 161, 57, 69, 216, 152, 194, 150 };
-            ECPoint.DeserializeFrom(new BinaryReader(new MemoryStream(input4)), ECCurve.Secp256r1).Should().Be(ECCurve.Secp256r1.G);
+            MemoryReader reader4 = new(input4);
+            ECPoint.DeserializeFrom(ref reader4, ECCurve.Secp256r1).Should().Be(ECCurve.Secp256r1.G);
 
-            action = () => ECPoint.DeserializeFrom(new BinaryReader(new MemoryStream(input3.Take(input3.Length - 1).ToArray())), ECCurve.Secp256k1).Should().Be(ECCurve.Secp256k1.G);
-            action.Should().Throw<FormatException>();
+            reader3 = new(input3.Take(input3.Length - 1).ToArray());
+            try
+            {
+                ECPoint.DeserializeFrom(ref reader3, ECCurve.Secp256k1);
+                Assert.Fail();
+            }
+            catch (FormatException) { }
         }
 
         [TestMethod]
@@ -270,7 +288,8 @@ namespace Neo.UnitTests.Cryptography.ECC
             ISerializable serializable = point;
             byte[] input = { 4, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152,
                 72, 58, 218, 119, 38, 163, 196, 101, 93, 164, 251, 252, 14, 17, 8, 168, 253, 23, 180, 72, 166, 133, 84, 25, 156, 71, 208, 143, 251, 16, 212, 184 };
-            serializable.Deserialize(new BinaryReader(new MemoryStream(input)));
+            MemoryReader reader = new(input);
+            serializable.Deserialize(ref reader);
             point.X.Should().Be(ECCurve.Secp256k1.G.X);
             point.Y.Should().Be(ECCurve.Secp256k1.G.Y);
         }

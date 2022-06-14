@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using System;
 using System.Collections;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
@@ -28,7 +29,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(test.TxCount, clone.TxCount);
             Assert.AreEqual(test.Hashes.Length, clone.TxCount);
             CollectionAssert.AreEqual(test.Hashes, clone.Hashes);
-            CollectionAssert.AreEqual(test.Flags, clone.Flags);
+            Assert.IsTrue(test.Flags.Span.SequenceEqual(clone.Flags.Span));
         }
     }
 }

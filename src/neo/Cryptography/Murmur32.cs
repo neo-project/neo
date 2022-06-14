@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -45,12 +45,15 @@ namespace Neo.Cryptography
 
         protected override void HashCore(byte[] array, int ibStart, int cbSize)
         {
-            length += cbSize;
-            int remainder = cbSize & 3;
-            int alignedLength = ibStart + (cbSize - remainder);
-            for (int i = ibStart; i < alignedLength; i += 4)
+            HashCore(array.AsSpan(ibStart, cbSize));
+        }
+
+        protected override void HashCore(ReadOnlySpan<byte> source)
+        {
+            length += source.Length;
+            for (; source.Length >= 4; source = source[4..])
             {
-                uint k = BinaryPrimitives.ReadUInt32LittleEndian(array.AsSpan(i));
+                uint k = BinaryPrimitives.ReadUInt32LittleEndian(source);
                 k *= c1;
                 k = BitOperations.RotateLeft(k, r1);
                 k *= c2;
@@ -58,14 +61,14 @@ namespace Neo.Cryptography
                 hash = BitOperations.RotateLeft(hash, r2);
                 hash = hash * m + n;
             }
-            if (remainder > 0)
+            if (source.Length > 0)
             {
                 uint remainingBytes = 0;
-                switch (remainder)
+                switch (source.Length)
                 {
-                    case 3: remainingBytes ^= (uint)array[alignedLength + 2] << 16; goto case 2;
-                    case 2: remainingBytes ^= (uint)array[alignedLength + 1] << 8; goto case 1;
-                    case 1: remainingBytes ^= array[alignedLength]; break;
+                    case 3: remainingBytes ^= (uint)source[2] << 16; goto case 2;
+                    case 2: remainingBytes ^= (uint)source[1] << 8; goto case 1;
+                    case 1: remainingBytes ^= source[0]; break;
                 }
                 remainingBytes *= c1;
                 remainingBytes = BitOperations.RotateLeft(remainingBytes, r1);
@@ -76,6 +79,13 @@ namespace Neo.Cryptography
 
         protected override byte[] HashFinal()
         {
+            byte[] buffer = GC.AllocateUninitializedArray<byte>(sizeof(uint));
+            TryHashFinal(buffer, out _);
+            return buffer;
+        }
+
+        protected override bool TryHashFinal(Span<byte> destination, out int bytesWritten)
+        {
             hash ^= (uint)length;
             hash ^= hash >> 16;
             hash *= 0x85ebca6b;
@@ -83,9 +93,8 @@ namespace Neo.Cryptography
             hash *= 0xc2b2ae35;
             hash ^= hash >> 16;
 
-            byte[] buffer = new byte[sizeof(uint)];
-            BinaryPrimitives.WriteUInt32LittleEndian(buffer, hash);
-            return buffer;
+            bytesWritten = Math.Min(destination.Length, sizeof(uint));
+            return BinaryPrimitives.TryWriteUInt32LittleEndian(destination, hash);
         }
 
         public override void Initialize()

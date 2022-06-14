@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -59,7 +59,7 @@ namespace Neo.SmartContract.Manifest
                     Hash = new UInt160(span);
                     break;
                 case 33:
-                    Group = span.AsSerializable<ECPoint>();
+                    Group = ECPoint.DecodePoint(span, ECCurve.Secp256r1);
                     break;
                 default:
                     throw new ArgumentException(null, nameof(span));

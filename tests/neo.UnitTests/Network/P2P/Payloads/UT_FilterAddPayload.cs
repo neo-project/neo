@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using System;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -24,7 +25,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var test = new FilterAddPayload() { Data = new byte[] { 1, 2, 3 } };
             var clone = test.ToArray().AsSerializable<FilterAddPayload>();
 
-            CollectionAssert.AreEqual(test.Data, clone.Data);
+            Assert.IsTrue(test.Data.Span.SequenceEqual(clone.Data.Span));
         }
     }
 }

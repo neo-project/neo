@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -8,22 +8,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-
-namespace Neo.Wallets.NEP6
+namespace Neo.Wallets
 {
-    internal class WalletLocker : IDisposable
+    public interface IWalletFactory
     {
-        private readonly NEP6Wallet wallet;
+        public bool Handle(string filename);
 
-        public WalletLocker(NEP6Wallet wallet)
-        {
-            this.wallet = wallet;
-        }
+        public Wallet CreateWallet(string name, string path, string password, ProtocolSettings settings);
 
-        public void Dispose()
-        {
-            wallet.Lock();
-        }
+        public Wallet OpenWallet(string path, string password, ProtocolSettings settings);
     }
 }

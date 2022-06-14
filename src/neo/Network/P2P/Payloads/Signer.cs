@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -12,6 +12,8 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.IO.Json;
 using Neo.Network.P2P.Payloads.Conditions;
+using Neo.SmartContract;
+using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,7 +24,7 @@ namespace Neo.Network.P2P.Payloads
     /// <summary>
     /// Represents a signer of a <see cref="Transaction"/>.
     /// </summary>
-    public class Signer : ISerializable
+    public class Signer : IInteroperable, ISerializable
     {
         // This limits maximum number of AllowedContracts or AllowedGroups here
         private const int MaxSubitems = 16;
@@ -59,7 +61,7 @@ namespace Neo.Network.P2P.Payloads
             /*AllowedGroups*/       (Scopes.HasFlag(WitnessScope.CustomGroups) ? AllowedGroups.GetVarSize() : 0) +
             /*Rules*/               (Scopes.HasFlag(WitnessScope.WitnessRules) ? Rules.GetVarSize() : 0);
 
-        public void Deserialize(BinaryReader reader)
+        public void Deserialize(ref MemoryReader reader)
         {
             Account = reader.ReadSerializable<UInt160>();
             Scopes = (WitnessScope)reader.ReadByte();
@@ -175,6 +177,23 @@ namespace Neo.Network.P2P.Payloads
             if (Scopes.HasFlag(WitnessScope.WitnessRules))
                 json["rules"] = Rules.Select(p => p.ToJson()).ToArray();
             return json;
+        }
+
+        void IInteroperable.FromStackItem(VM.Types.StackItem stackItem)
+        {
+            throw new NotSupportedException();
+        }
+
+        VM.Types.StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
+        {
+            return new VM.Types.Array(referenceCounter, new VM.Types.StackItem[]
+            {
+                Account.ToArray(),
+                (byte)Scopes,
+                new VM.Types.Array(referenceCounter, AllowedContracts.Select(u => new VM.Types.ByteString(u.ToArray()))),
+                new VM.Types.Array(referenceCounter, AllowedGroups.Select(u => new VM.Types.ByteString(u.ToArray()))),
+                new VM.Types.Array(referenceCounter, Rules.Select(u => u.ToStackItem(referenceCounter)))
+            });
         }
     }
 }

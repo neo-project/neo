@@ -43,6 +43,11 @@ namespace Neo.Ledger
         Invalid,
 
         /// <summary>
+        /// Indicates that the <see cref="Transaction"/> is invalid.
+        /// </summary>
+        Conflict,
+
+        /// <summary>
         /// Indicates that the <see cref="Transaction"/> has an invalid script.
         /// </summary>
         InvalidScript,

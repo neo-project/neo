@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -143,45 +143,28 @@ namespace Neo.Cryptography.ECC
             return new ECPoint(x, beta, curve);
         }
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(ref MemoryReader reader)
         {
-            ECPoint p = DeserializeFrom(reader, Curve);
+            ECPoint p = DeserializeFrom(ref reader, Curve);
             X = p.X;
             Y = p.Y;
         }
 
         /// <summary>
-        /// Deserializes an <see cref="ECPoint"/> object from a <see cref="BinaryReader"/>.
+        /// Deserializes an <see cref="ECPoint"/> object from a <see cref="MemoryReader"/>.
         /// </summary>
-        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
+        /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
         /// <param name="curve">The <see cref="ECCurve"/> object used to construct the <see cref="ECPoint"/>.</param>
         /// <returns>The deserialized point.</returns>
-        public static ECPoint DeserializeFrom(BinaryReader reader, ECCurve curve)
+        public static ECPoint DeserializeFrom(ref MemoryReader reader, ECCurve curve)
         {
-            Span<byte> buffer = stackalloc byte[1 + curve.ExpectedECPointLength * 2];
-            buffer[0] = reader.ReadByte();
-            switch (buffer[0])
+            int size = reader.Peek() switch
             {
-                case 0x02:
-                case 0x03:
-                    {
-                        if (reader.Read(buffer[1..(1 + curve.ExpectedECPointLength)]) != curve.ExpectedECPointLength)
-                        {
-                            throw new FormatException();
-                        }
-                        return DecodePoint(buffer[..(1 + curve.ExpectedECPointLength)], curve);
-                    }
-                case 0x04:
-                    {
-                        if (reader.Read(buffer[1..(1 + curve.ExpectedECPointLength * 2)]) != curve.ExpectedECPointLength * 2)
-                        {
-                            throw new FormatException();
-                        }
-                        return DecodePoint(buffer, curve);
-                    }
-                default:
-                    throw new FormatException("Invalid point encoding " + buffer[0]);
-            }
+                0x02 or 0x03 => 1 + curve.ExpectedECPointLength,
+                0x04 => 1 + curve.ExpectedECPointLength * 2,
+                _ => throw new FormatException("Invalid point encoding " + reader.Peek())
+            };
+            return DecodePoint(reader.ReadMemory(size).Span, curve);
         }
 
         /// <summary>

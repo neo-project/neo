@@ -593,7 +593,7 @@ namespace Neo.UnitTests.VMT
 
         private void TestToParameter2VMBoolean()
         {
-            StackItem item = new VM.Types.Boolean(true);
+            StackItem item = StackItem.True;
             ContractParameter parameter = VM.Helper.ToParameter(item);
             Assert.AreEqual(ContractParameterType.Boolean, parameter.Type);
             Assert.AreEqual(true, parameter.Value);

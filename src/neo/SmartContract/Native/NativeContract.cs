@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -75,6 +75,11 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public static OracleContract Oracle { get; } = new();
 
+        /// <summary>
+        /// Gets the instance of the <see cref="NotaryContract"/> class.
+        /// </summary>
+        public static NotaryContract Notary { get; } = new();
+
         #endregion
 
         /// <summary>
@@ -119,7 +124,7 @@ namespace Neo.SmartContract.Native
                 if (attribute is null) continue;
                 descriptors.Add(new ContractMethodMetadata(member, attribute));
             }
-            descriptors = descriptors.OrderBy(p => p.Name).ThenBy(p => p.Parameters.Length).ToList();
+            descriptors = descriptors.OrderBy(p => p.Name, StringComparer.Ordinal).ThenBy(p => p.Parameters.Length).ToList();
             byte[] script;
             using (ScriptBuilder sb = new())
             {
@@ -198,17 +203,21 @@ namespace Neo.SmartContract.Native
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
                 if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                     throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
-                engine.AddGas(method.CpuFee * Policy.GetExecFeeFactor(engine.Snapshot) + method.StorageFee * Policy.GetStoragePrice(engine.Snapshot));
+                engine.AddGas(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
                 List<object> parameters = new();
                 if (method.NeedApplicationEngine) parameters.Add(engine);
                 if (method.NeedSnapshot) parameters.Add(engine.Snapshot);
                 for (int i = 0; i < method.Parameters.Length; i++)
-                    parameters.Add(engine.Convert(context.EvaluationStack.Pop(), method.Parameters[i]));
+                    parameters.Add(engine.Convert(context.EvaluationStack.Peek(i), method.Parameters[i]));
                 object returnValue = method.Handler.Invoke(this, parameters.ToArray());
                 if (returnValue is ContractTask task)
                 {
                     await task;
                     returnValue = task.GetResult();
+                }
+                for (int i = 0; i < method.Parameters.Length; i++)
+                {
+                    context.EvaluationStack.Pop();
                 }
                 if (method.Handler.ReturnType != typeof(void) && method.Handler.ReturnType != typeof(ContractTask))
                 {

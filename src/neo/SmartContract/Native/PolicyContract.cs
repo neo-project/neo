@@ -136,12 +136,17 @@ namespace Neo.SmartContract.Native
         private bool BlockAccount(ApplicationEngine engine, UInt160 account)
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
+            return BlockAccount(engine.Snapshot, account);
+        }
+
+        internal bool BlockAccount(DataCache snapshot, UInt160 account)
+        {
             if (IsNative(account)) throw new InvalidOperationException("It's impossible to block a native contract.");
 
             var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
-            if (engine.Snapshot.Contains(key)) return false;
+            if (snapshot.Contains(key)) return false;
 
-            engine.Snapshot.Add(key, new StorageItem(Array.Empty<byte>()));
+            snapshot.Add(key, new StorageItem(Array.Empty<byte>()));
             return true;
         }
 

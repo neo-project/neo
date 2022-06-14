@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -52,39 +52,20 @@ namespace Neo.SmartContract
         /// <param name="limits">The limits for the deserialization.</param>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(byte[] data, ExecutionEngineLimits limits, ReferenceCounter referenceCounter = null)
+        public static StackItem Deserialize(ReadOnlyMemory<byte> data, ExecutionEngineLimits limits, ReferenceCounter referenceCounter = null)
         {
-            using MemoryStream ms = new(data, false);
-            using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
-            return Deserialize(reader, limits with { MaxItemSize = (uint)data.Length }, referenceCounter);
+            MemoryReader reader = new(data);
+            return Deserialize(ref reader, limits with { MaxItemSize = (uint)data.Length }, referenceCounter);
         }
 
         /// <summary>
-        /// Deserializes a <see cref="StackItem"/> from byte array.
+        /// Deserializes a <see cref="StackItem"/> from <see cref="MemoryReader"/>.
         /// </summary>
-        /// <param name="data">The byte array to parse.</param>
+        /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
         /// <param name="limits">The limits for the deserialization.</param>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static unsafe StackItem Deserialize(ReadOnlySpan<byte> data, ExecutionEngineLimits limits, ReferenceCounter referenceCounter = null)
-        {
-            if (data.IsEmpty) throw new FormatException();
-            fixed (byte* pointer = data)
-            {
-                using UnmanagedMemoryStream ms = new(pointer, data.Length);
-                using BinaryReader reader = new(ms, Utility.StrictUTF8, true);
-                return Deserialize(reader, limits with { MaxItemSize = (uint)data.Length }, referenceCounter);
-            }
-        }
-
-        /// <summary>
-        /// Deserializes a <see cref="StackItem"/> from <see cref="BinaryReader"/>.
-        /// </summary>
-        /// <param name="reader">The <see cref="BinaryReader"/> for reading data.</param>
-        /// <param name="limits">The limits for the deserialization.</param>
-        /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
-        /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(BinaryReader reader, ExecutionEngineLimits limits, ReferenceCounter referenceCounter)
+        public static StackItem Deserialize(ref MemoryReader reader, ExecutionEngineLimits limits, ReferenceCounter referenceCounter)
         {
             Stack<StackItem> deserialized = new();
             int undeserialized = 1;
@@ -100,15 +81,14 @@ namespace Neo.SmartContract
                         deserialized.Push(reader.ReadBoolean());
                         break;
                     case StackItemType.Integer:
-                        deserialized.Push(new BigInteger(reader.ReadVarBytes(Integer.MaxSize)));
+                        deserialized.Push(new BigInteger(reader.ReadVarMemory(Integer.MaxSize).Span));
                         break;
                     case StackItemType.ByteString:
-                        deserialized.Push(reader.ReadVarBytes((int)limits.MaxItemSize));
+                        deserialized.Push(reader.ReadVarMemory((int)limits.MaxItemSize));
                         break;
                     case StackItemType.Buffer:
-                        Buffer buffer = new((int)reader.ReadVarInt(limits.MaxItemSize));
-                        reader.FillBuffer(buffer.InnerBuffer);
-                        deserialized.Push(buffer);
+                        ReadOnlyMemory<byte> memory = reader.ReadVarMemory((int)limits.MaxItemSize);
+                        deserialized.Push(new Buffer(memory.Span));
                         break;
                     case StackItemType.Array:
                     case StackItemType.Struct:

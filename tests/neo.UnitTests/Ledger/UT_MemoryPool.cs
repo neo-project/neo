@@ -2,12 +2,10 @@ using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Neo.Cryptography;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System;
@@ -19,13 +17,6 @@ using System.Threading.Tasks;
 
 namespace Neo.UnitTests.Ledger
 {
-    internal class TestIMemoryPoolTxObserverPlugin : Plugin, IMemoryPoolTxObserverPlugin
-    {
-        protected override void Configure() { }
-        public void TransactionAdded(NeoSystem system, Transaction tx) { }
-        public void TransactionsRemoved(NeoSystem system, MemoryPoolTxRemovalReason reason, IEnumerable<Transaction> transactions) { }
-    }
-
     [TestClass]
     public class UT_MemoryPool : TestKit
     {
@@ -35,8 +26,6 @@ namespace Neo.UnitTests.Ledger
         private const byte Prefix_FeePerByte = 10;
         private readonly UInt160 senderAccount = UInt160.Zero;
         private MemoryPool _unit;
-        private MemoryPool _unit2;
-        private TestIMemoryPoolTxObserverPlugin plugin;
 
         [ClassInitialize]
         public static void TestSetup(TestContext ctx)
@@ -64,14 +53,6 @@ namespace Neo.UnitTests.Ledger
             _unit.VerifiedCount.Should().Be(0);
             _unit.UnVerifiedCount.Should().Be(0);
             _unit.Count.Should().Be(0);
-            _unit2 = new MemoryPool(new NeoSystem(ProtocolSettings.Default with { MemoryPoolMaxTransactions = 0 }));
-            plugin = new TestIMemoryPoolTxObserverPlugin();
-        }
-
-        [TestCleanup]
-        public void CleanUp()
-        {
-            Plugin.TxObserverPlugins.Remove(plugin);
         }
 
         private static long LongRandom(long min, long max, Random rand)
@@ -87,7 +68,7 @@ namespace Neo.UnitTests.Ledger
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new();
-            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>(), null)).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
@@ -111,7 +92,7 @@ namespace Neo.UnitTests.Ledger
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new();
             UInt160 sender = senderAccount;
-            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>())).Returns((ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context) => context.CheckTransaction(mock.Object, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
+            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>())).Returns((ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> transactions) => context.CheckTransaction(mock.Object, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
@@ -227,11 +208,12 @@ namespace Neo.UnitTests.Ledger
             var snapshot = GetSnapshot();
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            engine.LoadScript(Array.Empty<byte>());
             await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 70, true);
 
             long txFee = 1;
-            AddTransactionsWithBalanceVerify(70, txFee, snapshot);
+            AddTransactionsWithBalanceVerify(70, txFee, engine.Snapshot);
 
             _unit.SortedTxCount.Should().Be(70);
 
@@ -245,11 +227,12 @@ namespace Neo.UnitTests.Ledger
             UInt160 sender = block.Transactions[0].Sender;
 
             ApplicationEngine applicationEngine = ApplicationEngine.Create(TriggerType.All, block, snapshot, block, settings: TestBlockchain.TheNeoSystem.Settings, gas: (long)balance);
+            applicationEngine.LoadScript(Array.Empty<byte>());
             await NativeContract.GAS.Burn(applicationEngine, sender, NativeContract.GAS.BalanceOf(snapshot, sender));
             _ = NativeContract.GAS.Mint(applicationEngine, sender, txFee * 30, true); // Set the balance to meet 30 txs only
 
             // Persist block and reverify all the txs in mempool, but half of the txs will be discarded
-            _unit.UpdatePoolForBlockPersisted(block, snapshot);
+            _unit.UpdatePoolForBlockPersisted(block, applicationEngine.Snapshot);
             _unit.SortedTxCount.Should().Be(30);
             _unit.UnverifiedSortedTxCount.Should().Be(0);
 
@@ -484,7 +467,6 @@ namespace Neo.UnitTests.Ledger
             var tx1 = CreateTransaction();
             _unit.TryAdd(tx1, snapshot).Should().Be(VerifyResult.Succeed);
             _unit.TryAdd(tx1, snapshot).Should().NotBe(VerifyResult.Succeed);
-            _unit2.TryAdd(tx1, snapshot).Should().NotBe(VerifyResult.Succeed);
         }
 
         [TestMethod]
@@ -518,10 +500,8 @@ namespace Neo.UnitTests.Ledger
             {
                 Value = feePerByte
             };
-            var key1 = CreateStorageKey(Prefix_MaxTransactionsPerBlock);
-            var key2 = CreateStorageKey(Prefix_FeePerByte);
-            key1.Id = NativeContract.Policy.Id;
-            key2.Id = NativeContract.Policy.Id;
+            var key1 = CreateStorageKey(NativeContract.Policy.Id, Prefix_MaxTransactionsPerBlock);
+            var key2 = CreateStorageKey(NativeContract.Policy.Id, Prefix_FeePerByte);
             snapshot.Add(key1, item1);
             snapshot.Add(key2, item2);
 
@@ -545,17 +525,16 @@ namespace Neo.UnitTests.Ledger
             _unit.VerifiedCount.Should().Be(0);
         }
 
-        public static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
+        public static StorageKey CreateStorageKey(int id, byte prefix, byte[] key = null)
         {
-            StorageKey storageKey = new()
+            byte[] buffer = GC.AllocateUninitializedArray<byte>(sizeof(byte) + (key?.Length ?? 0));
+            buffer[0] = prefix;
+            key?.CopyTo(buffer.AsSpan(1));
+            return new()
             {
-                Id = 0,
-                Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
+                Id = id,
+                Key = buffer
             };
-            storageKey.Key[0] = prefix;
-            if (key != null)
-                Buffer.BlockCopy(key, 0, storageKey.Key, 1, key.Length);
-            return storageKey;
         }
     }
 }

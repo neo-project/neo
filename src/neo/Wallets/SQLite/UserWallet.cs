@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -18,9 +18,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Security;
 using System.Security.Cryptography;
-using System.Text;
 using static System.IO.Path;
 
 namespace Neo.Wallets.SQLite
@@ -118,19 +116,18 @@ namespace Neo.Wallets.SQLite
                 using WalletDataContext ctx = new(Path);
                 if (account.HasKey)
                 {
-                    string passphrase = Encoding.UTF8.GetString(masterKey);
                     Account db_account = ctx.Accounts.FirstOrDefault(p => p.PublicKeyHash == account.Key.PublicKeyHash.ToArray());
                     if (db_account == null)
                     {
                         db_account = ctx.Accounts.Add(new Account
                         {
-                            Nep2key = account.Key.Export(passphrase, ProtocolSettings.AddressVersion, scrypt.N, scrypt.R, scrypt.P),
+                            Nep2key = account.Key.Export(masterKey, ProtocolSettings.AddressVersion, scrypt.N, scrypt.R, scrypt.P),
                             PublicKeyHash = account.Key.PublicKeyHash.ToArray()
                         }).Entity;
                     }
                     else
                     {
-                        db_account.Nep2key = account.Key.Export(passphrase, ProtocolSettings.AddressVersion, scrypt.N, scrypt.R, scrypt.P);
+                        db_account.Nep2key = account.Key.Export(masterKey, ProtocolSettings.AddressVersion, scrypt.N, scrypt.R, scrypt.P);
                     }
                 }
                 if (account.Contract != null)
@@ -205,19 +202,6 @@ namespace Neo.Wallets.SQLite
         /// <param name="scrypt">The parameters of the SCrypt algorithm used for encrypting and decrypting the private keys in the wallet.</param>
         /// <returns>The created wallet.</returns>
         public static UserWallet Create(string path, string password, ProtocolSettings settings, ScryptParameters scrypt = null)
-        {
-            return new UserWallet(path, password.ToAesKey(), settings, scrypt ?? ScryptParameters.Default);
-        }
-
-        /// <summary>
-        /// Creates a new wallet at the specified path.
-        /// </summary>
-        /// <param name="path">The path of the wallet.</param>
-        /// <param name="password">The password of the wallet.</param>
-        /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
-        /// <param name="scrypt">The parameters of the SCrypt algorithm used for encrypting and decrypting the private keys in the wallet.</param>
-        /// <returns>The created wallet.</returns>
-        public static UserWallet Create(string path, SecureString password, ProtocolSettings settings, ScryptParameters scrypt = null)
         {
             return new UserWallet(path, password.ToAesKey(), settings, scrypt ?? ScryptParameters.Default);
         }
@@ -327,14 +311,13 @@ namespace Neo.Wallets.SQLite
         private Dictionary<UInt160, UserWalletAccount> LoadAccounts()
         {
             using WalletDataContext ctx = new(Path);
-            string passphrase = Encoding.UTF8.GetString(masterKey);
             Dictionary<UInt160, UserWalletAccount> accounts = ctx.Addresses.Select(p => p.ScriptHash).AsEnumerable().Select(p => new UserWalletAccount(new UInt160(p), ProtocolSettings)).ToDictionary(p => p.ScriptHash);
             foreach (Contract db_contract in ctx.Contracts.Include(p => p.Account))
             {
                 VerificationContract contract = db_contract.RawData.AsSerializable<VerificationContract>();
                 UserWalletAccount account = accounts[contract.ScriptHash];
                 account.Contract = contract;
-                account.Key = new KeyPair(GetPrivateKeyFromNEP2(db_contract.Account.Nep2key, passphrase, ProtocolSettings.AddressVersion, scrypt.N, scrypt.R, scrypt.P));
+                account.Key = new KeyPair(GetPrivateKeyFromNEP2(db_contract.Account.Nep2key, masterKey, ProtocolSettings.AddressVersion, scrypt.N, scrypt.R, scrypt.P));
             }
             return accounts;
         }
@@ -352,21 +335,14 @@ namespace Neo.Wallets.SQLite
         /// <param name="password">The password of the wallet.</param>
         /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
         /// <returns>The opened wallet.</returns>
-        public static UserWallet Open(string path, string password, ProtocolSettings settings)
+        public static new UserWallet Open(string path, string password, ProtocolSettings settings)
         {
             return new UserWallet(path, password.ToAesKey(), settings);
         }
 
-        /// <summary>
-        /// Opens a wallet at the specified path.
-        /// </summary>
-        /// <param name="path">The path of the wallet.</param>
-        /// <param name="password">The password of the wallet.</param>
-        /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
-        /// <returns>The opened wallet.</returns>
-        public static UserWallet Open(string path, SecureString password, ProtocolSettings settings)
+        public override void Save()
         {
-            return new UserWallet(path, password.ToAesKey(), settings);
+            // Do nothing
         }
 
         private void SaveStoredData(string name, int value)

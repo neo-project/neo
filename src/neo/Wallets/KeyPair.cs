@@ -96,10 +96,32 @@ namespace Neo.Wallets
         /// <returns>The private key in NEP-2 format.</returns>
         public string Export(string passphrase, byte version, int N = 16384, int r = 8, int p = 8)
         {
+            byte[] passphrasedata = Encoding.UTF8.GetBytes(passphrase);
+            try
+            {
+                return Export(passphrasedata, version, N, r, p);
+            }
+            finally
+            {
+                passphrasedata.AsSpan().Clear();
+            }
+        }
+
+        /// <summary>
+        /// Exports the private key in NEP-2 format.
+        /// </summary>
+        /// <param name="passphrase">The passphrase of the private key.</param>
+        /// <param name="version">The address version.</param>
+        /// <param name="N">The N field of the <see cref="ScryptParameters"/> to be used.</param>
+        /// <param name="r">The R field of the <see cref="ScryptParameters"/> to be used.</param>
+        /// <param name="p">The P field of the <see cref="ScryptParameters"/> to be used.</param>
+        /// <returns>The private key in NEP-2 format.</returns>
+        public string Export(byte[] passphrase, byte version, int N = 16384, int r = 8, int p = 8)
+        {
             UInt160 script_hash = Contract.CreateSignatureRedeemScript(PublicKey).ToScriptHash();
             string address = script_hash.ToAddress(version);
             byte[] addresshash = Encoding.ASCII.GetBytes(address).Sha256().Sha256()[..4];
-            byte[] derivedkey = SCrypt.Generate(Encoding.UTF8.GetBytes(passphrase), addresshash, N, r, p, 64);
+            byte[] derivedkey = SCrypt.Generate(passphrase, addresshash, N, r, p, 64);
             byte[] derivedhalf1 = derivedkey[..32];
             byte[] derivedhalf2 = derivedkey[32..];
             byte[] encryptedkey = Encrypt(XOR(PrivateKey, derivedhalf1), derivedhalf2);

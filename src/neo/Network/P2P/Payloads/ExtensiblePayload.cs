@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -46,7 +46,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The data of the payload.
         /// </summary>
-        public byte[] Data;
+        public ReadOnlyMemory<byte> Data;
 
         /// <summary>
         /// The witness of the payload. It must match the <see cref="Sender"/>.
@@ -89,21 +89,21 @@ namespace Neo.Network.P2P.Payloads
             }
         }
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(ref MemoryReader reader)
         {
-            ((IVerifiable)this).DeserializeUnsigned(reader);
+            ((IVerifiable)this).DeserializeUnsigned(ref reader);
             if (reader.ReadByte() != 1) throw new FormatException();
             Witness = reader.ReadSerializable<Witness>();
         }
 
-        void IVerifiable.DeserializeUnsigned(BinaryReader reader)
+        void IVerifiable.DeserializeUnsigned(ref MemoryReader reader)
         {
             Category = reader.ReadVarString(32);
             ValidBlockStart = reader.ReadUInt32();
             ValidBlockEnd = reader.ReadUInt32();
             if (ValidBlockStart >= ValidBlockEnd) throw new FormatException();
             Sender = reader.ReadSerializable<UInt160>();
-            Data = reader.ReadVarBytes(Message.PayloadMaxSize);
+            Data = reader.ReadVarMemory();
         }
 
         UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
@@ -123,7 +123,7 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(ValidBlockStart);
             writer.Write(ValidBlockEnd);
             writer.Write(Sender);
-            writer.WriteVarBytes(Data);
+            writer.WriteVarBytes(Data.Span);
         }
 
         internal bool Verify(ProtocolSettings settings, DataCache snapshot, ISet<UInt160> extensibleWitnessWhiteList)

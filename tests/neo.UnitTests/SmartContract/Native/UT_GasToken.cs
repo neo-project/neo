@@ -92,7 +92,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // Burn
 
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 0);
-            keyCount = snapshot.GetChangeSet().Count();
+            engine.LoadScript(Array.Empty<byte>());
 
             await Assert.ThrowsExceptionAsync<ArgumentOutOfRangeException>(async () =>
                 await NativeContract.GAS.Burn(engine, new UInt160(to), BigInteger.MinusOne));
@@ -106,21 +106,21 @@ namespace Neo.UnitTests.SmartContract.Native
 
             await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(1));
 
-            NativeContract.GAS.BalanceOf(snapshot, to).Should().Be(5200049999999999);
+            NativeContract.GAS.BalanceOf(engine.Snapshot, to).Should().Be(5200049999999999);
 
-            keyCount.Should().Be(snapshot.GetChangeSet().Count());
+            engine.Snapshot.GetChangeSet().Count().Should().Be(2);
 
             // Burn all
 
             await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(5200049999999999));
 
-            (keyCount - 1).Should().Be(snapshot.GetChangeSet().Count());
+            (keyCount - 1).Should().Be(engine.Snapshot.GetChangeSet().Count());
 
             // Bad inputs
 
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.GAS.Transfer(snapshot, from, to, BigInteger.MinusOne, true, persistingBlock));
-            Assert.ThrowsException<FormatException>(() => NativeContract.GAS.Transfer(snapshot, new byte[19], to, BigInteger.One, false, persistingBlock));
-            Assert.ThrowsException<FormatException>(() => NativeContract.GAS.Transfer(snapshot, from, new byte[19], BigInteger.One, false, persistingBlock));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => NativeContract.GAS.Transfer(engine.Snapshot, from, to, BigInteger.MinusOne, true, persistingBlock));
+            Assert.ThrowsException<FormatException>(() => NativeContract.GAS.Transfer(engine.Snapshot, new byte[19], to, BigInteger.One, false, persistingBlock));
+            Assert.ThrowsException<FormatException>(() => NativeContract.GAS.Transfer(engine.Snapshot, from, new byte[19], BigInteger.One, false, persistingBlock));
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, uint key)
@@ -130,14 +130,14 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
         {
-            StorageKey storageKey = new()
+            byte[] buffer = GC.AllocateUninitializedArray<byte>(sizeof(byte) + (key?.Length ?? 0));
+            buffer[0] = prefix;
+            key?.CopyTo(buffer.AsSpan(1));
+            return new()
             {
-                Id = NativeContract.NEO.Id,
-                Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
+                Id = NativeContract.GAS.Id,
+                Key = buffer
             };
-            storageKey.Key[0] = prefix;
-            key?.CopyTo(storageKey.Key.AsSpan(1));
-            return storageKey;
         }
     }
 }

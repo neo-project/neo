@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -40,7 +40,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The data in the <see cref="BloomFilter"/> that filtered the block.
         /// </summary>
-        public byte[] Flags;
+        public ReadOnlyMemory<byte> Flags;
 
         public int Size => Header.Size + sizeof(int) + Hashes.GetVarSize() + Flags.GetVarSize();
 
@@ -65,12 +65,12 @@ namespace Neo.Network.P2P.Payloads
             };
         }
 
-        public void Deserialize(BinaryReader reader)
+        public void Deserialize(ref MemoryReader reader)
         {
             Header = reader.ReadSerializable<Header>();
             TxCount = (int)reader.ReadVarInt(ushort.MaxValue);
             Hashes = reader.ReadSerializableArray<UInt256>(TxCount);
-            Flags = reader.ReadVarBytes((Math.Max(TxCount, 1) + 7) / 8);
+            Flags = reader.ReadVarMemory((Math.Max(TxCount, 1) + 7) / 8);
         }
 
         public void Serialize(BinaryWriter writer)
@@ -78,7 +78,7 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(Header);
             writer.WriteVarInt(TxCount);
             writer.Write(Hashes);
-            writer.WriteVarBytes(Flags);
+            writer.WriteVarBytes(Flags.Span);
         }
     }
 }

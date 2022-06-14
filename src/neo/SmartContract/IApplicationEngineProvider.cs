@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -10,9 +10,8 @@
 
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.SmartContract;
 
-namespace Neo.Plugins
+namespace Neo.SmartContract
 {
     /// <summary>
     /// A provider for creating <see cref="ApplicationEngine"/> instances.
@@ -30,6 +29,6 @@ namespace Neo.Plugins
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
-        ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, Diagnostic diagnostic);
+        ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic);
     }
 }

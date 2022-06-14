@@ -38,6 +38,7 @@ namespace Neo.SmartContract.Native
         {
             TransactionState[] transactions = engine.PersistingBlock.Transactions.Select(p => new TransactionState
             {
+                Trimmed = false,
                 BlockIndex = engine.PersistingBlock.Index,
                 Transaction = p,
                 State = VMState.NONE
@@ -47,6 +48,10 @@ namespace Neo.SmartContract.Native
             foreach (TransactionState tx in transactions)
             {
                 engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(tx.Transaction.Hash), new StorageItem(tx));
+                foreach (var attr in tx.Transaction.GetAttributes<ConflictAttribute>())
+                {
+                    engine.Snapshot.GetOrAdd(CreateStorageKey(Prefix_Transaction).Add(attr.Hash), () => new StorageItem(new TransactionState { Trimmed = true }));
+                }
             }
             engine.SetState(transactions);
             return ContractTask.CompletedTask;
@@ -82,7 +87,7 @@ namespace Neo.SmartContract.Native
         {
             StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_BlockHash).AddBigEndian(index));
             if (item is null) return null;
-            return new UInt256(item.Value);
+            return new UInt256(item.Value.Span);
         }
 
         /// <summary>
@@ -220,7 +225,9 @@ namespace Neo.SmartContract.Native
         /// <returns>The <see cref="TransactionState"/> with the specified hash.</returns>
         public TransactionState GetTransactionState(DataCache snapshot, UInt256 hash)
         {
-            return snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
+            var state = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
+            if (state is not null && state.Trimmed) return null;
+            return state;
         }
 
         /// <summary>
@@ -240,6 +247,14 @@ namespace Neo.SmartContract.Native
             TransactionState state = GetTransactionState(engine.Snapshot, hash);
             if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
             return state.Transaction;
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        private Signer[] GetTransactionSigners(ApplicationEngine engine, UInt256 hash)
+        {
+            TransactionState state = GetTransactionState(engine.Snapshot, hash);
+            if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
+            return state.Transaction.Signers;
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]

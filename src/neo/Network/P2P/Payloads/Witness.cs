@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -31,12 +31,12 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The invocation script of the witness. Used to pass arguments for <see cref="VerificationScript"/>.
         /// </summary>
-        public byte[] InvocationScript;
+        public ReadOnlyMemory<byte> InvocationScript;
 
         /// <summary>
         /// The verification script of the witness. It can be empty if the contract is deployed.
         /// </summary>
-        public byte[] VerificationScript;
+        public ReadOnlyMemory<byte> VerificationScript;
 
         private UInt160 _scriptHash;
         /// <summary>
@@ -48,7 +48,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 if (_scriptHash == null)
                 {
-                    _scriptHash = VerificationScript.ToScriptHash();
+                    _scriptHash = VerificationScript.Span.ToScriptHash();
                 }
                 return _scriptHash;
             }
@@ -56,16 +56,16 @@ namespace Neo.Network.P2P.Payloads
 
         public int Size => InvocationScript.GetVarSize() + VerificationScript.GetVarSize();
 
-        void ISerializable.Deserialize(BinaryReader reader)
+        void ISerializable.Deserialize(ref MemoryReader reader)
         {
-            InvocationScript = reader.ReadVarBytes(MaxInvocationScript);
-            VerificationScript = reader.ReadVarBytes(MaxVerificationScript);
+            InvocationScript = reader.ReadVarMemory(MaxInvocationScript);
+            VerificationScript = reader.ReadVarMemory(MaxVerificationScript);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.WriteVarBytes(InvocationScript);
-            writer.WriteVarBytes(VerificationScript);
+            writer.WriteVarBytes(InvocationScript.Span);
+            writer.WriteVarBytes(VerificationScript.Span);
         }
 
         /// <summary>
@@ -75,8 +75,8 @@ namespace Neo.Network.P2P.Payloads
         public JObject ToJson()
         {
             JObject json = new();
-            json["invocation"] = Convert.ToBase64String(InvocationScript);
-            json["verification"] = Convert.ToBase64String(VerificationScript);
+            json["invocation"] = Convert.ToBase64String(InvocationScript.Span);
+            json["verification"] = Convert.ToBase64String(VerificationScript.Span);
             return json;
         }
     }

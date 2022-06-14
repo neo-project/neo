@@ -3,18 +3,11 @@ using Neo.Plugins;
 
 namespace Neo.UnitTests.Plugins
 {
-    public class TestLogPlugin : Plugin, ILogPlugin
+    public class TestPlugin : Plugin
     {
-        public TestLogPlugin() : base() { }
-
-        public string Output { set; get; }
+        public TestPlugin() : base() { }
 
         protected override void Configure() { }
-
-        void ILogPlugin.Log(string source, LogLevel level, object message)
-        {
-            Output = source + "_" + level.ToString() + "_" + message;
-        }
 
         public void LogMessage(string message)
         {
