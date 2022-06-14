@@ -329,7 +329,7 @@ namespace Neo.Ledger
                 if (_unsortedTransactions.TryGetValue(hash, out PoolItem item))
                 {
                     if (!tx.Signers.Select(p => p.Account).Contains(item.Tx.Sender)) return false;
-                    if (tx.NetworkFee < item.Tx.NetworkFee) return false;
+                    if (tx.NetworkFee <= item.Tx.NetworkFee) return false;
                     to_removed.Add(item);
                 }
             }
