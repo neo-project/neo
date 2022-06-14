@@ -86,13 +86,14 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
         {
+            var k = new byte[sizeof(byte) + (key?.Length ?? 0)];
+            k[0] = prefix;
+            key?.CopyTo(k, 1);
             StorageKey storageKey = new()
             {
                 Id = NativeContract.NEO.Id,
-                Key = new byte[sizeof(byte) + (key?.Length ?? 0)]
+                Key = k
             };
-            storageKey.Key[0] = prefix;
-            key?.CopyTo(storageKey.Key.AsSpan(1));
             return storageKey;
         }
     }

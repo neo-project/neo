@@ -51,9 +51,9 @@ namespace Neo.Network.P2P.Payloads
             uint execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (witnesses[i].VerificationScript.IsSignatureContract())
+                if (IsSignatureContract(witnesses[i].VerificationScript.Span))
                     net_fee -= execFeeFactor * SignatureContractCost();
-                else if (witnesses[i].VerificationScript.IsMultiSigContract(out int m, out int n))
+                else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out int m, out int n))
                 {
                     net_fee -= execFeeFactor * MultiSignatureContractCost(m, n);
                 }
@@ -83,13 +83,13 @@ namespace Neo.Network.P2P.Payloads
             UInt160[] hashes = GetScriptHashesForVerifying(null);
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (witnesses[i].VerificationScript.IsSignatureContract())
+                if (IsSignatureContract(witnesses[i].VerificationScript.Span))
                 {
                     if (hashes[i] != witnesses[i].ScriptHash) return false;
-                    var pubkey = witnesses[i].VerificationScript.AsSpan(2..35);
+                    var pubkey = witnesses[i].VerificationScript.Span[2..35];
                     try
                     {
-                        if (!Crypto.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript.AsSpan(2), pubkey, ECCurve.Secp256r1))
+                        if (!Crypto.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript.Span[2..], pubkey, ECCurve.Secp256r1))
                             return false;
                     }
                     catch

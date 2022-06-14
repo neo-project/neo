@@ -17,7 +17,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool AllowMultiple => true;
 
-        protected override void DeserializeWithoutType(BinaryReader reader)
+        protected override void DeserializeWithoutType(ref MemoryReader reader)
         {
             Hash = reader.ReadSerializable<UInt256>();
         }

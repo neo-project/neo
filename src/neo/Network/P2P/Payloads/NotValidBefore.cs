@@ -1,3 +1,4 @@
+using Neo.IO;
 using Neo.IO.Json;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
@@ -16,7 +17,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool AllowMultiple => false;
 
-        protected override void DeserializeWithoutType(BinaryReader reader)
+        protected override void DeserializeWithoutType(ref MemoryReader reader)
         {
             Height = reader.ReadUInt32();
         }

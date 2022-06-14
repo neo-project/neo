@@ -71,7 +71,7 @@ namespace Neo.SmartContract.Native
             var to = from;
             var additionalParams = (Array)data;
             if (additionalParams.Count != 2) throw new Exception("`data` parameter should be an array of 2 elements");
-            if (!additionalParams[0].Equals(StackItem.Null)) to = additionalParams[0].GetSpan().AsSerializable<UInt160>();
+            if (!additionalParams[0].Equals(StackItem.Null)) to = additionalParams[0].GetSpan().ToArray().AsSerializable<UInt160>();
             var tx = (Transaction)engine.ScriptContainer;
             var allowedChangeTill = tx.Sender == to;
             var currentHeight = Ledger.CurrentIndex(engine.Snapshot);

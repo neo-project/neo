@@ -71,15 +71,15 @@ namespace Neo.Network.P2P.Payloads
         public int Size => mainTransaction.Size + fallbackTransaction.Size + witness.Size;
 
 
-        public void DeserializeUnsigned(BinaryReader reader)
+        public void DeserializeUnsigned(ref MemoryReader reader)
         {
             mainTransaction = reader.ReadSerializable<Transaction>();
             fallbackTransaction = reader.ReadSerializable<Transaction>();
         }
 
-        public void Deserialize(BinaryReader reader)
+        public void Deserialize(ref MemoryReader reader)
         {
-            DeserializeUnsigned(reader);
+            DeserializeUnsigned(ref reader);
             witness = reader.ReadSerializable<Witness>();
         }
 
@@ -108,7 +108,7 @@ namespace Neo.Network.P2P.Payloads
             if (fallbackTransaction.Signers.Length != 2) return false;
             if (fallbackTransaction.Witnesses[0].InvocationScript.Length != 66
                 || fallbackTransaction.Witnesses[0].VerificationScript.Length != 0
-                || fallbackTransaction.Witnesses[0].InvocationScript[0] != (byte)OpCode.PUSHDATA1 || fallbackTransaction.Witnesses[0].InvocationScript[1] != 64)
+                || fallbackTransaction.Witnesses[0].InvocationScript.Span[0] != (byte)OpCode.PUSHDATA1 || fallbackTransaction.Witnesses[0].InvocationScript.Span[1] != 64)
                 return false;
             if (fallbackTransaction.Sender != NativeContract.Notary.Hash) return false;
             if (fallbackTransaction.Signers[1].Account != witness.ScriptHash) return false;
