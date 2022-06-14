@@ -342,12 +342,21 @@ namespace Neo.Ledger
                     to_removed.Add(item);
                 }
             }
-            foreach (var item in to_removed)
+            if (to_removed.Count > 0)
             {
-                _unsortedTransactions.Remove(item.Tx.Hash);
-                _sortedTransactions.Remove(item);
-                VerificationContext.RemoveTransaction(item.Tx);
+                foreach (var item in to_removed)
+                {
+                    _unsortedTransactions.Remove(item.Tx.Hash);
+                    _sortedTransactions.Remove(item);
+                    VerificationContext.RemoveTransaction(item.Tx);
+                }
+                TransactionRemoved?.Invoke(this, new()
+                {
+                    Transactions = to_removed.Select(p => p.Tx).ToList(),
+                    Reason = TransactionRemovalReason.Conflict,
+                });
             }
+
             return true;
         }
 
