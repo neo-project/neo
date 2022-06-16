@@ -228,7 +228,7 @@ namespace Neo.IO
         /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
         /// <param name="max">The maximum number of elements in the array.</param>
         /// <returns>The array read from the <see cref="MemoryReader"/>.</returns>
-        public static T[] ReadNullableArray<T>(this MemoryReader reader, int max = 0x1000000) where T : class, ISerializable, new()
+        public static T[] ReadNullableArray<T>(this ref MemoryReader reader, int max = 0x1000000) where T : class, ISerializable, new()
         {
             T[] array = new T[reader.ReadVarInt((ulong)max)];
             for (int i = 0; i < array.Length; i++)
