@@ -1,10 +1,10 @@
-// Copyright (C) 2015-2021 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+// Copyright (C) 2015-2022 The Neo Project.
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -37,6 +37,12 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public bool Safe { get; set; }
 
+        /// <summary>
+        /// Indicates whether the method is an anti-reentry attack method.
+        /// If a method is marked as restricted, this method can only be called once.
+        /// </summary>
+        public bool Restricted { get; set; }
+
         public override void FromStackItem(StackItem stackItem)
         {
             base.FromStackItem(stackItem);
@@ -44,6 +50,7 @@ namespace Neo.SmartContract.Manifest
             ReturnType = (ContractParameterType)(byte)@struct[2].GetInteger();
             Offset = (int)@struct[3].GetInteger();
             Safe = @struct[4].GetBoolean();
+            Safe = @struct[5].GetBoolean();
         }
 
         public override StackItem ToStackItem(ReferenceCounter referenceCounter)
@@ -52,6 +59,7 @@ namespace Neo.SmartContract.Manifest
             @struct.Add((byte)ReturnType);
             @struct.Add(Offset);
             @struct.Add(Safe);
+            @struct.Add(Restricted);
             return @struct;
         }
 
@@ -68,7 +76,8 @@ namespace Neo.SmartContract.Manifest
                 Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson(u)).ToArray(),
                 ReturnType = Enum.Parse<ContractParameterType>(json["returntype"].GetString()),
                 Offset = json["offset"].GetInt32(),
-                Safe = json["safe"].GetBoolean()
+                Safe = json["safe"].GetBoolean(),
+                Restricted = json["restricted"].GetBoolean()
             };
             if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException();
             _ = descriptor.Parameters.ToDictionary(p => p.Name);
@@ -87,6 +96,7 @@ namespace Neo.SmartContract.Manifest
             json["returntype"] = ReturnType.ToString();
             json["offset"] = Offset;
             json["safe"] = Safe;
+            json["restricted"] = Restricted;
             return json;
         }
     }

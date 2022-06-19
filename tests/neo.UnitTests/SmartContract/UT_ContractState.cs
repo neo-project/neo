@@ -48,6 +48,8 @@ namespace Neo.UnitTests.SmartContract
         {
             IInteroperable newContract = new ContractState();
             newContract.FromStackItem(contract.ToStackItem(null));
+            var b = ((ContractState)newContract).Manifest.ToJson().ToString();
+            var c = contract.Manifest.ToJson().ToString();
             ((ContractState)newContract).Manifest.ToJson().ToString().Should().Be(contract.Manifest.ToJson().ToString());
             ((ContractState)newContract).Script.Span.SequenceEqual(contract.Script.Span).Should().BeTrue();
         }
