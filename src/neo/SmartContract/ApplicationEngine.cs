@@ -57,7 +57,7 @@ namespace Neo.SmartContract
         internal readonly uint ExecFeeFactor;
         internal readonly uint StoragePrice;
         private byte[] nonceData;
-        private Dictionary<UInt160, List<String>> _noReentryMethods;
+        private readonly Dictionary<UInt160, List<string>> _noReentryMethods = new();
 
         /// <summary>
         /// Gets or sets the provider used to create the <see cref="ApplicationEngine"/>.
