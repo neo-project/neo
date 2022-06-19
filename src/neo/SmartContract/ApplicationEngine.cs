@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -57,6 +57,7 @@ namespace Neo.SmartContract
         internal readonly uint ExecFeeFactor;
         internal readonly uint StoragePrice;
         private byte[] nonceData;
+        private Dictionary<UInt160, List<String>> _noReentryMethods;
 
         /// <summary>
         /// Gets or sets the provider used to create the <see cref="ApplicationEngine"/>.
@@ -203,6 +204,19 @@ namespace Neo.SmartContract
         {
             if (NativeContract.Policy.IsBlocked(Snapshot, contract.Hash))
                 throw new InvalidOperationException($"The contract {contract.Hash} has been blocked.");
+
+            if (method.NonReentry)
+            {
+                if (_noReentryMethods.ContainsKey(contract.Hash))
+                {
+                    if (_noReentryMethods[contract.Hash].Contains(method.Name)) throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contract.Hash} in an reentry manner.");
+                }
+                else
+                {
+                    _noReentryMethods[contract.Hash] = new List<string>();
+                }
+                _noReentryMethods[contract.Hash].Add(method.Name);
+            }
 
             if (method.Safe)
             {
