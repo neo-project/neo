@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -42,6 +42,11 @@ namespace Neo.SmartContract
         /// Indicates that the called contract is allowed to send notifications.
         /// </summary>
         AllowNotify = 0b00001000,
+
+        /// <summary>
+        /// Indicates that the called contract is allowed to reentry the function.
+        /// </summary>
+        NonReentry = 0b00010000,
 
         /// <summary>
         /// Indicates that the called contract is allowed to read or write states.

@@ -39,9 +39,9 @@ namespace Neo.SmartContract.Manifest
 
         /// <summary>
         /// Indicates whether the method is an anti-reentry attack method.
-        /// If a method is marked as restricted, this method can only be called once.
+        /// If a method is marked as NonReentry, this method can only be called once.
         /// </summary>
-        public bool Restricted { get; set; }
+        public bool NonReentry { get; set; }
 
         public override void FromStackItem(StackItem stackItem)
         {
@@ -50,7 +50,7 @@ namespace Neo.SmartContract.Manifest
             ReturnType = (ContractParameterType)(byte)@struct[2].GetInteger();
             Offset = (int)@struct[3].GetInteger();
             Safe = @struct[4].GetBoolean();
-            Safe = @struct[5].GetBoolean();
+            NonReentry = @struct[5].GetBoolean();
         }
 
         public override StackItem ToStackItem(ReferenceCounter referenceCounter)
@@ -59,7 +59,7 @@ namespace Neo.SmartContract.Manifest
             @struct.Add((byte)ReturnType);
             @struct.Add(Offset);
             @struct.Add(Safe);
-            @struct.Add(Restricted);
+            @struct.Add(NonReentry);
             return @struct;
         }
 
@@ -77,7 +77,7 @@ namespace Neo.SmartContract.Manifest
                 ReturnType = Enum.Parse<ContractParameterType>(json["returntype"].GetString()),
                 Offset = json["offset"].GetInt32(),
                 Safe = json["safe"].GetBoolean(),
-                Restricted = json["restricted"].GetBoolean()
+                NonReentry = json["nonreentry"].GetBoolean()
             };
             if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException();
             _ = descriptor.Parameters.ToDictionary(p => p.Name);
@@ -96,7 +96,7 @@ namespace Neo.SmartContract.Manifest
             json["returntype"] = ReturnType.ToString();
             json["offset"] = Offset;
             json["safe"] = Safe;
-            json["restricted"] = Restricted;
+            json["nonreentry"] = NonReentry;
             return json;
         }
     }

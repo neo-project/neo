@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -60,7 +60,8 @@ namespace Neo.SmartContract.Native
                 Name = Name,
                 ReturnType = ToParameterType(Handler.ReturnType),
                 Parameters = Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name }).ToArray(),
-                Safe = (attribute.RequiredCallFlags & ~CallFlags.ReadOnly) == 0
+                Safe = (attribute.RequiredCallFlags & ~CallFlags.ReadOnly) == 0,
+                NonReentry = (attribute.RequiredCallFlags & CallFlags.NonReentry) != 0,
             };
         }
 
