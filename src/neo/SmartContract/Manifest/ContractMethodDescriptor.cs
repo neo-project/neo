@@ -41,7 +41,7 @@ namespace Neo.SmartContract.Manifest
         /// Indicates whether the method is an anti-reentry attack method.
         /// If a method is marked as NonReentry, this method can only be called once.
         /// </summary>
-        public bool NonReentry { get; set; }
+        public bool NoReentry { get; set; }
 
         public override void FromStackItem(StackItem stackItem)
         {
@@ -50,7 +50,7 @@ namespace Neo.SmartContract.Manifest
             ReturnType = (ContractParameterType)(byte)@struct[2].GetInteger();
             Offset = (int)@struct[3].GetInteger();
             Safe = @struct[4].GetBoolean();
-            NonReentry = @struct[5].GetBoolean();
+            NoReentry = @struct[5].GetBoolean();
         }
 
         public override StackItem ToStackItem(ReferenceCounter referenceCounter)
@@ -59,7 +59,7 @@ namespace Neo.SmartContract.Manifest
             @struct.Add((byte)ReturnType);
             @struct.Add(Offset);
             @struct.Add(Safe);
-            @struct.Add(NonReentry);
+            @struct.Add(NoReentry);
             return @struct;
         }
 
@@ -77,7 +77,7 @@ namespace Neo.SmartContract.Manifest
                 ReturnType = Enum.Parse<ContractParameterType>(json["returntype"].GetString()),
                 Offset = json["offset"].GetInt32(),
                 Safe = json["safe"].GetBoolean(),
-                NonReentry = json["nonreentry"].GetBoolean()
+                NoReentry = json["noreentry"].GetBoolean()
             };
             if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException();
             _ = descriptor.Parameters.ToDictionary(p => p.Name);
@@ -96,7 +96,7 @@ namespace Neo.SmartContract.Manifest
             json["returntype"] = ReturnType.ToString();
             json["offset"] = Offset;
             json["safe"] = Safe;
-            json["nonreentry"] = NonReentry;
+            json["noreentry"] = NoReentry;
             return json;
         }
     }

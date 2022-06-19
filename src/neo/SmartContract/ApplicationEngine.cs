@@ -205,7 +205,7 @@ namespace Neo.SmartContract
             if (NativeContract.Policy.IsBlocked(Snapshot, contract.Hash))
                 throw new InvalidOperationException($"The contract {contract.Hash} has been blocked.");
 
-            if (method.NonReentry)
+            if (method.NoReentry)
             {
                 if (_noReentryMethods.ContainsKey(contract.Hash))
                 {
