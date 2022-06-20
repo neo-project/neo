@@ -139,6 +139,12 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_BurnGas = Register("System.Runtime.BurnGas", nameof(BurnGas), 1 << 4, CallFlags.None);
 
         /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Runtime.NoReentry.
+        /// Defend against re-entry attack.
+        /// </summary>
+        public static readonly InteropDescriptor System_Runtime_NoReentry = Register("System.Runtime.NoReentry",  nameof(NoReentry), 1 << 4, CallFlags.None);
+
+        /// <summary>
         /// The implementation of System.Runtime.Platform.
         /// Gets the name of the current platform.
         /// </summary>
@@ -353,6 +359,26 @@ namespace Neo.SmartContract
             if (gas <= 0)
                 throw new InvalidOperationException("GAS must be positive.");
             AddGas(gas);
+        }
+
+        /// <summary>
+        /// Attribute to defend against Re-entry attack
+        /// </summary>
+        /// <param name="method"></param>
+        /// <param name="paramCount"></param>
+        protected internal void NoReentry(string method, int paramCount)
+        {
+            if (_noReentryMethods.ContainsKey(CurrentScriptHash))
+            {
+                if (_noReentryMethods[CurrentScriptHash].Contains(method + paramCount))
+                    throw new InvalidOperationException(
+                        $"Cannot Call Method {method} Of Contract {CurrentScriptHash} in an reentry manner.");
+            }
+            else
+            {
+                _noReentryMethods[CurrentScriptHash] = new List<string>();
+            }
+            _noReentryMethods[CurrentScriptHash].Add(method + paramCount);
         }
     }
 }
