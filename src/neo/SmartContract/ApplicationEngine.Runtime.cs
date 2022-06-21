@@ -139,6 +139,18 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_BurnGas = Register("System.Runtime.BurnGas", nameof(BurnGas), 1 << 4, CallFlags.None);
 
         /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Runtime.MutexRemove.
+        /// Remove a mutex.
+        /// </summary>
+        public static readonly InteropDescriptor System_Runtime_Remove = Register("System.Runtime.MutexRemove", nameof(MutexRemove), 1 << 4, CallFlags.None);
+
+        /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Runtime.MutexCreate.
+        /// Create a mutex.
+        /// </summary>
+        public static readonly InteropDescriptor System_Runtime_Mutex = Register("System.Runtime.MutexCreate", nameof(MutexCreate), 1 << 4, CallFlags.None);
+
+        /// <summary>
         /// The implementation of System.Runtime.Platform.
         /// Gets the name of the current platform.
         /// </summary>
@@ -353,6 +365,36 @@ namespace Neo.SmartContract
             if (gas <= 0)
                 throw new InvalidOperationException("GAS must be positive.");
             AddGas(gas);
+        }
+
+        /// <summary>
+        /// Create mutex
+        /// </summary>
+        /// <param name="name">Mutex name</param>
+        protected internal bool MutexCreate(string name)
+        {
+            if (!_mutex.TryGetValue(CurrentScriptHash, out var set))
+            {
+                set = _mutex[CurrentScriptHash] = new HashSet<string>();
+            }
+
+            return set.Add(name);
+        }
+
+        /// <summary>
+        /// Remove mutex
+        /// </summary>
+        /// <param name="name">Mutex name</param>
+        protected internal bool MutexRemove(string name)
+        {
+            if (_mutex.TryGetValue(CurrentScriptHash, out var set))
+            {
+                return set.Remove(name);
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }
