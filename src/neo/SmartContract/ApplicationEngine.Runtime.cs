@@ -142,7 +142,7 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Runtime.NoReentry.
         /// Defend against re-entry attack.
         /// </summary>
-        public static readonly InteropDescriptor System_Runtime_NoReentry = Register("System.Runtime.NoReentry",  nameof(NoReentry), 1 << 4, CallFlags.None);
+        public static readonly InteropDescriptor System_Runtime_NoReentry = Register("System.Runtime.NoReentry", nameof(NoReentry), 1 << 4, CallFlags.None);
 
         /// <summary>
         /// The implementation of System.Runtime.Platform.
