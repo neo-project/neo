@@ -368,17 +368,18 @@ namespace Neo.SmartContract
         /// <param name="paramCount"></param>
         protected internal void NoReentry(string method, int paramCount)
         {
+            var key = $"{method}({paramCount})";
             if (_noReentryMethods.ContainsKey(CurrentScriptHash))
             {
-                if (_noReentryMethods[CurrentScriptHash].Contains(method + paramCount))
+                if (_noReentryMethods[CurrentScriptHash].Contains(key))
                     throw new InvalidOperationException(
-                        $"Cannot Call Method {method} Of Contract {CurrentScriptHash} in an reentry manner.");
+                        $"Cannot Call Method {method} Of Contract {CurrentScriptHash} in an re-entry manner.");
             }
             else
             {
                 _noReentryMethods[CurrentScriptHash] = new List<string>();
             }
-            _noReentryMethods[CurrentScriptHash].Add(method + paramCount);
+            _noReentryMethods[CurrentScriptHash].Add(key);
         }
     }
 }
