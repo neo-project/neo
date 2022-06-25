@@ -1,10 +1,10 @@
-// Copyright (C) 2015-2021 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+// Copyright (C) 2015-2022 The Neo Project.
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -37,12 +37,12 @@ namespace Neo.SmartContract
         /// Initializes a new instance of the <see cref="LogEventArgs"/> class.
         /// </summary>
         /// <param name="container">The container that containing the executed script.</param>
-        /// <param name="script_hash">The script hash of the contract that sends the log.</param>
+        /// <param name="scriptHash">The script hash of the contract that sends the log.</param>
         /// <param name="message">The message of the log.</param>
-        public LogEventArgs(IVerifiable container, UInt160 script_hash, string message)
+        public LogEventArgs(IVerifiable container, UInt160 scriptHash, string message)
         {
             this.ScriptContainer = container;
-            this.ScriptHash = script_hash;
+            this.ScriptHash = scriptHash;
             this.Message = message;
         }
     }
