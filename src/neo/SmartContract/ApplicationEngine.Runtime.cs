@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -293,8 +293,10 @@ namespace Neo.SmartContract
         protected internal void RuntimeLog(byte[] state)
         {
             if (state.Length > MaxNotificationSize) throw new ArgumentException(null, nameof(state));
-            string message = Utility.StrictUTF8.GetString(state);
-            Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash, message));
+            var log = new LogEventArgs(ScriptContainer, CurrentScriptHash, Utility.StrictUTF8.GetString(state));
+            Log?.Invoke(this, log);
+            _logs ??= new List<LogEventArgs>();
+            _logs.Add(log);
         }
 
         /// <summary>

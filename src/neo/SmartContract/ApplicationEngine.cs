@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -51,6 +51,7 @@ namespace Neo.SmartContract
         private Dictionary<Type, object> states;
         private readonly DataCache originalSnapshot;
         private List<NotifyEventArgs> notifications;
+        private List<LogEventArgs> _logs;
         private List<IDisposable> disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
         private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
@@ -134,6 +135,11 @@ namespace Neo.SmartContract
         /// The notifications sent during the execution.
         /// </summary>
         public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
+
+        /// <summary>
+        /// The logs sent during the execution.
+        /// </summary>
+        public IReadOnlyList<LogEventArgs> Logs => _logs ?? (IReadOnlyList<LogEventArgs>)Array.Empty<LogEventArgs>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ApplicationEngine"/> class.
