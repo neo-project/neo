@@ -112,7 +112,7 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Runtime.Log.
         /// Writes a log.
         /// </summary>
-        public static readonly InteropDescriptor System_Runtime_Log = Register("System.Runtime.Log", nameof(RuntimeLog), 1 << 15, CallFlags.AllowNotify);
+        public static readonly InteropDescriptor System_Runtime_Log = Register("System.Runtime.Log", nameof(RuntimeLog), 1 << 15, CallFlags.None);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.Notify.
