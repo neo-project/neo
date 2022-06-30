@@ -144,6 +144,23 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
+        /// Check if a method exists in a contract.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="hash">The hash of the deployed contract.</param>
+        /// <param name="method">The name of the method</param>
+        /// <param name="pcount">The number of parameters</param>
+        /// <returns>True if the method exists.</returns>
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public bool HasMethod(DataCache snapshot, UInt160 hash, string method, int pcount)
+        {
+            var contract = GetContract(snapshot, hash);
+            if (contract is null) return false;
+            var methodDescriptor = contract.Manifest.Abi.GetMethod(method, pcount);
+            return methodDescriptor is not null;
+        }
+
+        /// <summary>
         /// Gets all deployed contracts.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
