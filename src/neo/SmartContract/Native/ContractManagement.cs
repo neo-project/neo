@@ -154,7 +154,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public bool HasMethod(DataCache snapshot, UInt160 hash, string method, int pcount)
         {
-            var contract = snapshot.TryGet(CreateStorageKey(Prefix_Contract).Add(hash))?.GetInteroperable<ContractState>();
+            var contract = GetContract(snapshot, hash);
             if (contract is null) return false;
             var methodDescriptor = contract.Manifest.Abi.GetMethod(method, pcount);
             return methodDescriptor is not null;
