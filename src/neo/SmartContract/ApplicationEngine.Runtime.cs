@@ -112,7 +112,7 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Runtime.Log.
         /// Writes a log.
         /// </summary>
-        public static readonly InteropDescriptor System_Runtime_Log = Register("System.Runtime.Log", nameof(RuntimeLog), 1 << 15, CallFlags.AllowNotify);
+        public static readonly InteropDescriptor System_Runtime_Log = Register("System.Runtime.Log", nameof(RuntimeLog), 1 << 15, CallFlags.None);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.Notify.
@@ -293,7 +293,15 @@ namespace Neo.SmartContract
         protected internal void RuntimeLog(byte[] state)
         {
             if (state.Length > MaxNotificationSize) throw new ArgumentException(null, nameof(state));
+
             string message = Utility.StrictUTF8.GetString(state);
+
+            if (!CurrentContext.GetState<ExecutionContextState>().CallFlags.HasFlag(CallFlags.AllowNotify))
+            {
+                OnFault(new Exception(message));
+                return;
+            }
+
             Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash, message));
         }
 
