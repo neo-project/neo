@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2021 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -64,7 +64,7 @@ namespace Neo.SmartContract
         /// <typeparam name="T">The type of the <paramref name="key"/> parameter.</typeparam>
         /// <param name="key">Part of the key.</param>
         /// <returns>A reference to this instance after the add operation has completed.</returns>
-        unsafe public KeyBuilder Add<T>(T key) where T : unmanaged
+        public unsafe KeyBuilder Add<T>(T key) where T : unmanaged
         {
             return Add(new ReadOnlySpan<byte>(&key, sizeof(T)));
         }
@@ -75,7 +75,7 @@ namespace Neo.SmartContract
         /// <typeparam name="T">The type of the <paramref name="key"/> parameter.</typeparam>
         /// <param name="key">Part of the key.</param>
         /// <returns>A reference to this instance after the add operation has completed.</returns>
-        unsafe public KeyBuilder AddBigEndian<T>(T key) where T : unmanaged
+        public unsafe KeyBuilder AddBigEndian<T>(T key) where T : unmanaged
         {
             ReadOnlySpan<byte> buffer = new(&key, sizeof(T));
             for (int i = buffer.Length - 1; i >= 0; i--)

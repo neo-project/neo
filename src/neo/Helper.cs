@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2021 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -54,9 +54,7 @@ namespace Neo
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Concat(params byte[][] buffers)
         {
-            int length = 0;
-            for (int i = 0; i < buffers.Length; i++)
-                length += buffers[i].Length;
+            int length = buffers.Sum(t => t.Length);
             byte[] dst = new byte[length];
             int p = 0;
             foreach (byte[] src in buffers)
@@ -146,7 +144,7 @@ namespace Neo
         /// <returns>The converted byte array.</returns>
         public static byte[] HexToBytes(this string value)
         {
-            if (value == null || value.Length == 0)
+            if (string.IsNullOrEmpty(value))
                 return Array.Empty<byte>();
             if (value.Length % 2 == 1)
                 throw new FormatException();
@@ -288,7 +286,7 @@ namespace Neo
         }
 
         /// <summary>
-        /// Checks if address is IPv4 Maped to IPv6 format, if so, Map to IPv4.
+        /// Checks if address is IPv4 Mapped to IPv6 format, if so, Map to IPv4.
         /// Otherwise, return current address.
         /// </summary>
         internal static IPAddress Unmap(this IPAddress address)
@@ -299,7 +297,7 @@ namespace Neo
         }
 
         /// <summary>
-        /// Checks if IPEndPoint is IPv4 Maped to IPv6 format, if so, unmap to IPv4.
+        /// Checks if IPEndPoint is IPv4 Mapped to IPv6 format, if so, unmap to IPv4.
         /// Otherwise, return current endpoint.
         /// </summary>
         internal static IPEndPoint Unmap(this IPEndPoint endPoint)

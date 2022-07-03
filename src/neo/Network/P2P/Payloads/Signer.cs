@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -40,17 +40,20 @@ namespace Neo.Network.P2P.Payloads
         public WitnessScope Scopes;
 
         /// <summary>
-        /// The contracts that allowed by the witness. Only available when the <see cref="WitnessScope.CustomContracts"/> flag is set.
+        /// The contracts that allowed by the witness.
+        /// Only available when the <see cref="WitnessScope.CustomContracts"/> flag is set.
         /// </summary>
         public UInt160[] AllowedContracts;
 
         /// <summary>
-        /// The groups that allowed by the witness. Only available when the <see cref="WitnessScope.CustomGroups"/> flag is set.
+        /// The groups that allowed by the witness.
+        /// Only available when the <see cref="WitnessScope.CustomGroups"/> flag is set.
         /// </summary>
         public ECPoint[] AllowedGroups;
 
         /// <summary>
-        /// The rules that the witness must meet. Only available when the <see cref="WitnessScope.WitnessRules"/> flag is set.
+        /// The rules that the witness must meet.
+        /// Only available when the <see cref="WitnessScope.WitnessRules"/> flag is set.
         /// </summary>
         public WitnessRule[] Rules;
 
@@ -81,7 +84,7 @@ namespace Neo.Network.P2P.Payloads
         }
 
         /// <summary>
-        /// Converts all rules contianed in the <see cref="Signer"/> object to <see cref="WitnessRule"/>.
+        /// Converts all rules contained in the <see cref="Signer"/> object to <see cref="WitnessRule"/>.
         /// </summary>
         /// <returns>The <see cref="WitnessRule"/> array used to represent the current signer.</returns>
         public IEnumerable<WitnessRule> GetAllRules()

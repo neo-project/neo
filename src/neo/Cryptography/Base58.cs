@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2021 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -45,10 +45,13 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
-        /// Converts a byte array to its equivalent <see cref="string"/> representation that is encoded with base-58 digits. The encoded <see cref="string"/> contains the checksum of the binary data.
+        /// Converts a byte array to its equivalent <see cref="string"/>
+        /// representation that is encoded with base-58 digits.
+        /// The encoded <see cref="string"/> contains the checksum of the binary data.
         /// </summary>
         /// <param name="data">The byte array to convert.</param>
-        /// <returns>The <see cref="string"/> representation, in base-58, of the contents of <paramref name="data"/>.</returns>
+        /// <returns>The <see cref="string"/> representation,
+        /// in base-58, of the contents of <paramref name="data"/>.</returns>
         public static string Base58CheckEncode(this ReadOnlySpan<byte> data)
         {
             byte[] checksum = data.Sha256().Sha256();
@@ -67,7 +70,7 @@ namespace Neo.Cryptography
         /// <returns>A byte array that is equivalent to <paramref name="input"/>.</returns>
         public static byte[] Decode(string input)
         {
-            // Decode Base58 string to BigInteger 
+            // Decode Base58 string to BigInteger
             var bi = BigInteger.Zero;
             for (int i = 0; i < input.Length; i++)
             {

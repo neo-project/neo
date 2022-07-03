@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2021 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -192,6 +192,7 @@ namespace Neo.SmartContract
 
         private static string ToString(ContractParameter parameter, HashSet<ContractParameter> context)
         {
+            StringBuilder sb;
             switch (parameter.Value)
             {
                 case null:
@@ -199,26 +200,25 @@ namespace Neo.SmartContract
                 case byte[] data:
                     return data.ToHexString();
                 case IList<ContractParameter> data:
-                    if (context is null) context = new HashSet<ContractParameter>();
+                    context ??= new HashSet<ContractParameter>();
                     if (context.Contains(parameter))
                     {
                         return "(array)";
                     }
-                    else
+
+                    context.Add(parameter);
+                    sb = new StringBuilder();
+                    sb.Append('[');
+                    foreach (ContractParameter item in data)
                     {
-                        context.Add(parameter);
-                        StringBuilder sb = new();
-                        sb.Append('[');
-                        foreach (ContractParameter item in data)
-                        {
-                            sb.Append(ToString(item, context));
-                            sb.Append(", ");
-                        }
-                        if (data.Count > 0)
-                            sb.Length -= 2;
-                        sb.Append(']');
-                        return sb.ToString();
+                        sb.Append(ToString(item, context));
+                        sb.Append(", ");
                     }
+                    if (data.Count > 0)
+                        sb.Length -= 2;
+                    sb.Append(']');
+                    return sb.ToString();
+
                 case IList<KeyValuePair<ContractParameter, ContractParameter>> data:
                     if (context is null) context = new HashSet<ContractParameter>();
                     if (context.Contains(parameter))
@@ -228,7 +228,7 @@ namespace Neo.SmartContract
                     else
                     {
                         context.Add(parameter);
-                        StringBuilder sb = new();
+                        sb = new();
                         sb.Append('[');
                         foreach (var item in data)
                         {

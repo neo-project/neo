@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -29,13 +29,13 @@ namespace Neo.Ledger
         public event EventHandler<Transaction> TransactionAdded;
         public event EventHandler<TransactionRemovedEventArgs> TransactionRemoved;
 
-        // Allow a reverified transaction to be rebroadcasted if it has been this many block times since last broadcast.
+        // Allow a reverified transaction to be rebroadcast if it has been this many block times since last broadcast.
         private const int BlocksTillRebroadcast = 10;
         private int RebroadcastMultiplierThreshold => Capacity / 10;
 
         private readonly double MaxMillisecondsToReverifyTx;
 
-        // These two are not expected to be hit, they are just safegaurds.
+        // These two are not expected to be hit, they are just safeguards.
         private readonly double MaxMillisecondsToReverifyTxPerIdle;
 
         private readonly NeoSystem _system;
@@ -55,7 +55,7 @@ namespace Neo.Ledger
         /// </summary>
         private readonly Dictionary<UInt256, PoolItem> _unsortedTransactions = new();
         /// <summary>
-        /// Stores the verified sorted transactins currently in the pool.
+        /// Stores the verified sorted transactions currently in the pool.
         /// </summary>
         private readonly SortedSet<PoolItem> _sortedTransactions = new();
 

@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2021 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -40,10 +40,7 @@ namespace Neo.IO.Caching
 
         public TValue this[TKey key]
         {
-            get
-            {
-                return collection[key].Value;
-            }
+            get => collection[key].Value;
             set
             {
                 if (collection.TryGetValue(key, out var entry))
@@ -53,13 +50,7 @@ namespace Neo.IO.Caching
             }
         }
 
-        public TValue this[int index]
-        {
-            get
-            {
-                return collection[index].Value;
-            }
-        }
+        public TValue this[int index] => collection[index].Value;
 
         public void Add(TKey key, TValue value)
         {

@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2021 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -107,9 +107,9 @@ namespace Neo.IO.Caching
         }
 
         /// <summary>
-        /// Provides access to the item at the front of the queue without dequeueing it
+        /// Provides access to the item at the front of the queue without dequeuing it
         /// </summary>
-        /// <returns>The frontmost item</returns>
+        /// <returns>The front most item</returns>
         public T Peek()
         {
             if (_count == 0)
@@ -201,7 +201,7 @@ namespace Neo.IO.Caching
         }
 
         /// <summary>
-        /// Copys the queue's items to a destination array
+        /// Copy the queue's items to a destination array
         /// </summary>
         /// <param name="array">The destination array</param>
         /// <param name="arrayIndex">The index in the destination to start copying at</param>

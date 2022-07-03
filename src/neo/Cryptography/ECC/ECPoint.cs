@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -29,10 +29,7 @@ namespace Neo.Cryptography.ECC
         /// <summary>
         /// Indicates whether it is a point at infinity.
         /// </summary>
-        public bool IsInfinity
-        {
-            get { return X == null && Y == null; }
-        }
+        public bool IsInfinity => X == null && Y == null;
 
         public int Size => IsInfinity ? 1 : 33;
 
@@ -241,10 +238,10 @@ namespace Neo.Cryptography.ECC
             // width of the Window NAF
             sbyte width;
 
-            // Required length of precomputation array
+            // Required length of precomputing array
             int reqPreCompLen;
 
-            // Determine optimal width and corresponding length of precomputation
+            // Determine optimal width and corresponding length of precomputing array
             // array based on literature values
             if (m < 13)
             {
@@ -282,7 +279,7 @@ namespace Neo.Cryptography.ECC
                 reqPreCompLen = 127;
             }
 
-            // The length of the precomputation array
+            // The length of the precomputing array
             int preCompLen = 1;
 
             ECPoint[] preComp = new ECPoint[] { p };
@@ -290,7 +287,7 @@ namespace Neo.Cryptography.ECC
 
             if (preCompLen < reqPreCompLen)
             {
-                // Precomputation array must be made bigger, copy existing preComp
+                // Precomputing array must be made bigger, copy existing preComp
                 // array into the larger new preComp array
                 ECPoint[] oldPreComp = preComp;
                 preComp = new ECPoint[reqPreCompLen];
@@ -298,7 +295,7 @@ namespace Neo.Cryptography.ECC
 
                 for (int i = preCompLen; i < reqPreCompLen; i++)
                 {
-                    // Compute the new ECPoints for the precomputation array.
+                    // Compute the new ECPoints for the precomputing array.
                     // The values 1, 3, 5, ..., 2^(width-1)-1 times p are
                     // computed
                     preComp[i] = twiceP + preComp[i - 1];

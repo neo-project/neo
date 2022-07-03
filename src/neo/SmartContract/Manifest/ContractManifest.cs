@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2021 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -111,10 +111,10 @@ namespace Neo.SmartContract.Manifest
             ContractManifest manifest = new()
             {
                 Name = json["name"].GetString(),
-                Groups = ((JArray)json["groups"]).Select(u => ContractGroup.FromJson(u)).ToArray(),
+                Groups = ((JArray)json["groups"]).Select(ContractGroup.FromJson).ToArray(),
                 SupportedStandards = ((JArray)json["supportedstandards"]).Select(u => u.GetString()).ToArray(),
                 Abi = ContractAbi.FromJson(json["abi"]),
-                Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u)).ToArray(),
+                Permissions = ((JArray)json["permissions"]).Select(ContractPermission.FromJson).ToArray(),
                 Trusts = WildcardContainer<ContractPermissionDescriptor>.FromJson(json["trusts"], u => ContractPermissionDescriptor.FromJson(u)),
                 Extra = json["extra"]
             };
@@ -123,7 +123,7 @@ namespace Neo.SmartContract.Manifest
             _ = manifest.Groups.ToDictionary(p => p.PubKey);
             if (json["features"].Properties.Count != 0)
                 throw new FormatException();
-            if (manifest.SupportedStandards.Any(p => string.IsNullOrEmpty(p)))
+            if (manifest.SupportedStandards.Any(string.IsNullOrEmpty))
                 throw new FormatException();
             _ = manifest.SupportedStandards.ToDictionary(p => p);
             _ = manifest.Permissions.ToDictionary(p => p.Contract);

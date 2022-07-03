@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -165,7 +165,7 @@ namespace Neo
         {
             foreach (var p in Plugin.Plugins)
                 p.Dispose();
-            EnsureStoped(LocalNode);
+            EnsureStopped(LocalNode);
             // Dispose will call ActorSystem.Terminate()
             ActorSystem.Dispose();
             ActorSystem.WhenTerminated.Wait();
@@ -194,15 +194,14 @@ namespace Neo
             IEnumerable<T> result = services.OfType<T>();
             if (filter is null)
                 return result.FirstOrDefault();
-            else
-                return result.FirstOrDefault(filter);
+            return result.FirstOrDefault(filter);
         }
 
         /// <summary>
         /// Blocks the current thread until the specified actor has stopped.
         /// </summary>
         /// <param name="actor">The actor to wait.</param>
-        public void EnsureStoped(IActorRef actor)
+        public void EnsureStopped(IActorRef actor)
         {
             using Inbox inbox = Inbox.Create(ActorSystem);
             inbox.Watch(actor);
@@ -275,8 +274,7 @@ namespace Neo
         /// <returns><see langword="true"/> if the transaction exists; otherwise, <see langword="false"/>.</returns>
         public bool ContainsTransaction(UInt256 hash)
         {
-            if (MemPool.ContainsKey(hash)) return true;
-            return NativeContract.Ledger.ContainsTransaction(StoreView, hash);
+            return MemPool.ContainsKey(hash) || NativeContract.Ledger.ContainsTransaction(StoreView, hash);
         }
     }
 }

@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -285,7 +285,7 @@ namespace Neo.Wallets.NEP6
         /// </summary>
         public JObject ToJson()
         {
-            return new()
+            return new JObject
             {
                 ["name"] = name,
                 ["version"] = version.ToString(),
@@ -309,27 +309,20 @@ namespace Neo.Wallets.NEP6
         {
             lock (accounts)
             {
-                NEP6Account account = accounts.Values.FirstOrDefault(p => !p.Decrypted);
-                if (account == null)
-                {
-                    account = accounts.Values.FirstOrDefault(p => p.HasKey);
-                }
+                NEP6Account account = accounts.Values.FirstOrDefault(p => !p.Decrypted) ?? accounts.Values.FirstOrDefault(p => p.HasKey);
                 if (account == null) return true;
                 if (account.Decrypted)
                 {
                     return account.VerifyPassword(password);
                 }
-                else
+                try
                 {
-                    try
-                    {
-                        account.GetKey(password);
-                        return true;
-                    }
-                    catch (FormatException)
-                    {
-                        return false;
-                    }
+                    account.GetKey(password);
+                    return true;
+                }
+                catch (FormatException)
+                {
+                    return false;
                 }
             }
         }
@@ -347,17 +340,18 @@ namespace Neo.Wallets.NEP6
                         succeed = false;
                     }
                 });
-            }
-            if (succeed)
-            {
-                foreach (NEP6Account account in accounts.Values)
-                    account.ChangePasswordCommit();
-                password = newPassword;
-            }
-            else
-            {
-                foreach (NEP6Account account in accounts.Values)
-                    account.ChangePasswordRoolback();
+
+                if (succeed)
+                {
+                    foreach (NEP6Account account in accounts.Values)
+                        account.ChangePasswordCommit();
+                    password = newPassword;
+                }
+                else
+                {
+                    foreach (NEP6Account account in accounts.Values)
+                        account.ChangePasswordRoolback();
+                }
             }
             return succeed;
         }

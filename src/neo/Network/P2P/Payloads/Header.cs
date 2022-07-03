@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -133,7 +133,7 @@ namespace Neo.Network.P2P.Payloads
             sizeof(uint) +      // Index
             sizeof(byte) +      // PrimaryIndex
             UInt160.Length +    // NextConsensus
-            1 + Witness.Size;   // Witness   
+            1 + Witness.Size;   // Witness
 
         Witness[] IVerifiable.Witnesses
         {
@@ -220,19 +220,20 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The header represented by a JSON object.</returns>
         public JObject ToJson(ProtocolSettings settings)
         {
-            JObject json = new();
-            json["hash"] = Hash.ToString();
-            json["size"] = Size;
-            json["version"] = version;
-            json["previousblockhash"] = prevHash.ToString();
-            json["merkleroot"] = merkleRoot.ToString();
-            json["time"] = timestamp;
-            json["nonce"] = nonce.ToString("X16");
-            json["index"] = index;
-            json["primary"] = primaryIndex;
-            json["nextconsensus"] = nextConsensus.ToAddress(settings.AddressVersion);
-            json["witnesses"] = new JArray(Witness.ToJson());
-            return json;
+            return new JObject
+            {
+                ["hash"] = Hash.ToString(),
+                ["size"] = Size,
+                ["version"] = version,
+                ["previousblockhash"] = prevHash.ToString(),
+                ["merkleroot"] = merkleRoot.ToString(),
+                ["time"] = timestamp,
+                ["nonce"] = nonce.ToString("X16"),
+                ["index"] = index,
+                ["primary"] = primaryIndex,
+                ["nextconsensus"] = nextConsensus.ToAddress(settings.AddressVersion),
+                ["witnesses"] = new JArray(Witness.ToJson())
+            };
         }
 
         internal bool Verify(ProtocolSettings settings, DataCache snapshot)

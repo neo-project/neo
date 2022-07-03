@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -249,7 +249,7 @@ namespace Neo.Wallets
             foreach (WalletAccount account in GetAccounts())
             {
                 if (account.IsDefault) return account;
-                if (first == null) first = account;
+                first ??= account;
             }
             return first;
         }
@@ -455,9 +455,9 @@ namespace Neo.Wallets
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="outputs">The array of <see cref="TransferOutput"/> that contain the asset, amount, and targets of the transfer.</param>
         /// <param name="from">The account to transfer from.</param>
-        /// <param name="cosigners">The cosigners to be added to the transction.</param>
+        /// <param name="cosigners">The cosigners to be added to the transaction.</param>
         /// <param name="persistingBlock">The block environment to execute the transaction. If null, <see cref="ApplicationEngine.CreateDummyBlock"></see> will be used.</param>
-        /// <returns>The created transction.</returns>
+        /// <returns>The created transaction.</returns>
         public Transaction MakeTransaction(DataCache snapshot, TransferOutput[] outputs, UInt160 from = null, Signer[] cosigners = null, Block persistingBlock = null)
         {
             UInt160[] accounts;
@@ -518,8 +518,7 @@ namespace Neo.Wallets
                 }
                 script = sb.ToArray();
             }
-            if (balances_gas is null)
-                balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
+            balances_gas ??= accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
 
             return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), Array.Empty<TransactionAttribute>(), balances_gas, persistingBlock: persistingBlock);
         }
@@ -530,11 +529,11 @@ namespace Neo.Wallets
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="script">The script to be loaded in the transaction.</param>
         /// <param name="sender">The sender of the transaction.</param>
-        /// <param name="cosigners">The cosigners to be added to the transction.</param>
-        /// <param name="attributes">The attributes to be added to the transction.</param>
+        /// <param name="cosigners">The cosigners to be added to the transaction.</param>
+        /// <param name="attributes">The attributes to be added to the transaction.</param>
         /// <param name="maxGas">The maximum gas that can be spent to execute the script.</param>
         /// <param name="persistingBlock">The block environment to execute the transaction. If null, <see cref="ApplicationEngine.CreateDummyBlock"></see> will be used.</param>
-        /// <returns>The created transction.</returns>
+        /// <returns>The created transaction.</returns>
         public Transaction MakeTransaction(DataCache snapshot, ReadOnlyMemory<byte> script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null, long maxGas = ApplicationEngine.TestModeGas, Block persistingBlock = null)
         {
             UInt160[] accounts;
@@ -565,7 +564,7 @@ namespace Neo.Wallets
                     Attributes = attributes,
                 };
 
-                // will try to execute 'transfer' script to check if it works 
+                // will try to execute 'transfer' script to check if it works
                 using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.CreateSnapshot(), tx, settings: ProtocolSettings, gas: maxGas, persistingBlock: persistingBlock))
                 {
                     if (engine.State == VMState.FAULT)

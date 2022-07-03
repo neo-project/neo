@@ -1,14 +1,15 @@
 // Copyright (C) 2015-2021 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Neo.IO
 {
@@ -47,10 +48,7 @@ namespace Neo.IO
         {
             unchecked
             {
-                int hash = 17;
-                foreach (byte element in obj)
-                    hash = hash * 31 + element;
-                return hash;
+                return obj.Aggregate(17, (current, element) => current * 31 + element);
             }
         }
     }

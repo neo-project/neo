@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2021 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -112,7 +112,7 @@ namespace Neo.Network.P2P
         /// <summary>
         /// Broadcast a message to all connected nodes.
         /// </summary>
-        /// <param name="message">The message to be broadcasted.</param>
+        /// <param name="message">The message to be broadcast.</param>
         private void BroadcastMessage(Message message) => SendToRemoteNodes(message);
 
         /// <summary>
@@ -160,7 +160,8 @@ namespace Neo.Network.P2P
 
         /// <summary>
         /// Checks the new connection.
-        /// If it is equal to the nonce of local or any remote node, it'll return false, else we'll return true and update the Listener address of the connected remote node.
+        /// If it is equal to the nonce of local or any remote node, it'll return false,
+        /// else we'll return true and update the Listener address of the connected remote node.
         /// </summary>
         /// <param name="actor">Remote node actor.</param>
         /// <param name="node">Remote node object.</param>
@@ -200,8 +201,10 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// Performs a broadcast with the command <see cref="MessageCommand.GetAddr"/>, which, eventually, tells all known connections.
-        /// If there are no connected peers it will try with the default, respecting <see cref="MaxCountFromSeedList"/> limit.
+        /// Performs a broadcast with the command <see cref="MessageCommand.GetAddr"/>,
+        /// which, eventually, tells all known connections.
+        /// If there are no connected peers it will try with the default,
+        /// respecting <see cref="MaxCountFromSeedList"/> limit.
         /// </summary>
         /// <param name="count">Number of peers that are being requested.</param>
         protected override void NeedMorePeers(int count)
@@ -244,7 +247,8 @@ namespace Neo.Network.P2P
         private void OnRelayDirectly(IInventory inventory)
         {
             var message = new RemoteNode.Relay { Inventory = inventory };
-            // When relaying a block, if the block's index is greater than 'LastBlockIndex' of the RemoteNode, relay the block;
+            // When relaying a block, if the block's index is greater than
+            // 'LastBlockIndex' of the RemoteNode, relay the block;
             // otherwise, don't relay.
             if (inventory is Block block)
             {

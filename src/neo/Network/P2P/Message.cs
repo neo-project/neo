@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -53,7 +53,8 @@ namespace Neo.Network.P2P
         /// Creates a new instance of the <see cref="Message"/> class.
         /// </summary>
         /// <param name="command">The command of the message.</param>
-        /// <param name="payload">The payload of the message. For the messages that don't require a payload, it should be <see langword="null"/>.</param>
+        /// <param name="payload">The payload of the message.
+        /// For the messages that don't require a payload, it should be <see langword="null"/>.</param>
         /// <returns></returns>
         public static Message Create(MessageCommand command, ISerializable payload = null)
         {
