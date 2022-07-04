@@ -9,6 +9,7 @@
 // modifications are permitted.
 
 using System.Collections.Generic;
+
 namespace Neo.IO
 {
     internal class ByteArrayEqualityComparer : IEqualityComparer<byte[]>
