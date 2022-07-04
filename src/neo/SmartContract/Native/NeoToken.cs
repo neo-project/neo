@@ -591,7 +591,7 @@ namespace Neo.SmartContract.Native
 
         internal class CandidateState : IInteroperable
         {
-            public bool Registered = true;
+            public bool Registered;
             public BigInteger Votes;
 
             public void FromStackItem(StackItem stackItem)
