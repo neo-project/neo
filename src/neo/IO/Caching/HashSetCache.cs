@@ -11,8 +11,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-
 namespace Neo.IO.Caching
 {
     class HashSetCache<T> : IReadOnlyCollection<T> where T : IEquatable<T>
