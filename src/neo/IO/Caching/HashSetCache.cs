@@ -103,7 +103,13 @@ namespace Neo.IO.Caching
 
         public IEnumerator<T> GetEnumerator()
         {
-            return sets.SelectMany(set => set).GetEnumerator();
+            foreach (var set in sets)
+            {
+                foreach (var item in set)
+                {
+                    yield return item;
+                }
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

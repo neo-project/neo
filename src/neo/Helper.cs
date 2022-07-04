@@ -54,7 +54,9 @@ namespace Neo
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] Concat(params byte[][] buffers)
         {
-            int length = buffers.Sum(t => t.Length);
+            int length = 0;
+            for (int i = 0; i < buffers.Length; i++)
+                length += buffers[i].Length;
             byte[] dst = new byte[length];
             int p = 0;
             foreach (byte[] src in buffers)

@@ -48,7 +48,10 @@ namespace Neo.IO
         {
             unchecked
             {
-                return obj.Aggregate(17, (current, element) => current * 31 + element);
+                int hash = 17;
+                foreach (byte element in obj)
+                    hash = hash * 31 + element;
+                return hash;
             }
         }
     }

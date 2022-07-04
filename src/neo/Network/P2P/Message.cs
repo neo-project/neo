@@ -53,8 +53,7 @@ namespace Neo.Network.P2P
         /// Creates a new instance of the <see cref="Message"/> class.
         /// </summary>
         /// <param name="command">The command of the message.</param>
-        /// <param name="payload">The payload of the message.
-        /// For the messages that don't require a payload, it should be <see langword="null"/>.</param>
+        /// <param name="payload">The payload of the message. For the messages that don't require a payload, it should be <see langword="null"/>.</param>
         /// <returns></returns>
         public static Message Create(MessageCommand command, ISerializable payload = null)
         {

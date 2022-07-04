@@ -50,8 +50,7 @@ namespace Neo.Cryptography
         /// The encoded <see cref="string"/> contains the checksum of the binary data.
         /// </summary>
         /// <param name="data">The byte array to convert.</param>
-        /// <returns>The <see cref="string"/> representation,
-        /// in base-58, of the contents of <paramref name="data"/>.</returns>
+        /// <returns>The <see cref="string"/> representation, in base-58, of the contents of <paramref name="data"/>.</returns>
         public static string Base58CheckEncode(this ReadOnlySpan<byte> data)
         {
             byte[] checksum = data.Sha256().Sha256();
