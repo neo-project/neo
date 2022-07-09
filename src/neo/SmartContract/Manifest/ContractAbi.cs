@@ -95,11 +95,10 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The ABI represented by a JSON object.</returns>
         public JObject ToJson()
         {
-            return new JObject
-            {
-                ["methods"] = new JArray(Methods.Select(u => u.ToJson()).ToArray()),
-                ["events"] = new JArray(Events.Select(u => u.ToJson()).ToArray())
-            };
+            var json = new JObject();
+            json["methods"] = new JArray(Methods.Select(u => u.ToJson()).ToArray());
+            json["events"] = new JArray(Events.Select(u => u.ToJson()).ToArray());
+            return json;
         }
     }
 }

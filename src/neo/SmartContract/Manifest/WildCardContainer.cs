@@ -87,7 +87,7 @@ namespace Neo.SmartContract.Manifest
         public JObject ToJson(Func<T, JObject> elementSelector)
         {
             if (IsWildcard) return "*";
-            return _data.Select(elementSelector).ToArray();
+            return _data.Select(p => elementSelector(p)).ToArray();
         }
     }
 }

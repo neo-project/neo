@@ -220,20 +220,19 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The header represented by a JSON object.</returns>
         public JObject ToJson(ProtocolSettings settings)
         {
-            return new JObject
-            {
-                ["hash"] = Hash.ToString(),
-                ["size"] = Size,
-                ["version"] = version,
-                ["previousblockhash"] = prevHash.ToString(),
-                ["merkleroot"] = merkleRoot.ToString(),
-                ["time"] = timestamp,
-                ["nonce"] = nonce.ToString("X16"),
-                ["index"] = index,
-                ["primary"] = primaryIndex,
-                ["nextconsensus"] = nextConsensus.ToAddress(settings.AddressVersion),
-                ["witnesses"] = new JArray(Witness.ToJson())
-            };
+            JObject json = new();
+            json["hash"] = Hash.ToString();
+            json["size"] = Size;
+            json["version"] = version;
+            json["previousblockhash"] = prevHash.ToString();
+            json["merkleroot"] = merkleRoot.ToString();
+            json["time"] = timestamp;
+            json["nonce"] = nonce.ToString("X16");
+            json["index"] = index;
+            json["primary"] = primaryIndex;
+            json["nextconsensus"] = nextConsensus.ToAddress(settings.AddressVersion);
+            json["witnesses"] = new JArray(Witness.ToJson());
+            return json;
         }
 
         internal bool Verify(ProtocolSettings settings, DataCache snapshot)

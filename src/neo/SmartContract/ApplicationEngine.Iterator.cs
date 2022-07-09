@@ -33,7 +33,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="iterator">The iterator to be advanced.</param>
         /// <returns><see langword="true"/> if the iterator was successfully advanced to the next element; <see langword="false"/> if the iterator has passed the end of the collection.</returns>
-        protected internal static bool IteratorNext(IIterator iterator)
+        internal protected static bool IteratorNext(IIterator iterator)
         {
             return iterator.Next();
         }
@@ -44,7 +44,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="iterator">The iterator to be used.</param>
         /// <returns>The element in the collection at the current position of the iterator.</returns>
-        protected internal StackItem IteratorValue(IIterator iterator)
+        internal protected StackItem IteratorValue(IIterator iterator)
         {
             return iterator.Value(ReferenceCounter);
         }

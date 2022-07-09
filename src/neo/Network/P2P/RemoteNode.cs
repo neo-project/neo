@@ -260,7 +260,7 @@ namespace Neo.Network.P2P
             };
         }
 
-        protected internal override bool ShallDrop(object message, IEnumerable queue)
+        internal protected override bool ShallDrop(object message, IEnumerable queue)
         {
             if (message is not Message msg) return false;
             return msg.Command switch
