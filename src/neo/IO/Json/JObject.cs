@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2021 The Neo Project.
-//
-// The neo is free software distributed under the MIT software license,
+// 
+// The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php
+// project or http://www.opensource.org/licenses/mit-license.php 
 // for more details.
-//
+// 
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -40,8 +40,16 @@ namespace Neo.IO.Json
         /// <returns>The property with the specified name.</returns>
         public JObject this[string name]
         {
-            get => Properties.TryGetValue(name, out JObject value) ? value : null;
-            set => Properties[name] = value;
+            get
+            {
+                if (Properties.TryGetValue(name, out JObject value))
+                    return value;
+                return null;
+            }
+            set
+            {
+                Properties[name] = value;
+            }
         }
 
         /// <summary>

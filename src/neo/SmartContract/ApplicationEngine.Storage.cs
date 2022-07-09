@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2022 The Neo Project.
-//
-// The neo is free software distributed under the MIT software license,
+// 
+// The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php
+// project or http://www.opensource.org/licenses/mit-license.php 
 // for more details.
-//
+// 
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -104,7 +104,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="context">The storage context to convert.</param>
         /// <returns>The readonly storage context.</returns>
-        protected internal static StorageContext AsReadOnly(StorageContext context)
+        internal protected static StorageContext AsReadOnly(StorageContext context)
         {
             if (!context.IsReadOnly)
                 context = new StorageContext

@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2021 The Neo Project.
-//
-// The neo is free software distributed under the MIT software license,
+// 
+// The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php
+// project or http://www.opensource.org/licenses/mit-license.php 
 // for more details.
-//
+// 
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -231,6 +231,7 @@ namespace Neo.Network.P2P
                         if (block.Hash != block_old.Hash)
                         {
                             Sender.Tell(Tcp.Abort.Instance);
+                            return;
                         }
                     }
                     else
@@ -248,21 +249,25 @@ namespace Neo.Network.P2P
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void DecrementGlobalTask(UInt256 hash)
         {
-            if (!globalInvTasks.TryGetValue(hash, out var value)) return;
-            if (value == 1)
-                globalInvTasks.Remove(hash);
-            else
-                globalInvTasks[hash] = value - 1;
+            if (globalInvTasks.TryGetValue(hash, out var value))
+            {
+                if (value == 1)
+                    globalInvTasks.Remove(hash);
+                else
+                    globalInvTasks[hash] = value - 1;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void DecrementGlobalTask(uint index)
         {
-            if (!globalIndexTasks.TryGetValue(index, out var value)) return;
-            if (value == 1)
-                globalIndexTasks.Remove(index);
-            else
-                globalIndexTasks[index] = value - 1;
+            if (globalIndexTasks.TryGetValue(index, out var value))
+            {
+                if (value == 1)
+                    globalIndexTasks.Remove(index);
+                else
+                    globalIndexTasks[index] = value - 1;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -413,7 +418,7 @@ namespace Neo.Network.P2P
         {
         }
 
-        protected internal override bool IsHighPriority(object message)
+        internal protected override bool IsHighPriority(object message)
         {
             switch (message)
             {
@@ -430,7 +435,7 @@ namespace Neo.Network.P2P
             }
         }
 
-        protected internal override bool ShallDrop(object message, IEnumerable queue)
+        internal protected override bool ShallDrop(object message, IEnumerable queue)
         {
             if (message is not TaskManager.NewTasks tasks) return false;
             // Remove duplicate tasks

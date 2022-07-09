@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2021 The Neo Project.
-//
-// The neo is free software distributed under the MIT software license,
+// 
+// The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php
+// project or http://www.opensource.org/licenses/mit-license.php 
 // for more details.
-//
+// 
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -34,18 +34,17 @@ namespace Neo.Wallets.NEP6
 
         public JObject ToJson()
         {
-            return new JObject
+            JObject contract = new();
+            contract["script"] = Convert.ToBase64String(Script);
+            contract["parameters"] = new JArray(ParameterList.Zip(ParameterNames, (type, name) =>
             {
-                ["script"] = Convert.ToBase64String(Script),
-                ["parameters"] = new JArray(ParameterList.Zip(ParameterNames, (type, name) =>
-                {
-                    JObject parameter = new();
-                    parameter["name"] = name;
-                    parameter["type"] = type;
-                    return parameter;
-                })),
-                ["deployed"] = Deployed
-            };
+                JObject parameter = new();
+                parameter["name"] = name;
+                parameter["type"] = type;
+                return parameter;
+            }));
+            contract["deployed"] = Deployed;
+            return contract;
         }
     }
 }

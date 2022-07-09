@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2021 The Neo Project.
-//
-// The neo is free software distributed under the MIT software license,
+// 
+// The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php
+// project or http://www.opensource.org/licenses/mit-license.php 
 // for more details.
-//
+// 
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -76,14 +76,17 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The method that matches the specified name and number of parameters. If <paramref name="pcount"/> is set to -1, the first method with the specified name will be returned.</returns>
         public ContractMethodDescriptor GetMethod(string name, int pcount)
         {
-            if (pcount is < -1 or > ushort.MaxValue) throw new ArgumentOutOfRangeException(nameof(pcount));
+            if (pcount < -1 || pcount > ushort.MaxValue) throw new ArgumentOutOfRangeException(nameof(pcount));
             if (pcount >= 0)
             {
                 methodDictionary ??= Methods.ToDictionary(p => (p.Name, p.Parameters.Length));
                 methodDictionary.TryGetValue((name, pcount), out var method);
                 return method;
             }
-            return Methods.FirstOrDefault(p => p.Name == name);
+            else
+            {
+                return Methods.FirstOrDefault(p => p.Name == name);
+            }
         }
 
         /// <summary>

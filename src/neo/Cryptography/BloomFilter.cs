@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2021 The Neo Project.
-//
-// The neo is free software distributed under the MIT software license,
+// 
+// The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php
+// project or http://www.opensource.org/licenses/mit-license.php 
 // for more details.
-//
+// 
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -85,7 +85,7 @@ namespace Neo.Cryptography
         /// <returns><see langword="true"/> if <paramref name="element"/> is found in the <see cref="BloomFilter"/>; otherwise, <see langword="false"/>.</returns>
         public bool Check(byte[] element)
         {
-            foreach (uint i in seeds.AsParallel().Select(element.Murmur32))
+            foreach (uint i in seeds.AsParallel().Select(s => element.Murmur32(s)))
                 if (!bits.Get((int)(i % (uint)bits.Length)))
                     return false;
             return true;

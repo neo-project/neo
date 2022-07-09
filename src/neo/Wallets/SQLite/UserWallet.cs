@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2022 The Neo Project.
-//
-// The neo is free software distributed under the MIT software license,
+// 
+// The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php
+// project or http://www.opensource.org/licenses/mit-license.php 
 // for more details.
-//
+// 
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -104,7 +104,10 @@ namespace Neo.Wallets.SQLite
             {
                 if (accounts.TryGetValue(account.ScriptHash, out UserWalletAccount account_old))
                 {
-                    account.Contract ??= account_old.Contract;
+                    if (account.Contract == null)
+                    {
+                        account.Contract = account_old.Contract;
+                    }
                 }
                 accounts[account.ScriptHash] = account;
             }
@@ -332,7 +335,7 @@ namespace Neo.Wallets.SQLite
         /// <param name="password">The password of the wallet.</param>
         /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
         /// <returns>The opened wallet.</returns>
-        public new static UserWallet Open(string path, string password, ProtocolSettings settings)
+        public static new UserWallet Open(string path, string password, ProtocolSettings settings)
         {
             return new UserWallet(path, password.ToAesKey(), settings);
         }
