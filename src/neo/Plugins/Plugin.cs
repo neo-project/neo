@@ -19,7 +19,8 @@ using static System.IO.Path;
 namespace Neo.Plugins
 {
     /// <summary>
-    /// Represents the base class of all plugins. Any plugin should inherit this class. The plugins are automatically loaded when the process starts.
+    /// Represents the base class of all plugins. Any plugin should inherit this class.
+    /// The plugins are automatically loaded when the process starts.
     /// </summary>
     public abstract class Plugin : IDisposable
     {
@@ -89,7 +90,8 @@ namespace Neo.Plugins
         }
 
         /// <summary>
-        /// Called when the plugin is loaded and need to load the configure file, or the configuration file has been modified and needs to be reconfigured.
+        /// Called when the plugin is loaded and need to load the configure file,
+        /// or the configuration file has been modified and needs to be reconfigured.
         /// </summary>
         protected virtual void Configure()
         {
@@ -211,7 +213,7 @@ namespace Neo.Plugins
         }
 
         /// <summary>
-        /// Called when a message to the plugins is received. The messnage is sent by calling <see cref="SendMessage"/>.
+        /// Called when a message to the plugins is received. The message is sent by calling <see cref="SendMessage"/>.
         /// </summary>
         /// <param name="message">The received message.</param>
         /// <returns><see langword="true"/> if the <paramref name="message"/> has been handled; otherwise, <see langword="false"/>.</returns>

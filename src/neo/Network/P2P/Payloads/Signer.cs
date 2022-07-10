@@ -40,17 +40,20 @@ namespace Neo.Network.P2P.Payloads
         public WitnessScope Scopes;
 
         /// <summary>
-        /// The contracts that allowed by the witness. Only available when the <see cref="WitnessScope.CustomContracts"/> flag is set.
+        /// The contracts that allowed by the witness.
+        /// Only available when the <see cref="WitnessScope.CustomContracts"/> flag is set.
         /// </summary>
         public UInt160[] AllowedContracts;
 
         /// <summary>
-        /// The groups that allowed by the witness. Only available when the <see cref="WitnessScope.CustomGroups"/> flag is set.
+        /// The groups that allowed by the witness.
+        /// Only available when the <see cref="WitnessScope.CustomGroups"/> flag is set.
         /// </summary>
         public ECPoint[] AllowedGroups;
 
         /// <summary>
-        /// The rules that the witness must meet. Only available when the <see cref="WitnessScope.WitnessRules"/> flag is set.
+        /// The rules that the witness must meet.
+        /// Only available when the <see cref="WitnessScope.WitnessRules"/> flag is set.
         /// </summary>
         public WitnessRule[] Rules;
 
@@ -81,7 +84,7 @@ namespace Neo.Network.P2P.Payloads
         }
 
         /// <summary>
-        /// Converts all rules contianed in the <see cref="Signer"/> object to <see cref="WitnessRule"/>.
+        /// Converts all rules contained in the <see cref="Signer"/> object to <see cref="WitnessRule"/>.
         /// </summary>
         /// <returns>The <see cref="WitnessRule"/> array used to represent the current signer.</returns>
         public IEnumerable<WitnessRule> GetAllRules()

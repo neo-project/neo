@@ -165,7 +165,7 @@ namespace Neo
         {
             foreach (var p in Plugin.Plugins)
                 p.Dispose();
-            EnsureStoped(LocalNode);
+            EnsureStopped(LocalNode);
             // Dispose will call ActorSystem.Terminate()
             ActorSystem.Dispose();
             ActorSystem.WhenTerminated.Wait();
@@ -194,15 +194,14 @@ namespace Neo
             IEnumerable<T> result = services.OfType<T>();
             if (filter is null)
                 return result.FirstOrDefault();
-            else
-                return result.FirstOrDefault(filter);
+            return result.FirstOrDefault(filter);
         }
 
         /// <summary>
         /// Blocks the current thread until the specified actor has stopped.
         /// </summary>
         /// <param name="actor">The actor to wait.</param>
-        public void EnsureStoped(IActorRef actor)
+        public void EnsureStopped(IActorRef actor)
         {
             using Inbox inbox = Inbox.Create(ActorSystem);
             inbox.Watch(actor);

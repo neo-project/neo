@@ -133,7 +133,7 @@ namespace Neo.Network.P2P.Payloads
             sizeof(uint) +      // Index
             sizeof(byte) +      // PrimaryIndex
             UInt160.Length +    // NextConsensus
-            1 + Witness.Size;   // Witness   
+            1 + Witness.Size;   // Witness
 
         Witness[] IVerifiable.Witnesses
         {

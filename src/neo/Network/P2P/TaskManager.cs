@@ -51,7 +51,7 @@ namespace Neo.Network.P2P
         private static readonly TimeSpan TaskTimeout = TimeSpan.FromMinutes(1);
         private static readonly UInt256 HeaderTaskHash = UInt256.Zero;
 
-        private const int MaxConncurrentTasks = 3;
+        private const int MaxConcurrentTasks = 3;
 
         private readonly NeoSystem system;
         /// <summary>
@@ -278,7 +278,7 @@ namespace Neo.Network.P2P
                 globalInvTasks[hash] = 1;
                 return true;
             }
-            if (value >= MaxConncurrentTasks)
+            if (value >= MaxConcurrentTasks)
                 return false;
 
             globalInvTasks[hash] = value + 1;
@@ -293,7 +293,7 @@ namespace Neo.Network.P2P
                 globalIndexTasks[index] = 1;
                 return true;
             }
-            if (value >= MaxConncurrentTasks)
+            if (value >= MaxConcurrentTasks)
                 return false;
 
             globalIndexTasks[index] = value + 1;
@@ -379,9 +379,10 @@ namespace Neo.Network.P2P
 
             uint currentHeight = Math.Max(NativeContract.Ledger.CurrentIndex(snapshot), lastSeenPersistedIndex);
             uint headerHeight = system.HeaderCache.Last?.Index ?? currentHeight;
-            // When the number of AvailableTasks is no more than 0, no pending tasks of InventoryType.Block, it should process pending the tasks of headers
+            // When the number of AvailableTasks is no more than 0,
+            // no pending tasks of InventoryType.Block, it should process pending the tasks of headers
             // If not HeaderTask pending to be processed it should ask for more Blocks
-            if ((!HasHeaderTask || globalInvTasks[HeaderTaskHash] < MaxConncurrentTasks) && headerHeight < session.LastBlockIndex && !system.HeaderCache.Full)
+            if ((!HasHeaderTask || globalInvTasks[HeaderTaskHash] < MaxConcurrentTasks) && headerHeight < session.LastBlockIndex && !system.HeaderCache.Full)
             {
                 session.InvTasks[HeaderTaskHash] = DateTime.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);

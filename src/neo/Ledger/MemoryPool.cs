@@ -29,13 +29,13 @@ namespace Neo.Ledger
         public event EventHandler<Transaction> TransactionAdded;
         public event EventHandler<TransactionRemovedEventArgs> TransactionRemoved;
 
-        // Allow a reverified transaction to be rebroadcasted if it has been this many block times since last broadcast.
+        // Allow a reverified transaction to be rebroadcast if it has been this many block times since last broadcast.
         private const int BlocksTillRebroadcast = 10;
         private int RebroadcastMultiplierThreshold => Capacity / 10;
 
         private readonly double MaxMillisecondsToReverifyTx;
 
-        // These two are not expected to be hit, they are just safegaurds.
+        // These two are not expected to be hit, they are just safeguards.
         private readonly double MaxMillisecondsToReverifyTxPerIdle;
 
         private readonly NeoSystem _system;
@@ -55,7 +55,7 @@ namespace Neo.Ledger
         /// </summary>
         private readonly Dictionary<UInt256, PoolItem> _unsortedTransactions = new();
         /// <summary>
-        /// Stores the verified sorted transactins currently in the pool.
+        /// Stores the verified sorted transactions currently in the pool.
         /// </summary>
         private readonly SortedSet<PoolItem> _sortedTransactions = new();
 
