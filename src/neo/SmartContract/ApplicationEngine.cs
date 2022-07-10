@@ -510,17 +510,16 @@ namespace Neo.SmartContract
                 Push(Convert(returnValue));
         }
 
-        protected override void PreExecuteInstruction()
+        protected override void PreExecuteInstruction(Instruction instruction)
         {
-            Diagnostic?.PreExecuteInstruction();
-            if (CurrentContext.InstructionPointer < CurrentContext.Script.Length)
-                AddGas(ExecFeeFactor * OpCodePrices[CurrentContext.CurrentInstruction.OpCode]);
+            Diagnostic?.PreExecuteInstruction(instruction);
+            AddGas(ExecFeeFactor * OpCodePrices[instruction.OpCode]);
         }
 
-        protected override void PostExecuteInstruction()
+        protected override void PostExecuteInstruction(Instruction instruction)
         {
-            base.PostExecuteInstruction();
-            Diagnostic?.PostExecuteInstruction();
+            base.PostExecuteInstruction(instruction);
+            Diagnostic?.PostExecuteInstruction(instruction);
         }
 
         private static Block CreateDummyBlock(DataCache snapshot, ProtocolSettings settings)
