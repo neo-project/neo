@@ -29,5 +29,14 @@ namespace Neo.UnitTests.IO
             string result = reader.ReadVarString(10);
             Assert.AreEqual("AAAAAAA", result);
         }
+
+        [TestMethod]
+        public void TestReadNullableArray()
+        {
+            byte[] bs = "0400000000".HexToBytes();
+            MemoryReader reader = new(bs);
+            var n = reader.ReadNullableArray<UInt256>();
+            Assert.AreEqual(5, reader.Position);
+        }
     }
 }

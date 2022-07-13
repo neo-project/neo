@@ -122,7 +122,7 @@ namespace Neo.SmartContract
         /// <returns>The hash of the account.</returns>
         internal protected UInt160 CreateStandardAccount(ECPoint pubKey)
         {
-            long fee = IsHardforkEnabled(Hardfork.HF_2712_FixSyscallFees)
+            long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                 ? CheckSigPrice
                 : 1 << 8;
             AddGas(fee * ExecFeeFactor);
@@ -138,7 +138,7 @@ namespace Neo.SmartContract
         /// <returns>The hash of the account.</returns>
         internal protected UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
         {
-            long fee = IsHardforkEnabled(Hardfork.HF_2712_FixSyscallFees)
+            long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                 ? CheckSigPrice * pubKeys.Length
                 : 1 << 8;
             AddGas(fee * ExecFeeFactor);

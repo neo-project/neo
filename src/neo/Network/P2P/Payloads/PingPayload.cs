@@ -30,7 +30,8 @@ namespace Neo.Network.P2P.Payloads
         public uint Timestamp;
 
         /// <summary>
-        /// A random number. This number must be the same in <see cref="MessageCommand.Ping"/> and <see cref="MessageCommand.Pong"/> messages.
+        /// A random number. This number must be the same in
+        /// <see cref="MessageCommand.Ping"/> and <see cref="MessageCommand.Pong"/> messages.
         /// </summary>
         public uint Nonce;
 

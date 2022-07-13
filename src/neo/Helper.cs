@@ -288,7 +288,7 @@ namespace Neo
         }
 
         /// <summary>
-        /// Checks if address is IPv4 Maped to IPv6 format, if so, Map to IPv4.
+        /// Checks if address is IPv4 Mapped to IPv6 format, if so, Map to IPv4.
         /// Otherwise, return current address.
         /// </summary>
         internal static IPAddress Unmap(this IPAddress address)
@@ -299,7 +299,7 @@ namespace Neo
         }
 
         /// <summary>
-        /// Checks if IPEndPoint is IPv4 Maped to IPv6 format, if so, unmap to IPv4.
+        /// Checks if IPEndPoint is IPv4 Mapped to IPv6 format, if so, unmap to IPv4.
         /// Otherwise, return current endpoint.
         /// </summary>
         internal static IPEndPoint Unmap(this IPEndPoint endPoint)

@@ -17,19 +17,19 @@ namespace Neo.SmartContract
     /// <summary>
     /// Represents the keys in contract storage.
     /// </summary>
-    public class StorageKey : IEquatable<StorageKey>
+    public sealed record StorageKey
     {
         /// <summary>
         /// The id of the contract.
         /// </summary>
-        public int Id;
+        public int Id { get; init; }
 
         /// <summary>
         /// The key of the storage entry.
         /// </summary>
-        public ReadOnlyMemory<byte> Key;
+        public ReadOnlyMemory<byte> Key { get; init; }
 
-        private byte[] cache;
+        private byte[] cache = null;
 
         public StorageKey() { }
 
@@ -63,15 +63,9 @@ namespace Neo.SmartContract
             return Id == other.Id && Key.Span.SequenceEqual(other.Key.Span);
         }
 
-        public override bool Equals(object obj)
-        {
-            if (obj is not StorageKey other) return false;
-            return Equals(other);
-        }
-
         public override int GetHashCode()
         {
-            return Id.GetHashCode() + (int)Key.Span.Murmur32(0);
+            return Id + (int)Key.Span.Murmur32(0);
         }
 
         public byte[] ToArray()

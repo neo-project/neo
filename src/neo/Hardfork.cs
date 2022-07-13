@@ -12,6 +12,6 @@ namespace Neo
 {
     public enum Hardfork : byte
     {
-        HF_2712_FixSyscallFees
+        HF_Aspidochelone
     }
 }

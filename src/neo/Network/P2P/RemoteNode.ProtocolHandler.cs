@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2021 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -15,7 +15,6 @@ using Neo.Ledger;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.Plugins;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections;
@@ -26,6 +25,8 @@ using System.Net;
 
 namespace Neo.Network.P2P
 {
+    public delegate bool MessageReceivedHandler(NeoSystem system, Message message);
+
     partial class RemoteNode
     {
         private class Timer { }
@@ -37,6 +38,13 @@ namespace Neo.Network.P2P
             }
         }
 
+        public static event MessageReceivedHandler MessageReceived
+        {
+            add => handlers.Add(value);
+            remove => handlers.Remove(value);
+        }
+
+        private static readonly List<MessageReceivedHandler> handlers = new();
         private readonly PendingKnownHashesCollection pendingKnownHashes = new();
         private readonly HashSetCache<UInt256> knownHashes;
         private readonly HashSetCache<UInt256> sentHashes;
@@ -48,8 +56,8 @@ namespace Neo.Network.P2P
 
         private void OnMessage(Message msg)
         {
-            foreach (IP2PPlugin plugin in Plugin.P2PPlugins)
-                if (!plugin.OnP2PMessage(system, msg))
+            foreach (MessageReceivedHandler handler in handlers)
+                if (!handler(system, msg))
                     return;
             if (Version == null)
             {
@@ -225,7 +233,8 @@ namespace Neo.Network.P2P
         /// <summary>
         /// Will be triggered when a MessageCommand.GetData message is received.
         /// The payload includes an array of hash values.
-        /// For different payload.Type (Tx, Block, Consensus), get the corresponding (Txs, Blocks, Consensus) and tell them to RemoteNode actor.
+        /// For different payload.Type (Tx, Block, Consensus),
+        /// get the corresponding (Txs, Blocks, Consensus) and tell them to RemoteNode actor.
         /// </summary>
         /// <param name="payload">The payload containing the requested information.</param>
         private void OnGetDataMessageReceived(InvPayload payload)

@@ -91,7 +91,7 @@ namespace Neo.UnitTests.IO
             // Read 100%
 
             MemoryReader reader = new(data);
-            var read = Neo.IO.Helper.ReadNullableArray<UInt160>(reader);
+            var read = Neo.IO.Helper.ReadNullableArray<UInt160>(ref reader);
             CollectionAssert.AreEqual(caseArray, read);
         }
 

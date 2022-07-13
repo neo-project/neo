@@ -12,7 +12,6 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -36,6 +35,8 @@ namespace Neo.Wallets
     /// </summary>
     public abstract class Wallet
     {
+        private static readonly List<IWalletFactory> factories = new() { NEP6WalletFactory.Instance, SQLite.SQLiteWalletFactory.Instance };
+
         /// <summary>
         /// The <see cref="Neo.ProtocolSettings"/> to be used by the wallet.
         /// </summary>
@@ -454,9 +455,9 @@ namespace Neo.Wallets
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="outputs">The array of <see cref="TransferOutput"/> that contain the asset, amount, and targets of the transfer.</param>
         /// <param name="from">The account to transfer from.</param>
-        /// <param name="cosigners">The cosigners to be added to the transction.</param>
+        /// <param name="cosigners">The cosigners to be added to the transaction.</param>
         /// <param name="persistingBlock">The block environment to execute the transaction. If null, <see cref="ApplicationEngine.CreateDummyBlock"></see> will be used.</param>
-        /// <returns>The created transction.</returns>
+        /// <returns>The created transaction.</returns>
         public Transaction MakeTransaction(DataCache snapshot, TransferOutput[] outputs, UInt160 from = null, Signer[] cosigners = null, Block persistingBlock = null)
         {
             UInt160[] accounts;
@@ -529,11 +530,11 @@ namespace Neo.Wallets
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="script">The script to be loaded in the transaction.</param>
         /// <param name="sender">The sender of the transaction.</param>
-        /// <param name="cosigners">The cosigners to be added to the transction.</param>
-        /// <param name="attributes">The attributes to be added to the transction.</param>
+        /// <param name="cosigners">The cosigners to be added to the transaction.</param>
+        /// <param name="attributes">The attributes to be added to the transaction.</param>
         /// <param name="maxGas">The maximum gas that can be spent to execute the script.</param>
         /// <param name="persistingBlock">The block environment to execute the transaction. If null, <see cref="ApplicationEngine.CreateDummyBlock"></see> will be used.</param>
-        /// <returns>The created transction.</returns>
+        /// <returns>The created transaction.</returns>
         public Transaction MakeTransaction(DataCache snapshot, ReadOnlyMemory<byte> script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null, long maxGas = ApplicationEngine.TestModeGas, Block persistingBlock = null)
         {
             UInt160[] accounts;
@@ -564,7 +565,7 @@ namespace Neo.Wallets
                     Attributes = attributes,
                 };
 
-                // will try to execute 'transfer' script to check if it works 
+                // will try to execute 'transfer' script to check if it works
                 using (ApplicationEngine engine = ApplicationEngine.Run(script, snapshot.CreateSnapshot(), tx, settings: ProtocolSettings, gas: maxGas, persistingBlock: persistingBlock))
                 {
                     if (engine.State == VMState.FAULT)
@@ -598,8 +599,8 @@ namespace Neo.Wallets
             foreach (UInt160 hash in hashes)
             {
                 index++;
-                ReadOnlyMemory<byte>? witness_script = GetAccount(hash)?.Contract?.Script;
-                ReadOnlyMemory<byte>? invocationScript = null;
+                byte[] witness_script = GetAccount(hash)?.Contract?.Script;
+                byte[] invocationScript = null;
 
                 if (tx.Witnesses != null)
                 {
@@ -607,17 +608,17 @@ namespace Neo.Wallets
                     {
                         // Try to find the script in the witnesses
                         Witness witness = tx.Witnesses[index];
-                        witness_script = witness?.VerificationScript;
+                        witness_script = witness?.VerificationScript.ToArray();
 
-                        if (witness_script is null || witness_script.Value.Length == 0)
+                        if (witness_script is null || witness_script.Length == 0)
                         {
                             // Then it's a contract-based witness, so try to get the corresponding invocation script for it
-                            invocationScript = witness?.InvocationScript;
+                            invocationScript = witness?.InvocationScript.ToArray();
                         }
                     }
                 }
 
-                if (witness_script is null || witness_script.Value.Length == 0)
+                if (witness_script is null || witness_script.Length == 0)
                 {
                     var contract = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (contract is null)
@@ -643,15 +644,15 @@ namespace Neo.Wallets
 
                     networkFee += engine.GasConsumed;
                 }
-                else if (IsSignatureContract(witness_script.Value.Span))
+                else if (IsSignatureContract(witness_script))
                 {
-                    size += 67 + witness_script.Value.GetVarSize();
+                    size += 67 + witness_script.GetVarSize();
                     networkFee += exec_fee_factor * SignatureContractCost();
                 }
-                else if (IsMultiSigContract(witness_script.Value.Span, out int m, out int n))
+                else if (IsMultiSigContract(witness_script, out int m, out int n))
                 {
                     int size_inv = 66 * m;
-                    size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.Value.GetVarSize();
+                    size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
                     networkFee += exec_fee_factor * MultiSignatureContractCost(m, n);
                 }
                 else
@@ -779,15 +780,12 @@ namespace Neo.Wallets
         private static IWalletFactory GetFactory(string path)
         {
             string filename = System.IO.Path.GetFileName(path);
-            return GetFactories().FirstOrDefault(p => p.Handle(filename));
+            return factories.FirstOrDefault(p => p.Handle(filename));
         }
 
-        private static IEnumerable<IWalletFactory> GetFactories()
+        public static void RegisterFactory(IWalletFactory factory)
         {
-            return Plugin.Plugins
-                .OfType<IWalletFactory>()
-                .Append(NEP6WalletFactory.Instance)
-                .Append(SQLite.SQLiteWalletFactory.Instance);
+            factories.Add(factory);
         }
     }
 }
