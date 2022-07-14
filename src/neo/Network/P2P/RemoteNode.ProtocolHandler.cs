@@ -233,7 +233,8 @@ namespace Neo.Network.P2P
         /// <summary>
         /// Will be triggered when a MessageCommand.GetData message is received.
         /// The payload includes an array of hash values.
-        /// For different payload.Type (Tx, Block, Consensus), get the corresponding (Txs, Blocks, Consensus) and tell them to RemoteNode actor.
+        /// For different payload.Type (Tx, Block, Consensus),
+        /// get the corresponding (Txs, Blocks, Consensus) and tell them to RemoteNode actor.
         /// </summary>
         /// <param name="payload">The payload containing the requested information.</param>
         private void OnGetDataMessageReceived(InvPayload payload)

@@ -18,7 +18,7 @@ namespace Neo.SmartContract
         void Disposed();
         void ContextLoaded(ExecutionContext context);
         void ContextUnloaded(ExecutionContext context);
-        void PreExecuteInstruction();
-        void PostExecuteInstruction();
+        void PreExecuteInstruction(Instruction instruction);
+        void PostExecuteInstruction(Instruction instruction);
     }
 }
