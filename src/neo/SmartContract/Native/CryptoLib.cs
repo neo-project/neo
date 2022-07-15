@@ -13,6 +13,7 @@ using Neo.Cryptography.BLS12_381;
 using Neo.Cryptography.ECC;
 using System;
 using System.Collections.Generic;
+using System.Runtime.Versioning;
 
 namespace Neo.SmartContract.Native
 {
@@ -21,6 +22,10 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public sealed class CryptoLib : NativeContract
     {
+        private const int G1 = 48;
+        private const int G2 = 96;
+        private const int Gt = 576;
+
         private static readonly Dictionary<NamedCurve, ECCurve> curves = new()
         {
             [NamedCurve.secp256k1] = ECCurve.Secp256k1,
@@ -89,41 +94,77 @@ namespace Neo.SmartContract.Native
         /// The implementation of System.Crypto.PointAdd.
         /// Add operation of two gt points.
         /// </summary>
-        /// <param name="gt1">Gt1 point as byteArray</param>
-        /// <param name="gt2">Gt1 point as byteArray</param>
+        /// <param name="g1">Gt1 point as byteArray</param>
+        /// <param name="g2">Gt1 point as byteArray</param>
         /// <returns></returns>
         [ContractMethod(CpuFee = 1 << 19)]
-        public static byte[] Bls12381Add(byte[] gt1, byte[] gt2)
+        [RequiresPreviewFeaturesAttribute]
+        public static byte[] Bls12381Add(byte[] g1, byte[] g2)
         {
-            return GObject.Add(new GObject(gt1), new GObject(gt2)).ToByteArray();
+            if (g1.Length != g2.Length)
+                throw new Exception($"Bls12381 operation fault, type:format, error:type mismatch");
+            byte[] result;
+            switch (g1.Length)
+            {
+                case G1:
+                    result = new G1Affine(new G1Projective(G1Affine.FromCompressed(g1)) + new G1Projective(G1Affine.FromCompressed(g2))).ToCompressed();
+                    break;
+                case G2:
+                    result = new G2Affine(new G2Projective(G2Affine.FromCompressed(g1)) + new G2Projective(G2Affine.FromCompressed(g2))).ToCompressed();
+                    break;
+                case Gt:
+                    result = (Cryptography.BLS12_381.Gt.FromBytes(g1) + Cryptography.BLS12_381.Gt.FromBytes(g2)).ToArray();
+                    break;
+                default:
+                    throw new Exception($"Bls12381 operation fault, type:format, error:valid point length");
+            }
+            return result;
         }
 
         /// <summary>
         /// The implementation of System.Crypto.PointMul.
         /// Mul operation of gt point and mulitiplier
         /// </summary>
-        /// <param name="gt">Gt point as byteArray</param>
+        /// <param name="g">Gt point as byteArray</param>
         /// <param name="mul">Mulitiplier</param>
         /// <returns></returns>
         [ContractMethod(CpuFee = 1 << 21)]
-        public static byte[] Bls12381Mul(byte[] gt, long mul)
+        [RequiresPreviewFeaturesAttribute]
+        public static byte[] Bls12381Mul(byte[] g, long mul)
         {
-            GObject p = mul < 0 ? new GObject(gt).Neg() : new GObject(gt);
-            var x = System.Convert.ToUInt64(Math.Abs(mul));
-            return GObject.Mul(p, x).ToByteArray();
+            Scalar X = mul < 0 ? -new Scalar(Convert.ToUInt64(Math.Abs(mul))) : new Scalar(Convert.ToUInt64(Math.Abs(mul)));
+            byte[] result;
+            switch (g.Length)
+            {
+                case G1:
+                    result = new G1Affine(G1Affine.FromCompressed(g) * X).ToCompressed();
+                    break;
+                case G2:
+                    result = new G2Affine(G2Affine.FromCompressed(g) * X).ToCompressed();
+                    break;
+                case Gt:
+                    result = (Cryptography.BLS12_381.Gt.FromBytes(g) * X).ToArray();
+                    break;
+                default:
+                    throw new Exception($"Bls12381 operation fault, type:format, error:valid point length");
+            }
+            return result;
         }
 
         /// <summary>
         /// The implementation of System.Crypto.PointPairing.
         /// Pairing operation of g1 and g2
         /// </summary>
-        /// <param name="g1Binary">Gt point1 as byteArray</param>
-        /// <param name="g2Binary">Gt point2 as byteArray</param>
+        /// <param name="g1">Gt point1 as byteArray</param>
+        /// <param name="g2">Gt point2 as byteArray</param>
         /// <returns></returns>
         [ContractMethod(CpuFee = 1 << 23)]
-        public static byte[] Bls12381Pairing(byte[] g1Binary, byte[] g2Binary)
+        [RequiresPreviewFeaturesAttribute]
+        public static byte[] Bls12381Pairing(byte[] g1, byte[] g2)
         {
-            return GObject.Pairing(new GObject(g1Binary), new GObject(g2Binary)).ToByteArray();
+            if (g1.Length != G1 || g2.Length != G2)
+                throw new Exception($"Bls12381 operation fault, type:format, error:type mismatch");
+            return Bls12.Pairing(G1Affine.FromCompressed(g1), G2Affine.FromCompressed(g2)).ToArray();
         }
     }
 }
