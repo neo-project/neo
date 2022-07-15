@@ -87,7 +87,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         public void TestDeserializeAndSerialize()
         {
             var expected = TestUtils.CreateDefaultManifest();
-            expected.Extra = JObject.Parse(@"{""a"":123}");
+            expected.Extra = JToken.Parse(@"{""a"":123}").GetObject();
 
             var clone = new ContractManifest();
             ((IInteroperable)clone).FromStackItem(expected.ToStackItem(null));

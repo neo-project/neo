@@ -308,7 +308,7 @@ namespace Neo.VM
             {
                 ["type"] = item.Type
             };
-            JObject value = null;
+            JToken value = null;
             maxSize -= 11/*{"type":""}*/+ item.Type.ToString().Length;
             switch (item)
             {

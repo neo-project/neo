@@ -20,7 +20,7 @@ namespace Neo.Wallets.NEP6
         private string nep2key;
         private string nep2KeyNew = null;
         private KeyPair key;
-        public JObject Extra;
+        public JToken Extra;
 
         public bool Decrypted => nep2key == null || key != null;
         public override bool HasKey => nep2key != null;
@@ -45,7 +45,7 @@ namespace Neo.Wallets.NEP6
                 Label = json["label"]?.GetString(),
                 IsDefault = json["isDefault"].GetBoolean(),
                 Lock = json["lock"].GetBoolean(),
-                Contract = NEP6Contract.FromJson(json["contract"]),
+                Contract = NEP6Contract.FromJson(json["contract"].GetObject()),
                 Extra = json["extra"]
             };
         }

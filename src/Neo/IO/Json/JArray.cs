@@ -18,15 +18,15 @@ namespace Neo.IO.Json
     /// <summary>
     /// Represents a JSON array.
     /// </summary>
-    public class JArray : JObject, IList<JObject>
+    public class JArray : JContainer, IList<JToken>
     {
-        private readonly List<JObject> items = new();
+        private readonly List<JToken> items = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JArray"/> class.
         /// </summary>
         /// <param name="items">The initial items in the array.</param>
-        public JArray(params JObject[] items) : this((IEnumerable<JObject>)items)
+        public JArray(params JToken[] items) : this((IEnumerable<JToken>)items)
         {
         }
 
@@ -34,12 +34,12 @@ namespace Neo.IO.Json
         /// Initializes a new instance of the <see cref="JArray"/> class.
         /// </summary>
         /// <param name="items">The initial items in the array.</param>
-        public JArray(IEnumerable<JObject> items)
+        public JArray(IEnumerable<JToken> items)
         {
             this.items.AddRange(items);
         }
 
-        public override JObject this[int index]
+        public new JToken this[int index]
         {
             get
             {
@@ -51,13 +51,7 @@ namespace Neo.IO.Json
             }
         }
 
-        public int Count
-        {
-            get
-            {
-                return items.Count;
-            }
-        }
+        public override IReadOnlyList<JToken> Children => items;
 
         public bool IsReadOnly
         {
@@ -67,7 +61,7 @@ namespace Neo.IO.Json
             }
         }
 
-        public void Add(JObject item)
+        public void Add(JToken item)
         {
             items.Add(item);
         }
@@ -77,24 +71,19 @@ namespace Neo.IO.Json
             return string.Join(",", items.Select(p => p?.AsString()));
         }
 
-        public void Clear()
+        public override void Clear()
         {
             items.Clear();
         }
 
-        public bool Contains(JObject item)
+        public bool Contains(JToken item)
         {
             return items.Contains(item);
         }
 
-        public void CopyTo(JObject[] array, int arrayIndex)
-        {
-            items.CopyTo(array, arrayIndex);
-        }
-
         public override JArray GetArray() => this;
 
-        public IEnumerator<JObject> GetEnumerator()
+        public IEnumerator<JToken> GetEnumerator()
         {
             return items.GetEnumerator();
         }
@@ -104,17 +93,17 @@ namespace Neo.IO.Json
             return GetEnumerator();
         }
 
-        public int IndexOf(JObject item)
+        public int IndexOf(JToken item)
         {
             return items.IndexOf(item);
         }
 
-        public void Insert(int index, JObject item)
+        public void Insert(int index, JToken item)
         {
             items.Insert(index, item);
         }
 
-        public bool Remove(JObject item)
+        public bool Remove(JToken item)
         {
             return items.Remove(item);
         }
@@ -127,7 +116,7 @@ namespace Neo.IO.Json
         internal override void Write(Utf8JsonWriter writer)
         {
             writer.WriteStartArray();
-            foreach (JObject item in items)
+            foreach (JToken item in items)
             {
                 if (item is null)
                     writer.WriteNullValue();
@@ -137,11 +126,11 @@ namespace Neo.IO.Json
             writer.WriteEndArray();
         }
 
-        public override JObject Clone()
+        public override JArray Clone()
         {
             var cloned = new JArray();
 
-            foreach (JObject item in items)
+            foreach (JToken item in items)
             {
                 cloned.Add(item.Clone());
             }
@@ -149,7 +138,7 @@ namespace Neo.IO.Json
             return cloned;
         }
 
-        public static implicit operator JArray(JObject[] value)
+        public static implicit operator JArray(JToken[] value)
         {
             return new JArray(value);
         }

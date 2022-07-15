@@ -174,17 +174,17 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             jObj["index"].AsNumber().Should().Be(indexVal);
             jObj["nextconsensus"].AsString().Should().Be("NKuyBkoGdZZSLyPbJEetheRhMjeznFZszf");
 
-            JObject scObj = ((JArray)jObj["witnesses"])[0];
+            JObject scObj = ((JArray)jObj["witnesses"])[0].GetObject();
             scObj["invocation"].AsString().Should().Be("");
             scObj["verification"].AsString().Should().Be("EQ==");
 
             jObj["tx"].Should().NotBeNull();
-            JArray txObj = (JArray)jObj["tx"];
-            txObj[0]["hash"].AsString().Should().Be("0xb9bbfb2804f7582fd4340f5d87d741242afd29d3a02a5c9caa9b67325dbe236c");
-            txObj[0]["size"].AsNumber().Should().Be(53);
-            txObj[0]["version"].AsNumber().Should().Be(0);
-            ((JArray)txObj[0]["attributes"]).Count.Should().Be(0);
-            txObj[0]["netfee"].AsString().Should().Be("0");
+            JObject txObj = jObj["tx"].GetArray()[0].GetObject();
+            txObj["hash"].AsString().Should().Be("0xb9bbfb2804f7582fd4340f5d87d741242afd29d3a02a5c9caa9b67325dbe236c");
+            txObj["size"].AsNumber().Should().Be(53);
+            txObj["version"].AsNumber().Should().Be(0);
+            ((JArray)txObj["attributes"]).Count.Should().Be(0);
+            txObj["netfee"].AsString().Should().Be("0");
         }
     }
 }

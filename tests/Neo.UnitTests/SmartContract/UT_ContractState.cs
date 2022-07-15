@@ -65,7 +65,7 @@ namespace Neo.UnitTests.SmartContract
         {
             JObject json = contract.ToJson();
             json["hash"].AsString().Should().Be("0x820944cfdc70976602d71b0091445eedbc661bc5");
-            json["nef"]["script"].AsString().Should().Be("AQ==");
+            json["nef"].GetObject()["script"].AsString().Should().Be("AQ==");
             json["manifest"].AsString().Should().Be(manifest.ToJson().AsString());
         }
     }

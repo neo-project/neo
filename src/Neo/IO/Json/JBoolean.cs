@@ -15,17 +15,17 @@ namespace Neo.IO.Json
     /// <summary>
     /// Represents a JSON boolean value.
     /// </summary>
-    public class JBoolean : JObject
+    public class JBoolean : JToken
     {
         /// <summary>
-        /// Gets the value of the JSON object.
+        /// Gets the value of the JSON token.
         /// </summary>
         public bool Value { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JBoolean"/> class with the specified value.
         /// </summary>
-        /// <param name="value">The value of the JSON object.</param>
+        /// <param name="value">The value of the JSON token.</param>
         public JBoolean(bool value = false)
         {
             this.Value = value;
@@ -37,7 +37,7 @@ namespace Neo.IO.Json
         }
 
         /// <summary>
-        /// Converts the current JSON object to a floating point number.
+        /// Converts the current JSON token to a floating point number.
         /// </summary>
         /// <returns>The number 1 if value is <see langword="true"/>; otherwise, 0.</returns>
         public override double AsNumber()
@@ -62,7 +62,7 @@ namespace Neo.IO.Json
             writer.WriteBooleanValue(Value);
         }
 
-        public override JObject Clone()
+        public override JBoolean Clone()
         {
             return this;
         }

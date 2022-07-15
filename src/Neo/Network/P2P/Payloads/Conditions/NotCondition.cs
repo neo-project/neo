@@ -49,7 +49,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         private protected override void ParseJson(JObject json)
         {
-            Expression = FromJson(json["expression"]);
+            Expression = FromJson(json["expression"].GetObject());
         }
 
         public override JObject ToJson()

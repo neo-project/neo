@@ -17,24 +17,24 @@ namespace Neo.IO.Json
     /// <summary>
     /// Represents a JSON string.
     /// </summary>
-    public class JString : JObject
+    public class JString : JToken
     {
         /// <summary>
-        /// Gets the value of the JSON object.
+        /// Gets the value of the JSON token.
         /// </summary>
         public string Value { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JString"/> class with the specified value.
         /// </summary>
-        /// <param name="value">The value of the JSON object.</param>
+        /// <param name="value">The value of the JSON token.</param>
         public JString(string value)
         {
             this.Value = value ?? throw new ArgumentNullException(nameof(value));
         }
 
         /// <summary>
-        /// Converts the current JSON object to a boolean value.
+        /// Converts the current JSON token to a boolean value.
         /// </summary>
         /// <returns><see langword="true"/> if value is not empty; otherwise, <see langword="false"/>.</returns>
         public override bool AsBoolean()
@@ -72,7 +72,7 @@ namespace Neo.IO.Json
             writer.WriteStringValue(Value);
         }
 
-        public override JObject Clone()
+        public override JString Clone()
         {
             return this;
         }

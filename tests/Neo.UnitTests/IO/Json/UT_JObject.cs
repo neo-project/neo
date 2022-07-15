@@ -85,16 +85,14 @@ namespace Neo.UnitTests.IO.Json
         [TestMethod]
         public void TestOpImplicitEnum()
         {
-            var obj = new JObject();
-            obj = Woo.Tom;
+            JToken obj = Woo.Tom;
             obj.AsString().Should().Be("Tom");
         }
 
         [TestMethod]
         public void TestOpImplicitString()
         {
-            var obj = new JObject();
-            obj = null;
+            JToken obj = null;
             obj.Should().BeNull();
 
             obj = "{\"aaa\":\"111\"}";

@@ -30,7 +30,7 @@ namespace Neo.Wallets.NEP6
         private string name;
         private Version version;
         private readonly Dictionary<UInt160, NEP6Account> accounts;
-        private readonly JObject extra;
+        private readonly JToken extra;
 
         /// <summary>
         /// The parameters of the SCrypt algorithm used for encrypting and decrypting the private keys in the wallet.
@@ -56,7 +56,7 @@ namespace Neo.Wallets.NEP6
             this.password = password;
             if (File.Exists(path))
             {
-                JObject wallet = JObject.Parse(File.ReadAllBytes(path));
+                JObject wallet = JToken.Parse(File.ReadAllBytes(path)).GetObject();
                 LoadFromJson(wallet, out Scrypt, out accounts, out extra);
             }
             else
@@ -65,7 +65,7 @@ namespace Neo.Wallets.NEP6
                 this.version = Version.Parse("1.0");
                 this.Scrypt = ScryptParameters.Default;
                 this.accounts = new Dictionary<UInt160, NEP6Account>();
-                this.extra = JObject.Null;
+                this.extra = JToken.Null;
             }
         }
 
@@ -82,12 +82,12 @@ namespace Neo.Wallets.NEP6
             LoadFromJson(json, out Scrypt, out accounts, out extra);
         }
 
-        private void LoadFromJson(JObject wallet, out ScryptParameters scrypt, out Dictionary<UInt160, NEP6Account> accounts, out JObject extra)
+        private void LoadFromJson(JObject wallet, out ScryptParameters scrypt, out Dictionary<UInt160, NEP6Account> accounts, out JToken extra)
         {
             this.version = Version.Parse(wallet["version"].AsString());
             this.name = wallet["name"]?.AsString();
-            scrypt = ScryptParameters.FromJson(wallet["scrypt"]);
-            accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson(p, this)).ToDictionary(p => p.ScriptHash);
+            scrypt = ScryptParameters.FromJson(wallet["scrypt"].GetObject());
+            accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson(p.GetObject(), this)).ToDictionary(p => p.ScriptHash);
             extra = wallet["extra"];
             if (!VerifyPasswordInternal(password))
                 throw new InvalidOperationException("Wrong password.");

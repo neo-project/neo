@@ -15,7 +15,7 @@ using System.Linq;
 
 namespace Neo.IO.Caching
 {
-    internal class OrderedDictionary<TKey, TValue> : IDictionary<TKey, TValue>
+    internal partial class OrderedDictionary<TKey, TValue> : IDictionary<TKey, TValue>
     {
         private class TItem
         {
@@ -35,8 +35,16 @@ namespace Neo.IO.Caching
 
         public int Count => collection.Count;
         public bool IsReadOnly => false;
-        public ICollection<TKey> Keys => collection.Select(p => p.Key).ToArray();
-        public ICollection<TValue> Values => collection.Select(p => p.Value).ToArray();
+        public IReadOnlyList<TKey> Keys { get; }
+        public IReadOnlyList<TValue> Values { get; }
+        ICollection<TKey> IDictionary<TKey, TValue>.Keys => (KeyCollection)Keys;
+        ICollection<TValue> IDictionary<TKey, TValue>.Values => (ValueCollection)Values;
+
+        public OrderedDictionary()
+        {
+            Keys = new KeyCollection(collection);
+            Values = new ValueCollection(collection);
+        }
 
         public TValue this[TKey key]
         {

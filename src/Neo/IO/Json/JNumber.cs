@@ -17,7 +17,7 @@ namespace Neo.IO.Json
     /// <summary>
     /// Represents a JSON number.
     /// </summary>
-    public class JNumber : JObject
+    public class JNumber : JToken
     {
         /// <summary>
         /// Represents the largest safe integer in JSON.
@@ -30,14 +30,14 @@ namespace Neo.IO.Json
         public static readonly long MIN_SAFE_INTEGER = -MAX_SAFE_INTEGER;
 
         /// <summary>
-        /// Gets the value of the JSON object.
+        /// Gets the value of the JSON token.
         /// </summary>
         public double Value { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JNumber"/> class with the specified value.
         /// </summary>
-        /// <param name="value">The value of the JSON object.</param>
+        /// <param name="value">The value of the JSON token.</param>
         public JNumber(double value = 0)
         {
             if (!double.IsFinite(value)) throw new FormatException();
@@ -45,7 +45,7 @@ namespace Neo.IO.Json
         }
 
         /// <summary>
-        /// Converts the current JSON object to a boolean value.
+        /// Converts the current JSON token to a boolean value.
         /// </summary>
         /// <returns><see langword="true"/> if value is not zero; otherwise, <see langword="false"/>.</returns>
         public override bool AsBoolean()
@@ -91,7 +91,7 @@ namespace Neo.IO.Json
             writer.WriteNumberValue(Value);
         }
 
-        public override JObject Clone()
+        public override JNumber Clone()
         {
             return this;
         }
