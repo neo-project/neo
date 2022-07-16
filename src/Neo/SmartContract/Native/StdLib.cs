@@ -11,7 +11,7 @@
 #pragma warning disable IDE0051
 
 using Neo.Cryptography;
-using Neo.IO.Json;
+using Neo.Json;
 using Neo.VM.Types;
 using System;
 using System.Globalization;

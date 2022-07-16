@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2022 The Neo Project.
 // 
-// The neo is free software distributed under the MIT software license, 
+// The Neo.Json is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
 // project or http://www.opensource.org/licenses/mit-license.php 
 // for more details.
@@ -9,18 +9,23 @@
 // modifications are permitted.
 
 using System.Collections;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 
-namespace Neo.IO.Caching
+namespace Neo.Json
 {
-    internal partial class OrderedDictionary<TKey, TValue> : IDictionary<TKey, TValue>
+    partial class OrderedDictionary<TKey, TValue> : IDictionary<TKey, TValue> where TKey : notnull
     {
         private class TItem
         {
             public TKey Key;
             public TValue Value;
+
+            public TItem(TKey key, TValue value)
+            {
+                Key = key;
+                Value = value;
+            }
         }
 
         private class InternalCollection : KeyedCollection<TKey, TItem>
@@ -71,11 +76,7 @@ namespace Neo.IO.Caching
 
         public void Add(TKey key, TValue value)
         {
-            collection.Add(new TItem
-            {
-                Key = key,
-                Value = value
-            });
+            collection.Add(new TItem(key, value));
         }
 
         public bool ContainsKey(TKey key)
@@ -88,7 +89,7 @@ namespace Neo.IO.Caching
             return collection.Remove(key);
         }
 
-        public bool TryGetValue(TKey key, out TValue value)
+        public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)
         {
             if (collection.TryGetValue(key, out var entry))
             {

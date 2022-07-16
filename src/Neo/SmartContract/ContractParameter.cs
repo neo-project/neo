@@ -9,7 +9,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
-using Neo.IO.Json;
+using Neo.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;

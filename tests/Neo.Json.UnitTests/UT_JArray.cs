@@ -1,11 +1,6 @@
-using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO.Json;
-using System;
 using System.Collections;
-using System.Linq;
 
-namespace Neo.UnitTests.IO.Json
+namespace Neo.Json.UnitTests
 {
     enum Foo
     {

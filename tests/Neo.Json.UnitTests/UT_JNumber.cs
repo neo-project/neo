@@ -1,9 +1,4 @@
-using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO.Json;
-using System;
-
-namespace Neo.UnitTests.IO.Json
+namespace Neo.Json.UnitTests
 {
     enum Woo
     {

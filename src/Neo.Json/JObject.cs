@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2022 The Neo Project.
 // 
-// The neo is free software distributed under the MIT software license, 
+// The Neo.Json is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
 // project or http://www.opensource.org/licenses/mit-license.php 
 // for more details.
@@ -8,34 +8,32 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO.Caching;
-using System.Collections.Generic;
 using System.Text.Json;
 
-namespace Neo.IO.Json
+namespace Neo.Json
 {
     /// <summary>
     /// Represents a JSON object.
     /// </summary>
     public class JObject : JContainer
     {
-        private readonly OrderedDictionary<string, JToken> properties = new();
+        private readonly OrderedDictionary<string, JToken?> properties = new();
 
         /// <summary>
         /// Gets or sets the properties of the JSON object.
         /// </summary>
-        public IDictionary<string, JToken> Properties => properties;
+        public IDictionary<string, JToken?> Properties => properties;
 
         /// <summary>
         /// Gets or sets the properties of the JSON object.
         /// </summary>
         /// <param name="name">The name of the property to get or set.</param>
         /// <returns>The property with the specified name.</returns>
-        public override JToken this[string name]
+        public override JToken? this[string name]
         {
             get
             {
-                if (Properties.TryGetValue(name, out JToken value))
+                if (Properties.TryGetValue(name, out JToken? value))
                     return value;
                 return null;
             }
@@ -45,7 +43,7 @@ namespace Neo.IO.Json
             }
         }
 
-        public override IReadOnlyList<JToken> Children => properties.Values;
+        public override IReadOnlyList<JToken?> Children => properties.Values;
 
         /// <summary>
         /// Determines whether the JSON object contains a property with the specified name.

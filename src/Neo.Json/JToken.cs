@@ -1,9 +1,17 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text.Json;
+// Copyright (C) 2015-2022 The Neo Project.
+// 
+// The Neo.Json is free software distributed under the MIT software license, 
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php 
+// for more details.
+// 
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
 
-namespace Neo.IO.Json;
+using System.Text.Json;
+using static Neo.Json.Utility;
+
+namespace Neo.Json;
 
 /// <summary>
 /// Represents an abstract JSON token.
@@ -13,14 +21,14 @@ public abstract class JToken
     /// <summary>
     /// Represents a <see langword="null"/> token.
     /// </summary>
-    public const JToken Null = null;
+    public const JToken? Null = null;
 
     /// <summary>
     /// Gets or sets the child token at the specified index.
     /// </summary>
     /// <param name="index">The zero-based index of the child token to get or set.</param>
     /// <returns>The child token at the specified index.</returns>
-    public virtual JToken this[int index]
+    public virtual JToken? this[int index]
     {
         get => throw new NotSupportedException();
         set => throw new NotSupportedException();
@@ -31,7 +39,7 @@ public abstract class JToken
     /// </summary>
     /// <param name="key">The key of the property to get or set.</param>
     /// <returns>The property with the specified name.</returns>
-    public virtual JToken this[string key]
+    public virtual JToken? this[string key]
     {
         get => throw new NotSupportedException();
         set => throw new NotSupportedException();
@@ -119,7 +127,7 @@ public abstract class JToken
     /// <param name="value">The byte array that contains the JSON token.</param>
     /// <param name="max_nest">The maximum nesting depth when parsing the JSON token.</param>
     /// <returns>The parsed JSON token.</returns>
-    public static JToken Parse(ReadOnlySpan<byte> value, int max_nest = 100)
+    public static JToken? Parse(ReadOnlySpan<byte> value, int max_nest = 100)
     {
         Utf8JsonReader reader = new(value, new JsonReaderOptions
         {
@@ -129,7 +137,7 @@ public abstract class JToken
         });
         try
         {
-            JToken json = Read(ref reader);
+            JToken? json = Read(ref reader);
             if (reader.Read()) throw new FormatException();
             return json;
         }
@@ -145,12 +153,12 @@ public abstract class JToken
     /// <param name="value">The <see cref="string"/> that contains the JSON token.</param>
     /// <param name="max_nest">The maximum nesting depth when parsing the JSON token.</param>
     /// <returns>The parsed JSON token.</returns>
-    public static JToken Parse(string value, int max_nest = 100)
+    public static JToken? Parse(string value, int max_nest = 100)
     {
-        return Parse(Utility.StrictUTF8.GetBytes(value), max_nest);
+        return Parse(StrictUTF8.GetBytes(value), max_nest);
     }
 
-    private static JToken Read(ref Utf8JsonReader reader, bool skipReading = false)
+    private static JToken? Read(ref Utf8JsonReader reader, bool skipReading = false)
     {
         if (!skipReading && !reader.Read()) throw new FormatException();
         return reader.TokenType switch
@@ -195,7 +203,7 @@ public abstract class JToken
                 case JsonTokenType.PropertyName:
                     string name = ReadString(ref reader);
                     if (obj.Properties.ContainsKey(name)) throw new FormatException();
-                    JToken value = Read(ref reader);
+                    JToken? value = Read(ref reader);
                     obj.Properties.Add(name, value);
                     break;
                 default:
@@ -209,7 +217,7 @@ public abstract class JToken
     {
         try
         {
-            return reader.GetString();
+            return reader.GetString()!;
         }
         catch (InvalidOperationException ex)
         {
@@ -251,15 +259,16 @@ public abstract class JToken
     /// <returns>The encoded JSON token.</returns>
     public string ToString(bool indented)
     {
-        return Utility.StrictUTF8.GetString(ToByteArray(indented));
+        return StrictUTF8.GetString(ToByteArray(indented));
     }
 
     internal abstract void Write(Utf8JsonWriter writer);
+
     public abstract JToken Clone();
 
     public JArray JsonPath(string expr)
     {
-        JToken[] objects = { this };
+        JToken?[] objects = { this };
         if (expr.Length == 0) return objects;
         Queue<JPathToken> tokens = new(JPathToken.Parse(expr));
         JPathToken first = tokens.Dequeue();
@@ -273,7 +282,7 @@ public abstract class JToken
         return (JString)value;
     }
 
-    public static implicit operator JToken(JToken[] value)
+    public static implicit operator JToken(JToken?[] value)
     {
         return (JArray)value;
     }
@@ -288,8 +297,8 @@ public abstract class JToken
         return (JNumber)value;
     }
 
-    public static implicit operator JToken(string value)
+    public static implicit operator JToken?(string? value)
     {
-        return (JString)value;
+        return (JString?)value;
     }
 }

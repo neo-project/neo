@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
-using Neo.IO.Json;
+using Neo.Json;
 using Neo.SmartContract;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;

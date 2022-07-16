@@ -1,10 +1,6 @@
-using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO.Caching;
 using System.Collections;
-using System.Collections.Generic;
 
-namespace Neo.UnitTests.IO.Caching
+namespace Neo.Json.UnitTests
 {
     [TestClass]
     public class UT_OrderedDictionary
