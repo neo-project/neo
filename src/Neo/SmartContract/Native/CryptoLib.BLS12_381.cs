@@ -43,7 +43,7 @@ partial class CryptoLib
     [RequiresPreviewFeatures]
     public static byte[] Bls12381Mul(byte[] g, long mul)
     {
-        Scalar X = mul < 0 ? -new Scalar(Convert.ToUInt64(Math.Abs(mul))) : new Scalar(Convert.ToUInt64(Math.Abs(mul)));
+        Scalar X = mul < 0 ? -new Scalar((ulong)-mul) : new Scalar((ulong)mul);
         return g.Length switch
         {
             G1 => new G1Affine(G1Affine.FromCompressed(g) * X).ToCompressed(),
