@@ -40,13 +40,13 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestGetEnum()
         {
-            JString s = "Field2";
-            TestEnum e = s.GetEnum<TestEnum>();
-            Assert.AreEqual(TestEnum.Field2, e);
+            JString s = "James";
+            Woo woo = s.GetEnum<Woo>();
+            Assert.AreEqual(Woo.James, woo);
 
             s = "";
-            e = s.AsEnum(TestEnum.Field1, false);
-            Assert.AreEqual(TestEnum.Field1, e);
+            woo = s.AsEnum(Woo.Jerry, false);
+            Assert.AreEqual(Woo.Jerry, woo);
         }
     }
 }
