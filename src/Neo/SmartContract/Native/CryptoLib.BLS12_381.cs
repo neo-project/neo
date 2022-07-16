@@ -34,10 +34,10 @@ partial class CryptoLib
 
     /// <summary>
     /// The implementation of System.Crypto.PointMul.
-    /// Mul operation of gt point and mulitiplier
+    /// Mul operation of gt point and multiplier
     /// </summary>
     /// <param name="g">Gt point as byteArray</param>
-    /// <param name="mul">Mulitiplier</param>
+    /// <param name="mul">Multiplier</param>
     /// <returns></returns>
     [ContractMethod(CpuFee = 1 << 21)]
     [RequiresPreviewFeatures]
