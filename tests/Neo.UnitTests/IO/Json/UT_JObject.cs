@@ -77,9 +77,12 @@ namespace Neo.UnitTests.IO.Json
         }
 
         [TestMethod]
-        public void TestTryGetEnum()
+        public void TestGetEnum()
         {
-            alice.TryGetEnum<Woo>().Should().Be(Woo.Tom);
+            alice.AsEnum<Woo>().Should().Be(Woo.Tom);
+
+            Action action = () => alice.GetEnum<Woo>();
+            action.Should().Throw<InvalidCastException>();
         }
 
         [TestMethod]

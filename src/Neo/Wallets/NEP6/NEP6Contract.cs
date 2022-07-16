@@ -26,7 +26,7 @@ namespace Neo.Wallets.NEP6
             return new NEP6Contract
             {
                 Script = Convert.FromBase64String(json["script"].AsString()),
-                ParameterList = ((JArray)json["parameters"]).Select(p => p["type"].TryGetEnum<ContractParameterType>()).ToArray(),
+                ParameterList = ((JArray)json["parameters"]).Select(p => p["type"].GetEnum<ContractParameterType>()).ToArray(),
                 ParameterNames = ((JArray)json["parameters"]).Select(p => p["name"].AsString()).ToArray(),
                 Deployed = json["deployed"].AsBoolean()
             };

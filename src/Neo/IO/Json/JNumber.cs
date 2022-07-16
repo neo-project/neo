@@ -70,7 +70,7 @@ namespace Neo.IO.Json
             return AsString();
         }
 
-        public override T TryGetEnum<T>(T defaultValue = default, bool ignoreCase = false)
+        public override T AsEnum<T>(T defaultValue = default, bool ignoreCase = false)
         {
             Type enumType = typeof(T);
             object value;
@@ -84,6 +84,24 @@ namespace Neo.IO.Json
             }
             object result = Enum.ToObject(enumType, value);
             return Enum.IsDefined(enumType, result) ? (T)result : defaultValue;
+        }
+
+        public override T GetEnum<T>(bool ignoreCase = false)
+        {
+            Type enumType = typeof(T);
+            object value;
+            try
+            {
+                value = Convert.ChangeType(Value, enumType.GetEnumUnderlyingType());
+            }
+            catch (OverflowException)
+            {
+                throw new InvalidCastException();
+            }
+            object result = Enum.ToObject(enumType, value);
+            if (!Enum.IsDefined(enumType, result))
+                throw new InvalidCastException();
+            return (T)result;
         }
 
         internal override void Write(Utf8JsonWriter writer)

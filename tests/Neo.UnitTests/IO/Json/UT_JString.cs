@@ -43,14 +43,14 @@ namespace Neo.UnitTests.IO
         }
 
         [TestMethod]
-        public void TestTryGetEnum()
+        public void TestGetEnum()
         {
-            JString s = new JString("Signature");
-            ContractParameterType cp = s.TryGetEnum<ContractParameterType>(ContractParameterType.Void, false);
+            JString s = "Signature";
+            ContractParameterType cp = s.GetEnum<ContractParameterType>();
             Assert.AreEqual(ContractParameterType.Signature, cp);
 
-            s = new JString("");
-            cp = s.TryGetEnum<ContractParameterType>(ContractParameterType.Void, false);
+            s = "";
+            cp = s.AsEnum(ContractParameterType.Void, false);
             Assert.AreEqual(ContractParameterType.Void, cp);
         }
     }

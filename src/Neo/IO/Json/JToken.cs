@@ -47,6 +47,18 @@ public abstract class JToken
     }
 
     /// <summary>
+    /// Converts the current JSON token to an <see cref="Enum"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of the <see cref="Enum"/>.</typeparam>
+    /// <param name="defaultValue">If the current JSON token cannot be converted to type <typeparamref name="T"/>, then the default value is returned.</param>
+    /// <param name="ignoreCase">Indicates whether case should be ignored during conversion.</param>
+    /// <returns>The converted value.</returns>
+    public virtual T AsEnum<T>(T defaultValue = default, bool ignoreCase = false) where T : unmanaged, Enum
+    {
+        return defaultValue;
+    }
+
+    /// <summary>
     /// Converts the current JSON token to a floating point number.
     /// </summary>
     /// <returns>The converted value.</returns>
@@ -70,6 +82,8 @@ public abstract class JToken
     /// <returns>The converted value.</returns>
     /// <exception cref="InvalidCastException">The JSON token is not a <see cref="JBoolean"/>.</exception>
     public virtual bool GetBoolean() => throw new InvalidCastException();
+
+    public virtual T GetEnum<T>(bool ignoreCase = false) where T : unmanaged, Enum => throw new InvalidCastException();
 
     /// <summary>
     /// Converts the current JSON token to a 32-bit signed integer.
@@ -238,18 +252,6 @@ public abstract class JToken
     public string ToString(bool indented)
     {
         return Utility.StrictUTF8.GetString(ToByteArray(indented));
-    }
-
-    /// <summary>
-    /// Converts the current JSON token to an <see cref="Enum"/>.
-    /// </summary>
-    /// <typeparam name="T">The type of the <see cref="Enum"/>.</typeparam>
-    /// <param name="defaultValue">If the current JSON token cannot be converted to type <typeparamref name="T"/>, then the default value is returned.</param>
-    /// <param name="ignoreCase">Indicates whether case should be ignored during conversion.</param>
-    /// <returns>The converted value.</returns>
-    public virtual T TryGetEnum<T>(T defaultValue = default, bool ignoreCase = false) where T : Enum
-    {
-        return defaultValue;
     }
 
     internal abstract void Write(Utf8JsonWriter writer);

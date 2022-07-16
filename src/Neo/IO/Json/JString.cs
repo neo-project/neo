@@ -55,16 +55,23 @@ namespace Neo.IO.Json
 
         public override string GetString() => Value;
 
-        public override T TryGetEnum<T>(T defaultValue = default, bool ignoreCase = false)
+        public override T AsEnum<T>(T defaultValue = default, bool ignoreCase = false)
         {
             try
             {
-                return (T)Enum.Parse(typeof(T), Value, ignoreCase);
+                return Enum.Parse<T>(Value, ignoreCase);
             }
             catch
             {
                 return defaultValue;
             }
+        }
+
+        public override T GetEnum<T>(bool ignoreCase = false)
+        {
+            T result = Enum.Parse<T>(Value, ignoreCase);
+            if (!Enum.IsDefined(result)) throw new InvalidCastException();
+            return result;
         }
 
         internal override void Write(Utf8JsonWriter writer)

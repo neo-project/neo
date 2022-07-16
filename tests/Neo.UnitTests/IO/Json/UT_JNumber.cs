@@ -48,12 +48,15 @@ namespace Neo.UnitTests.IO.Json
         }
 
         [TestMethod]
-        public void TestTryGetEnum()
+        public void TestGetEnum()
         {
-            zero.TryGetEnum<Woo>().Should().Be(Woo.Tom);
-            new JNumber(1).TryGetEnum<Woo>().Should().Be(Woo.Jerry);
-            new JNumber(2).TryGetEnum<Woo>().Should().Be(Woo.James);
-            new JNumber(3).TryGetEnum<Woo>().Should().Be(Woo.Tom);
+            zero.GetEnum<Woo>().Should().Be(Woo.Tom);
+            new JNumber(1).GetEnum<Woo>().Should().Be(Woo.Jerry);
+            new JNumber(2).GetEnum<Woo>().Should().Be(Woo.James);
+            new JNumber(3).AsEnum<Woo>().Should().Be(Woo.Tom);
+
+            Action action = () => new JNumber(3).GetEnum<Woo>();
+            action.Should().Throw<InvalidCastException>();
         }
     }
 }
