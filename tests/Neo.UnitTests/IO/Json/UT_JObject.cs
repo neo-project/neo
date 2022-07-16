@@ -114,7 +114,7 @@ namespace Neo.UnitTests.IO.Json
             {
                 switch (bob[key])
                 {
-                    case null:
+                    case JToken.Null:
                         bobClone[key].Should().BeNull();
                         break;
                     case JObject obj:

@@ -13,7 +13,7 @@ public abstract class JToken
     /// <summary>
     /// Represents a <see langword="null"/> token.
     /// </summary>
-    public static readonly JToken Null = null;
+    public const JToken Null = null;
 
     /// <summary>
     /// Converts the current JSON token to a boolean value.
