@@ -58,7 +58,7 @@ namespace Neo.SmartContract.Manifest
             ContractEventDescriptor descriptor = new()
             {
                 Name = json["name"].GetString(),
-                Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson(u.GetObject())).ToArray(),
+                Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JObject)u)).ToArray(),
             };
             if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException();
             _ = descriptor.Parameters.ToDictionary(p => p.Name);

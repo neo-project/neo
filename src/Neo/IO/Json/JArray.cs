@@ -39,7 +39,7 @@ namespace Neo.IO.Json
             this.items.AddRange(items);
         }
 
-        public new JToken this[int index]
+        public override JToken this[int index]
         {
             get
             {
@@ -80,8 +80,6 @@ namespace Neo.IO.Json
         {
             return items.Contains(item);
         }
-
-        public override JArray GetArray() => this;
 
         public IEnumerator<JToken> GetEnumerator()
         {

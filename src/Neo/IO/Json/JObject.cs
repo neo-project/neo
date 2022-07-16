@@ -31,7 +31,7 @@ namespace Neo.IO.Json
         /// </summary>
         /// <param name="name">The name of the property to get or set.</param>
         /// <returns>The property with the specified name.</returns>
-        public JToken this[string name]
+        public override JToken this[string name]
         {
             get
             {
@@ -58,8 +58,6 @@ namespace Neo.IO.Json
         }
 
         public override void Clear() => properties.Clear();
-
-        public override JObject GetObject() => this;
 
         internal override void Write(Utf8JsonWriter writer)
         {

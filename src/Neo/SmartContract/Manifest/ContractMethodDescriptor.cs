@@ -65,7 +65,7 @@ namespace Neo.SmartContract.Manifest
             ContractMethodDescriptor descriptor = new()
             {
                 Name = json["name"].GetString(),
-                Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson(u.GetObject())).ToArray(),
+                Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JObject)u)).ToArray(),
                 ReturnType = Enum.Parse<ContractParameterType>(json["returntype"].GetString()),
                 Offset = json["offset"].GetInt32(),
                 Safe = json["safe"].GetBoolean()

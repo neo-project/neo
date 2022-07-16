@@ -118,7 +118,7 @@ namespace Neo.UnitTests.IO.Json
                         bobClone[key].Should().BeNull();
                         break;
                     case JObject obj:
-                        bobClone[key].GetObject().Properties.Should().BeEquivalentTo(obj.Properties);
+                        ((JObject)bobClone[key]).Properties.Should().BeEquivalentTo(obj.Properties);
                         break;
                     default:
                         bobClone[key].Should().BeEquivalentTo(bob[key]);

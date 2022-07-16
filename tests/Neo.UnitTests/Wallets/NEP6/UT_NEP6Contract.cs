@@ -22,7 +22,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         {
             string json = "{\"script\":\"IQPviR30wLfu+5N9IeoPuIzejg2Cp/8RhytecEeWna+062h0dHaq\"," +
                 "\"parameters\":[{\"name\":\"signature\",\"type\":\"Signature\"}],\"deployed\":false}";
-            JObject @object = JToken.Parse(json).GetObject();
+            JObject @object = (JObject)JToken.Parse(json);
 
             NEP6Contract nep6Contract = NEP6Contract.FromJson(@object);
             nep6Contract.Script.Should().BeEquivalentTo("2103ef891df4c0b7eefb937d21ea0fb88cde8e0d82a7ff11872b5e7047969dafb4eb68747476aa".HexToBytes());
@@ -54,14 +54,14 @@ namespace Neo.UnitTests.Wallets.NEP6
             JArray parameters = (JArray)@object["parameters"];
             parameters.Count.Should().Be(2);
 
-            jString = (JString)parameters[0].GetObject()["name"];
+            jString = (JString)parameters[0]["name"];
             jString.Value.Should().Be("param1");
-            jString = (JString)parameters[0].GetObject()["type"];
+            jString = (JString)parameters[0]["type"];
             jString.Value.Should().Be(ContractParameterType.Boolean.ToString());
 
-            jString = (JString)parameters[1].GetObject()["name"];
+            jString = (JString)parameters[1]["name"];
             jString.Value.Should().Be("param2");
-            jString = (JString)parameters[1].GetObject()["type"];
+            jString = (JString)parameters[1]["type"];
             jString.Value.Should().Be(ContractParameterType.Integer.ToString());
         }
     }

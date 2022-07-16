@@ -16,6 +16,28 @@ public abstract class JToken
     public const JToken Null = null;
 
     /// <summary>
+    /// Gets or sets the child token at the specified index.
+    /// </summary>
+    /// <param name="index">The zero-based index of the child token to get or set.</param>
+    /// <returns>The child token at the specified index.</returns>
+    public virtual JToken this[int index]
+    {
+        get => throw new NotSupportedException();
+        set => throw new NotSupportedException();
+    }
+
+    /// <summary>
+    /// Gets or sets the properties of the JSON object.
+    /// </summary>
+    /// <param name="key">The key of the property to get or set.</param>
+    /// <returns>The property with the specified name.</returns>
+    public virtual JToken this[string key]
+    {
+        get => throw new NotSupportedException();
+        set => throw new NotSupportedException();
+    }
+
+    /// <summary>
     /// Converts the current JSON token to a boolean value.
     /// </summary>
     /// <returns>The converted value.</returns>
@@ -41,13 +63,6 @@ public abstract class JToken
     {
         return ToString();
     }
-
-    /// <summary>
-    /// Converts the current JSON token to a <see cref="JArray"/> object.
-    /// </summary>
-    /// <returns>The converted value.</returns>
-    /// <exception cref="InvalidCastException">The JSON token is not a <see cref="JArray"/>.</exception>
-    public virtual JArray GetArray() => throw new InvalidCastException();
 
     /// <summary>
     /// Converts the current JSON token to a boolean value.
@@ -76,8 +91,6 @@ public abstract class JToken
     /// <returns>The converted value.</returns>
     /// <exception cref="InvalidCastException">The JSON token is not a <see cref="JNumber"/>.</exception>
     public virtual double GetNumber() => throw new InvalidCastException();
-
-    public virtual JObject GetObject() => throw new InvalidCastException();
 
     /// <summary>
     /// Converts the current JSON token to a <see cref="string"/>.

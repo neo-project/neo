@@ -56,7 +56,7 @@ namespace Neo.Wallets.NEP6
             this.password = password;
             if (File.Exists(path))
             {
-                JObject wallet = JToken.Parse(File.ReadAllBytes(path)).GetObject();
+                JObject wallet = (JObject)JToken.Parse(File.ReadAllBytes(path));
                 LoadFromJson(wallet, out Scrypt, out accounts, out extra);
             }
             else
@@ -86,8 +86,8 @@ namespace Neo.Wallets.NEP6
         {
             this.version = Version.Parse(wallet["version"].AsString());
             this.name = wallet["name"]?.AsString();
-            scrypt = ScryptParameters.FromJson(wallet["scrypt"].GetObject());
-            accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson(p.GetObject(), this)).ToDictionary(p => p.ScriptHash);
+            scrypt = ScryptParameters.FromJson((JObject)wallet["scrypt"]);
+            accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson((JObject)p, this)).ToDictionary(p => p.ScriptHash);
             extra = wallet["extra"];
             if (!VerifyPasswordInternal(password))
                 throw new InvalidOperationException("Wrong password.");

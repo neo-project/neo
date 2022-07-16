@@ -53,8 +53,8 @@ namespace Neo.UnitTests.IO.Json
                 alice,
                 bob
             };
-            var jAlice = jArray[0].GetObject();
-            var jBob = jArray[1].GetObject();
+            var jAlice = jArray[0];
+            var jBob = jArray[1];
             jAlice["name"].ToString().Should().Be(alice["name"].ToString());
             jAlice["age"].ToString().Should().Be(alice["age"].ToString());
             jAlice["score"].ToString().Should().Be(alice["score"].ToString());
@@ -90,7 +90,7 @@ namespace Neo.UnitTests.IO.Json
             {
                 alice
             };
-            var jAlice = jArray[0].GetObject();
+            var jAlice = jArray[0];
             jAlice["name"].ToString().Should().Be(alice["name"].ToString());
             jAlice["age"].ToString().Should().Be(alice["age"].ToString());
             jAlice["score"].ToString().Should().Be(alice["score"].ToString());

@@ -45,7 +45,7 @@ namespace Neo.Wallets.NEP6
                 Label = json["label"]?.GetString(),
                 IsDefault = json["isDefault"].GetBoolean(),
                 Lock = json["lock"].GetBoolean(),
-                Contract = NEP6Contract.FromJson(json["contract"]?.GetObject()),
+                Contract = NEP6Contract.FromJson((JObject)json["contract"]),
                 Extra = json["extra"]
             };
         }

@@ -83,7 +83,7 @@ namespace Neo.SmartContract.Manifest
                 Array array => WildcardContainer<ContractPermissionDescriptor>.Create(array.Select(p => new ContractPermissionDescriptor(p.GetSpan())).ToArray()),
                 _ => throw new ArgumentException(null, nameof(stackItem))
             };
-            Extra = JToken.Parse(@struct[7].GetSpan())?.GetObject();
+            Extra = (JObject)JToken.Parse(@struct[7].GetSpan());
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
@@ -111,12 +111,12 @@ namespace Neo.SmartContract.Manifest
             ContractManifest manifest = new()
             {
                 Name = json["name"].GetString(),
-                Groups = ((JArray)json["groups"]).Select(u => ContractGroup.FromJson(u.GetObject())).ToArray(),
+                Groups = ((JArray)json["groups"]).Select(u => ContractGroup.FromJson((JObject)u)).ToArray(),
                 SupportedStandards = ((JArray)json["supportedstandards"]).Select(u => u.GetString()).ToArray(),
-                Abi = ContractAbi.FromJson(json["abi"].GetObject()),
-                Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u.GetObject())).ToArray(),
+                Abi = ContractAbi.FromJson((JObject)json["abi"]),
+                Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson((JObject)u)).ToArray(),
                 Trusts = WildcardContainer<ContractPermissionDescriptor>.FromJson(json["trusts"], u => ContractPermissionDescriptor.FromJson((JString)u)),
-                Extra = json["extra"]?.GetObject()
+                Extra = (JObject)json["extra"]
             };
             if (string.IsNullOrEmpty(manifest.Name))
                 throw new FormatException();
@@ -139,7 +139,7 @@ namespace Neo.SmartContract.Manifest
         public static ContractManifest Parse(ReadOnlySpan<byte> json)
         {
             if (json.Length > MaxLength) throw new ArgumentException(null, nameof(json));
-            return FromJson(JToken.Parse(json).GetObject());
+            return FromJson((JObject)JToken.Parse(json));
         }
 
         /// <summary>

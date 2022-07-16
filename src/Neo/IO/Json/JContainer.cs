@@ -4,12 +4,7 @@ namespace Neo.IO.Json;
 
 public abstract class JContainer : JToken
 {
-    /// <summary>
-    /// Gets the token at the specified index.
-    /// </summary>
-    /// <param name="index">The zero-based index of the token to get.</param>
-    /// <returns>The token at the specified index.</returns>
-    public virtual JToken this[int index] => Children[index];
+    public override JToken this[int index] => Children[index];
 
     public abstract IReadOnlyList<JToken> Children { get; }
 

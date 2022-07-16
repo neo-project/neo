@@ -138,7 +138,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             json["isDefault"].ToString().Should().Be("false");
             json["lock"].ToString().Should().Be("false");
             json["key"].Should().BeNull();
-            json["contract"].GetObject()["script"].ToString().Should().Be(@"""IQNgPziA63rqCtRQCJOSXkpC/qSKRO5viYoQs8fOBdKiZ6w=""");
+            json["contract"]["script"].ToString().Should().Be(@"""IQNgPziA63rqCtRQCJOSXkpC/qSKRO5viYoQs8fOBdKiZ6w=""");
             json["extra"].Should().BeNull();
 
             _account.Contract = null;

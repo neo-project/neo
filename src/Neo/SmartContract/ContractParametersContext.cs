@@ -44,8 +44,8 @@ namespace Neo.SmartContract
             public ContextItem(JObject json)
             {
                 this.Script = Convert.FromBase64String(json["script"].AsString());
-                this.Parameters = ((JArray)json["parameters"]).Select(p => ContractParameter.FromJson(p.GetObject())).ToArray();
-                this.Signatures = json["signatures"].GetObject().Properties.Select(p => new
+                this.Parameters = ((JArray)json["parameters"]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray();
+                this.Signatures = ((JObject)json["signatures"]).Properties.Select(p => new
                 {
                     PublicKey = ECPoint.Parse(p.Key, ECCurve.Secp256r1),
                     Signature = Convert.FromBase64String(p.Value.AsString())
@@ -57,10 +57,9 @@ namespace Neo.SmartContract
                 JObject json = new();
                 json["script"] = Convert.ToBase64String(Script);
                 json["parameters"] = new JArray(Parameters.Select(p => p.ToJson()));
-                JObject signatures = new();
-                json["signatures"] = signatures;
+                json["signatures"] = new JObject();
                 foreach (var signature in Signatures)
-                    signatures[signature.Key.ToString()] = Convert.ToBase64String(signature.Value);
+                    json["signatures"][signature.Key.ToString()] = Convert.ToBase64String(signature.Value);
                 return json;
             }
         }
@@ -239,9 +238,9 @@ namespace Neo.SmartContract
                 if (hash != verifiable.Hash) throw new FormatException();
             }
             ContractParametersContext context = new(snapshot, verifiable, (uint)json["network"].GetInt32());
-            foreach (var property in json["items"].GetObject().Properties)
+            foreach (var (key, value) in ((JObject)json["items"]).Properties)
             {
-                context.ContextItems.Add(UInt160.Parse(property.Key), new ContextItem(property.Value.GetObject()));
+                context.ContextItems.Add(UInt160.Parse(key), new ContextItem((JObject)value));
             }
             return context;
         }
@@ -327,7 +326,7 @@ namespace Neo.SmartContract
         /// <returns>The parsed context.</returns>
         public static ContractParametersContext Parse(string value, DataCache snapshot)
         {
-            return FromJson(JToken.Parse(value).GetObject(), snapshot);
+            return FromJson((JObject)JToken.Parse(value), snapshot);
         }
 
         /// <summary>
@@ -346,10 +345,9 @@ namespace Neo.SmartContract
                 writer.Flush();
                 json["data"] = Convert.ToBase64String(ms.ToArray());
             }
-            JObject items = new();
-            json["items"] = items;
+            json["items"] = new JObject();
             foreach (var item in ContextItems)
-                items[item.Key.ToString()] = item.Value.ToJson();
+                json["items"][item.Key.ToString()] = item.Value.ToJson();
             json["network"] = Network;
             return json;
         }
