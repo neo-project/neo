@@ -102,7 +102,7 @@ namespace Neo.UnitTests.IO.Json
         [TestMethod]
         public void TestGetNull()
         {
-            JObject.Null.Should().BeNull();
+            JToken.Null.Should().BeNull();
         }
 
         [TestMethod]
@@ -112,7 +112,18 @@ namespace Neo.UnitTests.IO.Json
             bobClone.Should().NotBeSameAs(bob);
             foreach (var key in bobClone.Properties.Keys)
             {
-                bobClone[key].Should().BeEquivalentTo(bob[key]);
+                switch (bob[key])
+                {
+                    case null:
+                        bobClone[key].Should().BeNull();
+                        break;
+                    case JObject obj:
+                        bobClone[key].GetObject().Properties.Should().BeEquivalentTo(obj.Properties);
+                        break;
+                    default:
+                        bobClone[key].Should().BeEquivalentTo(bob[key]);
+                        break;
+                }
             }
         }
     }

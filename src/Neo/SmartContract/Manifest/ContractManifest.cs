@@ -83,7 +83,7 @@ namespace Neo.SmartContract.Manifest
                 Array array => WildcardContainer<ContractPermissionDescriptor>.Create(array.Select(p => new ContractPermissionDescriptor(p.GetSpan())).ToArray()),
                 _ => throw new ArgumentException(null, nameof(stackItem))
             };
-            Extra = JToken.Parse(@struct[7].GetSpan()).GetObject();
+            Extra = JToken.Parse(@struct[7].GetSpan())?.GetObject();
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
@@ -116,7 +116,7 @@ namespace Neo.SmartContract.Manifest
                 Abi = ContractAbi.FromJson(json["abi"].GetObject()),
                 Permissions = ((JArray)json["permissions"]).Select(u => ContractPermission.FromJson(u.GetObject())).ToArray(),
                 Trusts = WildcardContainer<ContractPermissionDescriptor>.FromJson(json["trusts"], u => ContractPermissionDescriptor.FromJson((JString)u)),
-                Extra = json["extra"].GetObject()
+                Extra = json["extra"]?.GetObject()
             };
             if (string.IsNullOrEmpty(manifest.Name))
                 throw new FormatException();
