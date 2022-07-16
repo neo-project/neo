@@ -22,23 +22,14 @@ partial class CryptoLib
     public static byte[] Bls12381Add(byte[] g1, byte[] g2)
     {
         if (g1.Length != g2.Length)
-            throw new Exception($"Bls12381 operation fault, type:format, error:type mismatch");
-        byte[] result;
-        switch (g1.Length)
+            throw new ArgumentException($"Bls12381 operation fault, type:format, error:type mismatch");
+        return g1.Length switch
         {
-            case G1:
-                result = new G1Affine(new G1Projective(G1Affine.FromCompressed(g1)) + new G1Projective(G1Affine.FromCompressed(g2))).ToCompressed();
-                break;
-            case G2:
-                result = new G2Affine(new G2Projective(G2Affine.FromCompressed(g1)) + new G2Projective(G2Affine.FromCompressed(g2))).ToCompressed();
-                break;
-            case Gt:
-                result = (Cryptography.BLS12_381.Gt.FromBytes(g1) + Cryptography.BLS12_381.Gt.FromBytes(g2)).ToArray();
-                break;
-            default:
-                throw new Exception($"Bls12381 operation fault, type:format, error:valid point length");
-        }
-        return result;
+            G1 => new G1Affine(new G1Projective(G1Affine.FromCompressed(g1)) + new G1Projective(G1Affine.FromCompressed(g2))).ToCompressed(),
+            G2 => new G2Affine(new G2Projective(G2Affine.FromCompressed(g1)) + new G2Projective(G2Affine.FromCompressed(g2))).ToCompressed(),
+            Gt => (Cryptography.BLS12_381.Gt.FromBytes(g1) + Cryptography.BLS12_381.Gt.FromBytes(g2)).ToArray(),
+            _ => throw new ArgumentException($"Bls12381 operation fault, type:format, error:valid point length"),
+        };
     }
 
     /// <summary>
@@ -53,22 +44,13 @@ partial class CryptoLib
     public static byte[] Bls12381Mul(byte[] g, long mul)
     {
         Scalar X = mul < 0 ? -new Scalar(Convert.ToUInt64(Math.Abs(mul))) : new Scalar(Convert.ToUInt64(Math.Abs(mul)));
-        byte[] result;
-        switch (g.Length)
+        return g.Length switch
         {
-            case G1:
-                result = new G1Affine(G1Affine.FromCompressed(g) * X).ToCompressed();
-                break;
-            case G2:
-                result = new G2Affine(G2Affine.FromCompressed(g) * X).ToCompressed();
-                break;
-            case Gt:
-                result = (Cryptography.BLS12_381.Gt.FromBytes(g) * X).ToArray();
-                break;
-            default:
-                throw new Exception($"Bls12381 operation fault, type:format, error:valid point length");
-        }
-        return result;
+            G1 => new G1Affine(G1Affine.FromCompressed(g) * X).ToCompressed(),
+            G2 => new G2Affine(G2Affine.FromCompressed(g) * X).ToCompressed(),
+            Gt => (Cryptography.BLS12_381.Gt.FromBytes(g) * X).ToArray(),
+            _ => throw new ArgumentException($"Bls12381 operation fault, type:format, error:valid point length"),
+        };
     }
 
     /// <summary>
@@ -83,7 +65,7 @@ partial class CryptoLib
     public static byte[] Bls12381Pairing(byte[] g1, byte[] g2)
     {
         if (g1.Length != G1 || g2.Length != G2)
-            throw new Exception($"Bls12381 operation fault, type:format, error:type mismatch");
+            throw new ArgumentException($"Bls12381 operation fault, type:format, error:type mismatch");
         return Bls12.Pairing(G1Affine.FromCompressed(g1), G2Affine.FromCompressed(g2)).ToArray();
     }
 }
