@@ -68,12 +68,13 @@ partial class CryptoLib
     /// </summary>
     /// <param name="g">Gt point as byteArray</param>
     /// <param name="mul">Multiplier</param>
+    /// <param name="neg">negative number</param>
     /// <returns></returns>
     [ContractMethod(CpuFee = 1 << 21)]
     [RequiresPreviewFeatures]
-    public static InteropInterface Bls12381Mul(InteropInterface g, long mul)
+    public static InteropInterface Bls12381Mul(InteropInterface g, ulong mul, bool neg)
     {
-        Scalar X = mul < 0 ? -new Scalar((ulong)-mul) : new Scalar((ulong)mul);
+        Scalar X = neg ? -new Scalar(mul) : new Scalar(mul);
         byte[] t = g.GetInterface<byte[]>();
         switch (t.Length)
         {

@@ -52,9 +52,10 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = TestBlockchain.GetTestSnapshot();
             using (ScriptBuilder script = new())
             {
+                script.EmitPush(false);
                 script.EmitPush(3);
                 script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381GetPoint", p);
-                script.EmitPush(2);
+                script.EmitPush(3);
                 script.Emit(OpCode.PACK);
                 script.EmitPush(CallFlags.All);
                 script.EmitPush("bls12381Mul");
@@ -70,9 +71,10 @@ namespace Neo.UnitTests.SmartContract.Native
             }
             using (ScriptBuilder script = new())
             {
-                script.EmitPush(-3);
+                script.EmitPush(true);
+                script.EmitPush(3);
                 script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381GetPoint", p);
-                script.EmitPush(2);
+                script.EmitPush(3);
                 script.Emit(OpCode.PACK);
                 script.EmitPush(CallFlags.All);
                 script.EmitPush("bls12381Mul");
@@ -107,7 +109,6 @@ namespace Neo.UnitTests.SmartContract.Native
                 script.EmitPush("bls12381Pairing");
                 script.EmitPush(NativeContract.CryptoLib.Hash);
                 script.EmitSysCall(ApplicationEngine.System_Contract_Call);
-
 
                 using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
                 engine.LoadScript(script.ToArray());
