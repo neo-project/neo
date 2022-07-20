@@ -4,6 +4,7 @@ using Neo.Cryptography.BLS12_381;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
@@ -47,13 +48,15 @@ namespace Neo.UnitTests.SmartContract.Native
         [RequiresPreviewFeatures]
         public void TestBls12381Mul()
         {
+            var data = new byte[32];
+            data[0] = 0x03;
             Gt t = Gt.FromBytes(gt);
             byte[] p = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref t, 1)).ToArray();
             var snapshot = TestBlockchain.GetTestSnapshot();
             using (ScriptBuilder script = new())
             {
                 script.EmitPush(false);
-                script.EmitPush(3);
+                script.EmitPush(data);
                 script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381GetPoint", p);
                 script.EmitPush(3);
                 script.Emit(OpCode.PACK);
@@ -72,7 +75,7 @@ namespace Neo.UnitTests.SmartContract.Native
             using (ScriptBuilder script = new())
             {
                 script.EmitPush(true);
-                script.EmitPush(3);
+                script.EmitPush(data);
                 script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381GetPoint", p);
                 script.EmitPush(3);
                 script.Emit(OpCode.PACK);

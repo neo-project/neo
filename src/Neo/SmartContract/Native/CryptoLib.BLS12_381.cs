@@ -1,6 +1,7 @@
 using Neo.Cryptography.BLS12_381;
 using Neo.VM.Types;
 using System;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
@@ -67,14 +68,14 @@ partial class CryptoLib
     /// Mul operation of gt point and multiplier
     /// </summary>
     /// <param name="g">Gt point as byteArray</param>
-    /// <param name="mul">Multiplier</param>
+    /// <param name="mul">Multiplier,32 bytes,little-endian</param>
     /// <param name="neg">negative number</param>
     /// <returns></returns>
     [ContractMethod(CpuFee = 1 << 21)]
     [RequiresPreviewFeatures]
-    public static InteropInterface Bls12381Mul(InteropInterface g, ulong mul, bool neg)
+    public static InteropInterface Bls12381Mul(InteropInterface g, byte[] mul, bool neg)
     {
-        Scalar X = neg ? -new Scalar(mul) : new Scalar(mul);
+        Scalar X = neg ? -Scalar.FromBytes(mul) : Scalar.FromBytes(mul);
         byte[] t = g.GetInterface<byte[]>();
         switch (t.Length)
         {
