@@ -1,7 +1,6 @@
 using Neo.Cryptography.BLS12_381;
 using Neo.VM.Types;
 using System;
-using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
@@ -14,14 +13,13 @@ partial class CryptoLib
     private const int Gt = 576;
 
     /// <summary>
-    /// The implementation of System.Crypto.GetPoint.
     /// Convert data to InteropInterface type.
     /// </summary>
     /// <param name="g">G point as byteArray</param>
     /// <returns></returns>
     [ContractMethod(CpuFee = 1 << 19)]
     [RequiresPreviewFeatures]
-    public static InteropInterface Bls12381GetPoint(byte[] g)
+    public static InteropInterface Bls12381Deserialize(byte[] g)
     {
         return g.Length switch
         {
@@ -33,7 +31,6 @@ partial class CryptoLib
     }
 
     /// <summary>
-    /// The implementation of System.Crypto.PointAdd.
     /// Add operation of two gt points.
     /// </summary>
     /// <param name="g1">Gt1 point as byteArray</param>
@@ -64,7 +61,6 @@ partial class CryptoLib
     }
 
     /// <summary>
-    /// The implementation of System.Crypto.PointMul.
     /// Mul operation of gt point and multiplier
     /// </summary>
     /// <param name="g">Gt point as byteArray</param>
@@ -94,7 +90,6 @@ partial class CryptoLib
     }
 
     /// <summary>
-    /// The implementation of System.Crypto.PointPairing.
     /// Pairing operation of g1 and g2
     /// </summary>
     /// <param name="g1">Gt point1 as byteArray</param>

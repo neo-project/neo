@@ -4,7 +4,6 @@ using Neo.Cryptography.BLS12_381;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
-using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
@@ -27,8 +26,8 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = TestBlockchain.GetTestSnapshot();
             using (ScriptBuilder script = new())
             {
-                script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381GetPoint", g);
-                script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381GetPoint", g);
+                script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", g);
+                script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", g);
                 script.EmitPush(2);
                 script.Emit(OpCode.PACK);
                 script.EmitPush(CallFlags.All);
@@ -57,7 +56,7 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 script.EmitPush(false);
                 script.EmitPush(data);
-                script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381GetPoint", p);
+                script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", p);
                 script.EmitPush(3);
                 script.Emit(OpCode.PACK);
                 script.EmitPush(CallFlags.All);
@@ -76,7 +75,7 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 script.EmitPush(true);
                 script.EmitPush(data);
-                script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381GetPoint", p);
+                script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", p);
                 script.EmitPush(3);
                 script.Emit(OpCode.PACK);
                 script.EmitPush(CallFlags.All);
@@ -104,8 +103,8 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = TestBlockchain.GetTestSnapshot();
             using (ScriptBuilder script = new())
             {
-                script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381GetPoint", p2);
-                script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381GetPoint", p1);
+                script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", p2);
+                script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", p1);
                 script.EmitPush(2);
                 script.Emit(OpCode.PACK);
                 script.EmitPush(CallFlags.All);
