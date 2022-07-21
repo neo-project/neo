@@ -123,7 +123,15 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the calling contract. This field could be <see langword="null"/> if the current context is the entry context.
         /// </summary>
-        public UInt160 CallingScriptHash => CurrentContext?.GetState<ExecutionContextState>().CallingScriptHash;
+        public UInt160 CallingScriptHash
+        {
+            get
+            {
+                if (CurrentContext is null) return null;
+                var state = CurrentContext.GetState<ExecutionContextState>();
+                return state.FakeCallingScriptHash ?? state.CallingContext?.GetState<ExecutionContextState>().ScriptHash;
+            }
+        }
 
         /// <summary>
         /// The script hash of the entry context. This field could be <see langword="null"/> if no context is loaded to the engine.
@@ -224,15 +232,15 @@ namespace Neo.SmartContract
                 invocationCounter[contract.Hash] = 1;
             }
 
-            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
-            UInt160 callingScriptHash = state.ScriptHash;
+            ExecutionContext currentContext = CurrentContext;
+            ExecutionContextState state = currentContext.GetState<ExecutionContextState>();
             CallFlags callingFlags = state.CallFlags;
 
             if (args.Count != method.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {method.Parameters.Length} Arguments But Receives {args.Count} Arguments");
             if (hasReturnValue ^ (method.ReturnType != ContractParameterType.Void)) throw new InvalidOperationException("The return value type does not match.");
             ExecutionContext context_new = LoadContract(contract, method, flags & callingFlags);
             state = context_new.GetState<ExecutionContextState>();
-            state.CallingScriptHash = callingScriptHash;
+            state.CallingContext = currentContext;
 
             for (int i = args.Count - 1; i >= 0; i--)
                 context_new.EvaluationStack.Push(args[i]);
@@ -244,7 +252,7 @@ namespace Neo.SmartContract
         {
             ExecutionContext context_new = CallContractInternal(hash, method, CallFlags.All, false, args);
             ExecutionContextState state = context_new.GetState<ExecutionContextState>();
-            state.CallingScriptHash = callingScriptHash;
+            state.FakeCallingScriptHash = callingScriptHash;
             ContractTask task = new();
             contractTasks.Add(context_new, task.GetAwaiter());
             return task;
@@ -254,7 +262,7 @@ namespace Neo.SmartContract
         {
             ExecutionContext context_new = CallContractInternal(hash, method, CallFlags.All, true, args);
             ExecutionContextState state = context_new.GetState<ExecutionContextState>();
-            state.CallingScriptHash = callingScriptHash;
+            state.FakeCallingScriptHash = callingScriptHash;
             ContractTask<T> task = new();
             contractTasks.Add(context_new, task.GetAwaiter());
             return task;

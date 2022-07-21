@@ -208,7 +208,7 @@ namespace Neo.SmartContract
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             ExecutionContext context = LoadScript(script, configureState: p =>
             {
-                p.CallingScriptHash = state.ScriptHash;
+                p.CallingContext = CurrentContext;
                 p.CallFlags = callFlags & state.CallFlags;
                 p.IsDynamicCall = true;
             });

@@ -42,7 +42,7 @@ namespace Neo.UnitTests.Extensions
             // Fake calling script hash
             if (callingScriptHash != null)
             {
-                engine.CurrentContext.GetState<ExecutionContextState>().CallingScriptHash = callingScriptHash;
+                engine.CurrentContext.GetState<ExecutionContextState>().FakeCallingScriptHash = callingScriptHash;
                 engine.CurrentContext.GetState<ExecutionContextState>().ScriptHash = callingScriptHash;
             }
 
@@ -65,7 +65,7 @@ namespace Neo.UnitTests.Extensions
             // Fake calling script hash
             if (callingScriptHash != null)
             {
-                engine.CurrentContext.GetState<ExecutionContextState>().CallingScriptHash = callingScriptHash;
+                engine.CurrentContext.GetState<ExecutionContextState>().FakeCallingScriptHash = callingScriptHash;
                 engine.CurrentContext.GetState<ExecutionContextState>().ScriptHash = callingScriptHash;
             }
 

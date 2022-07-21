@@ -24,7 +24,8 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public override bool Match(ApplicationEngine engine)
         {
-            return engine.CallingScriptHash is null || engine.CallingScriptHash == engine.EntryScriptHash;
+            var state = engine.CurrentContext.GetState<ExecutionContextState>();
+            return state.CallingContext is null || state.CallingContext == engine.EntryContext;
         }
 
         protected override void SerializeWithoutType(BinaryWriter writer)
