@@ -31,7 +31,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// Used in native contracts only.
         /// </summary>
-        internal UInt160 FakeCallingScriptHash { get; set; }
+        internal UInt160 NativeCallingScriptHash { get; set; }
 
         /// <summary>
         /// The <see cref="ContractState"/> of the current context.

@@ -129,7 +129,7 @@ namespace Neo.SmartContract
             {
                 if (CurrentContext is null) return null;
                 var state = CurrentContext.GetState<ExecutionContextState>();
-                return state.FakeCallingScriptHash ?? state.CallingContext?.GetState<ExecutionContextState>().ScriptHash;
+                return state.NativeCallingScriptHash ?? state.CallingContext?.GetState<ExecutionContextState>().ScriptHash;
             }
         }
 
@@ -252,7 +252,7 @@ namespace Neo.SmartContract
         {
             ExecutionContext context_new = CallContractInternal(hash, method, CallFlags.All, false, args);
             ExecutionContextState state = context_new.GetState<ExecutionContextState>();
-            state.FakeCallingScriptHash = callingScriptHash;
+            state.NativeCallingScriptHash = callingScriptHash;
             ContractTask task = new();
             contractTasks.Add(context_new, task.GetAwaiter());
             return task;
@@ -262,7 +262,7 @@ namespace Neo.SmartContract
         {
             ExecutionContext context_new = CallContractInternal(hash, method, CallFlags.All, true, args);
             ExecutionContextState state = context_new.GetState<ExecutionContextState>();
-            state.FakeCallingScriptHash = callingScriptHash;
+            state.NativeCallingScriptHash = callingScriptHash;
             ContractTask<T> task = new();
             contractTasks.Add(context_new, task.GetAwaiter());
             return task;
