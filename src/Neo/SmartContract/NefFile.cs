@@ -10,7 +10,7 @@
 
 using Neo.Cryptography;
 using Neo.IO;
-using Neo.IO.Json;
+using Neo.Json;
 using System;
 using System.Buffers.Binary;
 using System.IO;

@@ -10,7 +10,7 @@
 
 using Neo.Cryptography.ECC;
 using Neo.IO;
-using Neo.IO.Json;
+using Neo.Json;
 using Neo.Network.P2P.Payloads.Conditions;
 using Neo.SmartContract;
 using Neo.VM;
@@ -156,11 +156,11 @@ namespace Neo.Network.P2P.Payloads
             signer.Account = UInt160.Parse(json["account"].GetString());
             signer.Scopes = Enum.Parse<WitnessScope>(json["scopes"].GetString());
             if (signer.Scopes.HasFlag(WitnessScope.CustomContracts))
-                signer.AllowedContracts = json["allowedcontracts"].GetArray().Select(p => UInt160.Parse(p.GetString())).ToArray();
+                signer.AllowedContracts = ((JArray)json["allowedcontracts"]).Select(p => UInt160.Parse(p.GetString())).ToArray();
             if (signer.Scopes.HasFlag(WitnessScope.CustomGroups))
-                signer.AllowedGroups = json["allowedgroups"].GetArray().Select(p => ECPoint.Parse(p.GetString(), ECCurve.Secp256r1)).ToArray();
+                signer.AllowedGroups = ((JArray)json["allowedgroups"]).Select(p => ECPoint.Parse(p.GetString(), ECCurve.Secp256r1)).ToArray();
             if (signer.Scopes.HasFlag(WitnessScope.WitnessRules))
-                signer.Rules = json["rules"].GetArray().Select(WitnessRule.FromJson).ToArray();
+                signer.Rules = ((JArray)json["rules"]).Select(p => WitnessRule.FromJson((JObject)p)).ToArray();
             return signer;
         }
 
@@ -174,9 +174,9 @@ namespace Neo.Network.P2P.Payloads
             json["account"] = Account.ToString();
             json["scopes"] = Scopes;
             if (Scopes.HasFlag(WitnessScope.CustomContracts))
-                json["allowedcontracts"] = AllowedContracts.Select(p => (JObject)p.ToString()).ToArray();
+                json["allowedcontracts"] = AllowedContracts.Select(p => (JToken)p.ToString()).ToArray();
             if (Scopes.HasFlag(WitnessScope.CustomGroups))
-                json["allowedgroups"] = AllowedGroups.Select(p => (JObject)p.ToString()).ToArray();
+                json["allowedgroups"] = AllowedGroups.Select(p => (JToken)p.ToString()).ToArray();
             if (Scopes.HasFlag(WitnessScope.WitnessRules))
                 json["rules"] = Rules.Select(p => p.ToJson()).ToArray();
             return json;
