@@ -8,6 +8,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.Json;
 
@@ -88,6 +89,7 @@ namespace Neo.Json
             return new JString(value.ToString());
         }
 
+        [return: NotNullIfNotNull("value")]
         public static implicit operator JString?(string? value)
         {
             return value == null ? null : new JString(value);

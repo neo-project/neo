@@ -21,12 +21,12 @@ namespace Neo.Json
         /// <summary>
         /// Represents the largest safe integer in JSON.
         /// </summary>
-        public static readonly long MAX_SAFE_INTEGER = (long)Math.Pow(2, 53) - 1;
+        public const long MAX_SAFE_INTEGER = (1L << 53) - 1;
 
         /// <summary>
         /// Represents the smallest safe integer in JSON.
         /// </summary>
-        public static readonly long MIN_SAFE_INTEGER = -MAX_SAFE_INTEGER;
+        public const long MIN_SAFE_INTEGER = -MAX_SAFE_INTEGER;
 
         /// <summary>
         /// Gets the value of the JSON token.

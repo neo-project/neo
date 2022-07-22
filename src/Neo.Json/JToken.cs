@@ -8,6 +8,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using static Neo.Json.Utility;
 
@@ -297,6 +298,7 @@ public abstract class JToken
         return (JNumber)value;
     }
 
+    [return: NotNullIfNotNull("value")]
     public static implicit operator JToken?(string? value)
     {
         return (JString?)value;
