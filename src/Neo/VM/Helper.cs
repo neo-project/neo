@@ -10,7 +10,7 @@
 
 using Neo.Cryptography.ECC;
 using Neo.IO;
-using Neo.IO.Json;
+using Neo.Json;
 using Neo.SmartContract;
 using Neo.VM.Types;
 using System;
@@ -308,7 +308,7 @@ namespace Neo.VM
             {
                 ["type"] = item.Type
             };
-            JObject value = null;
+            JToken value = null;
             maxSize -= 11/*{"type":""}*/+ item.Type.ToString().Length;
             switch (item)
             {

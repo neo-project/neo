@@ -11,7 +11,7 @@
 #pragma warning disable IDE0051
 
 using Neo.Cryptography;
-using Neo.IO.Json;
+using Neo.Json;
 using Neo.VM.Types;
 using System;
 using System.Globalization;
@@ -49,7 +49,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 14)]
         private static StackItem JsonDeserialize(ApplicationEngine engine, byte[] json)
         {
-            return JsonSerializer.Deserialize(JObject.Parse(json, 10), engine.Limits, engine.ReferenceCounter);
+            return JsonSerializer.Deserialize(JToken.Parse(json, 10), engine.Limits, engine.ReferenceCounter);
         }
 
         /// <summary>

@@ -9,7 +9,7 @@
 // modifications are permitted.
 
 using Neo.IO;
-using Neo.IO.Json;
+using Neo.Json;
 using Neo.Network.P2P.Payloads.Conditions;
 using Neo.SmartContract;
 using Neo.VM;
@@ -60,7 +60,7 @@ namespace Neo.Network.P2P.Payloads
             return new()
             {
                 Action = Enum.Parse<WitnessRuleAction>(json["action"].GetString()),
-                Condition = WitnessCondition.FromJson(json["condition"])
+                Condition = WitnessCondition.FromJson((JObject)json["condition"])
             };
         }
 

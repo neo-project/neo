@@ -9,7 +9,7 @@
 // modifications are permitted.
 
 using Neo.IO;
-using Neo.IO.Json;
+using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -85,7 +85,7 @@ namespace Neo.SmartContract.Manifest
         {
             ContractPermission permission = new()
             {
-                Contract = ContractPermissionDescriptor.FromJson(json["contract"]),
+                Contract = ContractPermissionDescriptor.FromJson((JString)json["contract"]),
                 Methods = WildcardContainer<string>.FromJson(json["methods"], u => u.GetString()),
             };
             if (permission.Methods.Any(p => string.IsNullOrEmpty(p)))

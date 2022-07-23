@@ -1,9 +1,4 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO.Json;
-using System;
-using System.Linq;
-
-namespace Neo.UnitTests.IO.Json
+namespace Neo.Json.UnitTests
 {
     [TestClass]
     public class UT_JPath
@@ -59,7 +54,7 @@ namespace Neo.UnitTests.IO.Json
         public void TestOOM()
         {
             var filter = "$" + string.Concat(Enumerable.Repeat("[0" + string.Concat(Enumerable.Repeat(",0", 64)) + "]", 6));
-            Assert.ThrowsException<InvalidOperationException>(() => JObject.Parse("[[[[[[{}]]]]]]").JsonPath(filter));
+            Assert.ThrowsException<InvalidOperationException>(() => JObject.Parse("[[[[[[{}]]]]]]")!.JsonPath(filter));
         }
 
         [TestMethod]

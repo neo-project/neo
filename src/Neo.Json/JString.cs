@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2022 The Neo Project.
 // 
-// The neo is free software distributed under the MIT software license, 
+// The Neo.Json is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
 // project or http://www.opensource.org/licenses/mit-license.php 
 // for more details.
@@ -8,33 +8,32 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
 using System.Globalization;
 using System.Text.Json;
 
-namespace Neo.IO.Json
+namespace Neo.Json
 {
     /// <summary>
     /// Represents a JSON string.
     /// </summary>
-    public class JString : JObject
+    public class JString : JToken
     {
         /// <summary>
-        /// Gets the value of the JSON object.
+        /// Gets the value of the JSON token.
         /// </summary>
         public string Value { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JString"/> class with the specified value.
         /// </summary>
-        /// <param name="value">The value of the JSON object.</param>
+        /// <param name="value">The value of the JSON token.</param>
         public JString(string value)
         {
             this.Value = value ?? throw new ArgumentNullException(nameof(value));
         }
 
         /// <summary>
-        /// Converts the current JSON object to a boolean value.
+        /// Converts the current JSON token to a boolean value.
         /// </summary>
         /// <returns><see langword="true"/> if value is not empty; otherwise, <see langword="false"/>.</returns>
         public override bool AsBoolean()
@@ -55,11 +54,11 @@ namespace Neo.IO.Json
 
         public override string GetString() => Value;
 
-        public override T TryGetEnum<T>(T defaultValue = default, bool ignoreCase = false)
+        public override T AsEnum<T>(T defaultValue = default, bool ignoreCase = false)
         {
             try
             {
-                return (T)Enum.Parse(typeof(T), Value, ignoreCase);
+                return Enum.Parse<T>(Value, ignoreCase);
             }
             catch
             {
@@ -67,12 +66,19 @@ namespace Neo.IO.Json
             }
         }
 
+        public override T GetEnum<T>(bool ignoreCase = false)
+        {
+            T result = Enum.Parse<T>(Value, ignoreCase);
+            if (!Enum.IsDefined(result)) throw new InvalidCastException();
+            return result;
+        }
+
         internal override void Write(Utf8JsonWriter writer)
         {
             writer.WriteStringValue(Value);
         }
 
-        public override JObject Clone()
+        public override JString Clone()
         {
             return this;
         }
@@ -82,7 +88,7 @@ namespace Neo.IO.Json
             return new JString(value.ToString());
         }
 
-        public static implicit operator JString(string value)
+        public static implicit operator JString?(string? value)
         {
             return value == null ? null : new JString(value);
         }

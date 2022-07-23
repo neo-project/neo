@@ -10,7 +10,7 @@
 
 using Neo.Cryptography.ECC;
 using Neo.IO;
-using Neo.IO.Json;
+using Neo.Json;
 using System;
 
 namespace Neo.SmartContract.Manifest
@@ -120,7 +120,7 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">The permission descriptor represented by a JSON object.</param>
         /// <returns>The converted permission descriptor.</returns>
-        public static ContractPermissionDescriptor FromJson(JObject json)
+        public static ContractPermissionDescriptor FromJson(JString json)
         {
             string str = json.GetString();
             if (str.Length == 42)
@@ -136,7 +136,7 @@ namespace Neo.SmartContract.Manifest
         /// Converts the permission descriptor to a JSON object.
         /// </summary>
         /// <returns>The permission descriptor represented by a JSON object.</returns>
-        public JObject ToJson()
+        public JString ToJson()
         {
             if (IsHash) return Hash.ToString();
             if (IsGroup) return Group.ToString();

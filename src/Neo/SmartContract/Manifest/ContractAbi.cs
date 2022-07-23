@@ -8,7 +8,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO.Json;
+using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -61,8 +61,8 @@ namespace Neo.SmartContract.Manifest
         {
             ContractAbi abi = new()
             {
-                Methods = ((JArray)json["methods"]).Select(u => ContractMethodDescriptor.FromJson(u)).ToArray(),
-                Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.FromJson(u)).ToArray()
+                Methods = ((JArray)json["methods"]).Select(u => ContractMethodDescriptor.FromJson((JObject)u)).ToArray(),
+                Events = ((JArray)json["events"]).Select(u => ContractEventDescriptor.FromJson((JObject)u)).ToArray()
             };
             if (abi.Methods.Length == 0) throw new FormatException();
             return abi;

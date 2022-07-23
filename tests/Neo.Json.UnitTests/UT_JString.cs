@@ -1,9 +1,4 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO.Json;
-using Neo.SmartContract;
-using System;
-
-namespace Neo.UnitTests.IO
+namespace Neo.Json.UnitTests
 {
     [TestClass]
     public class UT_JString
@@ -43,15 +38,15 @@ namespace Neo.UnitTests.IO
         }
 
         [TestMethod]
-        public void TestTryGetEnum()
+        public void TestGetEnum()
         {
-            JString s = new JString("Signature");
-            ContractParameterType cp = s.TryGetEnum<ContractParameterType>(ContractParameterType.Void, false);
-            Assert.AreEqual(ContractParameterType.Signature, cp);
+            JString s = "James";
+            Woo woo = s.GetEnum<Woo>();
+            Assert.AreEqual(Woo.James, woo);
 
-            s = new JString("");
-            cp = s.TryGetEnum<ContractParameterType>(ContractParameterType.Void, false);
-            Assert.AreEqual(ContractParameterType.Void, cp);
+            s = "";
+            woo = s.AsEnum(Woo.Jerry, false);
+            Assert.AreEqual(Woo.Jerry, woo);
         }
     }
 }
