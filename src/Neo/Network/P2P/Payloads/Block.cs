@@ -10,7 +10,7 @@
 
 using Neo.Cryptography;
 using Neo.IO;
-using Neo.IO.Json;
+using Neo.Json;
 using Neo.Ledger;
 using Neo.Persistence;
 using System;

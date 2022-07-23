@@ -1,9 +1,4 @@
-using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO.Json;
-using System;
-
-namespace Neo.UnitTests.IO.Json
+namespace Neo.Json.UnitTests
 {
     [TestClass]
     public class UT_JObject
@@ -77,24 +72,25 @@ namespace Neo.UnitTests.IO.Json
         }
 
         [TestMethod]
-        public void TestTryGetEnum()
+        public void TestGetEnum()
         {
-            alice.TryGetEnum<Woo>().Should().Be(Woo.Tom);
+            alice.AsEnum<Woo>().Should().Be(Woo.Tom);
+
+            Action action = () => alice.GetEnum<Woo>();
+            action.Should().Throw<InvalidCastException>();
         }
 
         [TestMethod]
         public void TestOpImplicitEnum()
         {
-            var obj = new JObject();
-            obj = Woo.Tom;
+            JToken obj = Woo.Tom;
             obj.AsString().Should().Be("Tom");
         }
 
         [TestMethod]
         public void TestOpImplicitString()
         {
-            var obj = new JObject();
-            obj = null;
+            JToken obj = null;
             obj.Should().BeNull();
 
             obj = "{\"aaa\":\"111\"}";
@@ -104,7 +100,7 @@ namespace Neo.UnitTests.IO.Json
         [TestMethod]
         public void TestGetNull()
         {
-            JObject.Null.Should().BeNull();
+            JToken.Null.Should().BeNull();
         }
 
         [TestMethod]
@@ -114,7 +110,18 @@ namespace Neo.UnitTests.IO.Json
             bobClone.Should().NotBeSameAs(bob);
             foreach (var key in bobClone.Properties.Keys)
             {
-                bobClone[key].Should().BeEquivalentTo(bob[key]);
+                switch (bob[key])
+                {
+                    case JToken.Null:
+                        bobClone[key].Should().BeNull();
+                        break;
+                    case JObject obj:
+                        ((JObject)bobClone[key]).Properties.Should().BeEquivalentTo(obj.Properties);
+                        break;
+                    default:
+                        bobClone[key].Should().BeEquivalentTo(bob[key]);
+                        break;
+                }
             }
         }
     }

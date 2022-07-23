@@ -10,7 +10,7 @@
 
 using Neo.IO;
 using Neo.IO.Caching;
-using Neo.IO.Json;
+using Neo.Json;
 using Neo.Persistence;
 using System;
 using System.IO;

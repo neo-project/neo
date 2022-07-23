@@ -8,7 +8,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO.Json;
+using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -30,11 +30,11 @@ namespace Neo.SmartContract
     public static class JsonSerializer
     {
         /// <summary>
-        /// Serializes a <see cref="StackItem"/> to a <see cref="JObject"/>.
+        /// Serializes a <see cref="StackItem"/> to a <see cref="JToken"/>.
         /// </summary>
         /// <param name="item">The <see cref="StackItem"/> to serialize.</param>
         /// <returns>The serialized object.</returns>
-        public static JObject Serialize(StackItem item)
+        public static JToken Serialize(StackItem item)
         {
             switch (item)
             {
@@ -76,7 +76,7 @@ namespace Neo.SmartContract
                     }
                 case Null _:
                     {
-                        return JObject.Null;
+                        return JToken.Null;
                     }
                 default: throw new FormatException();
             }
@@ -156,19 +156,19 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// Deserializes a <see cref="StackItem"/> from <see cref="JObject"/>.
+        /// Deserializes a <see cref="StackItem"/> from <see cref="JToken"/>.
         /// </summary>
-        /// <param name="json">The <see cref="JObject"/> to deserialize.</param>
+        /// <param name="json">The <see cref="JToken"/> to deserialize.</param>
         /// <param name="limits">The limits for the deserialization.</param>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(JObject json, ExecutionEngineLimits limits, ReferenceCounter referenceCounter = null)
+        public static StackItem Deserialize(JToken json, ExecutionEngineLimits limits, ReferenceCounter referenceCounter = null)
         {
             uint maxStackSize = limits.MaxStackSize;
             return Deserialize(json, ref maxStackSize, referenceCounter);
         }
 
-        private static StackItem Deserialize(JObject json, ref uint maxStackSize, ReferenceCounter referenceCounter)
+        private static StackItem Deserialize(JToken json, ref uint maxStackSize, ReferenceCounter referenceCounter)
         {
             if (maxStackSize-- == 0) throw new FormatException();
             switch (json)
@@ -180,7 +180,7 @@ namespace Neo.SmartContract
                 case JArray array:
                     {
                         List<StackItem> list = new(array.Count);
-                        foreach (JObject obj in array)
+                        foreach (JToken obj in array)
                             list.Add(Deserialize(obj, ref maxStackSize, referenceCounter));
                         return new Array(referenceCounter, list);
                     }
