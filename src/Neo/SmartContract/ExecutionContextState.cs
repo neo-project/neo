@@ -24,9 +24,14 @@ namespace Neo.SmartContract
         public UInt160 ScriptHash { get; set; }
 
         /// <summary>
-        /// The script hash of the calling contract.
+        /// The calling context.
         /// </summary>
-        public UInt160 CallingScriptHash { get; set; }
+        public ExecutionContext CallingContext { get; set; }
+
+        /// <summary>
+        /// The script hash of the calling native contract. Used in native contracts only.
+        /// </summary>
+        internal UInt160 NativeCallingScriptHash { get; set; }
 
         /// <summary>
         /// The <see cref="ContractState"/> of the current context.
@@ -42,6 +47,6 @@ namespace Neo.SmartContract
 
         public int NotificationCount { get; set; }
 
-        public bool PushNullWhenReturn { get; set; }
+        public bool IsDynamicCall { get; set; }
     }
 }
