@@ -306,6 +306,8 @@ namespace Neo.SmartContract
         protected internal void RuntimeNotify(byte[] eventName, Array state)
         {
             if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
+            if (CurrentContext.GetState<ExecutionContextState>().Contract is null)
+                throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
             using MemoryStream ms = new(MaxNotificationSize);
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             BinarySerializer.Serialize(writer, state, MaxNotificationSize);
