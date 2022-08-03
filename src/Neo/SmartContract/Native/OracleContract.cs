@@ -116,6 +116,8 @@ namespace Neo.SmartContract.Native
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify)]
         private ContractTask Finish(ApplicationEngine engine)
         {
+            if (engine.InvocationStack.Count != 2) throw new InvalidOperationException();
+            if (engine.GetInvocationCounter() != 1) throw new InvalidOperationException();
             Transaction tx = (Transaction)engine.ScriptContainer;
             OracleResponse response = tx.GetAttribute<OracleResponse>();
             if (response == null) throw new ArgumentException("Oracle response was not found");
