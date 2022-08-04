@@ -209,7 +209,7 @@ namespace Neo.SmartContract
             ExecutionContext context = LoadScript(script, configureState: p =>
             {
                 p.CallingContext = CurrentContext;
-                p.CallFlags = callFlags & state.CallFlags;
+                p.CallFlags = callFlags & state.CallFlags & CallFlags.ReadOnly;
                 p.IsDynamicCall = true;
             });
 
