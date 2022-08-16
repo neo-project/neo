@@ -9,7 +9,7 @@
 // modifications are permitted.
 
 using Neo.IO;
-using Neo.IO.Json;
+using Neo.Json;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
@@ -51,7 +51,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         private protected override void ParseJson(JObject json)
         {
-            Expressions = json["expressions"].GetArray().Select(FromJson).ToArray();
+            Expressions = ((JArray)json["expressions"]).Select(p => FromJson((JObject)p)).ToArray();
         }
 
         public override JObject ToJson()

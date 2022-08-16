@@ -8,7 +8,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO.Json;
+using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -58,7 +58,7 @@ namespace Neo.SmartContract.Manifest
             ContractEventDescriptor descriptor = new()
             {
                 Name = json["name"].GetString(),
-                Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson(u)).ToArray(),
+                Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JObject)u)).ToArray(),
             };
             if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException();
             _ = descriptor.Parameters.ToDictionary(p => p.Name);

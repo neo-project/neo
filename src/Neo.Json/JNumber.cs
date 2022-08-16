@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2022 The Neo Project.
 // 
-// The neo is free software distributed under the MIT software license, 
+// The Neo.Json is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
 // project or http://www.opensource.org/licenses/mit-license.php 
 // for more details.
@@ -8,16 +8,15 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
 using System.Globalization;
 using System.Text.Json;
 
-namespace Neo.IO.Json
+namespace Neo.Json
 {
     /// <summary>
     /// Represents a JSON number.
     /// </summary>
-    public class JNumber : JObject
+    public class JNumber : JToken
     {
         /// <summary>
         /// Represents the largest safe integer in JSON.
@@ -30,14 +29,14 @@ namespace Neo.IO.Json
         public static readonly long MIN_SAFE_INTEGER = -MAX_SAFE_INTEGER;
 
         /// <summary>
-        /// Gets the value of the JSON object.
+        /// Gets the value of the JSON token.
         /// </summary>
         public double Value { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JNumber"/> class with the specified value.
         /// </summary>
-        /// <param name="value">The value of the JSON object.</param>
+        /// <param name="value">The value of the JSON token.</param>
         public JNumber(double value = 0)
         {
             if (!double.IsFinite(value)) throw new FormatException();
@@ -45,7 +44,7 @@ namespace Neo.IO.Json
         }
 
         /// <summary>
-        /// Converts the current JSON object to a boolean value.
+        /// Converts the current JSON token to a boolean value.
         /// </summary>
         /// <returns><see langword="true"/> if value is not zero; otherwise, <see langword="false"/>.</returns>
         public override bool AsBoolean()
@@ -70,7 +69,7 @@ namespace Neo.IO.Json
             return AsString();
         }
 
-        public override T TryGetEnum<T>(T defaultValue = default, bool ignoreCase = false)
+        public override T AsEnum<T>(T defaultValue = default, bool ignoreCase = false)
         {
             Type enumType = typeof(T);
             object value;
@@ -86,12 +85,30 @@ namespace Neo.IO.Json
             return Enum.IsDefined(enumType, result) ? (T)result : defaultValue;
         }
 
+        public override T GetEnum<T>(bool ignoreCase = false)
+        {
+            Type enumType = typeof(T);
+            object value;
+            try
+            {
+                value = Convert.ChangeType(Value, enumType.GetEnumUnderlyingType());
+            }
+            catch (OverflowException)
+            {
+                throw new InvalidCastException();
+            }
+            object result = Enum.ToObject(enumType, value);
+            if (!Enum.IsDefined(enumType, result))
+                throw new InvalidCastException();
+            return (T)result;
+        }
+
         internal override void Write(Utf8JsonWriter writer)
         {
             writer.WriteNumberValue(Value);
         }
 
-        public override JObject Clone()
+        public override JNumber Clone()
         {
             return this;
         }

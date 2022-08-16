@@ -10,7 +10,7 @@
 
 using Neo.Cryptography.ECC;
 using Neo.IO;
-using Neo.IO.Json;
+using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
@@ -44,8 +44,8 @@ namespace Neo.SmartContract
             public ContextItem(JObject json)
             {
                 this.Script = Convert.FromBase64String(json["script"].AsString());
-                this.Parameters = ((JArray)json["parameters"]).Select(p => ContractParameter.FromJson(p)).ToArray();
-                this.Signatures = json["signatures"].Properties.Select(p => new
+                this.Parameters = ((JArray)json["parameters"]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray();
+                this.Signatures = ((JObject)json["signatures"]).Properties.Select(p => new
                 {
                     PublicKey = ECPoint.Parse(p.Key, ECCurve.Secp256r1),
                     Signature = Convert.FromBase64String(p.Value.AsString())
@@ -238,9 +238,9 @@ namespace Neo.SmartContract
                 if (hash != verifiable.Hash) throw new FormatException();
             }
             ContractParametersContext context = new(snapshot, verifiable, (uint)json["network"].GetInt32());
-            foreach (var property in json["items"].Properties)
+            foreach (var (key, value) in ((JObject)json["items"]).Properties)
             {
-                context.ContextItems.Add(UInt160.Parse(property.Key), new ContextItem(property.Value));
+                context.ContextItems.Add(UInt160.Parse(key), new ContextItem((JObject)value));
             }
             return context;
         }
@@ -326,7 +326,7 @@ namespace Neo.SmartContract
         /// <returns>The parsed context.</returns>
         public static ContractParametersContext Parse(string value, DataCache snapshot)
         {
-            return FromJson(JObject.Parse(value), snapshot);
+            return FromJson((JObject)JToken.Parse(value), snapshot);
         }
 
         /// <summary>

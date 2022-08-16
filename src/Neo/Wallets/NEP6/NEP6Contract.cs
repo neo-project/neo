@@ -8,7 +8,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO.Json;
+using Neo.Json;
 using Neo.SmartContract;
 using System;
 using System.Linq;
@@ -26,7 +26,7 @@ namespace Neo.Wallets.NEP6
             return new NEP6Contract
             {
                 Script = Convert.FromBase64String(json["script"].AsString()),
-                ParameterList = ((JArray)json["parameters"]).Select(p => p["type"].TryGetEnum<ContractParameterType>()).ToArray(),
+                ParameterList = ((JArray)json["parameters"]).Select(p => p["type"].GetEnum<ContractParameterType>()).ToArray(),
                 ParameterNames = ((JArray)json["parameters"]).Select(p => p["name"].AsString()).ToArray(),
                 Deployed = json["deployed"].AsBoolean()
             };

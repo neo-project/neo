@@ -1,10 +1,6 @@
-using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO.Caching;
 using System.Collections;
-using System.Collections.Generic;
 
-namespace Neo.UnitTests.IO.Caching
+namespace Neo.Json.UnitTests
 {
     [TestClass]
     public class UT_OrderedDictionary
@@ -57,7 +53,7 @@ namespace Neo.UnitTests.IO.Caching
         public void TestGetKeys()
         {
             var keys = od.Keys;
-            keys.Contains("a").Should().BeTrue();
+            keys.Should().Contain("a");
             keys.Count.Should().Be(3);
         }
 
@@ -65,7 +61,7 @@ namespace Neo.UnitTests.IO.Caching
         public void TestGetValues()
         {
             var values = od.Values;
-            values.Contains(1).Should().BeTrue();
+            values.Should().Contain(1);
             values.Count.Should().Be(3);
         }
 
