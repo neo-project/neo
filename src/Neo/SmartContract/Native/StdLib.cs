@@ -102,7 +102,7 @@ namespace Neo.SmartContract.Native
         {
             return @base switch
             {
-                10 => BigInteger.Parse(value, NumberStyles.None),
+                10 => BigInteger.Parse(value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture),
                 16 => BigInteger.Parse(value, NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture),
                 _ => throw new ArgumentOutOfRangeException(nameof(@base))
             };
