@@ -13,9 +13,11 @@
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -28,6 +30,7 @@ namespace Neo.SmartContract.Native
     public sealed class ContractManagement : NativeContract
     {
         private const byte Prefix_MinimumDeploymentFee = 20;
+        private const byte Prefix_ContractHash = 17;
         private const byte Prefix_NextAvailableId = 15;
         private const byte Prefix_Contract = 8;
 
@@ -144,6 +147,43 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
+        /// Maps specified ID to deployed contract hash if it's available.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="id">Contract ID.</param>
+        /// <returns>Contract hash.</returns>
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        public UInt160 GetContractHash(DataCache snapshot, int id)
+        {
+            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_ContractHash).AddBigEndian(id));
+            if (item is null) return null;
+            return new UInt160(item.Value.Span);
+        }
+
+        /// <summary>
+        /// Gets hashes of all deployed contracts.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <returns>Iterator with hashes of all deployed contracts.</returns>
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
+        private IIterator GetContractHashes(DataCache snapshot)
+        {
+            const FindOptions options = FindOptions.RemovePrefix;
+            var enumerator = GetContractHashesInternal(snapshot)
+                .Select(p => (p.Key, p.Value))
+                .GetEnumerator();
+            return new StorageIterator(enumerator, 1, options);
+        }
+
+        internal IEnumerable<(StorageKey Key, StorageItem Value, int Id, UInt160 Hash)> GetContractHashesInternal(DataCache snapshot)
+        {
+            byte[] prefix_key = CreateStorageKey(Prefix_ContractHash).ToArray();
+            return snapshot.Find(prefix_key)
+                .Select(p => (p.Key, p.Value, Id: BinaryPrimitives.ReadInt32BigEndian(p.Key.Key.Span[1..]), Hash: new UInt160(p.Value.Value.Span)))
+                .Where(p => p.Id >= 0);
+        }
+
+        /// <summary>
         /// Check if a method exists in a contract.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
@@ -215,6 +255,7 @@ namespace Neo.SmartContract.Native
             if (!contract.Manifest.IsValid(hash)) throw new InvalidOperationException($"Invalid Manifest Hash: {hash}");
 
             engine.Snapshot.Add(key, new StorageItem(contract));
+            engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(hash.ToArray()));
 
             await OnDeploy(engine, contract, data, false);
 
@@ -270,6 +311,7 @@ namespace Neo.SmartContract.Native
             ContractState contract = engine.Snapshot.TryGet(ckey)?.GetInteroperable<ContractState>();
             if (contract is null) return;
             engine.Snapshot.Delete(ckey);
+            engine.Snapshot.Delete(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id));
             foreach (var (key, _) in engine.Snapshot.Find(StorageKey.CreateSearchPrefix(contract.Id, ReadOnlySpan<byte>.Empty)))
                 engine.Snapshot.Delete(key);
             // lock contract
