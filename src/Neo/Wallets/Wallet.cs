@@ -779,8 +779,7 @@ namespace Neo.Wallets
 
         private static IWalletFactory GetFactory(string path)
         {
-            string filename = System.IO.Path.GetFileName(path);
-            return factories.FirstOrDefault(p => p.Handle(filename));
+            return factories.FirstOrDefault(p => p.Handle(path));
         }
 
         public static void RegisterFactory(IWalletFactory factory)
