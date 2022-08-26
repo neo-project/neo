@@ -153,11 +153,12 @@ namespace Neo.SmartContract.Native
         /// <param name="id">Contract ID.</param>
         /// <returns>Contract hash.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public UInt160 GetContractHash(DataCache snapshot, int id)
+        public ContractState GetContractById(DataCache snapshot, int id)
         {
             StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_ContractHash).AddBigEndian(id));
             if (item is null) return null;
-            return new UInt160(item.Value.Span);
+            var hash = new UInt160(item.Value.Span);
+            return GetContract(snapshot, hash);
         }
 
         /// <summary>
