@@ -147,11 +147,11 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Maps specified ID to deployed contract hash if it's available.
+        /// Maps specified ID to deployed contract.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="id">Contract ID.</param>
-        /// <returns>Contract hash.</returns>
+        /// <returns>The deployed contract.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public ContractState GetContractById(DataCache snapshot, int id)
         {
