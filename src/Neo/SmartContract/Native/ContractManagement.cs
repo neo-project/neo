@@ -30,9 +30,9 @@ namespace Neo.SmartContract.Native
     public sealed class ContractManagement : NativeContract
     {
         private const byte Prefix_MinimumDeploymentFee = 20;
-        private const byte Prefix_ContractHash = 17;
         private const byte Prefix_NextAvailableId = 15;
         private const byte Prefix_Contract = 8;
+        private const byte Prefix_ContractHash = 12;
 
         internal ContractManagement()
         {
