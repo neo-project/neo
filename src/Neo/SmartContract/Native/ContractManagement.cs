@@ -170,18 +170,13 @@ namespace Neo.SmartContract.Native
         private IIterator GetContractHashes(DataCache snapshot)
         {
             const FindOptions options = FindOptions.RemovePrefix;
-            var enumerator = GetContractHashesInternal(snapshot)
+            byte[] prefix_key = CreateStorageKey(Prefix_ContractHash).ToArray();
+            var enumerator = snapshot.Find(prefix_key)
+                .Select(p => (p.Key, p.Value, Id: BinaryPrimitives.ReadInt32BigEndian(p.Key.Key.Span[1..])))
+                .Where(p => p.Id >= 0)
                 .Select(p => (p.Key, p.Value))
                 .GetEnumerator();
             return new StorageIterator(enumerator, 1, options);
-        }
-
-        internal IEnumerable<(StorageKey Key, StorageItem Value, int Id, UInt160 Hash)> GetContractHashesInternal(DataCache snapshot)
-        {
-            byte[] prefix_key = CreateStorageKey(Prefix_ContractHash).ToArray();
-            return snapshot.Find(prefix_key)
-                .Select(p => (p.Key, p.Value, Id: BinaryPrimitives.ReadInt32BigEndian(p.Key.Key.Span[1..]), Hash: new UInt160(p.Value.Value.Span)))
-                .Where(p => p.Id >= 0);
         }
 
         /// <summary>
