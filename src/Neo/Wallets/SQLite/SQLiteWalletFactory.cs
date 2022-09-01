@@ -8,7 +8,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Plugins;
 using System.IO;
 
 namespace Neo.Wallets.SQLite
@@ -17,9 +16,9 @@ namespace Neo.Wallets.SQLite
     {
         public static readonly SQLiteWalletFactory Instance = new();
 
-        public bool Handle(string filename)
+        public bool Handle(string path)
         {
-            return Path.GetExtension(filename).ToLowerInvariant() == ".db3";
+            return Path.GetExtension(path).ToLowerInvariant() == ".db3";
         }
 
         public Wallet CreateWallet(string name, string path, string password, ProtocolSettings settings)
