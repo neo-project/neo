@@ -162,7 +162,7 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets hashes of all deployed contracts.
+        /// Gets hashes of all non native deployed contracts.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>Iterator with hashes of all deployed contracts.</returns>
