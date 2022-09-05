@@ -118,14 +118,5 @@ namespace Neo.UnitTests.Cryptography
             filter.Add(tx.Hash.ToArray());
             filter.Test(tx).Should().BeTrue();
         }
-
-        [TestMethod]
-        public void TestStringToAesKey()
-        {
-            string password = "hello world";
-            string string1 = "bc62d4b80d9e36da29c16c5d4d9f11731f36052c72401a76c23c0fb5a9b74423";
-            byte[] byteArray = string1.HexToBytes();
-            password.ToAesKey().Should().Equal(byteArray);
-        }
     }
 }

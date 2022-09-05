@@ -5,7 +5,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
-using Neo.Wallets.SQLite;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -336,9 +335,10 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestMigrate()
         {
-            string path = GetRandomPath(".db3");
-            UserWallet uw = UserWallet.Create(path, "123", ProtocolSettings.Default);
+            string path = GetRandomPath(".json");
+            Wallet uw = Wallet.Create(null, path, "123", ProtocolSettings.Default);
             uw.CreateAccount(keyPair.PrivateKey);
+            uw.Save();
             string npath = GetRandomPath(".json");
             Wallet nw = Wallet.Migrate(npath, path, "123", ProtocolSettings.Default);
             bool result = nw.Contains(testScriptHash);
