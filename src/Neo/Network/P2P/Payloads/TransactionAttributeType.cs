@@ -27,6 +27,12 @@ namespace Neo.Network.P2P.Payloads
         /// Indicates that the transaction is an oracle response.
         /// </summary>
         [ReflectionCache(typeof(OracleResponse))]
-        OracleResponse = 0x11
+        OracleResponse = 0x11,
+
+        /// <summary>
+        /// Indicates that the transaction is not valid before <see cref="NotValidBefore.Height"/>.
+        /// </summary>
+        [ReflectionCache(typeof(NotValidBefore))]
+        NotValidBefore = 0x20
     }
 }
