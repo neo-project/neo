@@ -100,6 +100,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 6)]
         public static BigInteger Atoi([MaxLength(MaxInputLength)] string value, int @base)
         {
+            value = value.Trim(' ');
             return @base switch
             {
                 10 => BigInteger.Parse(value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture),
