@@ -14,6 +14,7 @@
     <PackageReference Include="BouncyCastle.NetCore" Version="1.9.0" />
     <PackageReference Include="K4os.Compression.LZ4" Version="1.2.16" />
     <PackageReference Include="Neo.VM" Version="3.4.0" />
+	<PackageReference Include="Neo.Cryptography.BLS12_381" Version="0.1.0" />
   </ItemGroup>
 
   <ItemGroup>
