@@ -82,7 +82,7 @@ namespace Neo.SmartContract
             bool hasReturnValue = md.ReturnType != ContractParameterType.Void;
 
             ExecutionContext context = CallContractInternal(contract, md, callFlags, hasReturnValue, args);
-            if (!hasReturnValue) context.GetState<ExecutionContextState>().PushNullWhenReturn = true;
+            context.GetState<ExecutionContextState>().IsDynamicCall = true;
         }
 
         /// <summary>

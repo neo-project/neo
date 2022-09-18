@@ -8,7 +8,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Plugins;
 using System;
 using System.IO;
 
@@ -18,9 +17,9 @@ namespace Neo.Wallets.NEP6
     {
         public static readonly NEP6WalletFactory Instance = new();
 
-        public bool Handle(string filename)
+        public bool Handle(string path)
         {
-            return Path.GetExtension(filename).ToLowerInvariant() == ".json";
+            return Path.GetExtension(path).ToLowerInvariant() == ".json";
         }
 
         public Wallet CreateWallet(string name, string path, string password, ProtocolSettings settings)

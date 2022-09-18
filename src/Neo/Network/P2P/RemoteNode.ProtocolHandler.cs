@@ -19,7 +19,6 @@ using Neo.SmartContract.Native;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
 
@@ -30,7 +29,7 @@ namespace Neo.Network.P2P
     partial class RemoteNode
     {
         private class Timer { }
-        private class PendingKnownHashesCollection : KeyedCollection<UInt256, (UInt256, DateTime)>
+        private class PendingKnownHashesCollection : KeyedCollectionSlim<UInt256, (UInt256, DateTime)>
         {
             protected override UInt256 GetKeyForItem((UInt256, DateTime) item)
             {
@@ -412,9 +411,9 @@ namespace Neo.Network.P2P
             DateTime oneMinuteAgo = TimeProvider.Current.UtcNow.AddMinutes(-1);
             while (pendingKnownHashes.Count > 0)
             {
-                var (_, time) = pendingKnownHashes[0];
+                var (_, time) = pendingKnownHashes.First;
                 if (oneMinuteAgo <= time) break;
-                pendingKnownHashes.RemoveAt(0);
+                pendingKnownHashes.RemoveFirst();
             }
             if (oneMinuteAgo > lastSent)
                 EnqueueMessage(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(system.StoreView))));

@@ -12,6 +12,7 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
@@ -89,6 +90,12 @@ namespace Neo.SmartContract
         /// Gets the script hash of the entry context.
         /// </summary>
         public static readonly InteropDescriptor System_Runtime_GetEntryScriptHash = Register("System.Runtime.GetEntryScriptHash", nameof(EntryScriptHash), 1 << 4, CallFlags.None);
+
+        /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Runtime.LoadScript.
+        /// Loads a script at rumtime.
+        /// </summary>
+        public static readonly InteropDescriptor System_Runtime_LoadScript = Register("System.Runtime.LoadScript", nameof(RuntimeLoadScript), 1 << 15, CallFlags.AllowCall);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.CheckWitness.
@@ -187,6 +194,27 @@ namespace Neo.SmartContract
         {
             if (ScriptContainer is not IInteroperable interop) throw new InvalidOperationException();
             return interop.ToStackItem(ReferenceCounter);
+        }
+
+        /// <summary>
+        /// The implementation of System.Runtime.LoadScript.
+        /// Loads a script at rumtime.
+        /// </summary>
+        protected internal void RuntimeLoadScript(byte[] script, CallFlags callFlags, Array args)
+        {
+            if ((callFlags & ~CallFlags.All) != 0)
+                throw new ArgumentOutOfRangeException(nameof(callFlags));
+
+            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
+            ExecutionContext context = LoadScript(script, configureState: p =>
+            {
+                p.CallingContext = CurrentContext;
+                p.CallFlags = callFlags & state.CallFlags & CallFlags.ReadOnly;
+                p.IsDynamicCall = true;
+            });
+
+            for (int i = args.Count - 1; i >= 0; i--)
+                context.EvaluationStack.Push(args[i]);
         }
 
         /// <summary>
@@ -306,6 +334,8 @@ namespace Neo.SmartContract
         protected internal void RuntimeNotify(byte[] eventName, Array state)
         {
             if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
+            if (CurrentContext.GetState<ExecutionContextState>().Contract is null)
+                throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
             using MemoryStream ms = new(MaxNotificationSize);
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             BinarySerializer.Serialize(writer, state, MaxNotificationSize);

@@ -12,7 +12,7 @@ namespace Neo.Wallets
 {
     public interface IWalletFactory
     {
-        public bool Handle(string filename);
+        public bool Handle(string path);
 
         public Wallet CreateWallet(string name, string path, string password, ProtocolSettings settings);
 

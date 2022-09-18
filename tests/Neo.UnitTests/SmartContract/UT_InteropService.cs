@@ -93,6 +93,7 @@ namespace Neo.UnitTests.SmartContract
                 // Execute
 
                 engine.LoadScript(script.ToArray());
+                engine.CurrentContext.GetState<ExecutionContextState>().Contract = new();
                 var currentScriptHash = engine.EntryScriptHash;
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -145,6 +146,7 @@ namespace Neo.UnitTests.SmartContract
                 // Execute
 
                 engine.LoadScript(script.ToArray());
+                engine.CurrentContext.GetState<ExecutionContextState>().Contract = new();
                 var currentScriptHash = engine.EntryScriptHash;
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
