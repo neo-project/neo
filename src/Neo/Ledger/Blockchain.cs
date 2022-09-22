@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 
 namespace Neo.Ledger
@@ -411,6 +412,7 @@ namespace Neo.Ledger
                     transactionStates = engine.GetState<TransactionState[]>();
                 }
                 DataCache clonedSnapshot = snapshot.CreateSnapshot();
+
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (TransactionState transactionState in transactionStates)
                 {
@@ -426,6 +428,7 @@ namespace Neo.Ledger
                     {
                         clonedSnapshot = snapshot.CreateSnapshot();
                     }
+                    block._gasConsumed.Add(tx.Hash, engine.GasConsumed);
                     ApplicationExecuted application_executed = new(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);

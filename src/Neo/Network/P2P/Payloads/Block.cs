@@ -14,6 +14,7 @@ using Neo.Json;
 using Neo.Ledger;
 using Neo.Persistence;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -80,6 +81,8 @@ namespace Neo.Network.P2P.Payloads
         /// The witness of the block.
         /// </summary>
         public Witness Witness => Header.Witness;
+
+        protected internal Dictionary<UInt256, long> _gasConsumed = new();
 
         InventoryType IInventory.InventoryType => InventoryType.Block;
         public int Size => Header.Size + Transactions.GetVarSize();

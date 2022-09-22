@@ -36,9 +36,11 @@ namespace Neo.SmartContract.Native
             long totalNetworkFee = 0;
             foreach (Transaction tx in engine.PersistingBlock.Transactions)
             {
-                await Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
+                var gasConsumed = engine.PersistingBlock._gasConsumed[tx.Hash];
+                await Burn(engine, tx.Sender, gasConsumed + tx.NetworkFee);
                 totalNetworkFee += tx.NetworkFee;
             }
+
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings.ValidatorsCount);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
             await Mint(engine, primary, totalNetworkFee, false);
