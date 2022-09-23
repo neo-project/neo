@@ -55,6 +55,10 @@ namespace Neo.Ledger
         /// </summary>
         private readonly Dictionary<UInt256, PoolItem> _unsortedTransactions = new();
         /// <summary>
+        /// Store transaction hashes that conflict with verified mempooled transactions.
+        /// </summary>
+        private readonly Dictionary<UInt256, List<UInt256>> _conflicts = new();
+        /// <summary>
         /// Stores the verified sorted transactions currently in the pool.
         /// </summary>
         private readonly SortedSet<PoolItem> _sortedTransactions = new();
@@ -275,7 +279,8 @@ namespace Neo.Ledger
             }
         }
 
-        // Note: this must only be called from a single thread (the Blockchain actor)
+        // Note: this must only be called from a single thread (the Blockchain actor) and
+        // doesn't take into account conflicting transactions.
         internal bool CanTransactionFitInPool(Transaction tx)
         {
             if (Count < Capacity) return true;
@@ -293,15 +298,31 @@ namespace Neo.Ledger
             _txRwLock.EnterWriteLock();
             try
             {
-                VerifyResult result = tx.VerifyStateDependent(_system.Settings, snapshot, VerificationContext);
+                if (!CheckConflicts(tx, out List<PoolItem> conflictsToBeRemoved)) return VerifyResult.HasConflicts;
+                VerifyResult result = tx.VerifyStateDependent(_system.Settings, snapshot, VerificationContext, conflictsToBeRemoved.Select(c => c.Tx));
                 if (result != VerifyResult.Succeed) return result;
 
                 _unsortedTransactions.Add(tx.Hash, poolItem);
                 VerificationContext.AddTransaction(tx);
                 _sortedTransactions.Add(poolItem);
+                foreach (var conflict in conflictsToBeRemoved)
+                {
+                    if (TryRemoveVerified(conflict.Tx.Hash, out var _))
+                        VerificationContext.RemoveTransaction(conflict.Tx);
+                }
+                removedTransactions = conflictsToBeRemoved.Select(itm => itm.Tx).ToList();
+                foreach (var attr in tx.GetAttributes<Conflicts>())
+                {
+                    if (!_conflicts.TryGetValue(attr.Hash, out var pooled))
+                    {
+                        pooled = new List<UInt256>();
+                    }
+                    pooled.Add(tx.Hash);
+                    _conflicts.AddOrSet(attr.Hash, pooled);
+                }
 
                 if (Count > Capacity)
-                    removedTransactions = RemoveOverCapacity();
+                    removedTransactions.AddRange(RemoveOverCapacity());
             }
             finally
             {
@@ -309,7 +330,7 @@ namespace Neo.Ledger
             }
 
             TransactionAdded?.Invoke(this, poolItem.Tx);
-            if (removedTransactions != null)
+            if (removedTransactions.Count() > 0)
                 TransactionRemoved?.Invoke(this, new()
                 {
                     Transactions = removedTransactions,
@@ -318,6 +339,44 @@ namespace Neo.Ledger
 
             if (!_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.OutOfMemory;
             return VerifyResult.Succeed;
+        }
+
+        /// <summary>
+        /// Checks whether transaction conflicts with mempooled verified transactions
+        /// and can be added to the pool. If true, then transactions from conflictsList
+        /// should be removed from the verified structures (_unsortedTransactions and
+        /// _sortedTransactions).
+        /// </summary>
+        /// <param name="tx">The <see cref="Transaction"/> that needs to be checked.</param>
+        /// <param name="conflictsList">The list of conflicting verified transactions that should be removed from the pool if tx fits the pool.</param>
+        /// <returns>True if transaction fits the pool, otherwise false.</returns>
+        private bool CheckConflicts(Transaction tx, out List<PoolItem> conflictsList)
+        {
+            conflictsList = new();
+            // Step 1: check if `tx` was in attributes of mempooled transactions.
+            if (_conflicts.TryGetValue(tx.Hash, out var conlicting))
+            {
+                foreach (var hash in conlicting)
+                {
+                    var existingTx = _unsortedTransactions[hash];
+                    if (existingTx.Tx.Signers.Select(s => s.Account).Contains(tx.Sender) && existingTx.Tx.NetworkFee > tx.NetworkFee) return false;
+                    conflictsList.Add(existingTx);
+                }
+            }
+            // Step 2: check if mempooled transactions were in `tx`'s attributes.
+            foreach (var hash in tx.GetAttributes<Conflicts>().Select(p => p.Hash))
+            {
+                if (_unsortedTransactions.TryGetValue(hash, out PoolItem existingTx))
+                {
+                    if (!tx.Signers.Select(p => p.Account).Contains(existingTx.Tx.Sender)) return false;
+                    if (existingTx.Tx.NetworkFee >= tx.NetworkFee) return false;
+                    conflictsList.Add(existingTx);
+                }
+            }
+            // Step 3: take into account sender's conflicting transactions while balance check,
+            // this will be done in VerifyStateDependant.
+
+            return true;
         }
 
         private List<Transaction> RemoveOverCapacity()
@@ -332,7 +391,10 @@ namespace Neo.Ledger
                 removedTransactions.Add(minItem.Tx);
 
                 if (ReferenceEquals(sortedPool, _sortedTransactions))
+                {
+                    RemoveConflictsOfVerified(minItem);
                     VerificationContext.RemoveTransaction(minItem.Tx);
+                }
             } while (Count > Capacity);
 
             return removedTransactions;
@@ -347,7 +409,25 @@ namespace Neo.Ledger
             _unsortedTransactions.Remove(hash);
             _sortedTransactions.Remove(item);
 
+            RemoveConflictsOfVerified(item);
+
             return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void RemoveConflictsOfVerified(PoolItem item)
+        {
+            foreach (var h in item.Tx.GetAttributes<Conflicts>().Select(attr => attr.Hash))
+            {
+                if (_conflicts.TryGetValue(h, out List<UInt256> conflicts))
+                {
+                    conflicts.Remove(item.Tx.Hash);
+                    if (conflicts.Count() == 0)
+                    {
+                        _conflicts.Remove(h);
+                    }
+                }
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -374,27 +454,59 @@ namespace Neo.Ledger
             _unsortedTransactions.Clear();
             VerificationContext = new TransactionVerificationContext();
             _sortedTransactions.Clear();
+            _conflicts.Clear();
         }
 
         // Note: this must only be called from a single thread (the Blockchain actor)
         internal void UpdatePoolForBlockPersisted(Block block, DataCache snapshot)
         {
+            var conflictingItems = new List<Transaction>();
             _txRwLock.EnterWriteLock();
             try
             {
+                HashSet<UInt256> conflicts = new HashSet<UInt256>();
                 // First remove the transactions verified in the block.
+                // No need to modify VerificationContext as it will be reset afterwards.
                 foreach (Transaction tx in block.Transactions)
                 {
-                    if (TryRemoveVerified(tx.Hash, out _)) continue;
-                    TryRemoveUnVerified(tx.Hash, out _);
+                    if (!TryRemoveVerified(tx.Hash, out _)) TryRemoveUnVerified(tx.Hash, out _);
+                    foreach (var h in tx.GetAttributes<Conflicts>().Select(a => a.Hash))
+                    {
+                        conflicts.Add(h);
+                    }
                 }
 
-                // Add all the previously verified transactions back to the unverified transactions
+                // Then remove the transactions conflicting with the accepted ones.
+                // No need to modify VerificationContext as it will be reset afterwards.
+                var persisted = block.Transactions.Select(t => t.Hash);
+                var stale = new List<UInt256>();
+                foreach (var item in _sortedTransactions)
+                {
+                    if (conflicts.Contains(item.Tx.Hash) || item.Tx.GetAttributes<Conflicts>().Select(a => a.Hash).Intersect(persisted).Count() > 0)
+                    {
+                        stale.Add(item.Tx.Hash);
+                        conflictingItems.Add(item.Tx);
+                    }
+                }
+                foreach (var h in stale)
+                {
+                    if (!TryRemoveVerified(h, out _)) TryRemoveUnVerified(h, out _);
+                }
+
+                // Add all the previously verified transactions back to the unverified transactions and clear mempool conflicts list.
                 InvalidateVerifiedTransactions();
             }
             finally
             {
                 _txRwLock.ExitWriteLock();
+            }
+            if (conflictingItems.Count() > 0)
+            {
+                TransactionRemoved?.Invoke(this, new()
+                {
+                    Transactions = conflictingItems.ToArray(),
+                    Reason = TransactionRemovalReason.Conflict,
+                });
             }
 
             // If we know about headers of future blocks, no point in verifying transactions from the unverified tx pool
@@ -431,10 +543,31 @@ namespace Neo.Ledger
                 // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
                 foreach (PoolItem item in unverifiedSortedTxPool.Reverse().Take(count))
                 {
-                    if (item.Tx.VerifyStateDependent(_system.Settings, snapshot, VerificationContext) == VerifyResult.Succeed)
+                    if (CheckConflicts(item.Tx, out List<PoolItem> conflictsToBeRemoved) &&
+                        item.Tx.VerifyStateDependent(_system.Settings, snapshot, VerificationContext, conflictsToBeRemoved.Select(c => c.Tx)) == VerifyResult.Succeed)
                     {
                         reverifiedItems.Add(item);
-                        VerificationContext.AddTransaction(item.Tx);
+                        if (_unsortedTransactions.TryAdd(item.Tx.Hash, item))
+                        {
+                            verifiedSortedTxPool.Add(item);
+                            foreach (var attr in item.Tx.GetAttributes<Conflicts>())
+                            {
+                                if (!_conflicts.TryGetValue(attr.Hash, out var pooled))
+                                {
+                                    pooled = new List<UInt256>();
+                                }
+                                pooled.Add(item.Tx.Hash);
+                                _conflicts.AddOrSet(attr.Hash, pooled);
+                            }
+                            VerificationContext.AddTransaction(item.Tx);
+                            foreach (var conflict in conflictsToBeRemoved)
+                            {
+                                if (TryRemoveVerified(conflict.Tx.Hash, out var _))
+                                    VerificationContext.RemoveTransaction(conflict.Tx);
+                                invalidItems.Add(conflict);
+                            }
+
+                        }
                     }
                     else // Transaction no longer valid -- it will be removed from unverifiedTxPool.
                         invalidItems.Add(item);
@@ -450,18 +583,14 @@ namespace Neo.Ledger
                 var rebroadcastCutOffTime = TimeProvider.Current.UtcNow.AddMilliseconds(-_system.Settings.MillisecondsPerBlock * blocksTillRebroadcast);
                 foreach (PoolItem item in reverifiedItems)
                 {
-                    if (_unsortedTransactions.TryAdd(item.Tx.Hash, item))
+                    if (_unsortedTransactions.ContainsKey(item.Tx.Hash))
                     {
-                        verifiedSortedTxPool.Add(item);
-
                         if (item.LastBroadcastTimestamp < rebroadcastCutOffTime)
                         {
                             _system.LocalNode.Tell(new LocalNode.RelayDirectly { Inventory = item.Tx }, _system.Blockchain);
                             item.LastBroadcastTimestamp = TimeProvider.Current.UtcNow;
                         }
                     }
-                    else
-                        VerificationContext.RemoveTransaction(item.Tx);
 
                     _unverifiedTransactions.Remove(item.Tx.Hash);
                     unverifiedSortedTxPool.Remove(item);

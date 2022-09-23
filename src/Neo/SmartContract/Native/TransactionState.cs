@@ -22,6 +22,11 @@ namespace Neo.SmartContract.Native
     public class TransactionState : IInteroperable
     {
         /// <summary>
+        /// The transaction is trimmed.
+        /// To indicate this state is a placeholder for a conflict transaction.
+        /// </summary>
+        public bool Trimmed;
+        /// <summary>
         /// The block containing this transaction.
         /// </summary>
         public uint BlockIndex;
@@ -42,6 +47,7 @@ namespace Neo.SmartContract.Native
         {
             return new TransactionState
             {
+                Trimmed = Trimmed,
                 BlockIndex = BlockIndex,
                 Transaction = Transaction,
                 State = State,
@@ -52,6 +58,7 @@ namespace Neo.SmartContract.Native
         void IInteroperable.FromReplica(IInteroperable replica)
         {
             TransactionState from = (TransactionState)replica;
+            Trimmed = from.Trimmed;
             BlockIndex = from.BlockIndex;
             Transaction = from.Transaction;
             State = from.State;
@@ -62,17 +69,20 @@ namespace Neo.SmartContract.Native
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
-            BlockIndex = (uint)@struct[0].GetInteger();
-            _rawTransaction = ((ByteString)@struct[1]).Memory;
+            Trimmed = @struct[0].GetBoolean();
+            if (Trimmed) return;
+            BlockIndex = (uint)@struct[1].GetInteger();
+            _rawTransaction = ((ByteString)@struct[2]).Memory;
             Transaction = _rawTransaction.AsSerializable<Transaction>();
-            State = (VMState)(byte)@struct[2].GetInteger();
+            State = (VMState)(byte)@struct[3].GetInteger();
         }
 
         StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
         {
+            if (Trimmed) return new Struct(referenceCounter) { Trimmed };
             if (_rawTransaction.IsEmpty)
                 _rawTransaction = Transaction.ToArray();
-            return new Struct(referenceCounter) { BlockIndex, _rawTransaction, (byte)State };
+            return new Struct(referenceCounter) { Trimmed, BlockIndex, _rawTransaction, (byte)State };
         }
     }
 }

@@ -33,6 +33,12 @@ namespace Neo.Network.P2P.Payloads
         /// Indicates that the transaction is not valid before <see cref="NotValidBefore.Height"/>.
         /// </summary>
         [ReflectionCache(typeof(NotValidBefore))]
-        NotValidBefore = 0x20
+        NotValidBefore = 0x20,
+
+        /// <summary>
+        /// Indicates that the transaction conflicts with <see cref="Conflicts.Hash"/>.
+        /// </summary>
+        [ReflectionCache(typeof(Conflicts))]
+        Conflicts = 0x21
     }
 }
