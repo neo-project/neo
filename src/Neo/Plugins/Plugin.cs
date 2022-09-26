@@ -103,6 +103,8 @@ namespace Neo.Plugins
             switch (GetExtension(e.Name))
             {
                 case ".json":
+                    Utility.Log(nameof(Plugin), LogLevel.Warning, $"Config file {e.Name} is {e.ChangeType}, please restart node.");
+                    break;
                 case ".dll":
                     Utility.Log(nameof(Plugin), LogLevel.Warning, $"Dll file {e.Name} is {e.ChangeType}, please restart node.");
                     break;
