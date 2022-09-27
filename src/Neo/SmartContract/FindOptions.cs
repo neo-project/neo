@@ -54,8 +54,13 @@ namespace Neo.SmartContract
         PickField1 = 1 << 5,
 
         /// <summary>
+        /// Indicates that results should be returned in backwards (descending) order.
+        /// </summary>
+        Backwards = 1 << 6,
+
+        /// <summary>
         /// This value is only for internal use, and shouldn't be used in smart contracts.
         /// </summary>
-        All = KeysOnly | RemovePrefix | ValuesOnly | DeserializeValues | PickField0 | PickField1
+        All = KeysOnly | RemovePrefix | ValuesOnly | DeserializeValues | PickField0 | PickField1 | Backwards
     }
 }

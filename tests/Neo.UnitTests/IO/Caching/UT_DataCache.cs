@@ -152,10 +152,39 @@ namespace Neo.UnitTests.IO.Caching
             store.Put(key3.ToArray(), value3.ToArray());
             store.Put(key4.ToArray(), value4.ToArray());
 
-            var items = myDataCache.Find(key1.ToArray());
+            var k1 = key1.ToArray();
+            var items = myDataCache.Find(k1);
             key1.Should().Be(items.ElementAt(0).Key);
             value1.Should().Be(items.ElementAt(0).Value);
             items.Count().Should().Be(1);
+
+            items = myDataCache.Find(k1, SeekDirection.Backward);
+            key1.Should().Be(items.ElementAt(0).Key);
+            value1.Should().Be(items.ElementAt(0).Value);
+            items.Count().Should().Be(1);
+
+            var prefix = k1.Take(k1.Count() - 1).ToArray(); // Just the "key" part to match everything.
+            items = myDataCache.Find(prefix);
+            items.Count().Should().Be(4);
+            key1.Should().Be(items.ElementAt(0).Key);
+            value1.Should().Be(items.ElementAt(0).Value);
+            key2.Should().Be(items.ElementAt(1).Key);
+            value2.Should().Be(items.ElementAt(1).Value);
+            key3.Should().Be(items.ElementAt(2).Key);
+            value3.EqualsTo(items.ElementAt(2).Value).Should().BeTrue();
+            key4.Should().Be(items.ElementAt(3).Key);
+            value4.EqualsTo(items.ElementAt(3).Value).Should().BeTrue();
+
+            items = myDataCache.Find(prefix, SeekDirection.Backward);
+            items.Count().Should().Be(4);
+            key4.Should().Be(items.ElementAt(0).Key);
+            value4.EqualsTo(items.ElementAt(0).Value).Should().BeTrue();
+            key3.Should().Be(items.ElementAt(1).Key);
+            value3.EqualsTo(items.ElementAt(1).Value).Should().BeTrue();
+            key2.Should().Be(items.ElementAt(2).Key);
+            value2.Should().Be(items.ElementAt(2).Value);
+            key1.Should().Be(items.ElementAt(3).Key);
+            value1.Should().Be(items.ElementAt(3).Value);
 
             items = myDataCache.Find(key5.ToArray());
             items.Count().Should().Be(0);
