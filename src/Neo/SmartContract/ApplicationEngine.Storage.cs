@@ -153,9 +153,7 @@ namespace Neo.SmartContract
             if ((options.HasFlag(FindOptions.PickField0) || options.HasFlag(FindOptions.PickField1)) && !options.HasFlag(FindOptions.DeserializeValues))
                 throw new ArgumentException(null, nameof(options));
             byte[] prefix_key = StorageKey.CreateSearchPrefix(context.Id, prefix);
-            SeekDirection direction = SeekDirection.Forward;
-            if (options.HasFlag(FindOptions.Backwards))
-                direction = SeekDirection.Backward;
+            SeekDirection direction = options.HasFlag(FindOptions.Backwards) ? SeekDirection.Backward : SeekDirection.Forward;
             return new StorageIterator(Snapshot.Find(prefix_key, direction).GetEnumerator(), prefix.Length, options);
         }
 
