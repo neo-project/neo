@@ -238,7 +238,14 @@ namespace Neo.SmartContract.Native
         private Transaction GetTransactionForContract(ApplicationEngine engine, UInt256 hash)
         {
             TransactionState state = GetTransactionState(engine.Snapshot, hash);
-            if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
+            if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks))
+            {
+                if (engine.ScriptContainer is Transaction tx && tx.Hash == hash)
+                {
+                    return tx;
+                }
+                return null;
+            }
             return state.Transaction;
         }
 
@@ -246,7 +253,14 @@ namespace Neo.SmartContract.Native
         private Signer[] GetTransactionSigners(ApplicationEngine engine, UInt256 hash)
         {
             TransactionState state = GetTransactionState(engine.Snapshot, hash);
-            if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
+            if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks))
+            {
+                if (engine.ScriptContainer is Transaction tx && tx.Hash == hash)
+                {
+                    return tx.Signers;
+                }
+                return null;
+            }
             return state.Transaction.Signers;
         }
 
