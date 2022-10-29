@@ -206,7 +206,7 @@ namespace Neo.SmartContract
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
 
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
-            ExecutionContext context = LoadScript(script, configureState: p =>
+            ExecutionContext context = LoadScript(new Script(script, true), configureState: p =>
             {
                 p.CallingContext = CurrentContext;
                 p.CallFlags = callFlags & state.CallFlags & CallFlags.ReadOnly;

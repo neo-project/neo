@@ -73,10 +73,12 @@ namespace Neo.Plugins
             {
                 EnableRaisingEvents = true,
                 IncludeSubdirectories = true,
-                NotifyFilter = NotifyFilters.CreationTime | NotifyFilters.LastWrite | NotifyFilters.Size,
+                NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.CreationTime | NotifyFilters.LastWrite | NotifyFilters.Size,
             };
             configWatcher.Changed += ConfigWatcher_Changed;
             configWatcher.Created += ConfigWatcher_Changed;
+            configWatcher.Renamed += ConfigWatcher_Changed;
+            configWatcher.Deleted += ConfigWatcher_Changed;
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
         }
 
@@ -102,20 +104,8 @@ namespace Neo.Plugins
             switch (GetExtension(e.Name))
             {
                 case ".json":
-                    try
-                    {
-                        Plugins.FirstOrDefault(p => p.ConfigFile == e.FullPath)?.Configure();
-                    }
-                    catch (FormatException) { }
-                    break;
                 case ".dll":
-                    if (e.ChangeType != WatcherChangeTypes.Created) return;
-                    if (GetDirectoryName(GetDirectoryName(e.FullPath)) != PluginsDirectory) return;
-                    try
-                    {
-                        LoadPlugin(Assembly.Load(File.ReadAllBytes(e.FullPath)));
-                    }
-                    catch { }
+                    Utility.Log(nameof(Plugin), LogLevel.Warning, $"File {e.Name} is {e.ChangeType}, please restart node.");
                     break;
             }
         }
