@@ -137,7 +137,7 @@ namespace Neo.UnitTests.VMT
             ScriptBuilder sb = new ScriptBuilder();
             sb.EmitDynamicCall(UInt160.Zero, "AAAAA", true);
             byte[] tempArray = new byte[38];
-            tempArray[0] = (byte)OpCode.PUSH1;
+            tempArray[0] = (byte)OpCode.PUSHT;
             tempArray[1] = (byte)OpCode.PUSH1;//arg.Length 
             tempArray[2] = (byte)OpCode.PACK;
             tempArray[3] = (byte)OpCode.PUSH15;//(byte)CallFlags.All;
@@ -344,7 +344,7 @@ namespace Neo.UnitTests.VMT
             ScriptBuilder sb = new ScriptBuilder();
             sb.EmitPush(new ContractParameter(ContractParameterType.Boolean));
             byte[] tempArray = new byte[1];
-            tempArray[0] = (byte)OpCode.PUSH0;
+            tempArray[0] = (byte)OpCode.PUSHF;
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -531,7 +531,7 @@ namespace Neo.UnitTests.VMT
             ScriptBuilder sb = new ScriptBuilder();
             sb.EmitPush(true);
             byte[] tempArray = new byte[1];
-            tempArray[0] = (byte)OpCode.PUSH1;
+            tempArray[0] = (byte)OpCode.PUSHT;
             CollectionAssert.AreEqual(tempArray, sb.ToArray());
         }
 
@@ -541,7 +541,7 @@ namespace Neo.UnitTests.VMT
             ScriptBuilder sb = new ScriptBuilder();
             sb.EmitSysCall(0, true);
             byte[] tempArray = new byte[6];
-            tempArray[0] = (byte)OpCode.PUSH1;
+            tempArray[0] = (byte)OpCode.PUSHT;
             tempArray[1] = (byte)OpCode.SYSCALL;
             tempArray[2] = 0x00;
             tempArray[3] = 0x00;
