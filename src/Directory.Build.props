@@ -3,7 +3,7 @@
 
   <PropertyGroup>
     <Copyright>2015-2022 The Neo Project</Copyright>
-    <VersionPrefix>3.4.0</VersionPrefix>
+    <VersionPrefix>3.5.0</VersionPrefix>
     <Authors>The Neo Project</Authors>
     <TargetFramework>net6.0</TargetFramework>
     <PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
