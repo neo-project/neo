@@ -98,8 +98,9 @@ namespace Neo.UnitTests.Wallets
         {
             byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
-            KeyPair keyPair = new KeyPair(privateKey);
-            keyPair.GetHashCode().Should().Be(1544360595);
+            KeyPair keyPair1 = new KeyPair(privateKey);
+            KeyPair keyPair2 = new KeyPair(privateKey);
+            keyPair1.GetHashCode().Should().Be(keyPair2.GetHashCode());
         }
 
         [TestMethod]
