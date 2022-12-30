@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 
 namespace Neo.Ledger
@@ -400,25 +401,16 @@ namespace Neo.Ledger
             using (SnapshotCache snapshot = system.GetSnapshot())
             {
                 List<ApplicationExecuted> all_application_executed = new();
-                TransactionState[] transactionStates;
-                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, system.Settings, 0))
-                {
-                    engine.LoadScript(onPersistScript);
-                    if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
-                    ApplicationExecuted application_executed = new(engine);
-                    Context.System.EventStream.Publish(application_executed);
-                    all_application_executed.Add(application_executed);
-                    transactionStates = engine.GetState<TransactionState[]>();
-                }
+                ApplicationExecuted persist_application_executed;
                 DataCache clonedSnapshot = snapshot.CreateSnapshot();
+
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
-                foreach (TransactionState transactionState in transactionStates)
+                foreach (var tx in block.Transactions)
                 {
-                    Transaction tx = transactionState.Transaction;
+                    // Transaction tx = transactionState.Transaction;
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee);
                     engine.LoadScript(tx.Script);
-                    transactionState.State = engine.Execute();
-                    if (transactionState.State == VMState.HALT)
+                    if (engine.Execute() == VMState.HALT)
                     {
                         clonedSnapshot.Commit();
                     }
@@ -426,10 +418,21 @@ namespace Neo.Ledger
                     {
                         clonedSnapshot = snapshot.CreateSnapshot();
                     }
+                    block._gasConsumed.Add(tx.Hash, engine.GasConsumed);
                     ApplicationExecuted application_executed = new(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
+
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, system.Settings, 0))
+                {
+                    engine.LoadScript(onPersistScript);
+                    if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
+                    persist_application_executed = new(engine);
+                    Context.System.EventStream.Publish(persist_application_executed);
+                    all_application_executed.Insert(0, persist_application_executed);
+                }
+
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, system.Settings, 0))
                 {
                     engine.LoadScript(postPersistScript);
