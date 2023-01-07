@@ -1,10 +1,10 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+// Copyright (C) 2015-2023 The Neo Project.
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -65,7 +65,7 @@ namespace Neo.Cryptography
         {
             _count = 0;
 
-            // Use the same chaining values (IVs) as in SHA1, 
+            // Use the same chaining values (IVs) as in SHA1,
             // The convention is little endian however (same as MD4)
             _stateMD160[0] = 0x67452301;
             _stateMD160[1] = 0xefcdab89;
@@ -179,12 +179,12 @@ namespace Neo.Cryptography
 
             /*
                 As we don't have macros in C# and we don't want to pay the cost of a function call
-                (which BTW is quite important here as we would have to pass 5 args by ref in 
+                (which BTW is quite important here as we would have to pass 5 args by ref in
                 16 * 10 = 160 function calls)
                 we'll prefer a less compact code to a less performant code
             */
 
-            // Left Round 1 
+            // Left Round 1
             // FF(ref aa, ref bb, ref cc, ref dd, ref ee, blockDWords[0], 11);
             aa += blockDWords[0] + F(bb, cc, dd);
             aa = (aa << 11 | aa >> (32 - 11)) + ee;
@@ -265,7 +265,7 @@ namespace Neo.Cryptography
             aa = (aa << 8 | aa >> (32 - 8)) + ee;
             cc = (cc << 10 | cc >> (32 - 10));
 
-            // Left Round 2 
+            // Left Round 2
             // GG(ref ee, ref aa, ref bb, ref cc, ref dd, blockDWords[7], 7);
             ee += G(aa, bb, cc) + blockDWords[7] + 0x5a827999;
             ee = (ee << 7 | ee >> (32 - 7)) + dd;
@@ -346,7 +346,7 @@ namespace Neo.Cryptography
             ee = (ee << 12 | ee >> (32 - 12)) + dd;
             bb = (bb << 10 | bb >> (32 - 10));
 
-            // Left Round 3 
+            // Left Round 3
             // HH(ref dd, ref ee, ref aa, ref bb, ref cc, blockDWords[3], 11);
             dd += H(ee, aa, bb) + blockDWords[3] + 0x6ed9eba1;
             dd = (dd << 11 | dd >> (32 - 11)) + cc;
@@ -427,7 +427,7 @@ namespace Neo.Cryptography
             dd = (dd << 5 | dd >> (32 - 5)) + cc;
             aa = (aa << 10 | aa >> (32 - 10));
 
-            // Left Round 4 
+            // Left Round 4
             // II(ref cc, ref dd, ref ee, ref aa, ref bb, blockDWords[1], 11);
             cc += I(dd, ee, aa) + blockDWords[1] + 0x8f1bbcdc;
             cc = (cc << 11 | cc >> (32 - 11)) + bb;
@@ -508,7 +508,7 @@ namespace Neo.Cryptography
             cc = (cc << 12 | cc >> (32 - 12)) + bb;
             ee = (ee << 10 | ee >> (32 - 10));
 
-            // Left Round 5 
+            // Left Round 5
             // JJ(ref bb, ref cc, ref dd, ref ee, ref aa, blockDWords[4], 9);
             bb += J(cc, dd, ee) + blockDWords[4] + 0xa953fd4e;
             bb = (bb << 9 | bb >> (32 - 9)) + aa;
@@ -589,7 +589,7 @@ namespace Neo.Cryptography
             bb = (bb << 6 | bb >> (32 - 6)) + aa;
             dd = (dd << 10 | dd >> (32 - 10));
 
-            // Parallel Right Round 1 
+            // Parallel Right Round 1
             // JJJ(ref aaa, ref bbb, ref ccc, ref ddd, ref eee, blockDWords[5], 8);
             aaa += J(bbb, ccc, ddd) + blockDWords[5] + 0x50a28be6;
             aaa = (aaa << 8 | aaa >> (32 - 8)) + eee;
@@ -670,8 +670,8 @@ namespace Neo.Cryptography
             aaa = (aaa << 6 | aaa >> (32 - 6)) + eee;
             ccc = (ccc << 10 | ccc >> (32 - 10));
 
-            // Parallel Right Round 2 
-            // III(ref eee, ref aaa, ref bbb, ref ccc, ref ddd, blockDWords[6], 9); 
+            // Parallel Right Round 2
+            // III(ref eee, ref aaa, ref bbb, ref ccc, ref ddd, blockDWords[6], 9);
             eee += I(aaa, bbb, ccc) + blockDWords[6] + 0x5c4dd124;
             eee = (eee << 9 | eee >> (32 - 9)) + ddd;
             bbb = (bbb << 10 | bbb >> (32 - 10));
@@ -913,7 +913,7 @@ namespace Neo.Cryptography
             ccc = (ccc << 8 | ccc >> (32 - 8)) + bbb;
             eee = (eee << 10 | eee >> (32 - 10));
 
-            // Parallel Right Round 5 
+            // Parallel Right Round 5
             // FFF(ref bbb, ref ccc, ref ddd, ref eee, ref aaa, blockDWords[12], 8);
             bbb += F(ccc, ddd, eee) + blockDWords[12];
             bbb = (bbb << 8 | bbb >> (32 - 8)) + aaa;
