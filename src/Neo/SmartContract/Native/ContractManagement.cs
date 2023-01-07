@@ -116,6 +116,7 @@ namespace Neo.SmartContract.Native
                     Hash = contract.Hash,
                     Manifest = contract.Manifest
                 }));
+                engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(contract.Hash.ToArray()));
                 await contract.Initialize(engine);
             }
         }
