@@ -9,7 +9,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
-using Neo.IO.Json;
+using Neo.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -83,8 +83,8 @@ namespace Neo.SmartContract
                     ContractParameterType.Hash256 => UInt256.Parse(json["value"].AsString()),
                     ContractParameterType.PublicKey => ECPoint.Parse(json["value"].AsString(), ECCurve.Secp256r1),
                     ContractParameterType.String => json["value"].AsString(),
-                    ContractParameterType.Array => ((JArray)json["value"]).Select(p => FromJson(p)).ToList(),
-                    ContractParameterType.Map => ((JArray)json["value"]).Select(p => new KeyValuePair<ContractParameter, ContractParameter>(FromJson(p["key"]), FromJson(p["value"]))).ToList(),
+                    ContractParameterType.Array => ((JArray)json["value"]).Select(p => FromJson((JObject)p)).ToList(),
+                    ContractParameterType.Map => ((JArray)json["value"]).Select(p => new KeyValuePair<ContractParameter, ContractParameter>(FromJson((JObject)p["key"]), FromJson((JObject)p["value"]))).ToList(),
                     _ => throw new ArgumentException(null, nameof(json)),
                 };
             return parameter;

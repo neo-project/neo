@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.IO.Json;
+using Neo.Json;
 using Neo.Wallets.NEP6;
 
 namespace Neo.UnitTests.Wallets.NEP6

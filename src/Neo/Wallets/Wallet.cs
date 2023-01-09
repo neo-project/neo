@@ -35,7 +35,7 @@ namespace Neo.Wallets
     /// </summary>
     public abstract class Wallet
     {
-        private static readonly List<IWalletFactory> factories = new() { NEP6WalletFactory.Instance, SQLite.SQLiteWalletFactory.Instance };
+        private static readonly List<IWalletFactory> factories = new() { NEP6WalletFactory.Instance };
 
         /// <summary>
         /// The <see cref="Neo.ProtocolSettings"/> to be used by the wallet.
@@ -779,8 +779,7 @@ namespace Neo.Wallets
 
         private static IWalletFactory GetFactory(string path)
         {
-            string filename = System.IO.Path.GetFileName(path);
-            return factories.FirstOrDefault(p => p.Handle(filename));
+            return factories.FirstOrDefault(p => p.Handle(path));
         }
 
         public static void RegisterFactory(IWalletFactory factory)

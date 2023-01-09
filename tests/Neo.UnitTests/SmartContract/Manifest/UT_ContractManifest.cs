@@ -1,6 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
-using Neo.IO.Json;
+using Neo.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 
@@ -87,7 +87,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         public void TestDeserializeAndSerialize()
         {
             var expected = TestUtils.CreateDefaultManifest();
-            expected.Extra = JObject.Parse(@"{""a"":123}");
+            expected.Extra = (JObject)JToken.Parse(@"{""a"":123}");
 
             var clone = new ContractManifest();
             ((IInteroperable)clone).FromStackItem(expected.ToStackItem(null));
