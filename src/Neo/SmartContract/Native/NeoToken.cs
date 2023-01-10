@@ -10,6 +10,11 @@
 
 #pragma warning disable IDE0051
 
+using System;
+using System.Buffers.Binary;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Persistence;
@@ -17,11 +22,6 @@ using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
-using System.Buffers.Binary;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
@@ -149,9 +149,14 @@ namespace Neo.SmartContract.Native
             // PersistingBlock is null when running under the debugger
             if (engine.PersistingBlock is null) return null;
 
-            BigInteger gas = CalculateBonus(engine.Snapshot, state.VoteTo, state.Balance, state.BalanceHeight, engine.PersistingBlock.Index);
+            BigInteger gas = CalculateBonus(engine.Snapshot, state, engine.PersistingBlock.Index);
             state.BalanceHeight = engine.PersistingBlock.Index;
-
+            if (state.VoteTo is not null)
+            {
+                var keyLastest = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(state.VoteTo);
+                var latestGasPerVote = engine.Snapshot.TryGet(keyLastest) ?? BigInteger.Zero;
+                state.LastGasPerVote = latestGasPerVote;
+            }
             if (gas == 0) return null;
             return new GasDistribution
             {
@@ -160,24 +165,19 @@ namespace Neo.SmartContract.Native
             };
         }
 
-        private BigInteger CalculateBonus(DataCache snapshot, ECPoint vote, BigInteger value, uint start, uint end)
+        private BigInteger CalculateBonus(DataCache snapshot, NeoAccountState state, uint end)
         {
-            if (value.IsZero || start >= end) return BigInteger.Zero;
-            if (value.Sign < 0) throw new ArgumentOutOfRangeException(nameof(value));
+            if (state.Balance.IsZero || state.BalanceHeight >= end) return BigInteger.Zero;
+            if (state.Balance.Sign < 0) throw new ArgumentOutOfRangeException(nameof(state.Balance));
 
-            BigInteger neoHolderReward = CalculateNeoHolderReward(snapshot, value, start, end);
-            if (vote is null) return neoHolderReward;
+            BigInteger neoHolderReward = CalculateNeoHolderReward(snapshot, state.Balance, state.BalanceHeight, end);
+            if (state.VoteTo is null) return neoHolderReward;
 
-            byte[] border = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).ToArray();
-            byte[] keyStart = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(start).ToArray();
-            (_, var item) = snapshot.FindRange(keyStart, border, SeekDirection.Backward).FirstOrDefault();
-            BigInteger startRewardPerNeo = item ?? BigInteger.Zero;
+            var keyLastest = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(state.VoteTo);
+            var latestGasPerVote = snapshot.TryGet(keyLastest) ?? BigInteger.Zero;
+            var voteReward = state.Balance * (latestGasPerVote - state.LastGasPerVote) / 100000000L;
 
-            byte[] keyEnd = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(vote).AddBigEndian(end).ToArray();
-            (_, item) = snapshot.FindRange(keyEnd, border, SeekDirection.Backward).FirstOrDefault();
-            BigInteger endRewardPerNeo = item ?? BigInteger.Zero;
-
-            return neoHolderReward + value * (endRewardPerNeo - startRewardPerNeo) / 100000000L;
+            return neoHolderReward + voteReward;
         }
 
         private BigInteger CalculateNeoHolderReward(DataCache snapshot, BigInteger value, uint start, uint end)
@@ -203,8 +203,7 @@ namespace Neo.SmartContract.Native
         {
             if (!candidate.Registered && candidate.Votes.IsZero)
             {
-                foreach (var (rewardKey, _) in snapshot.Find(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(pubkey).ToArray()).ToArray())
-                    snapshot.Delete(rewardKey);
+                snapshot.Delete(CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(pubkey));
                 snapshot.Delete(CreateStorageKey(Prefix_Candidate).Add(pubkey));
             }
         }
@@ -260,16 +259,14 @@ namespace Neo.SmartContract.Native
                 BigInteger voterRewardOfEachCommittee = gasPerBlock * VoterRewardRatio * 100000000L * m / (m + n) / 100; // Zoom in 100000000 times, and the final calculation should be divided 100000000L
                 for (index = 0; index < committee.Count; index++)
                 {
-                    var member = committee[index];
+                    var (PublicKey, Votes) = committee[index];
                     var factor = index < n ? 2 : 1; // The `voter` rewards of validator will double than other committee's
-                    if (member.Votes > 0)
+                    if (Votes > 0)
                     {
-                        BigInteger voterSumRewardPerNEO = factor * voterRewardOfEachCommittee / member.Votes;
-                        StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(member.PublicKey).AddBigEndian(engine.PersistingBlock.Index + 1);
-                        byte[] border = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(member.PublicKey).ToArray();
-                        (_, var item) = engine.Snapshot.FindRange(voterRewardKey.ToArray(), border, SeekDirection.Backward).FirstOrDefault();
-                        voterSumRewardPerNEO += (item ?? BigInteger.Zero);
-                        engine.Snapshot.Add(voterRewardKey, new StorageItem(voterSumRewardPerNEO));
+                        BigInteger voterSumRewardPerNEO = factor * voterRewardOfEachCommittee / Votes;
+                        StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(PublicKey);
+                        StorageItem lastRewardPerNeo = engine.Snapshot.GetAndChange(voterRewardKey, () => new StorageItem(BigInteger.Zero));
+                        lastRewardPerNeo.Add(voterSumRewardPerNEO);
                     }
                 }
             }
@@ -339,7 +336,7 @@ namespace Neo.SmartContract.Native
             StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account));
             if (storage is null) return BigInteger.Zero;
             NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
-            return CalculateBonus(snapshot, state.VoteTo, state.Balance, state.BalanceHeight, end);
+            return CalculateBonus(snapshot, state, end);
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.States)]
@@ -406,8 +403,15 @@ namespace Neo.SmartContract.Native
                 state_validator.Votes -= state_account.Balance;
                 CheckCandidate(engine.Snapshot, state_account.VoteTo, state_validator);
             }
+            if (voteTo != null && voteTo != state_account.VoteTo)
+            {
+                StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(voteTo);
+                var latestGasPerVote = engine.Snapshot.TryGet(voterRewardKey) ?? BigInteger.Zero;
+                state_account.LastGasPerVote = latestGasPerVote;
+            }
             ECPoint from = state_account.VoteTo;
             state_account.VoteTo = voteTo;
+
             if (validator_new != null)
             {
                 validator_new.Votes += state_account.Balance;
@@ -572,12 +576,15 @@ namespace Neo.SmartContract.Native
             /// </summary>
             public ECPoint VoteTo;
 
+            public BigInteger LastGasPerVote;
+
             public override void FromStackItem(StackItem stackItem)
             {
                 base.FromStackItem(stackItem);
                 Struct @struct = (Struct)stackItem;
                 BalanceHeight = (uint)@struct[1].GetInteger();
                 VoteTo = @struct[2].IsNull ? null : ECPoint.DecodePoint(@struct[2].GetSpan(), ECCurve.Secp256r1);
+                LastGasPerVote = @struct[3].GetInteger();
             }
 
             public override StackItem ToStackItem(ReferenceCounter referenceCounter)
@@ -585,6 +592,7 @@ namespace Neo.SmartContract.Native
                 Struct @struct = (Struct)base.ToStackItem(referenceCounter);
                 @struct.Add(BalanceHeight);
                 @struct.Add(VoteTo?.ToArray() ?? StackItem.Null);
+                @struct.Add(LastGasPerVote);
                 return @struct;
             }
         }
