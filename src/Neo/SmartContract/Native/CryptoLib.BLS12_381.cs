@@ -8,8 +8,8 @@ namespace Neo.SmartContract.Native;
 
 partial class CryptoLib
 {
-    private const int G1 = 104;
-    private const int G2 = 200;
+    private const int G1 = 97;
+    private const int G2 = 193;
     private const int Gt = 576;
 
     /// <summary>
