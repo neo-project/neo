@@ -1,109 +1,110 @@
 using Neo.Cryptography.BLS12_381;
 using Neo.VM.Types;
 using System;
-using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
 namespace Neo.SmartContract.Native;
 
 partial class CryptoLib
 {
-    private const int G1 = 97;
-    private const int G2 = 193;
+    private const int G1 = 48;
+    private const int G2 = 96;
     private const int Gt = 576;
 
     /// <summary>
-    /// Convert data to InteropInterface type.
+    /// Serialize a bls12381 point.
     /// </summary>
-    /// <param name="g">G point as byteArray</param>
+    /// <param name="g">The point to be serialized.</param>
+    /// <returns></returns>
+    public static byte[] Bls12381Serialize(InteropInterface g)
+    {
+        return g.GetInterface<object>() switch
+        {
+            G1Affine p => p.ToCompressed(),
+            G1Projective p => new G1Affine(p).ToCompressed(),
+            G2Affine p => p.ToCompressed(),
+            G2Projective p => new G2Affine(p).ToCompressed(),
+            Gt p => p.ToArray(),
+            _ => throw new ArgumentException($"Bls12381 operation fault, type:format, error:type mismatch")
+        };
+    }
+
+    /// <summary>
+    /// Deserialize a bls12381 point.
+    /// </summary>
+    /// <param name="data">The point as byte array.</param>
     /// <returns></returns>
     [ContractMethod(CpuFee = 1 << 19)]
     [RequiresPreviewFeatures]
-    public static InteropInterface Bls12381Deserialize(byte[] g)
+    public static InteropInterface Bls12381Deserialize(byte[] data)
     {
-        return g.Length switch
+        return data.Length switch
         {
-            G1 => new InteropInterface(g),
-            G2 => new InteropInterface(g),
-            Gt => new InteropInterface(g),
+            G1 => new InteropInterface(G1Affine.FromCompressed(data)),
+            G2 => new InteropInterface(G2Affine.FromCompressed(data)),
+            Gt => new InteropInterface(Cryptography.BLS12_381.Gt.FromBytes(data)),
             _ => throw new ArgumentException($"Bls12381 operation fault, type:format, error:valid point length"),
         };
     }
 
     /// <summary>
-    /// Add operation of two gt points.
+    /// Add operation of two points.
     /// </summary>
-    /// <param name="g1">Gt1 point as byteArray</param>
-    /// <param name="g2">Gt1 point as byteArray</param>
+    /// <param name="x">The first point.</param>
+    /// <param name="y">The second point.</param>
     /// <returns></returns>
     [ContractMethod(CpuFee = 1 << 19)]
     [RequiresPreviewFeatures]
-    public static InteropInterface Bls12381Add(InteropInterface g1, InteropInterface g2)
+    public static InteropInterface Bls12381Add(InteropInterface x, InteropInterface y)
     {
-        byte[] t1 = g1.GetInterface<byte[]>();
-        byte[] t2 = g2.GetInterface<byte[]>();
-        if (t1.Length != t2.Length)
-            throw new ArgumentException($"Bls12381 operation fault, type:format, error:type mismatch");
-        switch (t1.Length)
+        return (x.GetInterface<object>(), y.GetInterface<object>()) switch
         {
-            case G1:
-                var r1 = new G1Affine(new G1Projective(MemoryMarshal.AsRef<G1Affine>(t1)) + new G1Projective(MemoryMarshal.AsRef<G1Affine>(t2)));
-                return new InteropInterface(MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref r1, 1)).ToArray());
-            case G2:
-                var r2 = new G2Affine(new G2Projective(MemoryMarshal.AsRef<G2Affine>(t1)) + new G2Projective(MemoryMarshal.AsRef<G2Affine>(t2)));
-                return new InteropInterface(MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref r2, 1)).ToArray());
-            case Gt:
-                var r = MemoryMarshal.AsRef<Gt>(t1) + MemoryMarshal.AsRef<Gt>(t2);
-                return new InteropInterface(MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref r, 1)).ToArray());
-            default:
-                throw new ArgumentException($"Bls12381 operation fault, type:format, error:valid point length");
-        }
+            (G1Affine p1, G1Affine p2) => new(new G1Projective(p1) + p2),
+            (G1Affine p1, G1Projective p2) => new(p1 + p2),
+            (G1Projective p1, G1Affine p2) => new(p1 + p2),
+            (G1Projective p1, G1Projective p2) => new(p1 + p2),
+            (G2Affine p1, G2Affine p2) => new(new G2Projective(p1) + p2),
+            (G2Affine p1, G2Projective p2) => new(p1 + p2),
+            (G2Projective p1, G2Affine p2) => new(p1 + p2),
+            (G2Projective p1, G2Projective p2) => new(p1 + p2),
+            (Gt p1, Gt p2) => new(p1 + p2),
+            _ => throw new ArgumentException($"Bls12381 operation fault, type:format, error:type mismatch")
+        };
     }
 
     /// <summary>
     /// Mul operation of gt point and multiplier
     /// </summary>
-    /// <param name="g">Gt point as byteArray</param>
+    /// <param name="x">The point</param>
     /// <param name="mul">Multiplier,32 bytes,little-endian</param>
     /// <param name="neg">negative number</param>
     /// <returns></returns>
     [ContractMethod(CpuFee = 1 << 21)]
     [RequiresPreviewFeatures]
-    public static InteropInterface Bls12381Mul(InteropInterface g, byte[] mul, bool neg)
+    public static InteropInterface Bls12381Mul(InteropInterface x, byte[] mul, bool neg)
     {
         Scalar X = neg ? -Scalar.FromBytes(mul) : Scalar.FromBytes(mul);
-        byte[] t = g.GetInterface<byte[]>();
-        switch (t.Length)
+        return x.GetInterface<object>() switch
         {
-            case G1:
-                var r1 = MemoryMarshal.AsRef<G1Affine>(t) * X;
-                return new InteropInterface(MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref r1, 1)).ToArray());
-            case G2:
-                var r2 = MemoryMarshal.AsRef<G2Affine>(t) * X;
-                return new InteropInterface(MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref r2, 1)).ToArray());
-            case Gt:
-                var r = MemoryMarshal.AsRef<Gt>(t) * X;
-                return new InteropInterface(MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref r, 1)).ToArray());
-            default:
-                throw new ArgumentException($"Bls12381 operation fault, type:format, error:valid point length");
-        }
+            G1Affine p => new(p * X),
+            G1Projective p => new(p * X),
+            G2Affine p => new(p * X),
+            G2Projective p => new(p * X),
+            Gt p => new(p * X),
+            _ => throw new ArgumentException($"Bls12381 operation fault, type:format, error:type mismatch")
+        };
     }
 
     /// <summary>
     /// Pairing operation of g1 and g2
     /// </summary>
-    /// <param name="g1">Gt point1 as byteArray</param>
-    /// <param name="g2">Gt point2 as byteArray</param>
+    /// <param name="g1">The g1 point.</param>
+    /// <param name="g2">The g2 point.</param>
     /// <returns></returns>
     [ContractMethod(CpuFee = 1 << 23)]
     [RequiresPreviewFeatures]
     public static InteropInterface Bls12381Pairing(InteropInterface g1, InteropInterface g2)
     {
-        byte[] t1 = g1.GetInterface<byte[]>();
-        byte[] t2 = g2.GetInterface<byte[]>();
-        if (t1.Length != G1 || t2.Length != G2)
-            throw new ArgumentException($"Bls12381 operation fault, type:format, error:type mismatch");
-        var r = Bls12.Pairing(MemoryMarshal.AsRef<G1Affine>(t1), MemoryMarshal.AsRef<G2Affine>(t2));
-        return new InteropInterface(MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref r, 1)).ToArray());
+        return new(Bls12.Pairing(g1.GetInterface<G1Affine>(), g2.GetInterface<G2Affine>()));
     }
 }
