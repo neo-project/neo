@@ -101,6 +101,18 @@ partial class CryptoLib
     [ContractMethod(CpuFee = 1 << 23)]
     public static InteropInterface Bls12381Pairing(InteropInterface g1, InteropInterface g2)
     {
-        return new(Bls12.Pairing(g1.GetInterface<G1Affine>(), g2.GetInterface<G2Affine>()));
+        G1Affine g1a = g1.GetInterface<object>() switch
+        {
+            G1Affine g => g,
+            G1Projective g => new(g),
+            _ => throw new ArgumentException($"Bls12381 operation fault, type:format, error:type mismatch")
+        };
+        G2Affine g2a = g2.GetInterface<object>() switch
+        {
+            G2Affine g => g,
+            G2Projective g => new(g),
+            _ => throw new ArgumentException($"Bls12381 operation fault, type:format, error:type mismatch")
+        };
+        return new(Bls12.Pairing(in g1a, in g2a));
     }
 }
