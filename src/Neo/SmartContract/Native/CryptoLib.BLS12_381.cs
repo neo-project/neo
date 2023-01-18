@@ -47,6 +47,26 @@ partial class CryptoLib
     }
 
     /// <summary>
+    /// Determines whether the specified points are equal.
+    /// </summary>
+    /// <param name="x">The first point.</param>
+    /// <param name="y">Teh second point.</param>
+    /// <returns><c>true</c> if the specified points are equal; otherwise, <c>false</c>.</returns>
+    [ContractMethod(CpuFee = 1 << 5)]
+    public static bool Bls12381Equal(InteropInterface x, InteropInterface y)
+    {
+        return (x.GetInterface<object>(), y.GetInterface<object>()) switch
+        {
+            (G1Affine p1, G1Affine p2) => p1.Equals(p2),
+            (G1Projective p1, G1Projective p2) => p1.Equals(p2),
+            (G2Affine p1, G2Affine p2) => p1.Equals(p2),
+            (G2Projective p1, G2Projective p2) => p1.Equals(p2),
+            (Gt p1, Gt p2) => p1.Equals(p2),
+            _ => throw new ArgumentException($"Bls12381 operation fault, type:format, error:type mismatch")
+        };
+    }
+
+    /// <summary>
     /// Add operation of two points.
     /// </summary>
     /// <param name="x">The first point.</param>
