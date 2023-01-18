@@ -1,7 +1,6 @@
 using Neo.Cryptography.BLS12_381;
 using Neo.VM.Types;
 using System;
-using System.Runtime.Versioning;
 
 namespace Neo.SmartContract.Native;
 
@@ -16,6 +15,7 @@ partial class CryptoLib
     /// </summary>
     /// <param name="g">The point to be serialized.</param>
     /// <returns></returns>
+    [ContractMethod(CpuFee = 1 << 19)]
     public static byte[] Bls12381Serialize(InteropInterface g)
     {
         return g.GetInterface<object>() switch
@@ -35,7 +35,6 @@ partial class CryptoLib
     /// <param name="data">The point as byte array.</param>
     /// <returns></returns>
     [ContractMethod(CpuFee = 1 << 19)]
-    [RequiresPreviewFeatures]
     public static InteropInterface Bls12381Deserialize(byte[] data)
     {
         return data.Length switch
@@ -54,7 +53,6 @@ partial class CryptoLib
     /// <param name="y">The second point.</param>
     /// <returns></returns>
     [ContractMethod(CpuFee = 1 << 19)]
-    [RequiresPreviewFeatures]
     public static InteropInterface Bls12381Add(InteropInterface x, InteropInterface y)
     {
         return (x.GetInterface<object>(), y.GetInterface<object>()) switch
@@ -80,7 +78,6 @@ partial class CryptoLib
     /// <param name="neg">negative number</param>
     /// <returns></returns>
     [ContractMethod(CpuFee = 1 << 21)]
-    [RequiresPreviewFeatures]
     public static InteropInterface Bls12381Mul(InteropInterface x, byte[] mul, bool neg)
     {
         Scalar X = neg ? -Scalar.FromBytes(mul) : Scalar.FromBytes(mul);
@@ -102,7 +99,6 @@ partial class CryptoLib
     /// <param name="g2">The g2 point.</param>
     /// <returns></returns>
     [ContractMethod(CpuFee = 1 << 23)]
-    [RequiresPreviewFeatures]
     public static InteropInterface Bls12381Pairing(InteropInterface g1, InteropInterface g2)
     {
         return new(Bls12.Pairing(g1.GetInterface<G1Affine>(), g2.GetInterface<G2Affine>()));
