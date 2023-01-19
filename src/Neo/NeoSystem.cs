@@ -163,9 +163,10 @@ namespace Neo
 
         public void Dispose()
         {
+            EnsureStopped(LocalNode);
+            EnsureStopped(Blockchain);
             foreach (var p in Plugin.Plugins)
                 p.Dispose();
-            EnsureStopped(LocalNode);
             // Dispose will call ActorSystem.Terminate()
             ActorSystem.Dispose();
             ActorSystem.WhenTerminated.Wait();
