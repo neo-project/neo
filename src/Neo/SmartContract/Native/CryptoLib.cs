@@ -12,6 +12,7 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using System;
 using System.Collections.Generic;
+using Neo.Wallets;
 
 namespace Neo.SmartContract.Native
 {
@@ -61,6 +62,45 @@ namespace Neo.SmartContract.Native
         {
             using Murmur32 murmur = new(seed);
             return murmur.ComputeHash(data);
+        }
+
+
+        /// <summary>
+        /// Computes the script hash from specified public key byte array.
+        /// </summary>
+        /// <param name="pubKey">The public key to be used.</param>
+        /// <param name="curve">The curve to be used by the ECDSA algorithm.</param>
+        /// <returns>The computed public key script hash. Zero in case of error.</returns>
+        [ContractMethod(CpuFee = 1 << 15)]
+        public static UInt160 PubKeyToScriptHash(byte[] pubKey, NamedCurve curve)
+        {
+            try
+            {
+                return Contract.CreateSignatureRedeemScript(ECPoint.FromBytes(pubKey, curves[curve])).ToScriptHash();
+            }
+            catch (ArgumentException)
+            {
+                return UInt160.Zero;
+            }
+        }
+
+        /// <summary>
+        /// Computes the address from specified script hash.
+        /// </summary>
+        /// <param name="scriptHash">The script hash to be used.</param>
+        /// <param name="version">The version of the address.</param>
+        /// <returns>The computed address of script hash. Empty in case of error.</returns>
+        [ContractMethod(CpuFee = 1 << 14)]
+        public static string ScriptHashToAddr(UInt160 scriptHash, byte version)
+        {
+            try
+            {
+                return scriptHash.ToAddress(version);
+            }
+            catch (ArgumentException)
+            {
+                return string.Empty;
+            }
         }
 
         /// <summary>
