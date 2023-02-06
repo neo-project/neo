@@ -149,7 +149,7 @@ namespace Neo.SmartContract.Native
             // PersistingBlock is null when running under the debugger
             if (engine.PersistingBlock is null) return null;
 
-            BigInteger gas = CalculateBonus(engine.Snapshot, state);
+            BigInteger gas = CalculateBonus(engine.Snapshot, state, engine.PersistingBlock.Index);
             state.BalanceHeight = engine.PersistingBlock.Index;
             if (state.VoteTo is not null)
             {
@@ -165,12 +165,13 @@ namespace Neo.SmartContract.Native
             };
         }
 
-        private BigInteger CalculateBonus(DataCache snapshot, NeoAccountState state)
+        private BigInteger CalculateBonus(DataCache snapshot, NeoAccountState state, uint end)
         {
             if (state.Balance.IsZero) return BigInteger.Zero;
             if (state.Balance.Sign < 0) throw new ArgumentOutOfRangeException(nameof(state.Balance));
 
-            var end = Ledger.CurrentIndex(snapshot) + 1;
+            var expectEnd = Ledger.CurrentIndex(snapshot) + 1;
+            if (expectEnd != end) throw new ArgumentOutOfRangeException(nameof(end));
             if (state.BalanceHeight >= end) return BigInteger.Zero;
             BigInteger neoHolderReward = CalculateNeoHolderReward(snapshot, state.Balance, state.BalanceHeight, end);
             if (state.VoteTo is null) return neoHolderReward;
@@ -330,14 +331,15 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="account">The account to check.</param>
+        /// <param name="end">The block index used when calculating GAS.</param>
         /// <returns>The amount of unclaimed GAS.</returns>
         [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.ReadStates)]
-        public BigInteger UnclaimedGas(DataCache snapshot, UInt160 account)
+        public BigInteger UnclaimedGas(DataCache snapshot, UInt160 account, uint end)
         {
             StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account));
             if (storage is null) return BigInteger.Zero;
             NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
-            return CalculateBonus(snapshot, state);
+            return CalculateBonus(snapshot, state, end);
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.States)]

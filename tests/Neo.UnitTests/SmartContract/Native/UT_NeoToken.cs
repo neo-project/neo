@@ -48,6 +48,9 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
 
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+            snapshot.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
+
             byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
 
             // No signature
@@ -103,6 +106,9 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
 
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+            snapshot.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
+
             byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             var accountState = snapshot.TryGet(CreateStorageKey(20, from)).GetInteroperable<NeoAccountState>();
             accountState.Balance = 100;
@@ -132,6 +138,8 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+            snapshot.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
             //from vote to G
             byte[] from = ProtocolSettings.Default.StandbyValidators[0].ToArray();
             var from_Account = Contract.CreateSignatureContract(ProtocolSettings.Default.StandbyValidators[0]).ScriptHash.ToArray();
@@ -165,7 +173,8 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
-
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+            snapshot.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
             byte[] from = ProtocolSettings.Default.StandbyValidators[0].ToArray();
             var from_Account = Contract.CreateSignatureContract(ProtocolSettings.Default.StandbyValidators[0]).ScriptHash.ToArray();
             snapshot.Add(CreateStorageKey(20, from_Account), new StorageItem(new NeoAccountState()));
@@ -245,7 +254,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_UnregisterCandidate()
         {
             var snapshot = _snapshot.CreateSnapshot();
-
+            _persistingBlock.Header.Index = 1;
             var keyCount = snapshot.GetChangeSet().Count();
             var point = ProtocolSettings.Default.StandbyValidators[0].EncodePoint(true);
 
@@ -309,7 +318,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var keyCount = snapshot.GetChangeSet().Count();
             var point = ProtocolSettings.Default.StandbyValidators[0].EncodePoint(true);
             var persistingBlock = _persistingBlock;
-
+            persistingBlock.Header.Index = 1;
             //register with votes with 20000000
             var G_Account = Contract.CreateSignatureContract(ECCurve.Secp256r1.G).ScriptHash.ToArray();
             snapshot.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState()));
@@ -483,7 +492,7 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 Balance = -100
             }));
-            Action action = () => NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero).Should().Be(new BigInteger(0));
+            Action action = () => NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
             action.Should().Throw<ArgumentOutOfRangeException>();
             snapshot.Delete(key);
 
@@ -494,7 +503,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Balance = 100,
                 BalanceHeight = 100
             }));
-            action = () => NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero).Should().Be(new BigInteger(0));
+            action = () => NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
             snapshot.Delete(key);
 
             // Fault range: start >= end
@@ -504,7 +513,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Balance = 100,
                 BalanceHeight = 100
             }));
-            action = () => NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero).Should().Be(new BigInteger(0));
+            action = () => NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
             snapshot.Delete(key);
 
             // Normal 1) votee is non exist
@@ -518,7 +527,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var item = snapshot.GetAndChange(storageKey).GetInteroperable<HashIndexState>();
             item.Index = 99;
 
-            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero).Should().Be(new BigInteger(0.5 * 100 * 100));
+            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 100).Should().Be(new BigInteger(0.5 * 100 * 100));
             snapshot.Delete(key);
 
             // Normal 2) votee is not committee
@@ -528,7 +537,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Balance = 100,
                 VoteTo = ECCurve.Secp256r1.G
             }));
-            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero).Should().Be(new BigInteger(0.5 * 100 * 100));
+            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 100).Should().Be(new BigInteger(0.5 * 100 * 100));
             snapshot.Delete(key);
 
             // Normal 3) votee is committee
@@ -539,7 +548,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 VoteTo = ProtocolSettings.Default.StandbyCommittee[0]
             }));
             snapshot.Add(new KeyBuilder(NativeContract.NEO.Id, 23).Add(ProtocolSettings.Default.StandbyCommittee[0]).AddBigEndian(uint.MaxValue - 50), new StorageItem() { Value = new BigInteger(50 * 10000L).ToByteArray() });
-            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero).Should().Be(new BigInteger(50 * 100));
+            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 100).Should().Be(new BigInteger(50 * 100));
             snapshot.Delete(key);
         }
 
@@ -739,7 +748,7 @@ namespace Neo.UnitTests.SmartContract.Native
             state.Balance = 1000;
             state.BalanceHeight = 0;
             height.Index = persistingBlock.Index + 1;
-            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero).Should().Be(6500);
+            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, persistingBlock.Index + 2).Should().Be(6500);
         }
 
         [TestMethod]
@@ -847,7 +856,7 @@ namespace Neo.UnitTests.SmartContract.Native
             NativeContract.NEO.BalanceOf(snapshot, account).Should().Be(1999800);
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
             snapshot.GetAndChange(storageKey).GetInteroperable<HashIndexState>().Index = 29 + 2;
-            BigInteger value = NativeContract.NEO.UnclaimedGas(snapshot, account);
+            BigInteger value = NativeContract.NEO.UnclaimedGas(snapshot, account, 29 + 3);
             value.Should().Be(1999800 * 30000000000 / 100000000L + (1999800L * 10 * 5 * 29 / 100));
         }
 
@@ -855,9 +864,9 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestUnclaimedGas()
         {
             var snapshot = _snapshot.CreateSnapshot();
-            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero).Should().Be(new BigInteger(0));
+            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
             snapshot.Add(CreateStorageKey(20, UInt160.Zero.ToArray()), new StorageItem(new NeoAccountState()));
-            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero).Should().Be(new BigInteger(0));
+            NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 10).Should().Be(new BigInteger(0));
         }
 
         [TestMethod]
@@ -867,6 +876,7 @@ namespace Neo.UnitTests.SmartContract.Native
             UInt160 account = UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4");
             StorageKey keyAccount = CreateStorageKey(20, account.ToArray());
             StorageKey keyValidator = CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray());
+            _persistingBlock.Header.Index = 1;
             var ret = Check_Vote(snapshot, account.ToArray(), ECCurve.Secp256r1.G.ToArray(), false, _persistingBlock);
             ret.State.Should().BeTrue();
             ret.Result.Should().BeFalse();
@@ -901,7 +911,8 @@ namespace Neo.UnitTests.SmartContract.Native
         internal (bool State, bool Result) Transfer4TesingOnBalanceChanging(BigInteger amount, bool addVotes)
         {
             var snapshot = _snapshot.CreateSnapshot();
-            var engine = ApplicationEngine.Create(TriggerType.Application, TestBlockchain.TheNeoSystem.GenesisBlock, snapshot, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+            _persistingBlock.Header.Index = 1;
+            var engine = ApplicationEngine.Create(TriggerType.Application, TestBlockchain.TheNeoSystem.GenesisBlock, snapshot, _persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
             ScriptBuilder sb = new();
             var tmp = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot);
             UInt160 from = engine.ScriptContainer.GetScriptHashesForVerifying(engine.Snapshot)[0];
@@ -924,7 +935,8 @@ namespace Neo.UnitTests.SmartContract.Native
 
             sb.EmitDynamicCall(NativeContract.NEO.Hash, "transfer", from, UInt160.Zero, amount, null);
             engine.LoadScript(sb.ToArray());
-            engine.Execute();
+            var state = engine.Execute();
+            Console.WriteLine($"{state} {engine.FaultException}");
             var result = engine.ResultStack.Peek();
             result.GetType().Should().Be(typeof(VM.Types.Boolean));
             return (true, result.GetBoolean());
@@ -997,6 +1009,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             if (engine.Execute() == VMState.FAULT)
             {
+                Console.WriteLine(engine.FaultException);
                 return (false, false);
             }
 
@@ -1047,11 +1060,12 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
-            script.EmitDynamicCall(NativeContract.NEO.Hash, "unclaimedGas", address);
+            script.EmitDynamicCall(NativeContract.NEO.Hash, "unclaimedGas", address, persistingBlock.Index);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
             {
+                Console.WriteLine(engine.FaultException);
                 return (BigInteger.Zero, false);
             }
 
