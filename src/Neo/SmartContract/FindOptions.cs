@@ -56,7 +56,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// Indicates that results should be returned in backwards (descending) order.
         /// </summary>
-        Backwards = 1 << 6,
+        Backwards = 1 << 7,
 
         /// <summary>
         /// This value is only for internal use, and shouldn't be used in smart contracts.
