@@ -6,10 +6,6 @@ namespace Neo.SmartContract.Native;
 
 partial class CryptoLib
 {
-    private const int G1 = 48;
-    private const int G2 = 96;
-    private const int Gt = 576;
-
     /// <summary>
     /// Serialize a bls12381 point.
     /// </summary>
@@ -39,9 +35,9 @@ partial class CryptoLib
     {
         return data.Length switch
         {
-            G1 => new InteropInterface(G1Affine.FromCompressed(data)),
-            G2 => new InteropInterface(G2Affine.FromCompressed(data)),
-            Gt => new InteropInterface(Cryptography.BLS12_381.Gt.FromBytes(data)),
+            48 => new InteropInterface(G1Affine.FromCompressed(data)),
+            96 => new InteropInterface(G2Affine.FromCompressed(data)),
+            576 => new InteropInterface(Gt.FromBytes(data)),
             _ => throw new ArgumentException($"Bls12381 operation fault, type:format, error:valid point length"),
         };
     }
