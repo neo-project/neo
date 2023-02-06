@@ -4,7 +4,6 @@ using Neo.Cryptography.BLS12_381;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
-using System.Runtime.InteropServices;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
