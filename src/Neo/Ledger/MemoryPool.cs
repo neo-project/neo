@@ -482,7 +482,7 @@ namespace Neo.Ledger
                 var stale = new List<UInt256>();
                 foreach (var item in _sortedTransactions)
                 {
-                    if (conflicts.Contains(item.Tx.Hash) || item.Tx.GetAttributes<Conflicts>().Select(a => a.Hash).Intersect(persisted).Count() > 0)
+                    if (conflicts.Contains(item.Tx.Hash) || item.Tx.GetAttributes<Conflicts>().Select(a => a.Hash).Intersect(persisted).Any())
                     {
                         stale.Add(item.Tx.Hash);
                         conflictingItems.Add(item.Tx);
