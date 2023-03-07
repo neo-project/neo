@@ -290,7 +290,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "{\"key\":\"value\"}");
                 Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "null");
                 Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "\"test\"");
-                Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "1");
+                Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "true");
                 Assert.IsTrue(engine.ResultStack.Pop<ByteString>().GetString() == "5");
             }
 
