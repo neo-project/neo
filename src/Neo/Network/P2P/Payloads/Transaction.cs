@@ -338,7 +338,7 @@ namespace Neo.Network.P2P.Payloads
         /// <param name="settings">The <see cref="ProtocolSettings"/> used to verify the transaction.</param>
         /// <param name="snapshot">The snapshot used to verify the transaction.</param>
         /// <param name="context">The <see cref="TransactionVerificationContext"/> used to verify the transaction.</param>
-        /// <param name="conflictsList">The list of conflicting <see cref="Transaction"/> those fee should be excluded from sender's overall fee during <see cref="TransactionVerificationContext"/>-based verification.</param>
+        /// <param name="conflictsList">The list of conflicting <see cref="Transaction"/> those fee should be excluded from sender's overall fee during <see cref="TransactionVerificationContext"/>-based verification in case of sender's match.</param>
         /// <returns>The result of the verification.</returns>
         public VerifyResult Verify(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictsList)
         {
@@ -353,7 +353,7 @@ namespace Neo.Network.P2P.Payloads
         /// <param name="settings">The <see cref="ProtocolSettings"/> used to verify the transaction.</param>
         /// <param name="snapshot">The snapshot used to verify the transaction.</param>
         /// <param name="context">The <see cref="TransactionVerificationContext"/> used to verify the transaction.</param>
-        /// <param name="conflictsList">The list of conflicting <see cref="Transaction"/> those fee should be excluded from sender's overall fee during <see cref="TransactionVerificationContext"/>-based verification.</param>
+        /// <param name="conflictsList">The list of conflicting <see cref="Transaction"/> those fee should be excluded from sender's overall fee during <see cref="TransactionVerificationContext"/>-based verification in case of sender's match.</param>
         /// <returns>The result of the verification.</returns>
         public virtual VerifyResult VerifyStateDependent(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictsList)
         {

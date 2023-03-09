@@ -12,6 +12,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.Ledger
@@ -59,7 +60,7 @@ namespace Neo.Ledger
             senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
 
             BigInteger fee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
-            foreach (var conflictTx in conflictingTxs)
+            foreach (var conflictTx in conflictingTxs.Where(c => c.Sender.Equals(tx.Sender)))
             {
                 fee -= conflictTx.NetworkFee + conflictTx.SystemFee;
             }
