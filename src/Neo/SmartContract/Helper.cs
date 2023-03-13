@@ -78,6 +78,69 @@ namespace Neo.SmartContract
         /// <remarks>Note: The <see cref="Script"/> passed to this method should be constructed with strict mode.</remarks>
         public static void Check(this Script script, ContractAbi abi)
         {
+            if (abi is null) throw new ArgumentNullException(nameof(abi));
+
+            Dictionary<int, Instruction> instructions = new();
+            for (int ip = 0; ip < script.Length;)
+            {
+                Instruction instruction = script.GetInstruction(ip);
+                instructions.Add(ip, instruction);
+                ip += instruction.Size;
+            }
+            foreach (var (ip, instruction) in instructions)
+            {
+                switch (instruction.OpCode)
+                {
+                    case OpCode.JMP:
+                    case OpCode.JMPIF:
+                    case OpCode.JMPIFNOT:
+                    case OpCode.JMPEQ:
+                    case OpCode.JMPNE:
+                    case OpCode.JMPGT:
+                    case OpCode.JMPGE:
+                    case OpCode.JMPLT:
+                    case OpCode.JMPLE:
+                    case OpCode.CALL:
+                    case OpCode.ENDTRY:
+                        if (!instructions.ContainsKey(checked(ip + instruction.TokenI8)))
+                            throw new IndexOutOfRangeException();
+                        break;
+                    case OpCode.PUSHA:
+                    case OpCode.JMP_L:
+                    case OpCode.JMPIF_L:
+                    case OpCode.JMPIFNOT_L:
+                    case OpCode.JMPEQ_L:
+                    case OpCode.JMPNE_L:
+                    case OpCode.JMPGT_L:
+                    case OpCode.JMPGE_L:
+                    case OpCode.JMPLT_L:
+                    case OpCode.JMPLE_L:
+                    case OpCode.CALL_L:
+                    case OpCode.ENDTRY_L:
+                        if (!instructions.ContainsKey(checked(ip + instruction.TokenI32)))
+                            throw new IndexOutOfRangeException();
+                        break;
+                    case OpCode.TRY:
+                        if (!instructions.ContainsKey(checked(ip + instruction.TokenI8)) ||
+                            !instructions.ContainsKey(checked(ip + instruction.TokenI8_1)))
+                            throw new IndexOutOfRangeException();
+                        break;
+                    case OpCode.TRY_L:
+                        if (!instructions.ContainsKey(checked(ip + instruction.TokenI32)) ||
+                            !instructions.ContainsKey(checked(ip + instruction.TokenI32_1)))
+                            throw new IndexOutOfRangeException();
+                        break;
+                    case OpCode.NEWARRAY_T:
+                    case OpCode.ISTYPE:
+                    case OpCode.CONVERT:
+                        StackItemType type = (StackItemType)instruction.TokenU8;
+                        if (!Enum.IsDefined(typeof(StackItemType), type) ||
+                            instruction.OpCode != OpCode.NEWARRAY_T && type == StackItemType.Any)
+                            throw new IndexOutOfRangeException();
+                        break;
+                }
+            }
+
             foreach (ContractMethodDescriptor method in abi.Methods)
                 script.GetInstruction(method.Offset);
             abi.GetMethod(string.Empty, 0); // Trigger the construction of ContractAbi.methodDictionary to check the uniqueness of the method names.
