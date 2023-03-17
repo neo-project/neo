@@ -18,7 +18,7 @@ namespace Neo.SmartContract.Native
     /// <summary>
     /// A native contract library that provides cryptographic algorithms.
     /// </summary>
-    public sealed class CryptoLib : NativeContract
+    public sealed partial class CryptoLib : NativeContract
     {
         private static readonly Dictionary<NamedCurve, ECCurve> curves = new()
         {
