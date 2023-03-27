@@ -16,6 +16,7 @@ using Neo.VM.Types;
 using System;
 using System.Globalization;
 using System.Numerics;
+using System.Text;
 
 namespace Neo.SmartContract.Native
 {
@@ -222,5 +223,39 @@ namespace Neo.SmartContract.Native
             StringSplitOptions options = removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None;
             return str.Split(separator, options);
         }
+
+        [ContractMethod(CpuFee = 1 << 8)]
+        private static int StringByteLength([MaxLength(MaxInputLength)] string str)
+        {
+            // return the length of the string in bytes
+            // it should return 4 for "🦆" and 2 for "ã"
+            return Encoding.UTF8.GetByteCount(str);
+        }
+
+        [ContractMethod(CpuFee = 1 << 8)]
+        private static int StringCharLength([MaxLength(MaxInputLength)] string str)
+        {
+            // return the length of the string in characters
+            // it should return 2 for "🦆" and 1 for "ã"
+            return str.Length;
+        }
+
+        [ContractMethod(CpuFee = 1 << 8)]
+        private static int StringElementLength([MaxLength(MaxInputLength)] string str)
+        {
+            // return the length of the string in elements
+            // it should return 1 for both  "🦆" and "ã"
+
+            TextElementEnumerator enumerator = StringInfo.GetTextElementEnumerator(str);
+            int count = 0;
+
+            while (enumerator.MoveNext())
+            {
+                count++;
+            }
+
+            return count;
+        }
+
     }
 }

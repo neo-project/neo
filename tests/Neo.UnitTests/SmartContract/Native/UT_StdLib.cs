@@ -210,6 +210,59 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void StringByteLength()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshot();
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringByteLength", "🦆");
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            Assert.AreEqual(1, engine.ResultStack.Count);
+
+            var res = engine.ResultStack.Pop<Integer>();
+            Assert.AreEqual(4, res);
+        }
+
+        [TestMethod]
+        public void StringCharLength()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshot();
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringCharLength", "🦆");
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            Assert.AreEqual(1, engine.ResultStack.Count);
+
+            var res = engine.ResultStack.Pop<Integer>();
+            Assert.AreEqual(2, res);
+        }
+        [TestMethod]
+        public void StringElementLength()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshot();
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringElementLength", "🦆");
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            Assert.AreEqual(1, engine.ResultStack.Count);
+
+            var res = engine.ResultStack.Pop<Integer>();
+            Assert.AreEqual(1, res);
+        }
+
+        [TestMethod]
         public void Json_Deserialize()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
