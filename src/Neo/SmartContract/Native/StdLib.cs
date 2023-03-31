@@ -225,14 +225,6 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 8)]
-        private static int StringCharLength([MaxLength(MaxInputLength)] string str)
-        {
-            // return the length of the string in characters
-            // it should return 2 for "🦆" and 1 for "ã"
-            return str.Length;
-        }
-
-        [ContractMethod(CpuFee = 1 << 8)]
         private static int StringElementLength([MaxLength(MaxInputLength)] string str)
         {
             // return the length of the string in elements

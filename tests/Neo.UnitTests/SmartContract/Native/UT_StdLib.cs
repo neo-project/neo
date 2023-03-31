@@ -210,38 +210,23 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void StringCharLength()
-        {
-            var snapshot = TestBlockchain.GetTestSnapshot();
-
-            using var script = new ScriptBuilder();
-            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringCharLength", "🦆");
-
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
-            engine.LoadScript(script.ToArray());
-
-            Assert.AreEqual(engine.Execute(), VMState.HALT);
-            Assert.AreEqual(1, engine.ResultStack.Count);
-
-            var res = engine.ResultStack.Pop<Integer>();
-            Assert.AreEqual(2, res);
-        }
-        [TestMethod]
         public void StringElementLength()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringElementLength", "🦆");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringElementLength", "ã");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringElementLength", "a");
 
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(engine.Execute(), VMState.HALT);
-            Assert.AreEqual(1, engine.ResultStack.Count);
-
-            var res = engine.ResultStack.Pop<Integer>();
-            Assert.AreEqual(1, res);
+            Assert.AreEqual(3, engine.ResultStack.Count);
+            Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
+            Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
+            Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
         }
 
         [TestMethod]
