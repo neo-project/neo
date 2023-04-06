@@ -59,12 +59,12 @@ namespace Neo.Ledger
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
             senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
 
-            BigInteger fee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
+            BigInteger expectedFee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
             foreach (var conflictTx in conflictingTxs.Where(c => c.Sender.Equals(tx.Sender)))
             {
-                fee -= conflictTx.NetworkFee + conflictTx.SystemFee;
+                expectedFee -= (conflictTx.NetworkFee + conflictTx.SystemFee);
             }
-            if (balance < fee) return false;
+            if (balance < expectedFee) return false;
 
             var oracle = tx.GetAttribute<OracleResponse>();
             if (oracle != null && oracleResponses.ContainsKey(oracle.Id))
