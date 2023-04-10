@@ -229,6 +229,11 @@ namespace Neo.Persistence
                     throw new ArgumentException();
                 }
             }
+            return FindInternal(key_prefix, seek_prefix, direction);
+        }
+
+        private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[] key_prefix, byte[] seek_prefix, SeekDirection direction)
+        {
             foreach (var (key, value) in Seek(seek_prefix, direction))
                 if (key.ToArray().AsSpan().StartsWith(key_prefix))
                     yield return (key, value);
