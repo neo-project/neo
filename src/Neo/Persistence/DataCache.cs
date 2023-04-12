@@ -202,13 +202,42 @@ namespace Neo.Persistence
         /// Finds the entries starting with the specified prefix.
         /// </summary>
         /// <param name="key_prefix">The prefix of the key.</param>
+        /// <param name="direction">The search direction.</param>
         /// <returns>The entries found with the desired prefix.</returns>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[] key_prefix = null)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[] key_prefix = null, SeekDirection direction = SeekDirection.Forward)
         {
-            foreach (var (key, value) in Seek(key_prefix, SeekDirection.Forward))
+            var seek_prefix = key_prefix;
+            if (direction == SeekDirection.Backward)
+            {
+                if (key_prefix == null || key_prefix.Length == 0)
+                { // Backwards seek for zero prefix is not supported for now.
+                    throw new ArgumentException();
+                }
+                seek_prefix = null;
+                for (int i = key_prefix.Length - 1; i >= 0; i--)
+                {
+                    if (key_prefix[i] < 0xff)
+                    {
+                        seek_prefix = key_prefix.Take(i + 1).ToArray();
+                        // The next key after the key_prefix.
+                        seek_prefix[i]++;
+                        break;
+                    }
+                }
+                if (seek_prefix == null)
+                {
+                    throw new ArgumentException();
+                }
+            }
+            return FindInternal(key_prefix, seek_prefix, direction);
+        }
+
+        private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[] key_prefix, byte[] seek_prefix, SeekDirection direction)
+        {
+            foreach (var (key, value) in Seek(seek_prefix, direction))
                 if (key.ToArray().AsSpan().StartsWith(key_prefix))
                     yield return (key, value);
-                else
+                else if (direction == SeekDirection.Forward || !key.ToArray().SequenceEqual(seek_prefix))
                     yield break;
         }
 
