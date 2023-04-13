@@ -225,7 +225,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 8)]
-        private static int StringElementLength([MaxLength(MaxInputLength)] string str)
+        private static int StrLen([MaxLength(MaxInputLength)] string str)
         {
             // return the length of the string in elements
             // it should return 1 for both  "🦆" and "ã"
