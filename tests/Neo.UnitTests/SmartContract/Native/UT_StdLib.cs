@@ -215,9 +215,9 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = TestBlockchain.GetTestSnapshot();
 
             using var script = new ScriptBuilder();
-            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringElementLength", "🦆");
-            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringElementLength", "ã");
-            script.EmitDynamicCall(NativeContract.StdLib.Hash, "stringElementLength", "a");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", "🦆");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", "ã");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", "a");
 
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
             engine.LoadScript(script.ToArray());
