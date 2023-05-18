@@ -220,7 +220,7 @@ namespace Neo.SmartContract
             {
                 ContractState currentContract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
                 if (currentContract?.CanCall(contract, method.Name) == false)
-                    throw new InvalidOperationException($"Cannot Call Method {method} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
+                    throw new InvalidOperationException($"Cannot Call Method {method.Name} Of Contract {contract.Hash} From Contract {CurrentScriptHash}");
             }
 
             if (invocationCounter.TryGetValue(contract.Hash, out var counter))
