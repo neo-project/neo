@@ -342,35 +342,34 @@ namespace Neo.Ledger
         }
 
         /// <summary>
-        /// Checks whether transaction conflicts with mempooled verified transactions
-        /// and can be added to the pool. If true, then transactions from conflictsList
-        /// should be removed from the verified structures (_unsortedTransactions and
-        /// _sortedTransactions).
+        /// Checks whether there is no mismatch in Conflicts attributes between the current transaction
+        /// and mempooled unsorted transactions. If true, then these unsorted transactions will be added
+        /// into conflictsList.
         /// </summary>
-        /// <param name="tx">The <see cref="Transaction"/> that needs to be checked.</param>
+        /// <param name="tx">The <see cref="Transaction"/>current transaction needs to be checked.</param>
         /// <param name="conflictsList">The list of conflicting verified transactions that should be removed from the pool if tx fits the pool.</param>
         /// <returns>True if transaction fits the pool, otherwise false.</returns>
         private bool CheckConflicts(Transaction tx, out List<PoolItem> conflictsList)
         {
             conflictsList = new();
-            // Step 1: check if `tx` was in attributes of mempooled transactions.
-            if (_conflicts.TryGetValue(tx.Hash, out var conlicting))
+            // Step 1: check if `tx` was in Conflicts attributes of unsorted transactions.
+            if (_conflicts.TryGetValue(tx.Hash, out var conflicting))
             {
-                foreach (var hash in conlicting)
+                foreach (var hash in conflicting)
                 {
-                    var existingTx = _unsortedTransactions[hash];
-                    if (existingTx.Tx.Signers.Select(s => s.Account).Contains(tx.Sender) && existingTx.Tx.NetworkFee > tx.NetworkFee) return false;
-                    conflictsList.Add(existingTx);
+                    var unsortedTx = _unsortedTransactions[hash];
+                    if (unsortedTx.Tx.Signers.Select(s => s.Account).Contains(tx.Sender) && unsortedTx.Tx.NetworkFee > tx.NetworkFee) return false;
+                    conflictsList.Add(unsortedTx);
                 }
             }
-            // Step 2: check if mempooled transactions were in `tx`'s attributes.
+            // Step 2: check if unsorted transactions were in `tx`'s Conflicts attributes.
             foreach (var hash in tx.GetAttributes<Conflicts>().Select(p => p.Hash))
             {
-                if (_unsortedTransactions.TryGetValue(hash, out PoolItem existingTx))
+                if (_unsortedTransactions.TryGetValue(hash, out PoolItem unsortedTx))
                 {
-                    if (!tx.Signers.Select(p => p.Account).Contains(existingTx.Tx.Sender)) return false;
-                    if (existingTx.Tx.NetworkFee >= tx.NetworkFee) return false;
-                    conflictsList.Add(existingTx);
+                    if (!tx.Signers.Select(p => p.Account).Contains(unsortedTx.Tx.Sender)) return false;
+                    if (unsortedTx.Tx.NetworkFee >= tx.NetworkFee) return false;
+                    conflictsList.Add(unsortedTx);
                 }
             }
             // Step 3: take into account sender's conflicting transactions while balance check,
