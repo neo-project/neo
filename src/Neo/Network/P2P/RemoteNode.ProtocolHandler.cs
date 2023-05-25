@@ -318,7 +318,7 @@ namespace Neo.Network.P2P
             switch (inventory)
             {
                 case Transaction transaction:
-                    if (!system.ContainsTransaction(transaction.Hash))
+                    if (!(system.ContainsTransaction(transaction.Hash) || system.ContainsConflictHash(transaction.Hash)))
                         system.TxRouter.Tell(new TransactionRouter.Preverify(transaction, true));
                     break;
                 case Block block:
@@ -347,7 +347,7 @@ namespace Neo.Network.P2P
                 case InventoryType.TX:
                     {
                         DataCache snapshot = system.StoreView;
-                        hashes = hashes.Where(p => !NativeContract.Ledger.ContainsTransaction(snapshot, p)).ToArray();
+                        hashes = hashes.Where(p => !(NativeContract.Ledger.ContainsTransaction(snapshot, p) || NativeContract.Ledger.ContainsConflictHash(snapshot, p))).ToArray();
                     }
                     break;
             }

@@ -4,6 +4,7 @@ using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.SmartContract;
+using Neo.VM;
 using System;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
@@ -64,9 +65,24 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var snapshot = TestBlockchain.GetTestSnapshot();
             var key = Ledger.UT_MemoryPool.CreateStorageKey(NativeContract.Ledger.Id, Prefix_Transaction, _u.ToArray());
 
-            snapshot.Add(key, new StorageItem());
+            // Conflicting transaction is in the Conflicts attribute of some other on-chain transaction.
+            var conflict = new TransactionState { Trimmed = true };
+            snapshot.Add(key, new StorageItem(conflict));
+            Assert.IsTrue(test.Verify(snapshot, new Transaction()));
+
+            // Conflicting transaction is on-chain.
+            snapshot.Delete(key);
+            conflict = new TransactionState
+            {
+                Trimmed = false,
+                BlockIndex = 123,
+                Transaction = new Transaction(),
+                State = VMState.NONE
+            };
+            snapshot.Add(key, new StorageItem(conflict));
             Assert.IsFalse(test.Verify(snapshot, new Transaction()));
 
+            // There's no conflicting transaction at all.
             snapshot.Delete(key);
             Assert.IsTrue(test.Verify(snapshot, new Transaction()));
         }

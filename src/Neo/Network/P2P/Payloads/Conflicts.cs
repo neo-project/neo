@@ -38,6 +38,9 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Verify(DataCache snapshot, Transaction tx)
         {
+            // Only check if conflicting transaction is on chain. It's OK if the
+            // conflicting transaction was in the Conflicts attribute of some other
+            // on-chain transaction.
             return !NativeContract.Ledger.ContainsTransaction(snapshot, Hash);
         }
     }

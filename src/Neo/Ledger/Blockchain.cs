@@ -206,6 +206,8 @@ namespace Neo.Ledger
             {
                 if (NativeContract.Ledger.ContainsTransaction(snapshot, tx.Hash))
                     continue;
+                if (NativeContract.Ledger.ContainsConflictHash(snapshot, tx.Hash))
+                    continue;
                 // First remove the tx if it is unverified in the pool.
                 system.MemPool.TryRemoveUnVerified(tx.Hash, out _);
                 // Add to the memory pool
@@ -337,6 +339,7 @@ namespace Neo.Ledger
         private VerifyResult OnNewTransaction(Transaction transaction)
         {
             if (system.ContainsTransaction(transaction.Hash)) return VerifyResult.AlreadyExists;
+            if (system.ContainsConflictHash(transaction.Hash)) return VerifyResult.HasConflicts;
             return system.MemPool.TryAdd(transaction, system.StoreView);
         }
 
@@ -391,8 +394,9 @@ namespace Neo.Ledger
         {
             if (system.ContainsTransaction(tx.Hash))
                 SendRelayResult(tx, VerifyResult.AlreadyExists);
-            else
-                system.TxRouter.Forward(new TransactionRouter.Preverify(tx, true));
+            else if (system.ContainsConflictHash(tx.Hash))
+                SendRelayResult(tx, VerifyResult.HasConflicts);
+            else system.TxRouter.Forward(new TransactionRouter.Preverify(tx, true));
         }
 
         private void Persist(Block block)

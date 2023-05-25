@@ -131,7 +131,22 @@ namespace Neo.SmartContract.Native
         /// <returns><see langword="true"/> if the blockchain contains the transaction; otherwise, <see langword="false"/>.</returns>
         public bool ContainsTransaction(DataCache snapshot, UInt256 hash)
         {
-            return snapshot.Contains(CreateStorageKey(Prefix_Transaction).Add(hash));
+            var txState = GetTransactionState(snapshot, hash);
+            return txState != null;
+        }
+
+        /// <summary>
+        /// Determine whether the specified transaction hash is contained in the blockchain
+        /// as the hash of conflicting transaction.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="hash">The hash of the conflicting transaction.</param>
+        /// <returns><see langword="true"/> if the blockchain contains the hash of the conflicting transaction; otherwise, <see langword="false"/>.</returns>
+        public bool ContainsConflictHash(DataCache snapshot, UInt256 hash)
+        {
+            var state = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
+            if (state is not null && state.Trimmed) return true;
+            return false;
         }
 
         /// <summary>
