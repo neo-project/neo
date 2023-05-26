@@ -349,11 +349,15 @@ namespace Neo.UnitTests.Ledger
             _unit.SortedTxCount.Should().Be(2);
             _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp2, mp4 });
 
-            _unit.TryAdd(mp1, engine.Snapshot).Should().Be(VerifyResult.Succeed); // mp1 conflicts with mp2 and has same network fee => mp2 shoould be removed from pool
+            _unit.TryAdd(mp1, engine.Snapshot).Should().Be(VerifyResult.Succeed); // mp1 conflicts with mp2 and has same network fee, mp2 has Conflicts attribute => mp2 should be removed from pool
             _unit.SortedTxCount.Should().Be(2);
             _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1, mp4 });
 
-            _unit.TryAdd(mp5, engine.Snapshot).Should().Be(VerifyResult.HasConflicts); // mp1 conflicts with mp2 and has same network fee => mp2 shoould be removed from pool
+            _unit.TryAdd(mp2, engine.Snapshot).Should().Be(VerifyResult.HasConflicts); // mp2 conflicts with mp1 and has same network fee, mp2 has Conflicts attribute => mp2 shoouldn't be added to the pool
+            _unit.SortedTxCount.Should().Be(2);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1, mp4 });
+
+            _unit.TryAdd(mp5, engine.Snapshot).Should().Be(VerifyResult.HasConflicts); // mp5 conflicts with mp4 and has smaller network fee => mp5 fails to be added
             _unit.SortedTxCount.Should().Be(2);
             _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1, mp4 });
 

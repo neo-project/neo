@@ -61,9 +61,7 @@ namespace Neo.Ledger
 
             BigInteger expectedFee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
             foreach (var conflictTx in conflictingTxs.Where(c => c.Sender.Equals(tx.Sender)))
-            {
                 expectedFee -= (conflictTx.NetworkFee + conflictTx.SystemFee);
-            }
             if (balance < expectedFee) return false;
 
             var oracle = tx.GetAttribute<OracleResponse>();
