@@ -315,9 +315,12 @@ namespace Neo.UnitTests.Ledger
 
             var mp1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp1 doesn't conflict with anyone and not in the pool yet
 
-            var mp2 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp2 conflicts with mp1 and has the same network fee
-            mp2.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp1.Hash } };
-            _unit.TryAdd(mp2, engine.Snapshot);
+            var mp2_1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp2_1 conflicts with mp1 and has the same network fee
+            mp2_1.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp1.Hash } };
+            _unit.TryAdd(mp2_1, engine.Snapshot);
+            var mp2_2 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp2_2 also conflicts with mp1 and has the same network fee as mp1 and mp2_1
+            mp2_2.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp1.Hash } };
+            _unit.TryAdd(mp2_2, engine.Snapshot);
 
             var mp3 = CreateTransactionWithFeeAndBalanceVerify(2 * txFee);  // mp3 conflicts with mp1 and has larger network fee
             mp3.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp1.Hash } };
@@ -333,27 +336,27 @@ namespace Neo.UnitTests.Ledger
             var mp5 = CreateTransactionWithFeeAndBalanceVerify(2 * txFee);  // mp5 conflicts with mp4 and has smaller network fee
             mp5.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp4.Hash } };
 
-            _unit.SortedTxCount.Should().Be(2);
+            _unit.SortedTxCount.Should().Be(3);
             _unit.UnverifiedSortedTxCount.Should().Be(0);
 
             // Act & Assert: try to add conlflicting transactions to the pool.
-            _unit.TryAdd(mp1, engine.Snapshot).Should().Be(VerifyResult.HasConflicts); // mp1 conflicts with mp2 and mp3 but has lower network fee than mp3 => mp1 fails to be added
-            _unit.SortedTxCount.Should().Be(2);
-            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp2, mp3 });
+            _unit.TryAdd(mp1, engine.Snapshot).Should().Be(VerifyResult.HasConflicts); // mp1 conflicts with mp2_1, mp2_2 and mp3 but has lower network fee than mp3 => mp1 fails to be added
+            _unit.SortedTxCount.Should().Be(3);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp2_1, mp2_2, mp3 });
 
             _unit.TryAdd(malicious, engine.Snapshot).Should().Be(VerifyResult.HasConflicts); // malicious conflicts with mp3, has larger network fee but malicious (different) sender => mp3 shoould be left in pool
-            _unit.SortedTxCount.Should().Be(2);
-            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp2, mp3 });
+            _unit.SortedTxCount.Should().Be(3);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp2_1, mp2_2, mp3 });
 
             _unit.TryAdd(mp4, engine.Snapshot).Should().Be(VerifyResult.Succeed); // mp4 conflicts with mp3 and has larger network fee => mp3 shoould be removed from pool
-            _unit.SortedTxCount.Should().Be(2);
-            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp2, mp4 });
+            _unit.SortedTxCount.Should().Be(3);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp2_1, mp2_2, mp4 });
 
-            _unit.TryAdd(mp1, engine.Snapshot).Should().Be(VerifyResult.Succeed); // mp1 conflicts with mp2 and has same network fee, mp2 has Conflicts attribute => mp2 should be removed from pool
+            _unit.TryAdd(mp1, engine.Snapshot).Should().Be(VerifyResult.Succeed); // mp1 conflicts with mp2_1 and mp2_2 and has same network fee, mp2_1 and mp2_2 have Conflicts attribute => mp2_1 and mp2_2 should be removed from pool
             _unit.SortedTxCount.Should().Be(2);
             _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1, mp4 });
 
-            _unit.TryAdd(mp2, engine.Snapshot).Should().Be(VerifyResult.HasConflicts); // mp2 conflicts with mp1 and has same network fee, mp2 has Conflicts attribute => mp2 shoouldn't be added to the pool
+            _unit.TryAdd(mp2_1, engine.Snapshot).Should().Be(VerifyResult.HasConflicts); // mp2_1 conflicts with mp1 and has same network fee, mp2_1 has Conflicts attribute => mp2_1 shoouldn't be added to the pool
             _unit.SortedTxCount.Should().Be(2);
             _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1, mp4 });
 
