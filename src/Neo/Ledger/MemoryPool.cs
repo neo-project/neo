@@ -352,13 +352,15 @@ namespace Neo.Ledger
         private bool CheckConflicts(Transaction tx, out List<PoolItem> conflictsList)
         {
             conflictsList = new();
+            long conflictsFeeSum = 0;
             // Step 1: check if `tx` was in Conflicts attributes of unsorted transactions.
             if (_conflicts.TryGetValue(tx.Hash, out var conflicting))
             {
                 foreach (var hash in conflicting)
                 {
                     var unsortedTx = _unsortedTransactions[hash];
-                    if (unsortedTx.Tx.Signers.Select(s => s.Account).Contains(tx.Sender) && unsortedTx.Tx.NetworkFee > tx.NetworkFee) return false;
+                    if (unsortedTx.Tx.Signers.Select(s => s.Account).Contains(tx.Sender))
+                        conflictsFeeSum += unsortedTx.Tx.NetworkFee;
                     conflictsList.Add(unsortedTx);
                 }
             }
@@ -368,10 +370,14 @@ namespace Neo.Ledger
                 if (_unsortedTransactions.TryGetValue(hash, out PoolItem unsortedTx))
                 {
                     if (!tx.Signers.Select(p => p.Account).Contains(unsortedTx.Tx.Sender)) return false;
-                    if (unsortedTx.Tx.NetworkFee >= tx.NetworkFee) return false;
+                    conflictsFeeSum += unsortedTx.Tx.NetworkFee;
                     conflictsList.Add(unsortedTx);
                 }
             }
+            // Network fee of tx have to be larger than the sum of conflicting txs network fees.
+            if (conflictsFeeSum != 0 && conflictsFeeSum >= tx.NetworkFee)
+                return false;
+
             // Step 3: take into account sender's conflicting transactions while balance check,
             // this will be done in VerifyStateDependant.
 
