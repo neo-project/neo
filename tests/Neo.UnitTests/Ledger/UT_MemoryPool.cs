@@ -306,12 +306,14 @@ namespace Neo.UnitTests.Ledger
         {
             // Arrange: prepare mempooled txs that have conflicts.
             long txFee = 1;
+            var maliciousSender = new UInt160(Crypto.Hash160(new byte[] { 1, 2, 3 }));
             var snapshot = GetSnapshot();
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             engine.LoadScript(Array.Empty<byte>());
             await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
             _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 100, true); // balance enough for all mempooled txs
+            _ = NativeContract.GAS.Mint(engine, maliciousSender, 100, true); // balance enough for all mempooled txs
 
             var mp1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp1 doesn't conflict with anyone and not in the pool yet
 
@@ -336,6 +338,18 @@ namespace Neo.UnitTests.Ledger
             var mp5 = CreateTransactionWithFeeAndBalanceVerify(2 * txFee);  // mp5 conflicts with mp4 and has smaller network fee
             mp5.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp4.Hash } };
 
+            var mp6 = CreateTransactionWithFeeAndBalanceVerify(mp2_1.NetworkFee + mp2_2.NetworkFee + 1); // mp6 conflicts with mp2_1 and mp2_2 and has larger network fee.
+            mp6.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp2_1.Hash }, new Conflicts() { Hash = mp2_2.Hash } };
+
+            var mp7 = CreateTransactionWithFeeAndBalanceVerify(txFee * 2 + 1); // mp7 doesn't conflicts with anyone, but mp8, mp9 and mp10malicious has smaller sum network fee and conflict with mp7.
+            var mp8 = CreateTransactionWithFeeAndBalanceVerify(txFee);
+            mp8.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp7.Hash } };
+            var mp9 = CreateTransactionWithFeeAndBalanceVerify(txFee);
+            mp9.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp7.Hash } };
+            var mp10malicious = CreateTransactionWithFeeAndBalanceVerify(txFee);
+            mp10malicious.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp7.Hash } };
+            mp10malicious.Signers = new Signer[] { new Signer() { Account = maliciousSender, Scopes = WitnessScope.None } };
+
             _unit.SortedTxCount.Should().Be(3);
             _unit.UnverifiedSortedTxCount.Should().Be(0);
 
@@ -352,21 +366,40 @@ namespace Neo.UnitTests.Ledger
             _unit.SortedTxCount.Should().Be(3);
             _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp2_1, mp2_2, mp4 });
 
-            _unit.TryAdd(mp1, engine.Snapshot).Should().Be(VerifyResult.Succeed); // mp1 conflicts with mp2_1 and mp2_2 and has same network fee, mp2_1 and mp2_2 have Conflicts attribute => mp2_1 and mp2_2 should be removed from pool
-            _unit.SortedTxCount.Should().Be(2);
-            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1, mp4 });
+            _unit.TryAdd(mp1, engine.Snapshot).Should().Be(VerifyResult.HasConflicts); // mp1 conflicts with mp2_1 and mp2_2 and has same network fee => mp2_1 and mp2_2 should be left in pool.
+            _unit.SortedTxCount.Should().Be(3);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp2_1, mp2_2, mp4 });
 
-            _unit.TryAdd(mp2_1, engine.Snapshot).Should().Be(VerifyResult.HasConflicts); // mp2_1 conflicts with mp1 and has same network fee, mp2_1 has Conflicts attribute => mp2_1 shoouldn't be added to the pool
+            _unit.TryAdd(mp6, engine.Snapshot).Should().Be(VerifyResult.Succeed); // mp6 conflicts with mp2_1 and mp2_2 and has larger network fee than the sum of mp2_1 and mp2_2 fees => mp6 should be added.
             _unit.SortedTxCount.Should().Be(2);
-            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1, mp4 });
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp6, mp4 });
 
-            _unit.TryAdd(mp5, engine.Snapshot).Should().Be(VerifyResult.HasConflicts); // mp5 conflicts with mp4 and has smaller network fee => mp5 fails to be added
-            _unit.SortedTxCount.Should().Be(2);
-            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1, mp4 });
+            _unit.TryAdd(mp1, engine.Snapshot).Should().Be(VerifyResult.Succeed); // mp1 conflicts with mp2_1 and mp2_2, but they are not in the pool now => mp1 should be added.
+            _unit.SortedTxCount.Should().Be(3);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1, mp6, mp4 });
+
+            _unit.TryAdd(mp2_1, engine.Snapshot).Should().Be(VerifyResult.HasConflicts); // mp2_1 conflicts with mp1 and has same network fee => mp2_1 shouldn't be added to the pool.
+            _unit.SortedTxCount.Should().Be(3);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1, mp6, mp4 });
+
+            _unit.TryAdd(mp5, engine.Snapshot).Should().Be(VerifyResult.HasConflicts); // mp5 conflicts with mp4 and has smaller network fee => mp5 fails to be added.
+            _unit.SortedTxCount.Should().Be(3);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1, mp6, mp4 });
+
+            _unit.TryAdd(mp8, engine.Snapshot).Should().Be(VerifyResult.Succeed); // mp8, mp9 and mp10malicious conflict with mp7, but mo7 is not in the pool yet.
+            _unit.TryAdd(mp9, engine.Snapshot).Should().Be(VerifyResult.Succeed);
+            _unit.TryAdd(mp10malicious, engine.Snapshot).Should().Be(VerifyResult.Succeed);
+            _unit.SortedTxCount.Should().Be(6);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1, mp6, mp4, mp8, mp9, mp10malicious });
+            _unit.TryAdd(mp7, engine.Snapshot).Should().Be(VerifyResult.Succeed); // mp7 has larger network fee than the sum of mp8 and mp9 fees => should be added to the pool.
+            _unit.SortedTxCount.Should().Be(4);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1, mp6, mp4, mp7 });
 
             // Cleanup: revert the balance.
             await NativeContract.GAS.Burn(engine, UInt160.Zero, 100);
             _ = NativeContract.GAS.Mint(engine, UInt160.Zero, balance, true);
+            await NativeContract.GAS.Burn(engine, maliciousSender, 100);
+            _ = NativeContract.GAS.Mint(engine, maliciousSender, balance, true);
         }
 
         [TestMethod]
