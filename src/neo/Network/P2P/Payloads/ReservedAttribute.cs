@@ -11,7 +11,7 @@
 using System;
 using System.IO;
 using Neo.IO;
-using Neo.IO.Json;
+using Neo.Json;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -25,9 +25,9 @@ namespace Neo.Network.P2P.Payloads
         public override bool AllowMultiple => true;
         public override TransactionAttributeType Type => TransactionAttributeType.ReservedAttribute;
 
-        protected override void DeserializeWithoutType(BinaryReader reader)
+        protected override void DeserializeWithoutType(ref MemoryReader reader)
         {
-            _reserved = reader.ReadVarBytes(ushort.MaxValue);
+            _reserved = reader.ReadVarMemory(ushort.MaxValue).ToArray();
         }
 
         protected override void SerializeWithoutType(BinaryWriter writer)
