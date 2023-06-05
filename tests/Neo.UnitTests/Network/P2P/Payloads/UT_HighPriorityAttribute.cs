@@ -42,7 +42,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Wrong type
 
-            buffer[0] = 0xff;
+            buffer[0] = 0xfe;
             reader = new MemoryReader(buffer);
             try
             {
