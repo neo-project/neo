@@ -39,6 +39,6 @@ namespace Neo.Network.P2P.Payloads
         /// Indicates that the transaction is a reserved attribute.
         /// </summary>
         [ReflectionCache(typeof(ReservedAttribute))]
-        ReservedAttribute = 0xFF
+        ReservedAttribute = 0x31
     }
 }
