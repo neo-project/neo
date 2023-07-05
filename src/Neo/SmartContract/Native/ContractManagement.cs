@@ -116,6 +116,7 @@ namespace Neo.SmartContract.Native
                     Hash = contract.Hash,
                     Manifest = contract.Manifest
                 }));
+                engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(contract.Hash.ToArray()));
                 await contract.Initialize(engine);
             }
         }
@@ -230,7 +231,7 @@ namespace Neo.SmartContract.Native
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
             ContractManifest parsedManifest = ContractManifest.Parse(manifest);
-            Helper.Check(nef.Script, parsedManifest.Abi);
+            Helper.Check(new VM.Script(nef.Script, true), parsedManifest.Abi);
             UInt160 hash = Helper.GetContractHash(tx.Sender, nef.CheckSum, parsedManifest.Name);
 
             if (Policy.IsBlocked(engine.Snapshot, hash))
@@ -294,7 +295,7 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.Hash}");
                 contract.Manifest = manifest_new;
             }
-            Helper.Check(contract.Nef.Script, contract.Manifest.Abi);
+            Helper.Check(new VM.Script(contract.Nef.Script, true), contract.Manifest.Abi);
             contract.UpdateCounter++; // Increase update counter
             return OnDeploy(engine, contract, data, true);
         }

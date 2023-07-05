@@ -1,3 +1,7 @@
+using System;
+using System.Linq;
+using System.Numerics;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
@@ -6,10 +10,6 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
-using System;
-using System.Linq;
-using System.Numerics;
-using System.Threading.Tasks;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -42,10 +42,12 @@ namespace Neo.UnitTests.SmartContract.Native
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
             byte[] to = new byte[20];
-            var keyCount = snapshot.GetChangeSet().Count();
             var supply = NativeContract.GAS.TotalSupply(snapshot);
             supply.Should().Be(5200000050000000); // 3000000000000000 + 50000000 (neo holder reward)
 
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+            snapshot.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
+            var keyCount = snapshot.GetChangeSet().Count();
             // Check unclaim
 
             var unclaim = UT_NeoToken.Check_UnclaimedGas(snapshot, from, persistingBlock);
@@ -111,10 +113,9 @@ namespace Neo.UnitTests.SmartContract.Native
             engine.Snapshot.GetChangeSet().Count().Should().Be(2);
 
             // Burn all
-
             await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(5200049999999999));
 
-            (keyCount - 1).Should().Be(engine.Snapshot.GetChangeSet().Count());
+            (keyCount - 2).Should().Be(engine.Snapshot.GetChangeSet().Count());
 
             // Bad inputs
 
