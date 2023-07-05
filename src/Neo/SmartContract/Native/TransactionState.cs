@@ -22,17 +22,12 @@ namespace Neo.SmartContract.Native
     public class TransactionState : IInteroperable
     {
         /// <summary>
-        /// The transaction is trimmed.
-        /// To indicate this state is a placeholder for a conflict transaction.
-        /// </summary>
-        public bool Trimmed;
-        /// <summary>
         /// The block containing this transaction.
         /// </summary>
         public uint BlockIndex;
 
         /// <summary>
-        /// The transaction.
+        /// The transaction, if the transaction is trimmed this value will be null
         /// </summary>
         public Transaction Transaction;
 
@@ -47,7 +42,6 @@ namespace Neo.SmartContract.Native
         {
             return new TransactionState
             {
-                Trimmed = Trimmed,
                 BlockIndex = BlockIndex,
                 Transaction = Transaction,
                 State = State,
@@ -58,7 +52,6 @@ namespace Neo.SmartContract.Native
         void IInteroperable.FromReplica(IInteroperable replica)
         {
             TransactionState from = (TransactionState)replica;
-            Trimmed = from.Trimmed;
             BlockIndex = from.BlockIndex;
             Transaction = from.Transaction;
             State = from.State;
@@ -69,20 +62,19 @@ namespace Neo.SmartContract.Native
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
-            Trimmed = @struct[0].GetBoolean();
-            if (Trimmed) return;
-            BlockIndex = (uint)@struct[1].GetInteger();
-            _rawTransaction = ((ByteString)@struct[2]).Memory;
+            if (@struct.Count == 0) return;
+            BlockIndex = (uint)@struct[0].GetInteger();
+            _rawTransaction = ((ByteString)@struct[1]).Memory;
             Transaction = _rawTransaction.AsSerializable<Transaction>();
-            State = (VMState)(byte)@struct[3].GetInteger();
+            State = (VMState)(byte)@struct[2].GetInteger();
         }
 
         StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
         {
-            if (Trimmed) return new Struct(referenceCounter) { Trimmed };
+            if (Transaction is null) return new Struct(referenceCounter);
             if (_rawTransaction.IsEmpty)
                 _rawTransaction = Transaction.ToArray();
-            return new Struct(referenceCounter) { Trimmed, BlockIndex, _rawTransaction, (byte)State };
+            return new Struct(referenceCounter) { BlockIndex, _rawTransaction, (byte)State };
         }
     }
 }

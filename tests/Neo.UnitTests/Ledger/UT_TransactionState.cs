@@ -33,10 +33,7 @@ namespace Neo.UnitTests.Ledger
                     } }
                 }
             };
-            originTrimmed = new TransactionState()
-            {
-                Trimmed = true,
-            };
+            originTrimmed = new TransactionState();
         }
 
         [TestMethod]
@@ -45,12 +42,12 @@ namespace Neo.UnitTests.Ledger
             var data = BinarySerializer.Serialize(((IInteroperable)origin).ToStackItem(null), 1024);
             var reader = new MemoryReader(data);
 
-            TransactionState dest = new TransactionState();
+            TransactionState dest = new();
             ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(ref reader, ExecutionEngineLimits.Default, null));
 
             dest.BlockIndex.Should().Be(origin.BlockIndex);
             dest.Transaction.Hash.Should().Be(origin.Transaction.Hash);
-            dest.Trimmed.Should().Be(false);
+            dest.Transaction.Should().NotBeNull();
         }
 
         [TestMethod]
@@ -59,12 +56,12 @@ namespace Neo.UnitTests.Ledger
             var data = BinarySerializer.Serialize(((IInteroperable)originTrimmed).ToStackItem(null), 1024);
             var reader = new MemoryReader(data);
 
-            TransactionState dest = new TransactionState();
+            TransactionState dest = new();
             ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(ref reader, ExecutionEngineLimits.Default, null));
 
             dest.BlockIndex.Should().Be(0);
             dest.Transaction.Should().Be(null);
-            dest.Trimmed.Should().Be(true);
+            dest.Transaction.Should().BeNull();
         }
     }
 }

@@ -38,7 +38,6 @@ namespace Neo.SmartContract.Native
         {
             TransactionState[] transactions = engine.PersistingBlock.Transactions.Select(p => new TransactionState
             {
-                Trimmed = false,
                 BlockIndex = engine.PersistingBlock.Index,
                 Transaction = p,
                 State = VMState.NONE
@@ -50,7 +49,7 @@ namespace Neo.SmartContract.Native
                 engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(tx.Transaction.Hash), new StorageItem(tx));
                 foreach (var attr in tx.Transaction.GetAttributes<Conflicts>())
                 {
-                    engine.Snapshot.GetOrAdd(CreateStorageKey(Prefix_Transaction).Add(attr.Hash), () => new StorageItem(new TransactionState { Trimmed = true }));
+                    engine.Snapshot.GetOrAdd(CreateStorageKey(Prefix_Transaction).Add(attr.Hash), () => new StorageItem(new TransactionState()));
                 }
             }
             engine.SetState(transactions);
@@ -145,7 +144,7 @@ namespace Neo.SmartContract.Native
         public bool ContainsConflictHash(DataCache snapshot, UInt256 hash)
         {
             var state = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
-            if (state is not null && state.Trimmed) return true;
+            if (state is not null && state.Transaction is null) return true;
             return false;
         }
 
@@ -241,7 +240,7 @@ namespace Neo.SmartContract.Native
         public TransactionState GetTransactionState(DataCache snapshot, UInt256 hash)
         {
             var state = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
-            if (state is not null && state.Trimmed) return null;
+            if (state?.Transaction is null) return null;
             return state;
         }
 
