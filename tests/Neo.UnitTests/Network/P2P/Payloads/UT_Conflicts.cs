@@ -66,7 +66,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var key = Ledger.UT_MemoryPool.CreateStorageKey(NativeContract.Ledger.Id, Prefix_Transaction, _u.ToArray());
 
             // Conflicting transaction is in the Conflicts attribute of some other on-chain transaction.
-            var conflict = new TransactionState { Trimmed = true };
+            var conflict = new TransactionState();
             snapshot.Add(key, new StorageItem(conflict));
             Assert.IsTrue(test.Verify(snapshot, new Transaction()));
 
@@ -74,7 +74,6 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             snapshot.Delete(key);
             conflict = new TransactionState
             {
-                Trimmed = false,
                 BlockIndex = 123,
                 Transaction = new Transaction(),
                 State = VMState.NONE
