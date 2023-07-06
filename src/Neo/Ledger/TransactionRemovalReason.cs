@@ -24,10 +24,5 @@ namespace Neo.Ledger
         /// The transaction was ejected due to failing re-validation after a block was persisted.
         /// </summary>
         NoLongerValid,
-
-        /// <summary>
-        /// The transaction was ejected due to conflict with hight priority transactions.
-        /// </summary>
-        Conflict
     }
 }

@@ -338,13 +338,12 @@ namespace Neo.Network.P2P.Payloads
         /// <param name="settings">The <see cref="ProtocolSettings"/> used to verify the transaction.</param>
         /// <param name="snapshot">The snapshot used to verify the transaction.</param>
         /// <param name="context">The <see cref="TransactionVerificationContext"/> used to verify the transaction.</param>
-        /// <param name="conflictList">The transactions used to verify the conflict.</param>
         /// <returns>The result of the verification.</returns>
-        public VerifyResult Verify(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictList = null)
+        public VerifyResult Verify(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context)
         {
             VerifyResult result = VerifyStateIndependent(settings);
             if (result != VerifyResult.Succeed) return result;
-            return VerifyStateDependent(settings, snapshot, context, conflictList);
+            return VerifyStateDependent(settings, snapshot, context);
         }
 
         /// <summary>
@@ -353,9 +352,8 @@ namespace Neo.Network.P2P.Payloads
         /// <param name="settings">The <see cref="ProtocolSettings"/> used to verify the transaction.</param>
         /// <param name="snapshot">The snapshot used to verify the transaction.</param>
         /// <param name="context">The <see cref="TransactionVerificationContext"/> used to verify the transaction.</param>
-        /// <param name="conflictList">The transactions used to verify the conflict.</param>
         /// <returns>The result of the verification.</returns>
-        public virtual VerifyResult VerifyStateDependent(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictList = null)
+        public virtual VerifyResult VerifyStateDependent(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context)
         {
             uint height = NativeContract.Ledger.CurrentIndex(snapshot);
             if (ValidUntilBlock <= height || ValidUntilBlock > height + settings.MaxValidUntilBlockIncrement)
@@ -375,7 +373,6 @@ namespace Neo.Network.P2P.Payloads
             }
             long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot) - notary_fee;
             if (net_fee < 0) return VerifyResult.InsufficientFunds;
-            if (conflictList is not null && !VerifyConflicts(conflictList)) return VerifyResult.Conflict;
             if (net_fee > MaxVerificationGas) net_fee = MaxVerificationGas;
             uint execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             for (int i = 0; i < hashes.Length; i++)
@@ -455,20 +452,6 @@ namespace Neo.Network.P2P.Payloads
                 }
             }
             return VerifyResult.Succeed;
-        }
-
-        private bool VerifyConflicts(IEnumerable<Transaction> mempool)
-        {
-            return !GetAttributes<ConflictAttribute>()
-                .Select(p => p.Hash)
-                .Intersect(mempool.Select(p => p.Hash))
-                .Any() &&
-                !mempool
-                .Select(p => p
-                    .GetAttributes<ConflictAttribute>()
-                    .Select(p => p.Hash))
-                .Aggregate(Enumerable.Empty<UInt256>(), (conflicts, p) => conflicts.Union(p))
-                .Contains(Hash);
         }
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)

@@ -36,12 +36,6 @@ namespace Neo.Network.P2P.Payloads
         NotValidBefore = 0x20,
 
         /// <summary>
-        /// Indicates that the transaction is conflict with <see cref="ConflictAttribute.Hash"/>.
-        /// </summary>
-        [ReflectionCache(typeof(ConflictAttribute))]
-        Conflict = 0x21,
-
-        /// <summary>
         /// Indicates that the transaction need Notarys to collect signatures.
         /// </summary>
         [ReflectionCache(typeof(NotaryAssisted))]

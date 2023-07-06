@@ -112,9 +112,6 @@ namespace Neo.Network.P2P.Payloads
             if (fallbackTransaction.Sender != NativeContract.Notary.Hash) return false;
             if (fallbackTransaction.Signers[1].Account != witness.ScriptHash) return false;
             if (fallbackTransaction.GetAttribute<NotValidBefore>() is null) return false;
-            var conflicts = fallbackTransaction.GetAttributes<ConflictAttribute>();
-            if (conflicts.Count() != 1) return false;
-            if (conflicts.ToArray()[0].Hash != mainTransaction.Hash) return false;
             var nKeysFallback = fallbackTransaction.GetAttributes<NotaryAssisted>();
             if (!nKeysFallback.Any()) return false;
             if (nKeysFallback.ToArray()[0].NKeys != 0) return false;
