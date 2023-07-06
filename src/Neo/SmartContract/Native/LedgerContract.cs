@@ -245,11 +245,6 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private Signer[] GetTransactionSigners(ApplicationEngine engine, UInt256 hash)
         {
-            if (engine.ScriptContainer is Transaction tx && tx.Hash == hash)
-            {
-                return tx.Signers;
-            }
-
             TransactionState state = GetTransactionState(engine.Snapshot, hash);
             if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
             return state.Transaction.Signers;

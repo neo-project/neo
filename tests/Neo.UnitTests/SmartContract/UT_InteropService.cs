@@ -280,6 +280,13 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void TestRuntime_GetCurrentSigners()
+        {
+            var engine = GetEngine(hasContainer: true);
+            Assert.AreEqual(UInt160.Zero, engine.GetCurrentSigners(engine)[0].Account);
+        }
+
+        [TestMethod]
         public void TestCrypto_Verify()
         {
             var engine = GetEngine(true);
