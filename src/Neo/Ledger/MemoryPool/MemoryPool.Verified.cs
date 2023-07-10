@@ -83,9 +83,6 @@ namespace Neo.Ledger
 
             if (!_verifiedTransactions.ContainsKey(tx.Hash)) return VerifyResult.OutOfMemory;
 
-            // check whether the transaction is expired or has not sufficient fee to be added.
-            if (!ExpiringCheck(tx)) return VerifyResult.Expired;
-
             return VerifyResult.Succeed;
         }
 

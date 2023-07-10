@@ -83,8 +83,6 @@ namespace Neo.Ledger
             Capacity = system.Settings.MemoryPoolMaxTransactions;
             MaxMillisecondsToReverifyTx = (double)system.Settings.MillisecondsPerBlock / 3;
             MaxMillisecondsToReverifyTxPerIdle = (double)system.Settings.MillisecondsPerBlock / 15;
-            _edenCapacity = _system.Settings.MaxTransactionsPerBlock;
-            _survivorCapacity = 10 * _edenCapacity;
         }
 
         /// <summary>
@@ -233,8 +231,6 @@ namespace Neo.Ledger
 
                 // Add all the previously verified transactions back to the unverified transactions
                 InvalidateVerifiedTransactions();
-                // update the expiration pool.
-                ExpirationUpdate();
             }
             finally
             {
