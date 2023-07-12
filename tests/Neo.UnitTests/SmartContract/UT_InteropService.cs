@@ -283,7 +283,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestRuntime_GetCurrentSigners()
         {
             var engine = GetEngine(hasContainer: true);
-            Assert.AreEqual(UInt160.Zero, engine.GetCurrentSigners(engine)[0].Account);
+            Assert.AreEqual(UInt160.Zero, engine.GetCurrentSigners()[0].Account);
         }
 
         [TestMethod]
