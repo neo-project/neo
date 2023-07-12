@@ -399,9 +399,7 @@ namespace Neo.SmartContract
         protected internal Signer[] GetCurrentSigners()
         {
             if (ScriptContainer is Transaction tx)
-            {
                 return tx.Signers;
-            }
 
             return null;
         }
