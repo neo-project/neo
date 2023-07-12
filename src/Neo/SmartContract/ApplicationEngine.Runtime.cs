@@ -394,7 +394,6 @@ namespace Neo.SmartContract
         /// <summary>
         /// Get the Signers of the current transaction.
         /// </summary>
-        /// <param name="engine">ApplicationEngine used</param>
         /// <returns>The signers of the current transaction, or null if is not related to a transaction execution.</returns>
         protected internal Signer[] GetCurrentSigners()
         {
