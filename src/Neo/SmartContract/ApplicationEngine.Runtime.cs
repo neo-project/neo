@@ -396,9 +396,9 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="engine">ApplicationEngine used</param>
         /// <returns>The signers of the current transaction, or null if is not related to a transaction execution.</returns>
-        protected internal Signer[] GetCurrentSigners(ApplicationEngine engine)
+        protected internal Signer[] GetCurrentSigners()
         {
-            if (engine.ScriptContainer is Transaction tx)
+            if (ScriptContainer is Transaction tx)
             {
                 return tx.Signers;
             }
