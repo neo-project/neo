@@ -252,7 +252,7 @@ namespace Neo.UnitTests.Ledger
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             engine.LoadScript(Array.Empty<byte>());
             await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
-            _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 6, true); // balance enough for 6 mempooled txs
+            _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 7, true); // balance enough for 7 mempooled txs
 
             var mp1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp1 doesn't conflict with anyone
             _unit.TryAdd(mp1, engine.Snapshot).Should().Be(VerifyResult.Succeed);
@@ -283,21 +283,28 @@ namespace Neo.UnitTests.Ledger
             _unit.SortedTxCount.Should().Be(6);
             _unit.UnverifiedSortedTxCount.Should().Be(0);
 
+            var mp7 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp7 doesn't conflict with anyone
+            var tx6 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // in-block tx6 conflicts with mp7, but doesn't include sender of mp7 into signers list => even if tx6 is included into block, mp7 shouldn't be removed from the pool
+            tx6.Signers = new Signer[] { new Signer() { Account = new UInt160(Crypto.Hash160(new byte[] { 1, 2, 3 })) }, new Signer() { Account = new UInt160(Crypto.Hash160(new byte[] { 4, 5, 6 })) } };
+            tx6.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp7.Hash } };
+            _unit.TryAdd(mp7, engine.Snapshot);
+
             // Act: persist block and reverify all mempooled txs.
             var block = new Block
             {
                 Header = new Header(),
-                Transactions = new Transaction[] { tx1, tx2, tx3, tx4, tx5 },
+                Transactions = new Transaction[] { tx1, tx2, tx3, tx4, tx5, tx6 },
             };
             _unit.UpdatePoolForBlockPersisted(block, engine.Snapshot);
 
             // Assert: conflicting txs should be removed from the pool; the only mp6 that doesn't conflict with anyone should be left.
-            _unit.SortedTxCount.Should().Be(1);
+            _unit.SortedTxCount.Should().Be(2);
             _unit.GetSortedVerifiedTransactions().Select(tx => tx.Hash).Should().Contain(mp6.Hash);
+            _unit.GetSortedVerifiedTransactions().Select(tx => tx.Hash).Should().Contain(mp7.Hash);
             _unit.UnverifiedSortedTxCount.Should().Be(0);
 
             // Cleanup: revert the balance.
-            await NativeContract.GAS.Burn(engine, UInt160.Zero, txFee * 6);
+            await NativeContract.GAS.Burn(engine, UInt160.Zero, txFee * 7);
             _ = NativeContract.GAS.Mint(engine, UInt160.Zero, balance, true);
         }
 

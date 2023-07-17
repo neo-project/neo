@@ -47,9 +47,10 @@ namespace Neo.SmartContract.Native
             foreach (TransactionState tx in transactions)
             {
                 engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(tx.Transaction.Hash), new StorageItem(tx));
+                UInt160[] conflictingSigners = tx.Transaction.Signers.Select(s => s.Account).ToArray();
                 foreach (var attr in tx.Transaction.GetAttributes<Conflicts>())
                 {
-                    engine.Snapshot.GetOrAdd(CreateStorageKey(Prefix_Transaction).Add(attr.Hash), () => new StorageItem(new TransactionState()));
+                    engine.Snapshot.GetOrAdd(CreateStorageKey(Prefix_Transaction).Add(attr.Hash), () => new StorageItem(new TransactionState { ConflictingSigners = conflictingSigners }));
                 }
             }
             engine.SetState(transactions);
@@ -140,11 +141,12 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="hash">The hash of the conflicting transaction.</param>
+        /// <param name="sender">The sender of the conflicting transaction.</param>
         /// <returns><see langword="true"/> if the blockchain contains the hash of the conflicting transaction; otherwise, <see langword="false"/>.</returns>
-        public bool ContainsConflictHash(DataCache snapshot, UInt256 hash)
+        public bool ContainsConflictHash(DataCache snapshot, UInt256 hash, UInt160 sender)
         {
             var state = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
-            if (state is not null && state.Transaction is null) return true;
+            if (state is not null && state.Transaction is null && (sender is null || state.ConflictingSigners.Contains(sender))) return true;
             return false;
         }
 

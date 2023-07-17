@@ -469,15 +469,16 @@ namespace Neo.Ledger
             _txRwLock.EnterWriteLock();
             try
             {
-                HashSet<UInt256> conflicts = new HashSet<UInt256>();
+                Dictionary<UInt256, UInt160[]> conflicts = new Dictionary<UInt256, UInt160[]>();
                 // First remove the transactions verified in the block.
                 // No need to modify VerificationContext as it will be reset afterwards.
                 foreach (Transaction tx in block.Transactions)
                 {
                     if (!TryRemoveVerified(tx.Hash, out _)) TryRemoveUnVerified(tx.Hash, out _);
+                    UInt160[] conflictingSigners = tx.Signers.Select(s => s.Account).ToArray();
                     foreach (var h in tx.GetAttributes<Conflicts>().Select(a => a.Hash))
                     {
-                        conflicts.Add(h);
+                        conflicts.Add(h, conflictingSigners);
                     }
                 }
 
@@ -487,7 +488,7 @@ namespace Neo.Ledger
                 var stale = new List<UInt256>();
                 foreach (var item in _sortedTransactions)
                 {
-                    if (conflicts.Contains(item.Tx.Hash) || item.Tx.GetAttributes<Conflicts>().Select(a => a.Hash).Intersect(persisted).Any())
+                    if ((conflicts.TryGetValue(item.Tx.Hash, out var signers) && signers.Contains(item.Tx.Sender)) || item.Tx.GetAttributes<Conflicts>().Select(a => a.Hash).Intersect(persisted).Any())
                     {
                         stale.Add(item.Tx.Hash);
                         conflictingItems.Add(item.Tx);
