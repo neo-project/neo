@@ -206,7 +206,7 @@ namespace Neo.Ledger
             {
                 if (NativeContract.Ledger.ContainsTransaction(snapshot, tx.Hash))
                     continue;
-                if (NativeContract.Ledger.ContainsConflictHash(snapshot, tx.Hash, tx.Sender))
+                if (NativeContract.Ledger.ContainsConflictHash(snapshot, tx.Hash, tx.Signers.Select(s => s.Account)))
                     continue;
                 // First remove the tx if it is unverified in the pool.
                 system.MemPool.TryRemoveUnVerified(tx.Hash, out _);
@@ -339,7 +339,7 @@ namespace Neo.Ledger
         private VerifyResult OnNewTransaction(Transaction transaction)
         {
             if (system.ContainsTransaction(transaction.Hash)) return VerifyResult.AlreadyExists;
-            if (system.ContainsConflictHash(transaction.Hash, transaction.Sender)) return VerifyResult.HasConflicts;
+            if (system.ContainsConflictHash(transaction.Hash, transaction.Signers.Select(s => s.Account))) return VerifyResult.HasConflicts;
             return system.MemPool.TryAdd(transaction, system.StoreView);
         }
 
@@ -394,7 +394,7 @@ namespace Neo.Ledger
         {
             if (system.ContainsTransaction(tx.Hash))
                 SendRelayResult(tx, VerifyResult.AlreadyExists);
-            else if (system.ContainsConflictHash(tx.Hash, tx.Sender))
+            else if (system.ContainsConflictHash(tx.Hash, tx.Signers.Select(s => s.Account)))
                 SendRelayResult(tx, VerifyResult.HasConflicts);
             else system.TxRouter.Forward(new TransactionRouter.Preverify(tx, true));
         }

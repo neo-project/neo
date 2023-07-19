@@ -469,21 +469,21 @@ namespace Neo.Ledger
             _txRwLock.EnterWriteLock();
             try
             {
-                Dictionary<UInt256, List<UInt160[]>> conflicts = new Dictionary<UInt256, List<UInt160[]>>();
+                Dictionary<UInt256, List<UInt160>> conflicts = new Dictionary<UInt256, List<UInt160>>();
                 // First remove the transactions verified in the block.
                 // No need to modify VerificationContext as it will be reset afterwards.
                 foreach (Transaction tx in block.Transactions)
                 {
                     if (!TryRemoveVerified(tx.Hash, out _)) TryRemoveUnVerified(tx.Hash, out _);
-                    UInt160[] conflictingSigners = tx.Signers.Select(s => s.Account).ToArray();
+                    var conflictingSigners = tx.Signers.Select(s => s.Account);
                     foreach (var h in tx.GetAttributes<Conflicts>().Select(a => a.Hash))
                     {
                         if (conflicts.TryGetValue(h, out var signersList))
                         {
-                            signersList.Add(conflictingSigners);
+                            signersList.AddRange(conflictingSigners);
                             continue;
                         }
-                        signersList = new List<UInt160[]> { conflictingSigners };
+                        signersList = conflictingSigners.ToList();
                         conflicts.Add(h, signersList);
                     }
                 }
@@ -494,22 +494,7 @@ namespace Neo.Ledger
                 var stale = new List<UInt256>();
                 foreach (var item in _sortedTransactions)
                 {
-                    var shouldRemove = false;
-                    if (conflicts.TryGetValue(item.Tx.Hash, out var signersList))
-                    {
-                        foreach (var signers in signersList)
-                        {
-                            if (signers.Contains(item.Tx.Sender))
-                            {
-                                shouldRemove = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (!shouldRemove && item.Tx.GetAttributes<Conflicts>().Select(a => a.Hash).Intersect(persisted).Any())
-                        shouldRemove = true;
-
-                    if (shouldRemove)
+                    if ((conflicts.TryGetValue(item.Tx.Hash, out var signersList) && signersList.Intersect(item.Tx.Signers.Select(s => s.Account)).Any()) || item.Tx.GetAttributes<Conflicts>().Select(a => a.Hash).Intersect(persisted).Any())
                     {
                         stale.Add(item.Tx.Hash);
                         conflictingItems.Add(item.Tx);
