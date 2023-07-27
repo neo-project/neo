@@ -77,7 +77,7 @@ namespace Neo.SmartContract
             [OpCode.ABORT] = 0,
             [OpCode.ABORTMSG] = 0,
             [OpCode.ASSERT] = 1 << 0,
-            [OpCode.ASSERTMSG] = 0,
+            [OpCode.ASSERTMSG] = 1 << 0,
             [OpCode.THROW] = 1 << 9,
             [OpCode.TRY] = 1 << 2,
             [OpCode.TRY_L] = 1 << 2,
