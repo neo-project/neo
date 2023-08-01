@@ -40,6 +40,9 @@ namespace Neo.Json
         public JNumber(double value = 0)
         {
             if (!double.IsFinite(value)) throw new FormatException();
+            // Get the remainder after dividing the double value by 1
+            if (Math.Abs(value % 1) > 0) throw new InvalidDataException();
+
             this.Value = value;
         }
 

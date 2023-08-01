@@ -53,5 +53,12 @@ namespace Neo.Json.UnitTests
             Action action = () => new JNumber(3).GetEnum<Woo>();
             action.Should().Throw<InvalidCastException>();
         }
+
+        [TestMethod]
+        public void TestScientificNumber()
+        {
+            Action action = () => new JNumber(100.123e+2).AsString();
+            action.Should().Throw<InvalidDataException>();
+        }
     }
 }
