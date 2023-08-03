@@ -80,10 +80,10 @@ namespace Neo.UnitTests.SmartContract
 
             Assert.AreEqual("[1,-2,3.5]", parsed.ToString());
 
-            json = "[200.500000E+005,200.500000e+5,-1.1234e-100]";
+            json = "[200.500000E+005,200.500000e+5,-1.1234e-100,9.05E+28]";
             parsed = JObject.Parse(json);
 
-            Assert.AreEqual("[20050000,20050000,-1.1234E-100]", parsed.ToString());
+            Assert.AreEqual("[20050000,20050000,-1.1234E-100,9.05E+28]", parsed.ToString());
 
             json = "[-]";
             Assert.ThrowsException<FormatException>(() => JObject.Parse(json));
@@ -287,16 +287,17 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Deserialize_Array_Bool_Str_Num()
         {
-            var items = JsonSerializer.Deserialize(JObject.Parse("[true,\"test\",123]"), ExecutionEngineLimits.Default);
+            var items = JsonSerializer.Deserialize(JObject.Parse("[true,\"test\",123,9.05E+28]"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(VM.Types.Array));
-            Assert.AreEqual(((VM.Types.Array)items).Count, 3);
+            Assert.AreEqual(((VM.Types.Array)items).Count, 4);
 
             var array = (VM.Types.Array)items;
 
             Assert.IsTrue(array[0].GetBoolean());
             Assert.AreEqual(array[1].GetString(), "test");
             Assert.AreEqual(array[2].GetInteger(), 123);
+            Assert.AreEqual(array[3].GetInteger(), BigInteger.Parse("90500000000000000000000000000"));
         }
 
         [TestMethod]
