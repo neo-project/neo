@@ -191,8 +191,7 @@ namespace Neo.SmartContract
                 case JNumber num:
                     {
                         if ((num.Value % 1) != 0) throw new FormatException("Decimal value is not allowed");
-
-                        return (BigInteger)num.Value;
+                        return BigInteger.Parse(num.Value.ToString(), System.Globalization.NumberStyles.Float);
                     }
                 case JBoolean boolean:
                     {
