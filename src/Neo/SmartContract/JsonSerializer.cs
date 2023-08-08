@@ -195,7 +195,7 @@ namespace Neo.SmartContract
                         if ((num.Value % 1) != 0) throw new FormatException("Decimal value is not allowed");
                         if (engine.IsHardforkEnabled(Hardfork.HF_Basilisk))
                         {
-                            return BigInteger.Parse(num.Value.ToString(CultureInfo.InvariantCulture), NumberStyles.Float);
+                            return BigInteger.Parse(num.Value.ToString(CultureInfo.InvariantCulture), NumberStyles.Float, CultureInfo.InvariantCulture);
                         }
                         return (BigInteger)num.Value;
                     }
