@@ -14,6 +14,7 @@ using Neo.VM.Types;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -158,17 +159,18 @@ namespace Neo.SmartContract
         /// <summary>
         /// Deserializes a <see cref="StackItem"/> from <see cref="JToken"/>.
         /// </summary>
+        /// <param name="engine">The <see cref="ApplicationEngine"/> used.</param>
         /// <param name="json">The <see cref="JToken"/> to deserialize.</param>
         /// <param name="limits">The limits for the deserialization.</param>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(JToken json, ExecutionEngineLimits limits, ReferenceCounter referenceCounter = null)
+        public static StackItem Deserialize(ApplicationEngine engine, JToken json, ExecutionEngineLimits limits, ReferenceCounter referenceCounter = null)
         {
             uint maxStackSize = limits.MaxStackSize;
-            return Deserialize(json, ref maxStackSize, referenceCounter);
+            return Deserialize(engine, json, ref maxStackSize, referenceCounter);
         }
 
-        private static StackItem Deserialize(JToken json, ref uint maxStackSize, ReferenceCounter referenceCounter)
+        private static StackItem Deserialize(ApplicationEngine engine, JToken json, ref uint maxStackSize, ReferenceCounter referenceCounter)
         {
             if (maxStackSize-- == 0) throw new FormatException();
             switch (json)
@@ -181,7 +183,7 @@ namespace Neo.SmartContract
                     {
                         List<StackItem> list = new(array.Count);
                         foreach (JToken obj in array)
-                            list.Add(Deserialize(obj, ref maxStackSize, referenceCounter));
+                            list.Add(Deserialize(engine, obj, ref maxStackSize, referenceCounter));
                         return new Array(referenceCounter, list);
                     }
                 case JString str:
@@ -191,7 +193,11 @@ namespace Neo.SmartContract
                 case JNumber num:
                     {
                         if ((num.Value % 1) != 0) throw new FormatException("Decimal value is not allowed");
-                        return BigInteger.Parse(num.Value.ToString(), System.Globalization.NumberStyles.Float);
+                        if (engine.IsHardforkEnabled(Hardfork.HF_Basilisk))
+                        {
+                            return BigInteger.Parse(num.Value.ToString(CultureInfo.InvariantCulture), NumberStyles.Float);
+                        }
+                        return (BigInteger)num.Value;
                     }
                 case JBoolean boolean:
                     {
@@ -206,7 +212,7 @@ namespace Neo.SmartContract
                             if (maxStackSize-- == 0) throw new FormatException();
 
                             var key = entry.Key;
-                            var value = Deserialize(entry.Value, ref maxStackSize, referenceCounter);
+                            var value = Deserialize(engine, entry.Value, ref maxStackSize, referenceCounter);
 
                             item[key] = value;
                         }
