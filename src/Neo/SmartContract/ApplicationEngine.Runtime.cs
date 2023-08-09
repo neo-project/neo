@@ -333,6 +333,11 @@ namespace Neo.SmartContract
         /// <param name="state">The arguments of the event.</param>
         protected internal void RuntimeNotify(byte[] eventName, Array state)
         {
+            if (!IsHardforkEnabled(Hardfork.HF_Basilisk))
+            {
+                RuntimeNotifyV1(eventName, state);
+                return;
+            }
             if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
             string name = Utility.StrictUTF8.GetString(eventName);
             ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
@@ -353,6 +358,17 @@ namespace Neo.SmartContract
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             BinarySerializer.Serialize(writer, state, MaxNotificationSize);
             SendNotification(CurrentScriptHash, name, state);
+        }
+
+        protected internal void RuntimeNotifyV1(byte[] eventName, Array state)
+        {
+            if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
+            if (CurrentContext.GetState<ExecutionContextState>().Contract is null)
+                throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
+            using MemoryStream ms = new(MaxNotificationSize);
+            using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
+            BinarySerializer.Serialize(writer, state, MaxNotificationSize);
+            SendNotification(CurrentScriptHash, Utility.StrictUTF8.GetString(eventName), state);
         }
 
         /// <summary>
