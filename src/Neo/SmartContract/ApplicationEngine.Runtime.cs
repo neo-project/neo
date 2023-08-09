@@ -334,12 +334,25 @@ namespace Neo.SmartContract
         protected internal void RuntimeNotify(byte[] eventName, Array state)
         {
             if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
-            if (CurrentContext.GetState<ExecutionContextState>().Contract is null)
+            string name = Utility.StrictUTF8.GetString(eventName);
+            ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
+            if (contract is null)
                 throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
+            var @event = contract.Manifest.Abi.Events.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.Ordinal));
+            if (@event is null)
+                throw new InvalidOperationException($"Event `{name}` does not exist.");
+            if (@event.Parameters.Length != state.Count)
+                throw new InvalidOperationException("The number of the arguments does not match the formal parameters of the event.");
+            for (int i = 0; i < @event.Parameters.Length; i++)
+            {
+                var p = @event.Parameters[i];
+                if (!CheckItemType(state[i], p.Type))
+                    throw new InvalidOperationException($"The type of the argument `{p.Name}` does not match the formal parameter.");
+            }
             using MemoryStream ms = new(MaxNotificationSize);
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             BinarySerializer.Serialize(writer, state, MaxNotificationSize);
-            SendNotification(CurrentScriptHash, Utility.StrictUTF8.GetString(eventName), state);
+            SendNotification(CurrentScriptHash, name, state);
         }
 
         /// <summary>
@@ -383,6 +396,48 @@ namespace Neo.SmartContract
             if (gas <= 0)
                 throw new InvalidOperationException("GAS must be positive.");
             AddGas(gas);
+        }
+
+        private static bool CheckItemType(StackItem item, ContractParameterType type)
+        {
+            StackItemType aType = item.Type;
+            if (aType == StackItemType.Pointer) return false;
+            switch (type)
+            {
+                case ContractParameterType.Any:
+                    return true;
+                case ContractParameterType.Boolean:
+                    return aType == StackItemType.Boolean;
+                case ContractParameterType.Integer:
+                    return aType == StackItemType.Integer;
+                case ContractParameterType.ByteArray:
+                case ContractParameterType.String:
+                    return aType is StackItemType.Any or StackItemType.ByteString or StackItemType.Buffer;
+                case ContractParameterType.Hash160:
+                    if (aType == StackItemType.Any) return true;
+                    if (aType != StackItemType.ByteString && aType != StackItemType.Buffer) return false;
+                    return item.GetSpan().Length == UInt160.Length;
+                case ContractParameterType.Hash256:
+                    if (aType == StackItemType.Any) return true;
+                    if (aType != StackItemType.ByteString && aType != StackItemType.Buffer) return false;
+                    return item.GetSpan().Length == UInt256.Length;
+                case ContractParameterType.PublicKey:
+                    if (aType == StackItemType.Any) return true;
+                    if (aType != StackItemType.ByteString && aType != StackItemType.Buffer) return false;
+                    return item.GetSpan().Length == 33;
+                case ContractParameterType.Signature:
+                    if (aType == StackItemType.Any) return true;
+                    if (aType != StackItemType.ByteString && aType != StackItemType.Buffer) return false;
+                    return item.GetSpan().Length == 64;
+                case ContractParameterType.Array:
+                    return aType is StackItemType.Any or StackItemType.Array or StackItemType.Struct;
+                case ContractParameterType.Map:
+                    return aType is StackItemType.Any or StackItemType.Map;
+                case ContractParameterType.InteropInterface:
+                    return aType is StackItemType.Any or StackItemType.InteropInterface;
+                default:
+                    return false;
+            }
         }
     }
 }
