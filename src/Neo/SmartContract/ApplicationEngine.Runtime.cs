@@ -371,7 +371,6 @@ namespace Neo.SmartContract
             SendNotification(CurrentScriptHash, Utility.StrictUTF8.GetString(eventName), state);
         }
 
-
         /// <summary>
         /// Sends a notification for the specified contract.
         /// </summary>
