@@ -614,8 +614,20 @@ namespace Neo.SmartContract
         {
             if (PersistingBlock is null)
                 return true;
+
             if (!ProtocolSettings.Hardforks.TryGetValue(hardfork, out uint height))
-                return true;
+                return false;
+
+            // Pre-computed previous hardforks
+            var allHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToList();
+            foreach (var hf in allHardforks)
+            {
+                if (hf >= hardfork)
+                    break;
+                if (!ProtocolSettings.Hardforks.ContainsKey(hf))
+                    return false;
+            }
+
             return PersistingBlock.Index >= height;
         }
     }
