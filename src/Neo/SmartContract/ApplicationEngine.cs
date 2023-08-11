@@ -612,7 +612,7 @@ namespace Neo.SmartContract
 
         public bool IsHardforkEnabled(Hardfork hardfork)
         {
-            if (PersistingBlock is null)
+            if (PersistingBlock is null || ProtocolSettings.Hardforks.Count == 0)
                 return true;
 
             if (!ProtocolSettings.Hardforks.TryGetValue(hardfork, out uint height))
