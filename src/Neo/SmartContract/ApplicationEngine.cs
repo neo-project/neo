@@ -612,23 +612,30 @@ namespace Neo.SmartContract
 
         public bool IsHardforkEnabled(Hardfork hardfork)
         {
+            // Get all the known hardforks
+            var allHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToList();
+            allHardforks.Sort(); // Ensure they are sorted in the order of their definition
+
+            // Case 1: If no hardfork is specified in the configuration, enable all hardforks by default
             if (PersistingBlock is null || ProtocolSettings.Hardforks.Count == 0)
                 return true;
 
-            if (!ProtocolSettings.Hardforks.TryGetValue(hardfork, out uint height))
-                return false;
-
-            // Pre-computed previous hardforks
-            var allHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToList();
-            foreach (var hf in allHardforks)
+            // If the hardfork is not specified in the configuration, check if it's a new hardfork. If yes, disable it.
+            if (!ProtocolSettings.Hardforks.ContainsKey(hardfork))
             {
-                if (hf >= hardfork)
-                    break;
-                if (!ProtocolSettings.Hardforks.ContainsKey(hf))
+                // If the index of the hardfork in the list of known hardforks is greater than the index of the last hardfork in the configuration, disable it.
+                if (allHardforks.IndexOf(hardfork) > allHardforks.IndexOf(ProtocolSettings.Hardforks.Keys.Last()))
                     return false;
             }
 
-            return PersistingBlock.Index >= height;
+            uint height;
+            if (ProtocolSettings.Hardforks.TryGetValue(hardfork, out height))
+            {
+                // If the hardfork is set to a certain height in the configuration, check if the current block height is greater than or equal to this height
+                return PersistingBlock.Index >= height;
+            }
+            // For those old hardforks that are not explicitly specified in the configuration, we enable them by default at height 0.
+            return true;
         }
     }
 }
