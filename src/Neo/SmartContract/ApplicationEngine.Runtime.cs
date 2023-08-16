@@ -8,17 +8,17 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Numerics;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -428,8 +428,18 @@ namespace Neo.SmartContract
                     return aType == StackItemType.Integer;
                 case ContractParameterType.ByteArray:
                 case ContractParameterType.String:
-                    return aType is StackItemType.Any or StackItemType.ByteString or StackItemType.Buffer &&
-                        Utility.StrictUTF8.GetString(item.GetSpan()) is not null; // Prevent any non-UTF8 string
+                    {
+                        if (aType is StackItemType.Any or StackItemType.ByteString or StackItemType.Buffer)
+                        {
+                            try
+                            {
+                                _ = Utility.StrictUTF8.GetString(item.GetSpan()); // Prevent any non-UTF8 string
+                                return true;
+                            }
+                            catch { }
+                        }
+                        return false;
+                    }
                 case ContractParameterType.Hash160:
                     if (aType == StackItemType.Any) return true;
                     if (aType != StackItemType.ByteString && aType != StackItemType.Buffer) return false;
