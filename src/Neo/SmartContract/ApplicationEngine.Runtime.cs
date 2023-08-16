@@ -428,7 +428,8 @@ namespace Neo.SmartContract
                     return aType == StackItemType.Integer;
                 case ContractParameterType.ByteArray:
                 case ContractParameterType.String:
-                    return aType is StackItemType.Any or StackItemType.ByteString or StackItemType.Buffer;
+                    return aType is StackItemType.Any or StackItemType.ByteString or StackItemType.Buffer &&
+                        Utility.StrictUTF8.GetString(item.GetSpan()) is not null; // Prevent any non-UTF8 string
                 case ContractParameterType.Hash160:
                     if (aType == StackItemType.Any) return true;
                     if (aType != StackItemType.ByteString && aType != StackItemType.Buffer) return false;
