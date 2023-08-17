@@ -612,30 +612,49 @@ namespace Neo.SmartContract
 
         public bool IsHardforkEnabled(Hardfork hardfork)
         {
-            // Get all the known hardforks
             var allHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToList();
-            allHardforks.Sort(); // Ensure they are sorted in the order of their definition
 
-            // Case 1: If no hardfork is specified in the configuration, enable all hardforks by default
+            // Return true if there's no specific configuration or PersistingBlock is null
             if (PersistingBlock is null || ProtocolSettings.Hardforks.Count == 0)
                 return true;
 
-            // If the hardfork is not specified in the configuration, check if it's a new hardfork. If yes, disable it.
+            // If the hardfork isn't specified in the configuration, check if it's a new one.
             if (!ProtocolSettings.Hardforks.ContainsKey(hardfork))
             {
-                // If the index of the hardfork in the list of known hardforks is greater than the index of the last hardfork in the configuration, disable it.
-                if (allHardforks.IndexOf(hardfork) > allHardforks.IndexOf(ProtocolSettings.Hardforks.Keys.Last()))
+                int currentHardforkIndex = allHardforks.IndexOf(hardfork);
+                int lastConfiguredHardforkIndex = allHardforks.IndexOf(ProtocolSettings.Hardforks.Keys.Last());
+
+                // If it's a newer hardfork compared to the ones in the configuration, disable it.
+                if (currentHardforkIndex > lastConfiguredHardforkIndex)
                     return false;
             }
 
             uint height;
             if (ProtocolSettings.Hardforks.TryGetValue(hardfork, out height))
             {
-                // If the hardfork is set to a certain height in the configuration, check if the current block height is greater than or equal to this height
+                // If the hardfork has a specific height in the configuration, check the block height.
                 return PersistingBlock.Index >= height;
             }
-            // For those old hardforks that are not explicitly specified in the configuration, we enable them by default at height 0.
+
+            // Check for continuity in configured hardforks
+            var sortedHardforks = ProtocolSettings.Hardforks.Keys
+                .OrderBy(h => allHardforks.IndexOf(h))
+                .ToList();
+
+            for (int i = 0; i < sortedHardforks.Count - 1; i++)
+            {
+                int currentIndex = allHardforks.IndexOf(sortedHardforks[i]);
+                int nextIndex = allHardforks.IndexOf(sortedHardforks[i + 1]);
+
+                // If they aren't consecutive, return false.
+                if (nextIndex - currentIndex > 1)
+                    return false;
+            }
+
+            // If no specific conditions are met, return true.
             return true;
         }
+
+
     }
 }
