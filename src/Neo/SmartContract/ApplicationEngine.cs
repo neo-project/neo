@@ -635,26 +635,8 @@ namespace Neo.SmartContract
                 // If the hardfork has a specific height in the configuration, check the block height.
                 return PersistingBlock.Index >= height;
             }
-
-            // Check for continuity in configured hardforks
-            var sortedHardforks = ProtocolSettings.Hardforks.Keys
-                .OrderBy(h => allHardforks.IndexOf(h))
-                .ToList();
-
-            for (int i = 0; i < sortedHardforks.Count - 1; i++)
-            {
-                int currentIndex = allHardforks.IndexOf(sortedHardforks[i]);
-                int nextIndex = allHardforks.IndexOf(sortedHardforks[i + 1]);
-
-                // If they aren't consecutive, return false.
-                if (nextIndex - currentIndex > 1)
-                    return false;
-            }
-
             // If no specific conditions are met, return true.
             return true;
         }
-
-
     }
 }
