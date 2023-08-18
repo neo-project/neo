@@ -2,8 +2,10 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.SmartContract.Manifest;
 using System;
 using System.Numerics;
+using System.Text;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -24,21 +26,44 @@ namespace Neo.UnitTests.SmartContract
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
             engine.LoadScript(Array.Empty<byte>());
-            engine.CurrentContext.GetState<ExecutionContextState>().Contract = new();
+            engine.CurrentContext.GetState<ExecutionContextState>().Contract = new()
+            {
+                Manifest = new()
+                {
+                    Abi = new()
+                    {
+                        Events = new[]
+                        {
+                            new ContractEventDescriptor
+                            {
+                                Name = "e1",
+                                Parameters = new[]
+                                {
+                                    new ContractParameterDefinition
+                                    {
+                                        Type = ContractParameterType.Array
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
 
             // circular
 
             VM.Types.Array array = new();
             array.Add(array);
 
-            Assert.ThrowsException<NotSupportedException>(() => engine.RuntimeNotify(new byte[] { 0x01 }, array));
+            Assert.ThrowsException<NotSupportedException>(() => engine.RuntimeNotify(Encoding.ASCII.GetBytes("e1"), array));
 
             // Buffer
 
             array.Clear();
             array.Add(new VM.Types.Buffer(1));
+            engine.CurrentContext.GetState<ExecutionContextState>().Contract.Manifest.Abi.Events[0].Parameters[0].Type = ContractParameterType.ByteArray;
 
-            engine.RuntimeNotify(new byte[] { 0x01 }, array);
+            engine.RuntimeNotify(Encoding.ASCII.GetBytes("e1"), array);
             engine.Notifications[0].State[0].Type.Should().Be(VM.Types.StackItemType.ByteString);
 
             // Pointer
@@ -46,14 +71,15 @@ namespace Neo.UnitTests.SmartContract
             array.Clear();
             array.Add(new VM.Types.Pointer(Array.Empty<byte>(), 1));
 
-            Assert.ThrowsException<NotSupportedException>(() => engine.RuntimeNotify(new byte[] { 0x01 }, array));
+            Assert.ThrowsException<InvalidOperationException>(() => engine.RuntimeNotify(Encoding.ASCII.GetBytes("e1"), array));
 
             // InteropInterface
 
             array.Clear();
             array.Add(new VM.Types.InteropInterface(new object()));
+            engine.CurrentContext.GetState<ExecutionContextState>().Contract.Manifest.Abi.Events[0].Parameters[0].Type = ContractParameterType.InteropInterface;
 
-            Assert.ThrowsException<NotSupportedException>(() => engine.RuntimeNotify(new byte[] { 0x01 }, array));
+            Assert.ThrowsException<NotSupportedException>(() => engine.RuntimeNotify(Encoding.ASCII.GetBytes("e1"), array));
         }
 
         [TestMethod]
