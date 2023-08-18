@@ -430,7 +430,7 @@ namespace Neo.SmartContract
                     return aType is StackItemType.Any or StackItemType.ByteString or StackItemType.Buffer;
                 case ContractParameterType.String:
                     {
-                        if (aType is StackItemType.Any or StackItemType.ByteString or StackItemType.Buffer)
+                        if (aType is StackItemType.ByteString or StackItemType.Buffer)
                         {
                             try
                             {
