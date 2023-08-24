@@ -240,6 +240,5 @@ namespace Neo.SmartContract.Native
 
             return count;
         }
-
     }
 }
