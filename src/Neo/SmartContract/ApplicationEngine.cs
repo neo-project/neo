@@ -628,8 +628,7 @@ namespace Neo.SmartContract
                     return false;
             }
 
-            uint height;
-            if (ProtocolSettings.Hardforks.TryGetValue(hardfork, out height))
+            if (ProtocolSettings.Hardforks.TryGetValue(hardfork, out uint height))
             {
                 // If the hardfork has a specific height in the configuration, check the block height.
                 return PersistingBlock.Index >= height;
