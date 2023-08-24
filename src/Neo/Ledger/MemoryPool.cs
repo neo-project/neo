@@ -369,7 +369,7 @@ namespace Neo.Ledger
             {
                 if (_unsortedTransactions.TryGetValue(hash, out PoolItem unsortedTx))
                 {
-                    if (!tx.Signers.Select(p => p.Account).Contains(unsortedTx.Tx.Sender)) return false;
+                    if (!tx.Signers.Select(p => p.Account).Intersect(unsortedTx.Tx.Signers.Select(p => p.Account)).Any()) return false;
                     conflictsFeeSum += unsortedTx.Tx.NetworkFee;
                     conflictsList.Add(unsortedTx);
                 }
