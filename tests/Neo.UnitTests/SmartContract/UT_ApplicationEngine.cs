@@ -85,12 +85,12 @@ namespace Neo.UnitTests.SmartContract
                 var inc = nextIndex - currentIndex;
                 inc.Should().Be(1);
             }
+
             // Check that block numbers are not higher in earlier hardforks than in later ones
             for (int i = 0; i < sortedHardforks.Count - 1; i++)
             {
                 (setting[sortedHardforks[i]] > setting[sortedHardforks[i + 1]]).Should().Be(false);
             }
-
         }
     }
 }
