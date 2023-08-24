@@ -8,17 +8,17 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Numerics;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -339,6 +339,35 @@ namespace Neo.SmartContract
         /// <param name="state">The arguments of the event.</param>
         protected internal void RuntimeNotify(byte[] eventName, Array state)
         {
+            if (!IsHardforkEnabled(Hardfork.HF_Basilisk))
+            {
+                RuntimeNotifyV1(eventName, state);
+                return;
+            }
+            if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
+            string name = Utility.StrictUTF8.GetString(eventName);
+            ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
+            if (contract is null)
+                throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
+            var @event = contract.Manifest.Abi.Events.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.Ordinal));
+            if (@event is null)
+                throw new InvalidOperationException($"Event `{name}` does not exist.");
+            if (@event.Parameters.Length != state.Count)
+                throw new InvalidOperationException("The number of the arguments does not match the formal parameters of the event.");
+            for (int i = 0; i < @event.Parameters.Length; i++)
+            {
+                var p = @event.Parameters[i];
+                if (!CheckItemType(state[i], p.Type))
+                    throw new InvalidOperationException($"The type of the argument `{p.Name}` does not match the formal parameter.");
+            }
+            using MemoryStream ms = new(MaxNotificationSize);
+            using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
+            BinarySerializer.Serialize(writer, state, MaxNotificationSize);
+            SendNotification(CurrentScriptHash, name, state);
+        }
+
+        protected internal void RuntimeNotifyV1(byte[] eventName, Array state)
+        {
             if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
             if (CurrentContext.GetState<ExecutionContextState>().Contract is null)
                 throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
@@ -401,6 +430,60 @@ namespace Neo.SmartContract
                 return tx.Signers;
 
             return null;
+        }
+  
+        private static bool CheckItemType(StackItem item, ContractParameterType type)
+        {
+            StackItemType aType = item.Type;
+            if (aType == StackItemType.Pointer) return false;
+            switch (type)
+            {
+                case ContractParameterType.Any:
+                    return true;
+                case ContractParameterType.Boolean:
+                    return aType == StackItemType.Boolean;
+                case ContractParameterType.Integer:
+                    return aType == StackItemType.Integer;
+                case ContractParameterType.ByteArray:
+                    return aType is StackItemType.Any or StackItemType.ByteString or StackItemType.Buffer;
+                case ContractParameterType.String:
+                    {
+                        if (aType is StackItemType.ByteString or StackItemType.Buffer)
+                        {
+                            try
+                            {
+                                _ = Utility.StrictUTF8.GetString(item.GetSpan()); // Prevent any non-UTF8 string
+                                return true;
+                            }
+                            catch { }
+                        }
+                        return false;
+                    }
+                case ContractParameterType.Hash160:
+                    if (aType == StackItemType.Any) return true;
+                    if (aType != StackItemType.ByteString && aType != StackItemType.Buffer) return false;
+                    return item.GetSpan().Length == UInt160.Length;
+                case ContractParameterType.Hash256:
+                    if (aType == StackItemType.Any) return true;
+                    if (aType != StackItemType.ByteString && aType != StackItemType.Buffer) return false;
+                    return item.GetSpan().Length == UInt256.Length;
+                case ContractParameterType.PublicKey:
+                    if (aType == StackItemType.Any) return true;
+                    if (aType != StackItemType.ByteString && aType != StackItemType.Buffer) return false;
+                    return item.GetSpan().Length == 33;
+                case ContractParameterType.Signature:
+                    if (aType == StackItemType.Any) return true;
+                    if (aType != StackItemType.ByteString && aType != StackItemType.Buffer) return false;
+                    return item.GetSpan().Length == 64;
+                case ContractParameterType.Array:
+                    return aType is StackItemType.Any or StackItemType.Array or StackItemType.Struct;
+                case ContractParameterType.Map:
+                    return aType is StackItemType.Any or StackItemType.Map;
+                case ContractParameterType.InteropInterface:
+                    return aType is StackItemType.Any or StackItemType.InteropInterface;
+                default:
+                    return false;
+            }
         }
     }
 }

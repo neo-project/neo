@@ -45,7 +45,22 @@ namespace Neo.UnitTests.SmartContract
                 scriptHash2 = script.ToArray().ToScriptHash();
 
                 snapshot.DeleteContract(scriptHash2);
-                snapshot.AddContract(scriptHash2, TestUtils.GetContract(script.ToArray(), TestUtils.CreateManifest("test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer)));
+                ContractState contract = TestUtils.GetContract(script.ToArray(), TestUtils.CreateManifest("test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer));
+                contract.Manifest.Abi.Events = new[]
+                {
+                    new ContractEventDescriptor
+                    {
+                        Name = "testEvent2",
+                        Parameters = new[]
+                        {
+                            new ContractParameterDefinition
+                            {
+                                Type = ContractParameterType.Any
+                            }
+                        }
+                    }
+                };
+                snapshot.AddContract(scriptHash2, contract);
             }
 
             // Wrong length
@@ -93,7 +108,23 @@ namespace Neo.UnitTests.SmartContract
                 // Execute
 
                 engine.LoadScript(script.ToArray());
-                engine.CurrentContext.GetState<ExecutionContextState>().Contract = new();
+                engine.CurrentContext.GetState<ExecutionContextState>().Contract = new()
+                {
+                    Manifest = new()
+                    {
+                        Abi = new()
+                        {
+                            Events = new[]
+                            {
+                                new ContractEventDescriptor
+                                {
+                                    Name = "testEvent1",
+                                    Parameters = System.Array.Empty<ContractParameterDefinition>()
+                                }
+                            }
+                        }
+                    }
+                };
                 var currentScriptHash = engine.EntryScriptHash;
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -146,7 +177,23 @@ namespace Neo.UnitTests.SmartContract
                 // Execute
 
                 engine.LoadScript(script.ToArray());
-                engine.CurrentContext.GetState<ExecutionContextState>().Contract = new();
+                engine.CurrentContext.GetState<ExecutionContextState>().Contract = new()
+                {
+                    Manifest = new()
+                    {
+                        Abi = new()
+                        {
+                            Events = new[]
+                            {
+                                new ContractEventDescriptor
+                                {
+                                    Name = "testEvent1",
+                                    Parameters = System.Array.Empty<ContractParameterDefinition>()
+                                }
+                            }
+                        }
+                    }
+                };
                 var currentScriptHash = engine.EntryScriptHash;
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
