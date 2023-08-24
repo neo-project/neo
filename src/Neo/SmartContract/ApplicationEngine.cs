@@ -46,6 +46,7 @@ namespace Neo.SmartContract
         /// </summary>
         public static event EventHandler<LogEventArgs> Log;
 
+        private static readonly IList<Hardfork> AllHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToArray();
         private static Dictionary<uint, InteropDescriptor> services;
         private readonly long gas_amount;
         private Dictionary<Type, object> states;
@@ -612,8 +613,6 @@ namespace Neo.SmartContract
 
         public bool IsHardforkEnabled(Hardfork hardfork)
         {
-            var allHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToList();
-
             // Return true if there's no specific configuration or PersistingBlock is null
             if (PersistingBlock is null || ProtocolSettings.Hardforks.Count == 0)
                 return true;
@@ -621,8 +620,8 @@ namespace Neo.SmartContract
             // If the hardfork isn't specified in the configuration, check if it's a new one.
             if (!ProtocolSettings.Hardforks.ContainsKey(hardfork))
             {
-                int currentHardforkIndex = allHardforks.IndexOf(hardfork);
-                int lastConfiguredHardforkIndex = allHardforks.IndexOf(ProtocolSettings.Hardforks.Keys.Last());
+                int currentHardforkIndex = AllHardforks.IndexOf(hardfork);
+                int lastConfiguredHardforkIndex = AllHardforks.IndexOf(ProtocolSettings.Hardforks.Keys.Last());
 
                 // If it's a newer hardfork compared to the ones in the configuration, disable it.
                 if (currentHardforkIndex > lastConfiguredHardforkIndex)
