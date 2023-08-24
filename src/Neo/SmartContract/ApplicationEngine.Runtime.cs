@@ -431,7 +431,7 @@ namespace Neo.SmartContract
 
             return null;
         }
-  
+
         private static bool CheckItemType(StackItem item, ContractParameterType type)
         {
             StackItemType aType = item.Type;
