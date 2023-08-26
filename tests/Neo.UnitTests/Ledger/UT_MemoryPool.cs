@@ -1,3 +1,9 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
+using System.Threading.Tasks;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -5,31 +11,11 @@ using Moq;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.Ledger;
-using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using Akka.TestKit;
-using Akka.TestKit.Xunit2;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Ledger;
-using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
-using Neo.SmartContract;
-using Neo.SmartContract.Native;
-using Neo.Wallets;
-using Neo.Wallets.NEP6;
-using System;
-using System.Linq;
-using System.Numerics;
-using System.Threading.Tasks;
 
 namespace Neo.UnitTests.Ledger
 {
