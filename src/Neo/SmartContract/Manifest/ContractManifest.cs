@@ -79,7 +79,8 @@ namespace Neo.SmartContract.Manifest
             Permissions = ((Array)@struct[5]).Select(p => p.ToInteroperable<ContractPermission>()).ToArray();
             Trusts = @struct[6] switch
             {
-                Null => WildcardContainer<ContractPermissionDescriptor>.CreateWildcard(),
+                Null _ => WildcardContainer<ContractPermissionDescriptor>.CreateWildcard(),
+                Array array when array.Any(p => ((ByteString)p).Size == 0) => WildcardContainer<ContractPermissionDescriptor>.CreateWildcard(),
                 Array array => WildcardContainer<ContractPermissionDescriptor>.Create(array.Select(p => new ContractPermissionDescriptor(p.GetSpan())).ToArray()),
                 _ => throw new ArgumentException(null, nameof(stackItem))
             };
