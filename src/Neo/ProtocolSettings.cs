@@ -174,7 +174,9 @@ namespace Neo
         {
             IConfigurationRoot config = new ConfigurationBuilder().AddJsonFile(path, optional).Build();
             IConfigurationSection section = config.GetSection("ProtocolConfiguration");
-            return Load(section);
+            var settings = Load(section);
+            CheckingHardfork(settings);
+            return settings;
         }
 
         /// <summary>
@@ -207,6 +209,34 @@ namespace Neo
                     ? section.GetSection("Hardforks").GetChildren().ToImmutableDictionary(p => Enum.Parse<Hardfork>(p.Key), p => uint.Parse(p.Value))
                     : Default.Hardforks
             };
+        }
+
+        private static void CheckingHardfork(ProtocolSettings settings)
+        {
+            var allHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToList();
+            // Check for continuity in configured hardforks
+            var sortedHardforks = settings.Hardforks.Keys
+                .OrderBy(h => allHardforks.IndexOf(h))
+                .ToList();
+
+            for (int i = 0; i < sortedHardforks.Count - 1; i++)
+            {
+                int currentIndex = allHardforks.IndexOf(sortedHardforks[i]);
+                int nextIndex = allHardforks.IndexOf(sortedHardforks[i + 1]);
+
+                // If they aren't consecutive, return false.
+                if (nextIndex - currentIndex > 1)
+                    throw new Exception("Hardfork configuration is not continuous.");
+            }
+            // Check that block numbers are not higher in earlier hardforks than in later ones
+            for (int i = 0; i < sortedHardforks.Count - 1; i++)
+            {
+                if (settings.Hardforks[sortedHardforks[i]] > settings.Hardforks[sortedHardforks[i + 1]])
+                {
+                    // This means the block number for the current hardfork is greater than the next one, which should not be allowed.
+                    throw new Exception($"The Hardfork configuration for {sortedHardforks[i]} is greater than for {sortedHardforks[i + 1]}");
+                }
+            }
         }
     }
 }
