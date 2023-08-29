@@ -46,6 +46,7 @@ namespace Neo.SmartContract
         /// </summary>
         public static event EventHandler<LogEventArgs> Log;
 
+        private static readonly IList<Hardfork> AllHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToArray();
         private static Dictionary<uint, InteropDescriptor> services;
         private readonly long gas_amount;
         private Dictionary<Type, object> states;
@@ -610,13 +611,30 @@ namespace Neo.SmartContract
             states[typeof(T)] = state;
         }
 
-        private bool IsHardforkEnabled(Hardfork hardfork)
+        public bool IsHardforkEnabled(Hardfork hardfork)
         {
-            if (PersistingBlock is null)
+            // Return true if there's no specific configuration or PersistingBlock is null
+            if (PersistingBlock is null || ProtocolSettings.Hardforks.Count == 0)
                 return true;
-            if (!ProtocolSettings.Hardforks.TryGetValue(hardfork, out uint height))
-                return true;
-            return PersistingBlock.Index >= height;
+
+            // If the hardfork isn't specified in the configuration, check if it's a new one.
+            if (!ProtocolSettings.Hardforks.ContainsKey(hardfork))
+            {
+                int currentHardforkIndex = AllHardforks.IndexOf(hardfork);
+                int lastConfiguredHardforkIndex = AllHardforks.IndexOf(ProtocolSettings.Hardforks.Keys.Last());
+
+                // If it's a newer hardfork compared to the ones in the configuration, disable it.
+                if (currentHardforkIndex > lastConfiguredHardforkIndex)
+                    return false;
+            }
+
+            if (ProtocolSettings.Hardforks.TryGetValue(hardfork, out uint height))
+            {
+                // If the hardfork has a specific height in the configuration, check the block height.
+                return PersistingBlock.Index >= height;
+            }
+            // If no specific conditions are met, return true.
+            return true;
         }
     }
 }
