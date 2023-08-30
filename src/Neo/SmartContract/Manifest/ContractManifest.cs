@@ -97,11 +97,7 @@ namespace Neo.SmartContract.Manifest
                 new Array(referenceCounter, SupportedStandards.Select(p => (StackItem)p)),
                 Abi.ToStackItem(referenceCounter),
                 new Array(referenceCounter, Permissions.Select(p => p.ToStackItem(referenceCounter))),
-                Trusts.IsWildcard ? StackItem.Null : new Array(referenceCounter, Trusts.Select(p =>
-                {
-                    var arr = p.ToArray();
-                    return arr?? StackItem.Null;
-                })),
+                Trusts.IsWildcard ? StackItem.Null : new Array(referenceCounter, Trusts.Select(p => p.ToArray()?? StackItem.Null)),
                 Extra is null ? "null" : Extra.ToByteArray(false)
             };
         }
