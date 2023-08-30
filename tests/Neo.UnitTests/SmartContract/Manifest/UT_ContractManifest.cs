@@ -1,8 +1,10 @@
+using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.VM;
 
 namespace Neo.UnitTests.SmartContract.Manifest
 {
@@ -53,12 +55,20 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void ParseFromJson_Trust()
         {
-            var json = @"{""name"":""testManifest"",""groups"":[],""features"":{},""supportedstandards"":[],""abi"":{""methods"":[{""name"":""testMethod"",""parameters"":[],""returntype"":""Void"",""offset"":0,""safe"":true}],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[""0x0000000000000000000000000000000000000001""],""extra"":null}";
+            ReferenceCounter referenceCounter = new ReferenceCounter();
+            var json = @"{""name"":""testManifest"",""groups"":[],""features"":{},""supportedstandards"":[],""abi"":{""methods"":[{""name"":""testMethod"",""parameters"":[],""returntype"":""Void"",""offset"":0,""safe"":true}],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[""0x0000000000000000000000000000000000000001"",""*""],""extra"":null}";
             var manifest = ContractManifest.Parse(json);
+
+            Console.WriteLine(manifest.ToJson().ToString());
             Assert.AreEqual(manifest.ToJson().ToString(), json);
 
             var check = TestUtils.CreateDefaultManifest();
-            check.Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(ContractPermissionDescriptor.Create(UInt160.Parse("0x0000000000000000000000000000000000000001")));
+            check.Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(ContractPermissionDescriptor.Create(UInt160.Parse("0x0000000000000000000000000000000000000001")), ContractPermissionDescriptor.CreateWildcard());
+
+            var b = check.ToStackItem(referenceCounter);
+
+            Console.WriteLine(b.ToJson().ToString());
+
             Assert.AreEqual(manifest.ToJson().ToString(), check.ToJson().ToString());
         }
 

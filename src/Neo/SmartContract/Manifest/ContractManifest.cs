@@ -80,7 +80,7 @@ namespace Neo.SmartContract.Manifest
             Trusts = @struct[6] switch
             {
                 Null _ => WildcardContainer<ContractPermissionDescriptor>.CreateWildcard(),
-                Array array when array.Any(p => ((ByteString)p).Size == 0) => WildcardContainer<ContractPermissionDescriptor>.CreateWildcard(),
+                // Array array when array.Any(p => ((ByteString)p).Size == 0) => WildcardContainer<ContractPermissionDescriptor>.CreateWildcard(),
                 Array array => WildcardContainer<ContractPermissionDescriptor>.Create(array.Select(p => new ContractPermissionDescriptor(p.GetSpan())).ToArray()),
                 _ => throw new ArgumentException(null, nameof(stackItem))
             };
@@ -97,7 +97,11 @@ namespace Neo.SmartContract.Manifest
                 new Array(referenceCounter, SupportedStandards.Select(p => (StackItem)p)),
                 Abi.ToStackItem(referenceCounter),
                 new Array(referenceCounter, Permissions.Select(p => p.ToStackItem(referenceCounter))),
-                Trusts.IsWildcard ? StackItem.Null : new Array(referenceCounter, Trusts.Select(p => (StackItem)p.ToArray())),
+                Trusts.IsWildcard ? StackItem.Null : new Array(referenceCounter, Trusts.Select(p =>
+                {
+                    var arr = p.ToArray();
+                    return arr?? StackItem.Null;
+                })),
                 Extra is null ? "null" : Extra.ToByteArray(false)
             };
         }
