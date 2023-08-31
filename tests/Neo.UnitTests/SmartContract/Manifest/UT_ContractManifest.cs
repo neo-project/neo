@@ -1,6 +1,7 @@
 using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
@@ -103,6 +104,21 @@ namespace Neo.UnitTests.SmartContract.Manifest
 
             Assert.AreEqual(expected.Extra, clone.Extra);
             Assert.AreEqual(expected.ToString(), clone.ToString());
+        }
+
+        [TestMethod]
+        public void TestSerializeTrusts()
+        {
+            var check = TestUtils.CreateDefaultManifest();
+            check.Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(ContractPermissionDescriptor.Create(UInt160.Parse("0x0000000000000000000000000000000000000001")), ContractPermissionDescriptor.CreateWildcard());
+            var si = check.ToStackItem(null);
+
+            var actualTrusts = ((VM.Types.Array)si)[6];
+
+            Assert.AreEqual(((VM.Types.Array)actualTrusts).Count, 2);
+            Assert.AreEqual(((VM.Types.Array)actualTrusts)[0], new VM.Types.ByteString(UInt160.Parse("0x0000000000000000000000000000000000000001").ToArray()));
+            // Wildcard trust should be represented as Null stackitem (not as zero-length ByteString):
+            Assert.AreEqual(((VM.Types.Array)actualTrusts)[1], VM.Types.StackItem.Null);
         }
 
         [TestMethod]
