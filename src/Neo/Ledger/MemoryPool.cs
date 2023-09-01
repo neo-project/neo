@@ -57,7 +57,7 @@ namespace Neo.Ledger
         /// <summary>
         /// Store transaction hashes that conflict with verified mempooled transactions.
         /// </summary>
-        private readonly Dictionary<UInt256, List<UInt256>> _conflicts = new();
+        private readonly Dictionary<UInt256, HashSet<UInt256>> _conflicts = new();
         /// <summary>
         /// Stores the verified sorted transactions currently in the pool.
         /// </summary>
@@ -315,7 +315,7 @@ namespace Neo.Ledger
                 {
                     if (!_conflicts.TryGetValue(attr.Hash, out var pooled))
                     {
-                        pooled = new List<UInt256>();
+                        pooled = new HashSet<UInt256>();
                     }
                     pooled.Add(tx.Hash);
                     _conflicts.AddOrSet(attr.Hash, pooled);
@@ -424,7 +424,7 @@ namespace Neo.Ledger
         {
             foreach (var h in item.Tx.GetAttributes<Conflicts>().Select(attr => attr.Hash))
             {
-                if (_conflicts.TryGetValue(h, out List<UInt256> conflicts))
+                if (_conflicts.TryGetValue(h, out HashSet<UInt256> conflicts))
                 {
                     conflicts.Remove(item.Tx.Hash);
                     if (conflicts.Count() == 0)
@@ -566,7 +566,7 @@ namespace Neo.Ledger
                             {
                                 if (!_conflicts.TryGetValue(attr.Hash, out var pooled))
                                 {
-                                    pooled = new List<UInt256>();
+                                    pooled = new HashSet<UInt256>();
                                 }
                                 pooled.Add(item.Tx.Hash);
                                 _conflicts.AddOrSet(attr.Hash, pooled);
