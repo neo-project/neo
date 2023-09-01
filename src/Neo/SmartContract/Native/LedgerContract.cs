@@ -51,8 +51,9 @@ namespace Neo.SmartContract.Native
                 var conflictingSigners = tx.Transaction.Signers.Select(s => s.Account);
                 foreach (var attr in tx.Transaction.GetAttributes<Conflicts>())
                 {
-                    var conflictRecord = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Transaction).Add(attr.Hash), () => new StorageItem(new TransactionState { ConflictingSigners = new UInt160[] { } })).GetInteroperable<TransactionState>();
-                    conflictRecord.ConflictingSigners = conflictRecord.ConflictingSigners.Concat(conflictingSigners).ToArray();
+                    var conflictRecord = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Transaction).Add(attr.Hash),
+                        () => new StorageItem(new TransactionState { ConflictingSigners = Array.Empty<UInt160>() })).GetInteroperable<TransactionState>();
+                    conflictRecord.ConflictingSigners = conflictRecord.ConflictingSigners.Concat(conflictingSigners).Distinct().ToArray();
                 }
             }
             engine.SetState(transactions);
