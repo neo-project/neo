@@ -15,6 +15,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.VM;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
@@ -47,6 +48,13 @@ namespace Neo.SmartContract.Native
             foreach (TransactionState tx in transactions)
             {
                 engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(tx.Transaction.Hash), new StorageItem(tx));
+                var conflictingSigners = tx.Transaction.Signers.Select(s => s.Account);
+                foreach (var attr in tx.Transaction.GetAttributes<Conflicts>())
+                {
+                    var conflictRecord = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Transaction).Add(attr.Hash),
+                        () => new StorageItem(new TransactionState { ConflictingSigners = Array.Empty<UInt160>() })).GetInteroperable<TransactionState>();
+                    conflictRecord.ConflictingSigners = conflictRecord.ConflictingSigners.Concat(conflictingSigners).Distinct().ToArray();
+                }
             }
             engine.SetState(transactions);
             return ContractTask.CompletedTask;
@@ -126,7 +134,22 @@ namespace Neo.SmartContract.Native
         /// <returns><see langword="true"/> if the blockchain contains the transaction; otherwise, <see langword="false"/>.</returns>
         public bool ContainsTransaction(DataCache snapshot, UInt256 hash)
         {
-            return snapshot.Contains(CreateStorageKey(Prefix_Transaction).Add(hash));
+            var txState = GetTransactionState(snapshot, hash);
+            return txState != null;
+        }
+
+        /// <summary>
+        /// Determine whether the specified transaction hash is contained in the blockchain
+        /// as the hash of conflicting transaction.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="hash">The hash of the conflicting transaction.</param>
+        /// <param name="signers">The list of signer accounts of the conflicting transaction.</param>
+        /// <returns><see langword="true"/> if the blockchain contains the hash of the conflicting transaction; otherwise, <see langword="false"/>.</returns>
+        public bool ContainsConflictHash(DataCache snapshot, UInt256 hash, IEnumerable<UInt160> signers)
+        {
+            var state = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
+            return state is not null && state.Transaction is null && (signers is null || state.ConflictingSigners.Intersect(signers).Any());
         }
 
         /// <summary>
@@ -220,7 +243,9 @@ namespace Neo.SmartContract.Native
         /// <returns>The <see cref="TransactionState"/> with the specified hash.</returns>
         public TransactionState GetTransactionState(DataCache snapshot, UInt256 hash)
         {
-            return snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
+            var state = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
+            if (state?.Transaction is null) return null;
+            return state;
         }
 
         /// <summary>

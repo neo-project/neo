@@ -12,6 +12,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.Ledger
@@ -50,15 +51,18 @@ namespace Neo.Ledger
         /// Determine whether the specified <see cref="Transaction"/> conflicts with other transactions.
         /// </summary>
         /// <param name="tx">The specified <see cref="Transaction"/>.</param>
+        /// <param name="conflictingTxs">The list of <see cref="Transaction"/> that conflicts with the specified one and are to be removed from the pool.</param>
         /// <param name="snapshot">The snapshot used to verify the <see cref="Transaction"/>.</param>
         /// <returns><see langword="true"/> if the <see cref="Transaction"/> passes the check; otherwise, <see langword="false"/>.</returns>
-        public bool CheckTransaction(Transaction tx, DataCache snapshot)
+        public bool CheckTransaction(Transaction tx, IEnumerable<Transaction> conflictingTxs, DataCache snapshot)
         {
             BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, tx.Sender);
             senderFee.TryGetValue(tx.Sender, out var totalSenderFeeFromPool);
 
-            BigInteger fee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
-            if (balance < fee) return false;
+            BigInteger expectedFee = tx.SystemFee + tx.NetworkFee + totalSenderFeeFromPool;
+            foreach (var conflictTx in conflictingTxs.Where(c => c.Sender.Equals(tx.Sender)))
+                expectedFee -= (conflictTx.NetworkFee + conflictTx.SystemFee);
+            if (balance < expectedFee) return false;
 
             var oracle = tx.GetAttribute<OracleResponse>();
             if (oracle != null && oracleResponses.ContainsKey(oracle.Id))
