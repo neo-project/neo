@@ -70,7 +70,6 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestCreateAccount()
         {
-            var uut = new NEP6Wallet(wPath, "123", ProtocolSettings.Default);
             var acc = uut.CreateAccount("FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632549".HexToBytes());
             var tx = new Transaction()
             {
@@ -79,7 +78,7 @@ namespace Neo.UnitTests.Wallets.NEP6
                 Signers = new Signer[] { new Signer() { Account = acc.ScriptHash } },
             };
             var ctx = new ContractParametersContext(TestBlockchain.GetTestSnapshot(), tx, ProtocolSettings.Default.Network);
-            var sig = uut.Sign(ctx);
+            Assert.IsTrue(uut.Sign(ctx));
             tx.Witnesses = ctx.GetWitnesses();
             Assert.IsTrue(tx.VerifyWitnesses(ProtocolSettings.Default, TestBlockchain.GetTestSnapshot(), long.MaxValue));
             Assert.ThrowsException<ArgumentNullException>(() => uut.CreateAccount((byte[])null));
