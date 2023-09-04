@@ -6,6 +6,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
 using System;
@@ -96,6 +97,76 @@ namespace Neo.UnitTests.Ledger
 
             tx.Witnesses = data.GetWitnesses();
             return tx;
+        }
+
+        [TestMethod]
+        public void TestMaliciousOnChainConflict()
+        {
+            var snapshot = TestBlockchain.TheNeoSystem.GetSnapshot();
+            var walletA = TestUtils.GenerateTestWallet("123");
+            var accA = walletA.CreateAccount();
+            var walletB = TestUtils.GenerateTestWallet("456");
+            var accB = walletB.CreateAccount();
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            engine.LoadScript(Array.Empty<byte>());
+
+            // Fake balance for accounts A and B.
+            var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(accA.ScriptHash);
+            var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
+            entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
+            snapshot.Commit();
+
+            key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(accB.ScriptHash);
+            entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
+            entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
+            snapshot.Commit();
+
+            // Create transactions:
+            //    tx1 conflicts with tx2 and has the same sender (thus, it's a valid conflict and must prevent tx2 from entering the chain);
+            //    tx2 conflicts with tx3 and has different sender (thus, this conflict is invalid and must not prevent tx3 from entering the chain).
+            var tx1 = CreateValidTx(snapshot, walletA, accA.ScriptHash, 0);
+            var tx2 = CreateValidTx(snapshot, walletA, accA.ScriptHash, 1);
+            var tx3 = CreateValidTx(snapshot, walletB, accB.ScriptHash, 2);
+
+            tx1.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = tx2.Hash }, new Conflicts() { Hash = tx3.Hash } };
+
+            // Persist tx1.
+            var block = new Block
+            {
+                Header = new Header()
+                {
+                    Index = 10000,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    PrevHash = UInt256.Zero,
+                    Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
+                },
+                Transactions = new Transaction[] { tx1 },
+            };
+            byte[] onPersistScript;
+            using (ScriptBuilder sb = new())
+            {
+                sb.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
+                onPersistScript = sb.ToArray();
+            }
+            TransactionState[] transactionStates;
+            using (ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, TestBlockchain.TheNeoSystem.Settings, 0))
+            {
+                engine2.LoadScript(onPersistScript);
+                if (engine2.Execute() != VMState.HALT) throw new InvalidOperationException();
+                Blockchain.ApplicationExecuted application_executed = new(engine2);
+                transactionStates = engine2.GetState<TransactionState[]>();
+                engine2.Snapshot.Commit();
+            }
+            snapshot.Commit();
+
+            // Add tx2: must fail because valid conflict is alredy on chain (tx1).
+            senderProbe.Send(TestBlockchain.TheNeoSystem.Blockchain, tx2);
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.HasConflicts);
+
+            // Add tx3: must succeed because on-chain conflict is invalid (doesn't have proper signer).
+            senderProbe.Send(TestBlockchain.TheNeoSystem.Blockchain, tx3);
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Succeed);
         }
     }
 }
