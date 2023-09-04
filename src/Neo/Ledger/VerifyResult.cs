@@ -78,6 +78,11 @@ namespace Neo.Ledger
         PolicyFail,
 
         /// <summary>
+        /// Indicates that the <see cref="Transaction"/> failed to verify because it conflicts with on-chain or mempooled transactions.
+        /// </summary>
+        HasConflicts,
+
+        /// <summary>
         /// Indicates that the <see cref="IInventory"/> failed to verify due to other reasons.
         /// </summary>
         Unknown

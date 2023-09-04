@@ -10,6 +10,7 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
@@ -773,7 +774,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
             UInt160[] hashes = txSimple.GetScriptHashesForVerifying(snapshot);
             Assert.AreEqual(1, hashes.Length);
-            Assert.AreNotEqual(VerifyResult.Succeed, txSimple.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext()));
+            Assert.AreNotEqual(VerifyResult.Succeed, txSimple.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext(), new List<Transaction>()));
         }
 
         [TestMethod]
@@ -1204,11 +1205,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var key = NativeContract.GAS.CreateStorageKey(20, tx.Sender);
             var balance = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             balance.GetInteroperable<AccountState>().Balance = tx.NetworkFee;
+            var conflicts = new List<Transaction>();
 
-            tx.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.Invalid);
+            tx.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext(), conflicts).Should().Be(VerifyResult.Invalid);
             balance.GetInteroperable<AccountState>().Balance = 0;
             tx.SystemFee = 10;
-            tx.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.InsufficientFunds);
+            tx.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext(), conflicts).Should().Be(VerifyResult.InsufficientFunds);
 
             var walletA = TestUtils.GenerateTestWallet("123");
             var walletB = TestUtils.GenerateTestWallet("123");
@@ -1254,7 +1256,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.IsTrue(data.Completed);
 
             tx.Witnesses = data.GetWitnesses();
-            tx.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext()).Should().Be(VerifyResult.Succeed);
+            tx.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext(), new List<Transaction>()).Should().Be(VerifyResult.Succeed);
         }
 
         [TestMethod]

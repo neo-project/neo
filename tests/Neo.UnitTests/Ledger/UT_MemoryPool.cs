@@ -1,19 +1,21 @@
-using Akka.TestKit.Xunit2;
-using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-using Neo.IO;
-using Neo.Ledger;
-using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
-using Neo.SmartContract;
-using Neo.SmartContract.Native;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
+using Akka.TestKit.Xunit2;
+using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
+using Neo.Cryptography;
+using Neo.IO;
+using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
+using Neo.SmartContract;
+using Neo.SmartContract.Native;
+using Neo.VM;
 
 namespace Neo.UnitTests.Ledger
 {
@@ -68,7 +70,7 @@ namespace Neo.UnitTests.Ledger
             var randomBytes = new byte[16];
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new();
-            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>())).Returns(VerifyResult.Succeed);
+            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>())).Returns(VerifyResult.Succeed);
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
@@ -92,7 +94,7 @@ namespace Neo.UnitTests.Ledger
             random.NextBytes(randomBytes);
             Mock<Transaction> mock = new();
             UInt160 sender = senderAccount;
-            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>())).Returns((ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context) => context.CheckTransaction(mock.Object, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
+            mock.Setup(p => p.VerifyStateDependent(It.IsAny<ProtocolSettings>(), It.IsAny<DataCache>(), It.IsAny<TransactionVerificationContext>(), It.IsAny<IEnumerable<Transaction>>())).Returns((ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictsList) => context.CheckTransaction(mock.Object, conflictsList, snapshot) ? VerifyResult.Succeed : VerifyResult.InsufficientFunds);
             mock.Setup(p => p.VerifyStateIndependent(It.IsAny<ProtocolSettings>())).Returns(VerifyResult.Succeed);
             mock.Object.Script = randomBytes;
             mock.Object.NetworkFee = fee;
@@ -239,6 +241,215 @@ namespace Neo.UnitTests.Ledger
             // Revert the balance
             await NativeContract.GAS.Burn(applicationEngine, sender, txFee * 30);
             _ = NativeContract.GAS.Mint(applicationEngine, sender, balance, true);
+        }
+
+        [TestMethod]
+        public async Task UpdatePoolForBlockPersisted_RemoveBlockConflicts()
+        {
+            // Arrange: prepare mempooled and in-bock txs conflicting with each other.
+            long txFee = 1;
+            var snapshot = GetSnapshot();
+            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            engine.LoadScript(Array.Empty<byte>());
+            await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
+            _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 7, true); // balance enough for 7 mempooled txs
+
+            var mp1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp1 doesn't conflict with anyone
+            _unit.TryAdd(mp1, engine.Snapshot).Should().Be(VerifyResult.Succeed);
+            var tx1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // but in-block tx1 conflicts with mempooled mp1 => mp1 should be removed from pool after persist
+            tx1.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp1.Hash } };
+
+            var mp2 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp1 and mp2 don't conflict with anyone
+            _unit.TryAdd(mp2, engine.Snapshot);
+            var mp3 = CreateTransactionWithFeeAndBalanceVerify(txFee);
+            _unit.TryAdd(mp3, engine.Snapshot);
+            var tx2 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // in-block tx2 conflicts with mempooled mp2 and mp3 => mp2 and mp3 should be removed from pool after persist
+            tx2.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp2.Hash }, new Conflicts() { Hash = mp3.Hash } };
+
+            var tx3 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // in-block tx3 doesn't conflict with anyone
+            var mp4 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp4 conflicts with in-block tx3 => mp4 should be removed from pool after persist
+            mp4.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = tx3.Hash } };
+            _unit.TryAdd(mp4, engine.Snapshot);
+
+            var tx4 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // in-block tx4 and tx5 don't conflict with anyone
+            var tx5 = CreateTransactionWithFeeAndBalanceVerify(txFee);
+            var mp5 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp5 conflicts with in-block tx4 and tx5 => mp5 should be removed from pool after persist
+            mp5.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = tx4.Hash }, new Conflicts() { Hash = tx5.Hash } };
+            _unit.TryAdd(mp5, engine.Snapshot);
+
+            var mp6 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp6 doesn't conflict with anyone and noone conflicts with mp6 => mp6 should be left in the pool after persist
+            _unit.TryAdd(mp6, engine.Snapshot);
+
+            _unit.SortedTxCount.Should().Be(6);
+            _unit.UnverifiedSortedTxCount.Should().Be(0);
+
+            var mp7 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp7 doesn't conflict with anyone
+            var tx6 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // in-block tx6 conflicts with mp7, but doesn't include sender of mp7 into signers list => even if tx6 is included into block, mp7 shouldn't be removed from the pool
+            tx6.Signers = new Signer[] { new Signer() { Account = new UInt160(Crypto.Hash160(new byte[] { 1, 2, 3 })) }, new Signer() { Account = new UInt160(Crypto.Hash160(new byte[] { 4, 5, 6 })) } };
+            tx6.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp7.Hash } };
+            _unit.TryAdd(mp7, engine.Snapshot);
+
+            // Act: persist block and reverify all mempooled txs.
+            var block = new Block
+            {
+                Header = new Header(),
+                Transactions = new Transaction[] { tx1, tx2, tx3, tx4, tx5, tx6 },
+            };
+            _unit.UpdatePoolForBlockPersisted(block, engine.Snapshot);
+
+            // Assert: conflicting txs should be removed from the pool; the only mp6 that doesn't conflict with anyone should be left.
+            _unit.SortedTxCount.Should().Be(2);
+            _unit.GetSortedVerifiedTransactions().Select(tx => tx.Hash).Should().Contain(mp6.Hash);
+            _unit.GetSortedVerifiedTransactions().Select(tx => tx.Hash).Should().Contain(mp7.Hash);
+            _unit.UnverifiedSortedTxCount.Should().Be(0);
+
+            // Cleanup: revert the balance.
+            await NativeContract.GAS.Burn(engine, UInt160.Zero, txFee * 7);
+            _ = NativeContract.GAS.Mint(engine, UInt160.Zero, balance, true);
+        }
+
+        [TestMethod]
+        public async Task TryAdd_AddRangeOfConflictingTransactions()
+        {
+            // Arrange: prepare mempooled txs that have conflicts.
+            long txFee = 1;
+            var maliciousSender = new UInt160(Crypto.Hash160(new byte[] { 1, 2, 3 }));
+            var snapshot = GetSnapshot();
+            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            engine.LoadScript(Array.Empty<byte>());
+            await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
+            _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 100, true); // balance enough for all mempooled txs
+            _ = NativeContract.GAS.Mint(engine, maliciousSender, 100, true); // balance enough for all mempooled txs
+
+            var mp1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp1 doesn't conflict with anyone and not in the pool yet
+
+            var mp2_1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp2_1 conflicts with mp1 and has the same network fee
+            mp2_1.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp1.Hash } };
+            _unit.TryAdd(mp2_1, engine.Snapshot);
+            var mp2_2 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp2_2 also conflicts with mp1 and has the same network fee as mp1 and mp2_1
+            mp2_2.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp1.Hash } };
+            _unit.TryAdd(mp2_2, engine.Snapshot);
+
+            var mp3 = CreateTransactionWithFeeAndBalanceVerify(2 * txFee);  // mp3 conflicts with mp1 and has larger network fee
+            mp3.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp1.Hash } };
+            _unit.TryAdd(mp3, engine.Snapshot);
+
+            var mp4 = CreateTransactionWithFeeAndBalanceVerify(3 * txFee);  // mp4 conflicts with mp3 and has larger network fee
+            mp4.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp3.Hash } };
+
+            var malicious = CreateTransactionWithFeeAndBalanceVerify(3 * txFee);  // malicious conflicts with mp3 and has larger network fee, but different sender
+            malicious.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp3.Hash } };
+            malicious.Signers = new Signer[] { new Signer() { Account = new UInt160(Crypto.Hash160(new byte[] { 1, 2, 3 })), Scopes = WitnessScope.None } };
+
+            var mp5 = CreateTransactionWithFeeAndBalanceVerify(2 * txFee);  // mp5 conflicts with mp4 and has smaller network fee
+            mp5.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp4.Hash } };
+
+            var mp6 = CreateTransactionWithFeeAndBalanceVerify(mp2_1.NetworkFee + mp2_2.NetworkFee + 1); // mp6 conflicts with mp2_1 and mp2_2 and has larger network fee.
+            mp6.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp2_1.Hash }, new Conflicts() { Hash = mp2_2.Hash } };
+
+            var mp7 = CreateTransactionWithFeeAndBalanceVerify(txFee * 2 + 1); // mp7 doesn't conflicts with anyone, but mp8, mp9 and mp10malicious has smaller sum network fee and conflict with mp7.
+            var mp8 = CreateTransactionWithFeeAndBalanceVerify(txFee);
+            mp8.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp7.Hash } };
+            var mp9 = CreateTransactionWithFeeAndBalanceVerify(txFee);
+            mp9.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp7.Hash } };
+            var mp10malicious = CreateTransactionWithFeeAndBalanceVerify(txFee);
+            mp10malicious.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp7.Hash } };
+            mp10malicious.Signers = new Signer[] { new Signer() { Account = maliciousSender, Scopes = WitnessScope.None } };
+
+            _unit.SortedTxCount.Should().Be(3);
+            _unit.UnverifiedSortedTxCount.Should().Be(0);
+
+            // Act & Assert: try to add conlflicting transactions to the pool.
+            _unit.TryAdd(mp1, engine.Snapshot).Should().Be(VerifyResult.HasConflicts); // mp1 conflicts with mp2_1, mp2_2 and mp3 but has lower network fee than mp3 => mp1 fails to be added
+            _unit.SortedTxCount.Should().Be(3);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp2_1, mp2_2, mp3 });
+
+            _unit.TryAdd(malicious, engine.Snapshot).Should().Be(VerifyResult.HasConflicts); // malicious conflicts with mp3, has larger network fee but malicious (different) sender => mp3 shoould be left in pool
+            _unit.SortedTxCount.Should().Be(3);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp2_1, mp2_2, mp3 });
+
+            _unit.TryAdd(mp4, engine.Snapshot).Should().Be(VerifyResult.Succeed); // mp4 conflicts with mp3 and has larger network fee => mp3 shoould be removed from pool
+            _unit.SortedTxCount.Should().Be(3);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp2_1, mp2_2, mp4 });
+
+            _unit.TryAdd(mp1, engine.Snapshot).Should().Be(VerifyResult.HasConflicts); // mp1 conflicts with mp2_1 and mp2_2 and has same network fee => mp2_1 and mp2_2 should be left in pool.
+            _unit.SortedTxCount.Should().Be(3);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp2_1, mp2_2, mp4 });
+
+            _unit.TryAdd(mp6, engine.Snapshot).Should().Be(VerifyResult.Succeed); // mp6 conflicts with mp2_1 and mp2_2 and has larger network fee than the sum of mp2_1 and mp2_2 fees => mp6 should be added.
+            _unit.SortedTxCount.Should().Be(2);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp6, mp4 });
+
+            _unit.TryAdd(mp1, engine.Snapshot).Should().Be(VerifyResult.Succeed); // mp1 conflicts with mp2_1 and mp2_2, but they are not in the pool now => mp1 should be added.
+            _unit.SortedTxCount.Should().Be(3);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1, mp6, mp4 });
+
+            _unit.TryAdd(mp2_1, engine.Snapshot).Should().Be(VerifyResult.HasConflicts); // mp2_1 conflicts with mp1 and has same network fee => mp2_1 shouldn't be added to the pool.
+            _unit.SortedTxCount.Should().Be(3);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1, mp6, mp4 });
+
+            _unit.TryAdd(mp5, engine.Snapshot).Should().Be(VerifyResult.HasConflicts); // mp5 conflicts with mp4 and has smaller network fee => mp5 fails to be added.
+            _unit.SortedTxCount.Should().Be(3);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1, mp6, mp4 });
+
+            _unit.TryAdd(mp8, engine.Snapshot).Should().Be(VerifyResult.Succeed); // mp8, mp9 and mp10malicious conflict with mp7, but mo7 is not in the pool yet.
+            _unit.TryAdd(mp9, engine.Snapshot).Should().Be(VerifyResult.Succeed);
+            _unit.TryAdd(mp10malicious, engine.Snapshot).Should().Be(VerifyResult.Succeed);
+            _unit.SortedTxCount.Should().Be(6);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1, mp6, mp4, mp8, mp9, mp10malicious });
+            _unit.TryAdd(mp7, engine.Snapshot).Should().Be(VerifyResult.Succeed); // mp7 has larger network fee than the sum of mp8 and mp9 fees => should be added to the pool.
+            _unit.SortedTxCount.Should().Be(4);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1, mp6, mp4, mp7 });
+
+            // Cleanup: revert the balance.
+            await NativeContract.GAS.Burn(engine, UInt160.Zero, 100);
+            _ = NativeContract.GAS.Mint(engine, UInt160.Zero, balance, true);
+            await NativeContract.GAS.Burn(engine, maliciousSender, 100);
+            _ = NativeContract.GAS.Mint(engine, maliciousSender, balance, true);
+        }
+
+        [TestMethod]
+        public async Task TryRemoveVerified_RemoveVerifiedTxWithConflicts()
+        {
+            // Arrange: prepare mempooled txs that have conflicts.
+            long txFee = 1;
+            var snapshot = GetSnapshot();
+            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            engine.LoadScript(Array.Empty<byte>());
+            await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
+            _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 100, true); // balance enough for all mempooled txs
+
+            var mp1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // mp1 doesn't conflict with anyone and not in the pool yet
+
+            var mp2 = CreateTransactionWithFeeAndBalanceVerify(2 * txFee);  // mp2 conflicts with mp1 and has larger same network fee
+            mp2.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = mp1.Hash } };
+            _unit.TryAdd(mp2, engine.Snapshot);
+
+            _unit.SortedTxCount.Should().Be(1);
+            _unit.UnverifiedSortedTxCount.Should().Be(0);
+
+            _unit.TryAdd(mp1, engine.Snapshot).Should().Be(VerifyResult.HasConflicts); // mp1 conflicts with mp2 but has lower network fee
+            _unit.SortedTxCount.Should().Be(1);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp2 });
+
+            // Act & Assert: try to invalidate verified transactions and push conflicting one.
+            _unit.InvalidateVerifiedTransactions();
+            _unit.TryAdd(mp1, engine.Snapshot).Should().Be(VerifyResult.Succeed); // mp1 conflicts with mp2 but mp2 is not verified anymore
+            _unit.SortedTxCount.Should().Be(1);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp1 });
+
+            var tx1 = CreateTransactionWithFeeAndBalanceVerify(txFee);  // in-block tx1 doesn't conflict with anyone and is aimed to trigger reverification
+            var block = new Block
+            {
+                Header = new Header(),
+                Transactions = new Transaction[] { tx1 },
+            };
+            _unit.UpdatePoolForBlockPersisted(block, engine.Snapshot);
+            _unit.SortedTxCount.Should().Be(1);
+            _unit.GetVerifiedTransactions().Should().Contain(new List<Transaction>() { mp2 }); // after reverificaion mp2 should be back at verified list; mp1 should be completely kicked off
         }
 
         private static void VerifyTransactionsSortedDescending(IEnumerable<Transaction> transactions)
@@ -523,6 +734,74 @@ namespace Neo.UnitTests.Ledger
 
             _unit.UnVerifiedCount.Should().Be(0);
             _unit.VerifiedCount.Should().Be(0);
+        }
+
+
+        [TestMethod]
+        public async Task Malicious_OnChain_Conflict()
+        {
+            // Arrange: prepare mempooled txs that have conflicts.
+            long txFee = 1;
+            var snapshot = GetSnapshot();
+            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
+            engine.LoadScript(Array.Empty<byte>());
+
+            var tx1 = CreateTransactionWithFeeAndBalanceVerify(txFee);
+            var tx2 = CreateTransactionWithFeeAndBalanceVerify(txFee);
+
+            tx1.Signers[0].Account = UInt160.Parse("0x0001020304050607080900010203040506070809"); // Different sender
+
+            await NativeContract.GAS.Mint(engine, tx1.Sender, 100000, true); // balance enough for all mempooled txs
+            await NativeContract.GAS.Mint(engine, tx2.Sender, 100000, true); // balance enough for all mempooled txs
+
+            tx1.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = tx2.Hash } };
+
+            Assert.AreEqual(_unit.TryAdd(tx1, engine.Snapshot), VerifyResult.Succeed);
+
+            var block = new Block
+            {
+                Header = new Header()
+                {
+                    Index = 10000,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    PrevHash = UInt256.Zero,
+                    Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
+                },
+                Transactions = new Transaction[] { tx1 },
+            };
+            _unit.UpdatePoolForBlockPersisted(block, engine.Snapshot);
+
+            _unit.SortedTxCount.Should().Be(0);
+
+            // Simulate persist tx1
+
+            Assert.AreEqual(_unit.TryAdd(tx2, engine.Snapshot), VerifyResult.Succeed);
+
+            byte[] onPersistScript;
+            using (ScriptBuilder sb = new())
+            {
+                sb.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
+                onPersistScript = sb.ToArray();
+            }
+
+            TransactionState[] transactionStates;
+            using (ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.OnPersist, null, engine.Snapshot, block, TestBlockchain.TheNeoSystem.Settings, 0))
+            {
+                engine2.LoadScript(onPersistScript);
+                if (engine2.Execute() != VMState.HALT) throw new InvalidOperationException();
+                Blockchain.ApplicationExecuted application_executed = new(engine2);
+                transactionStates = engine2.GetState<TransactionState[]>();
+            }
+
+            // Test tx2 arrive
+
+            snapshot.Commit();
+
+            var senderProbe = CreateTestProbe();
+            senderProbe.Send(TestBlockchain.TheNeoSystem.Blockchain, tx2);
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.InsufficientFunds); // should be Succedded.
         }
 
         public static StorageKey CreateStorageKey(int id, byte prefix, byte[] key = null)
