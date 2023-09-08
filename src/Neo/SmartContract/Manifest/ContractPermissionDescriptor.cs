@@ -69,9 +69,7 @@ namespace Neo.SmartContract.Manifest
 
         public static ContractPermissionDescriptor Create(StackItem item)
         {
-            if (item == StackItem.Null)
-                return CreateWildcard();
-            return new ContractPermissionDescriptor(item.GetSpan());
+            return item.Equals(StackItem.Null) ? CreateWildcard() : new ContractPermissionDescriptor(item.GetSpan());
         }
 
         /// <summary>
