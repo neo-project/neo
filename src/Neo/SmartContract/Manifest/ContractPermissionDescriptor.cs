@@ -11,6 +11,7 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Json;
+using Neo.VM.Types;
 using System;
 
 namespace Neo.SmartContract.Manifest
@@ -64,6 +65,13 @@ namespace Neo.SmartContract.Manifest
                 default:
                     throw new ArgumentException(null, nameof(span));
             }
+        }
+
+        public static ContractPermissionDescriptor Create(StackItem item)
+        {
+            if (item == StackItem.Null)
+                return CreateWildcard();
+            return new ContractPermissionDescriptor(item.GetSpan());
         }
 
         /// <summary>
