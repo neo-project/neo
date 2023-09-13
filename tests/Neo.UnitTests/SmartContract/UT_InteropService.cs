@@ -327,6 +327,48 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void TestRuntime_GetCurrentSigners()
+        {
+            using var engine = GetEngine(hasContainer: true);
+            Assert.AreEqual(UInt160.Zero, engine.GetCurrentSigners()[0].Account);
+        }
+
+        [TestMethod]
+        public void TestRuntime_GetCurrentSigners_SysCall()
+        {
+            using ScriptBuilder script = new();
+            script.EmitSysCall(ApplicationEngine.System_Runtime_CurrentSigners.Hash);
+
+            // Null
+
+            using var engineA = GetEngine(hasSnapshot: true, addScript: false, hasContainer: false);
+
+            engineA.LoadScript(script.ToArray());
+            engineA.Execute();
+            Assert.AreEqual(engineA.State, VMState.HALT);
+
+            var result = engineA.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Null));
+
+            // Not null
+
+            using var engineB = GetEngine(hasSnapshot: true, addScript: false, hasContainer: true);
+
+            engineB.LoadScript(script.ToArray());
+            engineB.Execute();
+            Assert.AreEqual(engineB.State, VMState.HALT);
+
+            result = engineB.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Array));
+            (result as VM.Types.Array).Count.Should().Be(1);
+            result = (result as VM.Types.Array)[0];
+            result.Should().BeOfType(typeof(VM.Types.Array));
+            (result as VM.Types.Array).Count.Should().Be(5);
+            result = (result as VM.Types.Array)[0]; // Address
+            Assert.AreEqual(UInt160.Zero, new UInt160(result.GetSpan()));
+        }
+
+        [TestMethod]
         public void TestCrypto_Verify()
         {
             var engine = GetEngine(true);
