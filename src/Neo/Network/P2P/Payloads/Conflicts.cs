@@ -1,8 +1,11 @@
 using Neo.IO;
 using Neo.Json;
 using Neo.Persistence;
+using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using System;
 using System.IO;
+using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -38,6 +41,23 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Verify(DataCache snapshot, Transaction tx)
         {
+            // Check already stored signers
+
+            var conflictingSigners = tx.Signers.Select(s => s.Account);
+
+            foreach (var attr in tx.GetAttributes<Conflicts>())
+            {
+                var conflictRecord = snapshot.GetAndChange(new KeyBuilder(NativeContract.Ledger.Id, 11).Add(attr.Hash),
+                    () => new StorageItem(new TransactionState { ConflictingSigners = Array.Empty<UInt160>() })).GetInteroperable<TransactionState>();
+
+                conflictRecord.ConflictingSigners = conflictRecord.ConflictingSigners.Concat(conflictingSigners).Distinct().ToArray();
+
+                if (conflictingSigners.Count() > 100)
+                {
+                    return false;
+                }
+            }
+
             // Only check if conflicting transaction is on chain. It's OK if the
             // conflicting transaction was in the Conflicts attribute of some other
             // on-chain transaction.
