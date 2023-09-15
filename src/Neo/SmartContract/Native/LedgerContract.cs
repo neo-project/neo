@@ -66,7 +66,7 @@ namespace Neo.SmartContract.Native
             var conflictRecord = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?
                     .GetInteroperable<TransactionState>();
 
-            if (conflictRecord == null) return true;
+            if (conflictRecord is null || conflictRecord.Transaction is not null) return true;
 
             if (conflictRecord.ConflictingSigners.Concat(signers).Distinct().Count() > MaxAllowedConflictingSigners)
             {
