@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Neo.Cryptography;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
@@ -108,7 +109,10 @@ namespace Neo.UnitTests
                 Signers = new[]{ new Signer()
                 {
                     Account = sender,
-                    Scopes = WitnessScope.CalledByEntry
+                    Scopes = WitnessScope.CalledByEntry,
+                    AllowedContracts = Array.Empty<UInt160>(),
+                    AllowedGroups = Array.Empty<ECPoint>(),
+                    Rules = Array.Empty<WitnessRule>(),
                 } },
                 Witnesses = new Witness[]{ new Witness
                 {
