@@ -51,7 +51,7 @@ namespace Neo.Network.P2P.Payloads
                 if (!NativeContract.Ledger.CanFitConflictingSigners(snapshot, tx.Hash, conflictingSigners))
                     return false;
 
-                // Duplicate attribute
+                // Hash duplicated on different attributes
                 if (!hashes.Add(attr.Hash))
                     return false;
             }
