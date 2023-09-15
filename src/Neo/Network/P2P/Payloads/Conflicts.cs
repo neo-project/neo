@@ -3,15 +3,12 @@ using System.Linq;
 using Neo.IO;
 using Neo.Json;
 using Neo.Persistence;
-using Neo.SmartContract;
 using Neo.SmartContract.Native;
 
 namespace Neo.Network.P2P.Payloads
 {
     public class Conflicts : TransactionAttribute
     {
-        public const int MaxConflictSigners = 100;
-
         /// <summary>
         /// Indicates the conflict transaction hash.
         /// </summary>
@@ -44,16 +41,11 @@ namespace Neo.Network.P2P.Payloads
         {
             // Check already stored signers
 
-            var conflictingSigners = tx.Signers.Select(s => s.Account);
+            var conflictingSigners = tx.Signers.Select(s => s.Account).ToArray();
 
             foreach (var attr in tx.GetAttributes<Conflicts>())
             {
-                var conflictRecord = snapshot.TryGet(
-                    new KeyBuilder(NativeContract.Ledger.Id, LedgerContract.Prefix_Transaction).Add(attr.Hash))?
-                    .GetInteroperable<TransactionState>();
-                if (conflictRecord == null) continue;
-
-                if (conflictRecord.ConflictingSigners.Concat(conflictingSigners).Distinct().Count() > MaxConflictSigners)
+                if (!NativeContract.Ledger.CanFitConflictingSigners(snapshot, tx.Hash, conflictingSigners))
                 {
                     return false;
                 }

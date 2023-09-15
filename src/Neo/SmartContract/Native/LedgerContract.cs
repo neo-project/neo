@@ -29,7 +29,8 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_BlockHash = 9;
         private const byte Prefix_CurrentBlock = 12;
         private const byte Prefix_Block = 5;
-        internal const byte Prefix_Transaction = 11;
+        private const byte Prefix_Transaction = 11;
+        private const int MaxAllowedConflictingSigners = 100;
 
         internal LedgerContract()
         {
@@ -58,6 +59,21 @@ namespace Neo.SmartContract.Native
             }
             engine.SetState(transactions);
             return ContractTask.CompletedTask;
+        }
+
+        internal bool CanFitConflictingSigners(DataCache snapshot, UInt256 hash, UInt160[] signers)
+        {
+            var conflictRecord = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?
+                    .GetInteroperable<TransactionState>();
+
+            if (conflictRecord == null) return true;
+
+            if (conflictRecord.ConflictingSigners.Concat(signers).Distinct().Count() > MaxAllowedConflictingSigners)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         internal override ContractTask PostPersist(ApplicationEngine engine)
