@@ -30,7 +30,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// Indicates how many instances of this attribute are allowed.
         /// </summary>
-        public abstract int AllowedCount { get; }
+        public virtual bool AllowMultiple => false;
 
         public virtual int Size => sizeof(TransactionAttributeType);
 
