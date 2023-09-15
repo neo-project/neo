@@ -29,7 +29,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_BlockHash = 9;
         private const byte Prefix_CurrentBlock = 12;
         private const byte Prefix_Block = 5;
-        private const byte Prefix_Transaction = 11;
+        internal const byte Prefix_Transaction = 11;
 
         internal LedgerContract()
         {
