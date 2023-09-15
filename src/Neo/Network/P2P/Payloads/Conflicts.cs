@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Neo.IO;
@@ -41,12 +42,22 @@ namespace Neo.Network.P2P.Payloads
         {
             // Check already stored signers
 
+            HashSet<UInt256> hashes = new();
             var conflictingSigners = tx.Signers.Select(s => s.Account).ToArray();
 
             foreach (var attr in tx.GetAttributes<Conflicts>())
             {
                 if (!NativeContract.Ledger.CanFitConflictingSigners(snapshot, tx.Hash, conflictingSigners))
                 {
+                    // Can't fit MaxAllowedConflictingSigners
+
+                    return false;
+                }
+
+                if (!hashes.Add(attr.Hash))
+                {
+                    // Duplicate attribute
+
                     return false;
                 }
             }
