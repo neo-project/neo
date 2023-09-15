@@ -47,19 +47,13 @@ namespace Neo.Network.P2P.Payloads
 
             foreach (var attr in tx.GetAttributes<Conflicts>())
             {
+                // Can't fit MaxAllowedConflictingSigners
                 if (!NativeContract.Ledger.CanFitConflictingSigners(snapshot, tx.Hash, conflictingSigners))
-                {
-                    // Can't fit MaxAllowedConflictingSigners
-
                     return false;
-                }
 
+                // Duplicate attribute
                 if (!hashes.Add(attr.Hash))
-                {
-                    // Duplicate attribute
-
                     return false;
-                }
             }
 
             // Only check if conflicting transaction is on chain. It's OK if the
