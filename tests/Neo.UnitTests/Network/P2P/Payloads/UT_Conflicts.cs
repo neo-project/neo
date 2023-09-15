@@ -68,7 +68,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Conflicting transaction is in the Conflicts attribute of some other on-chain transaction.
             var conflict = new TransactionState();
             snapshot.Add(key, new StorageItem(conflict));
-            Assert.IsTrue(test.Verify(snapshot, new Transaction()));
+            Assert.IsTrue(test.Verify(snapshot, new Transaction() { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }));
 
             // Conflicting transaction is on-chain.
             snapshot.Delete(key);
@@ -79,11 +79,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 State = VMState.NONE
             };
             snapshot.Add(key, new StorageItem(conflict));
-            Assert.IsFalse(test.Verify(snapshot, new Transaction()));
+            Assert.IsFalse(test.Verify(snapshot, new Transaction() { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }));
 
             // There's no conflicting transaction at all.
             snapshot.Delete(key);
-            Assert.IsTrue(test.Verify(snapshot, new Transaction()));
+            Assert.IsTrue(test.Verify(snapshot, new Transaction() { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }));
         }
     }
 }
