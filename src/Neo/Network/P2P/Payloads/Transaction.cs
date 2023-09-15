@@ -199,10 +199,24 @@ namespace Neo.Network.P2P.Payloads
             int count = (int)reader.ReadVarInt((ulong)maxCount);
             TransactionAttribute[] attributes = new TransactionAttribute[count];
             HashSet<TransactionAttributeType> hashset = new();
+            Dictionary<TransactionAttributeType, int> typeCount = new();
             for (int i = 0; i < count; i++)
             {
                 TransactionAttribute attribute = TransactionAttribute.DeserializeFrom(ref reader);
-                if (!attribute.AllowMultiple && !hashset.Add(attribute.Type))
+                if (typeCount.TryGetValue(attribute.Type, out int tc))
+                {
+                    tc++;
+
+                    if (attribute.AllowedCount < tc)
+                        throw new FormatException();
+
+                    typeCount[attribute.Type] = tc;
+                }
+                else
+                {
+                    typeCount[attribute.Type] = 1;
+                }
+                if (!hashset.Add(attribute.Type))
                     throw new FormatException();
                 attributes[i] = attribute;
             }

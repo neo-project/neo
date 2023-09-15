@@ -51,7 +51,7 @@ namespace Neo.Network.P2P.Payloads
         public ReadOnlyMemory<byte> Result;
 
         public override TransactionAttributeType Type => TransactionAttributeType.OracleResponse;
-        public override bool AllowMultiple => false;
+        public override int AllowedCount => 1;
 
         public override int Size => base.Size +
             sizeof(ulong) +                 //Id

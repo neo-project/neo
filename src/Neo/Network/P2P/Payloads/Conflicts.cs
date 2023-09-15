@@ -15,7 +15,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override TransactionAttributeType Type => TransactionAttributeType.Conflicts;
 
-        public override bool AllowMultiple => true;
+        public override int AllowedCount => 4;
 
         public override int Size => base.Size + Hash.Size;
 

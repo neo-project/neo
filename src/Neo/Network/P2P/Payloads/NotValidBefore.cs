@@ -15,7 +15,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override TransactionAttributeType Type => TransactionAttributeType.NotValidBefore;
 
-        public override bool AllowMultiple => false;
+        public override int AllowedCount => 1;
 
         public override int Size => base.Size +
             sizeof(uint); // Height.

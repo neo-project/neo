@@ -21,7 +21,7 @@ namespace Neo.Network.P2P.Payloads
     /// </summary>
     public class HighPriorityAttribute : TransactionAttribute
     {
-        public override bool AllowMultiple => false;
+        public override int AllowedCount => 1;
         public override TransactionAttributeType Type => TransactionAttributeType.HighPriority;
 
         protected override void DeserializeWithoutType(ref MemoryReader reader)
