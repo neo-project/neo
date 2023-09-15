@@ -51,7 +51,7 @@ namespace Neo.Network.P2P.Payloads
                 var conflictRecord = snapshot.TryGet(
                     new KeyBuilder(NativeContract.Ledger.Id, LedgerContract.Prefix_Transaction).Add(attr.Hash))?
                     .GetInteroperable<TransactionState>();
-                if (conflictRecord == null) continue;
+                if (conflictRecord is null || conflictRecord.Transaction is not null) continue;
 
                 if (conflictRecord.ConflictingSigners.Concat(conflictingSigners).Distinct().Count() > MaxConflictSigners)
                 {
