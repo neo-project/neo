@@ -47,12 +47,10 @@ namespace Neo.Network.P2P.Payloads
 
             foreach (var attr in tx.GetAttributes<Conflicts>())
             {
-                var conflictRecord = snapshot.GetAndChange(new KeyBuilder(NativeContract.Ledger.Id, 11).Add(attr.Hash),
-                    () => new StorageItem(new TransactionState { ConflictingSigners = Array.Empty<UInt160>() })).GetInteroperable<TransactionState>();
+                var conflictRecord = snapshot.TryGet(new KeyBuilder(NativeContract.Ledger.Id, 11).Add(attr.Hash))?.GetInteroperable<TransactionState>();
+                if (conflictRecord == null) continue;
 
-                conflictRecord.ConflictingSigners = conflictRecord.ConflictingSigners.Concat(conflictingSigners).Distinct().ToArray();
-
-                if (conflictingSigners.Count() > 100)
+                if (conflictRecord.ConflictingSigners.Concat(conflictingSigners).Distinct().Count() > 100)
                 {
                     return false;
                 }
