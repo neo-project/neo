@@ -1,16 +1,17 @@
+using System.IO;
+using System.Linq;
 using Neo.IO;
 using Neo.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using System;
-using System.IO;
-using System.Linq;
 
 namespace Neo.Network.P2P.Payloads
 {
     public class Conflicts : TransactionAttribute
     {
+        public const int MaxConflictSigners = 100;
+
         /// <summary>
         /// Indicates the conflict transaction hash.
         /// </summary>
@@ -52,7 +53,7 @@ namespace Neo.Network.P2P.Payloads
                     .GetInteroperable<TransactionState>();
                 if (conflictRecord == null) continue;
 
-                if (conflictRecord.ConflictingSigners.Concat(conflictingSigners).Distinct().Count() > 100)
+                if (conflictRecord.ConflictingSigners.Concat(conflictingSigners).Distinct().Count() > MaxConflictSigners)
                 {
                     return false;
                 }
