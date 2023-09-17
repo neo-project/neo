@@ -38,7 +38,7 @@ namespace Neo.SmartContract.Native
         // conflicting records in mempool is limited by the same constant. Thus, the overall maximum
         // number of transactions per a single conflict record that can ever exist in the Ledger's
         // storage is 2*MaxAllowedConflictingTransactions.
-        private const int MaxAllowedConflictingTransactions = 16;
+        internal const int MaxAllowedConflictingTransactions = 16;
 
         internal LedgerContract()
         {
