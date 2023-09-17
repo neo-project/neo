@@ -54,8 +54,7 @@ namespace Neo.SmartContract.Native
                 {
                     var conflictRecord = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Transaction).Add(attr.Hash),
                         () => new StorageItem(new TransactionState { ConflictingSigners = Array.Empty<UInt160>() })).GetInteroperable<TransactionState>();
-                    conflictRecord.ConflictingSigners = conflictRecord.ConflictingSigners.Concat(conflictingSigners)
-                        .Distinct().OrderBy(s => s).Take(MaxAllowedConflictingSigners).ToArray();
+                    conflictRecord.ConflictingSigners = conflictRecord.ConflictingSigners.Concat(conflictingSigners).Distinct().ToArray();
                 }
             }
             engine.SetState(transactions);
