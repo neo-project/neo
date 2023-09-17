@@ -40,21 +40,10 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Verify(DataCache snapshot, Transaction tx)
         {
-            // Check already stored signers
-
-            HashSet<UInt256> hashes = new();
-            var conflictingSigners = tx.Signers.Select(s => s.Account).ToArray();
-
-            foreach (var attr in tx.GetAttributes<Conflicts>())
-            {
-                // Can't fit MaxAllowedConflictingSigners
-                if (!NativeContract.Ledger.CanFitConflictingSigners(snapshot, tx.Hash, conflictingSigners))
-                    return false;
-
-                // Hash duplicated on different attributes
-                if (!hashes.Add(attr.Hash))
-                    return false;
-            }
+            // Check whether conflicting record has enough space to fit the signers of
+            // yet another conflicting transaction.
+            if (!NativeContract.Ledger.CanFitConflictingTransaction(snapshot, tx))
+                return false;
 
             // Only check if conflicting transaction is on chain. It's OK if the
             // conflicting transaction was in the Conflicts attribute of some other

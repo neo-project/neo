@@ -30,7 +30,15 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_CurrentBlock = 12;
         private const byte Prefix_Block = 5;
         private const byte Prefix_Transaction = 11;
-        private const int MaxAllowedConflictingSigners = 100;
+        // MaxAllowedConflictingTransactions is the maximum number of transactions that make their
+        // contribution to a single conflicting signers record. This setting affects native Ledger
+        // storage in the following way: after MaxAllowedConflictingTransactions is stored in the
+        // Ledger's storage for a certain confclit record, mempool stops accepting new conflicting
+        // transactions corresponding to this record. At the same time, maximum number of
+        // conflicting records in mempool is limited by the same constant. Thus, the overall maximum
+        // number of transactions per a single conflict record that can ever exist in the Ledger's
+        // storage is 2*MaxAllowedConflictingTransactions.
+        private const int MaxAllowedConflictingTransactions = 16;
 
         internal LedgerContract()
         {
@@ -61,16 +69,26 @@ namespace Neo.SmartContract.Native
             return ContractTask.CompletedTask;
         }
 
-        internal bool CanFitConflictingSigners(DataCache snapshot, UInt256 hash, UInt160[] signers)
+        internal bool CanFitConflictingTransaction(DataCache snapshot, Transaction tx)
         {
-            var conflictRecord = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?
+            HashSet<UInt256> hashes = new();
+
+            foreach (var attr in tx.GetAttributes<Conflicts>())
+            {
+                // Filter out already handled hashes.
+                if (!hashes.Add(attr.Hash))
+                    continue;
+
+                var conflictRecord = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(attr.Hash))?
                     .GetInteroperable<TransactionState>();
 
-            if (conflictRecord is null || conflictRecord.Transaction is not null) return true;
+                // Filter out fully-qualified (simple) transactions and check only conflicing records.
+                if (conflictRecord is null || conflictRecord.Transaction is not null)
+                    continue;
 
-            if (conflictRecord.ConflictingSigners.Concat(signers).Distinct().Count() > MaxAllowedConflictingSigners)
-            {
-                return false;
+                if (conflictRecord.ConflictingTransactionsCount > MaxAllowedConflictingTransactions)
+                    return false;
+
             }
 
             return true;
