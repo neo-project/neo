@@ -32,6 +32,8 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public Transaction Transaction;
 
+        public uint ConflictingTransactionsCount;
+
         public UInt160[] ConflictingSigners;
 
         /// <summary>
@@ -47,6 +49,7 @@ namespace Neo.SmartContract.Native
             {
                 BlockIndex = BlockIndex,
                 Transaction = Transaction,
+                ConflictingTransactionsCount = ConflictingTransactionsCount,
                 ConflictingSigners = ConflictingSigners,
                 State = State,
                 _rawTransaction = _rawTransaction
@@ -59,6 +62,7 @@ namespace Neo.SmartContract.Native
             BlockIndex = from.BlockIndex;
             Transaction = from.Transaction;
             ConflictingSigners = from.ConflictingSigners;
+            ConflictingTransactionsCount = from.ConflictingTransactionsCount;
             State = from.State;
             if (_rawTransaction.IsEmpty)
                 _rawTransaction = from._rawTransaction;
@@ -67,9 +71,10 @@ namespace Neo.SmartContract.Native
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
-            if (@struct.Count == 1)
+            if (@struct.Count == 2)
             {
-                ConflictingSigners = ((VM.Types.Array)@struct[0]).Select(u => new UInt160(u.GetSpan())).ToArray();
+                ConflictingTransactionsCount = (uint)@struct[0].GetInteger();
+                ConflictingSigners = ((VM.Types.Array)@struct[1]).Select(u => new UInt160(u.GetSpan())).ToArray();
                 return;
             }
             BlockIndex = (uint)@struct[0].GetInteger();
@@ -80,7 +85,7 @@ namespace Neo.SmartContract.Native
 
         StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
         {
-            if (Transaction is null) return new Struct(referenceCounter) { new VM.Types.Array(referenceCounter, ConflictingSigners.Select(u => new ByteString(u.ToArray())).ToArray()) };
+            if (Transaction is null) return new Struct(referenceCounter) { ConflictingTransactionsCount, new VM.Types.Array(referenceCounter, ConflictingSigners.Select(u => new ByteString(u.ToArray())).ToArray()) };
             if (_rawTransaction.IsEmpty)
                 _rawTransaction = Transaction.ToArray();
             return new Struct(referenceCounter) { BlockIndex, _rawTransaction, (byte)State };

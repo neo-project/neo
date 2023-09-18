@@ -367,6 +367,12 @@ namespace Neo.Ledger
             // Step 2: check if unsorted transactions were in `tx`'s Conflicts attributes.
             foreach (var hash in tx.GetAttributes<Conflicts>().Select(p => p.Hash))
             {
+                // Firstly, check whether there's a free space in the list of transactions that has the same
+                // conflicts as `tx` has (in case of successfull verification, `tx` has to be added to this list).
+                if (_conflicts.TryGetValue(hash, out var pooled))
+                    if (pooled.Count() >= Neo.SmartContract.Native.LedgerContract.MaxAllowedConflictingTransactions) return false;
+
+                // After that, check if unsorted transactions are in the `tx`'s Conflicts attributes.
                 if (_unsortedTransactions.TryGetValue(hash, out PoolItem unsortedTx))
                 {
                     if (!tx.Signers.Select(p => p.Account).Intersect(unsortedTx.Tx.Signers.Select(p => p.Account)).Any()) return false;
