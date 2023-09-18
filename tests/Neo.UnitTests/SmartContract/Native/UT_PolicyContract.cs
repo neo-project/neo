@@ -33,6 +33,10 @@ namespace Neo.UnitTests.SmartContract.Native
             var ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
             ret.Should().BeOfType<VM.Types.Integer>();
             ret.GetInteger().Should().Be(1000);
+
+            ret = NativeContract.Policy.Call(snapshot, "getConflictsFee");
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetInteger().Should().Be(0);
         }
 
         [TestMethod]
@@ -172,6 +176,63 @@ namespace Neo.UnitTests.SmartContract.Native
             ret = NativeContract.Policy.Call(snapshot, "getStoragePrice");
             ret.Should().BeOfType<VM.Types.Integer>();
             ret.GetInteger().Should().Be(300300);
+        }
+
+        [TestMethod]
+        public void Check_SetConflictsFee()
+        {
+            var snapshot = _snapshot.CreateSnapshot();
+
+            // Fake blockchain
+            Block block = new()
+            {
+                Header = new Header
+                {
+                    Index = 1000,
+                    PrevHash = UInt256.Zero
+                }
+            };
+
+            // Without signature
+            Assert.ThrowsException<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
+                "setConflictsFee", new ContractParameter(ContractParameterType.Integer) { Value = 100500 });
+            });
+
+            var ret = NativeContract.Policy.Call(snapshot, "getConflictsFee");
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetInteger().Should().Be(0);
+
+            // With signature, wrong value
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                    "setConflictsFee", new ContractParameter(ContractParameterType.Integer) { Value = 11_0000_0000 });
+            });
+
+            ret = NativeContract.Policy.Call(snapshot, "getConflictsFee");
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetInteger().Should().Be(0);
+
+            // Proper set
+            ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "setConflictsFee", new ContractParameter(ContractParameterType.Integer) { Value = 300300 });
+            ret.IsNull.Should().BeTrue();
+
+            ret = NativeContract.Policy.Call(snapshot, "getConflictsFee");
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetInteger().Should().Be(300300);
+
+            // Set to zero
+            ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "setConflictsFee", new ContractParameter(ContractParameterType.Integer) { Value = 0 });
+            ret.IsNull.Should().BeTrue();
+
+            ret = NativeContract.Policy.Call(snapshot, "getConflictsFee");
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetInteger().Should().Be(0);
         }
 
         [TestMethod]

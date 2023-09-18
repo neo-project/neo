@@ -368,7 +368,9 @@ namespace Neo.Network.P2P.Payloads
             foreach (TransactionAttribute attribute in Attributes)
                 if (!attribute.Verify(snapshot, this))
                     return VerifyResult.InvalidAttribute;
-            long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot);
+
+            long conflictsFee = GetAttributes<Conflicts>().Count() * Signers.Count() * NativeContract.Policy.GetConflictsFee(snapshot);
+            long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot) - conflictsFee;
             if (net_fee < 0) return VerifyResult.InsufficientFunds;
 
             if (net_fee > MaxVerificationGas) net_fee = MaxVerificationGas;

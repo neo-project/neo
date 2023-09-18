@@ -661,6 +661,7 @@ namespace Neo.Wallets
                 }
             }
             networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
+            networkFee += tx.GetAttributes<Conflicts>().Count() * tx.Signers.Count() * NativeContract.Policy.GetConflictsFee(snapshot);
             return networkFee;
         }
 
