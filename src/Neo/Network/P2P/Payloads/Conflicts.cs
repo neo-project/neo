@@ -43,5 +43,10 @@ namespace Neo.Network.P2P.Payloads
             // on-chain transaction.
             return !NativeContract.Ledger.ContainsTransaction(snapshot, Hash);
         }
+
+        public override long CalculateNetworkFee(DataCache snapshot, Transaction tx)
+        {
+            return tx.Signers.Length * base.CalculateNetworkFee(snapshot, tx);
+        }
     }
 }
