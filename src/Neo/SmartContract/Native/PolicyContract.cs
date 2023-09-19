@@ -61,7 +61,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_ExecFeeFactor = 18;
         private const byte Prefix_StoragePrice = 19;
-        private const byte Prefix_ConflictsFee = 20;
+        private const byte Prefix_AttributeFee = 20;
 
         internal PolicyContract()
         {
@@ -118,7 +118,7 @@ namespace Neo.SmartContract.Native
         public uint GetAttributeFee(DataCache snapshot, byte attributeType)
         {
             if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType)) throw new InvalidOperationException();
-            StorageItem entry = snapshot.TryGet(CreateStorageKey(Prefix_ConflictsFee).Add(attributeType));
+            StorageItem entry = snapshot.TryGet(CreateStorageKey(Prefix_AttributeFee).Add(attributeType));
             if (entry == null) return DefaultAttributeFee;
 
             return (uint)(BigInteger)entry;
@@ -143,7 +143,7 @@ namespace Neo.SmartContract.Native
             if (value > MaxAttributeFee) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
-            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_ConflictsFee).Add(attributeType), () => new StorageItem(DefaultAttributeFee)).Set(value);
+            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_AttributeFee).Add(attributeType), () => new StorageItem(DefaultAttributeFee)).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
