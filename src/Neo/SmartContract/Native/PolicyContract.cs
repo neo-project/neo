@@ -113,7 +113,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="attributeType">Attribute type</param>
-        /// <returns>The fee for Conflicts attribute per signer.</returns>
+        /// <returns>The fee for attribute.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint GetAttributeFee(DataCache snapshot, byte attributeType)
         {
