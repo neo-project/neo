@@ -81,7 +81,7 @@ namespace Neo.SmartContract.Manifest
             {
                 Null _ => WildcardContainer<ContractPermissionDescriptor>.CreateWildcard(),
                 // Array array when array.Any(p => ((ByteString)p).Size == 0) => WildcardContainer<ContractPermissionDescriptor>.CreateWildcard(),
-                Array array => WildcardContainer<ContractPermissionDescriptor>.Create(array.Select(p => new ContractPermissionDescriptor(p.GetSpan())).ToArray()),
+                Array array => WildcardContainer<ContractPermissionDescriptor>.Create(array.Select(ContractPermissionDescriptor.Create).ToArray()),
                 _ => throw new ArgumentException(null, nameof(stackItem))
             };
             Extra = (JObject)JToken.Parse(@struct[7].GetSpan());
