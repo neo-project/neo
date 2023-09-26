@@ -146,6 +146,12 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_BurnGas = Register("System.Runtime.BurnGas", nameof(BurnGas), 1 << 4, CallFlags.None);
 
         /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Runtime.CurrentSigners.
+        /// Get the Signers of the current transaction.
+        /// </summary>
+        public static readonly InteropDescriptor System_Runtime_CurrentSigners = Register("System.Runtime.CurrentSigners", nameof(GetCurrentSigners), 1 << 4, CallFlags.None);
+
+        /// <summary>
         /// The implementation of System.Runtime.Platform.
         /// Gets the name of the current platform.
         /// </summary>
@@ -417,6 +423,18 @@ namespace Neo.SmartContract
             if (gas <= 0)
                 throw new InvalidOperationException("GAS must be positive.");
             AddGas(gas);
+        }
+
+        /// <summary>
+        /// Get the Signers of the current transaction.
+        /// </summary>
+        /// <returns>The signers of the current transaction, or null if is not related to a transaction execution.</returns>
+        protected internal Signer[] GetCurrentSigners()
+        {
+            if (ScriptContainer is Transaction tx)
+                return tx.Signers;
+
+            return null;
         }
 
         private static bool CheckItemType(StackItem item, ContractParameterType type)
