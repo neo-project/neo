@@ -431,11 +431,12 @@ namespace Neo.Ledger
                 // var readSet = new HashSet<StorageKey>();
                 var writeSet = new HashSet<StorageKey>();
 
+                var randomUsed = false;
                 foreach (var task in tasks)
                 {
                     var (transactionState, txSnapshot, executed) = task.Result;
 
-                    if (txSnapshot.GetReadSet().Overlaps(writeSet) || txSnapshot.isRandomNumberCalled)
+                    if (txSnapshot.GetReadSet().Overlaps(writeSet) || (randomUsed && txSnapshot.isRandomNumberCalled))
                     {
                         DataCache tmp = snapshot.CreateSnapshot();
                         var task2 = OnExecuteTransactionAsync(system, block, tmp, transactionState);
@@ -447,6 +448,7 @@ namespace Neo.Ledger
                     {
                         txSnapshot.Commit();
                         writeSet.UnionWith(txSnapshot.GetWriteSet());
+                        randomUsed = txSnapshot.isRandomNumberCalled;
                     }
 
                     // ApplicationExecuted application_executed = new(engine);
