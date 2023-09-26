@@ -23,6 +23,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Neo.Ledger
 {
@@ -414,26 +416,45 @@ namespace Neo.Ledger
                     all_application_executed.Add(application_executed);
                     transactionStates = engine.GetState<TransactionState[]>();
                 }
-                DataCache clonedSnapshot = snapshot.CreateSnapshot();
-                // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
+
+                var tasks = new List<Task<(TransactionState, DataCache, ApplicationExecuted)>>();
+
+                // Warning: Do not write into variable snapshot directly.
+                // Write into variable clonedSnapshot and commit instead.
                 foreach (TransactionState transactionState in transactionStates)
                 {
-                    Transaction tx = transactionState.Transaction;
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee);
-                    engine.LoadScript(tx.Script);
-                    transactionState.State = engine.Execute();
+                    DataCache txSnapshot = snapshot.CreateSnapshot();
+                    var task = OnExecuteTransactionAsync(system, block, txSnapshot, transactionState);
+                    tasks.Add(task);
+                }
+
+                // var readSet = new HashSet<StorageKey>();
+                var writeSet = new HashSet<StorageKey>();
+
+                foreach (var task in tasks)
+                {
+                    var (transactionState, txSnapshot, executed) = task.Result;
+
+                    if (txSnapshot.GetReadSet().Overlaps(writeSet) || txSnapshot.isRandomNumberCalled)
+                    {
+                        DataCache tmp = snapshot.CreateSnapshot();
+                        var task2 = OnExecuteTransactionAsync(system, block, tmp, transactionState);
+                        tasks.Add(task2);
+                        (transactionState, txSnapshot, executed) = task.Result;
+                    }
+
                     if (transactionState.State == VMState.HALT)
                     {
-                        clonedSnapshot.Commit();
+                        txSnapshot.Commit();
+                        writeSet.UnionWith(txSnapshot.GetWriteSet());
                     }
-                    else
-                    {
-                        clonedSnapshot = snapshot.CreateSnapshot();
-                    }
-                    ApplicationExecuted application_executed = new(engine);
-                    Context.System.EventStream.Publish(application_executed);
-                    all_application_executed.Add(application_executed);
+
+                    // ApplicationExecuted application_executed = new(engine);
+                    Context.System.EventStream.Publish(executed);
+                    all_application_executed.Add(executed);
+
                 }
+
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, system.Settings, 0))
                 {
                     engine.LoadScript(postPersistScript);
@@ -490,6 +511,23 @@ namespace Neo.Ledger
                 builder.UnionWith(stateValidators.Select(u => Contract.CreateSignatureRedeemScript(u).ToScriptHash()));
             }
             return builder.ToImmutable();
+        }
+
+        private static async Task<(TransactionState, DataCache, ApplicationExecuted)> OnExecuteTransactionAsync(NeoSystem system, Block block, DataCache clonedSnapshot, TransactionState transactionState)
+        {
+            ApplicationExecuted application_executed = null;
+
+            await Task.Run(() =>
+            {
+                Transaction tx = transactionState.Transaction;
+                using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee);
+                engine.LoadScript(tx.Script);
+                transactionState.State = engine.Execute();
+                application_executed = new(engine);
+            });
+
+            return (transactionState, clonedSnapshot, application_executed);
+
         }
     }
 
