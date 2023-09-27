@@ -596,6 +596,7 @@ namespace Neo.Wallets
             uint exec_fee_factor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             long networkFee = 0;
             int index = -1;
+            long gas_left = ApplicationEngine.TestModeGas;
             foreach (UInt160 hash in hashes)
             {
                 index++;
@@ -636,12 +637,14 @@ namespace Neo.Wallets
                     size += Array.Empty<byte>().GetVarSize() + invSize;
 
                     // Check verify cost
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: ProtocolSettings);
+                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: ProtocolSettings, gas: gas_left);
                     engine.LoadContract(contract, md, CallFlags.ReadOnly);
                     if (invocationScript != null) engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
                     if (!engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.Hash} returns false.");
 
+                    gas_left -= engine.GasConsumed;
+                    if (gas_left <= 0) throw new InvalidOperationException("Insufficient GAS.");
                     networkFee += engine.GasConsumed;
                 }
                 else if (IsSignatureContract(witness_script))
