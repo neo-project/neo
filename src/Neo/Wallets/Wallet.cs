@@ -658,10 +658,7 @@ namespace Neo.Wallets
                     size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
                     networkFee += exec_fee_factor * MultiSignatureContractCost(m, n);
                 }
-                else
-                {
-                    //We can support more contract types in the future.
-                }
+                // We can support more contract types in the future.
             }
             networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
             return networkFee;
