@@ -1,10 +1,10 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+// Copyright (C) 2015-2023 The Neo Project.
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -12,6 +12,8 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using System;
 using System.Collections.Generic;
+using System.Text;
+using Org.BouncyCastle.Crypto.Digests;
 
 namespace Neo.SmartContract.Native
 {
@@ -61,6 +63,21 @@ namespace Neo.SmartContract.Native
         {
             using Murmur32 murmur = new(seed);
             return murmur.ComputeHash(data);
+        }
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the keccak256 algorithm.
+        /// </summary>
+        /// <param name="data">The input to compute the hash code for.</param>
+        /// <returns></returns>
+        [ContractMethod(CpuFee = 1 << 15)]
+        public static byte[] Keccak256(byte[] data)
+        {
+            KeccakDigest keccak = new KeccakDigest(256);
+            keccak.BlockUpdate(data, 0, data.Length);
+            byte[] result = new byte[keccak.GetDigestSize()];
+            keccak.DoFinal(result, 0);
+            return result;
         }
 
         /// <summary>
