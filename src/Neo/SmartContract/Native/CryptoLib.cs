@@ -69,7 +69,7 @@ namespace Neo.SmartContract.Native
         /// Computes the hash value for the specified byte array using the keccak256 algorithm.
         /// </summary>
         /// <param name="data">The input to compute the hash code for.</param>
-        /// <returns>Computed hash</returns>
+        /// <returns></returns>
         [ContractMethod(CpuFee = 1 << 15)]
         public static byte[] Keccak256(byte[] data)
         {
