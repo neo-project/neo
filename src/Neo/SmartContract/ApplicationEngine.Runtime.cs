@@ -316,6 +316,11 @@ namespace Neo.SmartContract
                 price = 1 << 4;
             }
             AddGas(price * ExecFeeFactor);
+            if (Snapshot != null)
+            {
+                Snapshot.isRandomNumberCalled = true;
+            }
+
             return new BigInteger(buffer, isUnsigned: true);
         }
 
