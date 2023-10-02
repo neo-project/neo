@@ -62,7 +62,7 @@ static class Benchmarks
         Stopwatch stopwatch = Stopwatch.StartNew();
         engine.Execute();
         stopwatch.Stop();
-        Debug.Assert(engine.State == VMState.HALT);
+        Debug.Assert(engine.State == VMState.FAULT);
         Console.WriteLine($"Benchmark: {name},\tTime: {stopwatch.Elapsed}");
     }
 }
