@@ -4,7 +4,7 @@ using Neo.Cryptography.BLS12_381;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
-using System.Security.Cryptography;
+using Org.BouncyCastle.Utilities.Encoders;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -323,6 +323,21 @@ namespace Neo.UnitTests.SmartContract.Native
                 "c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
                 BLS12381PointType.G2Proj
             );
+        }
+
+        [TestMethod]
+        public void TestKeccak256()
+        {
+            // Arrange
+            byte[] inputData = "Hello, Keccak!"u8.ToArray();
+            string expectedHashHex = "49222c3dd1a2b5cf30a8720050c31844dbc8eca466595b5ce9c11932b7aac985";
+
+            // Act
+            byte[] outputData = CryptoLib.Keccak256(inputData);
+            string outputHashHex = Hex.ToHexString(outputData);
+
+            // Assert
+            Assert.AreEqual(expectedHashHex, outputHashHex, "Keccak256 hash did not match expected value.");
         }
     }
 }
