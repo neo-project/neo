@@ -11,7 +11,6 @@
 #pragma warning disable IDE0051
 
 using System;
-using System.Collections;
 using System.Globalization;
 using System.Numerics;
 using Neo.Cryptography;
@@ -262,7 +261,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15)]
         public static bool StartWith([MaxLength(MaxInputLength)] byte[] byteArray, [MaxLength(MaxInputLength)] byte[] byteToFind)
         {
-            return IndexOf(byteArray, byteToFind) == 0;
+            return byteArray.AsSpan().StartsWith(byteToFind);
         }
 
         /// <summary>
@@ -274,10 +273,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15)]
         public static bool EndsWith([MaxLength(MaxInputLength)] byte[] byteArray, [MaxLength(MaxInputLength)] byte[] byteToFind)
         {
-            int limit = byteArray.Length - byteToFind.Length;
-            if (limit < 0) return false;
-
-            return IndexOf(byteArray, byteToFind) == limit;
+            return byteArray.AsSpan().EndsWith(byteToFind);
         }
     }
 }
