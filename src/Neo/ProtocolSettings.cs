@@ -154,6 +154,7 @@ namespace Neo
                 [nameof(ContractManagement)] = new[] { 0u },
                 [nameof(StdLib)] = new[] { 0u },
                 [nameof(CryptoLib)] = new[] { 0u },
+                [nameof(Regex)] = new[] { 0u },
                 [nameof(LedgerContract)] = new[] { 0u },
                 [nameof(NeoToken)] = new[] { 0u },
                 [nameof(GasToken)] = new[] { 0u },

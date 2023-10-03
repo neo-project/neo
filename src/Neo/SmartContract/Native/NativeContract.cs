@@ -41,6 +41,11 @@ namespace Neo.SmartContract.Native
         public static StdLib StdLib { get; } = new();
 
         /// <summary>
+        /// Gets the instance of the <see cref="Native.Regex"/> class.
+        /// </summary>
+        public static Regex Regex { get; } = new();
+
+        /// <summary>
         /// Gets the instance of the <see cref="Native.CryptoLib"/> class.
         /// </summary>
         public static CryptoLib CryptoLib { get; } = new();
