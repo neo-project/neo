@@ -261,7 +261,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15)]
         public static bool StartWith([MaxLength(MaxInputLength)] byte[] byteArray, [MaxLength(MaxInputLength)] byte[] byteToFind)
         {
-            return byteArray.AsSpan().StartsWith(byteToFind);
+            return byteArray.AsSpan().StartsWith(byteToFind.AsSpan());
         }
 
         /// <summary>
@@ -273,7 +273,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15)]
         public static bool EndsWith([MaxLength(MaxInputLength)] byte[] byteArray, [MaxLength(MaxInputLength)] byte[] byteToFind)
         {
-            return byteArray.AsSpan().EndsWith(byteToFind);
+            return byteArray.AsSpan().EndsWith(byteToFind.AsSpan());
         }
     }
 }
