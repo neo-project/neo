@@ -438,14 +438,19 @@ namespace Neo.UnitTests.SmartContract.Native
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "Ndvb2h3qR4jQtR4t8keNBDmAm9BzmTtmwN", @"^N[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{33}$");
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "Ndvb2h3qR4jQtR4", @"^N[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{33}$");
 
+            var worstCaseStr = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab";
+
+            // 11. Worst case scenario
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", worstCaseStr, @"^(a?)*a$");
 
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
             engine.LoadScript(script.ToArray());
 
             Assert.AreEqual(engine.Execute(), VMState.HALT);
-            Assert.AreEqual(20, engine.ResultStack.Count);
+            Assert.AreEqual(21, engine.ResultStack.Count);
 
             // Assert for each test case (assuming the order remains same)
+            Assert.IsFalse(engine.ResultStack.Pop<Boolean>().GetBoolean()); // Worst case
             Assert.IsFalse(engine.ResultStack.Pop<Boolean>().GetBoolean()); // Neo N3 Address
             Assert.IsTrue(engine.ResultStack.Pop<Boolean>().GetBoolean());  // Neo N3 Address
             Assert.IsFalse(engine.ResultStack.Pop<Boolean>().GetBoolean()); // Block Hash
