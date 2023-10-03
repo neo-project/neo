@@ -248,7 +248,7 @@ namespace Neo.SmartContract.Native
         /// <param name="byteToFind">Array to search.</param>
         /// <returns>Index where it is located or -1</returns>
         [ContractMethod(CpuFee = 1 << 15)]
-        public static int IndexOf(byte[] byteArray, byte[] byteToFind)
+        public static int IndexOf([MaxLength(MaxInputLength)] byte[] byteArray, [MaxLength(MaxInputLength)] byte[] byteToFind)
         {
             return byteArray.AsSpan().IndexOf(byteToFind.AsSpan());
         }
@@ -260,7 +260,7 @@ namespace Neo.SmartContract.Native
         /// <param name="byteToFind">Array to search.</param>
         /// <returns>True if start with</returns>
         [ContractMethod(CpuFee = 1 << 15)]
-        public static bool StartWith(byte[] byteArray, byte[] byteToFind)
+        public static bool StartWith([MaxLength(MaxInputLength)] byte[] byteArray, [MaxLength(MaxInputLength)] byte[] byteToFind)
         {
             return IndexOf(byteArray, byteToFind) == 0;
         }
@@ -272,7 +272,7 @@ namespace Neo.SmartContract.Native
         /// <param name="byteToFind">Array to search.</param>
         /// <returns>True if ends with</returns>
         [ContractMethod(CpuFee = 1 << 15)]
-        public static bool EndsWith(byte[] byteArray, byte[] byteToFind)
+        public static bool EndsWith([MaxLength(MaxInputLength)] byte[] byteArray, [MaxLength(MaxInputLength)] byte[] byteToFind)
         {
             int limit = byteArray.Length - byteToFind.Length;
             if (limit < 0) return false;
