@@ -1,10 +1,10 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+// Copyright (C) 2015-2023 The Neo Project.
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -26,6 +26,7 @@ namespace Neo.SmartContract.Native
     public sealed class StdLib : NativeContract
     {
         private const int MaxInputLength = 1024;
+        private const int MaxRegexInputLength = 100;
 
         internal StdLib() { }
 
@@ -239,6 +240,19 @@ namespace Neo.SmartContract.Native
             }
 
             return count;
+        }
+
+        /// <summary>
+        /// Since we can not process complex regex in smart contract, we might try to support simple regex.
+        /// for some strings less than 50 characters, we can use this method to check if it matches the pattern.
+        /// </summary>
+        /// <param name="str">The string to match</param>
+        /// <param name="pattern">The patterns of the regex</param>
+        /// <returns>if the string match the pattern</returns>
+        [ContractMethod(CpuFee = 1 << 8)]
+        private static bool Regex([MaxLength(MaxRegexInputLength)] string str, [MaxLength(MaxRegexInputLength)] string pattern)
+        {
+            return System.Text.RegularExpressions.Regex.IsMatch(str, pattern);
         }
     }
 }

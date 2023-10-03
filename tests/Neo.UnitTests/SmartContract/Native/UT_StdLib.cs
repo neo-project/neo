@@ -390,5 +390,83 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(engine.ResultStack.Pop<Integer>().GetInteger(), 100);
             Assert.AreEqual(engine.ResultStack.Pop<ByteString>().GetString(), "test");
         }
+
+        [TestMethod]
+        public void TestRegex()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshot();
+
+            using ScriptBuilder script = new();
+
+            // 1. Email address
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "contact@neo.org", @"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "contact@neo", @"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
+
+            // 2. URL with specific constraints (Matches http or https URLs)
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "https://www.example.com", @"^https?:\/\/([a-z0-9]+[.])*[a-z0-9]+\.[a-z]+(\/[^\s]*)?$");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "www.example.com", @"^https?:\/\/([a-z0-9]+[.])*[a-z0-9]+\.[a-z]+(\/[^\s]*)?$");
+
+            // 3. Credit card number format (16 digits, can have spaces or dashes)
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "1234-5678-9012-3456", @"^(\d{4}-){3}\d{4}$|^(\d{4} ){3}\d{4}$|^\d{16}$");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "1234567890123456", @"^(\d{4}-){3}\d{4}$|^(\d{4} ){3}\d{4}$|^\d{16}$");
+
+            // 4. Dates in a specific format (dd/mm/yyyy)
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "03/10/2023", @"^(0[1-9]|1[0-9]|2[0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "03-10-2023", @"^(0[1-9]|1[0-9]|2[0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$");
+
+            // 5. Passwords with certain strength requirements (At least 8 characters, 1 uppercase, 1 lowercase, 1 number)
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "Passw0rd", @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "password", @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$");
+
+            // 6. Bitcoin Address
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2", @"^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "1BvBMSE", @"^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$");
+
+            // 7. Ethereum Address
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "0x5ed8cee6b63b1c6afce3ad7c92f4fd7e1b8fad9f", @"^0x[a-fA-F0-9]{40}$");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "0x5ed8cee6b63b1c6afce", @"^0x[a-fA-F0-9]{40}$");
+
+            // 8. Transaction ID (or hash)
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "5e2c3b8c3a862cf9e1d3e1b8c77b3323c68b4512db27d9a72c99106a8f2a8a7d", @"^[a-fA-F0-9]{64}$");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "5e2c3b8c3a862cf9", @"^[a-fA-F0-9]{64}$");
+
+            // 9. Block Hash
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "6e3b34e4ea1d9f77c061a741c3c5d0a2a1f25e1d5e2a3332c0cd0c7c0a2b5d2e", @"^[a-fA-F0-9]{64}$");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "6e3b34e4ea1d9f77", @"^[a-fA-F0-9]{64}$");
+
+            // 10. Neo N3 Address
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "Ndvb2h3qR4jQtR4t8keNBDmAm9BzmTtmwN", @"^N[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{33}$");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "regex", "Ndvb2h3qR4jQtR4", @"^N[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{33}$");
+
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            Assert.AreEqual(20, engine.ResultStack.Count);
+
+            // Assert for each test case (assuming the order remains same)
+            Assert.IsFalse(engine.ResultStack.Pop<Boolean>().GetBoolean()); // Neo N3 Address
+            Assert.IsTrue(engine.ResultStack.Pop<Boolean>().GetBoolean());  // Neo N3 Address
+            Assert.IsFalse(engine.ResultStack.Pop<Boolean>().GetBoolean()); // Block Hash
+            Assert.IsTrue(engine.ResultStack.Pop<Boolean>().GetBoolean());  // Block Hash
+            Assert.IsFalse(engine.ResultStack.Pop<Boolean>().GetBoolean()); // Transaction ID (or hash)
+            Assert.IsTrue(engine.ResultStack.Pop<Boolean>().GetBoolean());  // Transaction ID (or hash)
+            Assert.IsFalse(engine.ResultStack.Pop<Boolean>().GetBoolean()); // Ethereum Address
+            Assert.IsTrue(engine.ResultStack.Pop<Boolean>().GetBoolean());  // Ethereum Address
+            Assert.IsFalse(engine.ResultStack.Pop<Boolean>().GetBoolean()); // Bitcoin Address
+            Assert.IsTrue(engine.ResultStack.Pop<Boolean>().GetBoolean());  // Bitcoin Address
+            Assert.IsFalse(engine.ResultStack.Pop<Boolean>().GetBoolean()); // password
+            Assert.IsTrue(engine.ResultStack.Pop<Boolean>().GetBoolean());  // Passw0rd
+            Assert.IsFalse(engine.ResultStack.Pop<Boolean>().GetBoolean()); // 03-10-2023
+            Assert.IsTrue(engine.ResultStack.Pop<Boolean>().GetBoolean());  // 03/10/2023
+            Assert.IsTrue(engine.ResultStack.Pop<Boolean>().GetBoolean());  // 1234567890123456
+            Assert.IsTrue(engine.ResultStack.Pop<Boolean>().GetBoolean());  // 1234-5678-9012-3456
+            Assert.IsFalse(engine.ResultStack.Pop<Boolean>().GetBoolean()); // www.example.com
+            Assert.IsTrue(engine.ResultStack.Pop<Boolean>().GetBoolean());  // https://www.example.com
+            Assert.IsFalse(engine.ResultStack.Pop<Boolean>().GetBoolean()); // contact@neo
+            Assert.IsTrue(engine.ResultStack.Pop<Boolean>().GetBoolean());  // contact@neo.org
+        }
+
     }
 }
