@@ -10,13 +10,13 @@
 
 #pragma warning disable IDE0051
 
+using System;
+using System.Collections;
+using System.Globalization;
+using System.Numerics;
 using Neo.Cryptography;
 using Neo.Json;
 using Neo.VM.Types;
-using System;
-using System.Globalization;
-using System.Numerics;
-using System.Text;
 
 namespace Neo.SmartContract.Native
 {
@@ -239,6 +239,58 @@ namespace Neo.SmartContract.Native
             }
 
             return count;
+        }
+
+        /// <summary>
+        /// Returns the index of the first occurrence of a given value in an array.
+        /// </summary>
+        /// <param name="byteArray">Array where to search.</param>
+        /// <param name="byteToFind">Array to search.</param>
+        /// <returns>Index where it is located or -1</returns>
+        [ContractMethod(CpuFee = 1 << 15)]
+        public static int IndexOf(byte[] byteArray, byte[] byteToFind)
+        {
+            int len = byteToFind.Length;
+            int limit = byteArray.Length - len;
+
+            for (int i = 0; i <= limit; ++i)
+            {
+                int k = 0;
+                for (; k < len; k++)
+                {
+                    if (byteToFind[k] != byteArray[i + k]) break;
+                }
+                if (k == len) return i;
+            }
+
+            return -1;
+        }
+
+        /// <summary>
+        /// Determines whether the beginning of this string instance matches the specified string when compared using the specified culture.
+        /// </summary>
+        /// <param name="byteArray">Array where to search.</param>
+        /// <param name="byteToFind">Array to search.</param>
+        /// <returns>True if start with</returns>
+        [ContractMethod(CpuFee = 1 << 15)]
+        public static bool StartWith(byte[] byteArray, byte[] byteToFind)
+        {
+            return IndexOf(byteArray, byteToFind) == 0;
+        }
+
+        /// <summary>
+        /// Determines whether the end of this string instance matches a specified string.
+        /// </summary>
+        /// <param name="byteArray">Array where to search.</param>
+        /// <param name="byteToFind">Array to search.</param>
+        /// <returns>True if ends with</returns>
+        [ContractMethod(CpuFee = 1 << 15)]
+        public static bool EndsWith(byte[] byteArray, byte[] byteToFind)
+        {
+            int limit = byteArray.Length - byteToFind.Length;
+            if (limit < 0) return false;
+
+            return IndexOf(byteArray, byteToFind) == limit;
         }
     }
 }

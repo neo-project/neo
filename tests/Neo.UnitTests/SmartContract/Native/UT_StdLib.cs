@@ -28,6 +28,37 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void TestStartWith()
+        {
+            Assert.IsTrue(StdLib.StartWith(new byte[] { 1, 2, 3 }, new byte[] { 1 }));
+            Assert.IsTrue(StdLib.StartWith(new byte[] { 1, 2, 3 }, new byte[] { 1, 2, 3 }));
+            Assert.IsFalse(StdLib.StartWith(new byte[] { 1, 2, 3 }, new byte[] { 2 }));
+            Assert.IsFalse(StdLib.StartWith(new byte[] { 1, 2, 3 }, new byte[] { 1, 2, 3, 4 }));
+        }
+
+        [TestMethod]
+        public void TestEndsWith()
+        {
+            Assert.IsFalse(StdLib.EndsWith(new byte[] { 1, 2, 3 }, new byte[] { 1 }));
+            Assert.IsTrue(StdLib.EndsWith(new byte[] { 1, 2, 3 }, new byte[] { 1, 2, 3 }));
+            Assert.IsTrue(StdLib.EndsWith(new byte[] { 1, 2, 3 }, new byte[] { 2, 3 }));
+            Assert.IsTrue(StdLib.EndsWith(new byte[] { 1, 2, 3 }, new byte[] { 3 }));
+            Assert.IsFalse(StdLib.EndsWith(new byte[] { 1, 2, 3 }, new byte[] { 2 }));
+            Assert.IsFalse(StdLib.EndsWith(new byte[] { 1, 2, 3 }, new byte[] { 1, 2, 3, 4 }));
+        }
+
+        [TestMethod]
+        public void TestIndexOf()
+        {
+            Assert.AreEqual(0, StdLib.IndexOf(new byte[] { 1, 2, 3 }, new byte[] { 1 }));
+            Assert.AreEqual(0, StdLib.IndexOf(new byte[] { 1, 2, 3 }, new byte[] { 1, 2, 3 }));
+            Assert.AreEqual(1, StdLib.IndexOf(new byte[] { 1, 2, 3 }, new byte[] { 2, 3 }));
+            Assert.AreEqual(2, StdLib.IndexOf(new byte[] { 1, 2, 3 }, new byte[] { 3 }));
+            Assert.AreEqual(1, StdLib.IndexOf(new byte[] { 1, 2, 3 }, new byte[] { 2 }));
+            Assert.AreEqual(-1, StdLib.IndexOf(new byte[] { 1, 2, 3 }, new byte[] { 1, 2, 3, 4 }));
+        }
+
+        [TestMethod]
         public void TestItoaAtoi()
         {
             Assert.AreEqual("1", StdLib.Itoa(BigInteger.One, 10));
