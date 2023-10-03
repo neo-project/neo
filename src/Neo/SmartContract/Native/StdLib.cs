@@ -250,7 +250,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15)]
         public static int IndexOf(byte[] byteArray, byte[] byteToFind)
         {
-             return byteArray.AsSpan().IndexOf(byteToFind.AsSpan());
+            return byteArray.AsSpan().IndexOf(byteToFind.AsSpan());
         }
 
         /// <summary>
