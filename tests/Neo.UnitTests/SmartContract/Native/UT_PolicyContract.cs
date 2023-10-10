@@ -1,3 +1,6 @@
+using System;
+using System.Linq;
+using System.Numerics;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
@@ -6,8 +9,6 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
-using System;
-using System.Linq;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -33,6 +34,71 @@ namespace Neo.UnitTests.SmartContract.Native
             var ret = NativeContract.Policy.Call(snapshot, "getFeePerByte");
             ret.Should().BeOfType<VM.Types.Integer>();
             ret.GetInteger().Should().Be(1000);
+
+            ret = NativeContract.Policy.Call(snapshot, "getAttributeFee", new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(byte)TransactionAttributeType.Conflicts });
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetInteger().Should().Be(PolicyContract.DefaultAttributeFee);
+
+            Assert.ThrowsException<InvalidOperationException>(() => NativeContract.Policy.Call(snapshot, "getAttributeFee", new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)byte.MaxValue }));
+        }
+
+        [TestMethod]
+        public void Check_SetAttributeFee()
+        {
+            var snapshot = _snapshot.CreateSnapshot();
+
+            // Fake blockchain
+            Block block = new()
+            {
+                Header = new Header
+                {
+                    Index = 1000,
+                    PrevHash = UInt256.Zero
+                }
+            };
+
+            var attr = new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(byte)TransactionAttributeType.Conflicts };
+
+            // Without signature
+            Assert.ThrowsException<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(), block,
+                "setAttributeFee", attr, new ContractParameter(ContractParameterType.Integer) { Value = 100500 });
+            });
+
+            var ret = NativeContract.Policy.Call(snapshot, "getAttributeFee", attr);
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetInteger().Should().Be(0);
+
+            // With signature, wrong value
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+            {
+                NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                    "setAttributeFee", attr, new ContractParameter(ContractParameterType.Integer) { Value = 11_0000_0000 });
+            });
+
+            ret = NativeContract.Policy.Call(snapshot, "getAttributeFee", attr);
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetInteger().Should().Be(0);
+
+            // Proper set
+            ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "setAttributeFee", attr, new ContractParameter(ContractParameterType.Integer) { Value = 300300 });
+            ret.IsNull.Should().BeTrue();
+
+            ret = NativeContract.Policy.Call(snapshot, "getAttributeFee", attr);
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetInteger().Should().Be(300300);
+
+            // Set to zero
+            ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "setAttributeFee", attr, new ContractParameter(ContractParameterType.Integer) { Value = 0 });
+            ret.IsNull.Should().BeTrue();
+
+            ret = NativeContract.Policy.Call(snapshot, "getAttributeFee", attr);
+            ret.Should().BeOfType<VM.Types.Integer>();
+            ret.GetInteger().Should().Be(0);
         }
 
         [TestMethod]

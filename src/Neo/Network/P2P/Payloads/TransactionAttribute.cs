@@ -8,12 +8,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
+using System.IO;
 using Neo.IO;
 using Neo.IO.Caching;
 using Neo.Json;
 using Neo.Persistence;
-using System;
-using System.IO;
+using Neo.SmartContract.Native;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -92,5 +93,7 @@ namespace Neo.Network.P2P.Payloads
         /// <param name="tx">The <see cref="Transaction"/> that contains the attribute.</param>
         /// <returns><see langword="true"/> if the verification passes; otherwise, <see langword="false"/>.</returns>
         public virtual bool Verify(DataCache snapshot, Transaction tx) => true;
+
+        public virtual long CalculateNetworkFee(DataCache snapshot, Transaction tx) => NativeContract.Policy.GetAttributeFee(snapshot, (byte)Type);
     }
 }
