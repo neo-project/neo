@@ -47,9 +47,9 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.Add(CreateStorageKey(Prefix_Block).Add(engine.PersistingBlock.Hash), new StorageItem(Trim(engine.PersistingBlock).ToArray()));
             foreach (TransactionState tx in transactions)
             {
-                // Remove possible previously saved malicious conflict records for the transaction (if any).
-                foreach (var (key, _) in engine.Snapshot.Find(CreateStorageKey(Prefix_Transaction).Add(tx.Transaction.Hash).ToArray()))
-                    engine.Snapshot.Delete(key);
+                // It's possible that there are previously saved malicious conflict records for this transaction.
+                // These records are garbage in fact and can be removed in a separate flow, but at the same time
+                // it won't hurt to keep them.
 
                 engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(tx.Transaction.Hash), new StorageItem(tx));
 
