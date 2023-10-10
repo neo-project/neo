@@ -33,11 +33,6 @@ namespace Neo.SmartContract.Native
         public const uint DefaultStoragePrice = 100000;
 
         /// <summary>
-        /// The default fee for Conflicts attribute per signer.
-        /// </summary>
-        public const uint DefaultConflictsFee = 0;
-
-        /// <summary>
         /// The default network fee per byte of transactions.
         /// </summary>
         public const uint DefaultFeePerByte = 1000;
@@ -62,11 +57,6 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public const uint MaxStoragePrice = 10000000;
 
-        /// <summary>
-        /// The maximum fee for Conflicts attribute per signer that the committee can set.
-        /// </summary>
-        public const uint MaxConflictsFee = 10_0000_0000;
-
         private const byte Prefix_BlockedAccount = 15;
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_ExecFeeFactor = 18;
@@ -82,7 +72,6 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem(DefaultFeePerByte));
             engine.Snapshot.Add(CreateStorageKey(Prefix_ExecFeeFactor), new StorageItem(DefaultExecFeeFactor));
             engine.Snapshot.Add(CreateStorageKey(Prefix_StoragePrice), new StorageItem(DefaultStoragePrice));
-            engine.Snapshot.Add(CreateStorageKey(Prefix_ConflictsFee), new StorageItem(DefaultConflictsFee));
             return ContractTask.CompletedTask;
         }
 
@@ -179,14 +168,6 @@ namespace Neo.SmartContract.Native
             if (value == 0 || value > MaxStoragePrice) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
             engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_StoragePrice)).Set(value);
-        }
-
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private void SetConflictsFee(ApplicationEngine engine, uint value)
-        {
-            if (value > MaxConflictsFee) throw new ArgumentOutOfRangeException(nameof(value));
-            if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_ConflictsFee)).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
