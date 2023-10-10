@@ -365,12 +365,13 @@ namespace Neo.Network.P2P.Payloads
                 if (NativeContract.Policy.IsBlocked(snapshot, hash))
                     return VerifyResult.PolicyFail;
             if (!(context?.CheckTransaction(this, conflictsList, snapshot) ?? true)) return VerifyResult.InsufficientFunds;
+            long attributesFee = 0;
             foreach (TransactionAttribute attribute in Attributes)
                 if (!attribute.Verify(snapshot, this))
                     return VerifyResult.InvalidAttribute;
-
-            long conflictsFee = GetAttributes<Conflicts>().Count() * Signers.Count() * NativeContract.Policy.GetConflictsFee(snapshot);
-            long net_fee = NetworkFee - Size * NativeContract.Policy.GetFeePerByte(snapshot) - conflictsFee;
+                else
+                    attributesFee += attribute.CalculateNetworkFee(snapshot, this);
+            long net_fee = NetworkFee - (Size * NativeContract.Policy.GetFeePerByte(snapshot)) - attributesFee;
             if (net_fee < 0) return VerifyResult.InsufficientFunds;
 
             if (net_fee > MaxVerificationGas) net_fee = MaxVerificationGas;

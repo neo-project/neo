@@ -8,6 +8,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
@@ -17,13 +24,6 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets.NEP6;
 using Org.BouncyCastle.Crypto.Generators;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using static Neo.SmartContract.Helper;
 using static Neo.Wallets.Helper;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
@@ -575,7 +575,7 @@ namespace Neo.Wallets
                     tx.SystemFee = engine.GasConsumed;
                 }
 
-                tx.NetworkFee = CalculateNetworkFee(snapshot, tx);
+                tx.NetworkFee = CalculateNetworkFee(snapshot, tx, maxGas);
                 if (value >= tx.SystemFee + tx.NetworkFee) return tx;
             }
             throw new InvalidOperationException("Insufficient GAS");
@@ -586,8 +586,9 @@ namespace Neo.Wallets
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="tx">The transaction to calculate.</param>
+        /// <param name="maxExecutionCost">The maximum cost that can be spent when a contract is executed.</param>
         /// <returns>The network fee of the transaction.</returns>
-        public long CalculateNetworkFee(DataCache snapshot, Transaction tx)
+        public long CalculateNetworkFee(DataCache snapshot, Transaction tx, long maxExecutionCost = ApplicationEngine.TestModeGas)
         {
             UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
 
@@ -636,12 +637,14 @@ namespace Neo.Wallets
                     size += Array.Empty<byte>().GetVarSize() + invSize;
 
                     // Check verify cost
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: ProtocolSettings);
+                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: ProtocolSettings, gas: maxExecutionCost);
                     engine.LoadContract(contract, md, CallFlags.ReadOnly);
                     if (invocationScript != null) engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
                     if (!engine.ResultStack.Pop().GetBoolean()) throw new ArgumentException($"Smart contract {contract.Hash} returns false.");
 
+                    maxExecutionCost -= engine.GasConsumed;
+                    if (maxExecutionCost <= 0) throw new InvalidOperationException("Insufficient GAS.");
                     networkFee += engine.GasConsumed;
                 }
                 else if (IsSignatureContract(witness_script))
@@ -655,13 +658,13 @@ namespace Neo.Wallets
                     size += IO.Helper.GetVarSize(size_inv) + size_inv + witness_script.GetVarSize();
                     networkFee += exec_fee_factor * MultiSignatureContractCost(m, n);
                 }
-                else
-                {
-                    //We can support more contract types in the future.
-                }
+                // We can support more contract types in the future.
             }
             networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
-            networkFee += tx.GetAttributes<Conflicts>().Count() * tx.Signers.Count() * NativeContract.Policy.GetConflictsFee(snapshot);
+            foreach (TransactionAttribute attr in tx.Attributes)
+            {
+                networkFee += attr.CalculateNetworkFee(snapshot, tx);
+            }
             return networkFee;
         }
 

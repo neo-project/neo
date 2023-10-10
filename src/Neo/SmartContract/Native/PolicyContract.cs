@@ -10,9 +10,10 @@
 
 #pragma warning disable IDE0051
 
-using Neo.Persistence;
 using System;
 using System.Numerics;
+using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 
 namespace Neo.SmartContract.Native
 {
@@ -42,9 +43,19 @@ namespace Neo.SmartContract.Native
         public const uint DefaultFeePerByte = 1000;
 
         /// <summary>
+        /// The default fee for attribute.
+        /// </summary>
+        public const uint DefaultAttributeFee = 0;
+
+        /// <summary>
         /// The maximum execution fee factor that the committee can set.
         /// </summary>
         public const uint MaxExecFeeFactor = 100;
+
+        /// <summary>
+        /// The maximum fee for attribute that the committee can set.
+        /// </summary>
+        public const uint MaxAttributeFee = 10_0000_0000;
 
         /// <summary>
         /// The maximum storage price that the committee can set.
@@ -60,7 +71,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_FeePerByte = 10;
         private const byte Prefix_ExecFeeFactor = 18;
         private const byte Prefix_StoragePrice = 19;
-        private const byte Prefix_ConflictsFee = 20;
+        private const byte Prefix_AttributeFee = 20;
 
         internal PolicyContract()
         {
@@ -109,14 +120,19 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Gets the fee for Conflicts attribute per signer.
+        /// Gets the fee for attribute.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
-        /// <returns>The fee for Conflicts attribute per signer.</returns>
+        /// <param name="attributeType">Attribute type</param>
+        /// <returns>The fee for attribute.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public uint GetConflictsFee(DataCache snapshot)
+        public uint GetAttributeFee(DataCache snapshot, byte attributeType)
         {
-            return (uint)(BigInteger)snapshot[CreateStorageKey(Prefix_ConflictsFee)];
+            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType)) throw new InvalidOperationException();
+            StorageItem entry = snapshot.TryGet(CreateStorageKey(Prefix_AttributeFee).Add(attributeType));
+            if (entry == null) return DefaultAttributeFee;
+
+            return (uint)(BigInteger)entry;
         }
 
         /// <summary>
@@ -129,6 +145,16 @@ namespace Neo.SmartContract.Native
         public bool IsBlocked(DataCache snapshot, UInt160 account)
         {
             return snapshot.Contains(CreateStorageKey(Prefix_BlockedAccount).Add(account));
+        }
+
+        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
+        private void SetAttributeFee(ApplicationEngine engine, byte attributeType, uint value)
+        {
+            if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType)) throw new InvalidOperationException();
+            if (value > MaxAttributeFee) throw new ArgumentOutOfRangeException(nameof(value));
+            if (!CheckCommittee(engine)) throw new InvalidOperationException();
+
+            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_AttributeFee).Add(attributeType), () => new StorageItem(DefaultAttributeFee)).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
