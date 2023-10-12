@@ -1,0 +1,40 @@
+name: Validate neo-node Compilation with Local neo
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout neo
+      uses: actions/checkout@v2
+      with:
+        path: ./neo
+
+    - name: Checkout neo-node
+      uses: actions/checkout@v2
+      with:
+        repository: neo-project/neo-node
+        path: ./neo-node
+
+    - name: Patch neo-node neo-cli.csproj to use local neo
+      run: |
+        # Path to neo-cli.csproj in neo-node
+        csproj_path="./neo-node/neo-cli/neo-cli.csproj"
+        # Remove the PackageReference to Neo
+        sed -i '/<PackageReference Include="Neo"/d' $csproj_path
+        # Add a ProjectReference to the local Neo project
+        # Assuming the neo project's main .csproj is in its src/neo directory
+        sed -i '/<\/ItemGroup>/i \    <ProjectReference Include="../../neo/src/Neo/Neo.csproj" />' $csproj_path
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '7.x'  # Adjust according to the actual .NET Core version of neo-node
+
+    - name: Restore and build neo-node
+      run: |
+        cd neo-node/neo-cli
+        dotnet restore
+        dotnet build

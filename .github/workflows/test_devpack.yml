@@ -1,0 +1,43 @@
+name: Validate neo-devpack-dotnet Compilation with Local neo
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout neo
+      uses: actions/checkout@v2
+      with:
+        path: ./neo
+
+    - name: Checkout neo-devpack-dotnet
+      uses: actions/checkout@v2
+      with:
+        repository: neo-project/neo-devpack-dotnet
+        path: ./neo-devpack-dotnet
+
+    - name: Patch neo-devpack-dotnet .csproj to use local neo
+      run: |
+        # Remove the PackageReference to Neo
+        sed -i '/<PackageReference Include="Neo"/d' ./neo-devpack-dotnet/src/Neo.Compiler.CSharp/Neo.Compiler.CSharp.csproj
+        # Add a ProjectReference to the local Neo project
+        # Assuming the neo project's main .csproj is in its root directory
+        sed -i '/<\/ItemGroup>/i \    <ProjectReference Include="../../../neo/src/Neo/Neo.csproj" />' ./neo-devpack-dotnet/src/Neo.Compiler.CSharp/Neo.Compiler.CSharp.csproj
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '7.x'  # Adjust according to the actual .NET Core version of neo-devpack-dotnet
+
+    - name: Restore and build neo-devpack-dotnet
+      run: |
+        cd neo-devpack-dotnet/
+        dotnet restore
+        dotnet build
+
+    - name: Test neo-devpack-dotnet
+      run: |
+        cd neo-devpack-dotnet
+        dotnet test

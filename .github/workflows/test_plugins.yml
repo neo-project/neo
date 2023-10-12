@@ -1,0 +1,37 @@
+name: Validate neo-modules Compilation with Local neo
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout neo
+      uses: actions/checkout@v2
+      with:
+        path: ./neo
+
+    - name: Checkout neo-modules
+      uses: actions/checkout@v2
+      with:
+        repository: neo-project/neo-modules
+        path: ./neo-modules
+
+    - name: Patch neo-modules Directory.Build.props to use local neo
+      run: |
+        props_path="./neo-modules/src/Directory.Build.props"
+        sed -i '/<PackageReference Include="Neo"/d' $props_path
+        sed -i '/<\/ItemGroup>/i \    <ProjectReference Include="../../../neo/src/Neo/Neo.csproj" />' $props_path
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '7.x'
+
+    - name: Test neo-modules
+      run: |
+        sudo apt-get --assume-yes install libleveldb-dev libsnappy-dev libc6-dev
+        cd neo-modules/
+        dotnet test
+
