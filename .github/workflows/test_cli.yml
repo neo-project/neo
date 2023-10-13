@@ -1,6 +1,8 @@
 name: Validate neo-node Compilation with Local neo
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [master]
 
 jobs:
   build-and-test:
