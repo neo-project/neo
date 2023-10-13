@@ -16,12 +16,12 @@ jobs:
 
     steps:
     - name: Checkout neo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         path: ./neo
 
     - name: Checkout neo-modules
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: neo-project/neo-modules
         path: ./neo-modules
