@@ -3,6 +3,12 @@ name: Validate neo-devpack-dotnet Compilation with Local neo
 on:
   push:
     branches: [master]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Ref to build neo-devpack [default: latest master; examples: 3.6.0, 0a4ff9d3e4a9ab432fd5812eb18c98e03b5a7432]'
+        required: false
+        default: 'master'
 
 jobs:
   build-and-test:
@@ -19,6 +25,7 @@ jobs:
       with:
         repository: neo-project/neo-devpack-dotnet
         path: ./neo-devpack-dotnet
+        ref: ${{ github.event.inputs.ref }}
 
     - name: Patch neo-devpack-dotnet .csproj to use local neo
       run: |

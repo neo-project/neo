@@ -3,6 +3,12 @@ name: Validate neo-node Compilation with Local neo
 on:
   push:
     branches: [master]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Ref to build neo-node [default: latest master; examples: 3.6.0, 0a4ff9d3e4a9ab432fd5812eb18c98e03b5a7432]'
+        required: false
+        default: 'master'
 
 jobs:
   build-and-test:
@@ -19,6 +25,7 @@ jobs:
       with:
         repository: neo-project/neo-node
         path: ./neo-node
+        ref: ${{ github.event.inputs.ref }}
 
     - name: Patch neo-node neo-cli.csproj to use local neo
       run: |
