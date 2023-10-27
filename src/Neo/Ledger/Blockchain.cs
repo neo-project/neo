@@ -11,6 +11,7 @@
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.IO;
+using Neo.Cryptography;
 using Neo.IO.Actors;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -418,15 +419,18 @@ namespace Neo.Ledger
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee);
                     engine.LoadScript(tx.Script);
                     transactionState.State = engine.Execute();
+                    ApplicationExecuted application_executed = new(engine);
                     if (transactionState.State == VMState.HALT)
                     {
+                        transactionState.NotificationMerkleRoot =
+                            MerkleTree.ComputeRoot(application_executed.Notifications.Select(p => p.GetNotificationHash()).ToArray());
                         clonedSnapshot.Commit();
                     }
                     else
                     {
+                        transactionState.NotificationMerkleRoot = UInt256.Zero;
                         clonedSnapshot = snapshot.CreateSnapshot();
                     }
-                    ApplicationExecuted application_executed = new(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }

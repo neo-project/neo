@@ -8,11 +8,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.IO;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -55,6 +57,31 @@ namespace Neo.SmartContract
             this.ScriptHash = script_hash;
             this.EventName = eventName;
             this.State = state;
+        }
+
+        /// <summary>
+        /// Get notification Hash, or UInt256.Zero if something is wrong
+        /// </summary>
+        public UInt256 GetNotificationHash()
+        {
+            using MemoryStream ms = new();
+            using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
+            writer.Write(ScriptHash);
+
+            try
+            {
+                writer.Write(EventName);
+                writer.Write(BinarySerializer.Serialize(State, 32));
+            }
+            catch
+            {
+                // It might have more state entries than expected or an unsupported event name encoding.
+
+                return UInt256.Zero;
+            }
+
+            writer.Flush();
+            return new UInt256(ms.ToArray().Sha256());
         }
 
         public void FromStackItem(StackItem stackItem)
