@@ -32,15 +32,17 @@ namespace Neo.UnitTests.Ledger
                         InvocationScript=Array.Empty<byte>(),
                         VerificationScript=Array.Empty<byte>()
                     } }
-                }
+                },
+                NotificationMerkleRoot = UInt256.Zero
             };
             originTrimmed = new TransactionState
             {
+                NotificationMerkleRoot = UInt256.Zero,
                 ConflictingSigners = new UInt160[]
-            {
-                new UInt160(Crypto.Hash160(new byte[] { 1, 2, 3 })),
-                new UInt160(Crypto.Hash160(new byte[] { 4, 5, 6 }))
-            }
+                {
+                    new UInt160(Crypto.Hash160(new byte[] { 1, 2, 3 })),
+                    new UInt160(Crypto.Hash160(new byte[] { 4, 5, 6 }))
+                }
             };
         }
 
@@ -50,7 +52,10 @@ namespace Neo.UnitTests.Ledger
             var data = BinarySerializer.Serialize(((IInteroperable)origin).ToStackItem(null), 1024);
             var reader = new MemoryReader(data);
 
-            TransactionState dest = new();
+            TransactionState dest = new()
+            {
+                NotificationMerkleRoot = UInt256.Zero
+            };
             ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(ref reader, ExecutionEngineLimits.Default, null));
 
             dest.BlockIndex.Should().Be(origin.BlockIndex);
@@ -64,7 +69,10 @@ namespace Neo.UnitTests.Ledger
             var data = BinarySerializer.Serialize(((IInteroperable)originTrimmed).ToStackItem(null), 1024);
             var reader = new MemoryReader(data);
 
-            TransactionState dest = new();
+            TransactionState dest = new()
+            {
+                NotificationMerkleRoot = UInt256.Zero
+            };
             ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(ref reader, ExecutionEngineLimits.Default, null));
 
             dest.BlockIndex.Should().Be(0);
