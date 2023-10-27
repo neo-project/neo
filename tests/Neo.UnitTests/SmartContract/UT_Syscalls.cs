@@ -1,5 +1,6 @@
 using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
@@ -121,7 +122,16 @@ namespace Neo.UnitTests.SmartContract
             var tx = new Transaction()
             {
                 Script = new byte[] { 0x01 },
-                Signers = new Signer[] { new Signer() { Account = UInt160.Zero, Scopes = WitnessScope.None } },
+                Signers = new Signer[] {
+                    new Signer()
+                    {
+                        Account = UInt160.Zero,
+                        Scopes = WitnessScope.None,
+                        AllowedContracts = Array.Empty<UInt160>(),
+                        AllowedGroups = Array.Empty<ECPoint>(),
+                        Rules = Array.Empty<WitnessRule>(),
+                    }
+                },
                 Attributes = Array.Empty<TransactionAttribute>(),
                 NetworkFee = 0x02,
                 SystemFee = 0x03,

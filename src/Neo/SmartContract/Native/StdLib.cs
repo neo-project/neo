@@ -16,6 +16,7 @@ using Neo.VM.Types;
 using System;
 using System.Globalization;
 using System.Numerics;
+using System.Text;
 
 namespace Neo.SmartContract.Native
 {
@@ -49,7 +50,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 14)]
         private static StackItem JsonDeserialize(ApplicationEngine engine, byte[] json)
         {
-            return JsonSerializer.Deserialize(JToken.Parse(json, 10), engine.Limits, engine.ReferenceCounter);
+            return JsonSerializer.Deserialize(engine, JToken.Parse(json, 10), engine.Limits, engine.ReferenceCounter);
         }
 
         /// <summary>
@@ -221,6 +222,23 @@ namespace Neo.SmartContract.Native
             if (separator is null) throw new ArgumentNullException(nameof(separator));
             StringSplitOptions options = removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None;
             return str.Split(separator, options);
+        }
+
+        [ContractMethod(CpuFee = 1 << 8)]
+        private static int StrLen([MaxLength(MaxInputLength)] string str)
+        {
+            // return the length of the string in elements
+            // it should return 1 for both  "🦆" and "ã"
+
+            TextElementEnumerator enumerator = StringInfo.GetTextElementEnumerator(str);
+            int count = 0;
+
+            while (enumerator.MoveNext())
+            {
+                count++;
+            }
+
+            return count;
         }
     }
 }

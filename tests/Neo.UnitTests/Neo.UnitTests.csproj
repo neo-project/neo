@@ -1,13 +1,13 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka.TestKit" Version="1.4.47" />
-    <PackageReference Include="Akka.TestKit.Xunit2" Version="1.4.47" />
-    <PackageReference Include="Moq" Version="4.18.3" />
+    <PackageReference Include="Akka.TestKit" Version="1.5.12" />
+    <PackageReference Include="Akka.TestKit.Xunit2" Version="1.5.12" />
+    <PackageReference Include="Moq" Version="4.20.69" />
   </ItemGroup>
 
   <ItemGroup>

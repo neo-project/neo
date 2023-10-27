@@ -210,6 +210,47 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void StringElementLength()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshot();
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", "🦆");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", "ã");
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", "a");
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            Assert.AreEqual(3, engine.ResultStack.Count);
+            Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
+            Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
+            Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
+        }
+
+        [TestMethod]
+        public void TestInvalidUtf8Sequence()
+        {
+            // Simulating invalid UTF-8 byte (0xff) decoded as a UTF-16 char
+            const char badChar = (char)0xff;
+            var badStr = badChar.ToString();
+            var snapshot = TestBlockchain.GetTestSnapshot();
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", badStr);
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "strLen", badStr + "ab");
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(engine.Execute(), VMState.HALT);
+            Assert.AreEqual(2, engine.ResultStack.Count);
+            Assert.AreEqual(3, engine.ResultStack.Pop().GetInteger());
+            Assert.AreEqual(1, engine.ResultStack.Pop().GetInteger());
+        }
+
+        [TestMethod]
         public void Json_Deserialize()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
