@@ -41,7 +41,8 @@ namespace Neo.SmartContract.Native
             {
                 BlockIndex = engine.PersistingBlock.Index,
                 Transaction = p,
-                State = VMState.NONE
+                State = VMState.NONE,
+                NotificationMerkleRoot = UInt256.Zero
             }).ToArray();
             engine.Snapshot.Add(CreateStorageKey(Prefix_BlockHash).AddBigEndian(engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray()));
             engine.Snapshot.Add(CreateStorageKey(Prefix_Block).Add(engine.PersistingBlock.Hash), new StorageItem(Trim(engine.PersistingBlock).ToArray()));

@@ -432,7 +432,6 @@ namespace Neo.Ledger
                     }
                     else
                     {
-                        transactionState.NotificationMerkleRoot = UInt256.Zero;
                         clonedSnapshot = snapshot.CreateSnapshot();
                     }
                     Context.System.EventStream.Publish(application_executed);
