@@ -121,12 +121,14 @@ namespace Neo.UnitTests.SmartContract
 
             var script_exceedMaxLength = new NefFile()
             {
-                Script = new byte[NefFile.MaxScriptLength - 1],
+                Script = new byte[ExecutionEngineLimits.Default.MaxItemSize - 50],
                 Source = string.Empty,
                 Compiler = "",
-                Tokens = System.Array.Empty<MethodToken>()
+                Tokens = Array.Empty<MethodToken>()
             };
-            script_exceedMaxLength.CheckSum = NefFile.ComputeChecksum(nef);
+            script_exceedMaxLength.CheckSum = NefFile.ComputeChecksum(script_exceedMaxLength);
+
+            Assert.ThrowsException<FormatException>(() => script_exceedMaxLength.ToArray().AsSerializable<NefFile>());
             Assert.ThrowsException<InvalidOperationException>(() => snapshot.DeployContract(UInt160.Zero, script_exceedMaxLength.ToArray(), manifest.ToJson().ToByteArray(true)));
 
             var script_zeroLength = System.Array.Empty<byte>();
