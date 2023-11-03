@@ -424,10 +424,10 @@ namespace Neo.Ledger
                     engine.LoadScript(tx.Script);
                     transactionState.State = engine.Execute();
                     ApplicationExecuted application_executed = new(engine);
+                    transactionState.NotificationMerkleRoot =
+                            MerkleTree.ComputeRoot(application_executed.Notifications.Select(p => p.GetNotificationHash()).ToArray());
                     if (transactionState.State == VMState.HALT)
                     {
-                        transactionState.NotificationMerkleRoot =
-                            MerkleTree.ComputeRoot(application_executed.Notifications.Select(p => p.GetNotificationHash()).ToArray());
                         clonedSnapshot.Commit();
                     }
                     else
