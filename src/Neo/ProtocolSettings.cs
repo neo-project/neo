@@ -201,6 +201,9 @@ namespace Neo
                 .OrderBy(h => allHardforks.IndexOf(h))
                 .ToList();
 
+            if (sortedHardforks.Contains(Hardfork.HF_Genesis))
+                throw new Exception("Genesis Hardfork can't be configured.");
+
             for (int i = 0; i < sortedHardforks.Count - 1; i++)
             {
                 int currentIndex = allHardforks.IndexOf(sortedHardforks[i]);
