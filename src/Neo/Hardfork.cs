@@ -12,7 +12,8 @@ namespace Neo
 {
     public enum Hardfork : byte
     {
-        HF_Aspidochelone,
-        HF_Basilisk
+        HF_Genesis = 0,
+        HF_Aspidochelone = 1,
+        HF_Basilisk = 2
     }
 }
