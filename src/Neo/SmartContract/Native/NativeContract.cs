@@ -177,7 +177,7 @@ namespace Neo.SmartContract.Native
             {
                 if (!settings.Hardforks.TryGetValue(ActiveIn, out var activeIn))
                 {
-                    throw new InvalidOperationException($"The native contract {Name} is not configured.");
+                    throw new InvalidOperationException($"The hardfork '{ActiveIn}' required for {Name} is not configured in ProtocolSettings.");
                 }
 
                 return activeIn == index;
@@ -198,7 +198,7 @@ namespace Neo.SmartContract.Native
             {
                 if (!settings.Hardforks.TryGetValue(ActiveIn, out var activeIn))
                 {
-                    throw new InvalidOperationException($"The native contract {Name} is not configured.");
+                    throw new InvalidOperationException($"The hardfork '{ActiveIn}' required for {Name} is not configured in ProtocolSettings.");
                 }
 
                 return activeIn <= index;
