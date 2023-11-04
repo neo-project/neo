@@ -88,7 +88,7 @@ namespace Neo.SmartContract.Native
         public string Name => GetType().Name;
 
         /// <summary>
-        /// Active in
+        /// Since Hardfork has to start having access to the native contract.
         /// </summary>
         public virtual Hardfork ActiveIn { get; } = Hardfork.HF_Genesis;
 
