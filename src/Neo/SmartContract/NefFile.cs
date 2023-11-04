@@ -11,6 +11,7 @@
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.Json;
+using Neo.VM;
 using System;
 using System.Buffers.Binary;
 using System.IO;
@@ -71,11 +72,6 @@ namespace Neo.SmartContract
         /// </summary>
         public uint CheckSum { get; set; }
 
-        /// <summary>
-        /// The maximum length of the script.
-        /// </summary>
-        public const int MaxScriptLength = 512 * 1024;
-
         private const int HeaderSize =
             sizeof(uint) +  // Magic
             64;             // Compiler
@@ -108,16 +104,18 @@ namespace Neo.SmartContract
 
         public void Deserialize(ref MemoryReader reader)
         {
+            long startPosition = reader.Position;
             if (reader.ReadUInt32() != Magic) throw new FormatException("Wrong magic");
             Compiler = reader.ReadFixedString(64);
             Source = reader.ReadVarString(256);
             if (reader.ReadByte() != 0) throw new FormatException("Reserved bytes must be 0");
             Tokens = reader.ReadSerializableArray<MethodToken>(128);
             if (reader.ReadUInt16() != 0) throw new FormatException("Reserved bytes must be 0");
-            Script = reader.ReadVarMemory(MaxScriptLength);
+            Script = reader.ReadVarMemory((int)ExecutionEngineLimits.Default.MaxItemSize);
             if (Script.Length == 0) throw new ArgumentException($"Script can't be empty");
             CheckSum = reader.ReadUInt32();
             if (CheckSum != ComputeChecksum(this)) throw new FormatException("CRC verification fail");
+            if (reader.Position - startPosition > ExecutionEngineLimits.Default.MaxItemSize) throw new FormatException("Max vm item size exceed");
         }
 
         /// <summary>
