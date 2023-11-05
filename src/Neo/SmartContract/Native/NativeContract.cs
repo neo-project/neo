@@ -224,10 +224,10 @@ namespace Neo.SmartContract.Native
         internal bool IsInitializeBlock(ProtocolSettings settings, uint index, out Hardfork? hardfork)
         {
             // If is not configured, the Genesis is the a initialized block
-            if (ActiveIn is null)
+            if (index == 0 && ActiveIn is null)
             {
                 hardfork = null;
-                return index == 0;
+                return true;
             }
 
             // If is in the hardfork height, return true
