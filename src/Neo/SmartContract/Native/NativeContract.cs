@@ -90,7 +90,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Since Hardfork has to start having access to the native contract.
         /// </summary>
-        public virtual Hardfork ActiveIn { get; } = Hardfork.HF_Genesis;
+        public virtual Hardfork? ActiveIn { get; } = null;
 
         /// <summary>
         /// The nef of the native contract.
@@ -173,17 +173,14 @@ namespace Neo.SmartContract.Native
         /// <returns>True if the native contract must be initialized</returns>
         internal bool IsInitializeBlock(ProtocolSettings settings, uint index)
         {
-            if (ActiveIn != Hardfork.HF_Genesis)
-            {
-                if (!settings.Hardforks.TryGetValue(ActiveIn, out var activeIn))
-                {
-                    throw new InvalidOperationException($"The hardfork '{ActiveIn}' required for {Name} is not configured in ProtocolSettings.");
-                }
+            if (ActiveIn is null) return index == 0;
 
-                return activeIn == index;
+            if (!settings.Hardforks.TryGetValue(ActiveIn.Value, out var activeIn))
+            {
+                return false;
             }
 
-            return index == 0;
+            return activeIn == index;
         }
 
         /// <summary>
@@ -194,17 +191,14 @@ namespace Neo.SmartContract.Native
         /// <returns>True if the native contract is active</returns>
         internal bool IsActive(ProtocolSettings settings, uint index)
         {
-            if (ActiveIn != Hardfork.HF_Genesis)
-            {
-                if (!settings.Hardforks.TryGetValue(ActiveIn, out var activeIn))
-                {
-                    throw new InvalidOperationException($"The hardfork '{ActiveIn}' required for {Name} is not configured in ProtocolSettings.");
-                }
+            if (ActiveIn is null) return true;
 
-                return activeIn <= index;
+            if (!settings.Hardforks.TryGetValue(ActiveIn.Value, out var activeIn))
+            {
+                return false;
             }
 
-            return true;
+            return activeIn <= index;
         }
 
         /// <summary>
