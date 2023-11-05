@@ -159,7 +159,7 @@ namespace Neo.SmartContract.Native
             byte[] script;
             using (ScriptBuilder sb = new())
             {
-                foreach (ContractMethodMetadata method in methodDescriptors)
+                foreach (ContractMethodMetadata method in methodDescriptors.Where(u => u.ActiveIn is null || settings.IsHardforkEnabled(u.ActiveIn.Value, index)))
                 {
                     method.Descriptor.Offset = sb.Length;
                     sb.EmitPush(0); //version
