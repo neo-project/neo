@@ -233,10 +233,10 @@ namespace Neo.SmartContract.Native
             // If is in the hardfork height, return true
             foreach (Hardfork hf in listenHardforks)
             {
-                if (settings.Hardforks.TryGetValue(hf, out var activeIn))
+                if (settings.Hardforks.TryGetValue(hf, out var activeIn) && activeIn == index)
                 {
                     hardfork = hf;
-                    return activeIn == index;
+                    return true;
                 }
             }
 
