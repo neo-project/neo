@@ -27,7 +27,7 @@ namespace Neo.SmartContract.Native
     {
         private static readonly List<NativeContract> contractsList = new();
         private static readonly Dictionary<UInt160, NativeContract> contractsDictionary = new();
-        private readonly Dictionary<int, ContractMethodMetadata> methods = new();
+        private readonly Dictionary<int, ContractMethodMetadata> currentAllowedMethods;
         private readonly ImmutableHashSet<Hardfork> listenHardforks;
         private readonly ReadOnlyCollection<ContractMethodMetadata> methodDescriptors;
         private readonly ReadOnlyCollection<ContractEventAttribute> eventsDescriptors;
@@ -149,10 +149,12 @@ namespace Neo.SmartContract.Native
         /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
         /// <param name="index">Block index</param>
         /// <returns>The <see cref="ContractState"/>.</returns>
-        public ContractState GetContractState(ProtocolSettings settings, uint index)
+        internal ContractState GetContractState(ProtocolSettings settings, uint index)
         {
-            // Reflection to get the ContractMethods
+            // Methods that are allowed to be called are cached from the last time GetContractState was called, the last time it was initialized
+            currentAllowedMethods.Clear();
 
+            // Reflection to get the ContractMethods
             byte[] script;
             using (ScriptBuilder sb = new())
             {
@@ -160,7 +162,7 @@ namespace Neo.SmartContract.Native
                 {
                     method.Descriptor.Offset = sb.Length;
                     sb.EmitPush(0); //version
-                    methods.Add(sb.Length, method);
+                    currentAllowedMethods.Add(sb.Length, method);
                     sb.EmitSysCall(ApplicationEngine.System_Contract_CallNative);
                     sb.Emit(OpCode.RET);
                 }
@@ -168,7 +170,6 @@ namespace Neo.SmartContract.Native
             }
 
             // Compose nef file
-
             NefFile nef = new()
             {
                 Compiler = "neo-core-v3.0",
@@ -179,7 +180,6 @@ namespace Neo.SmartContract.Native
             nef.CheckSum = NefFile.ComputeChecksum(nef);
 
             // Compose manifest
-
             ContractManifest manifest = new()
             {
                 Name = Name,
@@ -202,7 +202,6 @@ namespace Neo.SmartContract.Native
             OnManifestCompose(manifest, settings, index);
 
             // Return ContractState
-
             return new ContractState
             {
                 Id = Id,
@@ -290,7 +289,7 @@ namespace Neo.SmartContract.Native
                 if (version != 0)
                     throw new InvalidOperationException($"The native contract of version {version} is not active.");
                 ExecutionContext context = engine.CurrentContext;
-                ContractMethodMetadata method = methods[context.InstructionPointer];
+                ContractMethodMetadata method = currentAllowedMethods[context.InstructionPointer];
                 if (method.ActiveIn is not null && !engine.IsHardforkEnabled(method.ActiveIn.Value))
                     throw new InvalidOperationException($"Cannot call this method before hardfork {method.ActiveIn}.");
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
