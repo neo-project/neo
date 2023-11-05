@@ -231,7 +231,7 @@ namespace Neo
         /// <returns>True if enabled</returns>
         public bool IsHardforkEnabled(Hardfork hardfork, uint index)
         {
-            // Return true if there's no specific configuration or PersistingBlock is null
+            // Return true if there's no specific configuration
             if (Hardforks.Count == 0)
                 return true;
 
