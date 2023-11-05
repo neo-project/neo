@@ -191,8 +191,7 @@ namespace Neo.SmartContract.Native
                     Events = eventsDescriptors
                         .Where(u => u.ActiveIn is null || settings.IsHardforkEnabled(u.ActiveIn.Value, index))
                         .Select(p => p.Descriptor).ToArray(),
-                    Methods = methodDescriptors
-                        .Where(u => u.ActiveIn is null || settings.IsHardforkEnabled(u.ActiveIn.Value, index))
+                    Methods = currentAllowedMethods.Values
                         .Select(p => p.Descriptor).ToArray()
                 },
                 Permissions = new[] { ContractPermission.DefaultPermission },
