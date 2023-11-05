@@ -31,9 +31,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_Block = 5;
         private const byte Prefix_Transaction = 11;
 
-        internal LedgerContract()
-        {
-        }
+        internal LedgerContract() : base() { }
 
         internal override ContractTask OnPersist(ApplicationEngine engine)
         {

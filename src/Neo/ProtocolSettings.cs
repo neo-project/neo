@@ -23,6 +23,8 @@ namespace Neo
     /// </summary>
     public record ProtocolSettings
     {
+        private static readonly IList<Hardfork> AllHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToArray();
+
         /// <summary>
         /// The magic number of the NEO network.
         /// </summary>
@@ -219,6 +221,38 @@ namespace Neo
                     throw new Exception($"The Hardfork configuration for {sortedHardforks[i]} is greater than for {sortedHardforks[i + 1]}");
                 }
             }
+        }
+
+        /// <summary>
+        /// Check if the Hardfork is Enabled
+        /// </summary>
+        /// <param name="hardfork">Hardfork</param>
+        /// <param name="index">Block index</param>
+        /// <returns>True if enabled</returns>
+        public bool IsHardforkEnabled(Hardfork hardfork, uint index)
+        {
+            // Return true if there's no specific configuration or PersistingBlock is null
+            if (Hardforks.Count == 0)
+                return true;
+
+            // If the hardfork isn't specified in the configuration, check if it's a new one.
+            if (!Hardforks.ContainsKey(hardfork))
+            {
+                int currentHardforkIndex = AllHardforks.IndexOf(hardfork);
+                int lastConfiguredHardforkIndex = AllHardforks.IndexOf(Hardforks.Keys.Last());
+
+                // If it's a newer hardfork compared to the ones in the configuration, disable it.
+                if (currentHardforkIndex > lastConfiguredHardforkIndex)
+                    return false;
+            }
+
+            if (Hardforks.TryGetValue(hardfork, out uint height))
+            {
+                // If the hardfork has a specific height in the configuration, check the block height.
+                return index >= height;
+            }
+            // If no specific conditions are met, return true.
+            return true;
         }
     }
 }

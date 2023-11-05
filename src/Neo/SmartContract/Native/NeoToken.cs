@@ -19,7 +19,6 @@ using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
-using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 
@@ -54,64 +53,18 @@ namespace Neo.SmartContract.Native
         private const byte CommitteeRewardRatio = 10;
         private const byte VoterRewardRatio = 80;
 
-        internal NeoToken()
+        [ContractEvent(1, name: "CandidateStateChanged",
+           "pubkey", ContractParameterType.PublicKey,
+           "registered", ContractParameterType.Boolean,
+           "votes", ContractParameterType.Integer)]
+        [ContractEvent(2, name: "Vote",
+           "account", ContractParameterType.Hash160,
+           "from", ContractParameterType.PublicKey,
+           "to", ContractParameterType.PublicKey,
+           "amount", ContractParameterType.Integer)]
+        internal NeoToken() : base()
         {
             this.TotalAmount = 100000000 * Factor;
-
-            var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
-            {
-                new ContractEventDescriptor
-                {
-                    Name = "CandidateStateChanged",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                            Name = "pubkey",
-                            Type = ContractParameterType.PublicKey
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "registered",
-                            Type = ContractParameterType.Boolean
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "votes",
-                            Type = ContractParameterType.Integer
-                        }
-                    }
-                },
-                new ContractEventDescriptor
-                {
-                    Name = "Vote",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                            Name = "account",
-                            Type = ContractParameterType.Hash160
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "from",
-                            Type = ContractParameterType.PublicKey
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "to",
-                            Type = ContractParameterType.PublicKey
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "amount",
-                            Type = ContractParameterType.Integer
-                        }
-                    }
-                }
-            };
-
-            Manifest.Abi.Events = events.ToArray();
         }
 
         public override BigInteger TotalSupply(DataCache snapshot)

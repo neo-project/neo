@@ -10,17 +10,17 @@
 
 #pragma warning disable IDE0051
 
+using System;
+using System.Buffers.Binary;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
-using System;
-using System.Buffers.Binary;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
 
 namespace Neo.SmartContract.Native
 {
@@ -34,50 +34,10 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_Contract = 8;
         private const byte Prefix_ContractHash = 12;
 
-        internal ContractManagement()
-        {
-            var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
-            {
-                new ContractEventDescriptor
-                {
-                    Name = "Deploy",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                            Name = "Hash",
-                            Type = ContractParameterType.Hash160
-                        }
-                    }
-                },
-                new ContractEventDescriptor
-                {
-                    Name = "Update",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                            Name = "Hash",
-                            Type = ContractParameterType.Hash160
-                        }
-                    }
-                },
-                new ContractEventDescriptor
-                {
-                    Name = "Destroy",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                            Name = "Hash",
-                            Type = ContractParameterType.Hash160
-                        }
-                    }
-                }
-            };
-
-            Manifest.Abi.Events = events.ToArray();
-        }
+        [ContractEvent(0, name: "Deploy", "Hash", ContractParameterType.Hash160)]
+        [ContractEvent(1, name: "Update", "Hash", ContractParameterType.Hash160)]
+        [ContractEvent(2, name: "Destroy", "Hash", ContractParameterType.Hash160)]
+        internal ContractManagement() : base() { }
 
         private int GetNextAvailableId(DataCache snapshot)
         {
@@ -108,14 +68,23 @@ namespace Neo.SmartContract.Native
             {
                 if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.PersistingBlock.Index))
                 {
-                    engine.Snapshot.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
+                    ContractState contractState = contract.GetContractState(engine.ProtocolSettings, engine.PersistingBlock.Index);
+                    StorageItem state = engine.Snapshot.TryGet(CreateStorageKey(Prefix_Contract).Add(contract.Hash));
+
+                    if (state is null)
                     {
-                        Id = contract.Id,
-                        Nef = contract.Nef,
-                        Hash = contract.Hash,
-                        Manifest = contract.Manifest
-                    }));
-                    engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(contract.Hash.ToArray()));
+                        // Create the contract state
+                        engine.Snapshot.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(contractState));
+                        engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(contract.Hash.ToArray()));
+                    }
+                    else
+                    {
+                        // Increase the update counter
+                        contractState.UpdateCounter = (ushort)(state.GetInteroperable<ContractState>().UpdateCounter + 1);
+                        // Update the contract state
+                        state.Set(contractState);
+                    }
+
                     await contract.Initialize(engine);
                 }
             }

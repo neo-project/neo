@@ -13,6 +13,8 @@ using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 
@@ -26,6 +28,9 @@ namespace Neo.SmartContract.Native
         private static readonly List<NativeContract> contractsList = new();
         private static readonly Dictionary<UInt160, NativeContract> contractsDictionary = new();
         private readonly Dictionary<int, ContractMethodMetadata> methods = new();
+        private readonly ImmutableHashSet<Hardfork> listenHardforks;
+        private readonly ReadOnlyCollection<ContractMethodMetadata> methodDescriptors;
+        private readonly ReadOnlyCollection<ContractEventAttribute> eventsDescriptors;
         private static int id_counter = 0;
 
         #region Named Native Contracts
@@ -93,11 +98,6 @@ namespace Neo.SmartContract.Native
         public virtual Hardfork? ActiveIn { get; } = null;
 
         /// <summary>
-        /// The nef of the native contract.
-        /// </summary>
-        public NefFile Nef { get; }
-
-        /// <summary>
         /// The hash of the native contract.
         /// </summary>
         public UInt160 Hash { get; }
@@ -108,27 +108,55 @@ namespace Neo.SmartContract.Native
         public int Id { get; } = --id_counter;
 
         /// <summary>
-        /// The manifest of the native contract.
-        /// </summary>
-        public ContractManifest Manifest { get; }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="NativeContract"/> class.
         /// </summary>
         protected NativeContract()
         {
-            List<ContractMethodMetadata> descriptors = new();
+            this.Hash = Helper.GetContractHash(UInt160.Zero, 0, Name);
+
+            // Reflection to get the methods
+
+            List<ContractMethodMetadata> listMethods = new();
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
             {
                 ContractMethodAttribute attribute = member.GetCustomAttribute<ContractMethodAttribute>();
                 if (attribute is null) continue;
-                descriptors.Add(new ContractMethodMetadata(member, attribute));
+                listMethods.Add(new ContractMethodMetadata(member, attribute));
             }
-            descriptors = descriptors.OrderBy(p => p.Name, StringComparer.Ordinal).ThenBy(p => p.Parameters.Length).ToList();
+            methodDescriptors = listMethods.OrderBy(p => p.Name, StringComparer.Ordinal).ThenBy(p => p.Parameters.Length).ToList().AsReadOnly();
+
+            // Reflection to get the events
+            eventsDescriptors =
+                GetType().GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, Array.Empty<Type>())?.
+                GetCustomAttributes<ContractEventAttribute>().
+                OrderBy(p => p.Order).ToList().AsReadOnly();
+
+            // Calculate the initializations forks
+            listenHardforks =
+                methodDescriptors.Select(u => u.ActiveIn)
+                .Concat(eventsDescriptors.Select(u => u.ActiveIn))
+                .Concat(new Hardfork?[] { ActiveIn })
+                .Where(u => u is not null)
+                .Cast<Hardfork>().ToImmutableHashSet();
+
+            contractsList.Add(this);
+            contractsDictionary.Add(Hash, this);
+        }
+
+        /// <summary>
+        /// The <see cref="ContractState"/> of the native contract.
+        /// </summary>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
+        /// <param name="index">Block index</param>
+        /// <returns>The <see cref="ContractState"/>.</returns>
+        public ContractState GetContractState(ProtocolSettings settings, uint index)
+        {
+            // Reflection to get the ContractMethods
+
             byte[] script;
             using (ScriptBuilder sb = new())
             {
-                foreach (ContractMethodMetadata method in descriptors)
+                foreach (ContractMethodMetadata method in methodDescriptors)
                 {
                     method.Descriptor.Offset = sb.Length;
                     sb.EmitPush(0); //version
@@ -138,32 +166,53 @@ namespace Neo.SmartContract.Native
                 }
                 script = sb.ToArray();
             }
-            this.Nef = new NefFile
+
+            // Compose nef file
+
+            NefFile nef = new()
             {
                 Compiler = "neo-core-v3.0",
                 Source = string.Empty,
                 Tokens = Array.Empty<MethodToken>(),
                 Script = script
             };
-            this.Nef.CheckSum = NefFile.ComputeChecksum(Nef);
-            this.Hash = Helper.GetContractHash(UInt160.Zero, 0, Name);
-            this.Manifest = new ContractManifest
+            nef.CheckSum = NefFile.ComputeChecksum(nef);
+
+            // Compose manifest
+
+            ContractManifest manifest = new()
             {
                 Name = Name,
                 Groups = Array.Empty<ContractGroup>(),
                 SupportedStandards = Array.Empty<string>(),
                 Abi = new ContractAbi()
                 {
-                    Events = Array.Empty<ContractEventDescriptor>(),
-                    Methods = descriptors.Select(p => p.Descriptor).ToArray()
+                    Events = eventsDescriptors
+                        .Where(u => u.ActiveIn is null || settings.IsHardforkEnabled(u.ActiveIn.Value, index))
+                        .Select(p => p.Descriptor).ToArray(),
+                    Methods = methodDescriptors
+                        .Where(u => u.ActiveIn is null || settings.IsHardforkEnabled(u.ActiveIn.Value, index))
+                        .Select(p => p.Descriptor).ToArray()
                 },
                 Permissions = new[] { ContractPermission.DefaultPermission },
                 Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(),
                 Extra = null
             };
-            contractsList.Add(this);
-            contractsDictionary.Add(Hash, this);
+
+            OnManifestCompose(manifest, settings, index);
+
+            // Return ContractState
+
+            return new ContractState
+            {
+                Id = Id,
+                Nef = nef,
+                Hash = Hash,
+                Manifest = manifest
+            };
         }
+
+        protected virtual void OnManifestCompose(ContractManifest manifest, ProtocolSettings settings, uint index) { }
 
         /// <summary>
         /// It is the initialize block
@@ -173,14 +222,20 @@ namespace Neo.SmartContract.Native
         /// <returns>True if the native contract must be initialized</returns>
         internal bool IsInitializeBlock(ProtocolSettings settings, uint index)
         {
+            // If is not configured, the Genesis is the a initialized block
             if (ActiveIn is null) return index == 0;
 
-            if (!settings.Hardforks.TryGetValue(ActiveIn.Value, out var activeIn))
+            // If is in the hardfork height, return true
+            foreach (Hardfork hf in listenHardforks)
             {
-                return false;
+                if (settings.Hardforks.TryGetValue(hf, out var activeIn))
+                {
+                    return activeIn == index;
+                }
             }
 
-            return activeIn == index;
+            // Initialized not required
+            return false;
         }
 
         /// <summary>
@@ -236,6 +291,8 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"The native contract of version {version} is not active.");
                 ExecutionContext context = engine.CurrentContext;
                 ContractMethodMetadata method = methods[context.InstructionPointer];
+                if (method.ActiveIn is not null && !engine.IsHardforkEnabled(method.ActiveIn.Value))
+                    throw new InvalidOperationException($"Cannot call this method before hardfork {method.ActiveIn}.");
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
                 if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                     throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");

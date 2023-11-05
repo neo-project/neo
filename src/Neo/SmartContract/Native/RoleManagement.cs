@@ -11,11 +11,9 @@
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Persistence;
-using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.SmartContract.Native
@@ -25,31 +23,10 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public sealed class RoleManagement : NativeContract
     {
-        internal RoleManagement()
-        {
-            var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
-            {
-                new ContractEventDescriptor
-                {
-                    Name = "Designation",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                            Name = "Role",
-                            Type = ContractParameterType.Integer
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "BlockIndex",
-                            Type = ContractParameterType.Integer
-                        }
-                    }
-                }
-            };
-
-            Manifest.Abi.Events = events.ToArray();
-        }
+        [ContractEvent(0, name: "Designation",
+            "Role", ContractParameterType.Integer,
+            "BlockIndex", ContractParameterType.Integer)]
+        internal RoleManagement() : base() { }
 
         /// <summary>
         /// Gets the list of nodes for the specified role.

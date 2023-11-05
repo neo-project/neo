@@ -14,6 +14,7 @@ using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -21,6 +22,7 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
 {
+    [DebuggerDisplay("{Name}")]
     internal class ContractMethodMetadata
     {
         public string Name { get; }
@@ -32,6 +34,7 @@ namespace Neo.SmartContract.Native
         public long StorageFee { get; }
         public CallFlags RequiredCallFlags { get; }
         public ContractMethodDescriptor Descriptor { get; }
+        public Hardfork? ActiveIn { get; init; } = null;
 
         public ContractMethodMetadata(MemberInfo member, ContractMethodAttribute attribute)
         {
@@ -55,6 +58,7 @@ namespace Neo.SmartContract.Native
             this.CpuFee = attribute.CpuFee;
             this.StorageFee = attribute.StorageFee;
             this.RequiredCallFlags = attribute.RequiredCallFlags;
+            this.ActiveIn = attribute.ActiveIn;
             this.Descriptor = new ContractMethodDescriptor
             {
                 Name = Name,

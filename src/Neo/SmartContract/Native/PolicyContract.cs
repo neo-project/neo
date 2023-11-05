@@ -63,9 +63,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_StoragePrice = 19;
         private const byte Prefix_AttributeFee = 20;
 
-        internal PolicyContract()
-        {
-        }
+        internal PolicyContract() : base() { }
 
         internal override ContractTask Initialize(ApplicationEngine engine)
         {

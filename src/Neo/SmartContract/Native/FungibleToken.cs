@@ -13,7 +13,6 @@ using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
@@ -56,39 +55,18 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Initializes a new instance of the <see cref="FungibleToken{TState}"/> class.
         /// </summary>
-        protected FungibleToken()
+        [ContractEvent(0, name: "Transfer",
+           "from", ContractParameterType.Hash160,
+           "to", ContractParameterType.Hash160,
+           "amount", ContractParameterType.Integer)]
+        protected FungibleToken() : base()
         {
             this.Factor = BigInteger.Pow(10, Decimals);
+        }
 
-            Manifest.SupportedStandards = new[] { "NEP-17" };
-
-            var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
-            {
-                new ContractEventDescriptor
-                {
-                    Name = "Transfer",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                            Name = "from",
-                            Type = ContractParameterType.Hash160
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "to",
-                            Type = ContractParameterType.Hash160
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "amount",
-                            Type = ContractParameterType.Integer
-                        }
-                    }
-                }
-            };
-
-            Manifest.Abi.Events = events.ToArray();
+        protected override void OnManifestCompose(ContractManifest manifest, ProtocolSettings settings, uint index)
+        {
+            manifest.SupportedStandards = new[] { "NEP-17" };
         }
 
         internal async ContractTask Mint(ApplicationEngine engine, UInt160 account, BigInteger amount, bool callOnPayment)

@@ -16,7 +16,6 @@ using Neo.VM.Types;
 using System;
 using System.Globalization;
 using System.Numerics;
-using System.Text;
 
 namespace Neo.SmartContract.Native
 {
@@ -27,7 +26,7 @@ namespace Neo.SmartContract.Native
     {
         private const int MaxInputLength = 1024;
 
-        internal StdLib() { }
+        internal StdLib() : base() { }
 
         [ContractMethod(CpuFee = 1 << 12)]
         private static byte[] Serialize(ApplicationEngine engine, StackItem item)
