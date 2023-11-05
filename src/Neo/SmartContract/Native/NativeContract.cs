@@ -296,6 +296,12 @@ namespace Neo.SmartContract.Native
                 if (version != 0)
                     throw new InvalidOperationException($"The native contract of version {version} is not active.");
                 ExecutionContext context = engine.CurrentContext;
+                if (currentAllowedMethods.Count == 0)
+                {
+                    // First call we need to cache it
+                    uint index = engine.PersistingBlock is not null ? engine.PersistingBlock.Index : Ledger.CurrentIndex(engine.Snapshot);
+                    _ = GetContractState(engine.ProtocolSettings, index);
+                }
                 ContractMethodMetadata method = currentAllowedMethods[context.InstructionPointer];
                 if (method.ActiveIn is not null && !engine.IsHardforkEnabled(method.ActiveIn.Value))
                     throw new InvalidOperationException($"Cannot call this method before hardfork {method.ActiveIn}.");
