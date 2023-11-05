@@ -27,7 +27,7 @@ namespace Neo.SmartContract.Native
     {
         private static readonly List<NativeContract> contractsList = new();
         private static readonly Dictionary<UInt160, NativeContract> contractsDictionary = new();
-        private readonly Dictionary<int, ContractMethodMetadata> currentAllowedMethods;
+        private readonly Dictionary<int, ContractMethodMetadata> currentAllowedMethods = new();
         private readonly ImmutableHashSet<Hardfork> listenHardforks;
         private readonly ReadOnlyCollection<ContractMethodMetadata> methodDescriptors;
         private readonly ReadOnlyCollection<ContractEventAttribute> eventsDescriptors;
