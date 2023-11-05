@@ -106,18 +106,18 @@ namespace Neo.SmartContract.Native
         {
             foreach (NativeContract contract in Contracts)
             {
-                uint[] updates = engine.ProtocolSettings.NativeUpdateHistory[contract.Name];
-                if (updates.Length == 0 || updates[0] != engine.PersistingBlock.Index)
-                    continue;
-                engine.Snapshot.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
+                if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.PersistingBlock.Index))
                 {
-                    Id = contract.Id,
-                    Nef = contract.Nef,
-                    Hash = contract.Hash,
-                    Manifest = contract.Manifest
-                }));
-                engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(contract.Hash.ToArray()));
-                await contract.Initialize(engine);
+                    engine.Snapshot.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
+                    {
+                        Id = contract.Id,
+                        Nef = contract.Nef,
+                        Hash = contract.Hash,
+                        Manifest = contract.Manifest
+                    }));
+                    engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(contract.Hash.ToArray()));
+                    await contract.Initialize(engine);
+                }
             }
         }
 

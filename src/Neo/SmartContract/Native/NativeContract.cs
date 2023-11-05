@@ -88,6 +88,11 @@ namespace Neo.SmartContract.Native
         public string Name => GetType().Name;
 
         /// <summary>
+        /// Since Hardfork has to start having access to the native contract.
+        /// </summary>
+        public virtual Hardfork? ActiveIn { get; } = null;
+
+        /// <summary>
         /// The nef of the native contract.
         /// </summary>
         public NefFile Nef { get; }
@@ -158,6 +163,42 @@ namespace Neo.SmartContract.Native
             };
             contractsList.Add(this);
             contractsDictionary.Add(Hash, this);
+        }
+
+        /// <summary>
+        /// It is the initialize block
+        /// </summary>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
+        /// <param name="index">Block index</param>
+        /// <returns>True if the native contract must be initialized</returns>
+        internal bool IsInitializeBlock(ProtocolSettings settings, uint index)
+        {
+            if (ActiveIn is null) return index == 0;
+
+            if (!settings.Hardforks.TryGetValue(ActiveIn.Value, out var activeIn))
+            {
+                return false;
+            }
+
+            return activeIn == index;
+        }
+
+        /// <summary>
+        /// Is the native contract active
+        /// </summary>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
+        /// <param name="index">Block index</param>
+        /// <returns>True if the native contract is active</returns>
+        internal bool IsActive(ProtocolSettings settings, uint index)
+        {
+            if (ActiveIn is null) return true;
+
+            if (!settings.Hardforks.TryGetValue(ActiveIn.Value, out var activeIn))
+            {
+                return false;
+            }
+
+            return activeIn <= index;
         }
 
         /// <summary>
