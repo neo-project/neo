@@ -47,10 +47,13 @@ namespace Neo.SmartContract.Native
             return value;
         }
 
-        internal override ContractTask Initialize(ApplicationEngine engine)
+        internal override ContractTask Initialize(ApplicationEngine engine, Hardfork? hardfork)
         {
-            engine.Snapshot.Add(CreateStorageKey(Prefix_MinimumDeploymentFee), new StorageItem(10_00000000));
-            engine.Snapshot.Add(CreateStorageKey(Prefix_NextAvailableId), new StorageItem(1));
+            if (hardfork is null)
+            {
+                engine.Snapshot.Add(CreateStorageKey(Prefix_MinimumDeploymentFee), new StorageItem(10_00000000));
+                engine.Snapshot.Add(CreateStorageKey(Prefix_NextAvailableId), new StorageItem(1));
+            }
             return ContractTask.CompletedTask;
         }
 
@@ -66,7 +69,7 @@ namespace Neo.SmartContract.Native
         {
             foreach (NativeContract contract in Contracts)
             {
-                if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.PersistingBlock.Index))
+                if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.PersistingBlock.Index, out Hardfork? hf))
                 {
                     ContractState contractState = contract.GetContractState(engine.ProtocolSettings, engine.PersistingBlock.Index);
                     StorageItem state = engine.Snapshot.TryGet(CreateStorageKey(Prefix_Contract).Add(contract.Hash));
@@ -85,7 +88,7 @@ namespace Neo.SmartContract.Native
                         state.Set(contractState);
                     }
 
-                    await contract.Initialize(engine);
+                    await contract.Initialize(engine, hf);
                 }
             }
         }
