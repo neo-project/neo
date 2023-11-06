@@ -8,6 +8,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Util;
 using Neo.IO;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
@@ -17,6 +18,7 @@ using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
+using static Neo.Ledger.Blockchain;
 
 namespace Neo.SmartContract.Native
 {
@@ -25,9 +27,15 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public abstract class NativeContract
     {
+        private class NefMethods
+        {
+            public Dictionary<int, ContractMethodMetadata> Methods { get; set; }
+            public byte[] Script { get; set; }
+            public bool Initialized { get; set; }
+        }
+
         private static readonly List<NativeContract> contractsList = new();
         private static readonly Dictionary<UInt160, NativeContract> contractsDictionary = new();
-        private readonly Dictionary<int, ContractMethodMetadata> currentAllowedMethods = new();
         private readonly ImmutableHashSet<Hardfork> listenHardforks;
         private readonly ReadOnlyCollection<ContractMethodMetadata> methodDescriptors;
         private readonly ReadOnlyCollection<ContractEventAttribute> eventsDescriptors;
@@ -145,15 +153,14 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// The <see cref="ContractState"/> of the native contract.
+        /// The allowed methods and his offsets.
         /// </summary>
         /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
         /// <param name="index">Block index</param>
-        /// <returns>The <see cref="ContractState"/>.</returns>
-        internal ContractState GetContractState(ProtocolSettings settings, uint index)
+        /// <returns>The <see cref="NefMethods"/>.</returns>
+        private NefMethods GetAllowedMethods(ProtocolSettings settings, uint index)
         {
-            // Methods that are allowed to be called are cached from the last time GetContractState was called, the last time it was initialized
-            currentAllowedMethods.Clear();
+            Dictionary<int, ContractMethodMetadata> methods = new();
 
             // Reflection to get the ContractMethods
             byte[] script;
@@ -163,12 +170,26 @@ namespace Neo.SmartContract.Native
                 {
                     method.Descriptor.Offset = sb.Length;
                     sb.EmitPush(0); //version
-                    currentAllowedMethods.Add(sb.Length, method);
+                    methods.Add(sb.Length, method);
                     sb.EmitSysCall(ApplicationEngine.System_Contract_CallNative);
                     sb.Emit(OpCode.RET);
                 }
                 script = sb.ToArray();
             }
+
+            return new NefMethods() { Methods = methods, Script = script, Initialized = true };
+        }
+
+        /// <summary>
+        /// The <see cref="ContractState"/> of the native contract.
+        /// </summary>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
+        /// <param name="index">Block index</param>
+        /// <returns>The <see cref="ContractState"/>.</returns>
+        internal ContractState GetContractState(ProtocolSettings settings, uint index)
+        {
+            // Get allowed methods and nef script
+            NefMethods allowedMethods = GetAllowedMethods(settings, index);
 
             // Compose nef file
             NefFile nef = new()
@@ -176,7 +197,7 @@ namespace Neo.SmartContract.Native
                 Compiler = "neo-core-v3.0",
                 Source = string.Empty,
                 Tokens = Array.Empty<MethodToken>(),
-                Script = script
+                Script = allowedMethods.Script
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
 
@@ -191,7 +212,7 @@ namespace Neo.SmartContract.Native
                     Events = eventsDescriptors
                         .Where(u => u.ActiveIn is null || settings.IsHardforkEnabled(u.ActiveIn.Value, index))
                         .Select(p => p.Descriptor).ToArray(),
-                    Methods = currentAllowedMethods.Values
+                    Methods = allowedMethods.Methods.Values
                         .Select(p => p.Descriptor).ToArray()
                 },
                 Permissions = new[] { ContractPermission.DefaultPermission },
@@ -296,13 +317,16 @@ namespace Neo.SmartContract.Native
                 if (version != 0)
                     throw new InvalidOperationException($"The native contract of version {version} is not active.");
                 ExecutionContext context = engine.CurrentContext;
-                if (currentAllowedMethods.Count == 0)
+                NefMethods currentAllowedMethods = context.GetState<NefMethods>();
+                if (!currentAllowedMethods.Initialized)
                 {
-                    // First call we need to cache it
-                    uint index = engine.PersistingBlock is not null ? engine.PersistingBlock.Index : Ledger.CurrentIndex(engine.Snapshot);
-                    _ = GetContractState(engine.ProtocolSettings, index);
+                    // Compute the current allowed methods
+                    NefMethods nefMethods = GetAllowedMethods(engine.ProtocolSettings, engine.PersistingBlock.Index);
+                    currentAllowedMethods.Methods = nefMethods.Methods;
+                    currentAllowedMethods.Script = nefMethods.Script;
+                    currentAllowedMethods.Initialized = true;
                 }
-                ContractMethodMetadata method = currentAllowedMethods[context.InstructionPointer];
+                ContractMethodMetadata method = currentAllowedMethods.Methods[context.InstructionPointer];
                 if (method.ActiveIn is not null && !engine.IsHardforkEnabled(method.ActiveIn.Value))
                     throw new InvalidOperationException($"Cannot call this method before hardfork {method.ActiveIn}.");
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
