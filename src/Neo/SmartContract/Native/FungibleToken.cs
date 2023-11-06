@@ -64,7 +64,7 @@ namespace Neo.SmartContract.Native
             this.Factor = BigInteger.Pow(10, Decimals);
         }
 
-        protected override void OnManifestCompose(ContractManifest manifest, ProtocolSettings settings, uint index)
+        protected override void OnManifestCompose(ContractManifest manifest)
         {
             manifest.SupportedStandards = new[] { "NEP-17" };
         }

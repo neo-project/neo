@@ -218,7 +218,7 @@ namespace Neo.SmartContract.Native
                 Extra = null
             };
 
-            OnManifestCompose(manifest, settings, index);
+            OnManifestCompose(manifest);
 
             // Return ContractState
             return new ContractState
@@ -230,7 +230,7 @@ namespace Neo.SmartContract.Native
             };
         }
 
-        protected virtual void OnManifestCompose(ContractManifest manifest, ProtocolSettings settings, uint index) { }
+        protected virtual void OnManifestCompose(ContractManifest manifest) { }
 
         /// <summary>
         /// It is the initialize block
