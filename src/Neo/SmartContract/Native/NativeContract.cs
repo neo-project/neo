@@ -8,15 +8,15 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
-using Neo.SmartContract.Manifest;
-using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
+using Neo.IO;
+using Neo.SmartContract.Manifest;
+using Neo.VM;
 
 namespace Neo.SmartContract.Native
 {
@@ -35,11 +35,12 @@ namespace Neo.SmartContract.Native
 
             internal Dictionary<int, NativeContractCacheEntry> NativeContracts { get; set; } = new Dictionary<int, NativeContractCacheEntry>();
 
-            public NativeContractCacheEntry GetAllowedMethods(NativeContract native, ProtocolSettings protocolSettings, uint index)
+            public NativeContractCacheEntry GetAllowedMethods(NativeContract native, ApplicationEngine engine)
             {
                 if (NativeContracts.TryGetValue(native.Id, out var value)) return value;
 
-                var methods = native.GetAllowedMethods(protocolSettings, index);
+                uint index = engine.PersistingBlock is null ? Ledger.CurrentIndex(engine.Snapshot) : engine.PersistingBlock.Index;
+                NativeContractCacheEntry methods = native.GetAllowedMethods(engine.ProtocolSettings, index);
                 NativeContracts[native.Id] = methods;
                 return methods;
             }
@@ -329,10 +330,7 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"The native contract of version {version} is not active.");
                 // Get native contracts invocation cache
                 NativeContractsCache nativeContracts = engine.GetState(() => new NativeContractsCache());
-                NativeContractsCache.NativeContractCacheEntry currentAllowedMethods =
-                    nativeContracts.GetAllowedMethods(this, engine.ProtocolSettings,
-                        engine.PersistingBlock is null ? Ledger.CurrentIndex(engine.Snapshot) :
-                        engine.PersistingBlock.Index);
+                NativeContractsCache.NativeContractCacheEntry currentAllowedMethods = nativeContracts.GetAllowedMethods(this, engine);
                 // Check if the method is allowed
                 ExecutionContext context = engine.CurrentContext;
                 ContractMethodMetadata method = currentAllowedMethods.Methods[context.InstructionPointer];
