@@ -8,14 +8,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.Extensions.Configuration;
-using Neo.Cryptography.ECC;
-using Neo.Network.P2P.Payloads;
-using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Microsoft.Extensions.Configuration;
+using Neo.Cryptography.ECC;
+using Neo.Network.P2P.Payloads;
 
 namespace Neo
 {
@@ -85,10 +84,8 @@ namespace Neo
         public uint MaxTraceableBlocks { get; init; }
 
         /// <summary>
-        /// Contains the update history of all native contracts.
+        /// Sets the block height from which a hardfork is activated.
         /// </summary>
-        public IReadOnlyDictionary<string, uint[]> NativeUpdateHistory { get; init; }
-
         public ImmutableDictionary<Hardfork, uint> Hardforks { get; init; }
 
         /// <summary>
@@ -149,18 +146,6 @@ namespace Neo
             MemoryPoolMaxTransactions = 50_000,
             MaxTraceableBlocks = 2_102_400,
             InitialGasDistribution = 52_000_000_00000000,
-            NativeUpdateHistory = new Dictionary<string, uint[]>
-            {
-                [nameof(ContractManagement)] = new[] { 0u },
-                [nameof(StdLib)] = new[] { 0u },
-                [nameof(CryptoLib)] = new[] { 0u },
-                [nameof(LedgerContract)] = new[] { 0u },
-                [nameof(NeoToken)] = new[] { 0u },
-                [nameof(GasToken)] = new[] { 0u },
-                [nameof(PolicyContract)] = new[] { 0u },
-                [nameof(RoleManagement)] = new[] { 0u },
-                [nameof(OracleContract)] = new[] { 0u }
-            },
             Hardforks = ImmutableDictionary<Hardfork, uint>.Empty
         };
 
@@ -202,9 +187,6 @@ namespace Neo
                 MemoryPoolMaxTransactions = section.GetValue("MemoryPoolMaxTransactions", Default.MemoryPoolMaxTransactions),
                 MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", Default.MaxTraceableBlocks),
                 InitialGasDistribution = section.GetValue("InitialGasDistribution", Default.InitialGasDistribution),
-                NativeUpdateHistory = section.GetSection("NativeUpdateHistory").Exists()
-                    ? section.GetSection("NativeUpdateHistory").GetChildren().ToDictionary(p => p.Key, p => p.GetChildren().Select(q => uint.Parse(q.Value)).ToArray())
-                    : Default.NativeUpdateHistory,
                 Hardforks = section.GetSection("Hardforks").Exists()
                     ? section.GetSection("Hardforks").GetChildren().ToImmutableDictionary(p => Enum.Parse<Hardfork>(p.Key), p => uint.Parse(p.Value))
                     : Default.Hardforks
