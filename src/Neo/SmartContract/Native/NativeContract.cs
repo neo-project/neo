@@ -329,7 +329,10 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"The native contract of version {version} is not active.");
                 ExecutionContext context = engine.CurrentContext;
                 NativeContractsCache nativeContracts = context.GetState<NativeContractsCache>();
-                NativeContractsCache.NativeContractCacheEntry currentAllowedMethods = nativeContracts.GetAllowedMethods(this, engine.ProtocolSettings, engine.PersistingBlock.Index);
+                NativeContractsCache.NativeContractCacheEntry currentAllowedMethods =
+                    nativeContracts.GetAllowedMethods(this, engine.ProtocolSettings,
+                        engine.PersistingBlock is null ? Ledger.CurrentIndex(engine.Snapshot) :
+                        engine.PersistingBlock.Index);
                 ContractMethodMetadata method = currentAllowedMethods.Methods[context.InstructionPointer];
                 if (method.ActiveIn is not null && !engine.IsHardforkEnabled(method.ActiveIn.Value))
                     throw new InvalidOperationException($"Cannot call this method before hardfork {method.ActiveIn}.");
