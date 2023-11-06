@@ -32,7 +32,7 @@ namespace Neo.Plugins
         /// <summary>
         /// The directory containing the plugin folders. Files can be contained in any subdirectory.
         /// </summary>
-        public static readonly string PluginsDirectory = Combine(GetDirectoryName(Assembly.GetEntryAssembly().Location), "Plugins");
+        public static readonly string PluginsDirectory = Combine(Environment.CurrentDirectory, "Plugins");
 
         private static readonly FileSystemWatcher configWatcher;
 
@@ -68,7 +68,8 @@ namespace Neo.Plugins
 
         static Plugin()
         {
-            if (!Directory.Exists(PluginsDirectory)) return;
+            if (!Directory.Exists(PluginsDirectory))
+                return;
             configWatcher = new FileSystemWatcher(PluginsDirectory)
             {
                 EnableRaisingEvents = true,
@@ -119,14 +120,19 @@ namespace Neo.Plugins
 
             Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name) ??
                                 AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == an.Name);
-            if (assembly != null) return assembly;
+            if (assembly != null)
+                return assembly;
 
             string filename = an.Name + ".dll";
             string path = filename;
-            if (!File.Exists(path)) path = Combine(GetDirectoryName(Assembly.GetEntryAssembly().Location), filename);
-            if (!File.Exists(path)) path = Combine(PluginsDirectory, filename);
-            if (!File.Exists(path)) path = Combine(PluginsDirectory, args.RequestingAssembly.GetName().Name, filename);
-            if (!File.Exists(path)) return null;
+            if (!File.Exists(path))
+                path = Combine(GetDirectoryName(Assembly.GetEntryAssembly().Location), filename);
+            if (!File.Exists(path))
+                path = Combine(PluginsDirectory, filename);
+            if (!File.Exists(path))
+                path = Combine(PluginsDirectory, args.RequestingAssembly.GetName().Name, filename);
+            if (!File.Exists(path))
+                return null;
 
             try
             {
@@ -156,8 +162,10 @@ namespace Neo.Plugins
         {
             foreach (Type type in assembly.ExportedTypes)
             {
-                if (!type.IsSubclassOf(typeof(Plugin))) continue;
-                if (type.IsAbstract) continue;
+                if (!type.IsSubclassOf(typeof(Plugin)))
+                    continue;
+                if (type.IsAbstract)
+                    continue;
 
                 ConstructorInfo constructor = type.GetConstructor(Type.EmptyTypes);
                 try
@@ -173,7 +181,8 @@ namespace Neo.Plugins
 
         internal static void LoadPlugins()
         {
-            if (!Directory.Exists(PluginsDirectory)) return;
+            if (!Directory.Exists(PluginsDirectory))
+                return;
             List<Assembly> assemblies = new();
             foreach (string rootPath in Directory.GetDirectories(PluginsDirectory))
             {
