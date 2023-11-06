@@ -135,7 +135,7 @@ namespace Neo.SmartContract.Native
 
         internal override ContractTask Initialize(ApplicationEngine engine, Hardfork? hardfork)
         {
-            if (hardfork is null)
+            if (hardfork == ActiveIn)
             {
                 engine.Snapshot.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BigInteger.Zero));
                 engine.Snapshot.Add(CreateStorageKey(Prefix_Price), new StorageItem(0_50000000));

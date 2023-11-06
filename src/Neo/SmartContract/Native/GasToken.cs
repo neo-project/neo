@@ -27,7 +27,7 @@ namespace Neo.SmartContract.Native
 
         internal override ContractTask Initialize(ApplicationEngine engine, Hardfork? hardfork)
         {
-            if (hardfork is null)
+            if (hardfork == ActiveIn)
             {
                 UInt160 account = Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators);
                 return Mint(engine, account, engine.ProtocolSettings.InitialGasDistribution, false);
