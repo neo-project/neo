@@ -13,7 +13,7 @@
     <PackageReference Include="Akka" Version="1.5.12" />
     <PackageReference Include="BouncyCastle.NetCore" Version="2.2.1" />
     <PackageReference Include="K4os.Compression.LZ4" Version="1.3.6" />
-    <PackageReference Include="Neo.VM" Version="3.6.0" />
+    <PackageReference Include="Neo.VM" Version="3.6.0-CI00334" />
     <PackageReference Include="Neo.Cryptography.BLS12_381" Version="0.2.0" />
   </ItemGroup>
 

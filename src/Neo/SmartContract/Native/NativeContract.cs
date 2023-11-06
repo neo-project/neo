@@ -25,11 +25,24 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public abstract class NativeContract
     {
-        private class NefMethods
+        private class NativeContractsCache
         {
-            public Dictionary<int, ContractMethodMetadata> Methods { get; set; }
-            public byte[] Script { get; set; }
-            public bool Initialized { get; set; }
+            public class NativeContractCacheEntry
+            {
+                public Dictionary<int, ContractMethodMetadata> Methods { get; set; }
+                public byte[] Script { get; set; }
+            }
+
+            internal Dictionary<int, NativeContractCacheEntry> NativeContracts { get; set; } = new Dictionary<int, NativeContractCacheEntry>();
+
+            public NativeContractCacheEntry GetAllowedMethods(NativeContract native, ProtocolSettings protocolSettings, uint index)
+            {
+                if (NativeContracts.TryGetValue(native.Id, out var value)) return value;
+
+                var methods = native.GetAllowedMethods(protocolSettings, index);
+                NativeContracts[native.Id] = methods;
+                return methods;
+            }
         }
 
         private static readonly List<NativeContract> contractsList = new();
@@ -155,8 +168,8 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
         /// <param name="index">Block index</param>
-        /// <returns>The <see cref="NefMethods"/>.</returns>
-        private NefMethods GetAllowedMethods(ProtocolSettings settings, uint index)
+        /// <returns>The <see cref="NativeContractsCache"/>.</returns>
+        private NativeContractsCache.NativeContractCacheEntry GetAllowedMethods(ProtocolSettings settings, uint index)
         {
             Dictionary<int, ContractMethodMetadata> methods = new();
 
@@ -175,7 +188,7 @@ namespace Neo.SmartContract.Native
                 script = sb.ToArray();
             }
 
-            return new NefMethods() { Methods = methods, Script = script, Initialized = true };
+            return new NativeContractsCache.NativeContractCacheEntry() { Methods = methods, Script = script };
         }
 
         /// <summary>
@@ -187,7 +200,7 @@ namespace Neo.SmartContract.Native
         internal ContractState GetContractState(ProtocolSettings settings, uint index)
         {
             // Get allowed methods and nef script
-            NefMethods allowedMethods = GetAllowedMethods(settings, index);
+            NativeContractsCache.NativeContractCacheEntry allowedMethods = GetAllowedMethods(settings, index);
 
             // Compose nef file
             NefFile nef = new()
@@ -315,15 +328,8 @@ namespace Neo.SmartContract.Native
                 if (version != 0)
                     throw new InvalidOperationException($"The native contract of version {version} is not active.");
                 ExecutionContext context = engine.CurrentContext;
-                NefMethods currentAllowedMethods = context.GetState<NefMethods>();
-                if (!currentAllowedMethods.Initialized)
-                {
-                    // Compute the current allowed methods
-                    NefMethods nefMethods = GetAllowedMethods(engine.ProtocolSettings, engine.PersistingBlock.Index);
-                    currentAllowedMethods.Methods = nefMethods.Methods;
-                    currentAllowedMethods.Script = nefMethods.Script;
-                    currentAllowedMethods.Initialized = true;
-                }
+                NativeContractsCache nativeContracts = context.GetState<NativeContractsCache>();
+                NativeContractsCache.NativeContractCacheEntry currentAllowedMethods = nativeContracts.GetAllowedMethods(this, engine.ProtocolSettings, engine.PersistingBlock.Index);
                 ContractMethodMetadata method = currentAllowedMethods.Methods[context.InstructionPointer];
                 if (method.ActiveIn is not null && !engine.IsHardforkEnabled(method.ActiveIn.Value))
                     throw new InvalidOperationException($"Cannot call this method before hardfork {method.ActiveIn}.");
