@@ -22,5 +22,12 @@ namespace Neo.SmartContract.Native
         public long CpuFee { get; init; }
         public long StorageFee { get; init; }
         public Hardfork? ActiveIn { get; init; } = null;
+
+        public ContractMethodAttribute() { }
+
+        public ContractMethodAttribute(Hardfork activeIn)
+        {
+            ActiveIn = activeIn;
+        }
     }
 }
