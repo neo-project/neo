@@ -8,7 +8,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.Util;
 using Neo.IO;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
@@ -18,7 +17,6 @@ using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
-using static Neo.Ledger.Blockchain;
 
 namespace Neo.SmartContract.Native
 {
