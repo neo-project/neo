@@ -604,6 +604,25 @@ namespace Neo.SmartContract
             return (T)state;
         }
 
+        public T GetState<T>(Func<T> factory)
+        {
+            if (states is null)
+            {
+                T state = factory();
+                SetState(state);
+                return state;
+            }
+            else
+            {
+                if (!states.TryGetValue(typeof(T), out object state))
+                {
+                    state = factory();
+                    SetState(state);
+                }
+                return (T)state;
+            }
+        }
+
         public void SetState<T>(T state)
         {
             states ??= new Dictionary<Type, object>();
