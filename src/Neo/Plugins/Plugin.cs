@@ -32,7 +32,7 @@ namespace Neo.Plugins
         /// <summary>
         /// The directory containing the plugin folders. Files can be contained in any subdirectory.
         /// </summary>
-        public static readonly string PluginsDirectory = Combine(GetDirectoryName(Assembly.GetEntryAssembly().Location), "Plugins");
+        public static readonly string PluginsDirectory = Combine(GetDirectoryName(System.AppContext.BaseDirectory), "Plugins");
 
         private static readonly FileSystemWatcher configWatcher;
 
@@ -123,7 +123,7 @@ namespace Neo.Plugins
 
             string filename = an.Name + ".dll";
             string path = filename;
-            if (!File.Exists(path)) path = Combine(GetDirectoryName(Assembly.GetEntryAssembly().Location), filename);
+            if (!File.Exists(path)) path = Combine(GetDirectoryName(System.AppContext.BaseDirectory), filename);
             if (!File.Exists(path)) path = Combine(PluginsDirectory, filename);
             if (!File.Exists(path)) path = Combine(PluginsDirectory, args.RequestingAssembly.GetName().Name, filename);
             if (!File.Exists(path)) return null;
