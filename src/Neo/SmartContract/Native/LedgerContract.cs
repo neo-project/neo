@@ -48,19 +48,23 @@ namespace Neo.SmartContract.Native
             foreach (TransactionState tx in transactions)
             {
                 // It's possible that there are previously saved malicious conflict records for this transaction.
-                // These records are garbage in fact and can be removed in a separate flow, but at the same time
-                // it won't hurt to keep them.
-
-                engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(tx.Transaction.Hash), new StorageItem(tx));
+                // If so, then remove it and store the relevant transaction itself.
+                var txKey = CreateStorageKey(Prefix_Transaction).Add(tx.Transaction.Hash);
+                engine.Snapshot.Delete(txKey);
+                engine.Snapshot.Add(txKey, new StorageItem(tx));
 
                 // Store transaction's conflicits.
                 var conflictingSigners = tx.Transaction.Signers.Select(s => s.Account);
                 foreach (var attr in tx.Transaction.GetAttributes<Conflicts>())
                 {
-                    engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(attr.Hash), new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
+                    var recordKey = CreateStorageKey(Prefix_Transaction).Add(attr.Hash);
+                    engine.Snapshot.Delete(recordKey);
+                    engine.Snapshot.Add(recordKey, new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
                     foreach (var signer in conflictingSigners)
                     {
-                        engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(attr.Hash).Add(signer), new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
+                        var conflictKey = CreateStorageKey(Prefix_Transaction).Add(attr.Hash).Add(signer);
+                        engine.Snapshot.Delete(conflictKey);
+                        engine.Snapshot.Add(conflictKey, new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
                     }
                 }
             }
