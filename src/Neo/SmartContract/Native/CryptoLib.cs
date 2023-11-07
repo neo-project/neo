@@ -26,7 +26,7 @@ namespace Neo.SmartContract.Native
             [NamedCurve.secp256r1] = ECCurve.Secp256r1
         };
 
-        internal CryptoLib() { }
+        internal CryptoLib() : base() { }
 
         /// <summary>
         /// Computes the hash value for the specified byte array using the ripemd160 algorithm.
