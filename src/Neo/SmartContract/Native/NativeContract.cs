@@ -265,7 +265,13 @@ namespace Neo.SmartContract.Native
             // If is in the hardfork height, return true
             foreach (Hardfork hf in listenHardforks)
             {
-                if (settings.Hardforks.TryGetValue(hf, out var activeIn) && activeIn == index)
+                if (!settings.Hardforks.TryGetValue(hf, out var activeIn))
+                {
+                    // If is not set in the configuration is treated as enabled from the genesis
+                    activeIn = 0;
+                }
+
+                if (activeIn == index)
                 {
                     hardfork = hf;
                     return true;
