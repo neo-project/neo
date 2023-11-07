@@ -21,7 +21,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 {
     public abstract class WitnessCondition : IInteroperable, ISerializable
     {
-        private const int MaxSubitems = 16;
+        internal const int MaxSubitems = 16;
         internal const int MaxNestingDepth = 2;
 
         /// <summary>
