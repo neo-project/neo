@@ -22,6 +22,12 @@ namespace Neo.SmartContract.Native
         public ContractEventDescriptor Descriptor { get; set; }
         public Hardfork? ActiveIn { get; init; } = null;
 
+        public ContractEventAttribute(Hardfork activeIn, int order, string name,
+            string arg1Name, ContractParameterType arg1Value) : this(order, name, arg1Name, arg1Value)
+        {
+            ActiveIn = activeIn;
+        }
+
         public ContractEventAttribute(int order, string name, string arg1Name, ContractParameterType arg1Value)
         {
             Order = order;
@@ -37,6 +43,13 @@ namespace Neo.SmartContract.Native
                     }
                 }
             };
+        }
+
+        public ContractEventAttribute(Hardfork activeIn, int order, string name,
+            string arg1Name, ContractParameterType arg1Value,
+            string arg2Name, ContractParameterType arg2Value) : this(order, name, arg1Name, arg1Value, arg2Name, arg2Value)
+        {
+            ActiveIn = activeIn;
         }
 
         public ContractEventAttribute(int order, string name,
@@ -61,6 +74,14 @@ namespace Neo.SmartContract.Native
                     }
                 }
             };
+        }
+
+        public ContractEventAttribute(Hardfork activeIn, int order, string name,
+            string arg1Name, ContractParameterType arg1Value,
+            string arg2Name, ContractParameterType arg2Value,
+            string arg3Name, ContractParameterType arg3Value) : this(order, name, arg1Name, arg1Value, arg2Name, arg2Value, arg3Name, arg3Value)
+        {
+            ActiveIn = activeIn;
         }
 
         public ContractEventAttribute(int order, string name,
@@ -92,6 +113,15 @@ namespace Neo.SmartContract.Native
                     }
                 }
             };
+        }
+
+        public ContractEventAttribute(Hardfork activeIn, int order, string name,
+            string arg1Name, ContractParameterType arg1Value,
+            string arg2Name, ContractParameterType arg2Value,
+            string arg3Name, ContractParameterType arg3Value,
+            string arg4Name, ContractParameterType arg4Value) : this(order, name, arg1Name, arg1Value, arg2Name, arg2Value, arg3Name, arg3Value, arg4Name, arg4Value)
+        {
+            ActiveIn = activeIn;
         }
 
         public ContractEventAttribute(int order, string name,
