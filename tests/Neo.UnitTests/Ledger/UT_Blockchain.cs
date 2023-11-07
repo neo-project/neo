@@ -152,7 +152,7 @@ namespace Neo.UnitTests.Ledger
             using (ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, TestBlockchain.TheNeoSystem.Settings, 0))
             {
                 engine2.LoadScript(onPersistScript);
-                if (engine2.Execute() != VMState.HALT) throw new InvalidOperationException();
+                if (engine2.Execute() != VMState.HALT) throw engine2.FaultException;
                 engine2.Snapshot.Commit();
             }
             snapshot.Commit();
@@ -168,7 +168,7 @@ namespace Neo.UnitTests.Ledger
             using (ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, TestBlockchain.TheNeoSystem.Settings, 0))
             {
                 engine2.LoadScript(postPersistScript);
-                if (engine2.Execute() != VMState.HALT) throw new InvalidOperationException();
+                if (engine2.Execute() != VMState.HALT) throw engine2.FaultException;
                 engine2.Snapshot.Commit();
             }
             snapshot.Commit();
