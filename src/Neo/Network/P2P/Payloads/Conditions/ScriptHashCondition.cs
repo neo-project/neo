@@ -13,6 +13,7 @@ using Neo.Json;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
 using System.IO;
 
 namespace Neo.Network.P2P.Payloads.Conditions
@@ -42,7 +43,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             writer.Write(Hash);
         }
 
-        private protected override void ParseJson(JObject json)
+        private protected override void ParseJson(JObject json, int maxNestDepth)
         {
             Hash = UInt160.Parse(json["hash"].GetString());
         }
@@ -56,7 +57,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public override StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            var result = (Array)base.ToStackItem(referenceCounter);
+            var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
             result.Add(Hash.ToArray());
             return result;
         }

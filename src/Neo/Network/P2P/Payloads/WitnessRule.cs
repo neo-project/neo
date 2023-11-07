@@ -60,7 +60,7 @@ namespace Neo.Network.P2P.Payloads
             return new()
             {
                 Action = Enum.Parse<WitnessRuleAction>(json["action"].GetString()),
-                Condition = WitnessCondition.FromJson((JObject)json["condition"])
+                Condition = WitnessCondition.FromJson((JObject)json["condition"], WitnessCondition.MaxNestingDepth)
             };
         }
 
