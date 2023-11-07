@@ -6,6 +6,7 @@ using Neo.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
+using Neo.VM.Types;
 
 namespace Neo.UnitTests.SmartContract.Manifest
 {
@@ -56,13 +57,29 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void ParseFromJson_Trust()
         {
-            ReferenceCounter referenceCounter = new ReferenceCounter();
             var json = @"{""name"":""testManifest"",""groups"":[],""features"":{},""supportedstandards"":[],""abi"":{""methods"":[{""name"":""testMethod"",""parameters"":[],""returntype"":""Void"",""offset"":0,""safe"":true}],""events"":[]},""permissions"":[{""contract"":""*"",""methods"":""*""}],""trusts"":[""0x0000000000000000000000000000000000000001"",""*""],""extra"":null}";
             var manifest = ContractManifest.Parse(json);
             Assert.AreEqual(manifest.ToJson().ToString(), json);
             var check = TestUtils.CreateDefaultManifest();
             check.Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(ContractPermissionDescriptor.Create(UInt160.Parse("0x0000000000000000000000000000000000000001")), ContractPermissionDescriptor.CreateWildcard());
             Assert.AreEqual(manifest.ToJson().ToString(), check.ToJson().ToString());
+        }
+
+        [TestMethod]
+        public void ToInteroperable_Trust()
+        {
+            var json = @"{""name"":""CallOracleContract-6"",""groups"":[],""features"":{},""supportedstandards"":[],""abi"":{""methods"":[{""name"":""request"",""parameters"":[{""name"":""url"",""type"":""String""},{""name"":""filter"",""type"":""String""},{""name"":""gasForResponse"",""type"":""Integer""}],""returntype"":""Void"",""offset"":0,""safe"":false},{""name"":""callback"",""parameters"":[{""name"":""url"",""type"":""String""},{""name"":""userData"",""type"":""Any""},{""name"":""responseCode"",""type"":""Integer""},{""name"":""response"",""type"":""ByteArray""}],""returntype"":""Void"",""offset"":86,""safe"":false},{""name"":""getStoredUrl"",""parameters"":[],""returntype"":""String"",""offset"":129,""safe"":false},{""name"":""getStoredResponseCode"",""parameters"":[],""returntype"":""Integer"",""offset"":142,""safe"":false},{""name"":""getStoredResponse"",""parameters"":[],""returntype"":""ByteArray"",""offset"":165,""safe"":false}],""events"":[]},""permissions"":[{""contract"":""0xfe924b7cfe89ddd271abaf7210a80a7e11178758"",""methods"":""*""},{""contract"":""*"",""methods"":""*""}],""trusts"":[""0xfe924b7cfe89ddd271abaf7210a80a7e11178758"",""*""],""extra"":{}}";
+            var manifest = ContractManifest.Parse(json);
+            Struct s = (Struct)manifest.ToStackItem(new ReferenceCounter());
+            manifest = s.ToInteroperable<ContractManifest>();
+
+            Assert.IsFalse(manifest.Permissions[0].Contract.IsWildcard);
+            Assert.IsTrue(manifest.Permissions[0].Methods.IsWildcard);
+            Assert.IsTrue(manifest.Permissions[1].Contract.IsWildcard);
+            Assert.IsTrue(manifest.Permissions[1].Methods.IsWildcard);
+
+            Assert.IsFalse(manifest.Trusts[0].IsWildcard);
+            Assert.IsTrue(manifest.Trusts[1].IsWildcard);
         }
 
         [TestMethod]

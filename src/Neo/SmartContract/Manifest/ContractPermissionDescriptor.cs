@@ -56,9 +56,6 @@ namespace Neo.SmartContract.Manifest
         {
             switch (span.Length)
             {
-                case 0:
-                    // wildcard logic
-                    break;
                 case UInt160.Length:
                     Hash = new UInt160(span);
                     break;
