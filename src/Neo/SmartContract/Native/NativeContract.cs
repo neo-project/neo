@@ -289,7 +289,8 @@ namespace Neo.SmartContract.Native
 
             if (!settings.Hardforks.TryGetValue(ActiveIn.Value, out var activeIn))
             {
-                return false;
+                // If is not set in the configuration is treated as enabled from the genesis
+                activeIn = 0;
             }
 
             return activeIn <= index;
