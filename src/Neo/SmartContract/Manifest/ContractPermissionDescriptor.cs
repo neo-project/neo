@@ -62,6 +62,9 @@ namespace Neo.SmartContract.Manifest
                 case 33:
                     Group = ECPoint.DecodePoint(span, ECCurve.Secp256r1);
                     break;
+                case 0:
+                    // wildcard logic
+                    break;
                 default:
                     throw new ArgumentException(null, nameof(span));
             }
