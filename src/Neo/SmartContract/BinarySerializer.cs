@@ -202,10 +202,10 @@ namespace Neo.SmartContract
             unserialized.Push(item);
             while (unserialized.Count > 0)
             {
-                item = unserialized.Pop();
-                writer.Write((byte)item.Type);
                 if (--maxItems < 0)
                     throw new FormatException();
+                item = unserialized.Pop();
+                writer.Write((byte)item.Type);
                 switch (item)
                 {
                     case Null _:
