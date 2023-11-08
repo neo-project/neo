@@ -48,7 +48,7 @@ namespace Neo.SmartContract.Native
 
         private static readonly List<NativeContract> contractsList = new();
         private static readonly Dictionary<UInt160, NativeContract> contractsDictionary = new();
-        private readonly ImmutableHashSet<Hardfork> listenHardforks;
+        private readonly ImmutableHashSet<Hardfork> usedHardforks;
         private readonly ReadOnlyCollection<ContractMethodMetadata> methodDescriptors;
         private readonly ReadOnlyCollection<ContractEventAttribute> eventsDescriptors;
         private static int id_counter = 0;
@@ -152,7 +152,7 @@ namespace Neo.SmartContract.Native
                 OrderBy(p => p.Order).ToList().AsReadOnly();
 
             // Calculate the initializations forks
-            listenHardforks =
+            usedHardforks =
                 methodDescriptors.Select(u => u.ActiveIn)
                 .Concat(eventsDescriptors.Select(u => u.ActiveIn))
                 .Concat(new Hardfork?[] { ActiveIn })
@@ -263,7 +263,7 @@ namespace Neo.SmartContract.Native
             }
 
             // If is in the hardfork height, return true
-            foreach (Hardfork hf in listenHardforks)
+            foreach (Hardfork hf in usedHardforks)
             {
                 if (!settings.Hardforks.TryGetValue(hf, out var activeIn))
                 {
