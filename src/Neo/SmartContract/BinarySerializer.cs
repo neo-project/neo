@@ -108,7 +108,8 @@ namespace Neo.SmartContract
                     default:
                         throw new FormatException();
                 }
-                if (deserialized.Count > limits.MaxStackSize) throw new FormatException();
+                if (deserialized.Count > limits.MaxStackSize)
+                    throw new FormatException();
             }
             Stack<StackItem> stack_temp = new();
             while (deserialized.Count > 0)
