@@ -252,7 +252,7 @@ namespace Neo.SmartContract.Native
                 Manifest = parsedManifest
             };
 
-            if (!contract.Manifest.IsValid(hash)) throw new InvalidOperationException($"Invalid Manifest Hash: {hash}");
+            if (!contract.Manifest.IsValid(engine, hash)) throw new InvalidOperationException($"Invalid Manifest Hash: {hash}");
 
             engine.Snapshot.Add(key, new StorageItem(contract));
             engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(hash.ToArray()));
@@ -295,7 +295,7 @@ namespace Neo.SmartContract.Native
                 ContractManifest manifest_new = ContractManifest.Parse(manifest);
                 if (manifest_new.Name != contract.Manifest.Name)
                     throw new InvalidOperationException("The name of the contract can't be changed.");
-                if (!manifest_new.IsValid(contract.Hash))
+                if (!manifest_new.IsValid(engine, contract.Hash))
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.Hash}");
                 contract.Manifest = manifest_new;
             }

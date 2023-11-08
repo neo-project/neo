@@ -8,12 +8,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
+using System.Linq;
 using Neo.IO;
 using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
-using System.Linq;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Manifest
@@ -172,10 +172,18 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// Determines whether the manifest is valid.
         /// </summary>
+        /// <param name="engine">The <see cref="ApplicationEngine"/>.</param>
         /// <param name="hash">The hash of the contract.</param>
         /// <returns><see langword="true"/> if the manifest is valid; otherwise, <see langword="false"/>.</returns>
-        public bool IsValid(UInt160 hash)
+        public bool IsValid(ApplicationEngine engine, UInt160 hash)
         {
+            // Ensure that is serializable
+            if (true) // TODO: Hardfork check?
+            {
+                var data = BinarySerializer.Serialize(ToStackItem(null), ExecutionEngineLimits.Default.MaxItemSize);
+                _ = BinarySerializer.Deserialize(data, ExecutionEngineLimits.Default);
+            }
+            // Check groups
             return Groups.All(u => u.IsValid(hash));
         }
     }

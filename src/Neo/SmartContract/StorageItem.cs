@@ -36,7 +36,7 @@ namespace Neo.SmartContract
                 return !value.IsEmpty ? value : value = cache switch
                 {
                     BigInteger bi => bi.ToByteArrayStandard(),
-                    IInteroperable interoperable => BinarySerializer.Serialize(interoperable.ToStackItem(null), 1024 * 1024),
+                    IInteroperable interoperable => BinarySerializer.Serialize(interoperable.ToStackItem(null), ExecutionEngineLimits.Default.MaxItemSize),
                     null => ReadOnlyMemory<byte>.Empty,
                     _ => throw new InvalidCastException()
                 };
