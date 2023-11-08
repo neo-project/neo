@@ -29,7 +29,7 @@ namespace Neo.UnitTests.Ledger
             var reader = new MemoryReader(data);
 
             HashIndexState dest = new();
-            ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(ref reader, ExecutionEngineLimits.Default.MaxItemSize, ExecutionEngineLimits.Default.MaxStackSize, null));
+            ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(ref reader, ExecutionEngineLimits.Default, null));
 
             dest.Hash.Should().Be(origin.Hash);
             dest.Index.Should().Be(origin.Index);

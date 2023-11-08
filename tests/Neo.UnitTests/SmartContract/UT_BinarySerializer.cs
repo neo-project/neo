@@ -13,8 +13,6 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_BinarySerializer
     {
-        private const int MaxItemSize = 1024 * 1024;
-
         [TestMethod]
         public void TestSerialize()
         {
