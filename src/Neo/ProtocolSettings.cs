@@ -190,9 +190,31 @@ namespace Neo
                 MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", Default.MaxTraceableBlocks),
                 InitialGasDistribution = section.GetValue("InitialGasDistribution", Default.InitialGasDistribution),
                 Hardforks = section.GetSection("Hardforks").Exists()
-                    ? section.GetSection("Hardforks").GetChildren().ToImmutableDictionary(p => Enum.Parse<Hardfork>(p.Key), p => uint.Parse(p.Value))
+                    ? EnsureOmmitedHardforks(section.GetSection("Hardforks").GetChildren().ToDictionary(p => Enum.Parse<Hardfork>(p.Key), p => uint.Parse(p.Value))).ToImmutableDictionary()
                     : Default.Hardforks
             };
+        }
+
+        /// <summary>
+        /// Explicitly set the height of all old omitted hardforks to 0 for proper IsHardforkEnabled behaviour.
+        /// </summary>
+        /// <param name="hardForks">HardForks</param>
+        /// <returns>Processed hardfork configuration</returns>
+        private static Dictionary<Hardfork, uint> EnsureOmmitedHardforks(Dictionary<Hardfork, uint> hardForks)
+        {
+            foreach (Hardfork hf in AllHardforks)
+            {
+                if (!hardForks.ContainsKey(hf))
+                {
+                    hardForks[hf] = 0;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return hardForks;
         }
 
         private static void CheckingHardfork(ProtocolSettings settings)
