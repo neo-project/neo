@@ -255,7 +255,7 @@ namespace Neo.SmartContract.Native
                 Filter = filter,
                 CallbackContract = engine.CallingScriptHash,
                 CallbackMethod = callback,
-                UserData = BinarySerializer.Serialize(userData, MaxUserDataLength)
+                UserData = BinarySerializer.Serialize(userData, MaxUserDataLength, engine.Limits.MaxStackSize)
             }));
 
             //Add the id to the IdList

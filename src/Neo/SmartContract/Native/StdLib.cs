@@ -10,13 +10,12 @@
 
 #pragma warning disable IDE0051
 
-using Neo.Cryptography;
-using Neo.Json;
-using Neo.VM.Types;
 using System;
 using System.Globalization;
 using System.Numerics;
-using System.Text;
+using Neo.Cryptography;
+using Neo.Json;
+using Neo.VM.Types;
 
 namespace Neo.SmartContract.Native
 {
@@ -32,7 +31,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 12)]
         private static byte[] Serialize(ApplicationEngine engine, StackItem item)
         {
-            return BinarySerializer.Serialize(item, engine.Limits.MaxItemSize);
+            return BinarySerializer.Serialize(item, engine.Limits);
         }
 
         [ContractMethod(CpuFee = 1 << 14)]

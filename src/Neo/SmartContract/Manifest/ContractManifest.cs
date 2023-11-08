@@ -180,8 +180,7 @@ namespace Neo.SmartContract.Manifest
             // Ensure that is serializable
             try
             {
-                var data = BinarySerializer.Serialize(ToStackItem(null), limits.MaxItemSize);
-                _ = BinarySerializer.Deserialize(data, limits);
+                _ = BinarySerializer.Serialize(ToStackItem(null), limits);
             }
             catch
             {

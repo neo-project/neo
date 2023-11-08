@@ -21,10 +21,10 @@ namespace Neo.UnitTests.SmartContract.Manifest
 
             var counter = new ReferenceCounter();
             var item = manifest.ToStackItem(counter);
-
-            var data = BinarySerializer.Serialize(item, 1024 * 1024);
+            var data = BinarySerializer.Serialize(item, 1024 * 1024, 4096);
 
             Assert.ThrowsException<FormatException>(() => BinarySerializer.Deserialize(data, ExecutionEngineLimits.Default, counter));
+            Assert.ThrowsException<FormatException>(() => BinarySerializer.Serialize(item, 1024 * 1024, 2048));
 
             item = BinarySerializer.Deserialize(data, ExecutionEngineLimits.Default with { MaxStackSize = 4096 }, counter);
             var copy = item.ToInteroperable<ContractManifest>();

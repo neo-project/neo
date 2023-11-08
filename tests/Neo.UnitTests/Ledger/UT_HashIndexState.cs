@@ -25,11 +25,11 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestDeserialize()
         {
-            var data = BinarySerializer.Serialize(((IInteroperable)origin).ToStackItem(null), 1024);
+            var data = BinarySerializer.Serialize(((IInteroperable)origin).ToStackItem(null), ExecutionEngineLimits.Default);
             var reader = new MemoryReader(data);
 
-            HashIndexState dest = new HashIndexState();
-            ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(ref reader, ExecutionEngineLimits.Default, null));
+            HashIndexState dest = new();
+            ((IInteroperable)dest).FromStackItem(BinarySerializer.Deserialize(ref reader, ExecutionEngineLimits.Default.MaxItemSize, ExecutionEngineLimits.Default.MaxStackSize, null));
 
             dest.Hash.Should().Be(origin.Hash);
             dest.Index.Should().Be(origin.Index);
