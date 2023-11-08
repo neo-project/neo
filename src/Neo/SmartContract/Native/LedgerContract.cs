@@ -47,13 +47,19 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.Add(CreateStorageKey(Prefix_Block).Add(engine.PersistingBlock.Hash), new StorageItem(Trim(engine.PersistingBlock).ToArray()));
             foreach (TransactionState tx in transactions)
             {
-                engine.Snapshot.Add(CreateStorageKey(Prefix_Transaction).Add(tx.Transaction.Hash), new StorageItem(tx));
+                // It's possible that there are previously saved malicious conflict records for this transaction.
+                // If so, then remove it and store the relevant transaction itself.
+                engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Transaction).Add(tx.Transaction.Hash), () => new StorageItem(new TransactionState())).FromReplica(new StorageItem(tx));
+
+                // Store transaction's conflicits.
                 var conflictingSigners = tx.Transaction.Signers.Select(s => s.Account);
                 foreach (var attr in tx.Transaction.GetAttributes<Conflicts>())
                 {
-                    var conflictRecord = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Transaction).Add(attr.Hash),
-                        () => new StorageItem(new TransactionState { ConflictingSigners = Array.Empty<UInt160>() })).GetInteroperable<TransactionState>();
-                    conflictRecord.ConflictingSigners = conflictRecord.ConflictingSigners.Concat(conflictingSigners).Distinct().ToArray();
+                    engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Transaction).Add(attr.Hash), () => new StorageItem(new TransactionState())).FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
+                    foreach (var signer in conflictingSigners)
+                    {
+                        engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Transaction).Add(attr.Hash).Add(signer), () => new StorageItem(new TransactionState())).FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
+                    }
                 }
             }
             engine.SetState(transactions);
@@ -145,11 +151,24 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="hash">The hash of the conflicting transaction.</param>
         /// <param name="signers">The list of signer accounts of the conflicting transaction.</param>
+        /// <param name="maxTraceableBlocks">MaxTraceableBlocks protocol setting.</param>
         /// <returns><see langword="true"/> if the blockchain contains the hash of the conflicting transaction; otherwise, <see langword="false"/>.</returns>
-        public bool ContainsConflictHash(DataCache snapshot, UInt256 hash, IEnumerable<UInt160> signers)
+        public bool ContainsConflictHash(DataCache snapshot, UInt256 hash, IEnumerable<UInt160> signers, uint maxTraceableBlocks)
         {
-            var state = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
-            return state is not null && state.Transaction is null && (signers is null || state.ConflictingSigners.Intersect(signers).Any());
+            // Check the dummy stub firstly to define whether there's exist at least one conflict record.
+            var stub = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash))?.GetInteroperable<TransactionState>();
+            if (stub is null || stub.Transaction is not null || !IsTraceableBlock(snapshot, stub.BlockIndex, maxTraceableBlocks))
+                return false;
+
+            // At least one conflict record is found, then need to check signers intersection.
+            foreach (var signer in signers)
+            {
+                var state = snapshot.TryGet(CreateStorageKey(Prefix_Transaction).Add(hash).Add(signer))?.GetInteroperable<TransactionState>();
+                if (state is not null && IsTraceableBlock(snapshot, state.BlockIndex, maxTraceableBlocks))
+                    return true;
+            }
+
+            return false;
         }
 
         /// <summary>
