@@ -59,7 +59,7 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// Deserializes a <see cref="StackItem"/> from byte array.
+        /// Deserializes a <see cref="StackItem"/> from <see cref="MemoryReader"/>.
         /// </summary>
         /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
         /// <param name="limits">The limits for the deserialization.</param>
@@ -78,7 +78,7 @@ namespace Neo.SmartContract
         /// <param name="maxItems">The max of items to serialize</param>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(ref MemoryReader reader, uint maxSize, uint maxItems, ReferenceCounter referenceCounter)
+        public static StackItem Deserialize(ref MemoryReader reader, uint maxSize, uint maxItems, ReferenceCounter referenceCounter = null)
         {
             Stack<StackItem> deserialized = new();
             int undeserialized = 1;
@@ -106,14 +106,14 @@ namespace Neo.SmartContract
                     case StackItemType.Array:
                     case StackItemType.Struct:
                         {
-                            int count = (int)reader.ReadVarInt((ulong)maxItems);
+                            int count = (int)reader.ReadVarInt(maxItems);
                             deserialized.Push(new ContainerPlaceholder(type, count));
                             undeserialized += count;
                         }
                         break;
                     case StackItemType.Map:
                         {
-                            int count = (int)reader.ReadVarInt((ulong)maxItems);
+                            int count = (int)reader.ReadVarInt(maxItems);
                             deserialized.Push(new ContainerPlaceholder(type, count));
                             undeserialized += count * 2;
                         }
