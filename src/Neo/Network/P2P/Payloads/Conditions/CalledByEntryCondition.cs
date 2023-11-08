@@ -9,6 +9,7 @@
 // modifications are permitted.
 
 using Neo.IO;
+using Neo.Json;
 using Neo.SmartContract;
 using System.IO;
 
@@ -18,10 +19,6 @@ namespace Neo.Network.P2P.Payloads.Conditions
     {
         public override WitnessConditionType Type => WitnessConditionType.CalledByEntry;
 
-        protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth)
-        {
-        }
-
         public override bool Match(ApplicationEngine engine)
         {
             var state = engine.CurrentContext.GetState<ExecutionContextState>();
@@ -30,8 +27,10 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return state.CallingContext is null;
         }
 
-        protected override void SerializeWithoutType(BinaryWriter writer)
-        {
-        }
+        protected override void DeserializeWithoutType(ref MemoryReader reader, int maxNestDepth) { }
+
+        protected override void SerializeWithoutType(BinaryWriter writer) { }
+
+        private protected override void ParseJson(JObject json, int maxNestDepth) { }
     }
 }

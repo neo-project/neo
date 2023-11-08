@@ -206,7 +206,7 @@ namespace Neo.Ledger
             {
                 if (NativeContract.Ledger.ContainsTransaction(snapshot, tx.Hash))
                     continue;
-                if (NativeContract.Ledger.ContainsConflictHash(snapshot, tx.Hash, tx.Signers.Select(s => s.Account)))
+                if (NativeContract.Ledger.ContainsConflictHash(snapshot, tx.Hash, tx.Signers.Select(s => s.Account), system.Settings.MaxTraceableBlocks))
                     continue;
                 // First remove the tx if it is unverified in the pool.
                 system.MemPool.TryRemoveUnVerified(tx.Hash, out _);
