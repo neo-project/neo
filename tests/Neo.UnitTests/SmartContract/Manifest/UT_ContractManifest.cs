@@ -40,7 +40,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
 
             Assert.AreEqual(manifest.ToJson().ToString(), json);
             Assert.AreEqual(manifest.ToJson().ToString(), TestUtils.CreateDefaultManifest().ToJson().ToString());
-            Assert.IsTrue(manifest.IsValid(ApplicationEngine.Create(TriggerType.Application, null, null), UInt160.Zero));
+            Assert.IsTrue(manifest.IsValid(ExecutionEngineLimits.Default, UInt160.Zero));
         }
 
         [TestMethod]

@@ -145,8 +145,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public ContractState GetContract(DataCache snapshot, UInt160 hash)
         {
-            return snapshot.TryGet(CreateStorageKey(Prefix_Contract).Add(hash))?
-                .GetInteroperable<ContractState>(ExecutionEngineLimits.Default with { MaxStackSize = 4096 });
+            return snapshot.TryGet(CreateStorageKey(Prefix_Contract).Add(hash))?.GetInteroperable<ContractState>();
         }
 
         /// <summary>
@@ -207,8 +206,7 @@ namespace Neo.SmartContract.Native
         public IEnumerable<ContractState> ListContracts(DataCache snapshot)
         {
             byte[] listContractsPrefix = CreateStorageKey(Prefix_Contract).ToArray();
-            return snapshot.Find(listContractsPrefix)
-                .Select(kvp => kvp.Value.GetInteroperable<ContractState>(ExecutionEngineLimits.Default with { MaxStackSize = 4096 }));
+            return snapshot.Find(listContractsPrefix).Select(kvp => kvp.Value.GetInteroperable<ContractState>());
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.All)]
@@ -252,7 +250,7 @@ namespace Neo.SmartContract.Native
                 Manifest = parsedManifest
             };
 
-            if (!contract.Manifest.IsValid(engine, hash)) throw new InvalidOperationException($"Invalid Manifest Hash: {hash}");
+            if (!contract.Manifest.IsValid(engine.Limits, hash)) throw new InvalidOperationException($"Invalid Manifest Hash: {hash}");
 
             engine.Snapshot.Add(key, new StorageItem(contract));
             engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(hash.ToArray()));
@@ -275,8 +273,7 @@ namespace Neo.SmartContract.Native
 
             engine.AddGas(engine.StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
 
-            var contract = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Contract).Add(engine.CallingScriptHash))?
-                .GetInteroperable<ContractState>(ExecutionEngineLimits.Default with { MaxStackSize = 4096 });
+            var contract = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Contract).Add(engine.CallingScriptHash))?.GetInteroperable<ContractState>();
             if (contract is null) throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
             if (contract.UpdateCounter == ushort.MaxValue) throw new InvalidOperationException($"The contract reached the maximum number of updates.");
 
@@ -295,7 +292,7 @@ namespace Neo.SmartContract.Native
                 ContractManifest manifest_new = ContractManifest.Parse(manifest);
                 if (manifest_new.Name != contract.Manifest.Name)
                     throw new InvalidOperationException("The name of the contract can't be changed.");
-                if (!manifest_new.IsValid(engine, contract.Hash))
+                if (!manifest_new.IsValid(engine.Limits, contract.Hash))
                     throw new InvalidOperationException($"Invalid Manifest Hash: {contract.Hash}");
                 contract.Manifest = manifest_new;
             }
@@ -309,8 +306,7 @@ namespace Neo.SmartContract.Native
         {
             UInt160 hash = engine.CallingScriptHash;
             StorageKey ckey = CreateStorageKey(Prefix_Contract).Add(hash);
-            ContractState contract = engine.Snapshot.TryGet(ckey)?
-                .GetInteroperable<ContractState>(ExecutionEngineLimits.Default with { MaxStackSize = 4096 });
+            ContractState contract = engine.Snapshot.TryGet(ckey)?.GetInteroperable<ContractState>();
             if (contract is null) return;
             engine.Snapshot.Delete(ckey);
             engine.Snapshot.Delete(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id));
