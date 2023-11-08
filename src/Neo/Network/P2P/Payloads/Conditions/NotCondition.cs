@@ -47,9 +47,10 @@ namespace Neo.Network.P2P.Payloads.Conditions
             writer.Write(Expression);
         }
 
-        private protected override void ParseJson(JObject json)
+        private protected override void ParseJson(JObject json, int maxNestDepth)
         {
-            Expression = FromJson((JObject)json["expression"]);
+            if (maxNestDepth <= 0) throw new FormatException();
+            Expression = FromJson((JObject)json["expression"], maxNestDepth - 1);
         }
 
         public override JObject ToJson()

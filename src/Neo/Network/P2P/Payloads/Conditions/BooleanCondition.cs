@@ -8,12 +8,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
+using System.IO;
 using Neo.IO;
 using Neo.Json;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
-using System.IO;
 
 namespace Neo.Network.P2P.Payloads.Conditions
 {
@@ -42,7 +43,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             writer.Write(Expression);
         }
 
-        private protected override void ParseJson(JObject json)
+        private protected override void ParseJson(JObject json, int maxNestDepth)
         {
             Expression = json["expression"].GetBoolean();
         }
@@ -56,7 +57,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         public override StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            var result = (Array)base.ToStackItem(referenceCounter);
+            var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
             result.Add(Expression);
             return result;
         }
