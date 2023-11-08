@@ -8,11 +8,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
-using Neo.VM;
 using System;
 using System.IO;
 using System.Numerics;
+using Neo.IO;
+using Neo.VM;
 
 namespace Neo.SmartContract
 {
@@ -131,14 +131,13 @@ namespace Neo.SmartContract
         /// Gets an <see cref="IInteroperable"/> from the storage.
         /// </summary>
         /// <typeparam name="T">The type of the <see cref="IInteroperable"/>.</typeparam>
-        /// <param name="limits">The limits for the deserialization.</param>
         /// <returns>The <see cref="IInteroperable"/> in the storage.</returns>
-        public T GetInteroperable<T>(ExecutionEngineLimits limits = null) where T : IInteroperable, new()
+        public T GetInteroperable<T>() where T : IInteroperable, new()
         {
             if (cache is null)
             {
                 var interoperable = new T();
-                interoperable.FromStackItem(BinarySerializer.Deserialize(value, limits ?? ExecutionEngineLimits.Default));
+                interoperable.FromStackItem(BinarySerializer.Deserialize(value, ExecutionEngineLimits.Default));
                 cache = interoperable;
             }
             value = null;
