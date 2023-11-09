@@ -271,6 +271,11 @@ namespace Neo.SmartContract
                 }
                 return false;
             }
+            else
+            {
+                // If we don't have the ScriptContainer, we consider that there are no script hashes for verifying
+                if (ScriptContainer is null) return false;
+            }
 
             // Check allow state callflag
 
