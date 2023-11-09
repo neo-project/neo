@@ -94,6 +94,14 @@ namespace Neo.UnitTests
 
             settings.Hardforks[Hardfork.HF_Aspidochelone].Should().Be(0);
             settings.Hardforks[Hardfork.HF_Basilisk].Should().Be(4120000);
+
+            // Check IsHardforkEnabled
+
+            settings.IsHardforkEnabled(Hardfork.HF_Aspidochelone, 0).Should().BeTrue();
+            settings.IsHardforkEnabled(Hardfork.HF_Aspidochelone, 10).Should().BeTrue();
+            settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 0).Should().BeFalse();
+            settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 10).Should().BeFalse();
+            settings.IsHardforkEnabled(Hardfork.HF_Basilisk, 4120000).Should().BeTrue();
         }
 
         [TestMethod]
