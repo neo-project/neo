@@ -27,20 +27,20 @@ namespace Neo.SmartContract.Native
     {
         private class NativeContractsCache
         {
-            public class NativeContractCacheEntry
+            public class CacheEntry
             {
                 public Dictionary<int, ContractMethodMetadata> Methods { get; set; }
                 public byte[] Script { get; set; }
             }
 
-            internal Dictionary<int, NativeContractCacheEntry> NativeContracts { get; set; } = new Dictionary<int, NativeContractCacheEntry>();
+            internal Dictionary<int, CacheEntry> NativeContracts { get; set; } = new Dictionary<int, CacheEntry>();
 
-            public NativeContractCacheEntry GetAllowedMethods(NativeContract native, ApplicationEngine engine)
+            public CacheEntry GetAllowedMethods(NativeContract native, ApplicationEngine engine)
             {
                 if (NativeContracts.TryGetValue(native.Id, out var value)) return value;
 
                 uint index = engine.PersistingBlock is null ? Ledger.CurrentIndex(engine.Snapshot) : engine.PersistingBlock.Index;
-                NativeContractCacheEntry methods = native.GetAllowedMethods(engine.ProtocolSettings, index);
+                CacheEntry methods = native.GetAllowedMethods(engine.ProtocolSettings, index);
                 NativeContracts[native.Id] = methods;
                 return methods;
             }
@@ -170,7 +170,7 @@ namespace Neo.SmartContract.Native
         /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
         /// <param name="index">Block index</param>
         /// <returns>The <see cref="NativeContractsCache"/>.</returns>
-        private NativeContractsCache.NativeContractCacheEntry GetAllowedMethods(ProtocolSettings settings, uint index)
+        private NativeContractsCache.CacheEntry GetAllowedMethods(ProtocolSettings settings, uint index)
         {
             Dictionary<int, ContractMethodMetadata> methods = new();
 
@@ -189,7 +189,7 @@ namespace Neo.SmartContract.Native
                 script = sb.ToArray();
             }
 
-            return new NativeContractsCache.NativeContractCacheEntry() { Methods = methods, Script = script };
+            return new NativeContractsCache.CacheEntry() { Methods = methods, Script = script };
         }
 
         /// <summary>
@@ -201,7 +201,7 @@ namespace Neo.SmartContract.Native
         internal ContractState GetContractState(ProtocolSettings settings, uint index)
         {
             // Get allowed methods and nef script
-            NativeContractsCache.NativeContractCacheEntry allowedMethods = GetAllowedMethods(settings, index);
+            NativeContractsCache.CacheEntry allowedMethods = GetAllowedMethods(settings, index);
 
             // Compose nef file
             NefFile nef = new()
@@ -337,7 +337,7 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"The native contract of version {version} is not active.");
                 // Get native contracts invocation cache
                 NativeContractsCache nativeContracts = engine.GetState(() => new NativeContractsCache());
-                NativeContractsCache.NativeContractCacheEntry currentAllowedMethods = nativeContracts.GetAllowedMethods(this, engine);
+                NativeContractsCache.CacheEntry currentAllowedMethods = nativeContracts.GetAllowedMethods(this, engine);
                 // Check if the method is allowed
                 ExecutionContext context = engine.CurrentContext;
                 ContractMethodMetadata method = currentAllowedMethods.Methods[context.InstructionPointer];
