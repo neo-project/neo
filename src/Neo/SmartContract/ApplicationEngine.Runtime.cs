@@ -249,6 +249,8 @@ namespace Neo.SmartContract
         {
             if (hash.Equals(CallingScriptHash)) return true;
 
+            if (ScriptContainer is null) return false;
+
             if (ScriptContainer is Transaction tx)
             {
                 Signer[] signers;
