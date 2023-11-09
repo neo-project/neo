@@ -89,6 +89,8 @@ namespace Neo.SmartContract.Native
                     }
 
                     await contract.Initialize(engine, hf);
+                     // Emit native contract notification
+                     engine.SendNotification(Hash, state is null ? "Deploy" : "Update", new VM.Types.Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
                 }
             }
         }
