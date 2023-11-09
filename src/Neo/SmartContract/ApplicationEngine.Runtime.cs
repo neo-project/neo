@@ -249,8 +249,6 @@ namespace Neo.SmartContract
         {
             if (hash.Equals(CallingScriptHash)) return true;
 
-            if (ScriptContainer is null) return false;
-
             if (ScriptContainer is Transaction tx)
             {
                 Signer[] signers;
@@ -272,6 +270,10 @@ namespace Neo.SmartContract
                         return rule.Action == WitnessRuleAction.Allow;
                 }
                 return false;
+            }
+            else
+            {
+                if (ScriptContainer is null) return false;
             }
 
             // Check allow state callflag
