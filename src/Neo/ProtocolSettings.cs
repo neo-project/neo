@@ -232,7 +232,7 @@ namespace Neo
 
                 // If they aren't consecutive, return false.
                 if (nextIndex - currentIndex > 1)
-                    throw new Exception("Hardfork configuration is not continuous.");
+                    throw new ArgumentException("Hardfork configuration is not continuous.");
             }
             // Check that block numbers are not higher in earlier hardforks than in later ones
             for (int i = 0; i < sortedHardforks.Count - 1; i++)
@@ -240,7 +240,7 @@ namespace Neo
                 if (settings.Hardforks[sortedHardforks[i]] > settings.Hardforks[sortedHardforks[i + 1]])
                 {
                     // This means the block number for the current hardfork is greater than the next one, which should not be allowed.
-                    throw new Exception($"The Hardfork configuration for {sortedHardforks[i]} is greater than for {sortedHardforks[i + 1]}");
+                    throw new ArgumentException($"The Hardfork configuration for {sortedHardforks[i]} is greater than for {sortedHardforks[i + 1]}");
                 }
             }
         }
