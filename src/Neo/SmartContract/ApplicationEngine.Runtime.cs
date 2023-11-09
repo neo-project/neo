@@ -1,10 +1,10 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
+// Copyright (C) 2015-2023 The Neo Project.
+//
+// The neo is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -231,11 +231,14 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the account has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
         protected internal bool CheckWitness(byte[] hashOrPubkey)
         {
+            // If we don't have the ScriptContainer, we consider that there are no script hashes for verifying
+            if (ScriptContainer is null) throw new ArgumentException("Invalid ScriptContainer", nameof(ScriptContainer));
+
             UInt160 hash = hashOrPubkey.Length switch
             {
                 20 => new UInt160(hashOrPubkey),
                 33 => Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(hashOrPubkey, ECCurve.Secp256r1)).ToScriptHash(),
-                _ => throw new ArgumentException(null, nameof(hashOrPubkey))
+                _ => throw new ArgumentException("Invalid hashOrPubKey", nameof(hashOrPubkey))
             };
             return CheckWitnessInternal(hash);
         }
@@ -270,11 +273,6 @@ namespace Neo.SmartContract
                         return rule.Action == WitnessRuleAction.Allow;
                 }
                 return false;
-            }
-            else
-            {
-                // If we don't have the ScriptContainer, we consider that there are no script hashes for verifying
-                if (ScriptContainer is null) return false;
             }
 
             // Check allow state callflag
