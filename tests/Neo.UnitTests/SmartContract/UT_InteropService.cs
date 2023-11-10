@@ -301,6 +301,20 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void TestRuntime_CheckWitness_Null_ScriptContainer()
+        {
+            byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
+            KeyPair keyPair = new(privateKey);
+            ECPoint pubkey = keyPair.PublicKey;
+
+            var engine = GetEngine();
+
+            engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeFalse();
+            engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeFalse();
+        }
+
+        [TestMethod]
         public void TestRuntime_Log()
         {
             var engine = GetEngine(true);
