@@ -148,7 +148,7 @@ namespace Neo
             MemoryPoolMaxTransactions = 50_000,
             MaxTraceableBlocks = 2_102_400,
             InitialGasDistribution = 52_000_000_00000000,
-            Hardforks = ImmutableDictionary<Hardfork, uint>.Empty
+            Hardforks = EnsureOmmitedHardforks(new Dictionary<Hardfork, uint>()).ToImmutableDictionary()
         };
 
         /// <summary>
@@ -222,7 +222,7 @@ namespace Neo
             var allHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToList();
             // Check for continuity in configured hardforks
             var sortedHardforks = settings.Hardforks.Keys
-                .OrderBy(h => allHardforks.IndexOf(h))
+                .OrderBy(allHardforks.IndexOf)
                 .ToList();
 
             for (int i = 0; i < sortedHardforks.Count - 1; i++)
@@ -253,28 +253,14 @@ namespace Neo
         /// <returns>True if enabled</returns>
         public bool IsHardforkEnabled(Hardfork hardfork, uint index)
         {
-            // Return true if there's no specific configuration
-            if (Hardforks.Count == 0)
-                return true;
-
-            // If the hardfork isn't specified in the configuration, check if it's a new one.
-            if (!Hardforks.ContainsKey(hardfork))
-            {
-                int currentHardforkIndex = AllHardforks.IndexOf(hardfork);
-                int lastConfiguredHardforkIndex = AllHardforks.IndexOf(Hardforks.Keys.Last());
-
-                // If it's a newer hardfork compared to the ones in the configuration, disable it.
-                if (currentHardforkIndex > lastConfiguredHardforkIndex)
-                    return false;
-            }
-
             if (Hardforks.TryGetValue(hardfork, out uint height))
             {
                 // If the hardfork has a specific height in the configuration, check the block height.
                 return index >= height;
             }
-            // If no specific conditions are met, return true.
-            return true;
+
+            // If the hardfork isn't specified in the configuration, return false.
+            return false;
         }
     }
 }
