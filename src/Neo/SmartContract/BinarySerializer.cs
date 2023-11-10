@@ -8,14 +8,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
-using Neo.VM;
-using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using Neo.IO;
+using Neo.VM;
+using Neo.VM.Types;
 using Array = Neo.VM.Types.Array;
 using Boolean = Neo.VM.Types.Boolean;
 using Buffer = Neo.VM.Types.Buffer;
@@ -55,7 +55,7 @@ namespace Neo.SmartContract
         public static StackItem Deserialize(ReadOnlyMemory<byte> data, ExecutionEngineLimits limits, ReferenceCounter referenceCounter = null)
         {
             MemoryReader reader = new(data);
-            return Deserialize(ref reader, limits with { MaxItemSize = (uint)data.Length }, referenceCounter);
+            return Deserialize(ref reader, (uint)Math.Min(data.Length, limits.MaxItemSize), limits.MaxStackSize, referenceCounter);
         }
 
         /// <summary>
@@ -65,7 +65,20 @@ namespace Neo.SmartContract
         /// <param name="limits">The limits for the deserialization.</param>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(ref MemoryReader reader, ExecutionEngineLimits limits, ReferenceCounter referenceCounter)
+        public static StackItem Deserialize(ref MemoryReader reader, ExecutionEngineLimits limits, ReferenceCounter referenceCounter = null)
+        {
+            return Deserialize(ref reader, limits.MaxItemSize, limits.MaxStackSize, referenceCounter);
+        }
+
+        /// <summary>
+        /// Deserializes a <see cref="StackItem"/> from <see cref="MemoryReader"/>.
+        /// </summary>
+        /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
+        /// <param name="maxSize">The maximum size of the result.</param>
+        /// <param name="maxItems">The max of items to serialize</param>
+        /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
+        /// <returns>The deserialized <see cref="StackItem"/>.</returns>
+        public static StackItem Deserialize(ref MemoryReader reader, uint maxSize, uint maxItems, ReferenceCounter referenceCounter = null)
         {
             Stack<StackItem> deserialized = new();
             int undeserialized = 1;
@@ -84,23 +97,23 @@ namespace Neo.SmartContract
                         deserialized.Push(new BigInteger(reader.ReadVarMemory(Integer.MaxSize).Span));
                         break;
                     case StackItemType.ByteString:
-                        deserialized.Push(reader.ReadVarMemory((int)limits.MaxItemSize));
+                        deserialized.Push(reader.ReadVarMemory((int)maxSize));
                         break;
                     case StackItemType.Buffer:
-                        ReadOnlyMemory<byte> memory = reader.ReadVarMemory((int)limits.MaxItemSize);
+                        ReadOnlyMemory<byte> memory = reader.ReadVarMemory((int)maxSize);
                         deserialized.Push(new Buffer(memory.Span));
                         break;
                     case StackItemType.Array:
                     case StackItemType.Struct:
                         {
-                            int count = (int)reader.ReadVarInt(limits.MaxStackSize);
+                            int count = (int)reader.ReadVarInt(maxItems);
                             deserialized.Push(new ContainerPlaceholder(type, count));
                             undeserialized += count;
                         }
                         break;
                     case StackItemType.Map:
                         {
-                            int count = (int)reader.ReadVarInt(limits.MaxStackSize);
+                            int count = (int)reader.ReadVarInt(maxItems);
                             deserialized.Push(new ContainerPlaceholder(type, count));
                             undeserialized += count * 2;
                         }
@@ -108,7 +121,8 @@ namespace Neo.SmartContract
                     default:
                         throw new FormatException();
                 }
-                if (deserialized.Count > limits.MaxStackSize) throw new FormatException();
+                if (deserialized.Count > maxItems)
+                    throw new FormatException();
             }
             Stack<StackItem> stack_temp = new();
             while (deserialized.Count > 0)
@@ -151,13 +165,25 @@ namespace Neo.SmartContract
         /// Serializes a <see cref="StackItem"/> to byte array.
         /// </summary>
         /// <param name="item">The <see cref="StackItem"/> to be serialized.</param>
-        /// <param name="maxSize">The maximum size of the result.</param>
+        /// <param name="limits">The <see cref="ExecutionEngineLimits"/> used to ensure the limits.</param>
         /// <returns>The serialized byte array.</returns>
-        public static byte[] Serialize(StackItem item, uint maxSize)
+        public static byte[] Serialize(StackItem item, ExecutionEngineLimits limits)
+        {
+            return Serialize(item, limits.MaxItemSize, limits.MaxStackSize);
+        }
+
+        /// <summary>
+        /// Serializes a <see cref="StackItem"/> to byte array.
+        /// </summary>
+        /// <param name="item">The <see cref="StackItem"/> to be serialized.</param>
+        /// <param name="maxSize">The maximum size of the result.</param>
+        /// <param name="maxItems">The max of items to serialize</param>
+        /// <returns>The serialized byte array.</returns>
+        public static byte[] Serialize(StackItem item, long maxSize, long maxItems)
         {
             using MemoryStream ms = new();
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
-            Serialize(writer, item, maxSize);
+            Serialize(writer, item, maxSize, maxItems);
             writer.Flush();
             return ms.ToArray();
         }
@@ -168,13 +194,16 @@ namespace Neo.SmartContract
         /// <param name="writer">The <see cref="BinaryWriter"/> for writing data.</param>
         /// <param name="item">The <see cref="StackItem"/> to be serialized.</param>
         /// <param name="maxSize">The maximum size of the result.</param>
-        public static void Serialize(BinaryWriter writer, StackItem item, uint maxSize)
+        /// <param name="maxItems">The max of items to serialize</param>
+        public static void Serialize(BinaryWriter writer, StackItem item, long maxSize, long maxItems)
         {
             HashSet<CompoundType> serialized = new(ReferenceEqualityComparer.Instance);
             Stack<StackItem> unserialized = new();
             unserialized.Push(item);
             while (unserialized.Count > 0)
             {
+                if (--maxItems < 0)
+                    throw new FormatException();
                 item = unserialized.Pop();
                 writer.Write((byte)item.Type);
                 switch (item)

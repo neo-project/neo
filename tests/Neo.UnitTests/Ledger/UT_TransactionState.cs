@@ -43,7 +43,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestDeserialize()
         {
-            var data = BinarySerializer.Serialize(((IInteroperable)origin).ToStackItem(null), 1024);
+            var data = BinarySerializer.Serialize(((IInteroperable)origin).ToStackItem(null), ExecutionEngineLimits.Default);
             var reader = new MemoryReader(data);
 
             TransactionState dest = new();
@@ -57,7 +57,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestDeserializeTrimmed()
         {
-            var data = BinarySerializer.Serialize(((IInteroperable)originTrimmed).ToStackItem(null), 1024);
+            var data = BinarySerializer.Serialize(((IInteroperable)originTrimmed).ToStackItem(null), ExecutionEngineLimits.Default);
             var reader = new MemoryReader(data);
 
             TransactionState dest = new();

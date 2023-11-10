@@ -10,17 +10,18 @@
 
 #pragma warning disable IDE0051
 
-using Neo.IO;
-using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
-using Neo.SmartContract.Iterators;
-using Neo.SmartContract.Manifest;
-using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Neo.IO;
+using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
+using Neo.SmartContract.Iterators;
+using Neo.SmartContract.Manifest;
+using Neo.VM;
+using Neo.VM.Types;
 
 namespace Neo.SmartContract.Native
 {
@@ -249,7 +250,7 @@ namespace Neo.SmartContract.Native
                 Manifest = parsedManifest
             };
 
-            if (!contract.Manifest.IsValid(hash)) throw new InvalidOperationException($"Invalid Manifest Hash: {hash}");
+            if (!contract.Manifest.IsValid(engine.Limits, hash)) throw new InvalidOperationException($"Invalid Manifest: {hash}");
 
             engine.Snapshot.Add(key, new StorageItem(contract));
             engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(hash.ToArray()));
@@ -291,8 +292,8 @@ namespace Neo.SmartContract.Native
                 ContractManifest manifest_new = ContractManifest.Parse(manifest);
                 if (manifest_new.Name != contract.Manifest.Name)
                     throw new InvalidOperationException("The name of the contract can't be changed.");
-                if (!manifest_new.IsValid(contract.Hash))
-                    throw new InvalidOperationException($"Invalid Manifest Hash: {contract.Hash}");
+                if (!manifest_new.IsValid(engine.Limits, contract.Hash))
+                    throw new InvalidOperationException($"Invalid Manifest: {contract.Hash}");
                 contract.Manifest = manifest_new;
             }
             Helper.Check(new VM.Script(contract.Nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), contract.Manifest.Abi);

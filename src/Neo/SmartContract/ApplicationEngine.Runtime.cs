@@ -362,7 +362,7 @@ namespace Neo.SmartContract
             }
             using MemoryStream ms = new(MaxNotificationSize);
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
-            BinarySerializer.Serialize(writer, state, MaxNotificationSize);
+            BinarySerializer.Serialize(writer, state, MaxNotificationSize, Limits.MaxStackSize);
             SendNotification(CurrentScriptHash, name, state);
         }
 
@@ -373,7 +373,7 @@ namespace Neo.SmartContract
                 throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
             using MemoryStream ms = new(MaxNotificationSize);
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
-            BinarySerializer.Serialize(writer, state, MaxNotificationSize);
+            BinarySerializer.Serialize(writer, state, MaxNotificationSize, Limits.MaxStackSize);
             SendNotification(CurrentScriptHash, Utility.StrictUTF8.GetString(eventName), state);
         }
 
