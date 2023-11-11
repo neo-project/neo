@@ -311,7 +311,6 @@ namespace Neo.UnitTests.SmartContract
             var engine = GetEngine();
 
             engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeFalse();
-            engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeFalse();
         }
 
         [TestMethod]
