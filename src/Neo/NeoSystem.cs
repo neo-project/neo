@@ -287,7 +287,7 @@ namespace Neo
         /// <returns><see langword="true"/> if the transaction conflicts with on-chain transaction; otherwise, <see langword="false"/>.</returns>
         public bool ContainsConflictHash(UInt256 hash, IEnumerable<UInt160> signers)
         {
-            return NativeContract.Ledger.ContainsConflictHash(StoreView, hash, signers);
+            return NativeContract.Ledger.ContainsConflictHash(StoreView, hash, signers, Settings.MaxTraceableBlocks);
         }
     }
 }

@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.SmartContract.Native;
 using Neo.Wallets;
 
 namespace Neo.UnitTests
@@ -40,12 +39,6 @@ namespace Neo.UnitTests
         public void TestGetSeedList()
         {
             ProtocolSettings.Default.SeedList.Should().BeEquivalentTo(new string[] { "seed1.neo.org:10333", "seed2.neo.org:10333", "seed3.neo.org:10333", "seed4.neo.org:10333", "seed5.neo.org:10333", });
-        }
-
-        [TestMethod]
-        public void TestNativeUpdateHistory()
-        {
-            ProtocolSettings.Default.NativeUpdateHistory.Count.Should().Be(NativeContract.Contracts.Count);
         }
     }
 }
