@@ -44,6 +44,8 @@ namespace Neo
             StrictUTF8.EncoderFallback = EncoderFallback.ExceptionFallback;
         }
 
+        public static object ConsoleLock { get; } = new();
+
         /// <summary>
         /// Writes a log.
         /// </summary>
@@ -52,7 +54,8 @@ namespace Neo
         /// <param name="message">The message of the log.</param>
         public static void Log(string source, LogLevel level, object message)
         {
-            Logging?.Invoke(source, level, message);
+            lock (ConsoleLock)
+                Logging?.Invoke(source, level, message);
         }
     }
 }
