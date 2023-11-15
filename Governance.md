@@ -79,6 +79,7 @@ This means that we expect that:
 - The team collaborates with other working groups.
   - Assist the design team in creating visuals for abstract elements.
   - Help the content team to provide accurate content.
+  - Offer integration support to new features
 - The team uses dApps built on Neo
 - The team creates mechanisms to deter harmful behaviors
   - This should be seen as a governance tool, not a motivation to work
