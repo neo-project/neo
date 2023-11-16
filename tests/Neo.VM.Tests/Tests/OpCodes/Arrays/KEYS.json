@@ -1,0 +1,63 @@
+{
+  "category": "Arrays",
+  "name": "KEYS",
+  "tests": [
+    {
+      "name": "Keys in map",
+      "script": [
+        "NEWMAP",
+        "DUP",
+        "DUP",
+        "PUSH0",
+        "PUSH0",
+        "SETITEM",
+        "PUSH1",
+        "PUSH1",
+        "SETITEM",
+        "KEYS"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "array",
+                "value": [
+                  {
+                    "type": "Integer",
+                    "value": 0
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 1
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invalid StackItem [Integer!=Map]",
+      "script": [
+        "PUSH0",
+        "KEYS"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    }
+  ]
+}

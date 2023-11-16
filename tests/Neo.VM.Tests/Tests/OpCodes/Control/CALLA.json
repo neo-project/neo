@@ -1,0 +1,158 @@
+{
+  "category": "Control",
+  "name": "CALLA",
+  "tests": [
+    {
+      "name": "Wrong type",
+      "script": [
+        "PUSH2",
+        "CALLA"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 1,
+                "nextInstruction": "CALLA",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 2
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test",
+      "script": [
+        "PUSHA",
+        "0x07000000",
+        "CALLA",
+        "RET",
+        "PUSH0",
+        "RET"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 5,
+                "nextInstruction": "CALLA",
+                "evaluationStack": [
+                  {
+                    "type": "pointer",
+                    "value": 7
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 7,
+                "nextInstruction": "PUSH0"
+              },
+              {
+                "instructionPointer": 6,
+                "nextInstruction": "RET"
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 8,
+                "nextInstruction": "RET",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "instructionPointer": 6,
+                "nextInstruction": "RET",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 6,
+                "nextInstruction": "RET",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "integer",
+                "value": 0
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

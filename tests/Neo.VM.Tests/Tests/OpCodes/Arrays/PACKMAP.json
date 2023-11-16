@@ -1,0 +1,127 @@
+{
+  "category": "Arrays",
+  "name": "PACKMAP",
+  "tests": [
+    {
+      "name": "Real test",
+      "script": [
+        "PUSH5",
+        "PUSH6",
+        "PUSH1",
+        "PACKMAP"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Map",
+                "value": {
+                  "0x06": {
+                    "type": "Integer",
+                    "value": "5"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Not enough size",
+      "script": [
+        "PUSH5",
+        "PUSH1",
+        "PACKMAP"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wrong type [Map]",
+      "script": [
+        "PUSH1",
+        "PUSH1",
+        "NEWMAP",
+        "PACKMAP"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wrong type [Array]",
+      "script": [
+        "PUSH1",
+        "PUSH1",
+        "NEWARRAY",
+        "PACKMAP"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wrong type [Struct]",
+      "script": [
+        "PUSH1",
+        "PUSH1",
+        "NEWSTRUCT",
+        "PACKMAP"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Without items",
+      "script": [
+        "PACKMAP"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    }
+  ]
+}

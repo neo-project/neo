@@ -1,0 +1,143 @@
+{
+  "category": "Control",
+  "name": "SYSCALL",
+  "tests": [
+    {
+      "name": "Syscall that does not exist",
+      "script": [
+        "SYSCALL",
+        "0x00"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wrong script",
+      "script": [
+        "SYSCALL",
+        "0x2a537973",
+        "DEPTH",
+        "CALL_L",
+        "0x6d2e0000",
+        "PUSHDATA1",
+        "0x457865637574696f6e456e67696e652e476574536372697074436f6e7461696e6572"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test [IMessageProvider]",
+      "script": [
+        "SYSCALL",
+        "0x77777777"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 5,
+                "nextInstruction": "RET",
+                "evaluationStack": [
+                  {
+                    "type": "interop",
+                    "value": "Object"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "interop",
+                "value": "Object"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wrong script",
+      "script": [
+        "SYSCALL",
+        "0xfdffff00"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wrong script",
+      "script": [
+        "SYSCALL",
+        "0xfeffffff",
+        "0xff",
+        "PUSH0"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wrong script",
+      "script": [
+        "SYSCALL",
+        "0xffffffff",
+        "0xffffffffff",
+        "PUSH0"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    }
+  ]
+}

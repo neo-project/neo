@@ -1,0 +1,74 @@
+{
+  "category": "Control",
+  "name": "JMP",
+  "tests": [
+    {
+      "name": "Out of range [<0]",
+      "script": [
+        "JMP",
+        "0xff",
+        "RET"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Out of range [>length]",
+      "script": [
+        "JMP",
+        "0x7f",
+        "RET"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test",
+      "script": [
+        "JMP",
+        "0x02",
+        "RET"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 2,
+                "nextInstruction": "RET"
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT"
+          }
+        }
+      ]
+    }
+  ]
+}
