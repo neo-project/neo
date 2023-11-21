@@ -10,8 +10,8 @@ namespace Neo.UnitTests
 
         public static ProtocolSettings Default = new()
         {
-            Network = 0x334F454Eu,
-            AddressVersion = 0x35,
+            Network = ProtocolSettings.Default.Network,
+            AddressVersion = ProtocolSettings.Default.AddressVersion,
             StandbyCommittee = new[]
             {
                 //Validators
@@ -38,7 +38,7 @@ namespace Neo.UnitTests
                 ECPoint.Parse("03cdcea66032b82f5c30450e381e5295cae85c5e6943af716cc6b646352a6067dc", ECCurve.Secp256r1),
                 ECPoint.Parse("02cd5a5547119e24feaa7c2a0f37b8c9366216bab7054de0065c9be42084003c8a", ECCurve.Secp256r1)
             },
-            ValidatorsCount = 7,
+            ValidatorsCount = ProtocolSettings.Default.ValidatorsCount,
             SeedList = new[]
             {
                 "seed1.neo.org:10333",
@@ -47,12 +47,12 @@ namespace Neo.UnitTests
                 "seed4.neo.org:10333",
                 "seed5.neo.org:10333"
             },
-            MillisecondsPerBlock = 15000,
-            MaxTransactionsPerBlock = 512,
-            MemoryPoolMaxTransactions = 50_000,
-            MaxTraceableBlocks = 2_102_400,
-            InitialGasDistribution = 52_000_000_00000000,
-            Hardforks = ImmutableDictionary<Hardfork, uint>.Empty
+            MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock,
+            MaxTransactionsPerBlock = ProtocolSettings.Default.MaxTransactionsPerBlock,
+            MemoryPoolMaxTransactions = ProtocolSettings.Default.MemoryPoolMaxTransactions,
+            MaxTraceableBlocks = ProtocolSettings.Default.MaxTraceableBlocks,
+            InitialGasDistribution = ProtocolSettings.Default.InitialGasDistribution,
+            Hardforks = ProtocolSettings.Default.Hardforks
         };
 
     }
