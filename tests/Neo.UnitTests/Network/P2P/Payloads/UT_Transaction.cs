@@ -145,10 +145,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Sign
 
-            var wrongData = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Network + 1);
+            var wrongData = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network + 1);
             Assert.IsFalse(walletA.Sign(wrongData));
 
-            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Network);
+            var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
             Assert.IsTrue(walletA.Sign(data));
             Assert.IsTrue(walletB.Sign(data));
             Assert.IsTrue(data.Completed);
@@ -157,7 +157,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Fast check
 
-            Assert.IsTrue(tx.VerifyWitnesses(ProtocolSettings.Default, snapshot, tx.NetworkFee));
+            Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshot, tx.NetworkFee));
 
             // Check
 
@@ -219,7 +219,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Sign
             // ----
 
-            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Network);
+            var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
             // 'from' is always required as witness
             // if not included on cosigner with a scope, its scope should be considered 'CalledByEntry'
             data.ScriptHashes.Count.Should().Be(1);
@@ -233,7 +233,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Fast check
 
-            Assert.IsTrue(tx.VerifyWitnesses(ProtocolSettings.Default, snapshot, tx.NetworkFee));
+            Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshot, tx.NetworkFee));
 
             // Check
 
@@ -330,7 +330,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Sign
             // ----
 
-            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Network);
+            var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
             bool signed = wallet.Sign(data);
             Assert.IsTrue(signed);
 
@@ -339,7 +339,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             tx.Witnesses.Length.Should().Be(1);
 
             // Fast check
-            Assert.IsTrue(tx.VerifyWitnesses(ProtocolSettings.Default, snapshot, tx.NetworkFee));
+            Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshot, tx.NetworkFee));
 
             // Check
             long verificationGas = 0;
@@ -410,7 +410,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Sign
             // ----
 
-            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Network);
+            var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
             bool signed = wallet.Sign(data);
             Assert.IsTrue(signed);
 
@@ -419,7 +419,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             tx.Witnesses.Length.Should().Be(1);
 
             // Fast check
-            Assert.IsTrue(tx.VerifyWitnesses(ProtocolSettings.Default, snapshot, tx.NetworkFee));
+            Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshot, tx.NetworkFee));
 
             // Check
             long verificationGas = 0;
@@ -493,7 +493,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Sign
             // ----
 
-            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Network);
+            var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
             bool signed = wallet.Sign(data);
             Assert.IsTrue(signed);
 
@@ -502,7 +502,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             tx.Witnesses.Length.Should().Be(1);
 
             // Fast check
-            Assert.IsTrue(tx.VerifyWitnesses(ProtocolSettings.Default, snapshot, tx.NetworkFee));
+            Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshot, tx.NetworkFee));
 
             // Check
             long verificationGas = 0;
@@ -618,7 +618,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Sign
             // ----
 
-            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Network);
+            var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
             bool signed = wallet.Sign(data);
             Assert.IsTrue(signed);
 
@@ -632,7 +632,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             tx.Signers.Length.Should().Be(1);
 
             // Fast check
-            Assert.IsTrue(tx.VerifyWitnesses(ProtocolSettings.Default, snapshot, tx.NetworkFee));
+            Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshot, tx.NetworkFee));
 
             // Check
             long verificationGas = 0;
@@ -758,7 +758,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Version = 0x00,
                 Nonce = 0x01020304,
-                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = Array.Empty<TransactionAttribute>(),
@@ -774,7 +774,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
             UInt160[] hashes = txSimple.GetScriptHashesForVerifying(snapshot);
             Assert.AreEqual(1, hashes.Length);
-            Assert.AreNotEqual(VerifyResult.Succeed, txSimple.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext(), new List<Transaction>()));
+            Assert.AreNotEqual(VerifyResult.Succeed, txSimple.VerifyStateDependent(TestProtocolSettings.Default, snapshot, new TransactionVerificationContext(), new List<Transaction>()));
         }
 
         [TestMethod]
@@ -785,7 +785,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Version = 0x00,
                 Nonce = 0x01020304,
-                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
@@ -802,7 +802,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 "04030201" + // nonce
                 "00e1f50500000000" + // system fee (1 GAS)
                 "0100000000000000" + // network fee (1 satoshi)
-                "04030201" + // timelimit 
+                "04030201" + // timelimit
                 "01000000000000000000000000000000000000000000" + // empty signer
                 "00" + // no attributes
                 "0111" + // push1 script
@@ -842,7 +842,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Version = 0x00,
                 Nonce = 0x01020304,
-                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = Array.Empty<TransactionAttribute>(),
@@ -904,7 +904,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Version = 0x00,
                 Nonce = 0x01020304,
-                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = Array.Empty<TransactionAttribute>(),
@@ -937,7 +937,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Version = 0x00,
                 Nonce = 0x01020304,
-                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS 
+                SystemFee = (long)BigInteger.Pow(10, 8), // 1 GAS
                 NetworkFee = 0x0000000000000001,
                 ValidUntilBlock = 0x01020304,
                 Attributes = Array.Empty<TransactionAttribute>(),
@@ -1012,7 +1012,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             // Sign
             // ----
 
-            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Network);
+            var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
             bool signed = wallet.Sign(data);
             Assert.IsTrue(signed);
 

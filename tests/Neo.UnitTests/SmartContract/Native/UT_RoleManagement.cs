@@ -30,7 +30,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot1 = _snapshot.CreateSnapshot();
             UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
-            ECPoint[] validators = NativeContract.NEO.ComputeNextBlockValidators(snapshot1, ProtocolSettings.Default);
+            ECPoint[] validators = NativeContract.NEO.ComputeNextBlockValidators(snapshot1, TestProtocolSettings.Default);
             List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
             EventHandler<NotifyEventArgs> ev = (o, e) => notifications.Add(e);
             ApplicationEngine.Notify += ev;

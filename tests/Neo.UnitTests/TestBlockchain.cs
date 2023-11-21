@@ -1,5 +1,7 @@
 using Neo.Persistence;
 using System;
+using System.Collections.Immutable;
+using Neo.Cryptography.ECC;
 
 namespace Neo.UnitTests
 {
@@ -10,8 +12,9 @@ namespace Neo.UnitTests
 
         static TestBlockchain()
         {
+
             Console.WriteLine("initialize NeoSystem");
-            TheNeoSystem = new NeoSystem(ProtocolSettings.Default, null, null);
+            TheNeoSystem = new NeoSystem(TestProtocolSettings.Default, null, null);
         }
 
         internal static DataCache GetTestSnapshot()

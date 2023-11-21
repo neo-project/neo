@@ -53,7 +53,7 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestAESEncryptAndDecrypt()
         {
-            NEP6Wallet wallet = new NEP6Wallet("", "1", ProtocolSettings.Default);
+            NEP6Wallet wallet = new NEP6Wallet("", "1", TestProtocolSettings.Default);
             wallet.CreateAccount();
             WalletAccount account = wallet.GetAccounts().ToArray()[0];
             KeyPair key = account.GetKey();
