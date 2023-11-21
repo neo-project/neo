@@ -7,7 +7,6 @@ namespace Neo.UnitTests
 {
     public static class TestProtocolSettings
     {
-
         public static ProtocolSettings Default = new()
         {
             Network = 0x334F454Eu,
@@ -54,7 +53,5 @@ namespace Neo.UnitTests
             InitialGasDistribution = 52_000_000_00000000,
             Hardforks = ImmutableDictionary<Hardfork, uint>.Empty
         };
-
     }
-
 }
