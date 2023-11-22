@@ -1,7 +1,5 @@
-using Neo.Persistence;
 using System;
-using System.Collections.Immutable;
-using Neo.Cryptography.ECC;
+using Neo.Persistence;
 
 namespace Neo.UnitTests
 {

@@ -117,7 +117,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestDefaultNetworkValue()
         {
-            TestProtocolSettings.Default.Network.Should().Be(ProtocolSettings.Default.Network);
+            ProtocolSettings.Default.Network.Should().Be(0);
         }
 
         [TestMethod]
@@ -129,7 +129,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestDefaultValidatorsCountValue()
         {
-            TestProtocolSettings.Default.ValidatorsCount.Should().Be(ProtocolSettings.Default.ValidatorsCount);
+            ProtocolSettings.Default.ValidatorsCount.Should().Be(0);
         }
 
         [TestMethod]

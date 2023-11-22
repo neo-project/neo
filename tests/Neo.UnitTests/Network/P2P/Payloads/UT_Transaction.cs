@@ -1021,7 +1021,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             tx.Witnesses.Length.Should().Be(1);
 
             // Fast check
-            Assert.IsTrue(tx.VerifyWitnesses(ProtocolSettings.Default, snapshot, tx.NetworkFee));
+            Assert.IsTrue(tx.VerifyWitnesses(TestProtocolSettings.Default, snapshot, tx.NetworkFee));
 
             // Check
             long verificationGas = 0;
@@ -1117,9 +1117,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     }
                 }
             };
-            tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.OverSize);
+            tx.VerifyStateIndependent(TestProtocolSettings.Default).Should().Be(VerifyResult.OverSize);
             tx.Script = Array.Empty<byte>();
-            tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Succeed);
+            tx.VerifyStateIndependent(TestProtocolSettings.Default).Should().Be(VerifyResult.Succeed);
 
             var walletA = TestUtils.GenerateTestWallet("123");
             var walletB = TestUtils.GenerateTestWallet("123");
@@ -1161,13 +1161,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Sign
 
-            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Network);
+            var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
             Assert.IsTrue(walletA.Sign(data));
             Assert.IsTrue(walletB.Sign(data));
             Assert.IsTrue(data.Completed);
 
             tx.Witnesses = data.GetWitnesses();
-            tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Succeed);
+            tx.VerifyStateIndependent(TestProtocolSettings.Default).Should().Be(VerifyResult.Succeed);
 
             // Different hash
 
@@ -1176,7 +1176,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 VerificationScript = walletB.GetAccounts().First().Contract.Script,
                 InvocationScript = tx.Witnesses[0].InvocationScript.ToArray()
             };
-            tx.VerifyStateIndependent(ProtocolSettings.Default).Should().Be(VerifyResult.Invalid);
+            tx.VerifyStateIndependent(TestProtocolSettings.Default).Should().Be(VerifyResult.Invalid);
         }
 
         [TestMethod]
@@ -1250,13 +1250,13 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             // Sign
 
-            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Network);
+            var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
             Assert.IsTrue(walletA.Sign(data));
             Assert.IsTrue(walletB.Sign(data));
             Assert.IsTrue(data.Completed);
 
             tx.Witnesses = data.GetWitnesses();
-            tx.VerifyStateDependent(ProtocolSettings.Default, snapshot, new TransactionVerificationContext(), new List<Transaction>()).Should().Be(VerifyResult.Succeed);
+            tx.VerifyStateDependent(TestProtocolSettings.Default, snapshot, new TransactionVerificationContext(), new List<Transaction>()).Should().Be(VerifyResult.Succeed);
         }
 
         [TestMethod]
