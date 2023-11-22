@@ -195,8 +195,6 @@ namespace Neo.UnitTests
 
             // If StandbyValidators is a derived property, comparing it as well
             TestProtocolSettings.Default.StandbyValidators.Should().BeEquivalentTo(loadedSetting.StandbyValidators);
-
         }
-
     }
 }
