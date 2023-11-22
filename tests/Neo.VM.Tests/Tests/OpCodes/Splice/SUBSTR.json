@@ -1,0 +1,478 @@
+{
+  "category": "Splice",
+  "name": "SUBSTR",
+  "tests": [
+    {
+      "name": "Without 3 items",
+      "script": [
+        "PUSH2",
+        "PUSH3",
+        "SUBSTR"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 2,
+                "nextInstruction": "SUBSTR",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 3
+                  },
+                  {
+                    "type": "integer",
+                    "value": 2
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "With negative count",
+      "script": [
+        "PUSH0",
+        "PUSH0",
+        "PUSHM1",
+        "SUBSTR"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 3,
+                "nextInstruction": "SUBSTR",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": -1
+                  },
+                  {
+                    "type": "integer",
+                    "value": 0
+                  },
+                  {
+                    "type": "integer",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "With map as string",
+      "script": [
+        "NEWMAP",
+        "PUSH0",
+        "PUSH0",
+        "SUBSTR"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 3,
+                "nextInstruction": "SUBSTR",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 0
+                  },
+                  {
+                    "type": "integer",
+                    "value": 0
+                  },
+                  {
+                    "type": "map",
+                    "value": {}
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "With map as count",
+      "script": [
+        "PUSH0",
+        "PUSH0",
+        "NEWMAP",
+        "SUBSTR"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 3,
+                "nextInstruction": "SUBSTR",
+                "evaluationStack": [
+                  {
+                    "type": "map",
+                    "value": {}
+                  },
+                  {
+                    "type": "integer",
+                    "value": 0
+                  },
+                  {
+                    "type": "integer",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "With map as index",
+      "script": [
+        "PUSH0",
+        "NEWMAP",
+        "PUSH0",
+        "SUBSTR"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 3,
+                "nextInstruction": "SUBSTR",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 0
+                  },
+                  {
+                    "type": "map",
+                    "value": {}
+                  },
+                  {
+                    "type": "integer",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "With negative index",
+      "script": [
+        "PUSH0",
+        "PUSHM1",
+        "PUSH0",
+        "SUBSTR"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 3,
+                "nextInstruction": "SUBSTR",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 0
+                  },
+                  {
+                    "type": "integer",
+                    "value": -1
+                  },
+                  {
+                    "type": "integer",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Overflow string index",
+      "script": [
+        "PUSHDATA1",
+        "0x02",
+        "0x0001",
+        "PUSH9",
+        "PUSH2",
+        "SUBSTR"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 6,
+                "nextInstruction": "SUBSTR",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 2
+                  },
+                  {
+                    "type": "integer",
+                    "value": 9
+                  },
+                  {
+                    "type": "ByteString",
+                    "value": "0x0001"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Overflow string count",
+      "script": [
+        "PUSHDATA1",
+        "0x0a",
+        "0x00010203040506070809",
+        "PUSH2",
+        "PUSH9",
+        "SUBSTR"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 14,
+                "nextInstruction": "SUBSTR",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 9
+                  },
+                  {
+                    "type": "integer",
+                    "value": 2
+                  },
+                  {
+                    "type": "ByteString",
+                    "value": "0x00010203040506070809"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test",
+      "script": [
+        "PUSHDATA1",
+        "0x0a",
+        "0x00010203040506070809",
+        "PUSH2",
+        "PUSH1",
+        "SUBSTR"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 14,
+                "nextInstruction": "SUBSTR",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 1
+                  },
+                  {
+                    "type": "integer",
+                    "value": 2
+                  },
+                  {
+                    "type": "ByteString",
+                    "value": "0x00010203040506070809"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Buffer",
+                "value": "0x02"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Integer overflow Test",
+      "script": [
+        "PUSHDATA1",
+        "0xff",
+        "0x414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141",
+        "PUSHDATA1",
+        "0x04",
+        "0xfd000000",
+        "PUSHDATA1",
+        "0x04",
+        "0x03ffff7f",
+        "SUBSTR"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "category": "Stack",
+  "name": "REVERSE3",
+  "tests": [
+    {
+      "name": "Without push",
+      "script": [
+        "REVERSE3"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "With push",
+      "script": [
+        "PUSH1",
+        "PUSH2",
+        "PUSH3",
+        "REVERSE3"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 3,
+                "nextInstruction": "REVERSE3",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 3
+                  },
+                  {
+                    "type": "integer",
+                    "value": 2
+                  },
+                  {
+                    "type": "integer",
+                    "value": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "integer",
+                "value": 1
+              },
+              {
+                "type": "integer",
+                "value": 2
+              },
+              {
+                "type": "integer",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

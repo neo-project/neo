@@ -1,0 +1,28 @@
+{
+  "category": "Arrays",
+  "name": "NEWARRAY0",
+  "tests": [
+    {
+      "name": "Real test",
+      "script": [
+        "NEWARRAY0"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Array",
+                "value": []
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

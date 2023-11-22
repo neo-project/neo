@@ -1,0 +1,1226 @@
+{
+  "category": "Arrays",
+  "name": "SETITEM",
+  "tests": [
+    {
+      "name": "Map in key",
+      "script": [
+        "PUSH1",
+        "NEWMAP",
+        "PUSH0",
+        "SETITEM"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 3,
+                "nextInstruction": "SETITEM",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 0
+                  },
+                  {
+                    "type": "map",
+                    "value": {}
+                  },
+                  {
+                    "type": "integer",
+                    "value": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Without array",
+      "script": [
+        "PUSH0",
+        "PUSH0",
+        "PUSH0",
+        "SETITEM"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 3,
+                "nextInstruction": "SETITEM",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 0
+                  },
+                  {
+                    "type": "integer",
+                    "value": 0
+                  },
+                  {
+                    "type": "integer",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Without push",
+      "script": [
+        "SETITEM"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Out of bounds [Array]",
+      "script": [
+        "PUSH1",
+        "NEWARRAY",
+        "PUSH1",
+        "PUSH5",
+        "SETITEM"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 4,
+                "nextInstruction": "SETITEM",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 5
+                  },
+                  {
+                    "type": "integer",
+                    "value": 1
+                  },
+                  {
+                    "type": "array",
+                    "value": [
+                      {
+                        "type": "Null"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Out of bounds [Struct]",
+      "script": [
+        "PUSH1",
+        "NEWSTRUCT",
+        "PUSH1",
+        "PUSH5",
+        "SETITEM"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 4,
+                "nextInstruction": "SETITEM",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 5
+                  },
+                  {
+                    "type": "integer",
+                    "value": 1
+                  },
+                  {
+                    "type": "struct",
+                    "value": [
+                      {
+                        "type": "Null"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test [Map]",
+      "script": [
+        "INITSSLOT",
+        "0x01",
+        "NEWMAP",
+        "DUP",
+        "STSFLD0",
+        "PUSH1",
+        "PUSH2",
+        "SETITEM",
+        "LDSFLD0",
+        "PUSH3",
+        "PUSH4",
+        "SETITEM",
+        "LDSFLD0",
+        "PUSH1",
+        "PUSH2",
+        "SETITEM",
+        "LDSFLD0",
+        "RET"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 5,
+                "nextInstruction": "PUSH1",
+                "evaluationStack": [
+                  {
+                    "type": "map",
+                    "value": {}
+                  }
+                ],
+                "staticFields": [
+                  {
+                    "type": "map",
+                    "value": {}
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 7,
+                "nextInstruction": "SETITEM",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 2
+                  },
+                  {
+                    "type": "integer",
+                    "value": 1
+                  },
+                  {
+                    "type": "map",
+                    "value": {}
+                  }
+                ],
+                "staticFields": [
+                  {
+                    "type": "map",
+                    "value": {}
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 8,
+                "nextInstruction": "LDSFLD0",
+                "staticFields": [
+                  {
+                    "type": "map",
+                    "value": {
+                      "0x01": {
+                        "type": "Integer",
+                        "value": 2
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 9,
+                "nextInstruction": "PUSH3",
+                "evaluationStack": [
+                  {
+                    "type": "map",
+                    "value": {
+                      "0x01": {
+                        "type": "Integer",
+                        "value": 2
+                      }
+                    }
+                  }
+                ],
+                "staticFields": [
+                  {
+                    "type": "map",
+                    "value": {
+                      "0x01": {
+                        "type": "Integer",
+                        "value": 2
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 13,
+                "nextInstruction": "PUSH1",
+                "evaluationStack": [
+                  {
+                    "type": "map",
+                    "value": {
+                      "0x01": {
+                        "type": "Integer",
+                        "value": 2
+                      },
+                      "0x03": {
+                        "type": "Integer",
+                        "value": 4
+                      }
+                    }
+                  }
+                ],
+                "staticFields": [
+                  {
+                    "type": "map",
+                    "value": {
+                      "0x01": {
+                        "type": "Integer",
+                        "value": 2
+                      },
+                      "0x03": {
+                        "type": "Integer",
+                        "value": 4
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "map",
+                "value": {
+                  "0x01": {
+                    "type": "Integer",
+                    "value": 2
+                  },
+                  "0x03": {
+                    "type": "Integer",
+                    "value": 4
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test [Array]",
+      "script": [
+        "PUSH1",
+        "NEWARRAY",
+        "DUP",
+        "PUSH0",
+        "PUSH5",
+        "SETITEM"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 5,
+                "nextInstruction": "SETITEM",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 5
+                  },
+                  {
+                    "type": "integer",
+                    "value": 0
+                  },
+                  {
+                    "type": "array",
+                    "value": [
+                      {
+                        "type": "Null"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "array",
+                    "value": [
+                      {
+                        "type": "Null"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 6,
+                "nextInstruction": "RET",
+                "evaluationStack": [
+                  {
+                    "type": "array",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 5
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "array",
+                "value": [
+                  {
+                    "type": "Integer",
+                    "value": 5
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test [Struct]",
+      "script": [
+        "PUSH1",
+        "NEWSTRUCT",
+        "DUP",
+        "PUSH0",
+        "PUSH5",
+        "SETITEM"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 5,
+                "nextInstruction": "SETITEM",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 5
+                  },
+                  {
+                    "type": "integer",
+                    "value": 0
+                  },
+                  {
+                    "type": "struct",
+                    "value": [
+                      {
+                        "type": "Null"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "struct",
+                    "value": [
+                      {
+                        "type": "Null"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 6,
+                "nextInstruction": "RET",
+                "evaluationStack": [
+                  {
+                    "type": "struct",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 5
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "struct",
+                "value": [
+                  {
+                    "type": "Integer",
+                    "value": 5
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clone test [Array]",
+      "script": [
+        "INITSSLOT",
+        "0x01",
+        "PUSH1",
+        "NEWARRAY",
+        "DUP",
+        "PUSH0",
+        "PUSH5",
+        "SETITEM",
+        "STSFLD0",
+        "LDSFLD0",
+        "DUP",
+        "PUSH0",
+        "PUSH4",
+        "SETITEM",
+        "LDSFLD0"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 5,
+                "nextInstruction": "PUSH0",
+                "evaluationStack": [
+                  {
+                    "type": "array",
+                    "value": [
+                      {
+                        "type": "Null"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "array",
+                    "value": [
+                      {
+                        "type": "Null"
+                      }
+                    ]
+                  }
+                ],
+                "staticFields": [
+                  {
+                    "type": "Null"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 8,
+                "nextInstruction": "STSFLD0",
+                "evaluationStack": [
+                  {
+                    "type": "array",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 5
+                      }
+                    ]
+                  }
+                ],
+                "staticFields": [
+                  {
+                    "type": "Null"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 11,
+                "nextInstruction": "PUSH0",
+                "evaluationStack": [
+                  {
+                    "type": "array",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 5
+                      }
+                    ]
+                  },
+                  {
+                    "type": "array",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 5
+                      }
+                    ]
+                  }
+                ],
+                "staticFields": [
+                  {
+                    "type": "array",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 5
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 14,
+                "nextInstruction": "LDSFLD0",
+                "evaluationStack": [
+                  {
+                    "type": "array",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 4
+                      }
+                    ]
+                  }
+                ],
+                "staticFields": [
+                  {
+                    "type": "array",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 4
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 15,
+                "nextInstruction": "RET",
+                "evaluationStack": [
+                  {
+                    "type": "array",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 4
+                      }
+                    ]
+                  },
+                  {
+                    "type": "array",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 4
+                      }
+                    ]
+                  }
+                ],
+                "staticFields": [
+                  {
+                    "type": "array",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 4
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "array",
+                "value": [
+                  {
+                    "type": "Integer",
+                    "value": 4
+                  }
+                ]
+              },
+              {
+                "type": "array",
+                "value": [
+                  {
+                    "type": "Integer",
+                    "value": 4
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clone test [Struct]",
+      "script": [
+        "INITSSLOT",
+        "0x01",
+        "PUSH1",
+        "NEWSTRUCT",
+        "DUP",
+        "PUSH0",
+        "PUSH5",
+        "SETITEM",
+        "STSFLD0",
+        "LDSFLD0",
+        "DUP",
+        "PUSH0",
+        "PUSH4",
+        "SETITEM",
+        "LDSFLD0"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 5,
+                "nextInstruction": "PUSH0",
+                "evaluationStack": [
+                  {
+                    "type": "struct",
+                    "value": [
+                      {
+                        "type": "Null"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "struct",
+                    "value": [
+                      {
+                        "type": "Null"
+                      }
+                    ]
+                  }
+                ],
+                "staticFields": [
+                  {
+                    "type": "Null"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 8,
+                "nextInstruction": "STSFLD0",
+                "evaluationStack": [
+                  {
+                    "type": "struct",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 5
+                      }
+                    ]
+                  }
+                ],
+                "staticFields": [
+                  {
+                    "type": "Null"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 11,
+                "nextInstruction": "PUSH0",
+                "evaluationStack": [
+                  {
+                    "type": "struct",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 5
+                      }
+                    ]
+                  },
+                  {
+                    "type": "struct",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 5
+                      }
+                    ]
+                  }
+                ],
+                "staticFields": [
+                  {
+                    "type": "struct",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 5
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 14,
+                "nextInstruction": "LDSFLD0",
+                "evaluationStack": [
+                  {
+                    "type": "struct",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 4
+                      }
+                    ]
+                  }
+                ],
+                "staticFields": [
+                  {
+                    "type": "struct",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 4
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 15,
+                "nextInstruction": "RET",
+                "evaluationStack": [
+                  {
+                    "type": "struct",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 4
+                      }
+                    ]
+                  },
+                  {
+                    "type": "struct",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 4
+                      }
+                    ]
+                  }
+                ],
+                "staticFields": [
+                  {
+                    "type": "struct",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 4
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "struct",
+                "value": [
+                  {
+                    "type": "Integer",
+                    "value": 4
+                  }
+                ]
+              },
+              {
+                "type": "struct",
+                "value": [
+                  {
+                    "type": "Integer",
+                    "value": 4
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test [Buffer]",
+      "script": [
+        "PUSHDATA1",
+        "0x02",
+        "0x0102",
+        "CONVERT",
+        "0x30",
+        "DUP",
+        "PUSH0",
+        "PUSH5",
+        "SETITEM"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "StepInto",
+            "StepInto",
+            "StepInto",
+            "StepInto",
+            "StepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 9,
+                "nextInstruction": "SETITEM",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": 5
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 0
+                  },
+                  {
+                    "type": "Buffer",
+                    "value": "0x0102"
+                  },
+                  {
+                    "type": "Buffer",
+                    "value": "0x0102"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Buffer",
+                "value": "0x0502"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

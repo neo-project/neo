@@ -1,0 +1,71 @@
+{
+  "category": "Slot",
+  "name": "LDARG5",
+  "tests": [
+    {
+      "name": "Without slot",
+      "script": [
+        "LDARG5"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Index out of range",
+      "script": [
+        "PUSH1",
+        "INITSLOT",
+        "0x0001",
+        "LDARG5"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test",
+      "script": [
+        "PUSH1",
+        "PUSH2",
+        "PUSH3",
+        "PUSH4",
+        "PUSH5",
+        "PUSH6",
+        "INITSLOT",
+        "0x0006",
+        "LDARG5"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

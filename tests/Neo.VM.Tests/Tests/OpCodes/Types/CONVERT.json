@@ -1,0 +1,898 @@
+{
+  "category": "Types",
+  "name": "CONVERT",
+  "tests": [
+    {
+      "name": "Null to Buffer",
+      "script": [
+        "PUSHNULL",
+        "CONVERT",
+        "0x30"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 1,
+                "nextInstruction": "CONVERT",
+                "evaluationStack": [
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Null to Boolean",
+      "script": [
+        "PUSHNULL",
+        "CONVERT",
+        "0x20"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 1,
+                "nextInstruction": "CONVERT",
+                "evaluationStack": [
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Struct to Array",
+      "script": [
+        "PUSH1",
+        "NEWSTRUCT",
+        "DUP",
+        "PUSH0",
+        "PUSH5",
+        "SETITEM",
+        "CONVERT",
+        "0x40"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 6,
+                "nextInstruction": "CONVERT",
+                "evaluationStack": [
+                  {
+                    "type": "struct",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 5
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "array",
+                "value": [
+                  {
+                    "type": "Integer",
+                    "value": 5
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Struct to Boolean",
+      "script": [
+        "PUSH0",
+        "NEWSTRUCT",
+        "CONVERT",
+        "0x20"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 2,
+                "nextInstruction": "CONVERT",
+                "evaluationStack": [
+                  {
+                    "type": "struct",
+                    "value": [
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Boolean",
+                "value": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Array to Boolean",
+      "script": [
+        "PUSH0",
+        "NEWARRAY",
+        "CONVERT",
+        "0x20"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 2,
+                "nextInstruction": "CONVERT",
+                "evaluationStack": [
+                  {
+                    "type": "array",
+                    "value": [
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Boolean",
+                "value": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Array to Struct",
+      "script": [
+        "PUSH1",
+        "NEWARRAY",
+        "DUP",
+        "PUSH0",
+        "PUSH5",
+        "SETITEM",
+        "CONVERT",
+        "0x41"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 6,
+                "nextInstruction": "CONVERT",
+                "evaluationStack": [
+                  {
+                    "type": "array",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 5
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "struct",
+                "value": [
+                  {
+                    "type": "Integer",
+                    "value": 5
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Array to Integer",
+      "script": [
+        "PUSH1",
+        "NEWARRAY",
+        "DUP",
+        "PUSH0",
+        "PUSH4",
+        "SETITEM",
+        "CONVERT",
+        "0x21"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 6,
+                "nextInstruction": "CONVERT",
+                "evaluationStack": [
+                  {
+                    "type": "array",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 4
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Integer to ByteString",
+      "script": [
+        "PUSHINT8",
+        "0x0A",
+        "CONVERT",
+        "0x28"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "ByteString",
+                "value": "0x0A"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Integer to Boolean",
+      "script": [
+        "PUSHINT8",
+        "0x0A",
+        "CONVERT",
+        "0x20"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Boolean",
+                "value": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Integer to Boolean",
+      "script": [
+        "PUSHINT8",
+        "0x00",
+        "CONVERT",
+        "0x20"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Boolean",
+                "value": false
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Integer to Boolean",
+      "script": [
+        "PUSHINT8",
+        "0x01",
+        "CONVERT",
+        "0x20"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Boolean",
+                "value": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Integer to Buffer",
+      "script": [
+        "PUSHINT8",
+        "0x0A",
+        "CONVERT",
+        "0x30"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Buffer",
+                "value": "0x0A"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ByteString to Buffer",
+      "script": [
+        "PUSHDATA1",
+        "0x0A",
+        "0x00000000000000000000",
+        "CONVERT",
+        "0x30"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Buffer",
+                "value": "0x00000000000000000000"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ByteString to Integer",
+      "script": [
+        "PUSHDATA1",
+        "0x02",
+        "0x0A0B",
+        "CONVERT",
+        "0x21"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": 2826
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ByteString to Boolean",
+      "script": [
+        "PUSHDATA1",
+        "0x02",
+        "0x0A0B",
+        "CONVERT",
+        "0x20"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Boolean",
+                "value": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ByteString to Boolean",
+      "script": [
+        "PUSHDATA1",
+        "0x02",
+        "0x0000",
+        "CONVERT",
+        "0x20"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Boolean",
+                "value": false
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ByteString to Boolean",
+      "script": [
+        "PUSHDATA1",
+        "0x02",
+        "0x0001",
+        "CONVERT",
+        "0x20"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Boolean",
+                "value": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ByteString to Boolean",
+      "script": [
+        "PUSHDATA1",
+        "0x01",
+        "0x01",
+        "CONVERT",
+        "0x20"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Boolean",
+                "value": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buffer to ByteString",
+      "script": [
+        "PUSHDATA1",
+        "0x0A",
+        "0x00000000000000000000",
+        "CONVERT",
+        "0x30",
+        "CONVERT",
+        "0x28"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "ByteString",
+                "value": "0x00000000000000000000"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buffer to Boolean",
+      "script": [
+        "PUSHDATA1",
+        "0x01",
+        "0x00",
+        "CONVERT",
+        "0x30",
+        "CONVERT",
+        "0x20"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Boolean",
+                "value": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buffer to Boolean",
+      "script": [
+        "PUSHDATA1",
+        "0x01",
+        "0x02",
+        "CONVERT",
+        "0x30",
+        "CONVERT",
+        "0x20"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Boolean",
+                "value": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buffer to Integer",
+      "script": [
+        "PUSHDATA1",
+        "0x02",
+        "0x0102",
+        "CONVERT",
+        "0x30",
+        "CONVERT",
+        "0x21"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": 513
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buffer to Integer (Exceed)",
+      "script": [
+        "PUSHDATA1",
+        "0x21",
+        "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "CONVERT",
+        "0x30",
+        "CONVERT",
+        "0x21"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buffer to Any",
+      "script": [
+        "PUSHDATA1",
+        "0x02",
+        "0x0102",
+        "CONVERT",
+        "0x30",
+        "CONVERT",
+        "0x00"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buffer to Interop",
+      "script": [
+        "PUSHDATA1",
+        "0x02",
+        "0x0102",
+        "CONVERT",
+        "0x30",
+        "CONVERT",
+        "0x60"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ByteString to non-defined",
+      "script": [
+        "PUSHDATA1",
+        "0x01",
+        "0xAA",
+        "CONVERT",
+        "0xFF"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Array to non-defined",
+      "script": [
+        "NEWARRAY0",
+        "CONVERT",
+        "0xFF"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Struct to non-defined",
+      "script": [
+        "NEWSTRUCT0",
+        "CONVERT",
+        "0xFF"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Null to non-defined",
+      "script": [
+        "PUSHNULL",
+        "CONVERT",
+        "0xFF"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    }
+  ]
+}
