@@ -9,7 +9,7 @@ namespace Neo.UnitTests
     {
         public static ProtocolSettings Default = new()
         {
-            Network = ProtocolSettings.Default.Network,
+            Network = 0x334F454Eu,
             AddressVersion = ProtocolSettings.Default.AddressVersion,
             StandbyCommittee = new[]
             {
