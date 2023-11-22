@@ -16,8 +16,6 @@
   <br>
   <a href="https://github.com/neo-project/neo"><strong>Neo</strong></a>
   ·
-  <a href="https://github.com/neo-project/neo-vm">Neo VM</a>
-  ·
   <a href="https://github.com/neo-project/neo-modules">Neo Modules</a>
   ·
   <a href="https://github.com/neo-project/neo-devpack-dotnet">Neo DevPack</a>
@@ -130,7 +128,6 @@ An overview of the project folders can be seen below.
 Code references are provided for all platform building blocks. That includes the base library, the VM, a command line application and the compiler. 
 
 * [neo:](https://github.com/neo-project/neo/) Neo core library, contains base classes, including ledger, p2p and IO modules.
-* [neo-vm:](https://github.com/neo-project/neo-vm/) Neo Virtual Machine is a decoupled VM that Neo uses to execute its scripts. It also uses the `InteropService` layer to extend its functionalities.
 * [neo-node:](https://github.com/neo-project/neo-node/) Executable version of the Neo library, exposing features using a command line application or GUI.
 * [neo-modules:](https://github.com/neo-project/neo-modules/) Neo modules include additional tools and plugins to be used with Neo.
 * [neo-devpack-dotnet:](https://github.com/neo-project/neo-devpack-dotnet/) These are the official tools used to convert a C# smart-contract into a *neo executable file*.
