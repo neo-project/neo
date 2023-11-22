@@ -16,7 +16,7 @@
   <br>
   <a href="https://github.com/neo-project/neo"><strong>Neo</strong></a>
   ·
-  <a href="https://github.com/neo-project/neo-vm">Neo VM</a>
+  <a href="https://github.com/neo-project/neo/tree/master/src/Neo.VM">Neo VM</a>
   ·
   <a href="https://github.com/neo-project/neo-modules">Neo Modules</a>
   ·
