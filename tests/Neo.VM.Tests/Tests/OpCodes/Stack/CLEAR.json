@@ -1,0 +1,59 @@
+{
+  "category": "Stack",
+  "name": "CLEAR",
+  "tests": [
+    {
+      "name": "Without push",
+      "script": [
+        "CLEAR"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "With push",
+      "script": [
+        "PUSH2",
+        "CLEAR"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 1,
+                "nextInstruction": "CLEAR",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 2
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT"
+          }
+        }
+      ]
+    }
+  ]
+}

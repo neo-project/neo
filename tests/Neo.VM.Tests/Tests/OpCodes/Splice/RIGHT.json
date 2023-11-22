@@ -1,0 +1,299 @@
+{
+  "category": "Splice",
+  "name": "RIGHT",
+  "tests": [
+    {
+      "name": "Without push",
+      "script": [
+        "PUSH11",
+        "RIGHT"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wrong type [Map]",
+      "script": [
+        "PUSH4",
+        "NEWMAP",
+        "RIGHT"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 2,
+                "nextInstruction": "RIGHT",
+                "evaluationStack": [
+                  {
+                    "type": "map",
+                    "value": {}
+                  },
+                  {
+                    "type": "integer",
+                    "value": 4
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Negative value",
+      "script": [
+        "PUSHDATA1",
+        "0x03",
+        "0x010203",
+        "PUSHM1",
+        "RIGHT"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 6,
+                "nextInstruction": "RIGHT",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": -1
+                  },
+                  {
+                    "type": "ByteString",
+                    "value": "0x010203"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Overflow string",
+      "script": [
+        "PUSHDATA1",
+        "0x03",
+        "0x010203",
+        "PUSH4",
+        "RIGHT"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 6,
+                "nextInstruction": "RIGHT",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 4
+                  },
+                  {
+                    "type": "ByteString",
+                    "value": "0x010203"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test",
+      "script": [
+        "PUSHDATA1",
+        "0x03",
+        "0x010203",
+        "PUSH2",
+        "RIGHT"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 6,
+                "nextInstruction": "RIGHT",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 2
+                  },
+                  {
+                    "type": "ByteString",
+                    "value": "0x010203"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 7,
+                "nextInstruction": "RET",
+                "evaluationStack": [
+                  {
+                    "type": "Buffer",
+                    "value": "0x0203"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Buffer",
+                "value": "0x0203"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test [whole input]",
+      "script": [
+        "PUSHDATA1",
+        "0x03",
+        "0x010203",
+        "PUSH3",
+        "RIGHT"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 6,
+                "nextInstruction": "RIGHT",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 3
+                  },
+                  {
+                    "type": "ByteString",
+                    "value": "0x010203"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 7,
+                "nextInstruction": "RET",
+                "evaluationStack": [
+                  {
+                    "type": "Buffer",
+                    "value": "0x010203"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Buffer",
+                "value": "0x010203"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

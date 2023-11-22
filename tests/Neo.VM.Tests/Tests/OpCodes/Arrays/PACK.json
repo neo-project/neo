@@ -1,0 +1,127 @@
+{
+  "category": "Arrays",
+  "name": "PACK",
+  "tests": [
+    {
+      "name": "Real test",
+      "script": [
+        "PUSH5",
+        "PUSH6",
+        "PUSH2",
+        "PACK"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "array",
+                "value": [
+                  {
+                    "type": "Integer",
+                    "value": 6
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 5
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Not enough size",
+      "script": [
+        "PUSH5",
+        "PUSH2",
+        "PACK"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wrong type [Map]",
+      "script": [
+        "NEWMAP",
+        "PACK"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wrong type [Array]",
+      "script": [
+        "PUSH1",
+        "NEWARRAY",
+        "PACK"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wrong type [Struct]",
+      "script": [
+        "PUSH1",
+        "NEWSTRUCT",
+        "PACK"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Without items",
+      "script": [
+        "PACK"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    }
+  ]
+}

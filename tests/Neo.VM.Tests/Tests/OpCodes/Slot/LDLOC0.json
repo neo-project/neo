@@ -1,0 +1,48 @@
+{
+  "category": "Slot",
+  "name": "LDLOC0",
+  "tests": [
+    {
+      "name": "Without slot",
+      "script": [
+        "LDLOC0"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test",
+      "script": [
+        "INITSLOT",
+        "0x0100",
+        "PUSH1",
+        "STLOC0",
+        "LDLOC0"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

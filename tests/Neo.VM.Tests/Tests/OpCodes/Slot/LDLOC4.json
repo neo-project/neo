@@ -1,0 +1,66 @@
+{
+  "category": "Slot",
+  "name": "LDLOC4",
+  "tests": [
+    {
+      "name": "Without slot",
+      "script": [
+        "LDLOC4"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Index out of range",
+      "script": [
+        "INITSLOT",
+        "0x0100",
+        "LDLOC4"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test",
+      "script": [
+        "INITSLOT",
+        "0x0500",
+        "PUSH1",
+        "STLOC4",
+        "LDLOC4"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "category": "Control",
+  "name": "TRY_CATCH",
+  "tests": [
+    {
+      "name": "try catch with syscall exception",
+      "script": [
+        "TRY",
+        "0x0a00",
+        "SYSCALL",
+        "0xdeaddead",
+        "ENDTRY",
+        "0x05",
+        "PUSH1",
+        "ENDTRY",
+        "0x02",
+        "PUSH2"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 11,
+                "nextInstruction": "ENDTRY",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 1
+                  },
+                  {
+                    "type": "ByteString",
+                    "value": "0x6572726f72"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "integer",
+                "value": 2
+              },
+              {
+                "type": "integer",
+                "value": 1
+              },
+              {
+                "type": "ByteString",
+                "value": "0x6572726f72"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "try catch without exception",
+      "script": [
+        "TRY",
+        "0x0600",
+        "PUSH0",
+        "ENDTRY",
+        "0x05",
+        "PUSH3",
+        "ENDTRY",
+        "0x02",
+        "RET"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 9,
+                "nextInstruction": "RET",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "try catch with exception",
+      "script": [
+        "TRY",
+        "0x0700",
+        "PUSH0",
+        "THROW",
+        "ENDTRY",
+        "0x05",
+        "PUSH1",
+        "ENDTRY",
+        "0x02",
+        "PUSH2"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 7,
+                "nextInstruction": "PUSH1",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 10,
+                "nextInstruction": "PUSH2",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 1
+                  },
+                  {
+                    "type": "integer",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

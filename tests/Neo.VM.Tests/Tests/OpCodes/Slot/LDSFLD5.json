@@ -1,0 +1,66 @@
+{
+  "category": "Slot",
+  "name": "LDSFLD5",
+  "tests": [
+    {
+      "name": "Without slot",
+      "script": [
+        "LDSFLD5"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Index out of range",
+      "script": [
+        "INITSSLOT",
+        "0x01",
+        "LDSFLD5"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test",
+      "script": [
+        "INITSSLOT",
+        "0x06",
+        "PUSH1",
+        "STSFLD5",
+        "LDSFLD5"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

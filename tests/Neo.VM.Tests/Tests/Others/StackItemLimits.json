@@ -1,0 +1,71 @@
+{
+  "category": "Limits",
+  "name": "Stack item limits [StackItemLimits] [StackItemLimits] [StackItemLimits]",
+  "tests": [
+    {
+      "name": "Max boolean ByteString",
+      "script": [
+        "PUSHDATA1",
+        "0x21",
+        "0x000000000000000000000000000000000000000000000000000000000000000000",
+        "NOT"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 35,
+                "nextInstruction": "NOT",
+                "evaluationStack": [
+                  {
+                    "type": "ByteString",
+                    "value": "0x000000000000000000000000000000000000000000000000000000000000000000"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Max items with PUSHDATA (2048+1)",
+      "script": [
+        "PUSHINT16",
+        "0x0004",
+        "NEWARRAY",
+        "UNPACK",
+        "PUSHINT16",
+        "0xfe03",
+        "NEWARRAY",
+        "UNPACK",
+        "PUSHDATA1",
+        "0x01",
+        "0x01"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    }
+  ]
+}

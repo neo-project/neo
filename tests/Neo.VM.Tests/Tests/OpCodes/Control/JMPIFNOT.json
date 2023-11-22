@@ -1,0 +1,145 @@
+{
+  "category": "Control",
+  "name": "JMPIFNOT",
+  "tests": [
+    {
+      "name": "Without items",
+      "script": [
+        "JMPIFNOT",
+        "0x00"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test [1]",
+      "script": [
+        "PUSH1",
+        "JMPIFNOT",
+        "0x03",
+        "NOP",
+        "RET"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 1,
+                "nextInstruction": "JMPIFNOT",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 3,
+                "nextInstruction": "NOP"
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 4,
+                "nextInstruction": "RET"
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test [0]",
+      "script": [
+        "PUSH0",
+        "JMPIFNOT",
+        "0x03",
+        "NOP",
+        "RET"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 1,
+                "nextInstruction": "JMPIFNOT",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 4,
+                "nextInstruction": "RET"
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT"
+          }
+        }
+      ]
+    }
+  ]
+}
