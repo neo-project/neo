@@ -5,7 +5,7 @@
     <Copyright>2015-2023 The Neo Project</Copyright>
     <VersionPrefix>3.6.2</VersionPrefix>
     <Authors>The Neo Project</Authors>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFrameworks>net7.0</TargetFrameworks>
     <PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryType>git</RepositoryType>
