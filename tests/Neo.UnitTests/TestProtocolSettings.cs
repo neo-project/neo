@@ -37,7 +37,7 @@ namespace Neo.UnitTests
                 ECPoint.Parse("03cdcea66032b82f5c30450e381e5295cae85c5e6943af716cc6b646352a6067dc", ECCurve.Secp256r1),
                 ECPoint.Parse("02cd5a5547119e24feaa7c2a0f37b8c9366216bab7054de0065c9be42084003c8a", ECCurve.Secp256r1)
             },
-            ValidatorsCount = ProtocolSettings.Default.ValidatorsCount,
+            ValidatorsCount = 7,
             SeedList = new[]
             {
                 "seed1.neo.org:10333",

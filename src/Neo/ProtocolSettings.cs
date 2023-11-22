@@ -104,10 +104,10 @@ namespace Neo
         /// </summary>
         public static ProtocolSettings Default { get; } = new ProtocolSettings
         {
-            Network = 0x334F454Eu,
+            Network = 0u,
             AddressVersion = 0x35,
             StandbyCommittee = Array.Empty<ECPoint>(),
-            ValidatorsCount = 7,
+            ValidatorsCount = 0,
             SeedList = Array.Empty<string>(),
             MillisecondsPerBlock = 15000,
             MaxTransactionsPerBlock = 512,
