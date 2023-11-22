@@ -149,3 +149,6 @@ You can be rewarded by finding security issues. Please refer to our [bounty prog
 
 ## License
 The NEO project is licensed under the [MIT license](LICENSE).
+
+## Star History
+[![Star History Chart](https://api.star-history.com/svg?repos=neo-project/neo&type=Date)](https://star-history.com/?utm_source=bestxtools.com#neo-project/neo&Date)
