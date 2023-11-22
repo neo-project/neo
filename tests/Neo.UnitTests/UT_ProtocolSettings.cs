@@ -113,5 +113,90 @@ namespace Neo.UnitTests
                 seed.Should().MatchRegex(@"^[\w.-]+:\d+$"); // Format: domain:port
             }
         }
+
+        [TestMethod]
+        public void TestDefaultNetworkValue()
+        {
+            TestProtocolSettings.Default.Network.Should().Be(ProtocolSettings.Default.Network);
+        }
+
+        [TestMethod]
+        public void TestDefaultAddressVersionValue()
+        {
+            TestProtocolSettings.Default.AddressVersion.Should().Be(ProtocolSettings.Default.AddressVersion);
+        }
+
+        [TestMethod]
+        public void TestDefaultValidatorsCountValue()
+        {
+            TestProtocolSettings.Default.ValidatorsCount.Should().Be(ProtocolSettings.Default.ValidatorsCount);
+        }
+
+        [TestMethod]
+        public void TestDefaultMillisecondsPerBlockValue()
+        {
+            TestProtocolSettings.Default.MillisecondsPerBlock.Should().Be(ProtocolSettings.Default.MillisecondsPerBlock);
+        }
+
+        [TestMethod]
+        public void TestDefaultMaxTransactionsPerBlockValue()
+        {
+            TestProtocolSettings.Default.MaxTransactionsPerBlock.Should().Be(ProtocolSettings.Default.MaxTransactionsPerBlock);
+        }
+
+        [TestMethod]
+        public void TestDefaultMemoryPoolMaxTransactionsValue()
+        {
+            TestProtocolSettings.Default.MemoryPoolMaxTransactions.Should().Be(ProtocolSettings.Default.MemoryPoolMaxTransactions);
+        }
+
+        [TestMethod]
+        public void TestDefaultMaxTraceableBlocksValue()
+        {
+            TestProtocolSettings.Default.MaxTraceableBlocks.Should().Be(ProtocolSettings.Default.MaxTraceableBlocks);
+        }
+
+        [TestMethod]
+        public void TestDefaultInitialGasDistributionValue()
+        {
+            TestProtocolSettings.Default.InitialGasDistribution.Should().Be(ProtocolSettings.Default.InitialGasDistribution);
+        }
+
+        [TestMethod]
+        public void TestDefaultHardforksValue()
+        {
+            TestProtocolSettings.Default.Hardforks.Should().BeEquivalentTo(ProtocolSettings.Default.Hardforks);
+        }
+
+        [TestMethod]
+        public void TestTimePerBlockCalculation()
+        {
+            var expectedTimeSpan = TimeSpan.FromMilliseconds(TestProtocolSettings.Default.MillisecondsPerBlock);
+            TestProtocolSettings.Default.TimePerBlock.Should().Be(expectedTimeSpan);
+        }
+
+        [TestMethod]
+        public void TestLoad()
+        {
+            var loadedSetting = ProtocolSettings.Load("test.config.json", false);
+
+            // Comparing all properties
+            TestProtocolSettings.Default.Network.Should().Be(loadedSetting.Network);
+            TestProtocolSettings.Default.AddressVersion.Should().Be(loadedSetting.AddressVersion);
+            TestProtocolSettings.Default.StandbyCommittee.Should().BeEquivalentTo(loadedSetting.StandbyCommittee);
+            TestProtocolSettings.Default.ValidatorsCount.Should().Be(loadedSetting.ValidatorsCount);
+            TestProtocolSettings.Default.SeedList.Should().BeEquivalentTo(loadedSetting.SeedList);
+            TestProtocolSettings.Default.MillisecondsPerBlock.Should().Be(loadedSetting.MillisecondsPerBlock);
+            TestProtocolSettings.Default.MaxTransactionsPerBlock.Should().Be(loadedSetting.MaxTransactionsPerBlock);
+            TestProtocolSettings.Default.MemoryPoolMaxTransactions.Should().Be(loadedSetting.MemoryPoolMaxTransactions);
+            TestProtocolSettings.Default.MaxTraceableBlocks.Should().Be(loadedSetting.MaxTraceableBlocks);
+            TestProtocolSettings.Default.InitialGasDistribution.Should().Be(loadedSetting.InitialGasDistribution);
+            TestProtocolSettings.Default.Hardforks.Should().BeEquivalentTo(loadedSetting.Hardforks);
+
+            // If StandbyValidators is a derived property, comparing it as well
+            TestProtocolSettings.Default.StandbyValidators.Should().BeEquivalentTo(loadedSetting.StandbyValidators);
+
+        }
+
     }
 }
