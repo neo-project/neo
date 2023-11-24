@@ -243,5 +243,73 @@ namespace Neo.Json.UnitTests
             var s = jArray.AsString();
             Assert.AreEqual(s, "{\"name\":\"alice\",\"age\":30,\"score\":100.001,\"gender\":\"female\",\"isMarried\":true,\"pet\":{\"name\":\"Tom\",\"type\":\"cat\"}},{\"name\":\"bob\",\"age\":100000,\"score\":0.001,\"gender\":\"male\",\"isMarried\":false,\"pet\":{\"name\":\"Paul\",\"type\":\"dog\"}}");
         }
+
+        [TestMethod]
+        public void TestCount()
+        {
+            var jArray = new JArray { alice, bob };
+            jArray.Count.Should().Be(2);
+        }
+
+        [TestMethod]
+        public void TestInvalidIndexAccess()
+        {
+            var jArray = new JArray { alice };
+            Action action = () => { var item = jArray[1]; };
+            action.Should().Throw<ArgumentOutOfRangeException>();
+        }
+
+        [TestMethod]
+        public void TestEmptyEnumeration()
+        {
+            var jArray = new JArray();
+            foreach (var item in jArray)
+            {
+                Assert.Fail("Enumeration should not occur on an empty JArray");
+            }
+        }
+
+        [TestMethod]
+        public void TestImplicitConversionFromJTokenArray()
+        {
+            JToken[] jTokens = { alice, bob };
+            JArray jArray = jTokens;
+
+            jArray.Count.Should().Be(2);
+            jArray[0].Should().Be(alice);
+            jArray[1].Should().Be(bob);
+        }
+
+        [TestMethod]
+        public void TestAddNullValues()
+        {
+            var jArray = new JArray();
+            jArray.Add(null);
+            jArray.Count.Should().Be(1);
+            jArray[0].Should().BeNull();
+        }
+
+        [TestMethod]
+        public void TestClone()
+        {
+            var jArray = new JArray { alice, bob };
+            var clone = jArray.Clone();
+
+            clone.Should().NotBeSameAs(jArray);
+            clone.Count.Should().Be(jArray.Count);
+
+            for (int i = 0; i < jArray.Count; i++)
+            {
+                clone[i]?.AsString().Should().Be(jArray[i]?.AsString());
+            }
+        }
+
+        [TestMethod]
+        public void TestReadOnlyBehavior()
+        {
+            var jArray = new JArray();
+            jArray.IsReadOnly.Should().BeTrue();
+        }
+
     }
 }
