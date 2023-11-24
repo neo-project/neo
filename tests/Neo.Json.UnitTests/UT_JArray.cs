@@ -308,7 +308,7 @@ namespace Neo.Json.UnitTests
         public void TestReadOnlyBehavior()
         {
             var jArray = new JArray();
-            jArray.IsReadOnly.Should().BeTrue();
+            jArray.IsReadOnly.Should().BeFalse();
         }
 
     }
