@@ -88,6 +88,75 @@ namespace Neo.Json.UnitTests
             Assert.ThrowsException<FormatException>(() => json.JsonPath("$..*"));
             Assert.ThrowsException<FormatException>(() => json.JsonPath("..book"));
             Assert.ThrowsException<FormatException>(() => json.JsonPath("$.."));
+
+            // Test with an empty JSON Path
+            // Assert.ThrowsException<FormatException>(() => json.JsonPath(""));
+
+            // Test with only special characters
+            Assert.ThrowsException<FormatException>(() => json.JsonPath("@#$%^&*()"));
+
+            // Test with unmatched brackets
+            Assert.ThrowsException<FormatException>(() => json.JsonPath("$.store.book["));
+            Assert.ThrowsException<FormatException>(() => json.JsonPath("$.store.book)]"));
+
+            // Test with invalid operators
+            Assert.ThrowsException<FormatException>(() => json.JsonPath("$.store.book=>2"));
+
+            // Test with incorrect field syntax
+            Assert.ThrowsException<FormatException>(() => json.JsonPath("$.store.'book'"));
+            Assert.ThrowsException<FormatException>(() => json.JsonPath("$.store.[book]"));
+
+            // Test with unexpected end of expression
+            Assert.ThrowsException<FormatException>(() => json.JsonPath("$.store.book[?(@.price<"));
+
+            // Test with invalid array indexing
+            // Assert.ThrowsException<FormatException>(() => json.JsonPath("$.store.book['one']"));
+            // Assert.ThrowsException<FormatException>(() => json.JsonPath("$.store.book[999]"));
+
+            // Test with invalid recursive descent
+            Assert.ThrowsException<FormatException>(() => json.JsonPath("$..*..author"));
+
+            // Test with nonexistent functions
+            Assert.ThrowsException<FormatException>(() => json.JsonPath("$.store.book.length()"));
+
+            // Test with incorrect use of wildcards
+            // Assert.ThrowsException<FormatException>(() => json.JsonPath("$.*.store"));
+
+            // Test with improper use of filters
+            Assert.ThrowsException<FormatException>(() => json.JsonPath("$.store.book[?(@.price)]"));
+
+            // Test with mixing of valid and invalid syntax
+            Assert.ThrowsException<FormatException>(() => json.JsonPath("$.store.book[*],$.invalid"));
+
+            // Test with invalid escape sequences
+            Assert.ThrowsException<FormatException>(() => json.JsonPath("$.store.book[\\]"));
+
+            // Test with incorrect property access
+            Assert.ThrowsException<FormatException>(() => json.JsonPath("$.store.'b?ook'"));
+
+            // Test with invalid use of wildcard in array index
+            // Assert.ThrowsException<FormatException>(() => json.JsonPath("$.store.book[*]"));
+
+            // Test with missing operators in filter expressions
+            Assert.ThrowsException<FormatException>(() => json.JsonPath("$.store.book[?(@.price)]"));
+
+            // Test with incorrect boolean logic in filters
+            Assert.ThrowsException<FormatException>(() => json.JsonPath("$.store.book[?(@.price AND @.title)]"));
+
+            // Test with nested filters without proper closure
+            Assert.ThrowsException<FormatException>(() => json.JsonPath("$.store.book[?(@.price[?(@ < 10)])]"));
+
+            // Test with misplaced recursive descent operator
+            // Assert.ThrowsException<FormatException>(() => json.JsonPath("$..store..book"));
+
+            // Test with using JSONPath reserved keywords incorrectly
+            Assert.ThrowsException<FormatException>(() => json.JsonPath("$..@.book"));
+
+            // Test with incorrect combinations of valid operators
+            Assert.ThrowsException<FormatException>(() => json.JsonPath("$.store.book..[0]"));
+
+            // Test with invalid script expressions (if supported)
+            Assert.ThrowsException<FormatException>(() => json.JsonPath("$.store.book[(@.length-1)]"));
         }
     }
 }
