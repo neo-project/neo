@@ -40,7 +40,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
-            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
             byte[] to = new byte[20];
             var supply = NativeContract.GAS.TotalSupply(snapshot);
             supply.Should().Be(5200000050000000); // 3000000000000000 + 50000000 (neo holder reward)

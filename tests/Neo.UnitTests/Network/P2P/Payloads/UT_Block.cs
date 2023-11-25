@@ -59,7 +59,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 TestUtils.GetTransaction(UInt160.Zero)
             };
 
-            uut.Size.Should().Be(167); // 159 + nonce 
+            uut.Size.Should().Be(167); // 159 + nonce
         }
 
         [TestMethod]
@@ -162,7 +162,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             UInt256 val256 = UInt256.Zero;
             TestUtils.SetupBlockWithValues(uut, val256, out _, out _, out var timeVal, out var indexVal, out var nonceVal, out _, out _, 1);
 
-            JObject jObj = uut.ToJson(ProtocolSettings.Default);
+            JObject jObj = uut.ToJson(TestProtocolSettings.Default);
             jObj.Should().NotBeNull();
             jObj["hash"].AsString().Should().Be("0x60193a05005c433787d8a9b95da332bbeebb311e904525e9fb1bacc34ff1ead7");
             jObj["size"].AsNumber().Should().Be(167); // 159 + nonce
