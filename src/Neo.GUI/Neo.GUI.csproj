@@ -9,7 +9,12 @@
     <RootNamespace>Neo</RootNamespace>
     <UseWindowsForms>true</UseWindowsForms>
     <Product>Neo.GUI</Product>
+    <ApplicationIcon>neo.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="neo.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <Compile Update="GUI\DeveloperToolsForm.ContractParameters.cs">
