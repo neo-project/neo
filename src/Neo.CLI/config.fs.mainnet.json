@@ -1,0 +1,53 @@
+{
+  "ApplicationConfiguration": {
+    "Logger": {
+      "Path": "Logs",
+      "ConsoleOutput": false,
+      "Active": false
+    },
+    "Storage": {
+      "Engine": "LevelDBStore",
+      "Path": "Data_LevelDB_{0}"
+    },
+    "P2P": {
+      "Port": 40333,
+      "WsPort": 40334,
+      "MinDesiredConnections": 10,
+      "MaxConnections": 40,
+      "MaxConnectionsPerAddress": 3
+    },
+    "UnlockWallet": {
+      "Path": "",
+      "Password": "",
+      "IsActive": false
+    }
+  },
+  "ProtocolConfiguration": {
+    "Network": 91414437,
+    "AddressVersion": 53,
+    "MillisecondsPerBlock": 15000,
+    "MaxTransactionsPerBlock": 512,
+    "MemoryPoolMaxTransactions": 50000,
+    "MaxTraceableBlocks": 2102400,
+    "InitialGasDistribution": 5200000000000000,
+    "ValidatorsCount": 7,
+    "StandbyCommittee": [
+      "026fa34ec057d74c2fdf1a18e336d0bd597ea401a0b2ad57340d5c220d09f44086",
+      "039a9db2a30942b1843db673aeb0d4fd6433f74cec1d879de6343cb9fcf7628fa4",
+      "0366d255e7ce23ea6f7f1e4bedf5cbafe598705b47e6ec213ef13b2f0819e8ab33",
+      "023f9cb7bbe154d529d5c719fdc39feaa831a43ae03d2a4280575b60f52fa7bc52",
+      "039ba959e0ab6dc616df8b803692f1c30ba9071b76b05535eb994bf5bbc402ad5f",
+      "035a2a18cddafa25ad353dea5e6730a1b9fcb4b918c4a0303c4387bb9c3b816adf",
+      "031f4d9c66f2ec348832c48fd3a16dfaeb59e85f557ae1e07f6696d0375c64f97b"
+    ],
+    "SeedList": [
+      "morph1.fs.neo.org:40333",
+      "morph2.fs.neo.org:40333",
+      "morph3.fs.neo.org:40333",
+      "morph4.fs.neo.org:40333",
+      "morph5.fs.neo.org:40333",
+      "morph6.fs.neo.org:40333",
+      "morph7.fs.neo.org:40333"
+    ]
+  }
+}
