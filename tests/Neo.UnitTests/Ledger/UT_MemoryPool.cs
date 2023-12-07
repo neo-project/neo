@@ -47,7 +47,7 @@ namespace Neo.UnitTests.Ledger
             TimeProvider.ResetToDefault();
 
             // Create a MemoryPool with capacity of 100
-            _unit = new MemoryPool(new NeoSystem(ProtocolSettings.Default with { MemoryPoolMaxTransactions = 100 }));
+            _unit = new MemoryPool(new NeoSystem(TestProtocolSettings.Default with { MemoryPoolMaxTransactions = 100 }));
 
             // Verify capacity equals the amount specified
             _unit.Capacity.Should().Be(100);
@@ -638,7 +638,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestReVerifyTopUnverifiedTransactionsIfNeeded()
         {
-            _unit = new MemoryPool(new NeoSystem(ProtocolSettings.Default with { MemoryPoolMaxTransactions = 600 }));
+            _unit = new MemoryPool(new NeoSystem(TestProtocolSettings.Default with { MemoryPoolMaxTransactions = 600 }));
 
             AddTransaction(CreateTransaction(100000001));
             AddTransaction(CreateTransaction(100000001));

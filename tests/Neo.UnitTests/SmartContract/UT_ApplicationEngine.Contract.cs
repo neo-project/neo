@@ -11,8 +11,8 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestCreateStandardAccount()
         {
-            var settings = ProtocolSettings.Default;
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            var settings = TestProtocolSettings.Default;
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null, settings: TestProtocolSettings.Default, gas: 1100_00000000);
 
             using var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Contract_CreateStandardAccount, settings.StandbyCommittee[0].EncodePoint(true));
@@ -27,7 +27,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestCreateStandardMultisigAccount()
         {
-            var settings = ProtocolSettings.Default;
+            var settings = TestProtocolSettings.Default;
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, null, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             using var script = new ScriptBuilder();

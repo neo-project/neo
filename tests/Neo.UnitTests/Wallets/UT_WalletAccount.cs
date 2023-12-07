@@ -11,7 +11,7 @@ namespace Neo.UnitTests.Wallets
         public override bool HasKey => key != null;
 
         public MyWalletAccount(UInt160 scriptHash)
-            : base(scriptHash, ProtocolSettings.Default)
+            : base(scriptHash, TestProtocolSettings.Default)
         {
         }
 

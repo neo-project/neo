@@ -1,0 +1,26 @@
+{
+  "category": "Control",
+  "name": "ABORTMSG",
+  "tests": [
+    {
+      "name": "Basic Test",
+      "script": [
+        "PUSHDATA1",
+        "0x03",
+        "0x4e454f",
+        "ABORTMSG"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT",
+            "exceptionMessage": "ABORTMSG is executed. Reason: NEO"
+          }
+        }
+      ]
+    }
+  ]
+}

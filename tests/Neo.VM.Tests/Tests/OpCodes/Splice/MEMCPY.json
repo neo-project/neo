@@ -1,0 +1,382 @@
+{
+  "category": "Splice",
+  "name": "MEMCPY",
+  "tests": [
+    {
+      "name": "Max Item Length",
+      "script": [
+        "PUSH4",
+        "NEWBUFFER",
+        "PUSHINT32",
+        "0x00001000",
+        "PUSHDATA1",
+        "0x02",
+        "0x1111",
+        "PUSH0",
+        "PUSH2",
+        "MEMCPY"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "StepInto",
+            "StepInto",
+            "StepInto",
+            "StepInto",
+            "StepInto",
+            "StepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 13,
+                "nextInstruction": "MEMCPY",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": 2
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 0
+                  },
+                  {
+                    "type": "ByteString",
+                    "value": "0x1111"
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 1048576
+                  },
+                  {
+                    "type": "Buffer",
+                    "value": "0x00000000"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Negative di",
+      "script": [
+        "PUSH4",
+        "NEWBUFFER",
+        "PUSHM1",
+        "PUSHDATA1",
+        "0x02",
+        "0x1111",
+        "PUSH0",
+        "PUSH2",
+        "MEMCPY"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "StepInto",
+            "StepInto",
+            "StepInto",
+            "StepInto",
+            "StepInto",
+            "StepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 9,
+                "nextInstruction": "MEMCPY",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": 2
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 0
+                  },
+                  {
+                    "type": "ByteString",
+                    "value": "0x1111"
+                  },
+                  {
+                    "type": "Integer",
+                    "value": -1
+                  },
+                  {
+                    "type": "Buffer",
+                    "value": "0x00000000"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Negative si",
+      "script": [
+        "PUSH4",
+        "NEWBUFFER",
+        "PUSHINT32",
+        "0x00001000",
+        "PUSHDATA1",
+        "0x02",
+        "0x1111",
+        "PUSHM1",
+        "PUSH2",
+        "MEMCPY"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "StepInto",
+            "StepInto",
+            "StepInto",
+            "StepInto",
+            "StepInto",
+            "StepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 13,
+                "nextInstruction": "MEMCPY",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": 2
+                  },
+                  {
+                    "type": "Integer",
+                    "value": -1
+                  },
+                  {
+                    "type": "ByteString",
+                    "value": "0x1111"
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 1048576
+                  },
+                  {
+                    "type": "Buffer",
+                    "value": "0x00000000"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Negative n",
+      "script": [
+        "PUSH4",
+        "NEWBUFFER",
+        "PUSHINT32",
+        "0x00001000",
+        "PUSHDATA1",
+        "0x02",
+        "0x1111",
+        "PUSH0",
+        "PUSHM1",
+        "MEMCPY"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "StepInto",
+            "StepInto",
+            "StepInto",
+            "StepInto",
+            "StepInto",
+            "StepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 13,
+                "nextInstruction": "MEMCPY",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": -1
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 0
+                  },
+                  {
+                    "type": "ByteString",
+                    "value": "0x1111"
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 1048576
+                  },
+                  {
+                    "type": "Buffer",
+                    "value": "0x00000000"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wrong type [Array]",
+      "script": [
+        "PUSH0",
+        "NEWARRAY",
+        "PUSHINT32",
+        "0x00001000",
+        "PUSHDATA1",
+        "0x02",
+        "0x1111",
+        "PUSH0",
+        "PUSH2",
+        "MEMCPY"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "StepInto",
+            "StepInto",
+            "StepInto",
+            "StepInto",
+            "StepInto",
+            "StepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 13,
+                "nextInstruction": "MEMCPY",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": 2
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 0
+                  },
+                  {
+                    "type": "ByteString",
+                    "value": "0x1111"
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 1048576
+                  },
+                  {
+                    "type": "Array",
+                    "value": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "No push",
+      "script": [
+        "MEMCPY"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test",
+      "script": [
+        "PUSH4",
+        "NEWBUFFER",
+        "DUP",
+        "PUSH1",
+        "PUSHDATA1",
+        "0x02",
+        "0x1111",
+        "PUSH0",
+        "PUSH2",
+        "MEMCPY"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Buffer",
+                "value": "0x00111100"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

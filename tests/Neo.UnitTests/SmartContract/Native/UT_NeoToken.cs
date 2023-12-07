@@ -51,7 +51,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
             snapshot.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
 
-            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
 
             // No signature
 
@@ -109,7 +109,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
             snapshot.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
 
-            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
             var accountState = snapshot.TryGet(CreateStorageKey(20, from)).GetInteroperable<NeoAccountState>();
             accountState.Balance = 100;
             snapshot.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState() { Registered = true }));
@@ -141,8 +141,8 @@ namespace Neo.UnitTests.SmartContract.Native
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
             snapshot.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
             //from vote to G
-            byte[] from = ProtocolSettings.Default.StandbyValidators[0].ToArray();
-            var from_Account = Contract.CreateSignatureContract(ProtocolSettings.Default.StandbyValidators[0]).ScriptHash.ToArray();
+            byte[] from = TestProtocolSettings.Default.StandbyValidators[0].ToArray();
+            var from_Account = Contract.CreateSignatureContract(TestProtocolSettings.Default.StandbyValidators[0]).ScriptHash.ToArray();
             snapshot.Add(CreateStorageKey(20, from_Account), new StorageItem(new NeoAccountState()));
             var accountState = snapshot.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
             accountState.Balance = 100;
@@ -175,8 +175,8 @@ namespace Neo.UnitTests.SmartContract.Native
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
             snapshot.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
-            byte[] from = ProtocolSettings.Default.StandbyValidators[0].ToArray();
-            var from_Account = Contract.CreateSignatureContract(ProtocolSettings.Default.StandbyValidators[0]).ScriptHash.ToArray();
+            byte[] from = TestProtocolSettings.Default.StandbyValidators[0].ToArray();
+            var from_Account = Contract.CreateSignatureContract(TestProtocolSettings.Default.StandbyValidators[0]).ScriptHash.ToArray();
             snapshot.Add(CreateStorageKey(20, from_Account), new StorageItem(new NeoAccountState()));
             var accountState = snapshot.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
             accountState.Balance = 100;
@@ -211,7 +211,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
             snapshot.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
 
-            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
 
             var unclaim = Check_UnclaimedGas(snapshot, from, persistingBlock);
             unclaim.Value.Should().Be(new BigInteger(0.5 * 1000 * 100000000L));
@@ -228,7 +228,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
 
             var keyCount = snapshot.GetChangeSet().Count();
-            var point = ProtocolSettings.Default.StandbyValidators[0].EncodePoint(true).Clone() as byte[];
+            var point = TestProtocolSettings.Default.StandbyValidators[0].EncodePoint(true).Clone() as byte[];
 
             var ret = Check_RegisterValidator(snapshot, point, _persistingBlock); // Exists
             ret.State.Should().BeTrue();
@@ -256,7 +256,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
             _persistingBlock.Header.Index = 1;
             var keyCount = snapshot.GetChangeSet().Count();
-            var point = ProtocolSettings.Default.StandbyValidators[0].EncodePoint(true);
+            var point = TestProtocolSettings.Default.StandbyValidators[0].EncodePoint(true);
 
             //without register
             var ret = Check_UnregisterCandidate(snapshot, point, _persistingBlock);
@@ -293,7 +293,7 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.Add(CreateStorageKey(20, G_Account), new StorageItem(new NeoAccountState()));
             var accountState = snapshot.TryGet(CreateStorageKey(20, G_Account)).GetInteroperable<NeoAccountState>();
             accountState.Balance = 100;
-            Check_Vote(snapshot, G_Account, ProtocolSettings.Default.StandbyValidators[0].ToArray(), true, _persistingBlock);
+            Check_Vote(snapshot, G_Account, TestProtocolSettings.Default.StandbyValidators[0].ToArray(), true, _persistingBlock);
             ret = Check_UnregisterCandidate(snapshot, point, _persistingBlock);
             ret.State.Should().BeTrue();
             ret.Result.Should().BeTrue();
@@ -304,11 +304,11 @@ namespace Neo.UnitTests.SmartContract.Native
             pointState.Votes.Should().Be(100);
 
             //vote fail
-            ret = Check_Vote(snapshot, G_Account, ProtocolSettings.Default.StandbyValidators[0].ToArray(), true, _persistingBlock);
+            ret = Check_Vote(snapshot, G_Account, TestProtocolSettings.Default.StandbyValidators[0].ToArray(), true, _persistingBlock);
             ret.State.Should().BeTrue();
             ret.Result.Should().BeFalse();
             accountState = snapshot.TryGet(CreateStorageKey(20, G_Account)).GetInteroperable<NeoAccountState>();
-            accountState.VoteTo.Should().Be(ProtocolSettings.Default.StandbyValidators[0]);
+            accountState.VoteTo.Should().Be(TestProtocolSettings.Default.StandbyValidators[0]);
         }
 
         [TestMethod]
@@ -316,7 +316,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot = _snapshot.CreateSnapshot();
             var keyCount = snapshot.GetChangeSet().Count();
-            var point = ProtocolSettings.Default.StandbyValidators[0].EncodePoint(true);
+            var point = TestProtocolSettings.Default.StandbyValidators[0].EncodePoint(true);
             var persistingBlock = _persistingBlock;
             persistingBlock.Header.Index = 1;
             //register with votes with 20000000
@@ -332,9 +332,9 @@ namespace Neo.UnitTests.SmartContract.Native
             ret.Result.Should().BeTrue();
 
             var committeemembers = NativeContract.NEO.GetCommittee(snapshot);
-            var defaultCommittee = ProtocolSettings.Default.StandbyCommittee.OrderBy(p => p).ToArray();
+            var defaultCommittee = TestProtocolSettings.Default.StandbyCommittee.OrderBy(p => p).ToArray();
             committeemembers.GetType().Should().Be(typeof(ECPoint[]));
-            for (int i = 0; i < ProtocolSettings.Default.CommitteeMembersCount; i++)
+            for (int i = 0; i < TestProtocolSettings.Default.CommitteeMembersCount; i++)
             {
                 committeemembers[i].Should().Be(defaultCommittee[i]);
             }
@@ -344,7 +344,7 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 Header = new Header
                 {
-                    Index = (uint)ProtocolSettings.Default.CommitteeMembersCount,
+                    Index = (uint)TestProtocolSettings.Default.CommitteeMembersCount,
                     MerkleRoot = UInt256.Zero,
                     NextConsensus = UInt160.Zero,
                     PrevHash = UInt256.Zero,
@@ -352,9 +352,9 @@ namespace Neo.UnitTests.SmartContract.Native
                 },
                 Transactions = Array.Empty<Transaction>()
             };
-            for (int i = 0; i < ProtocolSettings.Default.CommitteeMembersCount - 1; i++)
+            for (int i = 0; i < TestProtocolSettings.Default.CommitteeMembersCount - 1; i++)
             {
-                ret = Check_RegisterValidator(snapshot, ProtocolSettings.Default.StandbyCommittee[i].ToArray(), persistingBlock);
+                ret = Check_RegisterValidator(snapshot, TestProtocolSettings.Default.StandbyCommittee[i].ToArray(), persistingBlock);
                 ret.State.Should().BeTrue();
                 ret.Result.Should().BeTrue();
             }
@@ -362,13 +362,13 @@ namespace Neo.UnitTests.SmartContract.Native
             Check_OnPersist(snapshot, persistingBlock).Should().BeTrue();
 
             committeemembers = NativeContract.NEO.GetCommittee(snapshot);
-            committeemembers.Length.Should().Be(ProtocolSettings.Default.CommitteeMembersCount);
+            committeemembers.Length.Should().Be(TestProtocolSettings.Default.CommitteeMembersCount);
             committeemembers.Contains(ECCurve.Secp256r1.G).Should().BeTrue();
-            for (int i = 0; i < ProtocolSettings.Default.CommitteeMembersCount - 1; i++)
+            for (int i = 0; i < TestProtocolSettings.Default.CommitteeMembersCount - 1; i++)
             {
-                committeemembers.Contains(ProtocolSettings.Default.StandbyCommittee[i]).Should().BeTrue();
+                committeemembers.Contains(TestProtocolSettings.Default.StandbyCommittee[i]).Should().BeTrue();
             }
-            committeemembers.Contains(ProtocolSettings.Default.StandbyCommittee[ProtocolSettings.Default.CommitteeMembersCount - 1]).Should().BeFalse();
+            committeemembers.Contains(TestProtocolSettings.Default.StandbyCommittee[TestProtocolSettings.Default.CommitteeMembersCount - 1]).Should().BeFalse();
         }
 
         [TestMethod]
@@ -377,7 +377,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
 
-            byte[] from = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
+            byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
             byte[] to = new byte[20];
 
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
@@ -434,7 +434,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_BalanceOf()
         {
             var snapshot = _snapshot.CreateSnapshot();
-            byte[] account = Contract.GetBFTAddress(ProtocolSettings.Default.StandbyValidators).ToArray();
+            byte[] account = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
 
             NativeContract.NEO.BalanceOf(snapshot, account).Should().Be(100_000_000);
 
@@ -462,7 +462,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             Check_PostPersist(snapshot, persistingBlock).Should().BeTrue();
 
-            var committee = ProtocolSettings.Default.StandbyCommittee;
+            var committee = TestProtocolSettings.Default.StandbyCommittee;
             NativeContract.GAS.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[0]).ScriptHash.ToArray()).Should().Be(50000000);
             NativeContract.GAS.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[1]).ScriptHash.ToArray()).Should().Be(50000000);
             NativeContract.GAS.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[2]).ScriptHash.ToArray()).Should().Be(0);
@@ -545,9 +545,9 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.GetAndChange(key, () => new StorageItem(new NeoAccountState
             {
                 Balance = 100,
-                VoteTo = ProtocolSettings.Default.StandbyCommittee[0]
+                VoteTo = TestProtocolSettings.Default.StandbyCommittee[0]
             }));
-            snapshot.Add(new KeyBuilder(NativeContract.NEO.Id, 23).Add(ProtocolSettings.Default.StandbyCommittee[0]).AddBigEndian(uint.MaxValue - 50), new StorageItem() { Value = new BigInteger(50 * 10000L).ToByteArray() });
+            snapshot.Add(new KeyBuilder(NativeContract.NEO.Id, 23).Add(TestProtocolSettings.Default.StandbyCommittee[0]).AddBigEndian(uint.MaxValue - 50), new StorageItem() { Value = new BigInteger(50 * 10000L).ToByteArray() });
             NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 100).Should().Be(new BigInteger(50 * 100));
             snapshot.Delete(key);
         }
@@ -687,7 +687,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestGetValidators()
         {
             var snapshot = _snapshot.CreateSnapshot();
-            var result = NativeContract.NEO.ComputeNextBlockValidators(snapshot, ProtocolSettings.Default);
+            var result = NativeContract.NEO.ComputeNextBlockValidators(snapshot, TestProtocolSettings.Default);
             result[0].ToArray().ToHexString().Should().Be("02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70");
             result[1].ToArray().ToHexString().Should().Be("024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d");
             result[2].ToArray().ToHexString().Should().Be("02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e");
@@ -759,9 +759,9 @@ namespace Neo.UnitTests.SmartContract.Native
             // Initialize block
             snapshot.Add(CreateStorageKey(1), new StorageItem(new BigInteger(30000000)));
 
-            ECPoint[] standbyCommittee = ProtocolSettings.Default.StandbyCommittee.OrderBy(p => p).ToArray();
+            ECPoint[] standbyCommittee = TestProtocolSettings.Default.StandbyCommittee.OrderBy(p => p).ToArray();
             CachedCommittee cachedCommittee = new();
-            for (var i = 0; i < ProtocolSettings.Default.CommitteeMembersCount; i++)
+            for (var i = 0; i < TestProtocolSettings.Default.CommitteeMembersCount; i++)
             {
                 ECPoint member = standbyCommittee[i];
                 snapshot.Add(new KeyBuilder(NativeContract.NEO.Id, 33).Add(member), new StorageItem(new CandidateState()
@@ -790,9 +790,9 @@ namespace Neo.UnitTests.SmartContract.Native
             };
             Check_PostPersist(snapshot, persistingBlock).Should().BeTrue();
 
-            var committee = ProtocolSettings.Default.StandbyCommittee.OrderBy(p => p).ToArray();
+            var committee = TestProtocolSettings.Default.StandbyCommittee.OrderBy(p => p).ToArray();
             var accountA = committee[0];
-            var accountB = committee[ProtocolSettings.Default.CommitteeMembersCount - 1];
+            var accountB = committee[TestProtocolSettings.Default.CommitteeMembersCount - 1];
             NativeContract.NEO.BalanceOf(snapshot, Contract.CreateSignatureContract(accountA).ScriptHash).Should().Be(0);
 
             StorageItem storageItem = snapshot.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(accountA));
@@ -837,7 +837,7 @@ namespace Neo.UnitTests.SmartContract.Native
             };
             Check_PostPersist(snapshot, persistingBlock).Should().BeTrue();
 
-            accountA = ProtocolSettings.Default.StandbyCommittee.OrderBy(p => p).ToArray()[2];
+            accountA = TestProtocolSettings.Default.StandbyCommittee.OrderBy(p => p).ToArray()[2];
             NativeContract.NEO.BalanceOf(snapshot, Contract.CreateSignatureContract(committee[2]).ScriptHash).Should().Be(0);
 
             storageItem = snapshot.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(committee[2]));

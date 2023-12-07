@@ -1,0 +1,47 @@
+{
+  "category": "Control",
+  "name": "ASSERTMSG",
+  "tests": [
+    {
+      "name": "Fault Test",
+      "script": [
+        "PUSH0",
+        "PUSHDATA1",
+        "0x04",
+        "0x4641494c",
+        "ASSERTMSG"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT",
+            "exceptionMessage": "ASSERTMSG is executed with false result. Reason: FAIL"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Halt Test",
+      "script": [
+        "PUSH1",
+        "PUSHDATA1",
+        "0x04",
+        "0x50415353",
+        "ASSERTMSG"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT"
+          }
+        }
+      ]
+    }
+  ]
+}

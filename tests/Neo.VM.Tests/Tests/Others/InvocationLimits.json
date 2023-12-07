@@ -1,0 +1,120 @@
+{
+  "category": "Limits",
+  "name": "Invocation limits",
+  "tests": [
+    {
+      "name": "More than 1024 ExecutionContext",
+      "script": [
+        "INITSSLOT",
+        "0x01",
+        "PUSHDATA1",
+        "0x02",
+        "0x0004",
+        "INC",
+        "STSFLD0",
+        "LDSFLD0",
+        "DEC",
+        "DUP",
+        "STSFLD0",
+        "JMPIFNOT",
+        "0x04",
+        "CALL",
+        "0xfa",
+        "RET"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 8,
+                "nextInstruction": "LDSFLD0",
+                "staticFields": [
+                  {
+                    "type": "integer",
+                    "value": 1025
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 12,
+                "nextInstruction": "JMPIFNOT",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 1024
+                  }
+                ],
+                "staticFields": [
+                  {
+                    "type": "integer",
+                    "value": 1024
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 8,
+                "nextInstruction": "LDSFLD0",
+                "staticFields": [
+                  {
+                    "type": "integer",
+                    "value": 1024
+                  }
+                ]
+              },
+              {
+                "instructionPointer": 16,
+                "nextInstruction": "RET",
+                "staticFields": [
+                  {
+                    "type": "integer",
+                    "value": 1024
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    }
+  ]
+}
