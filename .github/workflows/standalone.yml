@@ -1,7 +1,7 @@
 name: Standalone Build (neo-cli)
 
 on:
-  workflow_call:
+  workflow_dispatch:
 
 env:
   DOTNET_VERSION: 7.0.x
