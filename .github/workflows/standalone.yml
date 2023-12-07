@@ -8,8 +8,6 @@ env:
   CONFIGURATION: Release
   DIST_PATH: /tmp/dist
   OUTPUT_PATH: /tmp/out
-  THIS_REPO_PATH: /tmp/neo
-  MODULES_REPO_PATH: /tmp/neo-modules
 
 jobs:
   build-neo-cli:
@@ -20,27 +18,21 @@ jobs:
         runtime: [linux-x64, linux-arm64, linux-musl-arm64, osx-x64, osx-arm64, win-x64, win-arm64]
 
     steps:
-    - name: Create Directory (neo)
-      run: mkdir -p ${{ env.THIS_REPO_PATH }}
-
-    - name: Create Directory (neo-modules)
-      run: mkdir -p ${{ env.MODULES_REPO_PATH }}
-
     - name: Checkout Repository Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
-        path: ${{ env.THIS_REPO_PATH }}
+        path: neo
         fetch-depth: 0
 
     - name: Checkout Repository Code (neo-modules)
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: neo-project/neo-modules
-        path: ${{ env.MODULES_REPO_PATH }}
+        path: neo-modules
         fetch-depth: 0
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
