@@ -77,17 +77,17 @@ jobs:
     - name: Create Distribution Directory
       run: mkdir -p ${{ env.DIST_PATH }}
 
-    - name: Zip Up Files (linux)
+    - name: Create Tarball File (linux)
       if: ${{ startsWith(matrix.runtime, 'linux') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
       run: tar -czvf ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.tar.gz .
 
-    - name: Zip Up Files (osx)
+    - name: Create Tarball File (osx)
       if: ${{ startsWith(matrix.runtime, 'osx') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
       run: tar -cJf ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.tar.xz .
 
-    - name: Zip Up Files (win)
+    - name: Create Zip File (win)
       if: ${{ startsWith(matrix.runtime, 'win') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
       run: zip ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.zip -r *
