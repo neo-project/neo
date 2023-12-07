@@ -56,12 +56,12 @@ jobs:
       run: tar -czvf ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.tar.gz .
 
     - name: Zip Up Files (osx)
-      if: startsWith(matrix.runtime, 'osx')
+      if: ${{ startsWith(matrix.runtime, 'osx') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
       run: tar -cJf ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.tar.xz .
 
     - name: Zip Up Files (win)
-      if: startsWith(matrix.runtime, 'win')
+      if: ${{ startsWith(matrix.runtime, 'win') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
       run: zip ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.zip *
 
