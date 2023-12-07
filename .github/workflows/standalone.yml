@@ -8,6 +8,7 @@ env:
   CONFIGURATION: Release
   DIST_PATH: /tmp/dist
   OUTPUT_PATH: /tmp/out
+  REPO_PATH: /tmp/neo-modules
 
 jobs:
   build-neo-cli:
@@ -18,9 +19,16 @@ jobs:
         runtime: [linux-x64, linux-arm64, linux-musl-arm64, osx-x64, osx-arm64, win-x64, win-arm64]
 
     steps:
-    - name: Checkout Code
+    - name: Checkout Repository Code
       uses: actions/checkout@v3
       with:
+        fetch-depth: 0
+
+    - name: Checkout Repository Code (neo-modules)
+      uses: actions/checkout@v3
+      with:
+        repository: neo-project/neo-modules
+        path: ${{ env.REPO_PATH }}
         fetch-depth: 0
 
     - name: Setup .NET
