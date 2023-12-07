@@ -1,0 +1,48 @@
+name: Standalone Build (neo-cli)
+
+on:
+  workflow_call:
+
+env:
+  DOTNET_VERSION: 7.0.x
+  CONFIGURATION: Release
+  DIST_PATH: /tmp/dist
+  OUTPUT_PATH: /tmp/out
+
+jobs:
+  build-neo-cli:
+    name: Build (neo-cli)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        runtime: [linux-x64, linux-arm64, osx-x64, osx-arm64, win-x64, win-arm64]
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Build (${{ matrix.runtime }})
+      run: |
+        dotnet publish ./src/Neo.CLI \
+        --framework net7.0 \
+        --configuration ${{ env.CONFIGURATION }} \
+        --runtime ${{ matrix.runtime }} \
+        --self-contained true \
+        --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }} \
+        --verbosity normal \
+        -p:RuntimeIdentifier=${{ matrix.runtime }} \
+        -p:SelfContained=true \
+        -p:IncludeNativeLibrariesForSelfExtract=false \
+        -p:PublishTrimmed=false \
+        -p:PublishSingleFile=true \
+        -p:PublishReadyToRun=true \
+        -p:EnableCompressionInSingleFile=true \
+        -p:DebugType=embedded \
+        -p:ServerGarbageCollection=true
