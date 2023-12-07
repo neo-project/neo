@@ -1,4 +1,4 @@
-name: Standalone Build (neo-cli)
+name: Build & Release (neo-cli)
 
 on:
   workflow_dispatch:
@@ -11,11 +11,11 @@ env:
 
 jobs:
   build-neo-cli:
-    name: Build (neo-cli)
+    name: Build (${{ matrix.runtime }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        runtime: [linux-x64, linux-arm64, osx-x64, osx-arm64, win-x64, win-arm64]
+        runtime: [linux-x64, linux-arm64, linux-musl-arm64, osx-x64, osx-arm64, win-x64, win-arm64]
 
     steps:
     - name: Checkout Code
@@ -28,7 +28,7 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Build (${{ matrix.runtime }})
+    - name: .NET Publish
       run: |
         dotnet publish ./src/Neo.CLI \
         --framework net7.0 \
@@ -46,3 +46,24 @@ jobs:
         -p:EnableCompressionInSingleFile=true \
         -p:DebugType=embedded \
         -p:ServerGarbageCollection=true
+
+    - name: Create Distribution Directory
+      run: mkdir -p ${{ env.DIST_PATH }}
+
+    - name: Zip Up Files (linux)
+      if: ${{ startsWith(matrix.runtime, 'linux') }}
+      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
+      run: tar -czvf ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.tar.gz .
+
+    - name: Zip Up Files (osx)
+      if: startWith(matrix.runtime, 'osx')
+      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
+      run: tar -cJf ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.tar.xz .
+
+    - name: Zip Up Files (win)
+      if: startWith(matrix.runtime, 'win')
+      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
+      run: zip ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.zip *
+
+    - name: Output Distribution Content
+      run: ls -l ${{ env.DIST_PATH }}
