@@ -24,11 +24,15 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Create Directory (neo-modules)
+      run: |
+        mkdir -p ${{ env.REPO_PATH }}
+        cd ${{ env.REPO_PATH }}
+
     - name: Checkout Repository Code (neo-modules)
       uses: actions/checkout@v3
       with:
         repository: neo-project/neo-modules
-        path: ${{ env.REPO_PATH }}
         fetch-depth: 0
 
     - name: Setup .NET
