@@ -90,7 +90,7 @@ jobs:
     - name: Zip Up Files (win)
       if: ${{ startsWith(matrix.runtime, 'win') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: zip ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.zip *
+      run: zip ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.zip -r *
 
     - name: Output/Distribution Directory Contents
       run: |
