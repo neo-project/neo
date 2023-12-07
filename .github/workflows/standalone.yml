@@ -102,7 +102,6 @@ jobs:
       with:
         path: ${{ env.DIST_PATH }}/*
         key: ${{ matrix.runtime }}
-        fail-on-cache-miss: true
 
   Release-neo-cli:
     name: Release (github)
@@ -110,17 +109,54 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Get Distribution Caches
+    - name: Get Distribution Caches (linux-x64)
       uses: actions/cache/restore@v3
       with:
         path: ${{ env.DIST_PATH }}/*
-        key: |
-          linux-x64
-          linux-arm64
-          linux-musl-arm64
-          osx-x64
-          osx-arm64
-          win-x64
-          win-arm64
-        fail-on-cache-miss: true
+        key: linux-x64
+
+    - name: Get Distribution Caches (linux-arm64)
+      uses: actions/cache/restore@v3
+      with:
+        path: ${{ env.DIST_PATH }}/*
+        key: linux-arm64
+
+    - name: Get Distribution Caches (linux-musl-arm64)
+      uses: actions/cache/restore@v3
+      with:
+        path: ${{ env.DIST_PATH }}/*
+        key: linux-musl-arm64
+
+    - name: Get Distribution Caches (osx-x64)
+      uses: actions/cache/restore@v3
+      with:
+        path: ${{ env.DIST_PATH }}/*
+        key: osx-x64
+
+    - name: Get Distribution Caches (osx-arm64)
+      uses: actions/cache/restore@v3
+      with:
+        path: ${{ env.DIST_PATH }}/*
+        key: osx-arm64
+
+    - name: Get Distribution Caches (win-x64)
+      uses: actions/cache/restore@v3
+      with:
+        path: ${{ env.DIST_PATH }}/*
+        key: win-x64
+
+    - name: Get Distribution Caches (win-arm64)
+      uses: actions/cache/restore@v3
+      with:
+        path: ${{ env.DIST_PATH }}/*
+        key: win-arm64
+
+    - name: Publish Release (github)
+      uses: marvinpinto/action-automatic-releases@latest
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        prerelease: false
+        title: ${{ github.ref_name }}
+        automatic_release_tag: ${{ github.ref_name }}
+        files: ${{ env.DIST_PATH }}/*
 
