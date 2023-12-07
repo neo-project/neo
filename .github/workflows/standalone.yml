@@ -36,7 +36,8 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: .NET Publish
+    - name: .NET Publish (neo-cli)
+      working-directory: ./neo
       run: |
         dotnet publish ./src/Neo.CLI \
         --framework net7.0 \
@@ -54,6 +55,24 @@ jobs:
         -p:EnableCompressionInSingleFile=true \
         -p:DebugType=embedded \
         -p:ServerGarbageCollection=true
+
+    - name: .NET Build (LevelDBStore)
+      working-directory: ./neo-modules
+      run: |
+        dotnet build ./src/LevelDBStore/LevelDBStore.csproj \
+        --framework net7.0 \
+        --configuration ${{ env.CONFIGURATION }} \
+        --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/plugins/LevelDBStore \
+        --verbosity normal
+
+    - name: .NET Build (SQLiteWallet)
+      working-directory: ./neo-modules
+      run: |
+        dotnet build ./src/SQLiteWallet/SQLiteWallet.csproj \
+        --framework net7.0 \
+        --configuration ${{ env.CONFIGURATION }} \
+        --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/plugins/SQLiteWallet \
+        --verbosity normal
 
     - name: Create Distribution Directory
       run: mkdir -p ${{ env.DIST_PATH }}
@@ -74,4 +93,6 @@ jobs:
       run: zip ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.zip *
 
     - name: Output Distribution Content
-      run: ls -l ${{ env.DIST_PATH }}
+      run: |
+        ls -l ${{ env.DIST_PATH }}
+        ls -l ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
