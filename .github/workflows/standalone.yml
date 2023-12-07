@@ -62,7 +62,7 @@ jobs:
         dotnet build ./src/LevelDBStore/LevelDBStore.csproj \
         --framework net7.0 \
         --configuration ${{ env.CONFIGURATION }} \
-        --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/plugins/LevelDBStore \
+        --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore \
         --verbosity normal
 
     - name: .NET Build (SQLiteWallet)
@@ -71,7 +71,7 @@ jobs:
         dotnet build ./src/SQLiteWallet/SQLiteWallet.csproj \
         --framework net7.0 \
         --configuration ${{ env.CONFIGURATION }} \
-        --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/plugins/SQLiteWallet \
+        --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/SQLiteWallet \
         --verbosity normal
 
     - name: Create Distribution Directory
@@ -92,7 +92,35 @@ jobs:
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
       run: zip ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.zip *
 
-    - name: Output Distribution Content
+    - name: Output/Distribution Directory Contents
       run: |
         ls -l ${{ env.DIST_PATH }}
         ls -l ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
+
+    - name: Cache Distribution
+      uses: actions/cache/save@v3
+      with:
+        path: ${{ env.DIST_PATH }}/*
+        key: ${{ matrix.runtime }}
+        fail-on-cache-miss: true
+
+  Release-neo-cli:
+    name: Release (github)
+    needs: [build-neo-cli]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Get Distribution Caches
+      uses: actions/cache/restore@v3
+      with:
+        path: ${{ env.DIST_PATH }}/*
+        key: |
+          linux-x64
+          linux-arm64
+          linux-musl-arm64
+          osx-x64
+          osx-arm64
+          win-x64
+          win-arm64
+        fail-on-cache-miss: true
+
