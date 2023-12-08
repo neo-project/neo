@@ -46,6 +46,7 @@ jobs:
       with:
         path: ./leveldb/build/Release/*
         key: leveldb-${{ matrix.arch }}
+        enableCrossOsArchive: true
 
   build-neo-cli:
     needs: [build-leveldb]
@@ -122,6 +123,7 @@ jobs:
       with:
         path: ./leveldb/build/Release/*
         key: leveldb-x64
+        enableCrossOsArchive: true
 
     - name: Get Distribution Caches (win-arm64)
       if: ${{ startsWith(matrix.runtime, 'win-arm64') }}
@@ -129,6 +131,7 @@ jobs:
       with:
         path: ./leveldb/build/Release/*
         key: leveldb-arm64
+        enableCrossOsArchive: true
 
     - name: Copy Files (leveldb) (win)
       if: ${{ startsWith(matrix.runtime, 'win') }}
