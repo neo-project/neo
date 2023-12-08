@@ -10,7 +10,34 @@ env:
   OUTPUT_PATH: /tmp/out
 
 jobs:
+  build-leveldb:
+    name: Build (leveldb)
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x64, arm64]
+
+    steps:
+    - name: Checkout Repository Code (leveldb)
+      uses: actions/checkout@v4
+      with:
+        repository: google/leveldb
+        path: leveldb
+        submodules: true
+        fetch-depth: 0
+
+    - name: Setup LevelDb
+      working-directory: ./leveldb
+      run: mkdir -p ./build
+
+    - name: Compile (leveldb) (x64)
+      working-directory: ./leveldb/build
+      run: |
+        cmake -DBUILD_SHARED_LIBS=ON -A ${{ matrix.arch }} ..
+        msbuild ./leveldb.sln
+
   build-neo-cli:
+    needs: [build-leveldb]
     name: Build (${{ matrix.runtime }})
     runs-on: ubuntu-latest
     strategy:
@@ -31,38 +58,10 @@ jobs:
         path: neo-modules
         fetch-depth: 0
 
-    - name: Checkout Repository Code (leveldb)
-      if: ${{ startsWith(matrix.runtime, 'win') }}
-      uses: actions/checkout@v4
-      with:
-        repository: google/leveldb
-        path: leveldb
-        submodules: true
-        fetch-depth: 0
-
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
-
-    - name: Setup LevelDb
-      if: ${{ startsWith(matrix.runtime, 'win') }}
-      working-directory: ./leveldb
-      run: mkdir -p ./build
-
-    - name: Compile (leveldb) (x64)
-      if: ${{ startsWith(matrix.runtime, 'win-x64') }}
-      working-directory: ./leveldb/build
-      run: |
-        cmake -DBUILD_SHARED_LIBS=ON -A x64 ..
-        msbuild ./leveldb.sln
-
-    - name: Compile (leveldb) (x64)
-      if: ${{ startsWith(matrix.runtime, 'win-arm64') }}
-      working-directory: ./leveldb/build
-      run: |
-        cmake -DBUILD_SHARED_LIBS=ON -A arm64 ..
-        msbuild ./leveldb.sln
 
     - name: .NET Publish (neo-cli)
       working-directory: ./neo
