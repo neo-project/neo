@@ -31,10 +31,38 @@ jobs:
         path: neo-modules
         fetch-depth: 0
 
+    - name: Checkout Repository Code (leveldb)
+      if: ${{ startsWith(matrix.runtime, 'win') }}
+      uses: actions/checkout@v4
+      with:
+        repository: google/leveldb
+        path: leveldb
+        submodules: true
+        fetch-depth: 0
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Setup LevelDb
+      if: ${{ startsWith(matrix.runtime, 'win') }}
+      working-directory: ./leveldb
+      run: mkdir -p ./build
+
+    - name: Compile (leveldb) (x64)
+      if: ${{ startsWith(matrix.runtime, 'win-x64') }}
+      working-directory: ./leveldb/build
+      run: |
+        cmake -DBUILD_SHARED_LIBS=ON -A x64 ..
+        msbuild ./leveldb.sln
+
+    - name: Compile (leveldb) (x64)
+      if: ${{ startsWith(matrix.runtime, 'win-arm64') }}
+      working-directory: ./leveldb/build
+      run: |
+        cmake -DBUILD_SHARED_LIBS=ON -A arm64 ..
+        msbuild ./leveldb.sln
 
     - name: .NET Publish (neo-cli)
       working-directory: ./neo
@@ -77,18 +105,6 @@ jobs:
     - name: Remove Xml Comment Files
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
       run: rm -v *.xml
-
-    - name: Copy LevelDb File (win-x64)
-      if: ${{ matrix.runtime == 'win-x64' }}
-      working-directory: ./neo/deps
-      run: |
-        cp -v libleveldb.x64 ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/libleveldb.dll
-
-    - name: Copy LevelDb File (win-arm64)
-      if: ${{ matrix.runtime == 'win-arm64' }}
-      working-directory: ./neo/deps
-      run: |
-        cp -v libleveldb.arm64 ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/libleveldb.dll
 
     - name: Create Distribution Directory
       run: mkdir -p ${{ env.DIST_PATH }}
