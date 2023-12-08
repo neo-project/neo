@@ -74,6 +74,22 @@ jobs:
         --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/SQLiteWallet \
         --verbosity normal
 
+    - name: Remove Xml Comment Files
+      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
+      run: rm -v *.xml
+
+    - name: Copy LevelDb File (win-x64)
+      if: ${{ matrix.runtime == 'win-x64' }}
+      working-directory: ./deps
+      run: |
+        cp -v libleveldb.x64 ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/libleveldb.dll
+
+    - name: Copy LevelDb File (win-arm64)
+      if: ${{ matrix.runtime == 'win-arm64' }}
+      working-directory: ./deps
+      run: |
+        cp -v libleveldb.arm64 ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/libleveldb.dll
+
     - name: Create Distribution Directory
       run: mkdir -p ${{ env.DIST_PATH }}
 
