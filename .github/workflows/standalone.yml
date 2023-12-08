@@ -26,15 +26,26 @@ jobs:
         submodules: true
         fetch-depth: 0
 
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1.1
+
     - name: Setup LevelDb
       working-directory: ./leveldb
       run: mkdir -p ./build
 
-    - name: Compile (leveldb) (x64)
+    - name: Create Build Files (${{ matrix.arch }})
       working-directory: ./leveldb/build
-      run: |
-        cmake -DBUILD_SHARED_LIBS=ON -A ${{ matrix.arch }} ..
-        msbuild ./leveldb.sln
+      run: cmake -DBUILD_SHARED_LIBS=ON -A ${{ matrix.arch }} ..
+
+    - name: Build (MSBuild)
+      working-directory: ./leveldb/build
+      run: msbuild ./leveldb.sln /p:Configuration=Release
+
+    - name: Cache Distribution
+      uses: actions/cache/save@v3
+      with:
+        path: ./leveldb/build/Release/*
+        key: leveldb-${{ matrix.arch }}
 
   build-neo-cli:
     needs: [build-leveldb]
@@ -104,6 +115,24 @@ jobs:
     - name: Remove Xml Comment Files
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
       run: rm -v *.xml
+
+    - name: Get Distribution Caches (win-x64)
+      if: ${{ startsWith(matrix.runtime, 'win-x64') }}
+      uses: actions/cache/restore@v3
+      with:
+        path: ./leveldb/build/Release/*
+        key: leveldb-x64
+
+    - name: Get Distribution Caches (win-arm64)
+      if: ${{ startsWith(matrix.runtime, 'win-arm64') }}
+      uses: actions/cache/restore@v3
+      with:
+        path: ./leveldb/build/Release/*
+        key: leveldb-arm64
+
+    - name: Copy Files (leveldb) (win)
+      if: ${{ startsWith(matrix.runtime, 'win') }}
+      run: cp -v ./leveldb/build/Release/leveldb.dll ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/libleveldb.dll
 
     - name: Create Distribution Directory
       run: mkdir -p ${{ env.DIST_PATH }}
