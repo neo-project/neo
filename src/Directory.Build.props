@@ -6,12 +6,18 @@
     <VersionPrefix>3.6.2</VersionPrefix>
     <Authors>The Neo Project</Authors>
     <TargetFrameworks>net7.0</TargetFrameworks>
+    <PackageIcon>neo.png</PackageIcon>
     <PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/neo-project/neo.git</RepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <Company>The Neo Project</Company>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Include="../neo.png" Pack="true" Visible="false" PackagePath=""/>
+  </ItemGroup>
 </Project>
