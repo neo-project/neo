@@ -1,0 +1,41 @@
+{
+  "category": "Others",
+  "name": "Init",
+  "tests": [
+    {
+      "name": "Init script",
+      "script": [
+        "RET"
+      ],
+      "steps": [
+        {
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 0,
+                "nextInstruction": "RET"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Init script",
+      "script": [
+        "RET"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT"
+          }
+        }
+      ]
+    }
+  ]
+}

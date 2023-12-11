@@ -23,7 +23,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             _keyPair = new KeyPair(privateKey);
-            _nep2 = _keyPair.Export("Satoshi", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
+            _nep2 = _keyPair.Export("Satoshi", TestProtocolSettings.Default.AddressVersion, 2, 1, 1);
         }
 
         [TestInitialize]
@@ -86,7 +86,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             json["contract"] = null;
             json["extra"] = null;
             NEP6Account account = NEP6Account.FromJson(json, _wallet);
-            account.ScriptHash.Should().Be("NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash(ProtocolSettings.Default.AddressVersion));
+            account.ScriptHash.Should().Be("NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf".ToScriptHash(TestProtocolSettings.Default.AddressVersion));
             account.Label.Should().BeNull();
             account.IsDefault.Should().BeTrue();
             account.Lock.Should().BeFalse();

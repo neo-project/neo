@@ -61,7 +61,7 @@ namespace Neo.UnitTests.Network.P2P
             {
                 UserAgent = "Unit Test".PadLeft(1024, '0'),
                 Nonce = 1,
-                Network = ProtocolSettings.Default.Network,
+                Network = TestProtocolSettings.Default.Network,
                 Timestamp = 5,
                 Version = 6,
                 Capabilities = new NodeCapability[]

@@ -97,7 +97,7 @@ namespace Neo.UnitTests
             wallet["accounts"] = new JArray();
             wallet["extra"] = null;
             wallet.ToString().Should().Be("{\"name\":\"noname\",\"version\":\"1.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}");
-            return new NEP6Wallet(null, password, ProtocolSettings.Default, wallet);
+            return new NEP6Wallet(null, password, TestProtocolSettings.Default, wallet);
         }
 
         public static Transaction GetTransaction(UInt160 sender)
