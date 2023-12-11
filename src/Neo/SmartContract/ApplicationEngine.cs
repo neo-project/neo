@@ -631,9 +631,9 @@ namespace Neo.SmartContract
 
         public bool IsHardforkEnabled(Hardfork hardfork)
         {
-            // Return true if PersistingBlock is null
+            // Return true if PersistingBlock is null and Hardfork is enabled
             if (PersistingBlock is null)
-                return true;
+                return ProtocolSettings.Hardforks.ContainsKey(hardfork);
 
             return ProtocolSettings.IsHardforkEnabled(hardfork, PersistingBlock.Index);
         }
