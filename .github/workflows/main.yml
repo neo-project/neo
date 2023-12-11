@@ -69,7 +69,7 @@ jobs:
         --configuration Debug \
         --output ./out \
         --version-suffix ${{ env.VERSION }}
-    - name : Pack (Neo)
+    - name : Pack (Neo.ConsoleService)
       run: |
         dotnet pack ./src/Neo.ConsoleService \
         --configuration Debug \
@@ -128,7 +128,7 @@ jobs:
         dotnet pack ./src/Neo.VM \
         --configuration Release \
         --output ./out
-    - name : Pack (Neo)
+    - name : Pack (Neo.ConsoleService)
       if: steps.check_tag.outputs.statusCode == '404'
       run: |
         dotnet pack ./src/Neo.ConsoleService \
