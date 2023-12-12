@@ -37,7 +37,6 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
   PublishMyGet:
-    if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
     needs: Test
     runs-on: ubuntu-latest
     steps:
@@ -50,31 +49,18 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     - name: Set Version
-      run: git rev-list --count HEAD | xargs printf 'CI%05d' | xargs -I{} echo 'VERSION={}' >> $GITHUB_ENV
-    - name : Pack (Neo)
+      run: git rev-list --count HEAD | xargs printf "CI%05d" | xargs -I{} echo 'VERSION={}' >> $GITHUB_ENV
+    - name: Pack (Neo)
       run: |
-        dotnet pack ./src/Neo \
+        dotnet pack ./neo.sln \
         --configuration Debug \
         --output ./out \
-        --version-suffix ${{ env.VERSION }}
-    - name : Pack (Neo.Json)
+        --version-suffix "${{ env.VERSION }}"
+    - name: Remove Unwanted Files
+      working-directory: ./out
       run: |
-        dotnet pack ./src/Neo.Json \
-        --configuration Debug \
-        --output ./out \
-        --version-suffix ${{ env.VERSION }}
-    - name : Pack (Neo.VM)
-      run: |
-        dotnet pack ./src/Neo.VM \
-        --configuration Debug \
-        --output ./out \
-        --version-suffix ${{ env.VERSION }}
-    - name : Pack (Neo)
-      run: |
-        dotnet pack ./src/Neo.ConsoleService \
-        --configuration Debug \
-        --output ./out \
-        --version-suffix ${{ env.VERSION }}
+        rm -v Neo.GUI*
+        rm -v Neo.CLI*
     - name: Publish to MyGet
       run: dotnet nuget push out/*.nupkg -s https://www.myget.org/F/neo/api/v2/package -k ${MYGET_TOKEN} -ss https://www.myget.org/F/neo/symbols/api/v2/package -sk ${MYGET_TOKEN}
       env:
