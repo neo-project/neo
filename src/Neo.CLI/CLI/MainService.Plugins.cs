@@ -118,8 +118,8 @@ namespace Neo.CLI
         /// <summary>
         /// Install plugin from stream
         /// </summary>
-        /// <param name="pluginName">name of the plugin</param>
-        /// <param name="overWrite">Install by force for `update`</param>
+        /// <param name="pluginName">Name of the plugin</param>
+        /// <param name="installed">Dependency set</param>
         private async Task InstallPluginAsync(string pluginName, HashSet<string> installed = null,
             bool overWrite = false)
         {
