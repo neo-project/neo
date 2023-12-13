@@ -241,58 +241,5 @@ namespace Neo.CLI
                 ConsoleHelper.Warning("No loaded plugins");
             }
         }
-
-
-        private async Task<MemoryStream> DownloadLibLevelDBAsync(string pluginName)
-        {
-            var url =
-                $"https://github.com/neo-project/neo-node/releases/download/v{typeof(Plugin).Assembly.GetVersion()}/{pluginName}.zip";
-            using HttpClient http = new();
-            HttpResponseMessage response = await http.GetAsync(url);
-            if (response.StatusCode == HttpStatusCode.NotFound)
-            {
-                response.Dispose();
-                Version versionCore = typeof(Plugin).Assembly.GetName().Version;
-                HttpRequestMessage request = new(HttpMethod.Get,
-                    "https://api.github.com/repos/neo-project/neo-modules/releases");
-                request.Headers.UserAgent.ParseAdd(
-                    $"{GetType().Assembly.GetName().Name}/{GetType().Assembly.GetVersion()}");
-                using HttpResponseMessage responseApi = await http.SendAsync(request);
-                byte[] buffer = await responseApi.Content.ReadAsByteArrayAsync();
-                var releases = JObject.Parse(buffer);
-                var asset = ((JArray)releases)
-                    .Where(p => !p["tag_name"].GetString().Contains('-'))
-                    .Select(p => new
-                    {
-                        Version = Version.Parse(p["tag_name"].GetString().TrimStart('v')),
-                        Assets = (JArray)p["assets"]
-                    })
-                    .OrderByDescending(p => p.Version)
-                    .First(p => p.Version <= versionCore).Assets
-                    .FirstOrDefault(p => p["name"].GetString() == $"{pluginName}.zip");
-                if (asset is null) throw new Exception("Plugin doesn't exist.");
-                response = await http.GetAsync(asset["browser_download_url"].GetString());
-            }
-
-            using (response)
-            {
-                var totalRead = 0L;
-                byte[] buffer = new byte[1024];
-                int read;
-                await using Stream stream = await response.Content.ReadAsStreamAsync();
-                ConsoleHelper.Info("From ", $"{url}");
-                var output = new MemoryStream();
-                while ((read = await stream.ReadAsync(buffer)) > 0)
-                {
-                    output.Write(buffer, 0, read);
-                    totalRead += read;
-                    Console.Write(
-                        $"\rDownloading {pluginName}.zip {totalRead / 1024}KB/{response.Content.Headers.ContentLength / 1024}KB {(totalRead * 100) / response.Content.Headers.ContentLength}%");
-                }
-
-                Console.WriteLine();
-                return output;
-            }
-        }
     }
 }
