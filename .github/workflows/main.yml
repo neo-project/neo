@@ -37,6 +37,7 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
   PublishMyGet:
+    if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
     needs: Test
     runs-on: ubuntu-latest
     steps:
@@ -63,18 +64,15 @@ jobs:
         rm -v Neo.GUI*
     - name: Publish to MyGet
       working-directory: ./out
-      run: dotnet nuget push Neo.${{ env.VERSION_SUFFIX }}.nupkg -s https://www.myget.org/F/neo/api/v2/package -k ${MYGET_TOKEN} -ss https://www.myget.org/F/neo/symbols/api/v2/package -sk ${MYGET_TOKEN}
-    - name: Publish to MyGet
-      working-directory: ./out
-      run: dotnet nuget push Neo.ConsoleService.${{ env.VERSION_SUFFIX }}.nupkg -s https://www.myget.org/F/neo/api/v2/package -k ${MYGET_TOKEN} -ss https://www.myget.org/F/neo/symbols/api/v2/package -sk ${MYGET_TOKEN}
-    - name: Publish to MyGet
-      working-directory: ./out
-      run: dotnet nuget push Neo.Json.${{ env.VERSION_SUFFIX }}.nupkg -s https://www.myget.org/F/neo/api/v2/package -k ${MYGET_TOKEN} -ss https://www.myget.org/F/neo/symbols/api/v2/package -sk ${MYGET_TOKEN}
-    - name: Publish to MyGet
-      working-directory: ./out
-      run: dotnet nuget push Neo.VM.${{ env.VERSION_SUFFIX }}.nupkg -s https://www.myget.org/F/neo/api/v2/package -k ${MYGET_TOKEN} -ss https://www.myget.org/F/neo/symbols/api/v2/package -sk ${MYGET_TOKEN}
-      env:
-        MYGET_TOKEN: ${{ secrets.MYGET_TOKEN }}
+      run: |
+        for filename in *.nupkg; do
+            dotnet nuget push "${filename}" \
+            --source https://www.myget.org/F/neo/api/v2/package \
+            --api-key "${{ secrets.MYGET_TOKEN }}" \
+            --symbol-source https://www.myget.org/F/neo/symbols/api/v2/package \
+            --symbol-api-key "${{ secrets.MYGET_TOKEN }}";
+        done;
+      shell: bash
 
   Release:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
