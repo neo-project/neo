@@ -1,7 +1,7 @@
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.VM;
-using System;
-using System.Collections.Generic;
 
 namespace Neo.Test
 {

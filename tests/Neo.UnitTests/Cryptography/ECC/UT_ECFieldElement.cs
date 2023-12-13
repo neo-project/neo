@@ -1,10 +1,10 @@
-using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography.ECC;
-using System;
+﻿using System;
 using System.Globalization;
 using System.Numerics;
 using System.Reflection;
+using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography.ECC;
 
 namespace Neo.UnitTests.Cryptography.ECC
 {

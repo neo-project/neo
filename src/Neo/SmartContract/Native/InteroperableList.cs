@@ -1,8 +1,8 @@
-using Neo.VM;
-using Neo.VM.Types;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Neo.VM;
+using Neo.VM.Types;
 
 namespace Neo.SmartContract.Native
 {

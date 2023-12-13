@@ -1,10 +1,10 @@
-#pragma warning disable CS1718
+﻿#pragma warning disable CS1718
 
+using System;
+using System.IO;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
-using System;
-using System.IO;
 
 namespace Neo.UnitTests.IO
 {

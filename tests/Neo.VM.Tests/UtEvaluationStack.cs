@@ -1,9 +1,9 @@
+﻿using System;
+using System.Collections;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
-using System.Collections;
-using System.Linq;
 
 namespace Neo.Test
 {

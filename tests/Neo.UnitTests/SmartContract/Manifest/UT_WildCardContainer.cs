@@ -1,10 +1,10 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Json;
 using Neo.SmartContract.Manifest;
-using System;
-using System.Collections;
-using System.Collections.Generic;
 
 namespace Neo.UnitTests.SmartContract.Manifest
 {

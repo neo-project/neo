@@ -1,8 +1,8 @@
+﻿using System.Linq;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 using Neo.VM;
-using System.Linq;
 
 namespace Neo.UnitTests.SmartContract
 {

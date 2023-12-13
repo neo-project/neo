@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2022 The Neo Project.
+﻿// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -8,15 +8,15 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Json;
 using Neo.SmartContract;
 using Neo.VM.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
 using Array = Neo.VM.Types.Array;
 using Boolean = Neo.VM.Types.Boolean;
 using Buffer = Neo.VM.Types.Buffer;

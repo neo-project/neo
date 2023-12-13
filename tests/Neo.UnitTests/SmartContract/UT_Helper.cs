@@ -1,3 +1,4 @@
+﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
@@ -5,7 +6,6 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
-using System;
 using static Neo.SmartContract.Helper;
 
 namespace Neo.UnitTests.SmartContract

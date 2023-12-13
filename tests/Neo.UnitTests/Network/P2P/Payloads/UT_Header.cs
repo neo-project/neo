@@ -1,10 +1,10 @@
+﻿using System;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.SmartContract;
-using System;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {

@@ -1,11 +1,11 @@
+﻿using System;
+using System.Numerics;
+using System.Text;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
-using System;
-using System.Numerics;
-using System.Text;
 
 namespace Neo.UnitTests.SmartContract
 {

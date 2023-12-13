@@ -1,3 +1,4 @@
+﻿using System.Linq;
 using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
@@ -8,7 +9,6 @@ using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
-using System.Linq;
 using Array = System.Array;
 
 namespace Neo.UnitTests.SmartContract

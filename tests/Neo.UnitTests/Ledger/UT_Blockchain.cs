@@ -1,3 +1,6 @@
+﻿using System;
+using System.Linq;
+using System.Numerics;
 using Akka.TestKit;
 using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -9,9 +12,6 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
-using System;
-using System.Linq;
-using System.Numerics;
 
 namespace Neo.UnitTests.Ledger
 {

@@ -1,5 +1,5 @@
+﻿using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Linq;
 
 namespace Neo.ConsoleService.Tests
 {

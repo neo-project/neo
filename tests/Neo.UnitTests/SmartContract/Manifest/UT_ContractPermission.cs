@@ -1,9 +1,9 @@
+﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
-using System;
 
 namespace Neo.UnitTests.SmartContract.Manifest
 {

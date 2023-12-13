@@ -1,3 +1,5 @@
+﻿using System;
+using System.IO;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
@@ -5,8 +7,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.SmartContract;
 using Neo.VM;
-using System;
-using System.IO;
 
 namespace Neo.UnitTests.Ledger
 {

@@ -1,10 +1,10 @@
+﻿using System;
+using System.Collections.Generic;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 using Neo.SmartContract.Iterators;
 using Neo.VM.Types;
-using System;
-using System.Collections.Generic;
 
 namespace Neo.UnitTests.SmartContract.Iterators
 {

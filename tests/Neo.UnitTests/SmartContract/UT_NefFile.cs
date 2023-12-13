@@ -1,9 +1,9 @@
+﻿using System;
+using System.IO;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.SmartContract;
-using System;
-using System.IO;
 
 namespace Neo.UnitTests.SmartContract
 {

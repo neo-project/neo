@@ -1,11 +1,11 @@
+﻿using System;
+using System.Linq;
+using System.Text.RegularExpressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Test.Extensions;
 using Neo.VM;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace Neo.Test.Converters
 {

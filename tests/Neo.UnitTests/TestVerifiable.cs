@@ -1,8 +1,8 @@
+﻿using System;
+using System.IO;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using System;
-using System.IO;
 
 namespace Neo.UnitTests
 {

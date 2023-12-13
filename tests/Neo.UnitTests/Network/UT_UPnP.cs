@@ -1,6 +1,6 @@
+﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network;
-using System;
 
 namespace Neo.UnitTests.Network
 {

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Neo.VM;
 using Neo.VM.Types;
 

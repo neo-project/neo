@@ -1,3 +1,6 @@
+﻿using System;
+using System.Linq;
+using System.Text;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
@@ -6,9 +9,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
-using System;
-using System.Linq;
-using System.Text;
 
 namespace Neo.UnitTests.Cryptography
 {

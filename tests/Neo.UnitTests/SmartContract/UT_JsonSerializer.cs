@@ -1,12 +1,12 @@
+﻿using System;
+using System.Linq;
+using System.Numerics;
+using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Json;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
-using System.Linq;
-using System.Numerics;
-using System.Text;
 
 namespace Neo.UnitTests.SmartContract
 {

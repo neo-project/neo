@@ -1,3 +1,7 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Numerics;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -6,10 +10,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using System;
-using System.Collections.Generic;
-using System.Numerics;
-using System.Threading.Tasks;
 
 namespace Neo.UnitTests.Ledger
 {

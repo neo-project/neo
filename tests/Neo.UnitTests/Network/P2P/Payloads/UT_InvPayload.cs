@@ -1,9 +1,9 @@
+﻿using System;
+using System.Linq;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
-using System;
-using System.Linq;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {

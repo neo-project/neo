@@ -1,3 +1,5 @@
+﻿using System;
+using System.Linq;
 using Akka.IO;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -5,8 +7,6 @@ using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.VM;
-using System;
-using System.Linq;
 
 namespace Neo.UnitTests.Network.P2P
 {

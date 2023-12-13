@@ -1,6 +1,6 @@
+﻿using System;
 using Neo.Cryptography.BLS12_381;
 using Neo.VM.Types;
-using System;
 
 namespace Neo.SmartContract.Native;
 

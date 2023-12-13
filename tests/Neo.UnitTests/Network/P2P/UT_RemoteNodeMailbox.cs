@@ -1,12 +1,12 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Akka.IO;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Network.P2P;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Neo.UnitTests.Network.P2P
 {

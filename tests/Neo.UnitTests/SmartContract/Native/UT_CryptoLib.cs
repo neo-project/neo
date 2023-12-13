@@ -1,10 +1,10 @@
+﻿using System.Security.Cryptography;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.BLS12_381;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
-using System.Security.Cryptography;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
