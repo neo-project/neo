@@ -235,8 +235,6 @@ dotnet_diagnostic.IDE0060.severity = ignore
 
 [src/{Compilers,ExpressionEvaluator,Scripting}/**Test**/*.{cs,vb}]
 
-# IDE0060: Remove unused parameter
-dotnet_diagnostic.IDE0060.severity = none
 
 [src/{Analyzers,CodeStyle,Features,Workspaces,EditorFeatures,VisualStudio}/**/*.{cs,vb}]
 
