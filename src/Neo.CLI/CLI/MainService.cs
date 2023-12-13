@@ -615,9 +615,7 @@ namespace Neo.CLI
         private Task TryInstallLevelDbPlugin()
         {
             if (PluginExists("LevelDBStore")) return Task.CompletedTask;
-            if (!ReadUserInput("LevelDBStore plugin is required but not installed. Do you want to install it now? (yes/no)").IsYes()) return Task.CompletedTask;
-
-            return InstallPluginAsync("LevelDBStore");
+            return !ReadUserInput("LevelDBStore plugin is required but not installed. Do you want to install it now? (yes/no)").IsYes() ? Task.CompletedTask : InstallPluginAsync("LevelDBStore");
         }
     }
 }
