@@ -1,7 +1,7 @@
+﻿using System.Text;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
-using System.Text;
 
 namespace Neo.UnitTests.Cryptography
 {

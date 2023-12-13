@@ -1,4 +1,4 @@
-// Copyright (C) 2016-2023 The Neo Project.
+﻿// Copyright (C) 2016-2023 The Neo Project.
 // 
 // The neo-vm is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -8,12 +8,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using Neo.VM.Types;
 using Buffer = Neo.VM.Types.Buffer;
 using VMArray = Neo.VM.Types.Array;
 

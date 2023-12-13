@@ -1,4 +1,4 @@
-// Copyright (C) 2016-2023 The Neo Project.
+﻿// Copyright (C) 2016-2023 The Neo Project.
 // 
 // The Neo.ConsoleService is free software distributed under the MIT 
 // software license, see the accompanying file LICENSE in the main directory

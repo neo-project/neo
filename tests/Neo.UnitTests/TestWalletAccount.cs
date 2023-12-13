@@ -1,7 +1,7 @@
+﻿using System;
 using Moq;
 using Neo.SmartContract;
 using Neo.Wallets;
-using System;
 
 namespace Neo.UnitTests
 {

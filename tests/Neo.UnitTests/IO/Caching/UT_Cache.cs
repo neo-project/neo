@@ -1,9 +1,9 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
-using System;
-using System.Collections;
-using System.Collections.Generic;
 
 namespace Neo.UnitTests.IO.Caching
 {

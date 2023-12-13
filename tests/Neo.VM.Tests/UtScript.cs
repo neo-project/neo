@@ -1,7 +1,7 @@
+﻿using System;
+using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.VM;
-using System;
-using System.Text;
 
 namespace Neo.Test
 {

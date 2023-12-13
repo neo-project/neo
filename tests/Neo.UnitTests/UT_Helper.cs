@@ -1,14 +1,14 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Numerics;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
 using Neo.Network.P2P;
 using Neo.SmartContract;
 using Neo.Wallets;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Numerics;
 
 namespace Neo.UnitTests
 {

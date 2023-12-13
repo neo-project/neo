@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2022 The Neo Project.
+﻿// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -8,11 +8,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.Collections;
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.Dispatch;
 using Akka.Dispatch.MessageQueues;
-using System.Collections;
 
 namespace Neo.IO.Actors
 {

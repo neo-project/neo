@@ -1,4 +1,4 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract.Native;
 
 namespace Neo.UnitTests.SmartContract.Native

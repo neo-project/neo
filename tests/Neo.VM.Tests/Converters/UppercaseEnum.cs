@@ -1,5 +1,5 @@
+﻿using System;
 using Newtonsoft.Json;
-using System;
 
 namespace Neo.Test.Converters
 {

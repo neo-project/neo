@@ -1,7 +1,7 @@
+﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 using Neo.VM;
-using System;
 
 namespace Neo.UnitTests.SmartContract
 {

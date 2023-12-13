@@ -1,3 +1,4 @@
+﻿using System.Net;
 using Akka.IO;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
@@ -6,7 +7,6 @@ using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
-using System.Net;
 
 namespace Neo.UnitTests.Network.P2P
 {

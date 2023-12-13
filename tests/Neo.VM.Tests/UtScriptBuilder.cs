@@ -1,11 +1,11 @@
+﻿using System;
+using System.Linq;
+using System.Numerics;
+using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Test.Extensions;
 using Neo.Test.Helpers;
 using Neo.VM;
-using System;
-using System.Linq;
-using System.Numerics;
-using System.Text;
 
 namespace Neo.Test
 {

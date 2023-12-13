@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2022 The Neo Project.
+﻿// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -8,13 +8,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
+using System.Security.Cryptography;
+using System.Text;
 using Neo.Cryptography;
 using Neo.SmartContract;
 using Neo.Wallets.NEP6;
 using Org.BouncyCastle.Crypto.Generators;
-using System;
-using System.Security.Cryptography;
-using System.Text;
 using static Neo.Wallets.Helper;
 
 namespace Neo.Wallets

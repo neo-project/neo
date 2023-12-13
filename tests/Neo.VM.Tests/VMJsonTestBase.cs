@@ -1,3 +1,6 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Test.Extensions;
 using Neo.Test.Types;
@@ -5,9 +8,6 @@ using Neo.VM;
 using Neo.VM.Types;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Neo.Test
 {

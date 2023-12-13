@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2022 The Neo Project.
+﻿// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -8,17 +8,17 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
+using System.Buffers.Binary;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Wallets;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
-using System;
-using System.Buffers.Binary;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using static Neo.Helper;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 

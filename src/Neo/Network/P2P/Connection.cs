@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2022 The Neo Project.
+﻿// Copyright (C) 2015-2022 The Neo Project.
 // 
 // The neo is free software distributed under the MIT software license, 
 // see the accompanying file LICENSE in the main directory of the
@@ -8,12 +8,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.Actor;
-using Akka.IO;
 using System;
 using System.Net;
 using System.Net.WebSockets;
 using System.Threading;
+using Akka.Actor;
+using Akka.IO;
 
 namespace Neo.Network.P2P
 {

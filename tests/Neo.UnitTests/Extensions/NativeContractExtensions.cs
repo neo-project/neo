@@ -1,10 +1,10 @@
+﻿using System;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
 
 namespace Neo.UnitTests.Extensions
 {

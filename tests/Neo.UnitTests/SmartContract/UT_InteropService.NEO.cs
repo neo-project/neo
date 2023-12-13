@@ -1,3 +1,5 @@
+﻿using System;
+using System.Linq;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
@@ -11,8 +13,6 @@ using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.Wallets;
-using System;
-using System.Linq;
 
 namespace Neo.UnitTests.SmartContract
 {

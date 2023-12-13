@@ -1,10 +1,10 @@
+﻿using System;
+using System.Linq;
+using System.Security.Cryptography;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Wallets;
-using System;
-using System.Linq;
-using System.Security.Cryptography;
 
 namespace Neo.UnitTests.Cryptography
 {

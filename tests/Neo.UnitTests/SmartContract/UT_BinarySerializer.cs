@@ -1,12 +1,12 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Neo.UnitTests.SmartContract
 {

@@ -1,7 +1,7 @@
+﻿using System.Net;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
-using System.Net;
 
 namespace Neo.UnitTests.Network.P2P
 {

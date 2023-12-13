@@ -1,4 +1,4 @@
-// Copyright (C) 2016-2023 The Neo Project.
+﻿// Copyright (C) 2016-2023 The Neo Project.
 // 
 // The neo-gui is free software distributed under the MIT software 
 // license, see the accompanying file LICENSE in the main directory of
@@ -8,11 +8,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Network.P2P.Payloads;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing.Design;
 using System.Linq;
+using Neo.Network.P2P.Payloads;
 
 namespace Neo.GUI.Wrappers
 {

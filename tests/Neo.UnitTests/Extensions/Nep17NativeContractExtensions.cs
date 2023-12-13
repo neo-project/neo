@@ -1,3 +1,5 @@
+﻿using System.IO;
+using System.Numerics;
 using FluentAssertions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
@@ -5,8 +7,6 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
-using System.IO;
-using System.Numerics;
 
 namespace Neo.UnitTests.Extensions
 {

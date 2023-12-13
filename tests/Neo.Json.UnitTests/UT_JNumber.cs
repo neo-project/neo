@@ -1,4 +1,4 @@
-namespace Neo.Json.UnitTests
+﻿namespace Neo.Json.UnitTests
 {
     enum Woo
     {

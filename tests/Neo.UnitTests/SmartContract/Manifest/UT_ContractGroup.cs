@@ -1,10 +1,10 @@
+﻿using System;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.Wallets;
-using System;
-using System.Linq;
 
 namespace Neo.UnitTests.SmartContract.Manifest
 {

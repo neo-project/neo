@@ -1,9 +1,9 @@
+﻿using System;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
-using System;
 
 namespace Neo.UnitTests.Ledger
 {

@@ -1,3 +1,6 @@
+﻿using System;
+using System.Linq;
+using System.Text;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -13,9 +16,6 @@ using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
-using System;
-using System.Linq;
-using System.Text;
 
 namespace Neo.UnitTests.SmartContract
 {

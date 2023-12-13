@@ -1,8 +1,8 @@
+﻿using System.IO;
 using Neo.IO;
 using Neo.Json;
 using Neo.Persistence;
 using Neo.SmartContract.Native;
-using System.IO;
 
 namespace Neo.Network.P2P.Payloads
 {

@@ -1,10 +1,10 @@
+﻿using System.Collections.Generic;
+using System.Numerics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
-using System.Collections.Generic;
-using System.Numerics;
 
 namespace Neo.UnitTests.SmartContract.Native
 {

@@ -1,4 +1,4 @@
-// Copyright (C) 2016-2023 The Neo Project.
+﻿// Copyright (C) 2016-2023 The Neo Project.
 // 
 // The neo-cli is free software distributed under the MIT software 
 // license, see the accompanying file LICENSE in the main directory of
@@ -8,9 +8,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.Threading;
 using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
-using System.Threading;
 
 namespace Neo
 {

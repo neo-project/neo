@@ -1,9 +1,9 @@
+﻿using System;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Json;
 using Neo.SmartContract;
 using Neo.Wallets.NEP6;
-using System;
 
 namespace Neo.UnitTests.Wallets.NEP6
 {

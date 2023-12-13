@@ -1,8 +1,8 @@
+﻿using System.IO;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.IO.Caching;
-using System.IO;
 
 namespace Neo.UnitTests.IO.Caching
 {

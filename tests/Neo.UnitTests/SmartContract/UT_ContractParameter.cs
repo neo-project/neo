@@ -1,12 +1,12 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Numerics;
+using System.Text;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Json;
 using Neo.SmartContract;
-using System;
-using System.Collections.Generic;
-using System.Numerics;
-using System.Text;
 
 namespace Neo.UnitTests.SmartContract
 {
