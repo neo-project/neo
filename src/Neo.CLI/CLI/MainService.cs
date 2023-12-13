@@ -1,10 +1,10 @@
 // Copyright (C) 2016-2023 The Neo Project.
-// 
-// The neo-cli is free software distributed under the MIT software 
+//
+// The neo-cli is free software distributed under the MIT software
 // license, see the accompanying file LICENSE in the main directory of
-// the project or http://www.opensource.org/licenses/mit-license.php 
+// the project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -32,8 +32,10 @@ using System.Linq;
 using System.Net;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using Array = System.Array;
 
 namespace Neo.CLI
@@ -66,6 +68,8 @@ namespace Neo.CLI
 
         protected override string Prompt => "neo";
         public override string ServiceName => "NEO-CLI";
+        static readonly string StrExeFilePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        static readonly string PluginPath = Path.Combine(StrExeFilePath, "Plugins");
 
         /// <summary>
         /// Constructor
@@ -356,6 +360,8 @@ namespace Neo.CLI
                         break;
                 }
 
+            await TryInstallLevelDbPlugin();
+
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
 
             NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
@@ -604,6 +610,14 @@ namespace Neo.CLI
             }
 
             return exception.Message;
+        }
+
+        private Task TryInstallLevelDbPlugin()
+        {
+            if (PluginExists("LevelDBStore")) return Task.CompletedTask;
+            if (!ReadUserInput("LevelDBStore plugin is required but not installed. Do you want to install it now? (yes/no)").IsYes()) return Task.CompletedTask;
+
+            return InstallPluginAsync("LevelDBStore");
         }
     }
 }
