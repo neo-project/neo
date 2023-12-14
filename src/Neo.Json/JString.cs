@@ -1,10 +1,10 @@
 // Copyright (C) 2015-2022 The Neo Project.
-// 
-// The Neo.Json is free software distributed under the MIT software license, 
+//
+// The Neo.Json is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -92,5 +92,37 @@ namespace Neo.Json
         {
             return value == null ? null : new JString(value);
         }
+
+        public static bool operator ==(JString left, JString? right)
+        {
+            if (right is null) return false;
+            return ReferenceEquals(left, right) || left.Value.Equals(right.Value);
+        }
+
+        public static bool operator !=(JString left, JString right)
+        {
+            return !(left == right);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is null) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj is JString other)
+            {
+                return this == other;
+            }
+            if (obj is string str)
+            {
+                return this.Value == str;
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return Value.GetHashCode();
+        }
+
     }
 }
