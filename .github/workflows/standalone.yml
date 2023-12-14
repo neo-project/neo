@@ -143,17 +143,17 @@ jobs:
     - name: Create Tarball File (linux)
       if: ${{ startsWith(matrix.runtime, 'linux') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: tar -czvf ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.tar.gz .
+      run: tar -czvf ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.${{ github.ref_name }}.tar.gz .
 
     - name: Create Tarball File (osx)
       if: ${{ startsWith(matrix.runtime, 'osx') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: tar -cJf ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.tar.xz .
+      run: tar -cJf ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.${{ github.ref_name }}.tar.xz .
 
     - name: Create Zip File (win)
       if: ${{ startsWith(matrix.runtime, 'win') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: zip ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.zip -r *
+      run: zip ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.${{ github.ref_name }}.zip -r *
 
     - name: Output/Distribution Directory Contents
       run: |
