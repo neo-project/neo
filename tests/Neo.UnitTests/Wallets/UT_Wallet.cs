@@ -20,7 +20,7 @@ namespace Neo.UnitTests.Wallets
 
         private readonly Dictionary<UInt160, WalletAccount> accounts = new();
 
-        public MyWallet() : base(null, ProtocolSettings.Default)
+        public MyWallet() : base(null, TestProtocolSettings.Default)
         {
         }
 
@@ -112,7 +112,7 @@ namespace Neo.UnitTests.Wallets
         public static void ClassInit(TestContext ctx)
         {
             glkey = UT_Crypto.GenerateCertainKey(32);
-            nep2Key = glkey.Export("pwd", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
+            nep2Key = glkey.Export("pwd", TestProtocolSettings.Default.AddressVersion, 2, 1, 1);
         }
 
         [TestMethod]

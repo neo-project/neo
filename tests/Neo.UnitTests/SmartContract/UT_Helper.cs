@@ -70,10 +70,10 @@ namespace Neo.UnitTests.SmartContract
             tx.Signers[0].Account = contract.ScriptHash;
 
             using ScriptBuilder invocationScript = new();
-            invocationScript.EmitPush(Neo.Wallets.Helper.Sign(tx, _key, ProtocolSettings.Default.Network));
+            invocationScript.EmitPush(Neo.Wallets.Helper.Sign(tx, _key, TestProtocolSettings.Default.Network));
             tx.Witnesses = new Witness[] { new Witness() { InvocationScript = invocationScript.ToArray(), VerificationScript = contract.Script } };
 
-            using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, null, null, ProtocolSettings.Default);
+            using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, null, null, TestProtocolSettings.Default);
             engine.LoadScript(contract.Script);
             engine.LoadScript(new Script(invocationScript.ToArray(), true), configureState: p => p.CallFlags = CallFlags.None);
             Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -91,9 +91,9 @@ namespace Neo.UnitTests.SmartContract
             tx.Signers[0].Account = contract.ScriptHash;
 
             using ScriptBuilder invocationScript = new();
-            invocationScript.EmitPush(Neo.Wallets.Helper.Sign(tx, _key, ProtocolSettings.Default.Network));
+            invocationScript.EmitPush(Neo.Wallets.Helper.Sign(tx, _key, TestProtocolSettings.Default.Network));
 
-            using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, null, null, ProtocolSettings.Default);
+            using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, null, null, TestProtocolSettings.Default);
             engine.LoadScript(contract.Script);
             engine.LoadScript(new Script(invocationScript.ToArray(), true), configureState: p => p.CallFlags = CallFlags.None);
             Assert.AreEqual(VMState.HALT, engine.Execute());
