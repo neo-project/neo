@@ -17,6 +17,7 @@ namespace Neo.Json
     /// </summary>
     public class JBoolean : JToken
     {
+
         /// <summary>
         /// Gets the value of the JSON token.
         /// </summary>
@@ -82,9 +83,22 @@ namespace Neo.Json
             return !left.Value.Equals(right.Value);
         }
 
-        public bool Equals(JBoolean other)
+        public override bool Equals(object? obj)
         {
-            return this.Value.Equals(other.Value);
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+            if (obj is JBoolean other)
+            {
+                return this.Value.Equals(other.Value);
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return Value.GetHashCode();
         }
     }
 }
