@@ -24,9 +24,9 @@ namespace Neo.Json.UnitTests
         public void TestEqual()
         {
             Assert.IsTrue(jTrue.Equals(new JBoolean(true)));
-            Assert.IsTrue(jTrue ==new JBoolean(true));
+            Assert.IsTrue(jTrue == new JBoolean(true));
             Assert.IsTrue(jFalse.Equals(new JBoolean()));
-            Assert.IsTrue(jFalse ==new JBoolean());
+            Assert.IsTrue(jFalse == new JBoolean());
         }
     }
 }
