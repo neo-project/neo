@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;

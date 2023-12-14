@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.VM;

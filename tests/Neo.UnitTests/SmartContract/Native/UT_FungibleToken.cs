@@ -1,4 +1,4 @@
-﻿using Akka.TestKit.Xunit2;
+using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract.Native;

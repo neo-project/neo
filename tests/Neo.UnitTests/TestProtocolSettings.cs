@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Immutable;
 using Neo.Cryptography.ECC;
 using Neo.Persistence;

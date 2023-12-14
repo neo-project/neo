@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;

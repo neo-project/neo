@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Moq;
 using Neo.SmartContract;
 using Neo.Wallets;

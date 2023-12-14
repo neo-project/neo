@@ -1,4 +1,4 @@
-﻿using Neo.Test.Converters;
+using Neo.Test.Converters;
 using Newtonsoft.Json;
 
 namespace Neo.Test.Types

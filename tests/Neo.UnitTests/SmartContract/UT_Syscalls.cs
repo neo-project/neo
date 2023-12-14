@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;

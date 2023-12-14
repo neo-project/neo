@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Neo.Plugins;
 
 namespace Neo.UnitTests.Plugins

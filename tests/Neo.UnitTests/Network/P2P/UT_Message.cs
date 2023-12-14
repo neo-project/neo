@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Akka.IO;
 using FluentAssertions;

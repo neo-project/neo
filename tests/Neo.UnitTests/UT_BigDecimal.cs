@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Numerics;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

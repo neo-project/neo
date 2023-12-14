@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Neo.Cryptography.BLS12_381;
 using Neo.VM.Types;
 

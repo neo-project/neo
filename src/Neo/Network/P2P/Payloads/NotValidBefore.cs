@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using Neo.IO;
 using Neo.Json;
 using Neo.Persistence;

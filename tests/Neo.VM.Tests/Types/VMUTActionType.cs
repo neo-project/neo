@@ -1,4 +1,4 @@
-﻿namespace Neo.Test.Types
+namespace Neo.Test.Types
 {
     public enum VMUTActionType
     {

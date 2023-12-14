@@ -1,4 +1,4 @@
-﻿#pragma warning disable CS1718
+#pragma warning disable CS1718
 
 using System;
 using FluentAssertions;

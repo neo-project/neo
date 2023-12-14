@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using Akka.IO;
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
