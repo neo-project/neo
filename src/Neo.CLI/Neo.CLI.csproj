@@ -25,23 +25,4 @@
     <ProjectReference Include="..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
     <ProjectReference Include="..\Neo\Neo.csproj" />
   </ItemGroup>
-
-    <ItemGroup>
-        <None Update="libs\win-x64\libleveldb.dll"  Condition="$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Link>libleveldb.dll</Link>
-        </None>
-        <None Update="libs\linux-x64\libleveldb.so" Condition="$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Link>libleveldb.os</Link>
-        </None>
-        <None Update="libs\osx-x64\libleveldb.dylib" Condition="$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX))) AND $([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture) == x64">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Link>libleveldb.dylib</Link>
-        </None>
-        <None Update="libs\osx-arm64\libleveldb.dylib" Condition="$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX))) AND $([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture) == Arm64">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Link>libleveldb.dylib</Link>
-        </None>
-    </ItemGroup>
 </Project>
