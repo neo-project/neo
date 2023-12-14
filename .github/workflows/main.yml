@@ -17,9 +17,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Setup .NET
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     - name: Check format
@@ -42,19 +42,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: Setup .NET
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
-    - name: Pack with dotnet
-      run: git rev-list --count HEAD |xargs printf "CI%05d" |xargs dotnet pack -c Debug -o out --include-source --version-suffix
+    - name: Set Version
+      run: git rev-list --count HEAD | xargs printf 'CI%05d' | xargs -I{} echo 'VERSION_SUFFIX={}' >> $GITHUB_ENV
+    - name : Pack (Neo)
+      run: |
+        dotnet pack \
+        --configuration Debug \
+        --output ./out \
+        --version-suffix ${{ env.VERSION_SUFFIX }}
+    - name: Remove Unwanted Files
+      working-directory: ./out
+      run: |
+        rm -v Neo.CLI*
+        rm -v Neo.GUI*
     - name: Publish to MyGet
-      run: dotnet nuget push out/*.nupkg -s https://www.myget.org/F/neo/api/v2/package -k ${MYGET_TOKEN} -ss https://www.myget.org/F/neo/symbols/api/v2/package -sk ${MYGET_TOKEN}
-      env:
-        MYGET_TOKEN: ${{ secrets.MYGET_TOKEN }}
+      working-directory: ./out
+      run: |
+        for filename in *.nupkg; do
+            dotnet nuget push "${filename}" \
+            --source https://www.myget.org/F/neo/api/v2/package \
+            --api-key "${{ secrets.MYGET_TOKEN }}" \
+            --symbol-source https://www.myget.org/F/neo/symbols/api/v2/package \
+            --symbol-api-key "${{ secrets.MYGET_TOKEN }}";
+        done;
+      shell: bash
 
   Release:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
@@ -62,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Get version
       id: get_version
       run: |
@@ -83,13 +101,36 @@ jobs:
         prerelease: ${{ contains(steps.get_version.outputs.version, '-') }}
     - name: Setup .NET
       if: steps.check_tag.outputs.statusCode == '404'
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name : Pack (Neo)
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack ./src/Neo \
+        --configuration Release \
+        --output ./out
+    - name : Pack (Neo.Json)
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack ./src/Neo.Json \
+        --configuration Release \
+        --output ./out
+    - name : Pack (Neo.VM)
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack ./src/Neo.VM \
+        --configuration Release \
+        --output ./out
+    - name : Pack (Neo.ConsoleService)
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack ./src/Neo.ConsoleService \
+        --configuration Release \
+        --output ./out
     - name: Publish to NuGet
       if: steps.check_tag.outputs.statusCode == '404'
       run: |
-        dotnet pack -o out -c Release
         dotnet nuget push out/*.nupkg -s https://api.nuget.org/v3/index.json -k ${NUGET_TOKEN}
       env:
         NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
