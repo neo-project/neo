@@ -68,8 +68,6 @@ namespace Neo.CLI
 
         protected override string Prompt => "neo";
         public override string ServiceName => "NEO-CLI";
-        static readonly string StrExeFilePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        static readonly string PluginPath = Path.Combine(StrExeFilePath, "Plugins");
 
         /// <summary>
         /// Constructor
@@ -327,8 +325,16 @@ namespace Neo.CLI
 
         public override void OnStart(string[] args)
         {
-            base.OnStart(args);
-            Start(args);
+            try
+            {
+                base.OnStart(args);
+                Start(args);
+            }
+            catch (DllNotFoundException e)
+            {
+                ConsoleHelper.Error(!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "Missing pre requirements. Please run scripts/install-requirements.sh to install them." : "Missing pre requirements. Please install them.");
+                throw;
+            }
         }
 
         public override void OnStop()
@@ -614,8 +620,9 @@ namespace Neo.CLI
 
         private Task TryInstallLevelDbPlugin()
         {
-            if (PluginExists("LevelDBStore")) return Task.CompletedTask;
-            return !ReadUserInput("LevelDBStore plugin is required but not installed. Do you want to install it now? (yes/no)").IsYes() ? Task.CompletedTask : InstallPluginAsync("LevelDBStore");
+            if (Settings.Default.Storage.Engine != "LevelDBStore" && Settings.Default.Storage.Engine != "RocksDBStore") return Task.CompletedTask;
+            if (PluginExists(Settings.Default.Storage.Engine)) return Task.CompletedTask;
+            return !ReadUserInput($"{Settings.Default.Storage.Engine} plugin is required but not installed. Do you want to install it now? (yes/no)").IsYes() ? Task.CompletedTask : InstallPluginAsync(Settings.Default.Storage.Engine);
         }
     }
 }
