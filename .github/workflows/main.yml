@@ -38,7 +38,7 @@ jobs:
 
   PublishMyGet:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
-    needs: TestK
+    needs: Test
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
