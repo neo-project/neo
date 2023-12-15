@@ -166,9 +166,9 @@ namespace Neo.SmartContract
         /// <param name="value">The value of the entry.</param>
         protected internal void Put(StorageContext context, byte[] key, byte[] value)
         {
-            if (key.Length > MaxStorageKeySize) throw new ArgumentException("Key length too big");
-            if (value.Length > MaxStorageValueSize) throw new ArgumentException("Value length too big");
-            if (context.IsReadOnly) throw new ArgumentException("StorageContext is readonly");
+            if (key.Length > MaxStorageKeySize) throw new ArgumentException("Key length too big", nameof(key));
+            if (value.Length > MaxStorageValueSize) throw new ArgumentException("Value length too big", nameof(value));
+            if (context.IsReadOnly) throw new ArgumentException("StorageContext is readonly", nameof(context));
 
             int newDataSize;
             StorageKey skey = new()
