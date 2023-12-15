@@ -148,6 +148,8 @@ namespace Neo.Json
                 long l => new JNumber(l),
                 byte b => new JNumber(b),
                 sbyte sb => new JNumber(sb),
+                short s => new JNumber(s),
+                ushort us => new JNumber(us),
                 decimal d => new JNumber((double)d),
                 float f => new JNumber(f),
                 double d => new JNumber(d),
