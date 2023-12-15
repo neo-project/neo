@@ -37,8 +37,8 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
   PublishMyGet:
-    if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
-    needs: Test
+    # if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
+    # needs: Test
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -68,7 +68,10 @@ jobs:
         for filename in *.nupkg; do
             dotnet nuget push "${filename}" \
             --source https://www.myget.org/F/neo/api/v3/index.json \
-            --api-key "${{ secrets.MYGET_TOKEN }}";
+            --api-key "${{ secrets.MYGET_TOKEN }}" \
+            --disable-buffering \
+            --no-service-endpoint \
+            --skip-duplicate;
         done;
       shell: bash
 
