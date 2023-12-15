@@ -17,7 +17,6 @@ namespace Neo.Json
     /// </summary>
     public class JBoolean : JToken
     {
-
         /// <summary>
         /// Gets the value of the JSON token.
         /// </summary>

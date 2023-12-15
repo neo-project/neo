@@ -48,8 +48,6 @@ namespace Neo.Json.UnitTests
             woo = s.AsEnum(Woo.Jerry, false);
             Assert.AreEqual(Woo.Jerry, woo);
         }
-
-
         [TestMethod]
         public void TestEqual()
         {

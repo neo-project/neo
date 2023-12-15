@@ -123,6 +123,5 @@ namespace Neo.Json
         {
             return Value.GetHashCode();
         }
-
     }
 }
