@@ -67,10 +67,8 @@ jobs:
       run: |
         for filename in *.nupkg; do
             dotnet nuget push "${filename}" \
-            --source https://www.myget.org/F/neo/api/v2/package \
-            --api-key "${{ secrets.MYGET_TOKEN }}" \
-            --symbol-source https://www.myget.org/F/neo/symbols/api/v2/package \
-            --symbol-api-key "${{ secrets.MYGET_TOKEN }}";
+            --source https://www.myget.org/F/neo/api/v3/index.json \
+            --api-key "${{ secrets.MYGET_TOKEN }}";
         done;
       shell: bash
 
