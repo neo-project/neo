@@ -30,6 +30,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -323,16 +324,26 @@ namespace Neo.CLI
             }
         }
 
-        public override void OnStart(string[] args)
+        public override async Task OnStart(string[] args)
         {
             try
             {
-                base.OnStart(args);
+                await base.OnStart(args);
                 Start(args);
             }
             catch (DllNotFoundException e)
             {
-                ConsoleHelper.Error(!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "Missing pre requirements. Please run scripts/install-requirements.sh to install them." : "Missing pre requirements. Please install them.");
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    if (ReadUserInput($"Missing pre requirements. Do you want to install them?").IsYes())
+                    {
+                        await TryDownloadLevelDbDll();
+                    }
+                }
+                else
+                {
+                    ConsoleHelper.Error("Missing pre requirements. Please run scripts/install-requirements.sh to install them.");
+                }
                 throw;
             }
         }
@@ -623,6 +634,42 @@ namespace Neo.CLI
             if (Settings.Default.Storage.Engine != "LevelDBStore" && Settings.Default.Storage.Engine != "RocksDBStore") return Task.CompletedTask;
             if (PluginExists(Settings.Default.Storage.Engine)) return Task.CompletedTask;
             return !ReadUserInput($"{Settings.Default.Storage.Engine} plugin is required but not installed. Do you want to install it now? (yes/no)").IsYes() ? Task.CompletedTask : InstallPluginAsync(Settings.Default.Storage.Engine);
+        }
+
+        private async Task TryDownloadLevelDbDll()
+        {
+            string url = "https://github.com/neo-ngd/leveldb/releases/download/v1.23/libleveldb-win-x64.zip";
+            string tempFilePath = Path.GetTempFileName();
+            string targetDirectory = @"./";
+
+            try
+            {
+                // Download the file
+                using (var httpClient = new HttpClient())
+                {
+                    var response = await httpClient.GetAsync(url);
+                    response.EnsureSuccessStatusCode();
+                    byte[] fileBytes = await response.Content.ReadAsByteArrayAsync();
+                    await File.WriteAllBytesAsync(tempFilePath, fileBytes);
+                }
+
+                // Unzip the file
+                ZipFile.ExtractToDirectory(tempFilePath, targetDirectory, true);
+
+                ConsoleHelper.Error("Installing leveldb success. Please restart neo-cli");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
+            finally
+            {
+                // Cleanup temporary file
+                if (File.Exists(tempFilePath))
+                {
+                    File.Delete(tempFilePath);
+                }
+            }
         }
     }
 }
