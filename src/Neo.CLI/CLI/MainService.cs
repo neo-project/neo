@@ -324,20 +324,20 @@ namespace Neo.CLI
             }
         }
 
-        public override async Task OnStart(string[] args)
+        public override async Task OnStartAsync(string[] args)
         {
             try
             {
-                await base.OnStart(args);
+                await base.OnStartAsync(args);
                 Start(args);
             }
-            catch (DllNotFoundException e)
+            catch (DllNotFoundException)
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     if (ReadUserInput($"Missing pre requirements. Do you want to install them?").IsYes())
                     {
-                        await TryDownloadLevelDbDll();
+                        await TryDownloadLevelDbDllAsync();
                     }
                 }
                 else
@@ -377,7 +377,7 @@ namespace Neo.CLI
                         break;
                 }
 
-            await TryInstallLevelDbPlugin();
+            await TryInstallLevelDbPluginAsync();
 
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
 
@@ -629,14 +629,14 @@ namespace Neo.CLI
             return exception.Message;
         }
 
-        private Task TryInstallLevelDbPlugin()
+        private Task TryInstallLevelDbPluginAsync()
         {
             if (Settings.Default.Storage.Engine != "LevelDBStore" && Settings.Default.Storage.Engine != "RocksDBStore") return Task.CompletedTask;
             if (PluginExists(Settings.Default.Storage.Engine)) return Task.CompletedTask;
             return !ReadUserInput($"{Settings.Default.Storage.Engine} plugin is required but not installed. Do you want to install it now? (yes/no)").IsYes() ? Task.CompletedTask : InstallPluginAsync(Settings.Default.Storage.Engine);
         }
 
-        private async Task TryDownloadLevelDbDll()
+        private async Task TryDownloadLevelDbDllAsync()
         {
             string url = "https://github.com/neo-ngd/leveldb/releases/download/v1.23/libleveldb-win-x64.zip";
             string tempFilePath = Path.GetTempFileName();

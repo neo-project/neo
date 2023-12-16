@@ -281,7 +281,7 @@ namespace Neo.ConsoleService
 
         #endregion
 
-        public virtual Task OnStart(string[] args)
+        public virtual Task OnStartAsync(string[] args)
         {
             // Register sigterm event handler
             AssemblyLoadContext.Default.Unloading += SigTermEventHandler;
@@ -551,7 +551,7 @@ namespace Neo.ConsoleService
                 }
                 else
                 {
-                    OnStart(args);
+                    OnStartAsync(args);
                     RunConsole();
                     OnStop();
                 }

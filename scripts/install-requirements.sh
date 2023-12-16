@@ -18,7 +18,8 @@ install_requirements_fedora() {
 
 install_requirements_opensuse() {
     echo "Installing requirements and dependencies on openSUSE..."
-    sudo zypper install -y libleveldb-devel sqlite3 libsqlite3-devel libunwind-devel
+    sudo zypper refresh
+    sudo zypper install -y leveldb-devel sqlite3-devel
 }
 
 install_requirements_macos() {
