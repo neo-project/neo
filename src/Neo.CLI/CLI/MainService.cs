@@ -98,7 +98,7 @@ namespace Neo.CLI
 
             if (input.EndsWith(".neo", StringComparison.InvariantCultureIgnoreCase))
             {
-                if (NeoSystem.Settings.Network == 860833102u)
+                if (NeoSystem.Settings.Network == mainNet)
                     return ResolveNeoNameServiceAddress(input);
                 else
                 {
