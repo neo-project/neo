@@ -90,10 +90,11 @@ namespace Neo.ConsoleService
 
                             availableCommands.Add((command, arguments.ToArray()));
                         }
-                        catch
+                        catch (Exception ex)
                         {
                             // Skip parse errors
                             possibleHelp = command.Key;
+                            ConsoleHelper.Error($"{ex.InnerException?.Message ?? ex.Message}\n");
                         }
                     }
                 }

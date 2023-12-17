@@ -88,12 +88,22 @@ namespace Neo.CLI
             Initialize_Logger();
         }
 
-        internal static UInt160 StringToAddress(string input, byte version)
+        internal UInt160 StringToAddress(string input, byte version)
         {
             switch (input.ToLowerInvariant())
             {
                 case "neo": return NativeContract.NEO.Hash;
                 case "gas": return NativeContract.GAS.Hash;
+            }
+
+            if (input.EndsWith(".neo", StringComparison.InvariantCultureIgnoreCase))
+            {
+                if (NeoSystem.Settings.Network == 860833102u)
+                    return ResolveNeoNameServiceAddress(input);
+                else
+                {
+                    throw new Exception("Neo Name Service (NNS): ONLY works on MainNet.");
+                }
             }
 
             // Try to parse as UInt160
@@ -604,6 +614,33 @@ namespace Neo.CLI
             }
 
             return exception.Message;
+        }
+
+        static readonly UInt160 nnsHash = UInt160.Parse("0x50ac1c37690cc2cfc594472833cf57505d5f46de");
+        static readonly uint mainNet = 860833102u;
+
+        public UInt160 ResolveNeoNameServiceAddress(string domain)
+        {
+            using var sb = new ScriptBuilder();
+            sb.EmitDynamicCall(nnsHash, "resolve", domain, 16);
+
+            using var appEng = ApplicationEngine.Run(sb.ToArray(), NeoSystem.StoreView, settings: NeoSystem.Settings);
+            if (appEng.State == VMState.HALT)
+            {
+                var data = appEng.ResultStack.Pop();
+                if (data is ByteString)
+                {
+                    try
+                    {
+                        return data.GetString().ToScriptHash(NeoSystem.Settings.AddressVersion);
+                    }
+                    catch
+                    {
+                        throw new Exception("Neo Name Service (NNS): Record invalid address format.");
+                    }
+                }
+            }
+            throw new Exception($"Neo Name Service (NNS): \"{domain}\" domain not found.");
         }
     }
 }

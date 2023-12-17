@@ -510,8 +510,9 @@ namespace Neo.CLI
                 ConsoleHelper.Error("Incorrect password");
                 return;
             }
+
             var snapshot = NeoSystem.StoreView;
-            Transaction tx;
+            Transaction tx = null;
             AssetDescriptor descriptor = new(snapshot, NeoSystem.Settings, asset);
             if (!BigDecimal.TryParse(amount, descriptor.Decimals, out BigDecimal decimalAmount) || decimalAmount.Sign <= 0)
             {
@@ -549,10 +550,10 @@ namespace Neo.CLI
                 return;
             }
 
-            ConsoleHelper.Info("Network fee: ",
-                $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)}\t",
-                "Total fee: ",
-                $"{new BigDecimal((BigInteger)(tx.SystemFee + tx.NetworkFee), NativeContract.GAS.Decimals)} GAS");
+            ConsoleHelper.Info(
+                "Send To: ", $"{to.ToAddress(NeoSystem.Settings.AddressVersion)}\n",
+                "Network fee: ", $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)}\t",
+                "Total fee: ", $"{new BigDecimal((BigInteger)(tx.SystemFee + tx.NetworkFee), NativeContract.GAS.Decimals)} GAS");
             if (!ReadUserInput("Relay tx? (no|yes)").IsYes())
             {
                 return;
