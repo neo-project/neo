@@ -198,7 +198,7 @@ namespace Neo.Test
             stack.Insert(2, "test");
             stack.Insert(3, true);
 
-            Assert.AreEqual("[Boolean(True), ByteString(test), Integer(1), Integer(3)]", stack.ToString());
+            Assert.AreEqual("[Integer(3), Integer(1), ByteString(test), Boolean(True)]", stack.ToString());
         }
     }
 }
