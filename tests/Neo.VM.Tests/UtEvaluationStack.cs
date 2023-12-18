@@ -187,5 +187,18 @@ namespace Neo.Test
             Assert.IsTrue(stack.Pop<Integer>().Equals(1));
             Assert.ThrowsException<ArgumentOutOfRangeException>(() => stack.Pop<Integer>().Equals(0));
         }
+
+        [TestMethod]
+        public void TestToString()
+        {
+            var stack = new EvaluationStack(new ReferenceCounter());
+
+            stack.Insert(0, 3);
+            stack.Insert(1, 1);
+            stack.Insert(2, "test");
+            stack.Insert(3, true);
+
+            Assert.AreEqual("[Boolean(True), ByteString(test), Integer(1), Integer(3)]", stack.ToString());
+        }
     }
 }

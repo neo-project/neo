@@ -1,10 +1,10 @@
 // Copyright (C) 2016-2023 The Neo Project.
-// 
-// The neo-vm is free software distributed under the MIT software license, 
+//
+// The neo-vm is free software distributed under the MIT software license,
 // see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -34,6 +34,22 @@ namespace Neo.VM
         /// Gets the number of items on the stack.
         /// </summary>
         public int Count => innerList.Count;
+
+        public override string ToString()
+        {
+            return $@"[{string.Join(", ", innerList.Select(p =>
+                    {
+                        var value = p.Type switch
+                        {
+                            StackItemType.Boolean => $"({p.GetBoolean()})",
+                            StackItemType.Integer => $"({p.GetInteger()})",
+                            StackItemType.ByteString => $"({p.GetString()})",
+                            _ => ""
+                        };
+                        return $"{p.Type.ToString()}{value}";
+                    }
+                    ))}]";
+        }
 
         internal void Clear()
         {
