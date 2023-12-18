@@ -44,7 +44,7 @@ namespace Neo.VM
                         {
                             StackItemType.Boolean => $"({p.GetBoolean()})",
                             StackItemType.Integer => $"({p.GetInteger()})",
-                            StackItemType.ByteString => $"({p.GetString()})",
+                            StackItemType.ByteString => $"(\"{p.GetString()}\")",
                             _ => ""
                         };
                         return $"{p.Type.ToString()}{value}";
