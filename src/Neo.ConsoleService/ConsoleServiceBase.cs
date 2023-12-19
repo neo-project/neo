@@ -94,7 +94,7 @@ namespace Neo.ConsoleService
                         {
                             // Skip parse errors
                             possibleHelp = command.Key;
-                            ConsoleHelper.Error($"{ex.InnerException?.Message ?? ex.Message}\n");
+                            ConsoleHelper.Error($"{ex.InnerException?.Message ?? ex.Message}");
                         }
                     }
                 }
