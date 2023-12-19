@@ -37,8 +37,7 @@ namespace Neo.VM
 
         public override string ToString()
         {
-            var reversed = new Stack<StackItem>(innerList);
-            return $@"[{string.Join(", ", reversed.Select(p =>
+            return $@"[{string.Join(", ", innerList.Select(p =>
                     {
                         var value = p.Type switch
                         {
