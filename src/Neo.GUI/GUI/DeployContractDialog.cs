@@ -1,19 +1,20 @@
-// Copyright (C) 2016-2023 The Neo Project.
-// 
-// The neo-gui is free software distributed under the MIT software 
-// license, see the accompanying file LICENSE in the main directory of
-// the project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// DeployContractDialog.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-using System.IO;
-using System.Windows.Forms;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using System;
+using System.IO;
+using System.Windows.Forms;
 
 namespace Neo.GUI
 {

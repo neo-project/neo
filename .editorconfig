@@ -6,6 +6,11 @@ root = true
 # Don't use tabs for indentation.
 [*]
 indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+charset = utf-8
+end_of_line = lf
+
 # (Please don't specify an indent_size here; that has too many unintended consequences.)
 spelling_exclusion_path = SpellingExclusions.dic
 
@@ -39,9 +44,15 @@ indent_size = 2
 
 # Dotnet code style settings:
 [*.{cs,vb}]
+# Member can be made 'readonly'
+csharp_style_prefer_readonly_struct_member = true
+dotnet_diagnostic.IDE0251.severity = warning
+dotnet_diagnostic.IDE0044.severity = warning
+
+dotnet_diagnostic.CS1591.severity = silent
 
 # Sort using and Import directives with System.* appearing first
-dotnet_sort_system_directives_first = true
+dotnet_sort_system_directives_first = false
 dotnet_separate_import_directive_groups = false
 # Avoid "this." and "Me." if not necessary
 dotnet_style_qualification_for_field = false:refactoring
@@ -143,7 +154,10 @@ dotnet_naming_symbols.all_members.applicable_kinds = *
 
 dotnet_naming_style.pascal_case_style.capitalization = pascal_case
 
-file_header_template = Licensed to the .NET Foundation under one or more agreements.\nThe .NET Foundation licenses this file to you under the MIT license.\nSee the LICENSE file in the project root for more information.
+file_header_template = Copyright (C) 2015-2024 The Neo Project.\n\n{fileName} file belongs to the neo project and is free\nsoftware distributed under the MIT software license, see the\naccompanying file LICENSE in the main directory of the\nrepository or http://www.opensource.org/licenses/mit-license.php\nfor more details.\n\nRedistribution and use in source and binary forms with or without\nmodifications are permitted.
+
+# Require file header
+dotnet_diagnostic.IDE0073.severity = error
 
 # RS0016: Only enable if API files are present
 dotnet_public_api_analyzer.require_api_files = true
@@ -231,7 +245,7 @@ csharp_preserve_single_line_blocks = true
 csharp_preserve_single_line_statements = true
 
 # IDE0060: Remove unused parameter
-dotnet_diagnostic.IDE0060.severity = ignore
+dotnet_diagnostic.IDE0060.severity = none
 
 [src/{Compilers,ExpressionEvaluator,Scripting}/**Test**/*.{cs,vb}]
 
