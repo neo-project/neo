@@ -96,8 +96,7 @@ namespace Neo.CLI
                 case "gas": return NativeContract.GAS.Hash;
             }
 
-            if (input.EndsWith(".neo", StringComparison.InvariantCultureIgnoreCase) ||
-                input.EndsWith(".neofs", StringComparison.InvariantCultureIgnoreCase))
+            if (input.IndexOf('.') > 0 && input.LastIndexOf('.') < input.Length)
             {
                 return ResolveNeoNameServiceAddress(input);
             }
