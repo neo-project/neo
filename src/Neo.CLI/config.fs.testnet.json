@@ -22,7 +22,7 @@
       "IsActive": false
     },
     "NeoNameService": {
-      "Contract": "0x0000000000000000000000000000000000000000"
+      "Contract": "0xfb08ccf30ab534a871b7b092a49fe70c154ed678"
     }
   },
   "ProtocolConfiguration": {

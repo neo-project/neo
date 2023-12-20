@@ -96,7 +96,8 @@ namespace Neo.CLI
                 case "gas": return NativeContract.GAS.Hash;
             }
 
-            if (input.EndsWith(".neo", StringComparison.InvariantCultureIgnoreCase))
+            if (input.EndsWith(".neo", StringComparison.InvariantCultureIgnoreCase) ||
+                input.EndsWith(".neofs", StringComparison.InvariantCultureIgnoreCase))
             {
                 return ResolveNeoNameServiceAddress(input);
             }
@@ -614,7 +615,7 @@ namespace Neo.CLI
         public UInt160 ResolveNeoNameServiceAddress(string domain)
         {
             if (Settings.Default.NNS.Contract == UInt160.Zero)
-                throw new Exception("Neo Name Service (NNS): Contract hash is invalid.");
+                throw new Exception("Neo Name Service (NNS): is disabled on this network.");
 
             using var sb = new ScriptBuilder();
             sb.EmitDynamicCall(Settings.Default.NNS.Contract, "resolve", domain, 16);
@@ -627,7 +628,11 @@ namespace Neo.CLI
                 {
                     try
                     {
-                        return data.GetString().ToScriptHash(NeoSystem.Settings.AddressVersion);
+                        var addressData = data.GetString();
+                        if (UInt160.TryParse(addressData, out var address))
+                            return address;
+                        else
+                            return addressData.ToScriptHash(NeoSystem.Settings.AddressVersion);
                     }
                     catch
                     {

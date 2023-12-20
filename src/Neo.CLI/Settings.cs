@@ -9,6 +9,7 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Configuration;
+using Neo.ConsoleService;
 using Neo.Network.P2P;
 using System.Threading;
 
@@ -128,10 +129,12 @@ namespace Neo
         {
             if (section.Exists())
             {
-                if (UInt160.TryParse(section.GetValue<string>(nameof(Contract), string.Empty), out var hash))
+                if (UInt160.TryParse(section.GetValue(nameof(Contract), string.Empty), out var hash))
                 {
                     this.Contract = hash;
                 }
+                else
+                    ConsoleHelper.Error("Neo Name Service (NNS): Contract hash is invalid. Check your config.json.");
             }
         }
     }
