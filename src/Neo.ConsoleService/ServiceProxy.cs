@@ -23,7 +23,7 @@ namespace Neo.ConsoleService
 
         protected override void OnStart(string[] args)
         {
-            _service.OnStartAsync(args);
+            _service.OnStartAsync(args).GetAwaiter().GetResult();
         }
 
         protected override void OnStop()

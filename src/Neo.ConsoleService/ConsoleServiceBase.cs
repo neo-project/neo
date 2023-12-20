@@ -551,7 +551,7 @@ namespace Neo.ConsoleService
                 }
                 else
                 {
-                    OnStartAsync(args);
+                    OnStartAsync(args).GetAwaiter().GetResult();
                     RunConsole();
                     OnStop();
                 }
