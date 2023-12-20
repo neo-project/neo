@@ -618,7 +618,7 @@ namespace Neo.CLI
                 throw new Exception("Neo Name Service (NNS): is disabled on this network.");
 
             using var sb = new ScriptBuilder();
-            sb.EmitDynamicCall(Settings.Default.NNS.Contract, "resolve", domain, 16);
+            sb.EmitDynamicCall(Settings.Default.NNS.Contract, "resolve", CallFlags.ReadOnly, domain, 16);
 
             using var appEng = ApplicationEngine.Run(sb.ToArray(), NeoSystem.StoreView, settings: NeoSystem.Settings);
             if (appEng.State == VMState.HALT)
