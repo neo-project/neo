@@ -98,12 +98,7 @@ namespace Neo.CLI
 
             if (input.EndsWith(".neo", StringComparison.InvariantCultureIgnoreCase))
             {
-                if (NeoSystem.Settings.Network == mainNet)
-                    return ResolveNeoNameServiceAddress(input);
-                else
-                {
-                    throw new Exception("Neo Name Service (NNS): ONLY works on MainNet.");
-                }
+                return ResolveNeoNameServiceAddress(input);
             }
 
             // Try to parse as UInt160
@@ -616,13 +611,13 @@ namespace Neo.CLI
             return exception.Message;
         }
 
-        static readonly UInt160 nnsHash = UInt160.Parse("0x50ac1c37690cc2cfc594472833cf57505d5f46de");
-        static readonly uint mainNet = 860833102u;
-
         public UInt160 ResolveNeoNameServiceAddress(string domain)
         {
+            if (Settings.Default.NNS.Contract == UInt160.Zero)
+                throw new Exception("Neo Name Service (NNS): Contract hash is invalid.");
+
             using var sb = new ScriptBuilder();
-            sb.EmitDynamicCall(nnsHash, "resolve", domain, 16);
+            sb.EmitDynamicCall(Settings.Default.NNS.Contract, "resolve", domain, 16);
 
             using var appEng = ApplicationEngine.Run(sb.ToArray(), NeoSystem.StoreView, settings: NeoSystem.Settings);
             if (appEng.State == VMState.HALT)

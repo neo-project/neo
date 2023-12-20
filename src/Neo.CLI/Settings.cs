@@ -20,6 +20,7 @@ namespace Neo
         public StorageSettings Storage { get; }
         public P2PSettings P2P { get; }
         public UnlockWalletSettings UnlockWallet { get; }
+        public NeoNameServiceSettings NNS { get; }
 
         static Settings _default;
 
@@ -54,6 +55,7 @@ namespace Neo
             this.Storage = new StorageSettings(section.GetSection("Storage"));
             this.P2P = new P2PSettings(section.GetSection("P2P"));
             this.UnlockWallet = new UnlockWalletSettings(section.GetSection("UnlockWallet"));
+            this.NNS = new NeoNameServiceSettings(section.GetSection("NeoNameService"));
         }
     }
 
@@ -114,6 +116,22 @@ namespace Neo
                 this.Path = section.GetValue("Path", "");
                 this.Password = section.GetValue("Password", "");
                 this.IsActive = bool.Parse(section.GetValue("IsActive", "false"));
+            }
+        }
+    }
+
+    public class NeoNameServiceSettings
+    {
+        public UInt160 Contract { get; }
+
+        public NeoNameServiceSettings(IConfigurationSection section)
+        {
+            if (section.Exists())
+            {
+                if (UInt160.TryParse(section.GetValue<string>(nameof(Contract), string.Empty), out var hash))
+                {
+                    this.Contract = hash;
+                }
             }
         }
     }

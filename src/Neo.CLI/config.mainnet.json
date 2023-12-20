@@ -20,6 +20,9 @@
       "Path": "",
       "Password": "",
       "IsActive": false
+    },
+    "NeoNameService": {
+      "Contract": "0x50ac1c37690cc2cfc594472833cf57505d5f46de"
     }
   },
   "ProtocolConfiguration": {
