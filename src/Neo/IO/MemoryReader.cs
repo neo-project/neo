@@ -21,7 +21,7 @@ namespace Neo.IO
         private readonly ReadOnlySpan<byte> span;
         private int pos = 0;
 
-        public int Position => pos;
+        public readonly int Position => pos;
 
         public MemoryReader(ReadOnlyMemory<byte> memory)
         {
@@ -30,7 +30,7 @@ namespace Neo.IO
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void EnsurePosition(int move)
+        private readonly void EnsurePosition(int move)
         {
             if (pos + move > span.Length) throw new FormatException();
         }

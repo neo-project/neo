@@ -24,7 +24,7 @@ namespace Neo.UnitTests.IO.Caching
     [TestClass]
     public class UT_DataCache
     {
-        private MemoryStore store = new();
+        private readonly MemoryStore store = new();
         private SnapshotCache myDataCache;
 
         private static readonly StorageKey key1 = new() { Id = 0, Key = Encoding.UTF8.GetBytes("key1") };

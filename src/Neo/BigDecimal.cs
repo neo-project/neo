@@ -25,17 +25,17 @@ namespace Neo
         /// <summary>
         /// The <see cref="BigInteger"/> value of the number.
         /// </summary>
-        public BigInteger Value => value;
+        public readonly BigInteger Value => value;
 
         /// <summary>
         /// The number of decimal places for this number.
         /// </summary>
-        public byte Decimals => decimals;
+        public readonly byte Decimals => decimals;
 
         /// <summary>
         /// The sign of the number.
         /// </summary>
-        public int Sign => value.Sign;
+        public readonly int Sign => value.Sign;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BigDecimal"/> struct.
@@ -93,7 +93,7 @@ namespace Neo
         /// </summary>
         /// <param name="decimals">The new decimals field.</param>
         /// <returns>The <see cref="BigDecimal"/> that has the new number of decimal places.</returns>
-        public BigDecimal ChangeDecimals(byte decimals)
+        public readonly BigDecimal ChangeDecimals(byte decimals)
         {
             if (this.decimals == decimals) return this;
             BigInteger value;
@@ -129,7 +129,7 @@ namespace Neo
         /// Gets a <see cref="string"/> representing the number.
         /// </summary>
         /// <returns>The <see cref="string"/> representing the number.</returns>
-        public override string ToString()
+        public override readonly string ToString()
         {
             BigInteger divisor = BigInteger.Pow(10, decimals);
             BigInteger result = BigInteger.DivRem(value, divisor, out BigInteger remainder);
@@ -182,7 +182,7 @@ namespace Neo
             return true;
         }
 
-        public int CompareTo(BigDecimal other)
+        public readonly int CompareTo(BigDecimal other)
         {
             BigInteger left = value, right = other.value;
             if (decimals < other.decimals)
@@ -203,7 +203,7 @@ namespace Neo
             return CompareTo(other) == 0;
         }
 
-        public override int GetHashCode()
+        public override readonly int GetHashCode()
         {
             BigInteger divisor = BigInteger.Pow(10, decimals);
             BigInteger result = BigInteger.DivRem(value, divisor, out BigInteger remainder);

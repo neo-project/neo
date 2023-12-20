@@ -19,7 +19,7 @@ namespace Neo.UnitTests.Cryptography
     [TestClass]
     public class UT_MerkleTreeNode
     {
-        private MerkleTreeNode node = new MerkleTreeNode();
+        private readonly MerkleTreeNode node = new MerkleTreeNode();
 
         [TestInitialize]
         public void TestSetup()
