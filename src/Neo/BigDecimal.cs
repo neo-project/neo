@@ -192,13 +192,13 @@ namespace Neo
             return left.CompareTo(right);
         }
 
-        public override bool Equals(object obj)
+        public override readonly bool Equals(object obj)
         {
             if (obj is not BigDecimal @decimal) return false;
             return Equals(@decimal);
         }
 
-        public bool Equals(BigDecimal other)
+        public readonly bool Equals(BigDecimal other)
         {
             return CompareTo(other) == 0;
         }

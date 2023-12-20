@@ -36,7 +36,7 @@ namespace Neo.IO
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public byte Peek()
+        public readonly byte Peek()
         {
             EnsurePosition(1);
             return span[pos];
