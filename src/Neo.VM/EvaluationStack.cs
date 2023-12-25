@@ -41,6 +41,7 @@ namespace Neo.VM
                     {
                         var value = p.Type switch
                         {
+                            StackItemType.Pointer => $"({((Pointer)p).Position})",
                             StackItemType.Boolean => $"({p.GetBoolean()})",
                             StackItemType.Integer => $"({p.GetInteger()})",
                             StackItemType.ByteString => $"(\"{p.GetString()}\")",
