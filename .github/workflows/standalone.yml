@@ -11,7 +11,7 @@ env:
 
 jobs:
   build-leveldb:
-    name: Build leveldb (win-${{ matrix.runtime }})
+    name: Build leveldb (win-${{ matrix.arch }})
     runs-on: windows-latest
     strategy:
       matrix:
