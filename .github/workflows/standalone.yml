@@ -11,7 +11,7 @@ env:
 
 jobs:
   build-leveldb:
-    name: Build (leveldb)
+    name: Build leveldb (win-${{ matrix.runtime }})
     runs-on: windows-latest
     strategy:
       matrix:
@@ -45,7 +45,7 @@ jobs:
       uses: actions/cache/save@v3
       with:
         path: ./leveldb/build/Release/*
-        key: leveldb-${{ matrix.arch }}
+        key: leveldb-win-${{ matrix.arch }}
         enableCrossOsArchive: true
 
   build-neo-cli:
@@ -122,7 +122,7 @@ jobs:
       uses: actions/cache/restore@v3
       with:
         path: ./leveldb/build/Release/*
-        key: leveldb-x64
+        key: leveldb-win-x64
         enableCrossOsArchive: true
 
     - name: Get Distribution Caches (win-arm64)
@@ -130,7 +130,7 @@ jobs:
       uses: actions/cache/restore@v3
       with:
         path: ./leveldb/build/Release/*
-        key: leveldb-arm64
+        key: leveldb-win-arm64
         enableCrossOsArchive: true
 
     - name: Copy Files (leveldb) (win)
@@ -143,17 +143,17 @@ jobs:
     - name: Create Tarball File (linux)
       if: ${{ startsWith(matrix.runtime, 'linux') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: tar -czvf ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.${{ github.ref_name }}.tar.gz .
+      run: tar -czvf ${{ env.DIST_PATH }}/neo-cli-${{ github.ref_name }}-${{ matrix.runtime }}.tar.gz .
 
     - name: Create Tarball File (osx)
       if: ${{ startsWith(matrix.runtime, 'osx') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: tar -cJf ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.${{ github.ref_name }}.tar.xz .
+      run: tar -cJf ${{ env.DIST_PATH }}/neo-cli-${{ github.ref_name }}-${{ matrix.runtime }}.tar.xz .
 
     - name: Create Zip File (win)
       if: ${{ startsWith(matrix.runtime, 'win') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: zip ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}.${{ github.ref_name }}.zip -r *
+      run: zip ${{ env.DIST_PATH }}/neo-cli-${{ github.ref_name }}-${{ matrix.runtime }}.zip -r *
 
     - name: Output/Distribution Directory Contents
       run: |
