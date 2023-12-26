@@ -127,8 +127,8 @@ namespace Neo.Wallets
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> to be used by the wallet.</param>
         protected Wallet(string path, ProtocolSettings settings)
         {
-            this.ProtocolSettings = settings;
-            this.Path = path;
+            ProtocolSettings = settings;
+            Path = path;
         }
 
         /// <summary>
@@ -137,24 +137,26 @@ namespace Neo.Wallets
         /// <returns>The created account.</returns>
         public WalletAccount CreateAccount()
         {
-            byte[] privateKey = new byte[32];
-generate:
-            try
+            var privateKey = new byte[32];
+            using var rng = RandomNumberGenerator.Create();
+
+            do
             {
-                using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+                try
                 {
                     rng.GetBytes(privateKey);
+                    return CreateAccount(privateKey);
                 }
-                return CreateAccount(privateKey);
+                catch (ArgumentException)
+                {
+                    // Try again
+                }
+                finally
+                {
+                    Array.Clear(privateKey, 0, privateKey.Length);
+                }
             }
-            catch (ArgumentException)
-            {
-                goto generate;
-            }
-            finally
-            {
-                Array.Clear(privateKey, 0, privateKey.Length);
-            }
+            while (true);
         }
 
         /// <summary>
@@ -172,7 +174,7 @@ generate:
         private static List<(UInt160 Account, BigInteger Value)> FindPayingAccounts(List<(UInt160 Account, BigInteger Value)> orderedAccounts, BigInteger amount)
         {
             var result = new List<(UInt160 Account, BigInteger Value)>();
-            BigInteger sum_balance = orderedAccounts.Select(p => p.Value).Sum();
+            var sum_balance = orderedAccounts.Select(p => p.Value).Sum();
             if (sum_balance == amount)
             {
                 result.AddRange(orderedAccounts);
