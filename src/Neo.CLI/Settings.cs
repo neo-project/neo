@@ -123,7 +123,7 @@ namespace Neo
 
     public class NeoNameServiceSettings
     {
-        public UInt160 Contract { get; }
+        public UInt160 Contract { get; } = UInt160.Zero;
 
         public NeoNameServiceSettings(IConfigurationSection section)
         {
