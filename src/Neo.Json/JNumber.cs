@@ -9,6 +9,7 @@
 // modifications are permitted.
 
 using System.Globalization;
+using System.Numerics;
 using System.Text.Json;
 
 namespace Neo.Json
@@ -39,7 +40,13 @@ namespace Neo.Json
         /// <param name="value">The value of the JSON token.</param>
         public JNumber(double value = 0)
         {
-            if (!double.IsFinite(value)) throw new FormatException();
+            if (!double.IsFinite(value)) 
+                throw new ArgumentException("value is not finite", nameof(value));
+            if (value > MAX_SAFE_INTEGER)
+                throw new ArgumentException("value is higher than MAX_SAFE_INTEGER", nameof(value));
+            if (value < MAX_SAFE_INTEGER)
+                throw new ArgumentException("value is lower than MAX_SAFE_INTEGER", nameof(value));
+
             this.Value = value;
         }
 
@@ -116,6 +123,11 @@ namespace Neo.Json
         public static implicit operator JNumber(double value)
         {
             return new JNumber(value);
+        }
+
+        public static implicit operator JNumber(BigInteger value)
+        {
+            return new JNumber((long)value);
         }
     }
 }

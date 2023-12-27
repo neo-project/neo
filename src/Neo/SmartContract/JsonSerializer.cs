@@ -50,10 +50,7 @@ namespace Neo.SmartContract
                     }
                 case Integer num:
                     {
-                        var integer = num.GetInteger();
-                        if (integer > JNumber.MAX_SAFE_INTEGER || integer < JNumber.MIN_SAFE_INTEGER)
-                            throw new InvalidOperationException();
-                        return (double)integer;
+                        return num.GetInteger();
                     }
                 case Boolean boolean:
                     {
@@ -65,7 +62,7 @@ namespace Neo.SmartContract
 
                         foreach (var entry in map)
                         {
-                            if (!(entry.Key is ByteString)) throw new FormatException();
+                            if (entry.Key is not ByteString) throw new FormatException();
 
                             var key = entry.Key.GetString();
                             var value = Serialize(entry.Value);

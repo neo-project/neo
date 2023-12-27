@@ -8,6 +8,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System.Numerics;
 using System.Text.Json;
 using static Neo.Json.Utility;
 
@@ -293,6 +294,11 @@ public abstract class JToken
     }
 
     public static implicit operator JToken(double value)
+    {
+        return (JNumber)value;
+    }
+
+    public static implicit operator JToken(BigInteger value)
     {
         return (JNumber)value;
     }
