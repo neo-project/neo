@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace Neo.Json.UnitTests
 {
     enum Woo
@@ -26,7 +28,16 @@ namespace Neo.Json.UnitTests
         public void TestAsBoolean()
         {
             maxInt.AsBoolean().Should().BeTrue();
+            minInt.AsBoolean().Should().BeTrue();
             zero.AsBoolean().Should().BeFalse();
+        }
+
+        [TestMethod]
+        public void TestBigInteger()
+        {
+            ((JNumber)BigInteger.One).AsNumber().Should().Be(1);
+            ((JNumber)BigInteger.Zero).AsNumber().Should().Be(0);
+            ((JNumber)BigInteger.MinusOne).AsNumber().Should().Be(-1);
         }
 
         [TestMethod]
