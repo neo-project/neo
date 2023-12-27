@@ -33,13 +33,13 @@ namespace Neo.Json.UnitTests
         public void TestAsString()
         {
             Action action1 = () => new JNumber(double.PositiveInfinity).AsString();
-            action1.Should().Throw<FormatException>();
+            action1.Should().Throw<ArgumentException>();
 
             Action action2 = () => new JNumber(double.NegativeInfinity).AsString();
-            action2.Should().Throw<FormatException>();
+            action2.Should().Throw<ArgumentException>();
 
             Action action3 = () => new JNumber(double.NaN).AsString();
-            action3.Should().Throw<FormatException>();
+            action3.Should().Throw<ArgumentException>();
         }
 
         [TestMethod]
