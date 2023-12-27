@@ -44,7 +44,7 @@ namespace Neo.Json
                 throw new ArgumentException("value is not finite", nameof(value));
             if (value > MAX_SAFE_INTEGER)
                 throw new ArgumentException("value is higher than MAX_SAFE_INTEGER", nameof(value));
-            if (value < MAX_SAFE_INTEGER)
+            if (value < MIN_SAFE_INTEGER)
                 throw new ArgumentException("value is lower than MAX_SAFE_INTEGER", nameof(value));
 
             this.Value = value;
