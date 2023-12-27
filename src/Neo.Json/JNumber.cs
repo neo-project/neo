@@ -40,7 +40,7 @@ namespace Neo.Json
         /// <param name="value">The value of the JSON token.</param>
         public JNumber(double value = 0)
         {
-            if (!double.IsFinite(value)) 
+            if (!double.IsFinite(value))
                 throw new ArgumentException("value is not finite", nameof(value));
             if (value > MAX_SAFE_INTEGER)
                 throw new ArgumentException("value is higher than MAX_SAFE_INTEGER", nameof(value));
