@@ -50,7 +50,7 @@ namespace Neo.UnitTests.Network.P2P.Capabilities
                 _ = new ServerCapability(NodeCapabilityType.FullNode);
             });
 
-            // Wrog type
+            // Wrong type
             buffer[0] = 0xFF;
             Assert.ThrowsException<FormatException>(() =>
             {

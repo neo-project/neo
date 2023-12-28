@@ -10,9 +10,6 @@
 
 using Akka.Actor;
 using Akka.IO;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Neo.IO;
 using System;
 using System.Buffers.Binary;
@@ -23,8 +20,6 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Net.WebSockets;
-using System.Threading.Tasks;
 
 namespace Neo.Network.P2P
 {
@@ -61,7 +56,6 @@ namespace Neo.Network.P2P
         }
 
         private class Timer { }
-        private class WsConnected { public WebSocket Socket; public IPEndPoint Remote; public IPEndPoint Local; }
 
         /// <summary>
         /// The default minimum number of desired connections.
@@ -75,7 +69,6 @@ namespace Neo.Network.P2P
 
         private static readonly IActorRef tcp_manager = Context.System.Tcp();
         private IActorRef tcp_listener;
-        private IWebHost ws_host;
         private ICancelable timer;
 
         private static readonly HashSet<IPAddress> localAddresses = new();
@@ -107,11 +100,6 @@ namespace Neo.Network.P2P
         /// The port listened by the local Tcp server.
         /// </summary>
         public int ListenerTcpPort { get; private set; }
-
-        /// <summary>
-        /// The port listened by the local WebSocket server.
-        /// </summary>
-        public int ListenerWsPort { get; private set; }
 
         /// <summary>
         /// Indicates the maximum number of connections with the same address.
@@ -220,9 +208,6 @@ namespace Neo.Network.P2P
                 case Connect connect:
                     ConnectToPeer(connect.EndPoint, connect.IsTrusted);
                     break;
-                case WsConnected ws:
-                    OnWsConnected(ws.Socket, ws.Remote, ws.Local);
-                    break;
                 case Tcp.Connected connected:
                     OnTcpConnected(((IPEndPoint)connected.RemoteAddress).Unmap(), ((IPEndPoint)connected.LocalAddress).Unmap());
                     break;
@@ -241,7 +226,6 @@ namespace Neo.Network.P2P
         private void OnStart(ChannelsConfig config)
         {
             ListenerTcpPort = config.Tcp?.Port ?? 0;
-            ListenerWsPort = config.WebSocket?.Port ?? 0;
 
             MinDesiredConnections = config.MinDesiredConnections;
             MaxConnections = config.MaxConnections;
@@ -249,7 +233,7 @@ namespace Neo.Network.P2P
 
             // schedule time to trigger `OnTimer` event every TimerMillisecondsInterval ms
             timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(0, 5000, Context.Self, new Timer(), ActorRefs.NoSender);
-            if ((ListenerTcpPort > 0 || ListenerWsPort > 0)
+            if ((ListenerTcpPort > 0)
                 && localAddresses.All(p => !p.IsIPv4MappedToIPv6 || IsIntranetAddress(p))
                 && UPnP.Discover())
             {
@@ -258,26 +242,12 @@ namespace Neo.Network.P2P
                     localAddresses.Add(UPnP.GetExternalIP());
 
                     if (ListenerTcpPort > 0) UPnP.ForwardPort(ListenerTcpPort, ProtocolType.Tcp, "NEO Tcp");
-                    if (ListenerWsPort > 0) UPnP.ForwardPort(ListenerWsPort, ProtocolType.Tcp, "NEO WebSocket");
                 }
                 catch { }
             }
             if (ListenerTcpPort > 0)
             {
                 tcp_manager.Tell(new Tcp.Bind(Self, config.Tcp, options: new[] { new Inet.SO.ReuseAddress(true) }));
-            }
-            if (ListenerWsPort > 0)
-            {
-                var host = "*";
-
-                if (!config.WebSocket.Address.GetAddressBytes().SequenceEqual(IPAddress.Any.GetAddressBytes()))
-                {
-                    // Is not for all interfaces
-                    host = config.WebSocket.Address.ToString();
-                }
-
-                ws_host = new WebHostBuilder().UseKestrel().UseUrls($"http://{host}:{ListenerWsPort}").Configure(app => app.UseWebSockets().Run(ProcessWebSocketAsync)).Build();
-                ws_host.Start();
             }
         }
 
@@ -367,38 +337,11 @@ namespace Neo.Network.P2P
             }
         }
 
-        private void OnWsConnected(WebSocket ws, IPEndPoint remote, IPEndPoint local)
-        {
-            ConnectedAddresses.TryGetValue(remote.Address, out int count);
-            if (count >= MaxConnectionsPerAddress)
-            {
-                ws.Abort();
-            }
-            else
-            {
-                ConnectedAddresses[remote.Address] = count + 1;
-                Context.ActorOf(ProtocolProps(ws, remote, local), $"connection_{Guid.NewGuid()}");
-            }
-        }
-
         protected override void PostStop()
         {
             timer.CancelIfNotNull();
-            ws_host?.Dispose();
             tcp_listener?.Tell(Tcp.Unbind.Instance);
             base.PostStop();
-        }
-
-        private async Task ProcessWebSocketAsync(HttpContext context)
-        {
-            if (!context.WebSockets.IsWebSocketRequest) return;
-            WebSocket ws = await context.WebSockets.AcceptWebSocketAsync();
-            Self.Tell(new WsConnected
-            {
-                Socket = ws,
-                Remote = new IPEndPoint(context.Connection.RemoteIpAddress, context.Connection.RemotePort),
-                Local = new IPEndPoint(context.Connection.LocalIpAddress, context.Connection.LocalPort)
-            });
         }
 
         /// <summary>

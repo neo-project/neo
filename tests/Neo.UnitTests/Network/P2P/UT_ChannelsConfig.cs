@@ -14,17 +14,16 @@ namespace Neo.UnitTests.Network.P2P
             var config = new ChannelsConfig();
 
             config.Tcp.Should().BeNull();
-            config.WebSocket.Should().BeNull();
             config.MinDesiredConnections.Should().Be(10);
             config.MaxConnections.Should().Be(40);
             config.MaxConnectionsPerAddress.Should().Be(3);
 
-            config.Tcp = config.WebSocket = new IPEndPoint(IPAddress.Any, 21);
+            config.Tcp = config.Tcp = new IPEndPoint(IPAddress.Any, 21);
             config.MaxConnectionsPerAddress++;
             config.MaxConnections++;
             config.MinDesiredConnections++;
 
-            config.Tcp.Should().BeSameAs(config.WebSocket);
+            config.Tcp.Should().BeSameAs(config.Tcp);
             config.Tcp.Address.Should().BeEquivalentTo(IPAddress.Any);
             config.Tcp.Port.Should().Be(21);
             config.MinDesiredConnections.Should().Be(11);
