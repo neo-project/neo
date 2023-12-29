@@ -613,7 +613,7 @@ namespace Neo.CLI
 
         public UInt160 ResolveNeoNameServiceAddress(string domain)
         {
-            if (Settings.Default.NNS.Contract == UInt160.Zero)
+            if (Settings.Default.NNS.Contract == null || Settings.Default.NNS.Contract == UInt160.Zero)
                 throw new Exception("Neo Name Service (NNS): is disabled on this network.");
 
             using var sb = new ScriptBuilder();
