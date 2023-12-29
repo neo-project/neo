@@ -502,17 +502,14 @@ namespace Neo.CLI
         /// <param name="gas">Max fee for running the script</param>
         private void SendTransaction(byte[] script, UInt160? account = null, long gas = TestModeGas)
         {
-            if (CurrentWallet is null)
-            {
-                throw new InvalidOperationException("The wallet must be open");
-            }
+            if (NoWallet()) return;
 
             Signer[] signers = Array.Empty<Signer>();
             var snapshot = NeoSystem.StoreView;
 
             if (account != null)
             {
-                signers = CurrentWallet.GetAccounts()
+                signers = CurrentWallet!.GetAccounts()
                 .Where(p => !p.Lock && !p.WatchOnly && p.ScriptHash == account && NativeContract.GAS.BalanceOf(snapshot, p.ScriptHash).Sign > 0)
                 .Select(p => new Signer { Account = p.ScriptHash, Scopes = WitnessScope.CalledByEntry })
                 .ToArray();
@@ -520,7 +517,7 @@ namespace Neo.CLI
 
             try
             {
-                Transaction tx = CurrentWallet.MakeTransaction(snapshot, script, account, signers, maxGas: gas);
+                Transaction tx = CurrentWallet!.MakeTransaction(snapshot, script, account, signers, maxGas: gas);
                 ConsoleHelper.Info("Invoking script with: ", $"'{Convert.ToBase64String(tx.Script.Span)}'");
 
                 using (ApplicationEngine engine = ApplicationEngine.Run(tx.Script, snapshot, container: tx, settings: NeoSystem.Settings, gas: gas))

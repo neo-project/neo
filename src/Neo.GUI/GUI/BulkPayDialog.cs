@@ -18,7 +18,7 @@ namespace Neo.GUI
 {
     internal partial class BulkPayDialog : Form
     {
-        public BulkPayDialog(AssetDescriptor asset = null)
+        public BulkPayDialog(AssetDescriptor? asset = null)
         {
             InitializeComponent();
             if (asset == null)
@@ -63,7 +63,7 @@ namespace Neo.GUI
         {
             if (comboBox1.SelectedItem is AssetDescriptor asset)
             {
-                textBox3.Text = Service.CurrentWallet.GetAvailable(Service.NeoSystem.StoreView, asset.AssetId).ToString();
+                textBox3.Text = Service.CurrentWallet!.GetAvailable(Service.NeoSystem.StoreView, asset.AssetId).ToString();
             }
             else
             {

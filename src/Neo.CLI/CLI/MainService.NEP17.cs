@@ -44,7 +44,7 @@ namespace Neo.CLI
             Transaction tx;
             try
             {
-                tx = CurrentWallet.MakeTransaction(snapshot, new[]
+                tx = CurrentWallet!.MakeTransaction(snapshot, new[]
                 {
                     new TransferOutput
                     {
