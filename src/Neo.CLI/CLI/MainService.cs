@@ -359,7 +359,7 @@ namespace Neo.CLI
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
 
             // install configured plugins
-            Settings.Default.Plugins?.Where(p => !string.IsNullOrEmpty(p)).ToList().ForEach(p => InstallPluginAsync(p).Wait());
+            Settings.Default.Plugins?.Where(p => !string.IsNullOrEmpty(p)).ToList().ForEach(p => InstallPluginAsync(p).GetAwaiter().GetResult());
 
             NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
             NeoSystem.AddService(this);
