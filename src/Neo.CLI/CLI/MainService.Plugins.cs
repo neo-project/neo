@@ -7,7 +7,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Configuration;
 using Neo.ConsoleService;
 using Neo.Json;
