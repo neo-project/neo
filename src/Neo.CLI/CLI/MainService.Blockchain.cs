@@ -26,7 +26,7 @@ namespace Neo.CLI
         /// <param name="count">Number of blocks</param>
         /// <param name="path">Path</param>
         [ConsoleCommand("export blocks", Category = "Blockchain Commands")]
-        private void OnExportBlocksStartCountCommand(uint start, uint count = uint.MaxValue, string path = null)
+        private void OnExportBlocksStartCountCommand(uint start, uint count = uint.MaxValue, string? path = null)
         {
             uint height = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
             if (height < start)
@@ -50,7 +50,7 @@ namespace Neo.CLI
         {
             lock (syncRoot)
             {
-                Block block = null;
+                Block? block = null;
 
                 if (uint.TryParse(indexOrHash, out var index))
                     block = NativeContract.Ledger.GetBlock(_neoSystem.StoreView, index);
@@ -228,7 +228,7 @@ namespace Neo.CLI
         {
             lock (syncRoot)
             {
-                ContractState contract = null;
+                ContractState? contract = null;
 
                 if (UInt160.TryParse(nameOrHash, out var scriptHash))
                     contract = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
@@ -257,7 +257,7 @@ namespace Neo.CLI
                 ConsoleHelper.Info("", "            Compiler: ", $"{contract.Nef.Compiler}");
                 ConsoleHelper.Info("", "          SourceCode: ", $"{contract.Nef.Source}");
                 ConsoleHelper.Info("", "              Trusts: ", $"[{string.Join(", ", contract.Manifest.Trusts.Select(s => s.ToJson()?.GetString()))}]");
-                if (contract.Manifest.Extra is null)
+                if (contract.Manifest.Extra is not null)
                 {
                     foreach (var extra in contract.Manifest.Extra.Properties)
                     {

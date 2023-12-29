@@ -7,6 +7,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Configuration;
 using Neo.ConsoleService;
 using Neo.Json;
@@ -121,7 +122,7 @@ namespace Neo.CLI
         /// <param name="pluginName">Name of the plugin</param>
         /// <param name="installed">Dependency set</param>
         /// <param name="overWrite">Install by force for `update`</param>
-        private async Task InstallPluginAsync(string pluginName, HashSet<string> installed = null,
+        private async Task InstallPluginAsync(string pluginName, HashSet<string>? installed = null,
             bool overWrite = false)
         {
             installed ??= new HashSet<string>();
@@ -135,7 +136,7 @@ namespace Neo.CLI
             }
 
             using ZipArchive zip = new(stream, ZipArchiveMode.Read);
-            ZipArchiveEntry entry = zip.Entries.FirstOrDefault(p => p.Name == "config.json");
+            ZipArchiveEntry? entry = zip.Entries.FirstOrDefault(p => p.Name == "config.json");
             if (entry is not null)
             {
                 await using Stream es = entry.Open();
@@ -160,10 +161,10 @@ namespace Neo.CLI
             var dependencies = dependency.GetChildren().Select(p => p.Get<string>()).ToArray();
             if (dependencies.Length == 0) return;
 
-            foreach (string plugin in dependencies.Where(p => !PluginExists(p)))
+            foreach (string? plugin in dependencies.Where(p => p is not null && !PluginExists(p)))
             {
                 ConsoleHelper.Info($"Installing dependency: {plugin}");
-                await InstallPluginAsync(plugin, installed);
+                await InstallPluginAsync(plugin!, installed);
             }
         }
 
@@ -201,7 +202,7 @@ namespace Neo.CLI
                         .GetSection("Dependency")
                         .GetChildren()
                         .Select(d => d.Get<string>())
-                        .Any(v => v.Equals(pluginName, StringComparison.InvariantCultureIgnoreCase)))
+                        .Any(v => v is not null && v.Equals(pluginName, StringComparison.InvariantCultureIgnoreCase)))
                     {
                         ConsoleHelper.Error(
                             $"Can not uninstall. Other plugins depend on this plugin, try `reinstall {pluginName}` if the plugin is broken.");

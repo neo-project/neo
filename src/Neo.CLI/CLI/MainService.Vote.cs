@@ -17,7 +17,6 @@ using Neo.VM;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
-using System.Linq;
 using System.Numerics;
 
 namespace Neo.CLI
@@ -49,9 +48,9 @@ namespace Neo.CLI
                 }
             }
 
-            ECPoint publicKey = currentAccount.GetKey()?.PublicKey;
+            ECPoint? publicKey = currentAccount.GetKey()?.PublicKey;
             byte[] script;
-            using (ScriptBuilder scriptBuilder = new ScriptBuilder())
+            using (ScriptBuilder scriptBuilder = new())
             {
                 scriptBuilder.EmitDynamicCall(NativeContract.NEO.Hash, "registerCandidate", publicKey);
                 script = scriptBuilder.ToArray();
@@ -84,9 +83,9 @@ namespace Neo.CLI
                 }
             }
 
-            ECPoint publicKey = currentAccount?.GetKey()?.PublicKey;
+            ECPoint? publicKey = currentAccount?.GetKey()?.PublicKey;
             byte[] script;
-            using (ScriptBuilder scriptBuilder = new ScriptBuilder())
+            using (ScriptBuilder scriptBuilder = new())
             {
                 scriptBuilder.EmitDynamicCall(NativeContract.NEO.Hash, "unregisterCandidate", publicKey);
                 script = scriptBuilder.ToArray();
@@ -105,7 +104,7 @@ namespace Neo.CLI
         {
             if (NoWallet()) return;
             byte[] script;
-            using (ScriptBuilder scriptBuilder = new ScriptBuilder())
+            using (ScriptBuilder scriptBuilder = new())
             {
                 scriptBuilder.EmitDynamicCall(NativeContract.NEO.Hash, "vote", senderAccount, publicKey);
                 script = scriptBuilder.ToArray();
