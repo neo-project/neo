@@ -103,7 +103,7 @@ namespace Neo
 
     public class UnlockWalletSettings
     {
-        public string ?Path { get; }
+        public string? Path { get; }
         public string? Password { get; }
         public bool IsActive { get; }
 
