@@ -54,7 +54,7 @@ namespace Neo
             this.Storage = new StorageSettings(section.GetSection("Storage"));
             this.P2P = new P2PSettings(section.GetSection("P2P"));
             this.UnlockWallet = new UnlockWalletSettings(section.GetSection("UnlockWallet"));
-            this.Plugins = section.GetSection("Plugins").Get<string[]>();
+            this.Plugins = section.GetSection("Plugins").Get<string[]>() ?? Array.Empty<string>();
         }
     }
 
