@@ -10,6 +10,7 @@
 
 using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
+using System;
 using System.Threading;
 
 namespace Neo
