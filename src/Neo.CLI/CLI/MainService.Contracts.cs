@@ -35,7 +35,7 @@ namespace Neo.CLI
             Transaction tx;
             try
             {
-                tx = CurrentWallet.MakeTransaction(NeoSystem.StoreView, script);
+                tx = CurrentWallet!.MakeTransaction(NeoSystem.StoreView, script);
             }
             catch (InvalidOperationException e)
             {
@@ -91,7 +91,7 @@ namespace Neo.CLI
             try
             {
                 byte[] script = LoadUpdateScript(scriptHash, filePath, manifestPath, data, out var nef, out var manifest);
-                tx = CurrentWallet.MakeTransaction(NeoSystem.StoreView, script, sender, signers);
+                tx = CurrentWallet!.MakeTransaction(NeoSystem.StoreView, script, sender, signers);
             }
             catch (InvalidOperationException e)
             {
@@ -161,7 +161,7 @@ namespace Neo.CLI
             if (NoWallet()) return;
             try
             {
-                tx = CurrentWallet.MakeTransaction(NeoSystem.StoreView, tx.Script, sender, signers, maxGas: (long)gas.Value);
+                tx = CurrentWallet!.MakeTransaction(NeoSystem.StoreView, tx.Script, sender, signers, maxGas: (long)gas.Value);
             }
             catch (InvalidOperationException e)
             {

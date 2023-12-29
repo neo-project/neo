@@ -60,7 +60,7 @@ namespace Neo.CLI
         private NeoSystem? _neoSystem;
         public NeoSystem NeoSystem
         {
-            get => _neoSystem;
+            get => _neoSystem!;
             private set => _neoSystem = value;
         }
 
