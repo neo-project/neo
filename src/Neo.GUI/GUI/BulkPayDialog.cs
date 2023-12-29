@@ -63,7 +63,7 @@ namespace Neo.GUI
         {
             if (comboBox1.SelectedItem is AssetDescriptor asset)
             {
-                textBox3.Text = Service.CurrentWallet!.GetAvailable(Service.NeoSystem.StoreView, asset.AssetId).ToString();
+                textBox3.Text = Service.CurrentWallet.GetAvailable(Service.NeoSystem.StoreView, asset.AssetId).ToString();
             }
             else
             {
