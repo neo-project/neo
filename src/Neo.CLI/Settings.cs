@@ -20,7 +20,7 @@ namespace Neo
         public StorageSettings Storage { get; }
         public P2PSettings P2P { get; }
         public UnlockWalletSettings UnlockWallet { get; }
-        public string[]? Plugins { get; }
+        public string[] Plugins { get; } = Array.Empty<string>();
         static Settings _default;
 
         static bool UpdateDefault(IConfiguration configuration)
