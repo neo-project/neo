@@ -1,10 +1,10 @@
 // Copyright (C) 2016-2023 The Neo Project.
-// 
-// The neo-cli is free software distributed under the MIT software 
+//
+// The neo-cli is free software distributed under the MIT software
 // license, see the accompanying file LICENSE in the main directory of
-// the project or http://www.opensource.org/licenses/mit-license.php 
+// the project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -357,6 +357,9 @@ namespace Neo.CLI
                 }
 
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
+
+            // install configured plugins
+            Settings.Default.Plugins?.Where(p => !string.IsNullOrEmpty(p)).ToList().ForEach(p => InstallPluginAsync(p).Wait());
 
             NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
             NeoSystem.AddService(this);

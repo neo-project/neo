@@ -20,7 +20,7 @@ namespace Neo
         public StorageSettings Storage { get; }
         public P2PSettings P2P { get; }
         public UnlockWalletSettings UnlockWallet { get; }
-
+        public string[]? Plugins { get; }
         static Settings _default;
 
         static bool UpdateDefault(IConfiguration configuration)
@@ -54,6 +54,7 @@ namespace Neo
             this.Storage = new StorageSettings(section.GetSection("Storage"));
             this.P2P = new P2PSettings(section.GetSection("P2P"));
             this.UnlockWallet = new UnlockWalletSettings(section.GetSection("UnlockWallet"));
+            this.Plugins = section.GetSection("Plugins").Get<string[]>();
         }
     }
 

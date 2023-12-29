@@ -20,7 +20,8 @@
       "Path": "",
       "Password": "",
       "IsActive": false
-    }
+    },
+    "Plugins": ["LevelDBStore"]
   },
   "ProtocolConfiguration": {
     "Network": 894710606,
