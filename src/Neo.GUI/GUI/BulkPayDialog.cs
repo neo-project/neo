@@ -18,7 +18,7 @@ namespace Neo.GUI
 {
     internal partial class BulkPayDialog : Form
     {
-        public BulkPayDialog(AssetDescriptor? asset = null)
+        public BulkPayDialog(AssetDescriptor asset = null)
         {
             InitializeComponent();
             if (asset == null)
