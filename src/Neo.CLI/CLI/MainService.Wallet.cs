@@ -468,7 +468,7 @@ namespace Neo.CLI
             {
                 var snapshot = NeoSystem.StoreView;
                 ContractParametersContext context = ContractParametersContext.Parse(jsonObjectToSign.ToString(), snapshot);
-                if (context.Network != _neoSystem.Settings.Network)
+                if (context.Network != NeoSystem.Settings.Network)
                 {
                     ConsoleHelper.Warning("Network mismatch.");
                     return;
@@ -719,17 +719,19 @@ namespace Neo.CLI
 
         private void SignAndSendTx(DataCache snapshot, Transaction tx)
         {
+            if (NoWallet()) return;
+
             ContractParametersContext context;
             try
             {
-                context = new ContractParametersContext(snapshot, tx, _neoSystem.Settings.Network);
+                context = new ContractParametersContext(snapshot, tx, NeoSystem.Settings.Network);
             }
             catch (InvalidOperationException e)
             {
                 ConsoleHelper.Error("Failed creating contract params: " + GetExceptionMessage(e));
                 throw;
             }
-            CurrentWallet.Sign(context);
+            CurrentWallet!.Sign(context);
             if (context.Completed)
             {
                 tx.Witnesses = context.GetWitnesses();

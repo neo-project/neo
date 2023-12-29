@@ -79,18 +79,18 @@ namespace Neo.CLI
                     $"{GetType().Assembly.GetName().Name}/{GetType().Assembly.GetVersion()}");
                 using HttpResponseMessage responseApi = await http.SendAsync(request);
                 byte[] buffer = await responseApi.Content.ReadAsByteArrayAsync();
-                var releases = JObject.Parse(buffer);
-                if (releases is not JArray arr) throw new Exception("Plugin doesn't exist.");
+                if (JToken.Parse(buffer) is not JArray arr) throw new Exception("Plugin doesn't exist.");
                 var asset = arr
-                    .Where(p => !p["tag_name"].GetString().Contains('-'))
+                    .Where(p => p?["tag_name"] is not null && p?["assets"] is not null)
+                    .Where(p => !p!["tag_name"]!.GetString().Contains('-'))
                     .Select(p => new
                     {
-                        Version = Version.Parse(p["tag_name"].GetString().TrimStart('v')),
-                        Assets = (JArray)p["assets"]
+                        Version = Version.Parse(p!["tag_name"]!.GetString().TrimStart('v')),
+                        Assets = p["assets"] as JArray
                     })
                     .OrderByDescending(p => p.Version)
-                    .First(p => p.Version <= versionCore).Assets
-                    .FirstOrDefault(p => p["name"].GetString() == $"{pluginName}.zip");
+                    .First(p => p.Version <= versionCore).Assets?
+                    .FirstOrDefault(p => p?["name"]?.GetString() == $"{pluginName}.zip");
                 if (asset is null) throw new Exception("Plugin doesn't exist.");
                 response = await http.GetAsync(asset["browser_download_url"]?.GetString());
             }

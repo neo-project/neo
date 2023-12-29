@@ -40,12 +40,11 @@ namespace Neo.CLI
 {
     public partial class MainService : ConsoleServiceBase, IWalletProvider
     {
-        public event EventHandler<Wallet?> WalletChanged;
+        public event EventHandler<Wallet?>? WalletChanged = null;
 
         public const long TestModeGas = 20_00000000;
 
         private Wallet? _currentWallet;
-        public LocalNode LocalNode;
 
         public Wallet? CurrentWallet
         {
@@ -64,6 +63,14 @@ namespace Neo.CLI
             private set => _neoSystem = value;
         }
 
+        private LocalNode? _localNode;
+
+        public LocalNode LocalNode
+        {
+            get => _localNode!;
+            private set => _localNode = value;
+        }
+
         protected override string Prompt => "neo";
         public override string ServiceName => "NEO-CLI";
 
@@ -78,7 +85,7 @@ namespace Neo.CLI
             RegisterCommandHandler<string[], UInt160[]>(arr => arr.Select(str => StringToAddress(str, NeoSystem.Settings.AddressVersion)).ToArray());
             RegisterCommandHandler<string, ECPoint>(str => ECPoint.Parse(str.Trim(), ECCurve.Secp256r1));
             RegisterCommandHandler<string[], ECPoint[]>(str => str.Select(u => ECPoint.Parse(u.Trim(), ECCurve.Secp256r1)).ToArray());
-            RegisterCommandHandler<string, JToken>(str => JToken.Parse(str));
+            RegisterCommandHandler<string, JToken>(str => JToken.Parse(str)!);
             RegisterCommandHandler<string, JObject>(str => (JObject)JToken.Parse(str)!);
             RegisterCommandHandler<string, decimal>(str => decimal.Parse(str, CultureInfo.InvariantCulture));
             RegisterCommandHandler<JToken, JArray>(obj => (JArray)obj);
@@ -415,6 +422,10 @@ namespace Neo.CLI
                     if (Settings.Default.UnlockWallet.Path is null)
                     {
                         throw new InvalidOperationException("UnlockWallet.Path must be defined");
+                    }
+                    else if (Settings.Default.UnlockWallet.Password is null)
+                    {
+                        throw new InvalidOperationException("UnlockWallet.Password must be defined");
                     }
 
                     OpenWallet(Settings.Default.UnlockWallet.Path, Settings.Default.UnlockWallet.Password);
