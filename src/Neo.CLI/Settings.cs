@@ -1,10 +1,10 @@
 // Copyright (C) 2016-2023 The Neo Project.
-// 
-// The neo-cli is free software distributed under the MIT software 
+//
+// The neo-cli is free software distributed under the MIT software
 // license, see the accompanying file LICENSE in the main directory of
-// the project or http://www.opensource.org/licenses/mit-license.php 
+// the project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -16,10 +16,10 @@ namespace Neo
 {
     public class Settings
     {
-        public LoggerSettings Logger { get; }
-        public StorageSettings Storage { get; }
-        public P2PSettings P2P { get; }
-        public UnlockWalletSettings UnlockWallet { get; }
+        public LoggerSettings Logger { get; init; }
+        public StorageSettings Storage { get; init; }
+        public P2PSettings P2P { get; init; }
+        public UnlockWalletSettings UnlockWallet { get; init; }
 
         static Settings _default;
 
@@ -44,9 +44,11 @@ namespace Neo
                     Initialize(config);
                 }
 
-                return _default;
+                return Custom ?? _default;
             }
         }
+
+        public static Settings? Custom { get; set; }
 
         public Settings(IConfigurationSection section)
         {
@@ -55,13 +57,17 @@ namespace Neo
             this.P2P = new P2PSettings(section.GetSection("P2P"));
             this.UnlockWallet = new UnlockWalletSettings(section.GetSection("UnlockWallet"));
         }
+
+        public Settings()
+        {
+        }
     }
 
     public class LoggerSettings
     {
-        public string Path { get; }
-        public bool ConsoleOutput { get; }
-        public bool Active { get; }
+        public string Path { get; init; }
+        public bool ConsoleOutput { get; init; }
+        public bool Active { get; init; }
 
         public LoggerSettings(IConfigurationSection section)
         {
@@ -73,23 +79,27 @@ namespace Neo
 
     public class StorageSettings
     {
-        public string Engine { get; }
-        public string Path { get; }
+        public string Engine { get; init; }
+        public string Path { get; init; }
 
         public StorageSettings(IConfigurationSection section)
         {
             this.Engine = section.GetValue("Engine", "LevelDBStore");
             this.Path = section.GetValue("Path", "Data_LevelDB_{0}");
         }
+
+        public StorageSettings()
+        {
+        }
     }
 
     public class P2PSettings
     {
-        public ushort Port { get; }
-        public ushort WsPort { get; }
-        public int MinDesiredConnections { get; }
-        public int MaxConnections { get; }
-        public int MaxConnectionsPerAddress { get; }
+        public ushort Port { get; init; }
+        public ushort WsPort { get; init; }
+        public int MinDesiredConnections { get; init; }
+        public int MaxConnections { get; init; }
+        public int MaxConnectionsPerAddress { get; init; }
 
         public P2PSettings(IConfigurationSection section)
         {
@@ -103,9 +113,9 @@ namespace Neo
 
     public class UnlockWalletSettings
     {
-        public string Path { get; }
-        public string Password { get; }
-        public bool IsActive { get; }
+        public string Path { get; init; }
+        public string Password { get; init; }
+        public bool IsActive { get; init; }
 
         public UnlockWalletSettings(IConfigurationSection section)
         {
@@ -115,6 +125,10 @@ namespace Neo
                 this.Password = section.GetValue("Password", "");
                 this.IsActive = bool.Parse(section.GetValue("IsActive", "false"));
             }
+        }
+
+        public UnlockWalletSettings()
+        {
         }
     }
 }
