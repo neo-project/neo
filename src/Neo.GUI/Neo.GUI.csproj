@@ -10,6 +10,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <Product>Neo.GUI</Product>
     <ApplicationIcon>neo.ico</ApplicationIcon>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
