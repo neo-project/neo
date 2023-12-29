@@ -19,7 +19,7 @@ namespace Neo.CLI
 {
     public partial class MainService
     {
-        private int OnStartWithCommandLine(string[] args)
+        public int OnStartWithCommandLine(string[] args)
         {
             RootCommand rootCommand = new(Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyTitleAttribute>()!.Title)
             {
