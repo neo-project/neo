@@ -558,7 +558,11 @@ namespace Neo.ConsoleService
             else
             {
                 Debug.Assert(Environment.OSVersion.Platform == PlatformID.Win32NT);
+#if NET7_0
                 ServiceBase.Run(new ServiceProxy(this));
+#else
+                ConsoleHelper.Warning("Only support for services on Windows.");
+#endif
             }
         }
 
