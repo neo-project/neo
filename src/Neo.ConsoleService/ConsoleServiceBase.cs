@@ -555,15 +555,15 @@ namespace Neo.ConsoleService
                     OnStop();
                 }
             }
+#pragma warning disable CA1416
+#if NET5_0_OR_GREATER
             else
             {
                 Debug.Assert(Environment.OSVersion.Platform == PlatformID.Win32NT);
-#if NET7_0
                 ServiceBase.Run(new ServiceProxy(this));
-#else
-                ConsoleHelper.Warning("Only support for services on Windows.");
-#endif
             }
+#endif
+#pragma warning restore CA1416
         }
 
         protected string ReadLine()
