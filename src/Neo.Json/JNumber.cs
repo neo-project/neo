@@ -108,7 +108,7 @@ namespace Neo.Json
             writer.WriteNumberValue(Value);
         }
 
-        public override JNumber Clone()
+        public override JToken Clone()
         {
             return this;
         }

@@ -122,7 +122,7 @@ namespace Neo.Json
             writer.WriteEndArray();
         }
 
-        public override JArray Clone()
+        public override JToken Clone()
         {
             var cloned = new JArray();
 

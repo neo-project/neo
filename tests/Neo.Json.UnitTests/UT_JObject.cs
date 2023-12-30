@@ -106,7 +106,7 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestClone()
         {
-            var bobClone = bob.Clone();
+            var bobClone = (JObject)bob.Clone();
             bobClone.Should().NotBeSameAs(bob);
             foreach (var key in bobClone.Properties.Keys)
             {

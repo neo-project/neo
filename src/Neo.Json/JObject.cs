@@ -75,7 +75,7 @@ namespace Neo.Json
         /// Creates a copy of the current JSON object.
         /// </summary>
         /// <returns>A copy of the current JSON object.</returns>
-        public override JObject Clone()
+        public override JToken Clone()
         {
             var cloned = new JObject();
 

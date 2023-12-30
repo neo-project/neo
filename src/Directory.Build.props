@@ -5,7 +5,6 @@
     <Copyright>2015-2023 The Neo Project</Copyright>
     <VersionPrefix>3.6.2</VersionPrefix>
     <Authors>The Neo Project</Authors>
-    <TargetFrameworks>net7.0</TargetFrameworks>
     <PackageIcon>neo.png</PackageIcon>
     <PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

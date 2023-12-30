@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <TargetFrameworks>net7.0</TargetFrameworks>
     <AssemblyTitle>Neo.CLI</AssemblyTitle>
     <AssemblyName>neo-cli</AssemblyName>
     <OutputType>Exe</OutputType>
