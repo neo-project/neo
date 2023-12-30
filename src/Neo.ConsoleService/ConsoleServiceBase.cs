@@ -557,7 +557,7 @@ namespace Neo.ConsoleService
             }
             else
             {
-                Debug.Assert(OperatingSystem.IsWindows());
+                Debug.Assert(Environment.OSVersion.Platform == PlatformID.Win32NT);
                 ServiceBase.Run(new ServiceProxy(this));
             }
         }
