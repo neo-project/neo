@@ -10,6 +10,7 @@
 
 using System.Collections;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Json
 {
@@ -88,14 +89,14 @@ namespace Neo.Json
             return collection.Remove(key);
         }
 
-        public bool TryGetValue(TKey key, out TValue value)
+        public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)
         {
             if (collection.TryGetValue(key, out var entry))
             {
                 value = entry.Value;
                 return true;
             }
-            value = default!;
+            value = default;
             return false;
         }
 
