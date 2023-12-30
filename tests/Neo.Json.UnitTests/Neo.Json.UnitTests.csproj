@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFrameworks>net7.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
-    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
