@@ -26,7 +26,7 @@ namespace Neo.ConsoleService
 {
     public abstract class ConsoleServiceBase
     {
-        protected virtual string Depends => null;
+        protected virtual string? Depends => null;
         protected virtual string Prompt => "service";
 
         public abstract string ServiceName { get; }
@@ -48,9 +48,9 @@ namespace Neo.ConsoleService
                 return true;
             }
 
-            string possibleHelp = null;
+            string? possibleHelp = null;
             var commandArgs = CommandToken.Parse(commandLine).ToArray();
-            var availableCommands = new List<(ConsoleCommandMethod Command, object[] Arguments)>();
+            var availableCommands = new List<(ConsoleCommandMethod Command, object?[] Arguments)>();
 
             foreach (var entries in _verbs.Values)
             {
@@ -58,7 +58,7 @@ namespace Neo.ConsoleService
                 {
                     if (command.IsThisCommand(commandArgs, out var consumedArgs))
                     {
-                        var arguments = new List<object>();
+                        var arguments = new List<object?>();
                         var args = commandArgs.Skip(consumedArgs).ToList();
 
                         CommandSpaceToken.Trim(args);
@@ -114,7 +114,7 @@ namespace Neo.ConsoleService
                 case 1:
                     {
                         var (command, arguments) = availableCommands[0];
-                        object result = command.Method.Invoke(command.Instance, arguments);
+                        object? result = command.Method.Invoke(command.Instance, arguments);
                         if (result is Task task) task.Wait();
                         return true;
                     }
@@ -127,7 +127,7 @@ namespace Neo.ConsoleService
             }
         }
 
-        private bool TryProcessValue(Type parameterType, List<CommandToken> args, bool canConsumeAll, out object value)
+        private bool TryProcessValue(Type parameterType, List<CommandToken> args, bool canConsumeAll, out object? value)
         {
             if (args.Count > 0)
             {
@@ -140,8 +140,11 @@ namespace Neo.ConsoleService
                 if (parameterType.IsEnum)
                 {
                     var arg = CommandToken.ReadString(args, canConsumeAll);
-                    value = Enum.Parse(parameterType, arg.Trim(), true);
-                    return true;
+                    if (arg is not null)
+                    {
+                        value = Enum.Parse(parameterType, arg.Trim(), true);
+                        return true;
+                    }
                 }
             }
 
@@ -198,7 +201,7 @@ namespace Neo.ConsoleService
 
             if (string.IsNullOrEmpty(key) || key.Equals("help", StringComparison.InvariantCultureIgnoreCase))
             {
-                string last = null;
+                string? last = null;
                 foreach (var command in withHelp)
                 {
                     if (last != command.HelpCategory)
@@ -218,8 +221,8 @@ namespace Neo.ConsoleService
             {
                 // Show help for this specific command
 
-                string last = null;
-                string lastKey = null;
+                string? last = null;
+                string? lastKey = null;
                 bool found = false;
 
                 foreach (var command in withHelp.Where(u => u.Key == key))
@@ -267,7 +270,7 @@ namespace Neo.ConsoleService
         [ConsoleCommand("version", Category = "Base Commands", Description = "Show the current version.")]
         protected void OnVersion()
         {
-            Console.WriteLine(Assembly.GetEntryAssembly().GetName().Version);
+            Console.WriteLine(Assembly.GetEntryAssembly()!.GetName().Version);
         }
 
         /// <summary>
@@ -391,7 +394,7 @@ namespace Neo.ConsoleService
             TriggerGracefulShutdown();
         }
 
-        private void CancelHandler(object sender, ConsoleCancelEventArgs e)
+        private void CancelHandler(object? sender, ConsoleCancelEventArgs e)
         {
             e.Cancel = true;
             TriggerGracefulShutdown();
@@ -404,7 +407,7 @@ namespace Neo.ConsoleService
         {
             // Register self commands
 
-            RegisterCommandHandler<string>(CommandToken.ReadString);
+            RegisterCommandHandler<string>((args, canConsumeAll) => CommandToken.ReadString(args, canConsumeAll) ?? "");
 
             RegisterCommandHandler<string[]>((args, canConsumeAll) =>
             {
@@ -415,7 +418,7 @@ namespace Neo.ConsoleService
                     return ret.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 }
 
-                return CommandToken.ReadString(args, false).Split(',', ' ');
+                return (CommandToken.ReadString(args, false)?.Split(',', ' ')) ?? Array.Empty<string>();
             });
 
             RegisterCommandHandler<string, byte>(false, str => byte.Parse(str));
@@ -471,7 +474,7 @@ namespace Neo.ConsoleService
         /// </summary>
         /// <param name="instance">Instance</param>
         /// <param name="name">Name</param>
-        public void RegisterCommand(object instance, string name = null)
+        public void RegisterCommand(object instance, string? name = null)
         {
             if (!string.IsNullOrEmpty(name))
             {
@@ -516,20 +519,27 @@ namespace Neo.ConsoleService
                         ConsoleHelper.Warning("Only support for installing services on Windows.");
                         return;
                     }
-                    string arguments = string.Format("create {0} start= auto binPath= \"{1}\"", ServiceName, Process.GetCurrentProcess().MainModule.FileName);
+                    string arguments = string.Format("create {0} start= auto binPath= \"{1}\"", ServiceName, Process.GetCurrentProcess().MainModule!.FileName);
                     if (!string.IsNullOrEmpty(Depends))
                     {
                         arguments += string.Format(" depend= {0}", Depends);
                     }
-                    Process process = Process.Start(new ProcessStartInfo
+                    Process? process = Process.Start(new ProcessStartInfo
                     {
                         Arguments = arguments,
                         FileName = Path.Combine(Environment.SystemDirectory, "sc.exe"),
                         RedirectStandardOutput = true,
                         UseShellExecute = false
                     });
-                    process.WaitForExit();
-                    Console.Write(process.StandardOutput.ReadToEnd());
+                    if (process is null)
+                    {
+                        ConsoleHelper.Error("Error installing the service with sc.exe.");
+                    }
+                    else
+                    {
+                        process.WaitForExit();
+                        Console.Write(process.StandardOutput.ReadToEnd());
+                    }
                 }
                 else if (args.Length > 0 && args[0] == "/uninstall")
                 {
@@ -538,15 +548,22 @@ namespace Neo.ConsoleService
                         ConsoleHelper.Warning("Only support for installing services on Windows.");
                         return;
                     }
-                    Process process = Process.Start(new ProcessStartInfo
+                    Process? process = Process.Start(new ProcessStartInfo
                     {
                         Arguments = string.Format("delete {0}", ServiceName),
                         FileName = Path.Combine(Environment.SystemDirectory, "sc.exe"),
                         RedirectStandardOutput = true,
                         UseShellExecute = false
                     });
-                    process.WaitForExit();
-                    Console.Write(process.StandardOutput.ReadToEnd());
+                    if (process is null)
+                    {
+                        ConsoleHelper.Error("Error installing the service with sc.exe.");
+                    }
+                    else
+                    {
+                        process.WaitForExit();
+                        Console.Write(process.StandardOutput.ReadToEnd());
+                    }
                 }
                 else
                 {
@@ -562,9 +579,9 @@ namespace Neo.ConsoleService
             }
         }
 
-        protected string ReadLine()
+        protected string? ReadLine()
         {
-            Task<string> readLineTask = Task.Run(Console.ReadLine);
+            Task<string?> readLineTask = Task.Run(Console.ReadLine);
 
             try
             {
@@ -600,7 +617,7 @@ namespace Neo.ConsoleService
                 }
 
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                string line = ReadLine()?.Trim();
+                string? line = ReadLine()?.Trim();
                 if (line == null) break;
                 Console.ForegroundColor = ConsoleColor.White;
 
