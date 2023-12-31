@@ -27,6 +27,7 @@ namespace Neo.Network.P2P.Payloads
     {
         private uint version;
         private UInt256 prevHash;
+        private UInt256 prevState;
         private UInt256 merkleRoot;
         private ulong timestamp;
         private ulong nonce;
@@ -55,6 +56,12 @@ namespace Neo.Network.P2P.Payloads
         {
             get => prevHash;
             set { prevHash = value; _hash = null; }
+        }
+
+        public UInt256 PrevState
+        {
+            get => prevState;
+            set { prevState = value; }
         }
 
         /// <summary>
@@ -127,6 +134,7 @@ namespace Neo.Network.P2P.Payloads
         public int Size =>
             sizeof(uint) +      // Version
             UInt256.Length +    // PrevHash
+            UInt256.Length +    // PrevState
             UInt256.Length +    // MerkleRoot
             sizeof(ulong) +     // Timestamp
             sizeof(ulong) +      // Nonce
@@ -162,6 +170,7 @@ namespace Neo.Network.P2P.Payloads
             version = reader.ReadUInt32();
             if (version > 0) throw new FormatException();
             prevHash = reader.ReadSerializable<UInt256>();
+            prevState = reader.ReadSerializable<UInt256>();
             merkleRoot = reader.ReadSerializable<UInt256>();
             timestamp = reader.ReadUInt64();
             nonce = reader.ReadUInt64();
@@ -205,6 +214,7 @@ namespace Neo.Network.P2P.Payloads
         {
             writer.Write(version);
             writer.Write(prevHash);
+            writer.Write(prevState);
             writer.Write(merkleRoot);
             writer.Write(timestamp);
             writer.Write(nonce);
@@ -225,6 +235,7 @@ namespace Neo.Network.P2P.Payloads
             json["size"] = Size;
             json["version"] = version;
             json["previousblockhash"] = prevHash.ToString();
+            json["previousblockstate"] = prevState.ToString();
             json["merkleroot"] = merkleRoot.ToString();
             json["time"] = timestamp;
             json["nonce"] = nonce.ToString("X16");

@@ -47,6 +47,11 @@ namespace Neo.Network.P2P.Payloads
         public UInt256 PrevHash => Header.PrevHash;
 
         /// <summary>
+        /// The state root of the previous block.
+        /// </summary>
+        public UInt256 PrevState => Header.PrevState;
+
+        /// <summary>
         /// The merkle root of the transactions.
         /// </summary>
         public UInt256 MerkleRoot => Header.MerkleRoot;
