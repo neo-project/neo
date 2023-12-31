@@ -48,5 +48,14 @@ namespace Neo.Json.UnitTests
             woo = s.AsEnum(Woo.Jerry, false);
             Assert.AreEqual(Woo.Jerry, woo);
         }
+        [TestMethod]
+        public void TestEqual()
+        {
+            var str = "hello world";
+            var jString = new JString(str);
+            Assert.IsTrue(jString.Equals(str));
+            Assert.IsTrue(jString == str);
+            Assert.IsTrue(jString != "hello world2");
+        }
     }
 }

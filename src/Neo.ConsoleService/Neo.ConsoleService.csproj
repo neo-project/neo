@@ -4,6 +4,7 @@
     <TargetFrameworks>netstandard2.1;net7.0</TargetFrameworks>
     <LangVersion>10.0</LangVersion>
     <PackageId>Neo.ConsoleService</PackageId>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
