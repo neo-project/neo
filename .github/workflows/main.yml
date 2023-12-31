@@ -11,7 +11,8 @@ env:
 jobs:
 
   Test:
-    strategy: 
+    timeout-minutes: 10
+    strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
