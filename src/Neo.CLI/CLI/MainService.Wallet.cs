@@ -124,7 +124,7 @@ namespace Neo.CLI
             {
                 Parallel.For(0, count, (i) =>
                 {
-                    WalletAccount account = CurrentWallet.CreateAccount();
+                    WalletAccount account = CurrentWallet!.CreateAccount();
                     lock (addresses)
                     {
                         addresses.Add(account.Address);
@@ -151,7 +151,7 @@ namespace Neo.CLI
 
             if (ReadUserInput($"Warning: Irrevocable operation!\nAre you sure to delete account {address.ToAddress(NeoSystem.Settings.AddressVersion)}? (no|yes)").IsYes())
             {
-                if (CurrentWallet.DeleteAccount(address))
+                if (CurrentWallet!.DeleteAccount(address))
                 {
                     if (CurrentWallet is NEP6Wallet wallet)
                     {
@@ -172,7 +172,7 @@ namespace Neo.CLI
         /// <param name="path">Path</param>
         /// <param name="scriptHash">ScriptHash</param>
         [ConsoleCommand("export key", Category = "Wallet Commands")]
-        private void OnExportKeyCommand(string path = null, UInt160 scriptHash = null)
+        private void OnExportKeyCommand(string? path = null, UInt160? scriptHash = null)
         {
             if (NoWallet()) return;
             if (path != null && File.Exists(path))
@@ -186,7 +186,7 @@ namespace Neo.CLI
                 ConsoleHelper.Info("Cancelled");
                 return;
             }
-            if (!CurrentWallet.VerifyPassword(password))
+            if (!CurrentWallet!.VerifyPassword(password))
             {
                 ConsoleHelper.Error("Incorrect password");
                 return;
@@ -210,7 +210,7 @@ namespace Neo.CLI
         /// Process "create wallet" command
         /// </summary>
         [ConsoleCommand("create wallet", Category = "Wallet Commands")]
-        private void OnCreateWalletCommand(string path, string wifOrFile = null)
+        private void OnCreateWalletCommand(string path, string? wifOrFile = null)
         {
             string password = ReadUserInput("password", true);
             if (password.Length == 0)
@@ -231,7 +231,7 @@ namespace Neo.CLI
             }
             bool createDefaultAccount = wifOrFile is null;
             CreateWallet(path, password, createDefaultAccount);
-            if (!createDefaultAccount) OnImportKeyCommand(wifOrFile);
+            if (!createDefaultAccount) OnImportKeyCommand(wifOrFile!);
         }
 
         /// <summary>
@@ -252,7 +252,7 @@ namespace Neo.CLI
             }
 
             Contract multiSignContract = Contract.CreateMultiSigContract(m, publicKeys);
-            KeyPair keyPair = CurrentWallet.GetAccounts().FirstOrDefault(p => p.HasKey && publicKeys.Contains(p.GetKey().PublicKey))?.GetKey();
+            KeyPair? keyPair = CurrentWallet!.GetAccounts().FirstOrDefault(p => p.HasKey && publicKeys.Contains(p.GetKey().PublicKey))?.GetKey();
 
             CurrentWallet.CreateAccount(multiSignContract, keyPair);
             if (CurrentWallet is NEP6Wallet wallet)
@@ -268,7 +268,7 @@ namespace Neo.CLI
         private void OnImportKeyCommand(string wifOrFile)
         {
             if (NoWallet()) return;
-            byte[] prikey = null;
+            byte[]? prikey = null;
             try
             {
                 prikey = Wallet.GetPrivateKeyFromWIF(wifOrFile);
@@ -301,7 +301,7 @@ namespace Neo.CLI
                             prikey = lines[i].HexToBytes();
                         else
                             prikey = Wallet.GetPrivateKeyFromWIF(lines[i]);
-                        CurrentWallet.CreateAccount(prikey);
+                        CurrentWallet!.CreateAccount(prikey);
                         Array.Clear(prikey, 0, prikey.Length);
                         percent.Value++;
                     }
@@ -309,7 +309,7 @@ namespace Neo.CLI
             }
             else
             {
-                WalletAccount account = CurrentWallet.CreateAccount(prikey);
+                WalletAccount account = CurrentWallet!.CreateAccount(prikey);
                 Array.Clear(prikey, 0, prikey.Length);
                 ConsoleHelper.Info("Address: ", account.Address);
                 ConsoleHelper.Info(" Pubkey: ", account.GetKey().PublicKey.EncodePoint(true).ToHexString());
@@ -325,7 +325,7 @@ namespace Neo.CLI
         private void OnImportWatchOnlyCommand(string addressOrFile)
         {
             if (NoWallet()) return;
-            UInt160 address = null;
+            UInt160? address = null;
             try
             {
                 address = StringToAddress(addressOrFile, NeoSystem.Settings.AddressVersion);
@@ -355,14 +355,14 @@ namespace Neo.CLI
                     for (int i = 0; i < lines.Length; i++)
                     {
                         address = StringToAddress(lines[i], NeoSystem.Settings.AddressVersion);
-                        CurrentWallet.CreateAccount(address);
+                        CurrentWallet!.CreateAccount(address);
                         percent.Value++;
                     }
                 }
             }
             else
             {
-                WalletAccount account = CurrentWallet.GetAccount(address);
+                WalletAccount account = CurrentWallet!.GetAccount(address);
                 if (account is not null)
                 {
                     ConsoleHelper.Warning("This address is already in your wallet");
@@ -385,7 +385,7 @@ namespace Neo.CLI
         {
             if (NoWallet()) return;
             var snapshot = NeoSystem.StoreView;
-            foreach (var account in CurrentWallet.GetAccounts())
+            foreach (var account in CurrentWallet!.GetAccounts())
             {
                 var contract = account.Contract;
                 var type = "Nonstandard";
@@ -420,7 +420,7 @@ namespace Neo.CLI
         {
             var snapshot = NeoSystem.StoreView;
             if (NoWallet()) return;
-            foreach (UInt160 account in CurrentWallet.GetAccounts().Select(p => p.ScriptHash))
+            foreach (UInt160 account in CurrentWallet!.GetAccounts().Select(p => p.ScriptHash))
             {
                 Console.WriteLine(account.ToAddress(NeoSystem.Settings.AddressVersion));
                 ConsoleHelper.Info("NEO: ", $"{CurrentWallet.GetBalance(snapshot, NativeContract.NEO.Hash, account)}");
@@ -441,7 +441,7 @@ namespace Neo.CLI
         private void OnListKeyCommand()
         {
             if (NoWallet()) return;
-            foreach (WalletAccount account in CurrentWallet.GetAccounts().Where(p => p.HasKey))
+            foreach (WalletAccount account in CurrentWallet!.GetAccounts().Where(p => p.HasKey))
             {
                 ConsoleHelper.Info("   Address: ", account.Address);
                 ConsoleHelper.Info("ScriptHash: ", account.ScriptHash.ToString());
@@ -468,12 +468,12 @@ namespace Neo.CLI
             {
                 var snapshot = NeoSystem.StoreView;
                 ContractParametersContext context = ContractParametersContext.Parse(jsonObjectToSign.ToString(), snapshot);
-                if (context.Network != _neoSystem.Settings.Network)
+                if (context.Network != NeoSystem.Settings.Network)
                 {
                     ConsoleHelper.Warning("Network mismatch.");
                     return;
                 }
-                else if (!CurrentWallet.Sign(context))
+                else if (!CurrentWallet!.Sign(context))
                 {
                     ConsoleHelper.Warning("Non-existent private key in wallet.");
                     return;
@@ -496,7 +496,7 @@ namespace Neo.CLI
         /// <param name="data">Data</param>
         /// <param name="signerAccounts">Signer's accounts</param>
         [ConsoleCommand("send", Category = "Wallet Commands")]
-        private void OnSendCommand(UInt160 asset, UInt160 to, string amount, UInt160 from = null, string data = null, UInt160[] signerAccounts = null)
+        private void OnSendCommand(UInt160 asset, UInt160 to, string amount, UInt160? from = null, string? data = null, UInt160[]? signerAccounts = null)
         {
             if (NoWallet()) return;
             string password = ReadUserInput("password", true);
@@ -505,7 +505,7 @@ namespace Neo.CLI
                 ConsoleHelper.Info("Cancelled");
                 return;
             }
-            if (!CurrentWallet.VerifyPassword(password))
+            if (!CurrentWallet!.VerifyPassword(password))
             {
                 ConsoleHelper.Error("Incorrect password");
                 return;
@@ -567,8 +567,10 @@ namespace Neo.CLI
         /// <param name="sender">Transaction's sender</param>
         /// <param name="signerAccounts">Signer's accounts</param>
         [ConsoleCommand("cancel", Category = "Wallet Commands")]
-        private void OnCancelCommand(UInt256 txid, UInt160 sender = null, UInt160[] signerAccounts = null)
+        private void OnCancelCommand(UInt256 txid, UInt160? sender = null, UInt160[]? signerAccounts = null)
         {
+            if (NoWallet()) return;
+
             TransactionState state = NativeContract.Ledger.GetTransactionState(NeoSystem.StoreView, txid);
             if (state != null)
             {
@@ -578,7 +580,7 @@ namespace Neo.CLI
 
             var conflict = new TransactionAttribute[] { new Conflicts() { Hash = txid } };
             Signer[] signers = Array.Empty<Signer>();
-            if (!NoWallet() && sender != null)
+            if (sender != null)
             {
                 if (signerAccounts == null)
                     signerAccounts = new UInt160[1] { sender };
@@ -595,7 +597,7 @@ namespace Neo.CLI
                 signers = signerAccounts.Select(p => new Signer() { Account = p, Scopes = WitnessScope.None }).ToArray();
             }
 
-            Transaction tx = new Transaction
+            Transaction tx = new()
             {
                 Signers = signers,
                 Attributes = conflict,
@@ -606,7 +608,7 @@ namespace Neo.CLI
             {
                 using ScriptBuilder scriptBuilder = new();
                 scriptBuilder.Emit(OpCode.RET);
-                tx = CurrentWallet.MakeTransaction(NeoSystem.StoreView, scriptBuilder.ToArray(), sender, signers, conflict);
+                tx = CurrentWallet!.MakeTransaction(NeoSystem.StoreView, scriptBuilder.ToArray(), sender, signers, conflict);
             }
             catch (InvalidOperationException e)
             {
@@ -652,7 +654,7 @@ namespace Neo.CLI
             BigInteger gas = BigInteger.Zero;
             var snapshot = NeoSystem.StoreView;
             uint height = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
-            foreach (UInt160 account in CurrentWallet.GetAccounts().Select(p => p.ScriptHash))
+            foreach (UInt160 account in CurrentWallet!.GetAccounts().Select(p => p.ScriptHash))
                 gas += NativeContract.NEO.UnclaimedGas(snapshot, account, height);
             ConsoleHelper.Info("Unclaimed gas: ", new BigDecimal(gas, NativeContract.GAS.Decimals).ToString());
         }
@@ -670,7 +672,7 @@ namespace Neo.CLI
                 ConsoleHelper.Info("Cancelled");
                 return;
             }
-            if (!CurrentWallet.VerifyPassword(oldPassword))
+            if (!CurrentWallet!.VerifyPassword(oldPassword))
             {
                 ConsoleHelper.Error("Incorrect password");
                 return;
@@ -717,17 +719,19 @@ namespace Neo.CLI
 
         private void SignAndSendTx(DataCache snapshot, Transaction tx)
         {
+            if (NoWallet()) return;
+
             ContractParametersContext context;
             try
             {
-                context = new ContractParametersContext(snapshot, tx, _neoSystem.Settings.Network);
+                context = new ContractParametersContext(snapshot, tx, NeoSystem.Settings.Network);
             }
             catch (InvalidOperationException e)
             {
                 ConsoleHelper.Error("Failed creating contract params: " + GetExceptionMessage(e));
                 throw;
             }
-            CurrentWallet.Sign(context);
+            CurrentWallet!.Sign(context);
             if (context.Completed)
             {
                 tx.Witnesses = context.GetWitnesses();
