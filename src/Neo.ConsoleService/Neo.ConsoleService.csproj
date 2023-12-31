@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <PackageId>Neo.ConsoleService</PackageId>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

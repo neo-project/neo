@@ -16,7 +16,6 @@ using Neo.SmartContract.Native;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Array = System.Array;
 
@@ -34,7 +33,7 @@ namespace Neo.CLI
         /// <param name="data">Data</param>
         /// <param name="signersAccounts">Signer's accounts</param>
         [ConsoleCommand("transfer", Category = "NEP17 Commands")]
-        private void OnTransferCommand(UInt160 tokenHash, UInt160 to, decimal amount, UInt160 from = null, string data = null, UInt160[] signersAccounts = null)
+        private void OnTransferCommand(UInt160 tokenHash, UInt160 to, decimal amount, UInt160? from = null, string? data = null, UInt160[]? signersAccounts = null)
         {
             var snapshot = NeoSystem.StoreView;
             var asset = new AssetDescriptor(snapshot, NeoSystem.Settings, tokenHash);
@@ -45,7 +44,7 @@ namespace Neo.CLI
             Transaction tx;
             try
             {
-                tx = CurrentWallet.MakeTransaction(snapshot, new[]
+                tx = CurrentWallet!.MakeTransaction(snapshot, new[]
                 {
                     new TransferOutput
                     {

@@ -39,7 +39,7 @@ namespace Neo.ConsoleService
         /// <param name="index">Index</param>
         /// <param name="quote">Quote (could be null)</param>
         /// <returns>CommandSpaceToken</returns>
-        internal static CommandStringToken Parse(string commandLine, ref int index, CommandQuoteToken quote)
+        internal static CommandStringToken Parse(string commandLine, ref int index, CommandQuoteToken? quote)
         {
             int end;
             int offset = index;
