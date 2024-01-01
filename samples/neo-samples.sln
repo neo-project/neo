@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Modifier", "Modifier\Modifi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Exception", "Exception\Exception.csproj", "{DD44BA11-7DF6-4CBD-B41D-8D33D273F774}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inscription", "Inscription\Inscription.csproj", "{B233DCE7-D97D-4BE3-8AE1-9A2416814C02}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +83,10 @@ Global
 		{DD44BA11-7DF6-4CBD-B41D-8D33D273F774}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DD44BA11-7DF6-4CBD-B41D-8D33D273F774}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DD44BA11-7DF6-4CBD-B41D-8D33D273F774}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B233DCE7-D97D-4BE3-8AE1-9A2416814C02}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B233DCE7-D97D-4BE3-8AE1-9A2416814C02}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B233DCE7-D97D-4BE3-8AE1-9A2416814C02}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B233DCE7-D97D-4BE3-8AE1-9A2416814C02}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
