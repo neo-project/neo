@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <Nullable>disable</Nullable>
+    </PropertyGroup>
+
+    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+        <Exec Command="dotnet nccs &quot;$(MSBuildProjectFile)&quot;" />
+    </Target>
+
+    <ItemGroup>
+        <PackageReference Include="Neo.SmartContract.Framework" Version="3.6.0" />
+    </ItemGroup>
+</Project>
