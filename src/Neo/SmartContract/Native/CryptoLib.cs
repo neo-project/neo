@@ -71,7 +71,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="data">The input to compute the hash code for.</param>
         /// <returns>Computed hash</returns>
-        [ContractMethod(Hardfork.HF_Manticore, CpuFee = 1 << 15)]
+        [ContractMethod(Hardfork.HF_Cockatrice, CpuFee = 1 << 15)]
         public static byte[] Keccak256(byte[] data)
         {
             KeccakDigest keccak = new(256);

@@ -15,6 +15,6 @@ namespace Neo
     {
         HF_Aspidochelone,
         HF_Basilisk,
-        HF_Manticore
+        HF_Cockatrice
     }
 }
