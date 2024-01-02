@@ -9,15 +9,15 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.IO;
+using Neo.SmartContract.Manifest;
+using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
-using Neo.IO;
-using Neo.SmartContract.Manifest;
-using Neo.VM;
 
 namespace Neo.SmartContract.Native
 {
