@@ -427,6 +427,5 @@ namespace Neo.UnitTests.SmartContract.Native
             // Assert
             Assert.AreEqual(expectedHashHex, outputHashHex, "Keccak256 hash did not match expected value for blank string.");
         }
-
     }
 }
