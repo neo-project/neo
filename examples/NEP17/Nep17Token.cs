@@ -15,7 +15,7 @@ namespace NEP17
     [ManifestExtra("Description", "A sample NEP-17 token")]
     [ManifestExtra("Email", "core@neo.org")]
     [ManifestExtra("Version", "0.0.1")]
-    [ContractSourceCode("https://github.com/neo-project/neo/samples/NEP17")]
+    [ContractSourceCode("https://github.com/neo-project/neo/examples/NEP17")]
     [ContractPermission("*", "*")]
     [SupportedStandards("NEP-17")]
     public class SampleNep17Token : Nep17Token

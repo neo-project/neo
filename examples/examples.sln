@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HelloWorld", "HelloWorld\He
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Event", "Event\Event.csproj", "{835FC3FC-E99C-4AD1-A187-43C7C25CB990}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeoNameService", "NeoNameService\NeoNameService.csproj", "{033EBB37-B602-424A-8712-419DF23FF255}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NEP17", "NEP17\NEP17.csproj", "{D7060EE6-EF53-42CA-922D-B6897BD65753}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NFT", "NFT\NFT.csproj", "{16A18BAB-7D79-44ED-9D1F-8D6996D3C934}"
@@ -31,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inscription", "Inscription\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Exchange", "Exchange\Exchange.csproj", "{3199912E-35D4-4FA0-BA6B-497872A7828F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContractCall", "ContractCall\ContractCall.csproj", "{FF93B618-586B-429B-A85A-31E69BB6CB73}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,10 +45,6 @@ Global
 		{835FC3FC-E99C-4AD1-A187-43C7C25CB990}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{835FC3FC-E99C-4AD1-A187-43C7C25CB990}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{835FC3FC-E99C-4AD1-A187-43C7C25CB990}.Release|Any CPU.Build.0 = Release|Any CPU
-		{033EBB37-B602-424A-8712-419DF23FF255}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{033EBB37-B602-424A-8712-419DF23FF255}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{033EBB37-B602-424A-8712-419DF23FF255}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{033EBB37-B602-424A-8712-419DF23FF255}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D7060EE6-EF53-42CA-922D-B6897BD65753}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D7060EE6-EF53-42CA-922D-B6897BD65753}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D7060EE6-EF53-42CA-922D-B6897BD65753}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -93,6 +89,10 @@ Global
 		{3199912E-35D4-4FA0-BA6B-497872A7828F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3199912E-35D4-4FA0-BA6B-497872A7828F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3199912E-35D4-4FA0-BA6B-497872A7828F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF93B618-586B-429B-A85A-31E69BB6CB73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF93B618-586B-429B-A85A-31E69BB6CB73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF93B618-586B-429B-A85A-31E69BB6CB73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF93B618-586B-429B-A85A-31E69BB6CB73}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

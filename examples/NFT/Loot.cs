@@ -29,7 +29,7 @@ namespace NFT
     [ContractPermission("*", "onNEP11Payment")]
     public partial class Loot : Nep11Token<TokenState>
     {
-        public string SourceCode => "https://github.com/neo-project/examples/Loot";
+        public string SourceCode => "https://github.com/neo-project/neo/examples/Loot";
         public override string Symbol() => "sLoot";
         private static readonly StorageMap TokenIndexMap = new(Storage.CurrentContext, (byte)StoragePrefix.Token);
         private static readonly StorageMap TokenMap = new(Storage.CurrentContext, Prefix_Token);

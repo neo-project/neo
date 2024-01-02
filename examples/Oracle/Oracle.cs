@@ -12,7 +12,7 @@ namespace Oracle
     [ManifestExtra("Description", "A sample contract to demonstrate how to use Oracle Service")]
     [ManifestExtra("Email", "core@neo.org")]
     [ManifestExtra("Version", "0.0.1")]
-    [ContractSourceCode("https://github.com/neo-project/examples/Oracle")]
+    [ContractSourceCode("https://github.com/neo-project/neo/examples/Oracle")]
     [ContractPermission("*", "*")]
     public class SampleOracle : SmartContract
     {

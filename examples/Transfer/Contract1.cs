@@ -4,21 +4,21 @@ using Neo.SmartContract.Framework.Native;
 
 using System.ComponentModel;
 
-namespace HelloWorld;
+namespace Transfer;
 
-[DisplayName("HelloWorld")]
-[ManifestExtra("Author", "code-dev")]
-[ManifestExtra("Description", "A simple `hello world` contract")]
-[ManifestExtra("Email", "core@neo.org")]
-[ManifestExtra("Version", "0.0.1")]
-[ContractSourceCode("https://github.com/neo-project/neo/examples/HelloWorld")]
+[DisplayName("Contract1")]
+[ManifestExtra("Author", "<Your Name Or Company Here>")]
+[ManifestExtra("Description", "<Description Here>")]
+[ManifestExtra("Email", "<Your Public Email Here>")]
+[ManifestExtra("Version", "1.0.0.0")]
+[ContractSourceCode("https://github.com/cschuchardt88/neo-templates")]
 [ContractPermission("*", "*")]
-public class HelloWorld : SmartContract
+public class Contract1 : SmartContract
 {
     [Safe]
-    public static string SayHello()
+    public static string SayHello(string name)
     {
-        return $"Hello, World!";
+        return $"Hello, {name}";
     }
 
     [DisplayName("_deploy")]

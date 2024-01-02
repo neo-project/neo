@@ -12,7 +12,7 @@ namespace Storage
     [ManifestExtra("Description", "A sample contract to demonstrate how to use storage")]
     [ManifestExtra("Email", "core@neo.org")]
     [ManifestExtra("Version", "0.0.1")]
-    [ContractSourceCode("https://github.com/neo-project/examples/Storage")]
+    [ContractSourceCode("https://github.com/neo-project/neo/examples/Storage")]
     [ContractPermission("*", "*")]
     public class SampleStorage : SmartContract
     {

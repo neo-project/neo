@@ -12,7 +12,7 @@ namespace Exception
     [ManifestExtra("Description", "A sample contract to demonstrate how to handle exception")]
     [ManifestExtra("Email", "core@neo.org")]
     [ManifestExtra("Version", "0.0.1")]
-    [ContractSourceCode("https://github.com/neo-project/examples/Exception")]
+    [ContractSourceCode("https://github.com/neo-project/neo/examples/Exception")]
     [ContractPermission("*", "*")]
     public class SampleException : SmartContract
     {

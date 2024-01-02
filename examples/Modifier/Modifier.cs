@@ -29,7 +29,7 @@ namespace Modifier
     [ManifestExtra("Description", "A sample contract to demonstrate how to use modifiers")]
     [ManifestExtra("Email", "core@neo.org")]
     [ManifestExtra("Version", "0.0.1")]
-    [ContractSourceCode("https://github.com/neo-project/examples/Exception")]
+    [ContractSourceCode("https://github.com/neo-project/neo/examples/Exception")]
     public class SampleModifier : SmartContract
     {
         [OwnerOnly("AAAAAAAAAAAAAAAAAAAAAAAAAAA=")]

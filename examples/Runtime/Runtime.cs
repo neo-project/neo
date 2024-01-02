@@ -14,7 +14,7 @@ namespace Runtime
     [ManifestExtra("Description", "A sample contract to demonstrate how to use runtime interface")]
     [ManifestExtra("Email", "core@neo.org")]
     [ManifestExtra("Version", "0.0.1")]
-    [ContractSourceCode("https://github.com/neo-project/examples/Runtime")]
+    [ContractSourceCode("https://github.com/neo-project/neo/examples/Runtime")]
     [ContractPermission("*", "*")]
     public class SampleRuntime : SmartContract
     {
