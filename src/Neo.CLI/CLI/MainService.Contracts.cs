@@ -29,14 +29,14 @@ namespace Neo.CLI
         /// <param name="manifestPath">Manifest path</param>
         /// <param name="data">Extra data for deploy</param>
         [ConsoleCommand("deploy", Category = "Contract Commands")]
-        private void OnDeployCommand(string filePath, string manifestPath = null, JObject data = null)
+        private void OnDeployCommand(string filePath, string? manifestPath = null, JObject? data = null)
         {
             if (NoWallet()) return;
             byte[] script = LoadDeploymentScript(filePath, manifestPath, data, out var nef, out var manifest);
             Transaction tx;
             try
             {
-                tx = CurrentWallet.MakeTransaction(NeoSystem.StoreView, script);
+                tx = CurrentWallet!.MakeTransaction(NeoSystem.StoreView, script);
             }
             catch (InvalidOperationException e)
             {
@@ -66,7 +66,7 @@ namespace Neo.CLI
         /// <param name="signerAccounts">Signer Accounts</param>
         /// <param name="data">Extra data for update</param>
         [ConsoleCommand("update", Category = "Contract Commands")]
-        private void OnUpdateCommand(UInt160 scriptHash, string filePath, string manifestPath, UInt160 sender, UInt160[] signerAccounts = null, JObject data = null)
+        private void OnUpdateCommand(UInt160 scriptHash, string filePath, string manifestPath, UInt160 sender, UInt160[]? signerAccounts = null, JObject? data = null)
         {
             Signer[] signers = Array.Empty<Signer>();
 
@@ -92,7 +92,7 @@ namespace Neo.CLI
             try
             {
                 byte[] script = LoadUpdateScript(scriptHash, filePath, manifestPath, data, out var nef, out var manifest);
-                tx = CurrentWallet.MakeTransaction(NeoSystem.StoreView, script, sender, signers);
+                tx = CurrentWallet!.MakeTransaction(NeoSystem.StoreView, script, sender, signers);
             }
             catch (InvalidOperationException e)
             {
@@ -129,7 +129,7 @@ namespace Neo.CLI
         /// <param name="signerAccounts">Signer's accounts</param>
         /// <param name="maxGas">Max fee for running the script</param>
         [ConsoleCommand("invoke", Category = "Contract Commands")]
-        private void OnInvokeCommand(UInt160 scriptHash, string operation, JArray contractParameters = null, UInt160 sender = null, UInt160[] signerAccounts = null, decimal maxGas = 20)
+        private void OnInvokeCommand(UInt160 scriptHash, string operation, JArray? contractParameters = null, UInt160? sender = null, UInt160[]? signerAccounts = null, decimal maxGas = 20)
         {
             var gas = new BigDecimal(maxGas, NativeContract.GAS.Decimals);
             Signer[] signers = Array.Empty<Signer>();
@@ -162,7 +162,7 @@ namespace Neo.CLI
             if (NoWallet()) return;
             try
             {
-                tx = CurrentWallet.MakeTransaction(NeoSystem.StoreView, tx.Script, sender, signers, maxGas: (long)gas.Value);
+                tx = CurrentWallet!.MakeTransaction(NeoSystem.StoreView, tx.Script, sender, signers, maxGas: (long)gas.Value);
             }
             catch (InvalidOperationException e)
             {

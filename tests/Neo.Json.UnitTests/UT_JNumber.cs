@@ -60,9 +60,18 @@ namespace Neo.Json.UnitTests
             new JNumber(1).GetEnum<Woo>().Should().Be(Woo.Jerry);
             new JNumber(2).GetEnum<Woo>().Should().Be(Woo.James);
             new JNumber(3).AsEnum<Woo>().Should().Be(Woo.Tom);
-
             Action action = () => new JNumber(3).GetEnum<Woo>();
             action.Should().Throw<InvalidCastException>();
+        }
+
+        [TestMethod]
+        public void TestEqual()
+        {
+            Assert.IsTrue(maxInt.Equals(JNumber.MAX_SAFE_INTEGER));
+            Assert.IsTrue(maxInt == JNumber.MAX_SAFE_INTEGER);
+            Assert.IsTrue(minInt.Equals(JNumber.MIN_SAFE_INTEGER));
+            Assert.IsTrue(minInt == JNumber.MIN_SAFE_INTEGER);
+            Assert.IsTrue(zero == new JNumber());
         }
     }
 }

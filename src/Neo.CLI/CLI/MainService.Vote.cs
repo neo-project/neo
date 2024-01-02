@@ -33,7 +33,7 @@ namespace Neo.CLI
         {
             var testGas = NativeContract.NEO.GetRegisterPrice(NeoSystem.StoreView) + (BigInteger)Math.Pow(10, NativeContract.GAS.Decimals) * 10;
             if (NoWallet()) return;
-            WalletAccount currentAccount = CurrentWallet.GetAccount(account);
+            WalletAccount currentAccount = CurrentWallet!.GetAccount(account);
 
             if (currentAccount == null)
             {
@@ -49,9 +49,9 @@ namespace Neo.CLI
                 }
             }
 
-            ECPoint publicKey = currentAccount.GetKey()?.PublicKey;
+            ECPoint? publicKey = currentAccount.GetKey()?.PublicKey;
             byte[] script;
-            using (ScriptBuilder scriptBuilder = new ScriptBuilder())
+            using (ScriptBuilder scriptBuilder = new())
             {
                 scriptBuilder.EmitDynamicCall(NativeContract.NEO.Hash, "registerCandidate", publicKey);
                 script = scriptBuilder.ToArray();
@@ -68,7 +68,7 @@ namespace Neo.CLI
         private void OnUnregisterCandidateCommand(UInt160 account)
         {
             if (NoWallet()) return;
-            WalletAccount currentAccount = CurrentWallet.GetAccount(account);
+            WalletAccount currentAccount = CurrentWallet!.GetAccount(account);
 
             if (currentAccount == null)
             {
@@ -84,9 +84,9 @@ namespace Neo.CLI
                 }
             }
 
-            ECPoint publicKey = currentAccount?.GetKey()?.PublicKey;
+            ECPoint? publicKey = currentAccount?.GetKey()?.PublicKey;
             byte[] script;
-            using (ScriptBuilder scriptBuilder = new ScriptBuilder())
+            using (ScriptBuilder scriptBuilder = new())
             {
                 scriptBuilder.EmitDynamicCall(NativeContract.NEO.Hash, "unregisterCandidate", publicKey);
                 script = scriptBuilder.ToArray();
@@ -105,7 +105,7 @@ namespace Neo.CLI
         {
             if (NoWallet()) return;
             byte[] script;
-            using (ScriptBuilder scriptBuilder = new ScriptBuilder())
+            using (ScriptBuilder scriptBuilder = new())
             {
                 scriptBuilder.EmitDynamicCall(NativeContract.NEO.Hash, "vote", senderAccount, publicKey);
                 script = scriptBuilder.ToArray();
@@ -123,7 +123,7 @@ namespace Neo.CLI
         {
             if (NoWallet()) return;
             byte[] script;
-            using (ScriptBuilder scriptBuilder = new ScriptBuilder())
+            using (ScriptBuilder scriptBuilder = new())
             {
                 scriptBuilder.EmitDynamicCall(NativeContract.NEO.Hash, "vote", senderAccount, null);
                 script = scriptBuilder.ToArray();
@@ -150,9 +150,10 @@ namespace Neo.CLI
                 foreach (var item in resJArray)
                 {
                     var value = (VM.Types.Array)item;
+                    if (value is null) continue;
 
-                    Console.Write(((ByteString)value?[0])?.GetSpan().ToHexString() + "\t");
-                    Console.WriteLine(((Integer)value?[1]).GetInteger());
+                    Console.Write(((ByteString)value[0])?.GetSpan().ToHexString() + "\t");
+                    Console.WriteLine(((Integer)value[1]).GetInteger());
                 }
             }
         }
@@ -222,6 +223,12 @@ namespace Neo.CLI
                 return;
             }
             var resJArray = (VM.Types.Array)result;
+            if (resJArray is null)
+            {
+                ConsoleHelper.Warning(notice);
+                return;
+            }
+
             foreach (StackItem value in resJArray)
             {
                 if (value.IsNull)
@@ -230,10 +237,10 @@ namespace Neo.CLI
                     return;
                 }
             }
-            var publickey = ECPoint.Parse(((ByteString)resJArray?[2])?.GetSpan().ToHexString(), ECCurve.Secp256r1);
+            var publickey = ECPoint.Parse(((ByteString)resJArray[2])?.GetSpan().ToHexString(), ECCurve.Secp256r1);
             ConsoleHelper.Info("Voted: ", Contract.CreateSignatureRedeemScript(publickey).ToScriptHash().ToAddress(NeoSystem.Settings.AddressVersion));
-            ConsoleHelper.Info("Amount: ", new BigDecimal(((Integer)resJArray?[0]).GetInteger(), NativeContract.NEO.Decimals).ToString());
-            ConsoleHelper.Info("Block: ", ((Integer)resJArray?[1]).GetInteger().ToString());
+            ConsoleHelper.Info("Amount: ", new BigDecimal(((Integer)resJArray[0]).GetInteger(), NativeContract.NEO.Decimals).ToString());
+            ConsoleHelper.Info("Block: ", ((Integer)resJArray[1]).GetInteger().ToString());
         }
     }
 }

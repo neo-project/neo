@@ -20,7 +20,7 @@ namespace Neo.CLI
         private readonly long _maxValue;
         private long _value;
         private decimal _lastFactor;
-        private string _lastPercent;
+        private string? _lastPercent;
 
         private readonly int _x, _y;
 
@@ -100,7 +100,7 @@ namespace Neo.CLI
         /// </summary>
         public void Invalidate()
         {
-            var factor = Math.Round((Percent / 100M), 1);
+            var factor = Math.Round(Percent / 100M, 1);
             var percent = Percent.ToString("0.0").PadLeft(5, ' ');
 
             if (_lastFactor == factor && _lastPercent == percent)

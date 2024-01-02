@@ -72,5 +72,33 @@ namespace Neo.Json
         {
             return new JBoolean(value);
         }
+
+        public static bool operator ==(JBoolean left, JBoolean right)
+        {
+            return left.Value.Equals(right.Value);
+        }
+
+        public static bool operator !=(JBoolean left, JBoolean right)
+        {
+            return !left.Value.Equals(right.Value);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+            if (obj is JBoolean other)
+            {
+                return this.Value.Equals(other.Value);
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return Value.GetHashCode();
+        }
     }
 }
