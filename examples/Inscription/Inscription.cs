@@ -14,7 +14,7 @@ namespace Inscription
     [ManifestExtra("Description", "A sample inscription contract.")]
     [ManifestExtra("Email", "<Your Public Email Here>")]
     [ManifestExtra("Version", "0.0.q")]
-    [ContractSourceCode("https://github.com/neo-project/samples/Inscription")]
+    [ContractSourceCode("https://github.com/neo-project/examples/Inscription")]
     [ContractPermission("*", "*")]
     public class SampleInscription : SmartContract
     {

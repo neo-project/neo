@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Exception", "Exception\Exce
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inscription", "Inscription\Inscription.csproj", "{B233DCE7-D97D-4BE3-8AE1-9A2416814C02}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Exchange", "Exchange\Exchange.csproj", "{3199912E-35D4-4FA0-BA6B-497872A7828F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +89,10 @@ Global
 		{B233DCE7-D97D-4BE3-8AE1-9A2416814C02}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B233DCE7-D97D-4BE3-8AE1-9A2416814C02}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B233DCE7-D97D-4BE3-8AE1-9A2416814C02}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3199912E-35D4-4FA0-BA6B-497872A7828F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3199912E-35D4-4FA0-BA6B-497872A7828F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3199912E-35D4-4FA0-BA6B-497872A7828F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3199912E-35D4-4FA0-BA6B-497872A7828F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

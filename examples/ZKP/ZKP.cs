@@ -10,7 +10,7 @@ namespace ZKP
     [ManifestExtra("Description", "A sample contract to demonstrate how to use ZKP")]
     [ManifestExtra("Email", "core@neo.org")]
     [ManifestExtra("Version", "0.0.1")]
-    [ContractSourceCode("https://github.com/neo-project/samples/ZKP")]
+    [ContractSourceCode("https://github.com/neo-project/examples/ZKP")]
     [ContractPermission("*", "*")]
     public class SampleZKP : SmartContract
     {

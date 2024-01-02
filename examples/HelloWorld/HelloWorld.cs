@@ -11,7 +11,7 @@ namespace HelloWorld;
 [ManifestExtra("Description", "A simple `hello world` contract")]
 [ManifestExtra("Email", "core@neo.org")]
 [ManifestExtra("Version", "0.0.1")]
-[ContractSourceCode("https://github.com/neo-project/samples/HelloWorld")]
+[ContractSourceCode("https://github.com/neo-project/examples/HelloWorld")]
 [ContractPermission("*", "*")]
 public class HelloWorld : SmartContract
 {

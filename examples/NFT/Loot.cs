@@ -1,11 +1,11 @@
 // Copyright (C) 2021 Neo Core.
 // This file belongs to the NEO-GAME-Loot contract developed for neo N3
 //
-// The NEO-GAME-Loot is free smart contract distributed under the MIT software 
+// The NEO-GAME-Loot is free smart contract distributed under the MIT software
 // license, see the accompanying file LICENSE in the main directory of
-// the project or http://www.opensource.org/licenses/mit-license.php 
+// the project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -29,7 +29,7 @@ namespace NFT
     [ContractPermission("*", "onNEP11Payment")]
     public partial class Loot : Nep11Token<TokenState>
     {
-        public string SourceCode => "https://github.com/neo-project/samples/Loot";
+        public string SourceCode => "https://github.com/neo-project/examples/Loot";
         public override string Symbol() => "sLoot";
         private static readonly StorageMap TokenIndexMap = new(Storage.CurrentContext, (byte)StoragePrefix.Token);
         private static readonly StorageMap TokenMap = new(Storage.CurrentContext, Prefix_Token);
@@ -143,14 +143,14 @@ namespace NFT
 
         /// <summary>
         /// Security Requirements:
-        /// 
-        /// <0> Has to check the validity of the token Id 
+        ///
+        /// <0> Has to check the validity of the token Id
         ///     both the upper and lower bound
-        /// 
+        ///
         /// <1> shall not be called from a contract
-        /// 
+        ///
         /// <3> tx shall fault if token already taken
-        /// 
+        ///
         /// <4> update the token map.
         /// </summary>
         /// <param name="tokenId"></param>
@@ -166,9 +166,9 @@ namespace NFT
 
         /// <summary>
         /// Security Requirements:
-        /// 
+        ///
         /// <0> only the owner can call this function
-        /// 
+        ///
         /// <1> the range of the tokenid is to be in (7777, 8001)
         /// </summary>
         /// <param name="tokenId"></param>
@@ -183,11 +183,11 @@ namespace NFT
 
         /// <summary>
         /// Security Requirements:
-        /// 
+        ///
         /// <0> the transaction should `FAULT` if the token already taken
-        /// 
+        ///
         /// <1> has to update the taken map if a new token is mint.
-        /// 
+        ///
         /// </summary>
         /// <param name="tokenId"></param>
         /// <param name="sender"></param>
@@ -202,9 +202,9 @@ namespace NFT
 
         /// <summary>
         /// Security requirements:
-        /// 
+        ///
         /// <0> throw exception if token already taken
-        /// 
+        ///
         /// <1> should get a random number as credential that
         ///     is not predictable and not linked to the tokenId
         /// </summary>
