@@ -1,4 +1,4 @@
-right (C) 2015-2024 The Neo Project.
+// Copyright right (C) 2015-2024 The Neo Project.
 //
 // CryptoLib.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
