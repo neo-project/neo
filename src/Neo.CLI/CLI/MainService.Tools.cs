@@ -26,7 +26,7 @@ namespace Neo.CLI
         [ConsoleCommand("parse", Category = "Base Commands", Description = "Parse a value to its possible conversions.")]
         private void OnParseCommand(string value)
         {
-            var parseFunctions = new Dictionary<string, Func<string, string>>()
+            var parseFunctions = new Dictionary<string, Func<string, string?>>()
             {
                 { "Address to ScriptHash", AddressToScripthash },
                 { "Address to Base64", AddressToBase64 },
@@ -73,7 +73,7 @@ namespace Neo.CLI
         /// string or when the converted string is not printable; otherwise, returns
         /// the string represented by the hexadecimal value
         /// </returns>
-        private string HexToString(string hexString)
+        private string? HexToString(string hexString)
         {
             try
             {
@@ -98,7 +98,7 @@ namespace Neo.CLI
         /// Returns null when is not possible to parse the hex value to big integer value;
         /// otherwise, returns the string that represents the converted big integer.
         /// </returns>
-        private string HexToNumber(string hexString)
+        private string? HexToNumber(string hexString)
         {
             try
             {
@@ -169,7 +169,7 @@ namespace Neo.CLI
         /// Returns null when it is not possible to parse the string value to a hexadecimal
         /// value; otherwise returns the hexadecimal value that represents the converted string
         /// </returns>
-        private string StringToHex(string strParam)
+        private string? StringToHex(string strParam)
         {
             try
             {
@@ -195,7 +195,7 @@ namespace Neo.CLI
         /// <exception cref="ArgumentException">
         /// Throw .
         /// </exception>
-        private string StringToBase64(string strParam)
+        private string? StringToBase64(string strParam)
         {
             try
             {
@@ -220,7 +220,7 @@ namespace Neo.CLI
         /// it is not possible to parse the big integer value to hexadecimal; otherwise,
         /// returns the string that represents the converted hexadecimal value
         /// </returns>
-        private string NumberToHex(string strParam)
+        private string? NumberToHex(string strParam)
         {
             try
             {
@@ -247,7 +247,7 @@ namespace Neo.CLI
         /// it is not possible to parse the big integer value to Base64 value; otherwise,
         /// returns the string that represents the converted Base64 value
         /// </returns>
-        private string NumberToBase64(string strParam)
+        private string? NumberToBase64(string strParam)
         {
             try
             {
@@ -277,7 +277,7 @@ namespace Neo.CLI
         /// it is not possible to parse the address to scripthash; otherwise returns
         /// the string that represents the converted scripthash
         /// </returns>
-        private string AddressToScripthash(string address)
+        private string? AddressToScripthash(string address)
         {
             try
             {
@@ -302,7 +302,7 @@ namespace Neo.CLI
         /// not possible to parse the address to Base64 value; otherwise returns
         /// the string that represents the converted Base64 value.
         /// </returns>
-        private string AddressToBase64(string address)
+        private string? AddressToBase64(string address)
         {
             try
             {
@@ -327,7 +327,7 @@ namespace Neo.CLI
         /// Returns null when the string does not represent an scripthash;
         /// otherwise, returns the string that represents the converted address
         /// </returns>
-        private string ScripthashToAddress(string script)
+        private string? ScripthashToAddress(string script)
         {
             try
             {
@@ -372,7 +372,7 @@ namespace Neo.CLI
         /// it is not possible to parse the Base64 value to address; otherwise,
         /// returns the string that represents the converted address
         /// </returns>
-        private string Base64ToAddress(string bytearray)
+        private string? Base64ToAddress(string bytearray)
         {
             try
             {
@@ -405,7 +405,7 @@ namespace Neo.CLI
         /// string is not printable; otherwise, returns the string that represents
         /// the Base64 value.
         /// </returns>
-        private string Base64ToString(string bytearray)
+        private string? Base64ToString(string bytearray)
         {
             try
             {
@@ -430,7 +430,7 @@ namespace Neo.CLI
         /// it is not possible to parse the Base64 value to big integer value; otherwise
         /// returns the string that represents the converted big integer
         /// </returns>
-        private string Base64ToNumber(string bytearray)
+        private string? Base64ToNumber(string bytearray)
         {
             try
             {

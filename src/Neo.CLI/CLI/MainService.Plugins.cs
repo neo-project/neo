@@ -72,26 +72,27 @@ namespace Neo.CLI
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 response.Dispose();
-                Version versionCore = typeof(Plugin).Assembly.GetName().Version;
+                Version versionCore = typeof(Plugin).Assembly.GetName().Version!;
                 HttpRequestMessage request = new(HttpMethod.Get,
                     "https://api.github.com/repos/neo-project/neo-modules/releases");
                 request.Headers.UserAgent.ParseAdd(
                     $"{GetType().Assembly.GetName().Name}/{GetType().Assembly.GetVersion()}");
                 using HttpResponseMessage responseApi = await http.SendAsync(request);
                 byte[] buffer = await responseApi.Content.ReadAsByteArrayAsync();
-                var releases = JObject.Parse(buffer);
-                var asset = ((JArray)releases)
-                    .Where(p => !p["tag_name"].GetString().Contains('-'))
+                if (JToken.Parse(buffer) is not JArray arr) throw new Exception("Plugin doesn't exist.");
+                var asset = arr
+                    .Where(p => p?["tag_name"] is not null && p?["assets"] is not null)
+                    .Where(p => !p!["tag_name"]!.GetString().Contains('-'))
                     .Select(p => new
                     {
-                        Version = Version.Parse(p["tag_name"].GetString().TrimStart('v')),
-                        Assets = (JArray)p["assets"]
+                        Version = Version.Parse(p!["tag_name"]!.GetString().TrimStart('v')),
+                        Assets = p["assets"] as JArray
                     })
                     .OrderByDescending(p => p.Version)
-                    .First(p => p.Version <= versionCore).Assets
-                    .FirstOrDefault(p => p["name"].GetString() == $"{pluginName}.zip");
+                    .First(p => p.Version <= versionCore).Assets?
+                    .FirstOrDefault(p => p?["name"]?.GetString() == $"{pluginName}.zip");
                 if (asset is null) throw new Exception("Plugin doesn't exist.");
-                response = await http.GetAsync(asset["browser_download_url"].GetString());
+                response = await http.GetAsync(asset["browser_download_url"]?.GetString());
             }
 
             using (response)
@@ -121,7 +122,7 @@ namespace Neo.CLI
         /// <param name="pluginName">Name of the plugin</param>
         /// <param name="installed">Dependency set</param>
         /// <param name="overWrite">Install by force for `update`</param>
-        private async Task InstallPluginAsync(string pluginName, HashSet<string> installed = null,
+        private async Task InstallPluginAsync(string pluginName, HashSet<string>? installed = null,
             bool overWrite = false)
         {
             installed ??= new HashSet<string>();
@@ -135,7 +136,7 @@ namespace Neo.CLI
             }
 
             using ZipArchive zip = new(stream, ZipArchiveMode.Read);
-            ZipArchiveEntry entry = zip.Entries.FirstOrDefault(p => p.Name == "config.json");
+            ZipArchiveEntry? entry = zip.Entries.FirstOrDefault(p => p.Name == "config.json");
             if (entry is not null)
             {
                 await using Stream es = entry.Open();
@@ -160,10 +161,10 @@ namespace Neo.CLI
             var dependencies = dependency.GetChildren().Select(p => p.Get<string>()).ToArray();
             if (dependencies.Length == 0) return;
 
-            foreach (string plugin in dependencies.Where(p => !PluginExists(p)))
+            foreach (string? plugin in dependencies.Where(p => p is not null && !PluginExists(p)))
             {
                 ConsoleHelper.Info($"Installing dependency: {plugin}");
-                await InstallPluginAsync(plugin, installed);
+                await InstallPluginAsync(plugin!, installed);
             }
         }
 
@@ -201,7 +202,7 @@ namespace Neo.CLI
                         .GetSection("Dependency")
                         .GetChildren()
                         .Select(d => d.Get<string>())
-                        .Any(v => v.Equals(pluginName, StringComparison.InvariantCultureIgnoreCase)))
+                        .Any(v => v is not null && v.Equals(pluginName, StringComparison.InvariantCultureIgnoreCase)))
                     {
                         ConsoleHelper.Error(
                             $"Can not uninstall. Other plugins depend on this plugin, try `reinstall {pluginName}` if the plugin is broken.");

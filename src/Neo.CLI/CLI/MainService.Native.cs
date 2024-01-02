@@ -10,7 +10,6 @@
 
 using Neo.ConsoleService;
 using Neo.SmartContract.Native;
-using System;
 using System.Linq;
 
 namespace Neo.CLI
