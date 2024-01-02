@@ -112,9 +112,9 @@ namespace Neo.CLI
                     Console.Write($"{logLevel} {log} \t{messages[0],-20}");
                     for (var i = 1; i < messages.Length; i++)
                     {
-                        if (messages[i].Length > 20)
+                        if (messages[i]?.Length > 20)
                         {
-                            messages[i] = $"{messages[i][..10]}...{messages[i][(messages[i].Length - 10)..]}";
+                            messages[i] = $"{messages[i]![..10]}...{messages[i]![(messages[i]!.Length - 10)..]}";
                         }
                         Console.Write(i % 2 == 0 ? $"={messages[i]} " : $" {messages[i]}");
                     }
@@ -162,7 +162,11 @@ namespace Neo.CLI
                 {
                     messages.Add(string.Join(" ", d));
                 }
-                messages.Add(parts.LastOrDefault());
+                var last = parts.LastOrDefault();
+                if (last is not null)
+                {
+                    messages.Add(last);
+                }
             }
 
             return messages.ToArray();

@@ -21,7 +21,7 @@ namespace Neo
         public P2PSettings P2P { get; }
         public UnlockWalletSettings UnlockWallet { get; }
 
-        static Settings _default;
+        static Settings? _default;
 
         static bool UpdateDefault(IConfiguration configuration)
         {
@@ -44,7 +44,7 @@ namespace Neo
                     Initialize(config);
                 }
 
-                return _default;
+                return _default!;
             }
         }
 
@@ -65,7 +65,7 @@ namespace Neo
 
         public LoggerSettings(IConfigurationSection section)
         {
-            this.Path = section.GetValue("Path", "Logs");
+            this.Path = section.GetValue("Path", "Logs")!;
             this.ConsoleOutput = section.GetValue("ConsoleOutput", false);
             this.Active = section.GetValue("Active", false);
         }
@@ -78,8 +78,8 @@ namespace Neo
 
         public StorageSettings(IConfigurationSection section)
         {
-            this.Engine = section.GetValue("Engine", "LevelDBStore");
-            this.Path = section.GetValue("Path", "Data_LevelDB_{0}");
+            this.Engine = section.GetValue("Engine", "LevelDBStore")!;
+            this.Path = section.GetValue("Path", "Data_LevelDB_{0}")!;
         }
     }
 
@@ -101,8 +101,8 @@ namespace Neo
 
     public class UnlockWalletSettings
     {
-        public string Path { get; }
-        public string Password { get; }
+        public string? Path { get; }
+        public string? Password { get; }
         public bool IsActive { get; }
 
         public UnlockWalletSettings(IConfigurationSection section)
@@ -111,7 +111,7 @@ namespace Neo
             {
                 this.Path = section.GetValue("Path", "");
                 this.Password = section.GetValue("Password", "");
-                this.IsActive = bool.Parse(section.GetValue("IsActive", "false"));
+                this.IsActive = bool.Parse(section.GetValue("IsActive", "false")!);
             }
         }
     }
