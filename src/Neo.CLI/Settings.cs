@@ -1,10 +1,11 @@
-// Copyright (C) 2016-2023 The Neo Project.
-// 
-// The neo-cli is free software distributed under the MIT software 
-// license, see the accompanying file LICENSE in the main directory of
-// the project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// Settings.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -86,15 +87,13 @@ namespace Neo
     public class P2PSettings
     {
         public ushort Port { get; }
-        public ushort WsPort { get; }
         public int MinDesiredConnections { get; }
         public int MaxConnections { get; }
         public int MaxConnectionsPerAddress { get; }
 
         public P2PSettings(IConfigurationSection section)
         {
-            this.Port = ushort.Parse(section.GetValue("Port", "10333")!);
-            this.WsPort = ushort.Parse(section.GetValue("WsPort", "10334")!);
+            this.Port = ushort.Parse(section.GetValue("Port", "10333"));
             this.MinDesiredConnections = section.GetValue("MinDesiredConnections", Peer.DefaultMinDesiredConnections);
             this.MaxConnections = section.GetValue("MaxConnections", Peer.DefaultMaxConnections);
             this.MaxConnectionsPerAddress = section.GetValue("MaxConnectionsPerAddress", 3);
