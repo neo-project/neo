@@ -9,6 +9,7 @@
     <PackageIcon>neo.png</PackageIcon>
     <PackageProjectUrl>https://github.com/neo-project/neo</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/neo-project/neo.git</RepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
@@ -19,5 +20,6 @@
 
   <ItemGroup>
     <None Include="../neo.png" Pack="true" Visible="false" PackagePath=""/>
+    <None Include="../README.md" Pack="true" Visible="false" PackagePath=""/>
   </ItemGroup>
 </Project>

@@ -1,10 +1,11 @@
-// Copyright (C) 2016-2023 The Neo Project.
-// 
-// The neo-cli is free software distributed under the MIT software 
-// license, see the accompanying file LICENSE in the main directory of
-// the project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// ConsolePercent.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -19,11 +20,11 @@ namespace Neo.CLI
         private readonly long _maxValue;
         private long _value;
         private decimal _lastFactor;
-        private string _lastPercent;
+        private string? _lastPercent;
 
         private readonly int _x, _y;
 
-        private bool _inputRedirected;
+        private readonly bool _inputRedirected;
 
         #endregion
 
@@ -99,7 +100,7 @@ namespace Neo.CLI
         /// </summary>
         public void Invalidate()
         {
-            var factor = Math.Round((Percent / 100M), 1);
+            var factor = Math.Round(Percent / 100M, 1);
             var percent = Percent.ToString("0.0").PadLeft(5, ' ');
 
             if (_lastFactor == factor && _lastPercent == percent)
