@@ -11,10 +11,9 @@
 
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Org.BouncyCastle.Crypto.Digests;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Org.BouncyCastle.Crypto.Digests;
 
 namespace Neo.SmartContract.Native
 {
