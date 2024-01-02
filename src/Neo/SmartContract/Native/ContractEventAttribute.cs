@@ -9,9 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.SmartContract.Manifest;
 using System;
 using System.Diagnostics;
-using Neo.SmartContract.Manifest;
 
 namespace Neo.SmartContract.Native
 {
