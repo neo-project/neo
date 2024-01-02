@@ -1,3 +1,14 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UtEvaluationStack.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.VM;
 using Neo.VM.Types;
@@ -186,6 +197,19 @@ namespace Neo.Test
             Assert.IsTrue(stack.Pop<Integer>().Equals(2));
             Assert.IsTrue(stack.Pop<Integer>().Equals(1));
             Assert.ThrowsException<ArgumentOutOfRangeException>(() => stack.Pop<Integer>().Equals(0));
+        }
+
+        [TestMethod]
+        public void TestToString()
+        {
+            var stack = new EvaluationStack(new ReferenceCounter());
+
+            stack.Insert(0, 3);
+            stack.Insert(1, 1);
+            stack.Insert(2, "test");
+            stack.Insert(3, true);
+
+            Assert.AreEqual("[Boolean(True), ByteString(\"test\"), Integer(1), Integer(3)]", stack.ToString());
         }
     }
 }

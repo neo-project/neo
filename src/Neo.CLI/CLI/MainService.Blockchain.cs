@@ -1,10 +1,11 @@
-// Copyright (C) 2016-2023 The Neo Project.
-// 
-// The neo-cli is free software distributed under the MIT software 
-// license, see the accompanying file LICENSE in the main directory of
-// the project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// MainService.Blockchain.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -26,7 +27,7 @@ namespace Neo.CLI
         /// <param name="count">Number of blocks</param>
         /// <param name="path">Path</param>
         [ConsoleCommand("export blocks", Category = "Blockchain Commands")]
-        private void OnExportBlocksStartCountCommand(uint start, uint count = uint.MaxValue, string path = null)
+        private void OnExportBlocksStartCountCommand(uint start, uint count = uint.MaxValue, string? path = null)
         {
             uint height = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
             if (height < start)
@@ -50,12 +51,12 @@ namespace Neo.CLI
         {
             lock (syncRoot)
             {
-                Block block = null;
+                Block? block = null;
 
                 if (uint.TryParse(indexOrHash, out var index))
-                    block = NativeContract.Ledger.GetBlock(_neoSystem.StoreView, index);
+                    block = NativeContract.Ledger.GetBlock(NeoSystem.StoreView, index);
                 else if (UInt256.TryParse(indexOrHash, out var hash))
-                    block = NativeContract.Ledger.GetBlock(_neoSystem.StoreView, hash);
+                    block = NativeContract.Ledger.GetBlock(NeoSystem.StoreView, hash);
                 else
                 {
                     ConsoleHelper.Error("Enter a valid block index or hash.");
@@ -81,7 +82,7 @@ namespace Neo.CLI
                 ConsoleHelper.Info("", "       PrevHash: ", $"{block.PrevHash}");
                 ConsoleHelper.Info("", "  NextConsensus: ", $"{block.NextConsensus}");
                 ConsoleHelper.Info("", "   PrimaryIndex: ", $"{block.PrimaryIndex}");
-                ConsoleHelper.Info("", "  PrimaryPubKey: ", $"{NativeContract.NEO.GetCommittee(_neoSystem.GetSnapshot())[block.PrimaryIndex]}");
+                ConsoleHelper.Info("", "  PrimaryPubKey: ", $"{NativeContract.NEO.GetCommittee(NeoSystem.GetSnapshot())[block.PrimaryIndex]}");
                 ConsoleHelper.Info("", "        Version: ", $"{block.Version}");
                 ConsoleHelper.Info("", "           Size: ", $"{block.Size} Byte(s)");
                 ConsoleHelper.Info();
@@ -116,7 +117,7 @@ namespace Neo.CLI
         {
             lock (syncRoot)
             {
-                var tx = NativeContract.Ledger.GetTransactionState(_neoSystem.StoreView, hash);
+                var tx = NativeContract.Ledger.GetTransactionState(NeoSystem.StoreView, hash);
 
                 if (tx is null)
                 {
@@ -124,7 +125,7 @@ namespace Neo.CLI
                     return;
                 }
 
-                var block = NativeContract.Ledger.GetHeader(_neoSystem.StoreView, tx.BlockIndex);
+                var block = NativeContract.Ledger.GetHeader(NeoSystem.StoreView, tx.BlockIndex);
 
                 DateTime transactionDatetime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
                 transactionDatetime = transactionDatetime.AddMilliseconds(block.Timestamp).ToLocalTime();
@@ -228,16 +229,16 @@ namespace Neo.CLI
         {
             lock (syncRoot)
             {
-                ContractState contract = null;
+                ContractState? contract = null;
 
                 if (UInt160.TryParse(nameOrHash, out var scriptHash))
-                    contract = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, scriptHash);
+                    contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, scriptHash);
                 else
                 {
                     var nativeContract = NativeContract.Contracts.SingleOrDefault(s => s.Name.Equals(nameOrHash, StringComparison.InvariantCultureIgnoreCase));
 
                     if (nativeContract != null)
-                        contract = NativeContract.ContractManagement.GetContract(_neoSystem.StoreView, nativeContract.Hash);
+                        contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, nativeContract.Hash);
                 }
 
                 if (contract is null)
@@ -257,7 +258,7 @@ namespace Neo.CLI
                 ConsoleHelper.Info("", "            Compiler: ", $"{contract.Nef.Compiler}");
                 ConsoleHelper.Info("", "          SourceCode: ", $"{contract.Nef.Source}");
                 ConsoleHelper.Info("", "              Trusts: ", $"[{string.Join(", ", contract.Manifest.Trusts.Select(s => s.ToJson()?.GetString()))}]");
-                if (contract.Manifest.Extra is null)
+                if (contract.Manifest.Extra is not null)
                 {
                     foreach (var extra in contract.Manifest.Extra.Properties)
                     {
