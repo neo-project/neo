@@ -13,8 +13,6 @@ using Akka.Actor;
 using Akka.IO;
 using System;
 using System.Net;
-using System.Net.WebSockets;
-using System.Threading;
 
 namespace Neo.Network.P2P
 {
@@ -48,7 +46,6 @@ namespace Neo.Network.P2P
 
         private ICancelable timer;
         private readonly IActorRef tcp;
-        private readonly WebSocket ws;
         private bool disconnected = false;
 
         /// <summary>
@@ -67,31 +64,7 @@ namespace Neo.Network.P2P
                 case IActorRef tcp:
                     this.tcp = tcp;
                     break;
-                case WebSocket ws:
-                    this.ws = ws;
-                    WsReceive();
-                    break;
             }
-        }
-
-        private void WsReceive()
-        {
-            byte[] buffer = new byte[512];
-            ws.ReceiveAsync(buffer, CancellationToken.None).PipeTo(Self,
-                success: p =>
-                {
-                    switch (p.MessageType)
-                    {
-                        case WebSocketMessageType.Binary:
-                            return new Tcp.Received(ByteString.FromBytes(buffer, 0, p.Count));
-                        case WebSocketMessageType.Close:
-                            return Tcp.PeerClosed.Instance;
-                        default:
-                            ws.Abort();
-                            return Tcp.Aborted.Instance;
-                    }
-                },
-                failure: ex => new Tcp.ErrorClosed(ex.Message));
         }
 
         /// <summary>
@@ -104,10 +77,6 @@ namespace Neo.Network.P2P
             if (tcp != null)
             {
                 tcp.Tell(abort ? Tcp.Abort.Instance : Tcp.Close.Instance);
-            }
-            else
-            {
-                ws.Abort();
             }
             Context.Stop(Self);
         }
@@ -163,7 +132,6 @@ namespace Neo.Network.P2P
             if (!disconnected)
                 tcp?.Tell(Tcp.Close.Instance);
             timer.CancelIfNotNull();
-            ws?.Dispose();
             base.PostStop();
         }
 
@@ -176,13 +144,6 @@ namespace Neo.Network.P2P
             if (tcp != null)
             {
                 tcp.Tell(Tcp.Write.Create(data, Ack.Instance));
-            }
-            else
-            {
-                ArraySegment<byte> segment = new(data.ToArray());
-                ws.SendAsync(segment, WebSocketMessageType.Binary, true, CancellationToken.None).PipeTo(Self,
-                    success: () => Ack.Instance,
-                    failure: ex => new Tcp.ErrorClosed(ex.Message));
             }
         }
     }
