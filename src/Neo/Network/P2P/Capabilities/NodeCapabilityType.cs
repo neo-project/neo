@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
+
 namespace Neo.Network.P2P.Capabilities
 {
     /// <summary>
@@ -26,6 +28,7 @@ namespace Neo.Network.P2P.Capabilities
         /// <summary>
         /// Indicates that the node is listening on a WebSocket port.
         /// </summary>
+        [Obsolete]
         WsServer = 0x02,
 
         #endregion

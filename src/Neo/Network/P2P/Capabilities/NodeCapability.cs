@@ -56,7 +56,9 @@ namespace Neo.Network.P2P.Capabilities
             NodeCapabilityType type = (NodeCapabilityType)reader.ReadByte();
             NodeCapability capability = type switch
             {
+#pragma warning disable CS0612 // Type or member is obsolete
                 NodeCapabilityType.TcpServer or NodeCapabilityType.WsServer => new ServerCapability(type),
+#pragma warning restore CS0612 // Type or member is obsolete
                 NodeCapabilityType.FullNode => new FullNodeCapability(),
                 _ => throw new FormatException(),
             };

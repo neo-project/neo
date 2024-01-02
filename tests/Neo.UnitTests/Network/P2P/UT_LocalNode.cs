@@ -37,7 +37,6 @@ namespace Neo.UnitTests.Network.P2P
             var localnode = senderProbe.ExpectMsg<LocalNode>();
 
             Assert.AreEqual(0, localnode.ListenerTcpPort);
-            Assert.AreEqual(0, localnode.ListenerWsPort);
             Assert.AreEqual(3, localnode.MaxConnectionsPerAddress);
             Assert.AreEqual(10, localnode.MinDesiredConnections);
             Assert.AreEqual(40, localnode.MaxConnections);
