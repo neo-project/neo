@@ -1,3 +1,14 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UT_Blockchain.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Akka.TestKit;
 using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -89,7 +100,7 @@ namespace Neo.UnitTests.Ledger
 
             tx.Nonce = nonce;
 
-            var data = new ContractParametersContext(snapshot, tx, ProtocolSettings.Default.Network);
+            var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
             Assert.IsNull(data.GetSignatures(tx.Sender));
             Assert.IsTrue(wallet.Sign(data));
             Assert.IsTrue(data.Completed);
@@ -135,7 +146,7 @@ namespace Neo.UnitTests.Ledger
             {
                 Header = new Header()
                 {
-                    Index = 10000,
+                    Index = 5, // allow tx1, tx2 and tx3 to fit into MaxValidUntilBlockIncrement.
                     MerkleRoot = UInt256.Zero,
                     NextConsensus = UInt160.Zero,
                     PrevHash = UInt256.Zero,
@@ -149,13 +160,26 @@ namespace Neo.UnitTests.Ledger
                 sb.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
                 onPersistScript = sb.ToArray();
             }
-            TransactionState[] transactionStates;
             using (ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, TestBlockchain.TheNeoSystem.Settings, 0))
             {
                 engine2.LoadScript(onPersistScript);
-                if (engine2.Execute() != VMState.HALT) throw new InvalidOperationException();
-                Blockchain.ApplicationExecuted application_executed = new(engine2);
-                transactionStates = engine2.GetState<TransactionState[]>();
+                if (engine2.Execute() != VMState.HALT) throw engine2.FaultException;
+                engine2.Snapshot.Commit();
+            }
+            snapshot.Commit();
+
+            // Run PostPersist to update current block index in native Ledger.
+            // Relevant current block index is needed for conflict records checks.
+            byte[] postPersistScript;
+            using (ScriptBuilder sb = new())
+            {
+                sb.EmitSysCall(ApplicationEngine.System_Contract_NativePostPersist);
+                postPersistScript = sb.ToArray();
+            }
+            using (ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, TestBlockchain.TheNeoSystem.Settings, 0))
+            {
+                engine2.LoadScript(postPersistScript);
+                if (engine2.Execute() != VMState.HALT) throw engine2.FaultException;
                 engine2.Snapshot.Commit();
             }
             snapshot.Commit();

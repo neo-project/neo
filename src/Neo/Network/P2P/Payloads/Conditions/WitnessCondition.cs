@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// WitnessCondition.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -21,7 +22,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 {
     public abstract class WitnessCondition : IInteroperable, ISerializable
     {
-        private const int MaxSubitems = 16;
+        internal const int MaxSubitems = 16;
         internal const int MaxNestingDepth = 2;
 
         /// <summary>
@@ -92,21 +93,20 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <param name="writer">The <see cref="BinaryWriter"/> for writing data.</param>
         protected abstract void SerializeWithoutType(BinaryWriter writer);
 
-        private protected virtual void ParseJson(JObject json)
-        {
-        }
+        private protected abstract void ParseJson(JObject json, int maxNestDepth);
 
         /// <summary>
         /// Converts the <see cref="WitnessCondition"/> from a JSON object.
         /// </summary>
         /// <param name="json">The <see cref="WitnessCondition"/> represented by a JSON object.</param>
+        /// <param name="maxNestDepth">The maximum nesting depth allowed during deserialization.</param>
         /// <returns>The converted <see cref="WitnessCondition"/>.</returns>
-        public static WitnessCondition FromJson(JObject json)
+        public static WitnessCondition FromJson(JObject json, int maxNestDepth)
         {
             WitnessConditionType type = Enum.Parse<WitnessConditionType>(json["type"].GetString());
             if (ReflectionCache<WitnessConditionType>.CreateInstance(type) is not WitnessCondition condition)
                 throw new FormatException("Invalid WitnessConditionType.");
-            condition.ParseJson(json);
+            condition.ParseJson(json, maxNestDepth);
             return condition;
         }
 

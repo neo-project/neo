@@ -1,24 +1,25 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// ApplicationEngine.Runtime.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Numerics;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -235,7 +236,7 @@ namespace Neo.SmartContract
             {
                 20 => new UInt160(hashOrPubkey),
                 33 => Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(hashOrPubkey, ECCurve.Secp256r1)).ToScriptHash(),
-                _ => throw new ArgumentException(null, nameof(hashOrPubkey))
+                _ => throw new ArgumentException("Invalid hashOrPubkey.", nameof(hashOrPubkey))
             };
             return CheckWitnessInternal(hash);
         }
@@ -272,14 +273,14 @@ namespace Neo.SmartContract
                 return false;
             }
 
-            // Check allow state callflag
+            // If we don't have the ScriptContainer, we consider that there are no script hashes for verifying
+            if (ScriptContainer is null) return false;
 
+            // Check allow state callflag
             ValidateCallFlags(CallFlags.ReadStates);
 
             // only for non-Transaction types (Block, etc)
-
-            var hashes_for_verifying = ScriptContainer.GetScriptHashesForVerifying(Snapshot);
-            return hashes_for_verifying.Contains(hash);
+            return ScriptContainer.GetScriptHashesForVerifying(Snapshot).Contains(hash);
         }
 
         /// <summary>
@@ -362,7 +363,7 @@ namespace Neo.SmartContract
             }
             using MemoryStream ms = new(MaxNotificationSize);
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
-            BinarySerializer.Serialize(writer, state, MaxNotificationSize);
+            BinarySerializer.Serialize(writer, state, MaxNotificationSize, Limits.MaxStackSize);
             SendNotification(CurrentScriptHash, name, state);
         }
 
@@ -373,7 +374,7 @@ namespace Neo.SmartContract
                 throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
             using MemoryStream ms = new(MaxNotificationSize);
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
-            BinarySerializer.Serialize(writer, state, MaxNotificationSize);
+            BinarySerializer.Serialize(writer, state, MaxNotificationSize, Limits.MaxStackSize);
             SendNotification(CurrentScriptHash, Utility.StrictUTF8.GetString(eventName), state);
         }
 

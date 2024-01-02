@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// TransactionState.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -32,8 +33,6 @@ namespace Neo.SmartContract.Native
         /// </summary>
         public Transaction Transaction;
 
-        public UInt160[] ConflictingSigners;
-
         /// <summary>
         /// The execution state
         /// </summary>
@@ -47,7 +46,6 @@ namespace Neo.SmartContract.Native
             {
                 BlockIndex = BlockIndex,
                 Transaction = Transaction,
-                ConflictingSigners = ConflictingSigners,
                 State = State,
                 _rawTransaction = _rawTransaction
             };
@@ -58,7 +56,6 @@ namespace Neo.SmartContract.Native
             TransactionState from = (TransactionState)replica;
             BlockIndex = from.BlockIndex;
             Transaction = from.Transaction;
-            ConflictingSigners = from.ConflictingSigners;
             State = from.State;
             if (_rawTransaction.IsEmpty)
                 _rawTransaction = from._rawTransaction;
@@ -67,12 +64,12 @@ namespace Neo.SmartContract.Native
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
-            if (@struct.Count == 1)
-            {
-                ConflictingSigners = ((VM.Types.Array)@struct[0]).Select(u => new UInt160(u.GetSpan())).ToArray();
-                return;
-            }
             BlockIndex = (uint)@struct[0].GetInteger();
+
+            // Conflict record.
+            if (@struct.Count == 1) return;
+
+            // Fully-qualified transaction.
             _rawTransaction = ((ByteString)@struct[1]).Memory;
             Transaction = _rawTransaction.AsSerializable<Transaction>();
             State = (VMState)(byte)@struct[2].GetInteger();
@@ -80,7 +77,8 @@ namespace Neo.SmartContract.Native
 
         StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
         {
-            if (Transaction is null) return new Struct(referenceCounter) { new VM.Types.Array(referenceCounter, ConflictingSigners.Select(u => new ByteString(u.ToArray())).ToArray()) };
+            if (Transaction is null)
+                return new Struct(referenceCounter) { BlockIndex };
             if (_rawTransaction.IsEmpty)
                 _rawTransaction = Transaction.ToArray();
             return new Struct(referenceCounter) { BlockIndex, _rawTransaction, (byte)State };

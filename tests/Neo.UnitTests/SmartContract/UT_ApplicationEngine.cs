@@ -1,9 +1,20 @@
-using System;
-using System.Collections.Immutable;
-using System.Linq;
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UT_ApplicationEngine.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
+using System;
+using System.Collections.Immutable;
+using System.Linq;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract
@@ -54,7 +65,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
             byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
-            ApplicationEngine engine = ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshot);
+            ApplicationEngine engine = ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshot, settings: TestProtocolSettings.Default);
             engine.PersistingBlock.Version.Should().Be(0);
             engine.PersistingBlock.PrevHash.Should().Be(TestBlockchain.TheNeoSystem.GenesisBlock.Hash);
             engine.PersistingBlock.MerkleRoot.Should().Be(new UInt256());

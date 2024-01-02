@@ -1,0 +1,277 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="About" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="AboutMessage" xml:space="preserve">
+    <value>NEO</value>
+  </data>
+  <data name="AboutVersion" xml:space="preserve">
+    <value>Version:</value>
+  </data>
+  <data name="AddContractFailedMessage" xml:space="preserve">
+    <value>Failed to add smart contract, corresponding private key missing in this wallet.</value>
+  </data>
+  <data name="Address" xml:space="preserve">
+    <value>Address</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="ChangePasswordSuccessful" xml:space="preserve">
+    <value>Change password successful.</value>
+  </data>
+  <data name="Confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="CostTips" xml:space="preserve">
+    <value>will be consumed, confirm?</value>
+  </data>
+  <data name="CostTitle" xml:space="preserve">
+    <value>Cost Warning</value>
+  </data>
+  <data name="DeleteAddressConfirmationCaption" xml:space="preserve">
+    <value>Confirmation</value>
+  </data>
+  <data name="DeleteAddressConfirmationMessage" xml:space="preserve">
+    <value>Upon deletion, assets in these addresses will be permanently lost, are you sure to proceed?</value>
+  </data>
+  <data name="DeleteAssetConfirmationMessage" xml:space="preserve">
+    <value>Assets cannot be recovered once deleted, are you sure to delete the assets?</value>
+  </data>
+  <data name="DeleteConfirmation" xml:space="preserve">
+    <value>Confirmation</value>
+  </data>
+  <data name="EnterRemarkMessage" xml:space="preserve">
+    <value>Enter remark here, which will be recorded on the blockchain</value>
+  </data>
+  <data name="EnterRemarkTitle" xml:space="preserve">
+    <value>Transaction Remark</value>
+  </data>
+  <data name="ExecutionFailed" xml:space="preserve">
+    <value>Execution terminated in fault state.</value>
+  </data>
+  <data name="ExpiredCertificate" xml:space="preserve">
+    <value>Expired</value>
+  </data>
+  <data name="Failed" xml:space="preserve">
+    <value>Failed</value>
+  </data>
+  <data name="HighPriority" xml:space="preserve">
+    <value>High Priority Transaction</value>
+  </data>
+  <data name="ImportWatchOnlyAddress" xml:space="preserve">
+    <value>Import Watch-Only Address</value>
+  </data>
+  <data name="IncompletedSignatureMessage" xml:space="preserve">
+    <value>Transaction initiated, but the signature is incomplete.</value>
+  </data>
+  <data name="IncompletedSignatureTitle" xml:space="preserve">
+    <value>Incomplete signature</value>
+  </data>
+  <data name="InstallCertificateCancel" xml:space="preserve">
+    <value>You have cancelled the certificate installation.</value>
+  </data>
+  <data name="InstallCertificateCaption" xml:space="preserve">
+    <value>Install the certificate</value>
+  </data>
+  <data name="InstallCertificateText" xml:space="preserve">
+    <value>NEO must install Onchain root certificate to validate assets on the blockchain, install it now?</value>
+  </data>
+  <data name="InsufficientFunds" xml:space="preserve">
+    <value>Insufficient funds, transaction cannot be initiated.</value>
+  </data>
+  <data name="InvalidCertificate" xml:space="preserve">
+    <value>Invalid</value>
+  </data>
+  <data name="MigrateWalletCaption" xml:space="preserve">
+    <value>Migrate Wallet</value>
+  </data>
+  <data name="MigrateWalletMessage" xml:space="preserve">
+    <value>Opening wallet files in older versions, update to newest format?
+Note: updated files cannot be openned by clients in older versions!</value>
+  </data>
+  <data name="MigrateWalletSucceedMessage" xml:space="preserve">
+    <value>Wallet file relocated. New wallet file has been saved at: </value>
+  </data>
+  <data name="PasswordIncorrect" xml:space="preserve">
+    <value>Password Incorrect</value>
+  </data>
+  <data name="RelaySuccessText" xml:space="preserve">
+    <value>Data broadcast success, the hash is shown as follows:</value>
+  </data>
+  <data name="RelaySuccessTitle" xml:space="preserve">
+    <value>Broadcast Success</value>
+  </data>
+  <data name="RelayTitle" xml:space="preserve">
+    <value>Raw:</value>
+  </data>
+  <data name="SendTxSucceedMessage" xml:space="preserve">
+    <value>Transaction sent, TXID:</value>
+  </data>
+  <data name="SendTxSucceedTitle" xml:space="preserve">
+    <value>Transaction successful</value>
+  </data>
+  <data name="SigningFailedKeyNotFoundMessage" xml:space="preserve">
+    <value>The private key that can sign the data is not found.</value>
+  </data>
+  <data name="SigningFailedNoDataMessage" xml:space="preserve">
+    <value>You must input JSON object pending signature data.</value>
+  </data>
+  <data name="SystemIssuer" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="TradeFailedFakeDataMessage" xml:space="preserve">
+    <value>Validation failed, the counterparty falsified the transaction content!</value>
+  </data>
+  <data name="TradeFailedInvalidDataMessage" xml:space="preserve">
+    <value>Validation failed, the counterparty generated illegal transaction content!</value>
+  </data>
+  <data name="TradeFailedNoSyncMessage" xml:space="preserve">
+    <value>Validation failed, invalid transaction or unsynchronized blockchain, please try again when synchronized!</value>
+  </data>
+  <data name="TradeNeedSignatureCaption" xml:space="preserve">
+    <value>Need Signature</value>
+  </data>
+  <data name="TradeNeedSignatureMessage" xml:space="preserve">
+    <value>Transaction generated, please send the following information to the counterparty for signing:</value>
+  </data>
+  <data name="TradeRequestCreatedCaption" xml:space="preserve">
+    <value>Trade Request</value>
+  </data>
+  <data name="TradeRequestCreatedMessage" xml:space="preserve">
+    <value>Transaction request generated, please send it to the counterparty or merge it with the counterparty's request.</value>
+  </data>
+  <data name="TradeSuccessCaption" xml:space="preserve">
+    <value>Trade Success</value>
+  </data>
+  <data name="TradeSuccessMessage" xml:space="preserve">
+    <value>Transaction sent, this is the TXID:</value>
+  </data>
+  <data name="Unconfirmed" xml:space="preserve">
+    <value>unconfirmed</value>
+  </data>
+  <data name="UnknownIssuer" xml:space="preserve">
+    <value>unknown issuer</value>
+  </data>
+  <data name="UnsynchronizedBlock" xml:space="preserve">
+    <value>Blockchain unsynchronized, transaction cannot be sent.</value>
+  </data>
+</root>

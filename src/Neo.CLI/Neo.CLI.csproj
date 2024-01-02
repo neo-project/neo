@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyTitle>Neo.CLI</AssemblyTitle>
+    <AssemblyName>neo-cli</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <PackageId>Neo.CLI</PackageId>
+    <RootNamespace>Neo</RootNamespace>
+    <Product>Neo.CLI</Product>
+    <ApplicationIcon>neo.ico</ApplicationIcon>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="neo.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="config*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
+    <ProjectReference Include="..\Neo\Neo.csproj" />
+  </ItemGroup>
+
+</Project>

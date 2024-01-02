@@ -1,0 +1,47 @@
+{
+  "category": "Push",
+  "name": "PUSHDATA1",
+  "tests": [
+    {
+      "name": "Good definition",
+      "script": [
+        "PUSHDATA1",
+        "0x04",
+        "0x01020304"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "ByteString",
+                "value": "0x01020304"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Without enough length",
+      "script": [
+        "PUSHDATA1",
+        "0x0501020304"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    }
+  ]
+}

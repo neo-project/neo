@@ -1,3 +1,14 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UT_Helper.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO.Caching;
@@ -19,7 +30,7 @@ namespace Neo.UnitTests
         public void GetSignData()
         {
             TestVerifiable verifiable = new();
-            byte[] res = verifiable.GetSignData(ProtocolSettings.Default.Network);
+            byte[] res = verifiable.GetSignData(TestProtocolSettings.Default.Network);
             res.ToHexString().Should().Be("4e454f3350b51da6bb366be3ea50140cda45ba7df575287c0371000b2037ed3898ff8bf5");
         }
 
@@ -27,7 +38,7 @@ namespace Neo.UnitTests
         public void Sign()
         {
             TestVerifiable verifiable = new();
-            byte[] res = verifiable.Sign(new KeyPair(TestUtils.GetByteArray(32, 0x42)), ProtocolSettings.Default.Network);
+            byte[] res = verifiable.Sign(new KeyPair(TestUtils.GetByteArray(32, 0x42)), TestProtocolSettings.Default.Network);
             res.Length.Should().Be(64);
         }
 

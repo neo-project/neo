@@ -1,3 +1,14 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UT_Syscalls.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Akka.TestKit.Xunit2;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
@@ -71,7 +82,7 @@ namespace Neo.UnitTests.SmartContract
             const byte Prefix_CurrentBlock = 12;
 
             var height = snapshot[NativeContract.Ledger.CreateStorageKey(Prefix_CurrentBlock)].GetInteroperable<HashIndexState>();
-            height.Index = block.Index + ProtocolSettings.Default.MaxTraceableBlocks;
+            height.Index = block.Index + TestProtocolSettings.Default.MaxTraceableBlocks;
 
             UT_SmartContractHelper.BlocksAdd(snapshot, block.Hash, block);
             snapshot.Add(NativeContract.Ledger.CreateStorageKey(Prefix_Transaction, tx.Hash), new StorageItem(new TransactionState

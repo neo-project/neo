@@ -1,0 +1,28 @@
+{
+  "category": "Arrays",
+  "name": "NEWSTRUCT0",
+  "tests": [
+    {
+      "name": "Real test",
+      "script": [
+        "NEWSTRUCT0"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Struct",
+                "value": []
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

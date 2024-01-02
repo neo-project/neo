@@ -1,9 +1,14 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Threading.Tasks;
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UT_MemoryPool.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -15,7 +20,12 @@ using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.VM;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
+using System.Threading.Tasks;
 
 namespace Neo.UnitTests.Ledger
 {
@@ -47,7 +57,7 @@ namespace Neo.UnitTests.Ledger
             TimeProvider.ResetToDefault();
 
             // Create a MemoryPool with capacity of 100
-            _unit = new MemoryPool(new NeoSystem(ProtocolSettings.Default with { MemoryPoolMaxTransactions = 100 }));
+            _unit = new MemoryPool(new NeoSystem(TestProtocolSettings.Default with { MemoryPoolMaxTransactions = 100 }));
 
             // Verify capacity equals the amount specified
             _unit.Capacity.Should().Be(100);
@@ -638,7 +648,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestReVerifyTopUnverifiedTransactionsIfNeeded()
         {
-            _unit = new MemoryPool(new NeoSystem(ProtocolSettings.Default with { MemoryPoolMaxTransactions = 600 }));
+            _unit = new MemoryPool(new NeoSystem(TestProtocolSettings.Default with { MemoryPoolMaxTransactions = 600 }));
 
             AddTransaction(CreateTransaction(100000001));
             AddTransaction(CreateTransaction(100000001));
@@ -734,74 +744,6 @@ namespace Neo.UnitTests.Ledger
 
             _unit.UnVerifiedCount.Should().Be(0);
             _unit.VerifiedCount.Should().Be(0);
-        }
-
-
-        [TestMethod]
-        public async Task Malicious_OnChain_Conflict()
-        {
-            // Arrange: prepare mempooled txs that have conflicts.
-            long txFee = 1;
-            var snapshot = GetSnapshot();
-            BigInteger balance = NativeContract.GAS.BalanceOf(snapshot, senderAccount);
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
-            engine.LoadScript(Array.Empty<byte>());
-
-            var tx1 = CreateTransactionWithFeeAndBalanceVerify(txFee);
-            var tx2 = CreateTransactionWithFeeAndBalanceVerify(txFee);
-
-            tx1.Signers[0].Account = UInt160.Parse("0x0001020304050607080900010203040506070809"); // Different sender
-
-            await NativeContract.GAS.Mint(engine, tx1.Sender, 100000, true); // balance enough for all mempooled txs
-            await NativeContract.GAS.Mint(engine, tx2.Sender, 100000, true); // balance enough for all mempooled txs
-
-            tx1.Attributes = new TransactionAttribute[] { new Conflicts() { Hash = tx2.Hash } };
-
-            Assert.AreEqual(_unit.TryAdd(tx1, engine.Snapshot), VerifyResult.Succeed);
-
-            var block = new Block
-            {
-                Header = new Header()
-                {
-                    Index = 10000,
-                    MerkleRoot = UInt256.Zero,
-                    NextConsensus = UInt160.Zero,
-                    PrevHash = UInt256.Zero,
-                    Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
-                },
-                Transactions = new Transaction[] { tx1 },
-            };
-            _unit.UpdatePoolForBlockPersisted(block, engine.Snapshot);
-
-            _unit.SortedTxCount.Should().Be(0);
-
-            // Simulate persist tx1
-
-            Assert.AreEqual(_unit.TryAdd(tx2, engine.Snapshot), VerifyResult.Succeed);
-
-            byte[] onPersistScript;
-            using (ScriptBuilder sb = new())
-            {
-                sb.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
-                onPersistScript = sb.ToArray();
-            }
-
-            TransactionState[] transactionStates;
-            using (ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.OnPersist, null, engine.Snapshot, block, TestBlockchain.TheNeoSystem.Settings, 0))
-            {
-                engine2.LoadScript(onPersistScript);
-                if (engine2.Execute() != VMState.HALT) throw new InvalidOperationException();
-                Blockchain.ApplicationExecuted application_executed = new(engine2);
-                transactionStates = engine2.GetState<TransactionState[]>();
-            }
-
-            // Test tx2 arrive
-
-            snapshot.Commit();
-
-            var senderProbe = CreateTestProbe();
-            senderProbe.Send(TestBlockchain.TheNeoSystem.Blockchain, tx2);
-            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.InsufficientFunds); // should be Succedded.
         }
 
         public static StorageKey CreateStorageKey(int id, byte prefix, byte[] key = null)

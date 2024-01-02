@@ -1,3 +1,14 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UT_SmartContractHelper.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
@@ -131,7 +142,7 @@ namespace Neo.UnitTests.SmartContract
                 Hashes = new UInt256[1] { UInt256.Zero },
             });
             BlocksDelete(snapshot1, index1);
-            Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(new Header() { PrevHash = index1 }, ProtocolSettings.Default, snapshot1, 100));
+            Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(new Header() { PrevHash = index1 }, TestProtocolSettings.Default, snapshot1, 100));
 
             var snapshot2 = TestBlockchain.GetTestSnapshot();
             UInt256 index2 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
@@ -152,7 +163,7 @@ namespace Neo.UnitTests.SmartContract
 
             snapshot2.AddContract(UInt160.Zero, new ContractState());
             snapshot2.DeleteContract(UInt160.Zero);
-            Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header2, ProtocolSettings.Default, snapshot2, 100));
+            Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header2, TestProtocolSettings.Default, snapshot2, 100));
 
             var snapshot3 = TestBlockchain.GetTestSnapshot();
             UInt256 index3 = UInt256.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
@@ -184,7 +195,7 @@ namespace Neo.UnitTests.SmartContract
                 Hash = Array.Empty<byte>().ToScriptHash(),
                 Manifest = TestUtils.CreateManifest("verify", ContractParameterType.Boolean, ContractParameterType.Signature),
             });
-            Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header3, ProtocolSettings.Default, snapshot3, 100));
+            Assert.AreEqual(false, Neo.SmartContract.Helper.VerifyWitnesses(header3, TestProtocolSettings.Default, snapshot3, 100));
 
             // Smart contract verification
 
@@ -200,7 +211,7 @@ namespace Neo.UnitTests.SmartContract
                 Witnesses = new Witness[] { new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() } }
             };
 
-            Assert.AreEqual(true, Neo.SmartContract.Helper.VerifyWitnesses(tx, ProtocolSettings.Default, snapshot3, 1000));
+            Assert.AreEqual(true, Neo.SmartContract.Helper.VerifyWitnesses(tx, TestProtocolSettings.Default, snapshot3, 1000));
         }
 
         private static void BlocksDelete(DataCache snapshot, UInt256 hash)

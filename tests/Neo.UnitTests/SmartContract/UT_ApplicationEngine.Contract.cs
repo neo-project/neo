@@ -1,3 +1,14 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UT_ApplicationEngine.Contract.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
@@ -11,8 +22,8 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestCreateStandardAccount()
         {
-            var settings = ProtocolSettings.Default;
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            var settings = TestProtocolSettings.Default;
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null, settings: TestProtocolSettings.Default, gas: 1100_00000000);
 
             using var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Contract_CreateStandardAccount, settings.StandbyCommittee[0].EncodePoint(true));
@@ -27,7 +38,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestCreateStandardMultisigAccount()
         {
-            var settings = ProtocolSettings.Default;
+            var settings = TestProtocolSettings.Default;
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, null, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
 
             using var script = new ScriptBuilder();

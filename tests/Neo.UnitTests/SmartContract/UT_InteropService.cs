@@ -1,3 +1,14 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UT_InteropService.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -301,6 +312,19 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void TestRuntime_CheckWitness_Null_ScriptContainer()
+        {
+            byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
+            KeyPair keyPair = new(privateKey);
+            ECPoint pubkey = keyPair.PublicKey;
+
+            var engine = GetEngine();
+
+            engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeFalse();
+        }
+
+        [TestMethod]
         public void TestRuntime_Log()
         {
             var engine = GetEngine(true);
@@ -373,7 +397,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var engine = GetEngine(true);
             IVerifiable iv = engine.ScriptContainer;
-            byte[] message = iv.GetSignData(ProtocolSettings.Default.Network);
+            byte[] message = iv.GetSignData(TestProtocolSettings.Default.Network);
             byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair keyPair = new(privateKey);
