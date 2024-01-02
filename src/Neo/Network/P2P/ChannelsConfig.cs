@@ -23,11 +23,6 @@ namespace Neo.Network.P2P
         public IPEndPoint Tcp { get; set; }
 
         /// <summary>
-        /// Web socket configuration.
-        /// </summary>
-        public IPEndPoint WebSocket { get; set; }
-
-        /// <summary>
         /// Minimum desired connections.
         /// </summary>
         public int MinDesiredConnections { get; set; } = Peer.DefaultMinDesiredConnections;
