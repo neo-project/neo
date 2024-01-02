@@ -1,8 +1,9 @@
-// Copyright (C) 2016-2023 The Neo Project.
+// Copyright (C) 2015-2024 The Neo Project.
 //
-// The neo-cli is free software distributed under the MIT software
-// license, see the accompanying file LICENSE in the main directory of
-// the project or http://www.opensource.org/licenses/mit-license.php
+// MainService.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
 //
 // Redistribution and use in source and binary forms with or without
@@ -40,14 +41,13 @@ namespace Neo.CLI
 {
     public partial class MainService : ConsoleServiceBase, IWalletProvider
     {
-        public event EventHandler<Wallet> WalletChanged;
+        public event EventHandler<Wallet?>? WalletChanged = null;
 
         public const long TestModeGas = 20_00000000;
 
-        private Wallet _currentWallet;
-        public LocalNode LocalNode;
+        private Wallet? _currentWallet;
 
-        public Wallet CurrentWallet
+        public Wallet? CurrentWallet
         {
             get => _currentWallet;
             private set
@@ -57,11 +57,19 @@ namespace Neo.CLI
             }
         }
 
-        private NeoSystem _neoSystem;
+        private NeoSystem? _neoSystem;
         public NeoSystem NeoSystem
         {
-            get => _neoSystem;
+            get => _neoSystem!;
             private set => _neoSystem = value;
+        }
+
+        private LocalNode? _localNode;
+
+        public LocalNode LocalNode
+        {
+            get => _localNode!;
+            private set => _localNode = value;
         }
 
         protected override string Prompt => "neo";
@@ -78,8 +86,8 @@ namespace Neo.CLI
             RegisterCommandHandler<string[], UInt160[]>(arr => arr.Select(str => StringToAddress(str, NeoSystem.Settings.AddressVersion)).ToArray());
             RegisterCommandHandler<string, ECPoint>(str => ECPoint.Parse(str.Trim(), ECCurve.Secp256r1));
             RegisterCommandHandler<string[], ECPoint[]>(str => str.Select(u => ECPoint.Parse(u.Trim(), ECCurve.Secp256r1)).ToArray());
-            RegisterCommandHandler<string, JToken>(str => JToken.Parse(str));
-            RegisterCommandHandler<string, JObject>(str => (JObject)JToken.Parse(str));
+            RegisterCommandHandler<string, JToken>(str => JToken.Parse(str)!);
+            RegisterCommandHandler<string, JObject>(str => (JObject)JToken.Parse(str)!);
             RegisterCommandHandler<string, decimal>(str => decimal.Parse(str, CultureInfo.InvariantCulture));
             RegisterCommandHandler<JToken, JArray>(obj => (JArray)obj);
 
@@ -108,7 +116,7 @@ namespace Neo.CLI
             return input.ToScriptHash(version);
         }
 
-        Wallet IWalletProvider.GetWallet()
+        Wallet? IWalletProvider.GetWallet()
         {
             return CurrentWallet;
         }
@@ -117,9 +125,9 @@ namespace Neo.CLI
         {
             Console.ForegroundColor = ConsoleColor.DarkGreen;
 
-            var cliV = Assembly.GetAssembly(typeof(Program)).GetVersion();
-            var neoV = Assembly.GetAssembly(typeof(NeoSystem)).GetVersion();
-            var vmV = Assembly.GetAssembly(typeof(ExecutionEngine)).GetVersion();
+            var cliV = Assembly.GetAssembly(typeof(Program))!.GetVersion();
+            var neoV = Assembly.GetAssembly(typeof(NeoSystem))!.GetVersion();
+            var vmV = Assembly.GetAssembly(typeof(ExecutionEngine))!.GetVersion();
             Console.WriteLine($"{ServiceName} v{cliV}  -  NEO v{neoV}  -  NEO-VM v{vmV}");
             Console.WriteLine();
 
@@ -172,17 +180,22 @@ namespace Neo.CLI
         {
             const string pathAcc = "chain.acc";
             if (File.Exists(pathAcc))
-                using (FileStream fs = new FileStream(pathAcc, FileMode.Open, FileAccess.Read, FileShare.Read))
+                using (FileStream fs = new(pathAcc, FileMode.Open, FileAccess.Read, FileShare.Read))
                     foreach (var block in GetBlocks(fs))
                         yield return block;
 
             const string pathAccZip = pathAcc + ".zip";
             if (File.Exists(pathAccZip))
-                using (FileStream fs = new FileStream(pathAccZip, FileMode.Open, FileAccess.Read, FileShare.Read))
-                using (ZipArchive zip = new ZipArchive(fs, ZipArchiveMode.Read))
-                using (Stream zs = zip.GetEntry(pathAcc).Open())
-                    foreach (var block in GetBlocks(zs))
-                        yield return block;
+                using (FileStream fs = new(pathAccZip, FileMode.Open, FileAccess.Read, FileShare.Read))
+                using (ZipArchive zip = new(fs, ZipArchiveMode.Read))
+                using (Stream? zs = zip.GetEntry(pathAcc)?.Open())
+                {
+                    if (zs is not null)
+                    {
+                        foreach (var block in GetBlocks(zs))
+                            yield return block;
+                    }
+                }
 
             var paths = Directory.EnumerateFiles(".", "chain.*.acc", SearchOption.TopDirectoryOnly).Concat(Directory.EnumerateFiles(".", "chain.*.acc.zip", SearchOption.TopDirectoryOnly)).Select(p => new
             {
@@ -196,13 +209,18 @@ namespace Neo.CLI
             {
                 if (path.Start > height + 1) break;
                 if (path.IsCompressed)
-                    using (FileStream fs = new FileStream(path.FileName, FileMode.Open, FileAccess.Read, FileShare.Read))
-                    using (ZipArchive zip = new ZipArchive(fs, ZipArchiveMode.Read))
-                    using (Stream zs = zip.GetEntry(Path.GetFileNameWithoutExtension(path.FileName)).Open())
-                        foreach (var block in GetBlocks(zs, true))
-                            yield return block;
+                    using (FileStream fs = new(path.FileName, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    using (ZipArchive zip = new(fs, ZipArchiveMode.Read))
+                    using (Stream? zs = zip.GetEntry(Path.GetFileNameWithoutExtension(path.FileName))?.Open())
+                    {
+                        if (zs is not null)
+                        {
+                            foreach (var block in GetBlocks(zs, true))
+                                yield return block;
+                        }
+                    }
                 else
-                    using (FileStream fs = new FileStream(path.FileName, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    using (FileStream fs = new(path.FileName, FileMode.Open, FileAccess.Read, FileShare.Read))
                         foreach (var block in GetBlocks(fs, true))
                             yield return block;
             }
@@ -215,7 +233,7 @@ namespace Neo.CLI
             return true;
         }
 
-        private byte[] LoadDeploymentScript(string nefFilePath, string manifestFilePath, JObject data, out NefFile nef, out ContractManifest manifest)
+        private byte[] LoadDeploymentScript(string nefFilePath, string? manifestFilePath, JObject? data, out NefFile nef, out ContractManifest manifest)
         {
             if (string.IsNullOrEmpty(manifestFilePath))
             {
@@ -242,7 +260,7 @@ namespace Neo.CLI
 
             nef = File.ReadAllBytes(nefFilePath).AsSerializable<NefFile>();
 
-            ContractParameter dataParameter = null;
+            ContractParameter? dataParameter = null;
             if (data is not null)
                 try
                 {
@@ -268,7 +286,7 @@ namespace Neo.CLI
             }
         }
 
-        private byte[] LoadUpdateScript(UInt160 scriptHash, string nefFilePath, string manifestFilePath, JObject data, out NefFile nef, out ContractManifest manifest)
+        private byte[] LoadUpdateScript(UInt160 scriptHash, string nefFilePath, string manifestFilePath, JObject? data, out NefFile nef, out ContractManifest manifest)
         {
             if (string.IsNullOrEmpty(manifestFilePath))
             {
@@ -295,7 +313,7 @@ namespace Neo.CLI
 
             nef = File.ReadAllBytes(nefFilePath).AsSerializable<NefFile>();
 
-            ContractParameter dataParameter = null;
+            ContractParameter? dataParameter = null;
             if (data is not null)
                 try
                 {
@@ -395,7 +413,6 @@ namespace Neo.CLI
             NeoSystem.StartNode(new ChannelsConfig
             {
                 Tcp = new IPEndPoint(IPAddress.Any, Settings.Default.P2P.Port),
-                WebSocket = new IPEndPoint(IPAddress.Any, Settings.Default.P2P.WsPort),
                 MinDesiredConnections = Settings.Default.P2P.MinDesiredConnections,
                 MaxConnections = Settings.Default.P2P.MaxConnections,
                 MaxConnectionsPerAddress = Settings.Default.P2P.MaxConnectionsPerAddress
@@ -405,6 +422,15 @@ namespace Neo.CLI
             {
                 try
                 {
+                    if (Settings.Default.UnlockWallet.Path is null)
+                    {
+                        throw new InvalidOperationException("UnlockWallet.Path must be defined");
+                    }
+                    else if (Settings.Default.UnlockWallet.Password is null)
+                    {
+                        throw new InvalidOperationException("UnlockWallet.Password must be defined");
+                    }
+
                     OpenWallet(Settings.Default.UnlockWallet.Path, Settings.Default.UnlockWallet.Password);
                 }
                 catch (FileNotFoundException)
@@ -488,14 +514,16 @@ namespace Neo.CLI
         /// <param name="script">script</param>
         /// <param name="account">sender</param>
         /// <param name="gas">Max fee for running the script</param>
-        private void SendTransaction(byte[] script, UInt160 account = null, long gas = TestModeGas)
+        private void SendTransaction(byte[] script, UInt160? account = null, long gas = TestModeGas)
         {
+            if (NoWallet()) return;
+
             Signer[] signers = Array.Empty<Signer>();
             var snapshot = NeoSystem.StoreView;
 
             if (account != null)
             {
-                signers = CurrentWallet.GetAccounts()
+                signers = CurrentWallet!.GetAccounts()
                 .Where(p => !p.Lock && !p.WatchOnly && p.ScriptHash == account && NativeContract.GAS.BalanceOf(snapshot, p.ScriptHash).Sign > 0)
                 .Select(p => new Signer { Account = p.ScriptHash, Scopes = WitnessScope.CalledByEntry })
                 .ToArray();
@@ -503,7 +531,7 @@ namespace Neo.CLI
 
             try
             {
-                Transaction tx = CurrentWallet.MakeTransaction(snapshot, script, account, signers, maxGas: gas);
+                Transaction tx = CurrentWallet!.MakeTransaction(snapshot, script, account, signers, maxGas: gas);
                 ConsoleHelper.Info("Invoking script with: ", $"'{Convert.ToBase64String(tx.Script.Span)}'");
 
                 using (ApplicationEngine engine = ApplicationEngine.Run(tx.Script, snapshot, container: tx, settings: NeoSystem.Settings, gas: gas))
@@ -536,15 +564,18 @@ namespace Neo.CLI
         /// <param name="showStack">Show result stack if it is true</param>
         /// <param name="gas">Max fee for running the script</param>
         /// <returns>Return true if it was successful</returns>
-        private bool OnInvokeWithResult(UInt160 scriptHash, string operation, out StackItem result, IVerifiable verifiable = null, JArray contractParameters = null, bool showStack = true, long gas = TestModeGas)
+        private bool OnInvokeWithResult(UInt160 scriptHash, string operation, out StackItem result, IVerifiable? verifiable = null, JArray? contractParameters = null, bool showStack = true, long gas = TestModeGas)
         {
-            List<ContractParameter> parameters = new List<ContractParameter>();
+            List<ContractParameter> parameters = new();
 
             if (contractParameters != null)
             {
                 foreach (var contractParameter in contractParameters)
                 {
-                    parameters.Add(ContractParameter.FromJson((JObject)contractParameter));
+                    if (contractParameter is not null)
+                    {
+                        parameters.Add(ContractParameter.FromJson((JObject)contractParameter));
+                    }
                 }
             }
 
@@ -581,7 +612,7 @@ namespace Neo.CLI
 
             using ApplicationEngine engine = ApplicationEngine.Run(script, NeoSystem.StoreView, container: verifiable, settings: NeoSystem.Settings, gas: gas);
             PrintExecutionOutput(engine, showStack);
-            result = engine.State == VMState.FAULT ? null : engine.ResultStack.Peek();
+            result = engine.State == VMState.FAULT ? StackItem.Null : engine.ResultStack.Peek();
             return engine.State != VMState.FAULT;
         }
 

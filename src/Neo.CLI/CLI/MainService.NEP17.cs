@@ -1,10 +1,11 @@
-// Copyright (C) 2016-2023 The Neo Project.
-// 
-// The neo-cli is free software distributed under the MIT software 
-// license, see the accompanying file LICENSE in the main directory of
-// the project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// MainService.NEP17.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -16,7 +17,6 @@ using Neo.SmartContract.Native;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Array = System.Array;
 
@@ -34,7 +34,7 @@ namespace Neo.CLI
         /// <param name="data">Data</param>
         /// <param name="signersAccounts">Signer's accounts</param>
         [ConsoleCommand("transfer", Category = "NEP17 Commands")]
-        private void OnTransferCommand(UInt160 tokenHash, UInt160 to, decimal amount, UInt160 from = null, string data = null, UInt160[] signersAccounts = null)
+        private void OnTransferCommand(UInt160 tokenHash, UInt160 to, decimal amount, UInt160? from = null, string? data = null, UInt160[]? signersAccounts = null)
         {
             var snapshot = NeoSystem.StoreView;
             var asset = new AssetDescriptor(snapshot, NeoSystem.Settings, tokenHash);
@@ -45,7 +45,7 @@ namespace Neo.CLI
             Transaction tx;
             try
             {
-                tx = CurrentWallet.MakeTransaction(snapshot, new[]
+                tx = CurrentWallet!.MakeTransaction(snapshot, new[]
                 {
                     new TransferOutput
                     {
