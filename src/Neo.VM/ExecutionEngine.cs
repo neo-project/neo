@@ -72,7 +72,7 @@ namespace Neo.VM
             {
                 return state;
             }
-            internal protected set
+            protected internal set
             {
                 if (state != value)
                 {
@@ -1459,7 +1459,7 @@ namespace Neo.VM
         /// <summary>
         /// Execute the next instruction.
         /// </summary>
-        internal protected void ExecuteNext()
+        protected internal void ExecuteNext()
         {
             if (InvocationStack.Count == 0)
             {
