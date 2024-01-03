@@ -417,7 +417,7 @@ namespace Neo.Ledger
             else system.TxRouter.Forward(new TransactionRouter.Preverify(tx, true));
         }
 
-         private void Persist(Block block)
+        private void Persist(Block block)
         {
             using (SnapshotCache snapshot = system.GetSnapshot())
             {

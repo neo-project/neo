@@ -399,8 +399,8 @@ namespace Neo.CLI
                         if (!blocksBeingImported.MoveNext()) break;
                         var block = blocksBeingImported.Current;
                         blocksToImport.Add(blocksBeingImported.Current);
-                        if (block.Transactions.Length ==0) continue;
-                        if(blocksToImport.Count > maxWorkerThreads*2) break;
+                        if (block.Transactions.Length == 0) continue;
+                        if (blocksToImport.Count > maxWorkerThreads * 2) break;
                         i++;
                     }
                     if (blocksToImport.Count == 0) break;
