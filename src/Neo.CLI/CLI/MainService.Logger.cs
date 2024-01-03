@@ -1,8 +1,9 @@
-// Copyright (C) 2016-2023 The Neo Project.
-// 
-// The neo-cli is free software distributed under the MIT software 
-// license, see the accompanying file LICENSE in the main directory of
-// the project or http://www.opensource.org/licenses/mit-license.php
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// MainService.Logger.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
 //
 // Redistribution and use in source and binary forms with or without
@@ -112,9 +113,9 @@ namespace Neo.CLI
                     Console.Write($"{logLevel} {log} \t{messages[0],-20}");
                     for (var i = 1; i < messages.Length; i++)
                     {
-                        if (messages[i].Length > 20)
+                        if (messages[i]?.Length > 20)
                         {
-                            messages[i] = $"{messages[i][..10]}...{messages[i][(messages[i].Length - 10)..]}";
+                            messages[i] = $"{messages[i]![..10]}...{messages[i]![(messages[i]!.Length - 10)..]}";
                         }
                         Console.Write(i % 2 == 0 ? $"={messages[i]} " : $" {messages[i]}");
                     }
@@ -162,7 +163,11 @@ namespace Neo.CLI
                 {
                     messages.Add(string.Join(" ", d));
                 }
-                messages.Add(parts.LastOrDefault());
+                var last = parts.LastOrDefault();
+                if (last is not null)
+                {
+                    messages.Add(last);
+                }
             }
 
             return messages.ToArray();
