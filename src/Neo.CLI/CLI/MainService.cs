@@ -390,13 +390,18 @@ namespace Neo.CLI
 
             using (IEnumerator<Block> blocksBeingImported = GetBlocksFromFile().GetEnumerator())
             {
+                ThreadPool.GetMaxThreads(out var maxWorkerThreads, out _);
                 while (true)
                 {
                     List<Block> blocksToImport = new List<Block>();
-                    for (int i = 0; i < 10; i++)
+                    for (int i = 0; i < maxWorkerThreads;)
                     {
                         if (!blocksBeingImported.MoveNext()) break;
+                        var block = blocksBeingImported.Current;
                         blocksToImport.Add(blocksBeingImported.Current);
+                        if (block.Transactions.Length ==0) continue;
+                        if(blocksToImport.Count > maxWorkerThreads*2) break;
+                        i++;
                     }
                     if (blocksToImport.Count == 0) break;
                     await NeoSystem.Blockchain.Ask<Blockchain.ImportCompleted>(new Blockchain.Import

@@ -24,6 +24,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Neo.Ledger
 {
@@ -152,17 +154,32 @@ namespace Neo.Ledger
 
         private void OnImport(IEnumerable<Block> blocks, bool verify)
         {
+            var blocksToImport = blocks as Block[] ?? blocks.ToArray();
+            var hash = blocksToImport.FirstOrDefault()?.NextConsensus;
+
+            // Capture necessary context elements
+            var self = Self;
+            var verificationTasks = blocksToImport.Select(block => Task.Run(() =>
+            {
+                if (verify && !block.Header.VerifyWitness(system.Settings, system.StoreView, hash, ((IVerifiable)block.Header).Witnesses[0], 3_00000000L, out long fee))
+                    throw new InvalidOperationException();
+                return null;
+            })).ToList();
+
             uint currentHeight = NativeContract.Ledger.CurrentIndex(system.StoreView);
-            foreach (Block block in blocks)
+            foreach (var block in blocksToImport)
             {
                 if (block.Index <= currentHeight) continue;
                 if (block.Index != currentHeight + 1)
                     throw new InvalidOperationException();
-                if (verify && !block.Verify(system.Settings, system.StoreView))
-                    throw new InvalidOperationException();
                 Persist(block);
                 ++currentHeight;
             }
+
+            Task.WhenAll(verificationTasks).ContinueWith(t => (object)null).PipeTo(self,
+                success: result => result,
+                failure: ex => ex);
+
             Sender.Tell(new ImportCompleted());
         }
 
@@ -400,7 +417,62 @@ namespace Neo.Ledger
             else system.TxRouter.Forward(new TransactionRouter.Preverify(tx, true));
         }
 
-        private void Persist(Block block)
+         private void Persist(Block block)
+        {
+            using (SnapshotCache snapshot = system.GetSnapshot())
+            {
+                List<ApplicationExecuted> all_application_executed = new();
+                TransactionState[] transactionStates;
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, system.Settings, 0))
+                {
+                    engine.LoadScript(onPersistScript);
+                    if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
+                    ApplicationExecuted application_executed = new(engine);
+                    Context.System.EventStream.Publish(application_executed);
+                    all_application_executed.Add(application_executed);
+                    transactionStates = engine.GetState<TransactionState[]>();
+                }
+                DataCache clonedSnapshot = snapshot.CreateSnapshot();
+                // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
+                foreach (TransactionState transactionState in transactionStates)
+                {
+                    Transaction tx = transactionState.Transaction;
+                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee);
+                    engine.LoadScript(tx.Script);
+                    transactionState.State = engine.Execute();
+                    if (transactionState.State == VMState.HALT)
+                    {
+                        clonedSnapshot.Commit();
+                    }
+                    else
+                    {
+                        clonedSnapshot = snapshot.CreateSnapshot();
+                    }
+                    ApplicationExecuted application_executed = new(engine);
+                    Context.System.EventStream.Publish(application_executed);
+                    all_application_executed.Add(application_executed);
+                }
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, system.Settings, 0))
+                {
+                    engine.LoadScript(postPersistScript);
+                    if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
+                    ApplicationExecuted application_executed = new(engine);
+                    Context.System.EventStream.Publish(application_executed);
+                    all_application_executed.Add(application_executed);
+                }
+                Committing?.Invoke(system, block, snapshot, all_application_executed);
+                snapshot.Commit();
+            }
+            Committed?.Invoke(system, block);
+            system.MemPool.UpdatePoolForBlockPersisted(block, system.StoreView);
+            extensibleWitnessWhiteList = null;
+            block_cache.Remove(block.PrevHash);
+            Context.System.EventStream.Publish(new PersistCompleted { Block = block });
+            if (system.HeaderCache.TryRemoveFirst(out Header header))
+                Debug.Assert(header.Index == block.Index);
+        }
+
+        private void PersistBlocks(Block[] blocks)
         {
             using (SnapshotCache snapshot = system.GetSnapshot())
             {
