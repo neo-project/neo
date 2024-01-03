@@ -472,61 +472,6 @@ namespace Neo.Ledger
                 Debug.Assert(header.Index == block.Index);
         }
 
-        private void PersistBlocks(Block[] blocks)
-        {
-            using (SnapshotCache snapshot = system.GetSnapshot())
-            {
-                List<ApplicationExecuted> all_application_executed = new();
-                TransactionState[] transactionStates;
-                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, system.Settings, 0))
-                {
-                    engine.LoadScript(onPersistScript);
-                    if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
-                    ApplicationExecuted application_executed = new(engine);
-                    Context.System.EventStream.Publish(application_executed);
-                    all_application_executed.Add(application_executed);
-                    transactionStates = engine.GetState<TransactionState[]>();
-                }
-                DataCache clonedSnapshot = snapshot.CreateSnapshot();
-                // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
-                foreach (TransactionState transactionState in transactionStates)
-                {
-                    Transaction tx = transactionState.Transaction;
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee);
-                    engine.LoadScript(tx.Script);
-                    transactionState.State = engine.Execute();
-                    if (transactionState.State == VMState.HALT)
-                    {
-                        clonedSnapshot.Commit();
-                    }
-                    else
-                    {
-                        clonedSnapshot = snapshot.CreateSnapshot();
-                    }
-                    ApplicationExecuted application_executed = new(engine);
-                    Context.System.EventStream.Publish(application_executed);
-                    all_application_executed.Add(application_executed);
-                }
-                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, system.Settings, 0))
-                {
-                    engine.LoadScript(postPersistScript);
-                    if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
-                    ApplicationExecuted application_executed = new(engine);
-                    Context.System.EventStream.Publish(application_executed);
-                    all_application_executed.Add(application_executed);
-                }
-                Committing?.Invoke(system, block, snapshot, all_application_executed);
-                snapshot.Commit();
-            }
-            Committed?.Invoke(system, block);
-            system.MemPool.UpdatePoolForBlockPersisted(block, system.StoreView);
-            extensibleWitnessWhiteList = null;
-            block_cache.Remove(block.PrevHash);
-            Context.System.EventStream.Publish(new PersistCompleted { Block = block });
-            if (system.HeaderCache.TryRemoveFirst(out Header header))
-                Debug.Assert(header.Index == block.Index);
-        }
-
         /// <summary>
         /// Gets a <see cref="Akka.Actor.Props"/> object used for creating the <see cref="Blockchain"/> actor.
         /// </summary>
