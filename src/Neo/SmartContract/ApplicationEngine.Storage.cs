@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// ApplicationEngine.Storage.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -105,7 +106,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="context">The storage context to convert.</param>
         /// <returns>The readonly storage context.</returns>
-        internal protected static StorageContext AsReadOnly(StorageContext context)
+        protected internal static StorageContext AsReadOnly(StorageContext context)
         {
             if (!context.IsReadOnly)
                 context = new StorageContext
@@ -166,8 +167,9 @@ namespace Neo.SmartContract
         /// <param name="value">The value of the entry.</param>
         protected internal void Put(StorageContext context, byte[] key, byte[] value)
         {
-            if (key.Length > MaxStorageKeySize || value.Length > MaxStorageValueSize || context.IsReadOnly)
-                throw new ArgumentException();
+            if (key.Length > MaxStorageKeySize) throw new ArgumentException("Key length too big", nameof(key));
+            if (value.Length > MaxStorageValueSize) throw new ArgumentException("Value length too big", nameof(value));
+            if (context.IsReadOnly) throw new ArgumentException("StorageContext is readonly", nameof(context));
 
             int newDataSize;
             StorageKey skey = new()
