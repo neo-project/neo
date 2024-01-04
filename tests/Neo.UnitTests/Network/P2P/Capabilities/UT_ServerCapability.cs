@@ -1,3 +1,14 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UT_ServerCapability.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
@@ -15,13 +26,16 @@ namespace Neo.UnitTests.Network.P2P.Capabilities
             var test = new ServerCapability(NodeCapabilityType.TcpServer) { Port = 1 };
             test.Size.Should().Be(3);
 
+#pragma warning disable CS0612 // Type or member is obsolete
             test = new ServerCapability(NodeCapabilityType.WsServer) { Port = 2 };
+#pragma warning restore CS0612 // Type or member is obsolete
             test.Size.Should().Be(3);
         }
 
         [TestMethod]
         public void DeserializeAndSerialize()
         {
+#pragma warning disable CS0612 // Type or member is obsolete
             var test = new ServerCapability(NodeCapabilityType.WsServer) { Port = 2 };
             var buffer = test.ToArray();
 
@@ -32,6 +46,7 @@ namespace Neo.UnitTests.Network.P2P.Capabilities
             Assert.AreEqual(test.Type, clone.Type);
 
             clone = new ServerCapability(NodeCapabilityType.WsServer, 123);
+#pragma warning restore CS0612 // Type or member is obsolete
             br = new MemoryReader(buffer);
             ((ISerializable)clone).Deserialize(ref br);
 
