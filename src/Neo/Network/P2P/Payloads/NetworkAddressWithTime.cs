@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Capabilities;
 using System;
@@ -68,7 +69,7 @@ namespace Neo.Network.P2P.Payloads
 
             // Address
             ReadOnlyMemory<byte> data = reader.ReadMemory(16);
-            Address = new IPAddress(data.Span).Unmap();
+            Address = new IPAddress(data.Span).UnMap();
 
             // Capabilities
             Capabilities = new NodeCapability[reader.ReadVarInt(VersionPayload.MaxCapabilities)];

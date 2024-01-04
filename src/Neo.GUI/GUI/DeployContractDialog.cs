@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -27,7 +28,7 @@ namespace Neo.GUI
 
         public byte[] GetScript()
         {
-            byte[] script = textBox8.Text.HexToBytes();
+            byte[] script = textBox8.Text.FromHexString();
             string manifest = "";
             using ScriptBuilder sb = new ScriptBuilder();
             sb.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", script, manifest);
@@ -44,7 +45,7 @@ namespace Neo.GUI
                 && textBox8.TextLength > 0;
             try
             {
-                textBox9.Text = textBox8.Text.HexToBytes().ToScriptHash().ToString();
+                textBox9.Text = textBox8.Text.FromHexString().ToScriptHash().ToString();
             }
             catch (FormatException)
             {

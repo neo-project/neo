@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
@@ -155,7 +156,7 @@ namespace Neo.GUI
             {
                 try
                 {
-                    parameter.Value = s.HexToBytes();
+                    parameter.Value = s.FromHexString();
                     parameter.Type = ContractParameterType.ByteArray;
                 }
                 catch (FormatException)

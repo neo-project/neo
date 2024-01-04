@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.SmartContract;
 using Neo.Wallets;
 using System;
@@ -31,7 +32,7 @@ namespace Neo.GUI
 
         public Contract GetContract()
         {
-            publicKeys = listBox1.Items.OfType<string>().Select(p => ECPoint.DecodePoint(p.HexToBytes(), ECCurve.Secp256r1)).ToArray();
+            publicKeys = listBox1.Items.OfType<string>().Select(p => ECPoint.DecodePoint(p.FromHexString(), ECCurve.Secp256r1)).ToArray();
             return Contract.CreateMultiSigContract((int)numericUpDown2.Value, publicKeys);
         }
 

@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.IO;
 using Neo.IO.Caching;
 using System;
@@ -37,8 +38,8 @@ namespace Neo.Cryptography.ECC
 
         public int Size => IsInfinity ? 1 : 33;
 
-        private static IO.Caching.ECPointCache pointCacheK1 { get; } = new(1000);
-        private static IO.Caching.ECPointCache pointCacheR1 { get; } = new(1000);
+        private static ECPointCache pointCacheK1 { get; } = new(1000);
+        private static ECPointCache pointCacheR1 { get; } = new(1000);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ECPoint"/> class with the secp256r1 curve.
@@ -341,7 +342,7 @@ namespace Neo.Cryptography.ECC
         /// <returns>The parsed point.</returns>
         public static ECPoint Parse(string value, ECCurve curve)
         {
-            return DecodePoint(value.HexToBytes(), curve);
+            return DecodePoint(value.FromHexString(), curve);
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

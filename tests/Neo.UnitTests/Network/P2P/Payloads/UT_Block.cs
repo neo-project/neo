@@ -11,6 +11,7 @@
 
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
@@ -107,7 +108,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             var hex = "0000000000000000000000000000000000000000000000000000000000000000000000006c23be5d32679baa9c5c2aa0d329fd2a2441d7875d0f34d42f58f70428fbbbb9e913ff854c00000000000000000000000000000000000000000000000000000000000000000000000001000111010000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000001000112010000";
 
-            MemoryReader reader = new(hex.HexToBytes());
+            MemoryReader reader = new(hex.FromHexString());
             uut.Deserialize(ref reader);
             UInt256 merkRoot = uut.MerkleRoot;
 

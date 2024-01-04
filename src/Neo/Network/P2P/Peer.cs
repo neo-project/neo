@@ -11,6 +11,7 @@
 
 using Akka.Actor;
 using Akka.IO;
+using Neo.Extensions;
 using Neo.IO;
 using System;
 using System.Buffers.Binary;
@@ -138,7 +139,7 @@ namespace Neo.Network.P2P
 
         static Peer()
         {
-            localAddresses.UnionWith(NetworkInterface.GetAllNetworkInterfaces().SelectMany(p => p.GetIPProperties().UnicastAddresses).Select(p => p.Address.Unmap()));
+            localAddresses.UnionWith(NetworkInterface.GetAllNetworkInterfaces().SelectMany(p => p.GetIPProperties().UnicastAddresses).Select(p => p.Address.UnMap()));
         }
 
         /// <summary>
@@ -163,7 +164,7 @@ namespace Neo.Network.P2P
         /// <param name="isTrusted">Indicates whether the remote node is trusted. A trusted node will always be connected.</param>
         protected void ConnectToPeer(IPEndPoint endPoint, bool isTrusted = false)
         {
-            endPoint = endPoint.Unmap();
+            endPoint = endPoint.UnMap();
             // If the address is the same, the ListenerTcpPort should be different, otherwise, return
             if (endPoint.Port == ListenerTcpPort && localAddresses.Contains(endPoint.Address)) return;
 
@@ -210,7 +211,7 @@ namespace Neo.Network.P2P
                     ConnectToPeer(connect.EndPoint, connect.IsTrusted);
                     break;
                 case Tcp.Connected connected:
-                    OnTcpConnected(((IPEndPoint)connected.RemoteAddress).Unmap(), ((IPEndPoint)connected.LocalAddress).Unmap());
+                    OnTcpConnected(((IPEndPoint)connected.RemoteAddress).UnMap(), ((IPEndPoint)connected.LocalAddress).UnMap());
                     break;
                 case Tcp.Bound _:
                     tcp_listener = Sender;
@@ -302,7 +303,7 @@ namespace Neo.Network.P2P
             switch (cmd)
             {
                 case Tcp.Connect connect:
-                    ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(((IPEndPoint)connect.RemoteAddress).Unmap()));
+                    ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(((IPEndPoint)connect.RemoteAddress).UnMap()));
                     break;
             }
         }

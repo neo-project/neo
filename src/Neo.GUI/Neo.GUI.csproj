@@ -56,5 +56,6 @@
     <ProjectReference Include="..\Neo.CLI\Neo.CLI.csproj">
       <ReferenceSourceTarget></ReferenceSourceTarget>
     </ProjectReference>
+    <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" />
   </ItemGroup>
 </Project>

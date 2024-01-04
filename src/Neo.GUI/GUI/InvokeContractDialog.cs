@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Properties;
@@ -51,7 +52,7 @@ namespace Neo.GUI
 
         public Transaction GetTransaction()
         {
-            byte[] script = textBox6.Text.Trim().HexToBytes();
+            byte[] script = textBox6.Text.Trim().FromHexString();
             return tx ?? Service.CurrentWallet.MakeTransaction(Service.NeoSystem.StoreView, script);
         }
 
@@ -73,7 +74,7 @@ namespace Neo.GUI
             byte[] script;
             try
             {
-                script = textBox6.Text.Trim().HexToBytes();
+                script = textBox6.Text.Trim().FromHexString();
             }
             catch (FormatException ex)
             {

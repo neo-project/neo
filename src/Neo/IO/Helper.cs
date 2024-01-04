@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using K4os.Compression.LZ4;
+using Neo.IO.Caching;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -442,6 +443,19 @@ namespace Neo.IO
         public static void WriteVarString(this BinaryWriter writer, string value)
         {
             writer.WriteVarBytes(Utility.StrictUTF8.GetBytes(value));
+        }
+
+        internal static void Remove<T>(this HashSet<T> set, HashSetCache<T> other)
+            where T : IEquatable<T>
+        {
+            if (set.Count > other.Count)
+            {
+                set.ExceptWith(other);
+            }
+            else
+            {
+                set.RemoveWhere(u => other.Contains(u));
+            }
         }
     }
 }

@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO;
 using System.IO;
 using System.Text;
@@ -44,7 +45,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestReadNullableArray()
         {
-            byte[] bs = "0400000000".HexToBytes();
+            byte[] bs = "0400000000".FromHexString();
             MemoryReader reader = new(bs);
             var n = reader.ReadNullableArray<UInt256>();
             Assert.AreEqual(5, reader.Position);

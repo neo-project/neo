@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -389,8 +390,8 @@ namespace Neo.UnitTests.SmartContract.Native
             // Good
 
             using ScriptBuilder script = new();
-            script.EmitDynamicCall(NativeContract.StdLib.Hash, "deserialize", "280474657374".HexToBytes());
-            script.EmitDynamicCall(NativeContract.StdLib.Hash, "deserialize", "210164".HexToBytes());
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "deserialize", "280474657374".FromHexString());
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "deserialize", "210164".FromHexString());
 
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings);
             engine.LoadScript(script.ToArray());

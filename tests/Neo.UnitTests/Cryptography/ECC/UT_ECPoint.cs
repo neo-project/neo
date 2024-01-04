@@ -12,6 +12,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using System;
 using System.IO;
@@ -159,7 +160,7 @@ namespace Neo.UnitTests.Cryptography.ECC
             point.EncodePoint(true).Should().BeEquivalentTo(result4);
             point.EncodePoint(true).Should().BeEquivalentTo(result4);
 
-            byte[] result5 = "046b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c2964fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5".HexToBytes();
+            byte[] result5 = "046b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c2964fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5".FromHexString();
             point = ECPoint.DecodePoint(ECCurve.Secp256r1.G.EncodePoint(false), ECCurve.Secp256r1);
             point.EncodePoint(true).Should().BeEquivalentTo(result4);
             point.EncodePoint(true).Should().BeEquivalentTo(result4);

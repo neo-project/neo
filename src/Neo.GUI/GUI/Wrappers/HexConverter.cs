@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using System;
 using System.ComponentModel;
 using System.Globalization;
@@ -34,7 +35,7 @@ namespace Neo.GUI.Wrappers
         public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
         {
             if (value is string s)
-                return s.HexToBytes();
+                return s.FromHexString();
             throw new NotSupportedException();
         }
 

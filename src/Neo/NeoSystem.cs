@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Akka.Actor;
+using Neo.Extensions;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P;
@@ -118,15 +119,15 @@ namespace Neo
         /// <param name="storagePath">The path of the storage. If <paramref name="storageEngine"/> is the default in-memory storage engine, this parameter is ignored.</param>
         public NeoSystem(ProtocolSettings settings, string storageEngine = null, string storagePath = null)
         {
-            this.Settings = settings;
-            this.GenesisBlock = CreateGenesisBlock(settings);
-            this.storage_engine = storageEngine ?? nameof(MemoryStore);
-            this.store = LoadStore(storagePath);
-            this.MemPool = new MemoryPool(this);
-            this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
-            this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
-            this.TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
-            this.TxRouter = ActorSystem.ActorOf(TransactionRouter.Props(this));
+            Settings = settings;
+            GenesisBlock = CreateGenesisBlock(settings);
+            storage_engine = storageEngine ?? nameof(MemoryStore);
+            store = LoadStore(storagePath);
+            MemPool = new MemoryPool(this);
+            Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
+            LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
+            TaskManager = ActorSystem.ActorOf(Network.P2P.TaskManager.Props(this));
+            TxRouter = ActorSystem.ActorOf(TransactionRouter.Props(this));
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnSystemLoaded(this);
             Blockchain.Ask(new Blockchain.Initialize()).Wait();

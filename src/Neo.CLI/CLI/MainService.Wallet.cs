@@ -12,6 +12,7 @@
 using Akka.Actor;
 using Neo.ConsoleService;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -299,7 +300,7 @@ namespace Neo.CLI
                     for (int i = 0; i < lines.Length; i++)
                     {
                         if (lines[i].Length == 64)
-                            prikey = lines[i].HexToBytes();
+                            prikey = lines[i].FromHexString();
                         else
                             prikey = Wallet.GetPrivateKeyFromWIF(lines[i]);
                         CurrentWallet!.CreateAccount(prikey);

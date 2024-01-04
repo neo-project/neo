@@ -11,6 +11,7 @@
 
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.SmartContract;
 using Neo.Wallets.NEP6;
@@ -36,7 +37,7 @@ namespace Neo.UnitTests.Wallets.NEP6
             JObject @object = (JObject)JToken.Parse(json);
 
             NEP6Contract nep6Contract = NEP6Contract.FromJson(@object);
-            nep6Contract.Script.Should().BeEquivalentTo("2103ef891df4c0b7eefb937d21ea0fb88cde8e0d82a7ff11872b5e7047969dafb4eb68747476aa".HexToBytes());
+            nep6Contract.Script.Should().BeEquivalentTo("2103ef891df4c0b7eefb937d21ea0fb88cde8e0d82a7ff11872b5e7047969dafb4eb68747476aa".FromHexString());
             nep6Contract.ParameterList.Length.Should().Be(1);
             nep6Contract.ParameterList[0].Should().Be(ContractParameterType.Signature);
             nep6Contract.ParameterNames.Length.Should().Be(1);

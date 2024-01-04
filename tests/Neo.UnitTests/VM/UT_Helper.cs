@@ -12,6 +12,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -176,7 +177,7 @@ namespace Neo.UnitTests.VMT
         [TestMethod]
         public void TestToParameter()
         {
-            StackItem byteItem = "00e057eb481b".HexToBytes();
+            StackItem byteItem = "00e057eb481b".FromHexString();
             Assert.AreEqual(30000000000000L, (long)new BigInteger(byteItem.ToParameter().Value as byte[]));
 
             StackItem boolItem = false;
@@ -201,7 +202,7 @@ namespace Neo.UnitTests.VMT
             ContractParameter parameter = null;
             Assert.ThrowsException<ArgumentNullException>(() => parameter.ToStackItem());
 
-            ContractParameter byteParameter = new ContractParameter { Type = ContractParameterType.ByteArray, Value = "00e057eb481b".HexToBytes() };
+            ContractParameter byteParameter = new ContractParameter { Type = ContractParameterType.ByteArray, Value = "00e057eb481b".FromHexString() };
             Assert.AreEqual(30000000000000L, (long)byteParameter.ToStackItem().GetInteger());
 
             ContractParameter boolParameter = new ContractParameter { Type = ContractParameterType.Boolean, Value = false };

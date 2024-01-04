@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.Json;
 using System;
 using System.Collections.Generic;
@@ -100,7 +101,7 @@ namespace Neo.SmartContract
             switch (Type)
             {
                 case ContractParameterType.Signature:
-                    byte[] signature = text.HexToBytes();
+                    byte[] signature = text.FromHexString();
                     if (signature.Length != 64) throw new FormatException();
                     Value = signature;
                     break;
@@ -117,7 +118,7 @@ namespace Neo.SmartContract
                     Value = UInt256.Parse(text);
                     break;
                 case ContractParameterType.ByteArray:
-                    Value = text.HexToBytes();
+                    Value = text.FromHexString();
                     break;
                 case ContractParameterType.PublicKey:
                     Value = ECPoint.Parse(text, ECCurve.Secp256r1);

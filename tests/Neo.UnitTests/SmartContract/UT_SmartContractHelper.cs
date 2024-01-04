@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -201,8 +202,8 @@ namespace Neo.UnitTests.SmartContract
 
             var contract = new ContractState()
             {
-                Nef = new NefFile { Script = "11".HexToBytes() }, // 17 PUSH1
-                Hash = "11".HexToBytes().ToScriptHash(),
+                Nef = new NefFile { Script = "11".FromHexString() }, // 17 PUSH1
+                Hash = "11".FromHexString().ToScriptHash(),
                 Manifest = TestUtils.CreateManifest("verify", ContractParameterType.Boolean, ContractParameterType.Signature), // Offset = 0
             };
             snapshot3.AddContract(contract.Hash, contract);

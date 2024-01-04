@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Extensions;
 using Neo.SmartContract;
 using Neo.Wallets;
 using System;
@@ -21,8 +22,8 @@ namespace Neo.GUI
     {
         public Contract GetContract()
         {
-            ContractParameterType[] parameterList = textBox1.Text.HexToBytes().Select(p => (ContractParameterType)p).ToArray();
-            byte[] redeemScript = textBox2.Text.HexToBytes();
+            ContractParameterType[] parameterList = textBox1.Text.FromHexString().Select(p => (ContractParameterType)p).ToArray();
+            byte[] redeemScript = textBox2.Text.FromHexString();
             return Contract.Create(parameterList, redeemScript);
         }
 
@@ -36,7 +37,7 @@ namespace Neo.GUI
             }
             catch (FormatException)
             {
-                privateKey = textBox3.Text.HexToBytes();
+                privateKey = textBox3.Text.FromHexString();
             }
             return new KeyPair(privateKey);
         }

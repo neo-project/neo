@@ -12,6 +12,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using Neo.Extensions;
 using System;
 using System.Collections.Generic;
 
@@ -50,8 +51,8 @@ namespace Neo.UnitTests.Cryptography
 
             foreach (var entry in bitcoinTest)
             {
-                Base58.Encode(entry.Key.HexToBytes()).Should().Be(entry.Value);
-                Base58.Decode(entry.Value).Should().BeEquivalentTo(entry.Key.HexToBytes());
+                Base58.Encode(entry.Key.FromHexString()).Should().Be(entry.Value);
+                Base58.Decode(entry.Value).Should().BeEquivalentTo(entry.Key.FromHexString());
 
                 Action action = () => Base58.Decode(entry.Value + "l");
                 action.Should().Throw<FormatException>();

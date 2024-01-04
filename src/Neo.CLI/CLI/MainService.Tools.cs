@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.ConsoleService;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Wallets;
 using System;
@@ -79,7 +80,7 @@ namespace Neo.CLI
             try
             {
                 var clearHexString = ClearHexString(hexString);
-                var bytes = clearHexString.HexToBytes();
+                var bytes = clearHexString.FromHexString();
                 var utf8String = Utility.StrictUTF8.GetString(bytes);
                 return IsPrintable(utf8String) ? utf8String : null;
             }
@@ -104,7 +105,7 @@ namespace Neo.CLI
             try
             {
                 var clearHexString = ClearHexString(hexString);
-                var bytes = clearHexString.HexToBytes();
+                var bytes = clearHexString.FromHexString();
                 var number = new BigInteger(bytes);
 
                 return number.ToString();
@@ -149,7 +150,7 @@ namespace Neo.CLI
                 {
                     // if the input value starts with '0x', the first byte is the less significant
                     // to parse correctly, reverse the byte array
-                    return hexString.HexToBytes().Reverse().ToArray().ToHexString();
+                    return hexString.FromHexString().Reverse().ToArray().ToHexString();
                 }
             }
             catch (FormatException)

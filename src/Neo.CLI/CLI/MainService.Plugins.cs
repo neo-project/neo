@@ -11,6 +11,7 @@
 
 using Microsoft.Extensions.Configuration;
 using Neo.ConsoleService;
+using Neo.Extensions;
 using Neo.Json;
 using Neo.Plugins;
 using System;

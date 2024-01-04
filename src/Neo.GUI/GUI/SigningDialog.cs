@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
+using Neo.Extensions;
 using Neo.Properties;
 using Neo.Wallets;
 using System;
@@ -72,7 +73,7 @@ namespace Neo.GUI
                 switch (cmbFormat.SelectedIndex)
                 {
                     case 0: raw = Encoding.UTF8.GetBytes(textBox1.Text); break;
-                    case 1: raw = textBox1.Text.HexToBytes(); break;
+                    case 1: raw = textBox1.Text.FromHexString(); break;
                     default: return;
                 }
             }

@@ -12,6 +12,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads.Conditions;
@@ -34,7 +35,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hex = "000000000000000000000000000000000000000080";
             attr.ToArray().ToHexString().Should().Be(hex);
 
-            var copy = hex.HexToBytes().AsSerializable<Signer>();
+            var copy = hex.FromHexString().AsSerializable<Signer>();
 
             Assert.AreEqual(attr.Scopes, copy.Scopes);
             Assert.AreEqual(attr.Account, copy.Account);
@@ -52,7 +53,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hex = "000000000000000000000000000000000000000001";
             attr.ToArray().ToHexString().Should().Be(hex);
 
-            var copy = hex.HexToBytes().AsSerializable<Signer>();
+            var copy = hex.FromHexString().AsSerializable<Signer>();
 
             Assert.AreEqual(attr.Scopes, copy.Scopes);
             Assert.AreEqual(attr.Account, copy.Account);
@@ -93,7 +94,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hex = "00000000000000000000000000000000000000004001010201020102010001";
             attr.ToArray().ToHexString().Should().Be(hex);
 
-            Assert.ThrowsException<FormatException>(() => hex.HexToBytes().AsSerializable<Signer>());
+            Assert.ThrowsException<FormatException>(() => hex.FromHexString().AsSerializable<Signer>());
         }
 
         [TestMethod]
@@ -131,7 +132,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hex = "00000000000000000000000000000000000000004001010301030103010001";
             attr.ToArray().ToHexString().Should().Be(hex);
 
-            Assert.ThrowsException<FormatException>(() => hex.HexToBytes().AsSerializable<Signer>());
+            Assert.ThrowsException<FormatException>(() => hex.FromHexString().AsSerializable<Signer>());
         }
 
         [TestMethod]
@@ -147,7 +148,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hex = "000000000000000000000000000000000000000010010000000000000000000000000000000000000000";
             attr.ToArray().ToHexString().Should().Be(hex);
 
-            var copy = hex.HexToBytes().AsSerializable<Signer>();
+            var copy = hex.FromHexString().AsSerializable<Signer>();
 
             Assert.AreEqual(attr.Scopes, copy.Scopes);
             CollectionAssert.AreEqual(attr.AllowedContracts, copy.AllowedContracts);
@@ -167,7 +168,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var hex = "0000000000000000000000000000000000000000200103b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c";
             attr.ToArray().ToHexString().Should().Be(hex);
 
-            var copy = hex.HexToBytes().AsSerializable<Signer>();
+            var copy = hex.FromHexString().AsSerializable<Signer>();
 
             Assert.AreEqual(attr.Scopes, copy.Scopes);
             CollectionAssert.AreEqual(attr.AllowedGroups, copy.AllowedGroups);

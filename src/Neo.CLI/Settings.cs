@@ -51,10 +51,10 @@ namespace Neo
 
         public Settings(IConfigurationSection section)
         {
-            this.Logger = new LoggerSettings(section.GetSection("Logger"));
-            this.Storage = new StorageSettings(section.GetSection("Storage"));
-            this.P2P = new P2PSettings(section.GetSection("P2P"));
-            this.UnlockWallet = new UnlockWalletSettings(section.GetSection("UnlockWallet"));
+            Logger = new LoggerSettings(section.GetSection("Logger"));
+            Storage = new StorageSettings(section.GetSection("Storage"));
+            P2P = new P2PSettings(section.GetSection("P2P"));
+            UnlockWallet = new UnlockWalletSettings(section.GetSection("UnlockWallet"));
         }
     }
 
@@ -66,9 +66,9 @@ namespace Neo
 
         public LoggerSettings(IConfigurationSection section)
         {
-            this.Path = section.GetValue("Path", "Logs")!;
-            this.ConsoleOutput = section.GetValue("ConsoleOutput", false);
-            this.Active = section.GetValue("Active", false);
+            Path = section.GetValue("Path", "Logs")!;
+            ConsoleOutput = section.GetValue("ConsoleOutput", false);
+            Active = section.GetValue("Active", false);
         }
     }
 
@@ -79,8 +79,8 @@ namespace Neo
 
         public StorageSettings(IConfigurationSection section)
         {
-            this.Engine = section.GetValue("Engine", "LevelDBStore")!;
-            this.Path = section.GetValue("Path", "Data_LevelDB_{0}")!;
+            Engine = section.GetValue("Engine", "LevelDBStore")!;
+            Path = section.GetValue("Path", "Data_LevelDB_{0}")!;
         }
     }
 
@@ -93,10 +93,10 @@ namespace Neo
 
         public P2PSettings(IConfigurationSection section)
         {
-            this.Port = ushort.Parse(section.GetValue("Port", "10333"));
-            this.MinDesiredConnections = section.GetValue("MinDesiredConnections", Peer.DefaultMinDesiredConnections);
-            this.MaxConnections = section.GetValue("MaxConnections", Peer.DefaultMaxConnections);
-            this.MaxConnectionsPerAddress = section.GetValue("MaxConnectionsPerAddress", 3);
+            Port = section.GetValue<ushort>("Port", 10333);
+            MinDesiredConnections = section.GetValue("MinDesiredConnections", Peer.DefaultMinDesiredConnections);
+            MaxConnections = section.GetValue("MaxConnections", Peer.DefaultMaxConnections);
+            MaxConnectionsPerAddress = section.GetValue("MaxConnectionsPerAddress", 3);
         }
     }
 
@@ -110,9 +110,9 @@ namespace Neo
         {
             if (section.Exists())
             {
-                this.Path = section.GetValue("Path", "");
-                this.Password = section.GetValue("Password", "");
-                this.IsActive = bool.Parse(section.GetValue("IsActive", "false")!);
+                Path = section.GetValue("Path", "");
+                Password = section.GetValue("Password", "");
+                IsActive = bool.Parse(section.GetValue("IsActive", "false")!);
             }
         }
     }
