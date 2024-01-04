@@ -24,12 +24,12 @@ namespace Neo
         public UnlockWalletSettings UnlockWallet { get; }
         public NeoNameServiceSettings NNS { get; }
 
-        static Settings? _default;
+        static Settings? s_default;
 
         static bool UpdateDefault(IConfiguration configuration)
         {
             var settings = new Settings(configuration.GetSection("ApplicationConfiguration"));
-            return null == Interlocked.CompareExchange(ref _default, settings, null);
+            return null == Interlocked.CompareExchange(ref s_default, settings, null);
         }
 
         public static bool Initialize(IConfiguration configuration)
@@ -41,13 +41,13 @@ namespace Neo
         {
             get
             {
-                if (_default == null)
+                if (s_default == null)
                 {
-                    IConfigurationRoot config = new ConfigurationBuilder().AddJsonFile("config.json", optional: true).Build();
+                    var config = new ConfigurationBuilder().AddJsonFile("config.json", optional: true).Build();
                     Initialize(config);
                 }
 
-                return _default!;
+                return s_default!;
             }
         }
 
@@ -96,7 +96,7 @@ namespace Neo
 
         public P2PSettings(IConfigurationSection section)
         {
-            this.Port = ushort.Parse(section.GetValue("Port", "10333"));
+            this.Port = section.GetValue<ushort>("Port", 10333);
             this.MinDesiredConnections = section.GetValue("MinDesiredConnections", Peer.DefaultMinDesiredConnections);
             this.MaxConnections = section.GetValue("MaxConnections", Peer.DefaultMaxConnections);
             this.MaxConnectionsPerAddress = section.GetValue("MaxConnectionsPerAddress", 3);
