@@ -2,6 +2,11 @@ name: Build & Release (neo-cli)
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: 'Version Number (Example: 1.0.0)'
+        required: true
 
 env:
   DOTNET_VERSION: 7.0.x
@@ -143,17 +148,17 @@ jobs:
     - name: Create Tarball File (linux)
       if: ${{ startsWith(matrix.runtime, 'linux') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: tar -czvf ${{ env.DIST_PATH }}/neo-cli-${{ github.ref_name }}-${{ matrix.runtime }}.tar.gz .
+      run: tar -czvf ${{ env.DIST_PATH }}/neo-cli-${{ github.event.inputs.version }}-${{ matrix.runtime }}.tar.gz .
 
     - name: Create Tarball File (osx)
       if: ${{ startsWith(matrix.runtime, 'osx') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: tar -cJf ${{ env.DIST_PATH }}/neo-cli-${{ github.ref_name }}-${{ matrix.runtime }}.tar.xz .
+      run: tar -cJf ${{ env.DIST_PATH }}/neo-cli-${{ github.event.inputs.version }}-${{ matrix.runtime }}.tar.xz .
 
     - name: Create Zip File (win)
       if: ${{ startsWith(matrix.runtime, 'win') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: zip ${{ env.DIST_PATH }}/neo-cli-${{ github.ref_name }}-${{ matrix.runtime }}.zip -r *
+      run: zip ${{ env.DIST_PATH }}/neo-cli-${{ github.event.inputs.version }}-${{ matrix.runtime }}.zip -r *
 
     - name: Output/Distribution Directory Contents
       run: |
@@ -219,7 +224,7 @@ jobs:
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
         prerelease: false
-        title: v${{ github.ref_name }}
-        automatic_release_tag: v${{ github.ref_name }}
+        title: v${{ github.event.inputs.version }}
+        automatic_release_tag: v${{ github.event.inputs.version }}
         files: ${{ env.DIST_PATH }}/*
 
