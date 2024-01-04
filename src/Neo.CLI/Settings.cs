@@ -22,12 +22,12 @@ namespace Neo
         public P2PSettings P2P { get; }
         public UnlockWalletSettings UnlockWallet { get; }
 
-        static Settings _default;
+        static Settings? s_default;
 
         static bool UpdateDefault(IConfiguration configuration)
         {
             var settings = new Settings(configuration.GetSection("ApplicationConfiguration"));
-            return null == Interlocked.CompareExchange(ref _default, settings, null);
+            return null == Interlocked.CompareExchange(ref s_default, settings, null);
         }
 
         public static bool Initialize(IConfiguration configuration)
@@ -39,22 +39,22 @@ namespace Neo
         {
             get
             {
-                if (_default == null)
+                if (s_default == null)
                 {
-                    IConfigurationRoot config = new ConfigurationBuilder().AddJsonFile("config.json", optional: true).Build();
+                    var config = new ConfigurationBuilder().AddJsonFile("config.json", optional: true).Build();
                     Initialize(config);
                 }
 
-                return _default;
+                return s_default!;
             }
         }
 
         public Settings(IConfigurationSection section)
         {
-            this.Logger = new LoggerSettings(section.GetSection("Logger"));
-            this.Storage = new StorageSettings(section.GetSection("Storage"));
-            this.P2P = new P2PSettings(section.GetSection("P2P"));
-            this.UnlockWallet = new UnlockWalletSettings(section.GetSection("UnlockWallet"));
+            this.Logger = new(section.GetSection("Logger"));
+            this.Storage = new(section.GetSection("Storage"));
+            this.P2P = new(section.GetSection("P2P"));
+            this.UnlockWallet = new(section.GetSection("UnlockWallet"));
         }
     }
 
@@ -93,7 +93,7 @@ namespace Neo
 
         public P2PSettings(IConfigurationSection section)
         {
-            this.Port = ushort.Parse(section.GetValue("Port", "10333"));
+            this.Port = section.GetValue<ushort>("Port", 10333);
             this.MinDesiredConnections = section.GetValue("MinDesiredConnections", Peer.DefaultMinDesiredConnections);
             this.MaxConnections = section.GetValue("MaxConnections", Peer.DefaultMaxConnections);
             this.MaxConnectionsPerAddress = section.GetValue("MaxConnectionsPerAddress", 3);
