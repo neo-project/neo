@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// MemoryReader.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -20,7 +21,7 @@ namespace Neo.IO
         private readonly ReadOnlySpan<byte> span;
         private int pos = 0;
 
-        public int Position => pos;
+        public readonly int Position => pos;
 
         public MemoryReader(ReadOnlyMemory<byte> memory)
         {
@@ -29,13 +30,13 @@ namespace Neo.IO
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void EnsurePosition(int move)
+        private readonly void EnsurePosition(int move)
         {
             if (pos + move > span.Length) throw new FormatException();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public byte Peek()
+        public readonly byte Peek()
         {
             EnsurePosition(1);
             return span[pos];
