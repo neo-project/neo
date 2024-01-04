@@ -23,7 +23,7 @@
 # intervention with every merge. To do so, just uncomment the entries below
 ###############################################################################
 *.sln text eol=crlf
-*.csproj text eol=crlf
+#*.csproj text eol=crlf
 #*.vbproj    merge=binary
 #*.vcxproj   merge=binary
 #*.vcproj    merge=binary
