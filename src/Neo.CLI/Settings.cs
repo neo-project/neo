@@ -51,10 +51,10 @@ namespace Neo
 
         public Settings(IConfigurationSection section)
         {
-            this.Logger = new(section.GetSection("Logger"));
-            this.Storage = new(section.GetSection("Storage"));
-            this.P2P = new(section.GetSection("P2P"));
-            this.UnlockWallet = new(section.GetSection("UnlockWallet"));
+            Logger = new(section.GetSection(nameof(Logger)));
+            Storage = new(section.GetSection(nameof(Storage)));
+            P2P = new(section.GetSection(nameof(P2P)));
+            UnlockWallet = new(section.GetSection(nameof(UnlockWallet)));
         }
     }
 
@@ -66,21 +66,21 @@ namespace Neo
 
         public LoggerSettings(IConfigurationSection section)
         {
-            this.Path = section.GetValue("Path", "Logs");
-            this.ConsoleOutput = section.GetValue("ConsoleOutput", false);
-            this.Active = section.GetValue("Active", false);
+            Path = section.GetValue(nameof(Path), "Logs")!;
+            ConsoleOutput = section.GetValue(nameof(ConsoleOutput), false);
+            Active = section.GetValue(nameof(Active), false);
         }
     }
 
     public class StorageSettings
     {
-        public string Engine { get; }
-        public string Path { get; }
+        public string Engine { get; } = string.Empty;
+        public string Path { get; } = string.Empty;
 
         public StorageSettings(IConfigurationSection section)
         {
-            this.Engine = section.GetValue("Engine", "LevelDBStore");
-            this.Path = section.GetValue("Path", "Data_LevelDB_{0}");
+            Engine = section.GetValue(nameof(Engine), "LevelDBStore")!;
+            Path = section.GetValue(nameof(Path), "Data_LevelDB_{0}")!;
         }
     }
 
@@ -93,26 +93,26 @@ namespace Neo
 
         public P2PSettings(IConfigurationSection section)
         {
-            this.Port = section.GetValue<ushort>("Port", 10333);
-            this.MinDesiredConnections = section.GetValue("MinDesiredConnections", Peer.DefaultMinDesiredConnections);
-            this.MaxConnections = section.GetValue("MaxConnections", Peer.DefaultMaxConnections);
-            this.MaxConnectionsPerAddress = section.GetValue("MaxConnectionsPerAddress", 3);
+            Port = section.GetValue<ushort>(nameof(Port), 10333);
+            MinDesiredConnections = section.GetValue(nameof(MinDesiredConnections), Peer.DefaultMinDesiredConnections);
+            MaxConnections = section.GetValue(nameof(MaxConnections), Peer.DefaultMaxConnections);
+            MaxConnectionsPerAddress = section.GetValue(nameof(MaxConnectionsPerAddress), 3);
         }
     }
 
     public class UnlockWalletSettings
     {
-        public string Path { get; }
-        public string Password { get; }
-        public bool IsActive { get; }
+        public string Path { get; } = string.Empty;
+        public string Password { get; } = string.Empty;
+        public bool IsActive { get; } = false;
 
         public UnlockWalletSettings(IConfigurationSection section)
         {
             if (section.Exists())
             {
-                this.Path = section.GetValue("Path", "");
-                this.Password = section.GetValue("Password", "");
-                this.IsActive = bool.Parse(section.GetValue("IsActive", "false"));
+                Path = section.GetValue(nameof(Path), string.Empty)!;
+                Password = section.GetValue(nameof(Password), string.Empty)!;
+                IsActive = section.GetValue(nameof(IsActive), false);
             }
         }
     }
