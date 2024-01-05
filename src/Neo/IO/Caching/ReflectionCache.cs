@@ -17,27 +17,27 @@ namespace Neo.IO.Caching
 {
     internal static class ReflectionCache<T> where T : Enum
     {
-        private static readonly Dictionary<T, Type> dictionary = new();
+        private static readonly Dictionary<T, Type> s_dictionary = new();
 
-        public static int Count => dictionary.Count;
+        public static int Count => s_dictionary.Count;
 
         static ReflectionCache()
         {
-            foreach (FieldInfo field in typeof(T).GetFields(BindingFlags.Public | BindingFlags.Static))
+            foreach (var field in typeof(T).GetFields(BindingFlags.Public | BindingFlags.Static))
             {
                 // Get attribute
-                ReflectionCacheAttribute attribute = field.GetCustomAttribute<ReflectionCacheAttribute>();
+                var attribute = field.GetCustomAttribute<ReflectionCacheAttribute>();
                 if (attribute == null) continue;
 
                 // Append to cache
-                dictionary.Add((T)field.GetValue(null), attribute.Type);
+                s_dictionary.Add((T)field.GetValue(null), attribute.Type);
             }
         }
 
         public static object CreateInstance(T key, object def = null)
         {
             // Get Type from cache
-            if (dictionary.TryGetValue(key, out Type t))
+            if (s_dictionary.TryGetValue(key, out var t))
                 return Activator.CreateInstance(t);
 
             // return null
@@ -46,7 +46,7 @@ namespace Neo.IO.Caching
 
         public static ISerializable CreateSerializable(T key, ReadOnlyMemory<byte> data)
         {
-            if (dictionary.TryGetValue(key, out Type t))
+            if (s_dictionary.TryGetValue(key, out var t))
                 return data.AsSerializable(t);
             return null;
         }

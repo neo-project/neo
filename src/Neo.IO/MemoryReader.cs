@@ -17,29 +17,29 @@ namespace Neo.IO
 {
     public ref struct MemoryReader
     {
-        private readonly ReadOnlyMemory<byte> memory;
-        private readonly ReadOnlySpan<byte> span;
-        private int pos = 0;
+        private readonly ReadOnlyMemory<byte> _memory;
+        private readonly ReadOnlySpan<byte> _span;
+        private int _pos = 0;
 
-        public readonly int Position => pos;
+        public readonly int Position => _pos;
 
         public MemoryReader(ReadOnlyMemory<byte> memory)
         {
-            this.memory = memory;
-            this.span = memory.Span;
+            _memory = memory;
+            _span = memory.Span;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private readonly void EnsurePosition(int move)
         {
-            if (pos + move > span.Length) throw new FormatException();
+            if (_pos + move > _span.Length) throw new FormatException();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly byte Peek()
         {
             EnsurePosition(1);
-            return span[pos];
+            return _span[_pos];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -57,7 +57,7 @@ namespace Neo.IO
         public sbyte ReadSByte()
         {
             EnsurePosition(1);
-            byte b = span[pos++];
+            var b = _span[_pos++];
             return unchecked((sbyte)b);
         }
 
@@ -65,15 +65,15 @@ namespace Neo.IO
         public byte ReadByte()
         {
             EnsurePosition(1);
-            return span[pos++];
+            return _span[_pos++];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public short ReadInt16()
         {
             EnsurePosition(sizeof(short));
-            var result = BinaryPrimitives.ReadInt16LittleEndian(span[pos..]);
-            pos += sizeof(short);
+            var result = BinaryPrimitives.ReadInt16LittleEndian(_span[_pos..]);
+            _pos += sizeof(short);
             return result;
         }
 
@@ -81,8 +81,8 @@ namespace Neo.IO
         public short ReadInt16BigEndian()
         {
             EnsurePosition(sizeof(short));
-            var result = BinaryPrimitives.ReadInt16BigEndian(span[pos..]);
-            pos += sizeof(short);
+            var result = BinaryPrimitives.ReadInt16BigEndian(_span[_pos..]);
+            _pos += sizeof(short);
             return result;
         }
 
@@ -90,8 +90,8 @@ namespace Neo.IO
         public ushort ReadUInt16()
         {
             EnsurePosition(sizeof(ushort));
-            var result = BinaryPrimitives.ReadUInt16LittleEndian(span[pos..]);
-            pos += sizeof(ushort);
+            var result = BinaryPrimitives.ReadUInt16LittleEndian(_span[_pos..]);
+            _pos += sizeof(ushort);
             return result;
         }
 
@@ -99,8 +99,8 @@ namespace Neo.IO
         public ushort ReadUInt16BigEndian()
         {
             EnsurePosition(sizeof(ushort));
-            var result = BinaryPrimitives.ReadUInt16BigEndian(span[pos..]);
-            pos += sizeof(ushort);
+            var result = BinaryPrimitives.ReadUInt16BigEndian(_span[_pos..]);
+            _pos += sizeof(ushort);
             return result;
         }
 
@@ -108,8 +108,8 @@ namespace Neo.IO
         public int ReadInt32()
         {
             EnsurePosition(sizeof(int));
-            var result = BinaryPrimitives.ReadInt32LittleEndian(span[pos..]);
-            pos += sizeof(int);
+            var result = BinaryPrimitives.ReadInt32LittleEndian(_span[_pos..]);
+            _pos += sizeof(int);
             return result;
         }
 
@@ -117,8 +117,8 @@ namespace Neo.IO
         public int ReadInt32BigEndian()
         {
             EnsurePosition(sizeof(int));
-            var result = BinaryPrimitives.ReadInt32BigEndian(span[pos..]);
-            pos += sizeof(int);
+            var result = BinaryPrimitives.ReadInt32BigEndian(_span[_pos..]);
+            _pos += sizeof(int);
             return result;
         }
 
@@ -126,8 +126,8 @@ namespace Neo.IO
         public uint ReadUInt32()
         {
             EnsurePosition(sizeof(uint));
-            var result = BinaryPrimitives.ReadUInt32LittleEndian(span[pos..]);
-            pos += sizeof(uint);
+            var result = BinaryPrimitives.ReadUInt32LittleEndian(_span[_pos..]);
+            _pos += sizeof(uint);
             return result;
         }
 
@@ -135,8 +135,8 @@ namespace Neo.IO
         public uint ReadUInt32BigEndian()
         {
             EnsurePosition(sizeof(uint));
-            var result = BinaryPrimitives.ReadUInt32BigEndian(span[pos..]);
-            pos += sizeof(uint);
+            var result = BinaryPrimitives.ReadUInt32BigEndian(_span[_pos..]);
+            _pos += sizeof(uint);
             return result;
         }
 
@@ -144,8 +144,8 @@ namespace Neo.IO
         public long ReadInt64()
         {
             EnsurePosition(sizeof(long));
-            var result = BinaryPrimitives.ReadInt64LittleEndian(span[pos..]);
-            pos += sizeof(long);
+            var result = BinaryPrimitives.ReadInt64LittleEndian(_span[_pos..]);
+            _pos += sizeof(long);
             return result;
         }
 
@@ -153,8 +153,8 @@ namespace Neo.IO
         public long ReadInt64BigEndian()
         {
             EnsurePosition(sizeof(long));
-            var result = BinaryPrimitives.ReadInt64BigEndian(span[pos..]);
-            pos += sizeof(long);
+            var result = BinaryPrimitives.ReadInt64BigEndian(_span[_pos..]);
+            _pos += sizeof(long);
             return result;
         }
 
@@ -162,8 +162,8 @@ namespace Neo.IO
         public ulong ReadUInt64()
         {
             EnsurePosition(sizeof(ulong));
-            var result = BinaryPrimitives.ReadUInt64LittleEndian(span[pos..]);
-            pos += sizeof(ulong);
+            var result = BinaryPrimitives.ReadUInt64LittleEndian(_span[_pos..]);
+            _pos += sizeof(ulong);
             return result;
         }
 
@@ -171,16 +171,16 @@ namespace Neo.IO
         public ulong ReadUInt64BigEndian()
         {
             EnsurePosition(sizeof(ulong));
-            var result = BinaryPrimitives.ReadUInt64BigEndian(span[pos..]);
-            pos += sizeof(ulong);
+            var result = BinaryPrimitives.ReadUInt64BigEndian(_span[_pos..]);
+            _pos += sizeof(ulong);
             return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ulong ReadVarInt(ulong max = ulong.MaxValue)
         {
-            byte b = ReadByte();
-            ulong value = b switch
+            var b = ReadByte();
+            var value = b switch
             {
                 0xfd => ReadUInt16(),
                 0xfe => ReadUInt32(),
@@ -195,24 +195,24 @@ namespace Neo.IO
         public string ReadFixedString(int length)
         {
             EnsurePosition(length);
-            int end = pos + length;
-            int i = pos;
-            while (i < end && span[i] != 0) i++;
-            ReadOnlySpan<byte> data = span[pos..i];
+            var end = _pos + length;
+            var i = _pos;
+            while (i < end && _span[i] != 0) i++;
+            var data = _span[_pos..i];
             for (; i < end; i++)
-                if (span[i] != 0)
+                if (_span[i] != 0)
                     throw new FormatException();
-            pos = end;
+            _pos = end;
             return Utility.StrictUTF8.GetString(data);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ReadVarString(int max = 0x1000000)
         {
-            int length = (int)ReadVarInt((ulong)max);
+            var length = (int)ReadVarInt((ulong)max);
             EnsurePosition(length);
-            ReadOnlySpan<byte> data = span.Slice(pos, length);
-            pos += length;
+            var data = _span.Slice(_pos, length);
+            _pos += length;
             return Utility.StrictUTF8.GetString(data);
         }
 
@@ -220,8 +220,8 @@ namespace Neo.IO
         public ReadOnlyMemory<byte> ReadMemory(int count)
         {
             EnsurePosition(count);
-            ReadOnlyMemory<byte> result = memory.Slice(pos, count);
-            pos += count;
+            var result = _memory.Slice(_pos, count);
+            _pos += count;
             return result;
         }
 
@@ -234,8 +234,8 @@ namespace Neo.IO
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadOnlyMemory<byte> ReadToEnd()
         {
-            ReadOnlyMemory<byte> result = memory[pos..];
-            pos = memory.Length;
+            var result = _memory[_pos..];
+            _pos = _memory.Length;
             return result;
         }
     }

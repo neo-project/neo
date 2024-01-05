@@ -4,16 +4,15 @@
     <TargetFrameworks>netstandard2.1;net7.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageTags>NEO;AntShares;Blockchain;Smart Contract</PackageTags>
-    <LangVersion>9.0</LangVersion>
+    <LangVersion>10.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka" Version="1.5.14" />
+    <InternalsVisibleTo Include="Neo" />
+    <InternalsVisibleTo Include="Neo.UnitTests" />
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Neo" />
-    <InternalsVisibleTo Include="Neo.IO" />
-    <InternalsVisibleTo Include="Neo.UnitTests" />
+    <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" />
   </ItemGroup>
 </Project>

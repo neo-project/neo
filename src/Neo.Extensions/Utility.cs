@@ -17,9 +17,6 @@ namespace Neo
 {
     public delegate void LogEventHandler(string source, LogLevel level, object message);
 
-    /// <summary>
-    /// A utility class that provides common functions.
-    /// </summary>
     public static class Utility
     {
         internal class Logger : ReceiveActor

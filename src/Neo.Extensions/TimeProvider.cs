@@ -18,12 +18,12 @@ namespace Neo
     /// </summary>
     public class TimeProvider
     {
-        private static readonly TimeProvider Default = new();
+        private static readonly TimeProvider s_default = new();
 
         /// <summary>
         /// The currently used <see cref="TimeProvider"/> instance.
         /// </summary>
-        public static TimeProvider Current { get; internal set; } = Default;
+        public static TimeProvider Current { get; internal set; } = s_default;
 
         /// <summary>
         /// Gets the current time expressed as the Coordinated Universal Time (UTC).
@@ -32,7 +32,7 @@ namespace Neo
 
         internal static void ResetToDefault()
         {
-            Current = Default;
+            Current = s_default;
         }
     }
 }

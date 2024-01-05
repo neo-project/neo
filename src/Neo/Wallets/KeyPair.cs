@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
+using Neo.Extensions;
 using Neo.SmartContract;
 using Neo.Wallets.NEP6;
 using Org.BouncyCastle.Crypto.Generators;

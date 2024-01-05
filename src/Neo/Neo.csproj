@@ -17,7 +17,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Neo.Cryptography\Neo.Cryptography.csproj" />
     <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" />
+    <ProjectReference Include="..\Neo.IO\Neo.IO.csproj" />
     <ProjectReference Include="..\Neo.Json\Neo.Json.csproj" />
     <ProjectReference Include="..\Neo.VM\Neo.VM.csproj" />
   </ItemGroup>

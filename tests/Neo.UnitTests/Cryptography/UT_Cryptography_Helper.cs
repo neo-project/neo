@@ -12,6 +12,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using Neo.Cryptography.Extensions;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
@@ -72,8 +73,8 @@ namespace Neo.UnitTests.Cryptography
             Random random = new Random();
             byte[] nonce = new byte[12];
             random.NextBytes(nonce);
-            var cypher = Neo.Cryptography.Helper.AES256Encrypt(Encoding.UTF8.GetBytes("hello world"), key.PrivateKey, nonce);
-            var m = Neo.Cryptography.Helper.AES256Decrypt(cypher, key.PrivateKey);
+            var cypher = Encoding.UTF8.GetBytes("hello world").AES256Encrypt(key.PrivateKey, nonce);
+            var m = cypher.AES256Decrypt(key.PrivateKey);
             var message2 = Encoding.UTF8.GetString(m);
             Assert.AreEqual("hello world", message2);
         }
