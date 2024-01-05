@@ -42,12 +42,6 @@ jobs:
         sudo apt-get update && \
         sudo apt-get install -y crossbuild-essential-arm64 libkyotocabinet-dev libsnappy-dev libsqlite3-dev
 
-    # - name: Setup macos-arm64
-    #   if: ${{ startsWith(matrix.os, 'macos') && startsWith(matrix.arch, 'arm64') }}
-    #   run: |
-    #     brew update && \
-    #     brew install aarch64-elf-gcc
-
     - name: Setup LevelDb
       working-directory: ./leveldb
       run: mkdir -p ./build/Release
@@ -157,15 +151,6 @@ jobs:
         --framework net7.0 \
         --configuration ${{ env.CONFIGURATION }} \
         --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore \
-        --verbosity normal
-
-    - name: .NET Build (SQLiteWallet)
-      working-directory: ./neo-modules
-      run: |
-        dotnet build ./src/SQLiteWallet/SQLiteWallet.csproj \
-        --framework net7.0 \
-        --configuration ${{ env.CONFIGURATION }} \
-        --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/SQLiteWallet \
         --verbosity normal
 
     - name: Remove Xml Comment Files
