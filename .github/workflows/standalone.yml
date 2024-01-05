@@ -33,6 +33,7 @@ jobs:
         fetch-depth: 0
 
     - name: Setup MSBuild
+      if: ${{ startsWith(matrix.os, 'windows') }}
       uses: microsoft/setup-msbuild@v1.1
 
     - name: Setup LevelDb
