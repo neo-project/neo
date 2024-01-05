@@ -55,12 +55,12 @@ jobs:
     - name: Create Build Files (${{ matrix.os }}-x64)
       if: ${{ !startsWith(matrix.os, 'windows') && startsWith(matrix.arch, 'x64') }}
       working-directory: ./leveldb/build
-      run: cmake -DCMAKE_BUILD_TYPE=Release ..
+      run: cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=true ..
 
     - name: Create Build Files (macos-arm64)
       if: ${{ startsWith(matrix.os, 'macos') && startsWith(matrix.arch, 'arm64') }}
       working-directory: ./leveldb/build
-      run: cmake -DCMAKE_BUILD_TYPE=Release  -DHAVE_STD_REGEX=ON -DRUN_HAVE_STD_REGEX=1 -DCMAKE_OSX_ARCHITECTURES=arm64 ..
+      run: cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=true -DHAVE_STD_REGEX=ON -DRUN_HAVE_STD_REGEX=1 -DCMAKE_OSX_ARCHITECTURES=arm64 ..
 
     - name: Create Build Files (linux-arm64)
       if: ${{ startsWith(matrix.os, 'ubuntu') && startsWith(matrix.arch, 'arm64') }}
@@ -70,7 +70,7 @@ jobs:
         export CC=aarch64-linux-gnu-gcc
         export CXX=aarch64-linux-gnu-g++
         export LINK=aarch64-linux-gnu-g++
-        cmake -DCMAKE_BUILD_TYPE=Release -DHAVE_STD_REGEX=ON -DRUN_HAVE_STD_REGEX=1 ..
+        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=true -DHAVE_STD_REGEX=ON -DRUN_HAVE_STD_REGEX=1 ..
       shell: bash
 
     - name: Create Build Files (win-${{ matrix.arch }})
@@ -89,7 +89,7 @@ jobs:
       run: cmake --build .
 
     - name: Show Directory (Debug)
-      run: ls -l ./leveldb/build/Release/
+      run: ls -l ./leveldb/build/
 
     - name: Cache Distribution
       uses: actions/cache/save@v3
