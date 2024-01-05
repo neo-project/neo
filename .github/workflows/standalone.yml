@@ -41,7 +41,7 @@ jobs:
       run: mkdir -p ./build
 
     - name: Create Build Files (${{ matrix.os }}-x64)
-      if: ${{ !startsWith(matrix.os, 'windows') &&  && startsWith(matrix.arch, 'x64') }}
+      if: ${{ !startsWith(matrix.os, 'windows') && startsWith(matrix.arch, 'x64') }}
       working-directory: ./leveldb/build
       run: cmake -DCMAKE_BUILD_TYPE=Release ..
 
