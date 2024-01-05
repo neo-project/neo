@@ -299,7 +299,7 @@ jobs:
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
         prerelease: false
-        title: v${{ github.event.inputs.version }}
-        automatic_release_tag: v${{ github.event.inputs.version }}
+        title: "v${{ github.event.inputs.version }}"
+        automatic_release_tag: "v${{ github.event.inputs.version }}"
         files: ${{ env.DIST_PATH }}/*
 
