@@ -42,11 +42,11 @@ jobs:
         sudo apt-get update && \
         sudo apt-get install -y crossbuild-essential-arm64 libkyotocabinet-dev libsnappy-dev libsqlite3-dev
 
-    - name: Setup macos-arm64
-      if: ${{ startsWith(matrix.os, 'macos') && startsWith(matrix.arch, 'arm64') }}
-      run: |
-        brew update && \
-        brew install aarch64-elf-gcc
+    # - name: Setup macos-arm64
+    #   if: ${{ startsWith(matrix.os, 'macos') && startsWith(matrix.arch, 'arm64') }}
+    #   run: |
+    #     brew update && \
+    #     brew install aarch64-elf-gcc
 
     - name: Setup LevelDb
       working-directory: ./leveldb
@@ -60,7 +60,7 @@ jobs:
     - name: Create Build Files (macos-arm64)
       if: ${{ startsWith(matrix.os, 'macos') && startsWith(matrix.arch, 'arm64') }}
       working-directory: ./leveldb/build
-      run: cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64 ..
+      run: cmake -DCMAKE_BUILD_TYPE=Release  -DHAVE_STD_REGEX=ON -DRUN_HAVE_STD_REGEX=1 -DCMAKE_OSX_ARCHITECTURES=arm64 ..
 
     - name: Create Build Files (linux-arm64)
       if: ${{ startsWith(matrix.os, 'ubuntu') && startsWith(matrix.arch, 'arm64') }}
