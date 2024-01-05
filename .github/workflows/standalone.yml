@@ -17,7 +17,7 @@ env:
 jobs:
   build-leveldb:
     name: Build leveldb (${{ matrix.os }}-${{ matrix.arch }})
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -40,17 +40,12 @@ jobs:
       working-directory: ./leveldb
       run: mkdir -p ./build
 
-    - name: Create Build Files (${{ matrix.arch }})
-      if: ${{ !startsWith(matrix.os, 'windows') && startsWith(matrix.arch, 'arm64') }}
+    - name: Create Build Files (POSIX-${{ matrix.arch }})
+      if: ${{ !startsWith(matrix.os, 'windows') }}
       working-directory: ./leveldb/build
-      run: cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-march=armv8-a" ..
+      run: cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -A ${{ matrix.arch }} ..
 
-    - name: Create Build Files (${{ matrix.arch }})
-      if: ${{ !startsWith(matrix.os, 'windows') && startsWith(matrix.arch, 'x64') }}
-      working-directory: ./leveldb/build
-      run: cmake -DCMAKE_BUILD_TYPE=Release ..
-
-    - name: Create Build Files (${{ matrix.arch }})
+    - name: Create Build Files (win-${{ matrix.arch }})
       if: ${{ startsWith(matrix.os, 'windows') }}
       working-directory: ./leveldb/build
       run: cmake -DBUILD_SHARED_LIBS=ON -A ${{ matrix.arch }} ..
@@ -60,7 +55,7 @@ jobs:
       working-directory: ./leveldb/build
       run: msbuild ./leveldb.sln /p:Configuration=Release
 
-    - name: Build (gcc)
+    - name: Build (POSIX)
       if: ${{ !startsWith(matrix.os, 'windows') }}
       working-directory: ./leveldb/build
       run: cmake --build .
