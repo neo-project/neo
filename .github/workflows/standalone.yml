@@ -61,11 +61,12 @@ jobs:
       if: ${{ !startsWith(matrix.os, 'windows') && startsWith(matrix.arch, 'arm64') }}
       working-directory: ./leveldb/build
       run: |
-        export AR=aarch64-linux-gnu-ar &&
-        export CC=aarch64-linux-gnu-gcc &&
-        export CXX=aarch64-linux-gnu-g++ &&
-        export LINK=aarch64-linux-gnu-g++ &&
+        export AR=aarch64-linux-gnu-ar
+        export CC=aarch64-linux-gnu-gcc
+        export CXX=aarch64-linux-gnu-g++
+        export LINK=aarch64-linux-gnu-g++
         cmake -DCMAKE_BUILD_TYPE=Release ..
+      shell: bash
 
     - name: Create Build Files (win-${{ matrix.arch }})
       if: ${{ startsWith(matrix.os, 'windows') }}
