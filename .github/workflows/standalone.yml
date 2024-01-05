@@ -50,7 +50,7 @@ jobs:
       run: msbuild ./leveldb.sln /p:Configuration=Release
 
     - name: Show Directory (Debug)
-      run: ls -la ./leveldb/build/Release/
+      run: ls -l ./leveldb/build/Release/
 
     - name: Cache Distribution
       uses: actions/cache/save@v3
