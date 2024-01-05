@@ -153,6 +153,15 @@ jobs:
         --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore \
         --verbosity normal
 
+    - name: .NET Build (SQLiteWallet)
+      working-directory: ./neo-modules
+      run: |
+        dotnet build ./src/SQLiteWallet/SQLiteWallet.csproj \
+        --framework net7.0 \
+        --configuration ${{ env.CONFIGURATION }} \
+        --output ./bin \
+        --verbosity normal
+
     - name: Remove Xml Comment Files
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
       run: rm -v *.xml
@@ -208,6 +217,10 @@ jobs:
     - name: Copy Files (leveldb) (win)
       if: ${{ startsWith(matrix.runtime, 'win') }}
       run: cp -v ./leveldb/build/Release/leveldb.dll ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/libleveldb.dll
+
+    - name: Copy Files (sqlite3) (win)
+      if: ${{ startsWith(matrix.runtime, 'win') }}
+      run: cp -v ./neo-modules/bin/runtimes/${{ matrix.runtime }}/native/e_sqlite3.dll ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/e_sqlite3.dll
 
     - name: Copy Files (leveldb) (linux)
       if: ${{ startsWith(matrix.runtime, 'linux') }}
