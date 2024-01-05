@@ -40,7 +40,7 @@ jobs:
       if: ${{ startsWith(matrix.os, 'ubuntu') && startsWith(matrix.arch, 'arm64') }}
       run: |
         sudo apt-get update && \
-        sudo apt-get install -y g++ make gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
+        sudo apt-get install -y crossbuild-essential-arm64
 
     - name: Setup macos-arm64
       if: ${{ startsWith(matrix.os, 'macos') && startsWith(matrix.arch, 'arm64') }}
