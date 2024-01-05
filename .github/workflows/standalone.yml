@@ -65,7 +65,7 @@ jobs:
         export CC=aarch64-linux-gnu-gcc
         export CXX=aarch64-linux-gnu-g++
         export LINK=aarch64-linux-gnu-g++
-        cmake -DCMAKE_BUILD_TYPE=Release ..
+        cmake -DCMAKE_BUILD_TYPE=Release -DHAVE_STD_REGEX=ON -DRUN_HAVE_STD_REGEX=1 ..
       shell: bash
 
     - name: Create Build Files (win-${{ matrix.arch }})
