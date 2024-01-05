@@ -41,6 +41,12 @@ jobs:
       run: mkdir -p ./build
 
     - name: Create Build Files (${{ matrix.arch }})
+      if: ${{ !startsWith(matrix.os, 'windows') }}
+      working-directory: ./leveldb/build
+      run: cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -A ${{ matrix.arch }} ..
+
+    - name: Create Build Files (${{ matrix.arch }})
+      if: ${{ startsWith(matrix.os, 'windows') }}
       working-directory: ./leveldb/build
       run: cmake -DBUILD_SHARED_LIBS=ON -A ${{ matrix.arch }} ..
 
@@ -48,6 +54,11 @@ jobs:
       if: ${{ startsWith(matrix.os, 'windows') }}
       working-directory: ./leveldb/build
       run: msbuild ./leveldb.sln /p:Configuration=Release
+
+    - name: Build (gcc)
+      if: ${{ !startsWith(matrix.os, 'windows') }}
+      working-directory: ./leveldb/build
+      run: cmake --build .
 
     - name: Show Directory (Debug)
       run: ls -l ./leveldb/build/Release/
