@@ -51,7 +51,7 @@ namespace Neo.VM
             if (value < 4) return BigInteger.One;
 
             var z = value;
-            var x = BigInteger.One << (((value - 1).GetBitLength() + 1) >> 1);
+            var x = BigInteger.One << (int)(((value - 1).GetBitLength() + 1) >> 1);
             while (x < z)
             {
                 z = x;
