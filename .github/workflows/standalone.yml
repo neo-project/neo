@@ -57,8 +57,13 @@ jobs:
       working-directory: ./leveldb/build
       run: cmake -DCMAKE_BUILD_TYPE=Release ..
 
-    - name: Create Build Files (${{ matrix.os }}-arm64)
-      if: ${{ !startsWith(matrix.os, 'windows') && startsWith(matrix.arch, 'arm64') }}
+    - name: Create Build Files (macos-arm64)
+      if: ${{ startsWith(matrix.os, 'macos') && startsWith(matrix.arch, 'arm64') }}
+      working-directory: ./leveldb/build
+      run: cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64 ..
+
+    - name: Create Build Files (linux-arm64)
+      if: ${{ startsWith(matrix.os, 'ubuntu') && startsWith(matrix.arch, 'arm64') }}
       working-directory: ./leveldb/build
       run: |
         export AR=aarch64-linux-gnu-ar
