@@ -50,7 +50,7 @@ jobs:
 
     - name: Setup LevelDb
       working-directory: ./leveldb
-      run: mkdir -p ./build
+      run: mkdir -p ./build/Release
 
     - name: Create Build Files (${{ matrix.os }}-x64)
       if: ${{ !startsWith(matrix.os, 'windows') && startsWith(matrix.arch, 'x64') }}
@@ -88,8 +88,13 @@ jobs:
       working-directory: ./leveldb/build
       run: cmake --build .
 
-    - name: Show Directory (Debug)
-      run: ls -l ./leveldb/build/
+    - name: Copy libleveldb (linux)
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+      run: cp -v ./leveldb/build/libleveldb.so.1.23.0 ./leveldb/build/Release/libleveldb.so
+
+    - name: Copy libleveldb (macos)
+      if: ${{ startsWith(matrix.os, 'macos') }}
+      run: cp -v ./leveldb/build/libleveldb.1.23.0.dylib ./leveldb/build/Release/libleveldb.dylib
 
     - name: Cache Distribution
       uses: actions/cache/save@v3
