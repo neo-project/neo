@@ -390,13 +390,21 @@ namespace Neo.CLI
 
             using (IEnumerator<Block> blocksBeingImported = GetBlocksFromFile().GetEnumerator())
             {
+                UInt256 preHash = _neoSystem.GenesisBlock.Hash;
                 while (true)
                 {
                     List<Block> blocksToImport = new List<Block>();
                     for (int i = 0; i < 10; i++)
                     {
                         if (!blocksBeingImported.MoveNext()) break;
-                        blocksToImport.Add(blocksBeingImported.Current);
+                        var block = blocksBeingImported.Current;
+                        blocksToImport.Add(block);
+                        if (block.Index == 0) continue;
+                        if (block.PrevHash != preHash)
+                        {
+                            throw new InvalidOperationException($"Block at {block.Index} has wrong previous hash");
+                        }
+                        preHash = block.Hash;
                     }
                     if (blocksToImport.Count == 0) break;
                     await NeoSystem.Blockchain.Ask<Blockchain.ImportCompleted>(new Blockchain.Import
