@@ -41,9 +41,14 @@ jobs:
       run: mkdir -p ./build
 
     - name: Create Build Files (${{ matrix.arch }})
-      if: ${{ !startsWith(matrix.os, 'windows') }}
+      if: ${{ !startsWith(matrix.os, 'windows') && startsWith(matrix.arch, 'arm64') }}
       working-directory: ./leveldb/build
-      run: cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -A ${{ matrix.arch }} ..
+      run: cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-march=armv8-a" ..
+
+    - name: Create Build Files (${{ matrix.arch }})
+      if: ${{ !startsWith(matrix.os, 'windows') && startsWith(matrix.arch, 'x64') }}
+      working-directory: ./leveldb/build
+      run: cmake -DCMAKE_BUILD_TYPE=Release ..
 
     - name: Create Build Files (${{ matrix.arch }})
       if: ${{ startsWith(matrix.os, 'windows') }}
