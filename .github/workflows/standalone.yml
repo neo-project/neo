@@ -156,7 +156,7 @@ jobs:
     - name: .NET Build (SQLiteWallet)
       working-directory: ./neo-modules
       run: |
-        dotnet build ./src/SQLiteWallet/SQLiteWallet.csproj \
+        dotnet publish ./src/SQLiteWallet/SQLiteWallet.csproj \
         --framework net7.0 \
         --configuration ${{ env.CONFIGURATION }} \
         --output ./bin \
@@ -220,7 +220,7 @@ jobs:
 
     - name: Copy Files (sqlite3) (win)
       if: ${{ startsWith(matrix.runtime, 'win') }}
-      run: cp -v ./bin/runtimes/${{ matrix.runtime }}/native/e_sqlite3.dll ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/e_sqlite3.dll
+      run: cp -v ./neo-modules/bin/runtimes/${{ matrix.runtime }}/native/e_sqlite3.dll ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/e_sqlite3.dll
 
     - name: Copy Files (leveldb) (linux)
       if: ${{ startsWith(matrix.runtime, 'linux') }}
