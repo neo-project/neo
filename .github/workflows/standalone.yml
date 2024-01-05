@@ -63,8 +63,8 @@ jobs:
       run: |
         export AR=aarch64-linux-gnu-ar
         export CC=aarch64-linux-gnu-gcc
-        export CXX=aarch64-linux-gnu-g++
-        export LINK=aarch64-linux-gnu-g++
+        export CXX=aarch64-linux-gnu-gcc
+        export LINK=aarch64-linux-gnu-gcc
         cmake -DCMAKE_BUILD_TYPE=Release ..
       shell: bash
 
