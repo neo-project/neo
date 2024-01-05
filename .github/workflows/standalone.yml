@@ -40,7 +40,7 @@ jobs:
       if: ${{ !startsWith(matrix.os, 'windows') }}
       run: |
         sudo apt-get update && \
-        sudo apt-get install -y 'aarch64-linux-gnu-g++'
+        sudo apt-get install -y aarch64-linux-gnu-g\+\+
 
     - name: Setup LevelDb
       working-directory: ./leveldb
