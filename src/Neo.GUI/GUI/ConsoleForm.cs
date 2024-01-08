@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.ConsoleService;
 using System;
 using System.IO;
 using System.Threading;
@@ -50,7 +51,7 @@ namespace Neo.GUI
             {
                 e.SuppressKeyPress = true;
                 string line = $"{textBox2.Text}{Environment.NewLine}";
-                textBox1.AppendText(Program.Service.ReadingPassword ? "***" : line);
+                textBox1.AppendText(ConsoleHelper.ReadingPassword ? "***" : line);
                 switch (textBox2.Text.ToLower())
                 {
                     case "clear":

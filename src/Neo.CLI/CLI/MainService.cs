@@ -537,7 +537,7 @@ namespace Neo.CLI
                     if (engine.State == VMState.FAULT) return;
                 }
 
-                if (!ReadUserInput("Relay tx(no|yes)").IsYes())
+                if (!ConsoleHelper.ReadUserInput("Relay tx(no|yes)").IsYes())
                 {
                     return;
                 }

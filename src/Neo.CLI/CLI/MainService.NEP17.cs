@@ -67,7 +67,7 @@ namespace Neo.CLI
                 ConsoleHelper.Error(GetExceptionMessage(e));
                 return;
             }
-            if (!ReadUserInput("Relay tx(no|yes)").IsYes())
+            if (!ConsoleHelper.ReadUserInput("Relay tx(no|yes)").IsYes())
             {
                 return;
             }
