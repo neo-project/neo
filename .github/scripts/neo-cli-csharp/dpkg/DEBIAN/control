@@ -1,0 +1,6 @@
+Package: neo-cli
+Essential: no
+Priority: optional
+Depends: libleveldb-dev, libsnappy-dev, libsqlite3-dev
+Maintainer: neo-project
+Description: Neo n3 blockchain node
