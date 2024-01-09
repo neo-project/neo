@@ -33,24 +33,17 @@ namespace Neo.Cryptography
     {
         private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
 
-        public static int GetBitSize(BigInteger num) //power of 2 search high, then binary search
+        private static ReadOnlySpan<byte> Log2DeBruijn => new byte[32]
         {
-            if (num.IsZero) return 0;
-            int lo = 0, hi = 1;
-            while ((BigInteger.One << hi) <= num) { lo = hi; hi <<= 1; }
-            return GetBitSizeBinSearch(num, lo, hi);
-        }
+            00, 09, 01, 10, 13, 21, 02, 29,
+            11, 14, 16, 18, 22, 25, 03, 30,
+            08, 12, 20, 28, 15, 17, 24, 07,
+            19, 27, 23, 06, 26, 05, 04, 31
+        };
 
-        public static int GetBitSizeBinSearch(BigInteger num, int lo, int hi)
+        public static long GetBitSize(BigInteger num)
         {
-            int mid = (hi + lo) >> 1;
-            while (lo <= hi)
-            {
-                if ((BigInteger.One << mid) <= num) lo = mid + 1;
-                else hi = mid - 1;
-                mid = (hi + lo) >> 1;
-            }
-            return mid + 1;
+            return (long)Math.Ceiling(BigInteger.Log(num.Sign < 0 ? -num : num + 1, 2.0));
         }
 
         /// <summary>
