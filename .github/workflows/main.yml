@@ -37,6 +37,7 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
+  # MyGet isn't working
   # PublishMyGet:
   #   if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
   #   needs: Test
