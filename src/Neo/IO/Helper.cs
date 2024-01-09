@@ -102,7 +102,7 @@ namespace Neo.IO
         public static ReadOnlyMemory<byte> CompressLz4(this ReadOnlySpan<byte> data)
         {
             int maxLength = LZ4Codec.MaximumOutputSize(data.Length);
-            byte[] buffer = GC.AllocateUninitializedArray<byte>(sizeof(uint) + maxLength);
+            byte[] buffer = new byte[sizeof(uint) + maxLength];
             BinaryPrimitives.WriteInt32LittleEndian(buffer, data.Length);
             int length = LZ4Codec.Encode(data, buffer.AsSpan(sizeof(uint)));
             return buffer.AsMemory(0, sizeof(uint) + length);
@@ -118,7 +118,7 @@ namespace Neo.IO
         {
             int length = BinaryPrimitives.ReadInt32LittleEndian(data);
             if (length < 0 || length > maxOutput) throw new FormatException();
-            byte[] result = GC.AllocateUninitializedArray<byte>(length);
+            byte[] result = new byte[length]; // GC.AllocateUninitializedArray<byte>(length);
             if (LZ4Codec.Decode(data[4..], result) != length)
                 throw new FormatException();
             return result;

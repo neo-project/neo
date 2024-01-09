@@ -16,6 +16,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 using System.Xml;
 
 namespace Neo.Network
@@ -125,11 +126,11 @@ namespace Neo.Network
         /// <param name="port">The port to forward.</param>
         /// <param name="protocol">The <see cref="ProtocolType"/> of the port.</param>
         /// <param name="description">The description of the forward.</param>
-        public static void ForwardPort(int port, ProtocolType protocol, string description)
+        public static async Task ForwardPort(int port, ProtocolType protocol, string description)
         {
             if (string.IsNullOrEmpty(_serviceUrl))
                 throw new Exception("No UPnP service available or Discover() has not been called");
-            SOAPRequest(_serviceUrl, "<u:AddPortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
+            await SOAPRequest(_serviceUrl, "<u:AddPortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
                 "<NewRemoteHost></NewRemoteHost><NewExternalPort>" + port.ToString() + "</NewExternalPort><NewProtocol>" + protocol.ToString().ToUpper() + "</NewProtocol>" +
                 "<NewInternalPort>" + port.ToString() + "</NewInternalPort><NewInternalClient>" + Dns.GetHostAddresses(Dns.GetHostName()).First(p => p.AddressFamily == AddressFamily.InterNetwork).ToString() +
                 "</NewInternalClient><NewEnabled>1</NewEnabled><NewPortMappingDescription>" + description +
@@ -141,11 +142,11 @@ namespace Neo.Network
         /// </summary>
         /// <param name="port">The port to forward.</param>
         /// <param name="protocol">The <see cref="ProtocolType"/> of the port.</param>
-        public static void DeleteForwardingRule(int port, ProtocolType protocol)
+        public static async Task DeleteForwardingRule(int port, ProtocolType protocol)
         {
             if (string.IsNullOrEmpty(_serviceUrl))
                 throw new Exception("No UPnP service available or Discover() has not been called");
-            SOAPRequest(_serviceUrl,
+            await SOAPRequest(_serviceUrl,
             "<u:DeletePortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
             "<NewRemoteHost>" +
             "</NewRemoteHost>" +
@@ -158,11 +159,11 @@ namespace Neo.Network
         /// Attempt to get the external IP address of the local host.
         /// </summary>
         /// <returns>The external IP address of the local host.</returns>
-        public static IPAddress GetExternalIP()
+        public static async Task<IPAddress> GetExternalIP()
         {
             if (string.IsNullOrEmpty(_serviceUrl))
                 throw new Exception("No UPnP service available or Discover() has not been called");
-            XmlDocument xdoc = SOAPRequest(_serviceUrl, "<u:GetExternalIPAddress xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
+            XmlDocument xdoc = await SOAPRequest(_serviceUrl, "<u:GetExternalIPAddress xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">" +
             "</u:GetExternalIPAddress>", "GetExternalIPAddress");
             XmlNamespaceManager nsMgr = new(xdoc.NameTable);
             nsMgr.AddNamespace("tns", "urn:schemas-upnp-org:device-1-0");
@@ -170,7 +171,7 @@ namespace Neo.Network
             return IPAddress.Parse(IP);
         }
 
-        private static XmlDocument SOAPRequest(string url, string soap, string function)
+        private static async Task<XmlDocument> SOAPRequest(string url, string soap, string function)
         {
             string req = "<?xml version=\"1.0\"?>" +
             "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">" +
@@ -183,8 +184,8 @@ namespace Neo.Network
             request.Headers.Add("Content-Type", "text/xml; charset=\"utf-8\"");
             request.Content = new StringContent(req);
             using HttpClient http = new();
-            using HttpResponseMessage response = http.Send(request);
-            using Stream stream = response.EnsureSuccessStatusCode().Content.ReadAsStream();
+            using HttpResponseMessage response = await http.SendAsync(request);
+            using Stream stream = await response.EnsureSuccessStatusCode().Content.ReadAsStreamAsync();
             XmlDocument resp = new() { XmlResolver = null };
             resp.Load(stream);
             return resp;

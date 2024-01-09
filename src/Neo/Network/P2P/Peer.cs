@@ -240,9 +240,9 @@ namespace Neo.Network.P2P
             {
                 try
                 {
-                    localAddresses.Add(UPnP.GetExternalIP());
+                    localAddresses.Add(UPnP.GetExternalIP().GetAwaiter().GetResult());
 
-                    if (ListenerTcpPort > 0) UPnP.ForwardPort(ListenerTcpPort, ProtocolType.Tcp, "NEO Tcp");
+                    if (ListenerTcpPort > 0) UPnP.ForwardPort(ListenerTcpPort, ProtocolType.Tcp, "NEO Tcp").GetAwaiter().GetResult();
                 }
                 catch { }
             }
