@@ -45,7 +45,7 @@ namespace Neo.CLI
                 ConsoleHelper.Error("File does not exist");
                 return;
             }
-            string password = ReadUserInput("password", true);
+            string password = ConsoleHelper.ReadUserInput("password", true);
             if (password.Length == 0)
             {
                 ConsoleHelper.Info("Cancelled");
@@ -88,7 +88,7 @@ namespace Neo.CLI
                 ConsoleHelper.Error("File does not exist.");
                 return;
             }
-            string password = ReadUserInput("password", true);
+            string password = ConsoleHelper.ReadUserInput("password", true);
             if (password.Length == 0)
             {
                 ConsoleHelper.Info("Cancelled");
@@ -115,7 +115,7 @@ namespace Neo.CLI
             string path = "address.txt";
             if (File.Exists(path))
             {
-                if (!ReadUserInput($"The file '{path}' already exists, do you want to overwrite it? (yes|no)", false).IsYes())
+                if (!ConsoleHelper.ReadUserInput($"The file '{path}' already exists, do you want to overwrite it? (yes|no)", false).IsYes())
                 {
                     return;
                 }
@@ -151,7 +151,7 @@ namespace Neo.CLI
         {
             if (NoWallet()) return;
 
-            if (ReadUserInput($"Warning: Irrevocable operation!\nAre you sure to delete account {address.ToAddress(NeoSystem.Settings.AddressVersion)}? (no|yes)").IsYes())
+            if (ConsoleHelper.ReadUserInput($"Warning: Irrevocable operation!\nAre you sure to delete account {address.ToAddress(NeoSystem.Settings.AddressVersion)}? (no|yes)").IsYes())
             {
                 if (CurrentWallet!.DeleteAccount(address))
                 {
@@ -182,7 +182,7 @@ namespace Neo.CLI
                 ConsoleHelper.Error($"File '{path}' already exists");
                 return;
             }
-            string password = ReadUserInput("password", true);
+            string password = ConsoleHelper.ReadUserInput("password", true);
             if (password.Length == 0)
             {
                 ConsoleHelper.Info("Cancelled");
@@ -214,13 +214,13 @@ namespace Neo.CLI
         [ConsoleCommand("create wallet", Category = "Wallet Commands")]
         private void OnCreateWalletCommand(string path, string? wifOrFile = null)
         {
-            string password = ReadUserInput("password", true);
+            string password = ConsoleHelper.ReadUserInput("password", true);
             if (password.Length == 0)
             {
                 ConsoleHelper.Info("Cancelled");
                 return;
             }
-            string password2 = ReadUserInput("repeat password", true);
+            string password2 = ConsoleHelper.ReadUserInput("repeat password", true);
             if (password != password2)
             {
                 ConsoleHelper.Error("Two passwords not match.");
@@ -288,7 +288,7 @@ namespace Neo.CLI
 
                 if (wifOrFile.Length > 1024 * 1024)
                 {
-                    if (!ReadUserInput($"The file '{fileInfo.FullName}' is too big, do you want to continue? (yes|no)", false).IsYes())
+                    if (!ConsoleHelper.ReadUserInput($"The file '{fileInfo.FullName}' is too big, do you want to continue? (yes|no)", false).IsYes())
                     {
                         return;
                     }
@@ -345,7 +345,7 @@ namespace Neo.CLI
 
                 if (fileInfo.Length > 1024 * 1024)
                 {
-                    if (!ReadUserInput($"The file '{fileInfo.FullName}' is too big, do you want to continue? (yes|no)", false).IsYes())
+                    if (!ConsoleHelper.ReadUserInput($"The file '{fileInfo.FullName}' is too big, do you want to continue? (yes|no)", false).IsYes())
                     {
                         return;
                     }
@@ -501,7 +501,7 @@ namespace Neo.CLI
         private void OnSendCommand(UInt160 asset, UInt160 to, string amount, UInt160? from = null, string? data = null, UInt160[]? signerAccounts = null)
         {
             if (NoWallet()) return;
-            string password = ReadUserInput("password", true);
+            string password = ConsoleHelper.ReadUserInput("password", true);
             if (password.Length == 0)
             {
                 ConsoleHelper.Info("Cancelled");
@@ -555,7 +555,7 @@ namespace Neo.CLI
                 $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)}\t",
                 "Total fee: ",
                 $"{new BigDecimal((BigInteger)(tx.SystemFee + tx.NetworkFee), NativeContract.GAS.Decimals)} GAS");
-            if (!ReadUserInput("Relay tx? (no|yes)").IsYes())
+            if (!ConsoleHelper.ReadUserInput("Relay tx? (no|yes)").IsYes())
             {
                 return;
             }
@@ -626,7 +626,7 @@ namespace Neo.CLI
             {
                 var snapshot = NeoSystem.StoreView;
                 AssetDescriptor descriptor = new(snapshot, NeoSystem.Settings, NativeContract.GAS.Hash);
-                string extracFee = ReadUserInput("This tx is not in mempool, please input extra fee manually");
+                string extracFee = ConsoleHelper.ReadUserInput("This tx is not in mempool, please input extra fee manually");
                 if (!BigDecimal.TryParse(extracFee, descriptor.Decimals, out BigDecimal decimalExtraFee) || decimalExtraFee.Sign <= 0)
                 {
                     ConsoleHelper.Error("Incorrect Amount Format");
@@ -639,7 +639,7 @@ namespace Neo.CLI
                 $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)}\t",
                 "Total fee: ",
                 $"{new BigDecimal((BigInteger)(tx.SystemFee + tx.NetworkFee), NativeContract.GAS.Decimals)} GAS");
-            if (!ReadUserInput("Relay tx? (no|yes)").IsYes())
+            if (!ConsoleHelper.ReadUserInput("Relay tx? (no|yes)").IsYes())
             {
                 return;
             }
@@ -668,7 +668,7 @@ namespace Neo.CLI
         private void OnChangePasswordCommand()
         {
             if (NoWallet()) return;
-            string oldPassword = ReadUserInput("password", true);
+            string oldPassword = ConsoleHelper.ReadUserInput("password", true);
             if (oldPassword.Length == 0)
             {
                 ConsoleHelper.Info("Cancelled");
@@ -679,8 +679,8 @@ namespace Neo.CLI
                 ConsoleHelper.Error("Incorrect password");
                 return;
             }
-            string newPassword = ReadUserInput("New password", true);
-            string newPasswordReEntered = ReadUserInput("Re-Enter Password", true);
+            string newPassword = ConsoleHelper.ReadUserInput("New password", true);
+            string newPasswordReEntered = ConsoleHelper.ReadUserInput("Re-Enter Password", true);
             if (!newPassword.Equals(newPasswordReEntered))
             {
                 ConsoleHelper.Error("Two passwords entered are inconsistent!");
