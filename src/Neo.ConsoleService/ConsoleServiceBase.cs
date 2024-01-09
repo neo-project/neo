@@ -33,7 +33,6 @@ namespace Neo.ConsoleService
         public abstract string ServiceName { get; }
 
         protected bool ShowPrompt { get; set; } = true;
-        public bool ReadingPassword { get; set; } = false;
 
         private bool _running;
         private readonly CancellationTokenSource _shutdownTokenSource = new();
@@ -297,89 +296,6 @@ namespace Neo.ConsoleService
         public virtual void OnStop()
         {
             _shutdownAcknowledged.Signal();
-        }
-
-        public string ReadUserInput(string prompt, bool password = false)
-        {
-            const string t = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
-            var sb = new StringBuilder();
-
-            if (!string.IsNullOrEmpty(prompt))
-            {
-                Console.Write(prompt + ": ");
-            }
-
-            if (password) ReadingPassword = true;
-            var prevForeground = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Yellow;
-
-            if (Console.IsInputRedirected)
-            {
-                // neo-gui Console require it
-                sb.Append(Console.ReadLine());
-            }
-            else
-            {
-                ConsoleKeyInfo key;
-                do
-                {
-                    key = Console.ReadKey(true);
-
-                    if (t.IndexOf(key.KeyChar) != -1)
-                    {
-                        sb.Append(key.KeyChar);
-                        Console.Write(password ? '*' : key.KeyChar);
-                    }
-                    else if (key.Key == ConsoleKey.Backspace && sb.Length > 0)
-                    {
-                        sb.Length--;
-                        Console.Write("\b \b");
-                    }
-                } while (key.Key != ConsoleKey.Enter);
-            }
-
-            Console.ForegroundColor = prevForeground;
-            if (password) ReadingPassword = false;
-            Console.WriteLine();
-            return sb.ToString();
-        }
-
-        public SecureString ReadSecureString(string prompt)
-        {
-            const string t = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
-            SecureString securePwd = new SecureString();
-            ConsoleKeyInfo key;
-
-            if (!string.IsNullOrEmpty(prompt))
-            {
-                Console.Write(prompt + ": ");
-            }
-
-            ReadingPassword = true;
-            Console.ForegroundColor = ConsoleColor.Yellow;
-
-            do
-            {
-                key = Console.ReadKey(true);
-                if (t.IndexOf(key.KeyChar) != -1)
-                {
-                    securePwd.AppendChar(key.KeyChar);
-                    Console.Write('*');
-                }
-                else if (key.Key == ConsoleKey.Backspace && securePwd.Length > 0)
-                {
-                    securePwd.RemoveAt(securePwd.Length - 1);
-                    Console.Write(key.KeyChar);
-                    Console.Write(' ');
-                    Console.Write(key.KeyChar);
-                }
-            } while (key.Key != ConsoleKey.Enter);
-
-            Console.ForegroundColor = ConsoleColor.White;
-            ReadingPassword = false;
-            Console.WriteLine();
-            securePwd.MakeReadOnly();
-            return securePwd;
         }
 
         private void TriggerGracefulShutdown()
