@@ -67,7 +67,6 @@ namespace Neo.CLI
         private void OnCloseWalletCommand()
         {
             if (NoWallet()) return;
-            CurrentWallet = null;
             ConsoleHelper.Info("Wallet is closed");
         }
 
@@ -513,7 +512,7 @@ namespace Neo.CLI
             }
 
             var snapshot = NeoSystem.StoreView;
-            Transaction tx = null;
+            Transaction tx;
             AssetDescriptor descriptor = new(snapshot, NeoSystem.Settings, asset);
             if (!BigDecimal.TryParse(amount, descriptor.Decimals, out BigDecimal decimalAmount) || decimalAmount.Sign <= 0)
             {
@@ -555,7 +554,7 @@ namespace Neo.CLI
                 "Send To: ", $"{to.ToAddress(NeoSystem.Settings.AddressVersion)}\n",
                 "Network fee: ", $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)}\t",
                 "Total fee: ", $"{new BigDecimal((BigInteger)(tx.SystemFee + tx.NetworkFee), NativeContract.GAS.Decimals)} GAS");
-            if (!ReadUserInput("Relay tx? (no|yes)").IsYes())
+            if (!ConsoleHelper.ReadUserInput("Relay tx? (no|yes)").IsYes())
             {
                 return;
             }
