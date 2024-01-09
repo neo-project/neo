@@ -39,7 +39,7 @@ jobs:
 
   PublishGithub:
     #if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
-    needs: Test
+    #needs: Test
     runs-on: windows-latest
     steps:
     - name: Chectout
@@ -66,9 +66,10 @@ jobs:
         rm -v Neo.GUI*
 
     - name: Publish to Github Packages
+      working-directory: ./out
       run: |
         dotnet nuget add source --username neo-project --password ${{ secrets.GITHUB_TOKEN }} --name github "https://nuget.pkg.github.com/neo-project/index.json"
-        dotnet nuget push ./out/*.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source "github"
+        dotnet nuget push --api-key ${{ secrets.GITHUB_TOKEN }} --source "github"
 
   PublishMyGet:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
