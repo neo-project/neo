@@ -132,16 +132,18 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ./leveldb/build/Release/*
-        key: leveldb-windows-latest-x64
+        key: leveldb-windows-x64
         enableCrossOsArchive: true
+        fail-on-cache-miss: true
 
     - if: ${{ startsWith(matrix.runtime, 'win-arm64') }}
       name: Get Distribution Caches (win-arm64)
       uses: actions/cache@v3
       with:
         path: ./leveldb/build/Release/*
-        key: leveldb-windows-latest-arm64
+        key: leveldb-windows-arm64
         enableCrossOsArchive: true
+        fail-on-cache-miss: true
 
     - if: ${{ startsWith(matrix.runtime, 'win') }}
       name: Copy Files (leveldb) (win)
