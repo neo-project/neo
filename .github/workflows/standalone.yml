@@ -7,10 +7,10 @@ on:
         type: string
         description: 'Version Number (Example: 1.0.0)'
         required: true
-    clear-leveldb:
-      version:
+      clear-leveldb:
         type: boolean
         description: 'Rebuild Leveldb'
+        default: false
         required: true
 
 env:
