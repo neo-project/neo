@@ -1,0 +1,51 @@
+name: Nuget Package Cleanup (github)
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Run every day at 24:00
+
+jobs:
+  delete-pkgs:
+    name: Delete Old Nuget Packages
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Delete Neo Package
+      uses: actions/delete-package-versions@v4
+      with:
+        package-name: Neo
+        package-type: nuget
+        min-versions-to-keep: 5
+        token: "${{ secrets.PKGS_TOKEN }}"
+
+    - name: Delete Neo.ConsoleService Package
+      uses: actions/delete-package-versions@v4
+      with:
+        package-name: Neo.ConsoleService
+        package-type: nuget
+        min-versions-to-keep: 5
+        token: "${{ secrets.PKGS_TOKEN }}"
+
+    - name: Delete Neo.ConsoleService Package
+      uses: actions/delete-package-versions@v4
+      with:
+        package-name: Neo.ConsoleService
+        package-type: nuget
+        min-versions-to-keep: 5
+        token: "${{ secrets.PKGS_TOKEN }}"
+
+    - name: Delete Neo.Json Package
+      uses: actions/delete-package-versions@v4
+      with:
+        package-name: Neo.Json
+        package-type: nuget
+        min-versions-to-keep: 5
+        token: "${{ secrets.PKGS_TOKEN }}"
+
+    - name: Delete Neo.VM Package
+      uses: actions/delete-package-versions@v4
+      with:
+        package-name: Neo.VM
+        package-type: nuget
+        min-versions-to-keep: 5
+        token: "${{ secrets.PKGS_TOKEN }}"
