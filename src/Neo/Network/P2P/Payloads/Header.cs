@@ -243,6 +243,7 @@ namespace Neo.Network.P2P.Payloads
             TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
             if (prev is null) return false;
             if (prev.Index + 1 != index) return false;
+            if (prev.Hash != prevHash) return false;
             if (prev.Header.timestamp >= timestamp) return false;
             if (!this.VerifyWitnesses(settings, snapshot, 3_00000000L)) return false;
             return true;
