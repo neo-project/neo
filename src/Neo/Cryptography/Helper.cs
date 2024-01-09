@@ -33,17 +33,19 @@ namespace Neo.Cryptography
     {
         private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
 
-        private static ReadOnlySpan<byte> Log2DeBruijn => new byte[32]
+        public static long GetBitLength(BigInteger num)
         {
-            00, 09, 01, 10, 13, 21, 02, 29,
-            11, 14, 16, 18, 22, 25, 03, 30,
-            08, 12, 20, 28, 15, 17, 24, 07,
-            19, 27, 23, 06, 26, 05, 04, 31
-        };
-
-        public static long GetBitSize(BigInteger num)
-        {
-            return (long)Math.Ceiling(BigInteger.Log(num.Sign < 0 ? -num : num + 1, 2.0));
+            var bytes = num.ToByteArray();
+            var size = bytes.Length;
+            if (size == 0) return 0;
+            int v = bytes[size - 1]; // 8-bit value to find the log2 of 
+            if (v == 0) return (size - 1) * 8;
+            int r; // result of log2(v) will go here
+            int shift;
+            r = (v > 0xF) ? 4 : 0; v >>= r;
+            shift = (v > 0x3) ? 2 : 0; v >>= shift; r |= shift;
+            r |= (v >> 1);
+            return (size - 1) * 8 + r + 1;
         }
 
         /// <summary>

@@ -101,8 +101,8 @@ namespace Neo.Cryptography
                     case 1: remainingBytesL ^= (ulong)source[alignedLength] << 0; break;
                 }
 
-                H2 ^= (remainingBytesH * c2 << r2) | (remainingBytesH * c2 >> (64 - r2)) * c1; // BitOperations.RotateLeft(remainingBytesH * c2, r2) * c1;
-                H1 ^= (remainingBytesL * c1 << r1) | (remainingBytesL * c1 >> (64 - r1)) * c2; //BitOperations.RotateLeft(remainingBytesL * c1, r1) * c2;
+                H2 ^= ((remainingBytesH * c2 << r2) | (remainingBytesH * c2 >> (64 - r2))) * c1; // BitOperations.RotateLeft(remainingBytesH * c2, r2) * c1;
+                H1 ^= ((remainingBytesL * c1 << r1) | (remainingBytesL * c1 >> (64 - r1))) * c2; //BitOperations.RotateLeft(remainingBytesL * c1, r1) * c2;
             }
         }
 
