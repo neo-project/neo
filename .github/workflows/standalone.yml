@@ -24,13 +24,13 @@ jobs:
 
     steps:
     - name: Lookup Cache Distribution
-      id: cahce-leveldb
+      id: cache-leveldb
       uses: actions/cache@v3
       with:
         path: ./leveldb/build/Release/*
         key: leveldb-windows-${{ matrix.arch }}
         enableCrossOsArchive: true
-        #lookup-only: true # Check out issue https://github.com/actions/cache/issues/1301
+        lookup-only: true
 
     - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'true' }}
       name: Checkout Repository Code (leveldb)
