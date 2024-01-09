@@ -69,7 +69,7 @@ jobs:
       working-directory: ./out
       run: |
         dotnet nuget add source --username neo-project --password ${{ secrets.GITHUB_TOKEN }} --name github "https://nuget.pkg.github.com/neo-project/index.json"
-        dotnet nuget push --api-key ${{ secrets.GITHUB_TOKEN }} --source "github"
+        dotnet nuget push * --api-key ${{ secrets.GITHUB_TOKEN }} --source "github"
 
   PublishMyGet:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
