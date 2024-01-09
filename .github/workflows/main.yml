@@ -69,8 +69,11 @@ jobs:
     - name: Publish to Github Packages
       working-directory: ./out
       run: |
-        dotnet nuget add source --username neo-project --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github2 "https://nuget.pkg.github.com/neo-project/index.json"
-        dotnet nuget push * --api-key ${{ secrets.GITHUB_TOKEN }} --source github2
+        dotnet nuget push * \
+            --source https://nuget.pkg.github.com/neo-project/index.json \
+            --api-key "${{ secrets.PKGS_TOKEN }}" \
+            --disable-buffering \
+            --no-service-endpoint;
 
   PublishMyGet:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
