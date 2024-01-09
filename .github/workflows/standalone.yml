@@ -23,15 +23,16 @@ jobs:
         arch: [x64, arm64]
 
     steps:
-    - name: Cache Distribution
+    - name: Lookup Cache Distribution
       id: cahce-leveldb
       uses: actions/cache@v3
       with:
         path: ./leveldb/build/Release/*
         key: leveldb-windows-${{ matrix.arch }}
         enableCrossOsArchive: true
+        lookup-only: true
 
-    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'false' }}
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'true' }}
       name: Checkout Repository Code (leveldb)
       uses: actions/checkout@v4
       with:
@@ -40,26 +41,26 @@ jobs:
         submodules: true
         fetch-depth: 0
 
-    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'false' }}
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'true' }}
       name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
 
-    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'false' }}
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'true' }}
       name: Setup LevelDb
       working-directory: ./leveldb
       run: mkdir -p ./build/Release
 
-    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'false' }}
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'true' }}
       name: Create Build Files (win-${{ matrix.arch }})
       working-directory: ./leveldb/build
       run: cmake -DBUILD_SHARED_LIBS=ON -A ${{ matrix.arch }} ..
 
-    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'false' }}
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'true' }}
       name: Build (MSBuild)
       working-directory: ./leveldb/build
       run: msbuild ./leveldb.sln /p:Configuration=Release
 
-    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'false' }}
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'true' }}
       name: Cache Distribution
       uses: actions/cache@v3
       with:
