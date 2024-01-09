@@ -16,15 +16,23 @@ env:
 
 jobs:
   build-leveldb:
-    name: Build leveldb (${{ matrix.os }}-${{ matrix.arch }})
-    runs-on: ${{ matrix.os }}
+    name: Build leveldb (windows-latest)
+    runs-on: windows-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
         arch: [x64, arm64]
 
     steps:
-    - name: Checkout Repository Code (leveldb)
+    - name: Cache Distribution
+      id: cahce-leveldb
+      uses: actions/cache@v3
+      with:
+        path: ./leveldb/build/Release/*
+        key: leveldb-windows-${{ matrix.arch }}
+        enableCrossOsArchive: true
+
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'false' }}
+      name: Checkout Repository Code (leveldb)
       uses: actions/checkout@v4
       with:
         repository: google/leveldb
@@ -32,69 +40,31 @@ jobs:
         submodules: true
         fetch-depth: 0
 
-    - name: Setup MSBuild
-      if: ${{ startsWith(matrix.os, 'windows') }}
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'false' }}
+      name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
 
-    - name: Setup linux-arm64
-      if: ${{ startsWith(matrix.os, 'ubuntu') }}
-      run: |
-        sudo apt-get update && \
-        sudo apt-get install -y crossbuild-essential-arm64 libkyotocabinet-dev libsnappy-dev libsqlite3-dev
-
-    - name: Setup LevelDb
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'false' }}
+      name: Setup LevelDb
       working-directory: ./leveldb
       run: mkdir -p ./build/Release
 
-    - name: Create Build Files (${{ matrix.os }}-x64)
-      if: ${{ !startsWith(matrix.os, 'windows') && startsWith(matrix.arch, 'x64') }}
-      working-directory: ./leveldb/build
-      run: cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=true ..
-
-    - name: Create Build Files (macos-arm64)
-      if: ${{ startsWith(matrix.os, 'macos') && startsWith(matrix.arch, 'arm64') }}
-      working-directory: ./leveldb/build
-      run: cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=true -DHAVE_STD_REGEX=ON -DRUN_HAVE_STD_REGEX=1 -DCMAKE_OSX_ARCHITECTURES=arm64 ..
-
-    - name: Create Build Files (linux-arm64)
-      if: ${{ startsWith(matrix.os, 'ubuntu') && startsWith(matrix.arch, 'arm64') }}
-      working-directory: ./leveldb/build
-      run: |
-        export AR=aarch64-linux-gnu-ar
-        export CC=aarch64-linux-gnu-gcc
-        export CXX=aarch64-linux-gnu-g++
-        export LINK=aarch64-linux-gnu-g++
-        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=true -DHAVE_STD_REGEX=ON -DRUN_HAVE_STD_REGEX=1 ..
-      shell: bash
-
-    - name: Create Build Files (win-${{ matrix.arch }})
-      if: ${{ startsWith(matrix.os, 'windows') }}
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'false' }}
+      name: Create Build Files (win-${{ matrix.arch }})
       working-directory: ./leveldb/build
       run: cmake -DBUILD_SHARED_LIBS=ON -A ${{ matrix.arch }} ..
 
-    - name: Build (MSBuild)
-      if: ${{ startsWith(matrix.os, 'windows') }}
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'false' }}
+      name: Build (MSBuild)
       working-directory: ./leveldb/build
       run: msbuild ./leveldb.sln /p:Configuration=Release
 
-    - name: Build (POSIX)
-      if: ${{ !startsWith(matrix.os, 'windows') }}
-      working-directory: ./leveldb/build
-      run: cmake --build .
-
-    - name: Copy libleveldb (linux)
-      if: ${{ startsWith(matrix.os, 'ubuntu') }}
-      run: cp -v ./leveldb/build/libleveldb.so.1.23.0 ./leveldb/build/Release/libleveldb.so
-
-    - name: Copy libleveldb (macos)
-      if: ${{ startsWith(matrix.os, 'macos') }}
-      run: cp -v ./leveldb/build/libleveldb.1.23.0.dylib ./leveldb/build/Release/libleveldb.dylib
-
-    - name: Cache Distribution
-      uses: actions/cache/save@v3
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'false' }}
+      name: Cache Distribution
+      uses: actions/cache@v3
       with:
         path: ./leveldb/build/Release/*
-        key: leveldb-${{ matrix.os }}-${{ matrix.arch }}
+        key: leveldb-windows-${{ matrix.arch }}
         enableCrossOsArchive: true
 
   build-neo-cli:
@@ -153,82 +123,38 @@ jobs:
         --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore \
         --verbosity normal
 
-    - name: .NET Build (SQLiteWallet)
-      working-directory: ./neo-modules
-      run: |
-        dotnet publish ./src/SQLiteWallet/SQLiteWallet.csproj \
-        --framework net7.0 \
-        --configuration ${{ env.CONFIGURATION }} \
-        --output ./bin \
-        --verbosity normal
-
     - name: Remove Xml Comment Files
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
       run: rm -v *.xml
 
-    - name: Get Distribution Caches (win-x64)
-      if: ${{ startsWith(matrix.runtime, 'win-x64') }}
-      uses: actions/cache/restore@v3
+    - if: ${{ startsWith(matrix.runtime, 'win-x64') }}
+      continue-on-error: false
+      id: cache-leveldb-win-x64
+      name: Get Distribution Caches (win-x64)
+      uses: actions/cache@v3
       with:
         path: ./leveldb/build/Release/*
         key: leveldb-windows-latest-x64
         enableCrossOsArchive: true
 
-    - name: Get Distribution Caches (win-arm64)
-      if: ${{ startsWith(matrix.runtime, 'win-arm64') }}
-      uses: actions/cache/restore@v3
+    - if: ${{ startsWith(matrix.runtime, 'win-arm64') }}
+      id: cache-leveldb-win-arm64
+      continue-on-error: false
+      name: Get Distribution Caches (win-arm64)
+      uses: actions/cache@v3
       with:
         path: ./leveldb/build/Release/*
         key: leveldb-windows-latest-arm64
         enableCrossOsArchive: true
 
-    - name: Get Distribution Caches (linux-arm64)
-      if: ${{ startsWith(matrix.runtime, 'linux-arm64') || startsWith(matrix.runtime, 'linux-musl-arm64') }}
-      uses: actions/cache/restore@v3
-      with:
-        path: ./leveldb/build/Release/*
-        key: leveldb-ubuntu-latest-arm64
-        enableCrossOsArchive: true
-
-    - name: Get Distribution Caches (linux-x64)
-      if: ${{ startsWith(matrix.runtime, 'linux-x64') }}
-      uses: actions/cache/restore@v3
-      with:
-        path: ./leveldb/build/Release/*
-        key: leveldb-ubuntu-latest-x64
-        enableCrossOsArchive: true
-
-    - name: Get Distribution Caches (osx-x64)
-      if: ${{ startsWith(matrix.runtime, 'osx-x64') }}
-      uses: actions/cache/restore@v3
-      with:
-        path: ./leveldb/build/Release/*
-        key: leveldb-macos-latest-x64
-        enableCrossOsArchive: true
-
-    - name: Get Distribution Caches (osx-x64)
-      if: ${{ startsWith(matrix.runtime, 'osx-arm64') }}
-      uses: actions/cache/restore@v3
-      with:
-        path: ./leveldb/build/Release/*
-        key: leveldb-macos-latest-arm64
-        enableCrossOsArchive: true
-
-    - name: Copy Files (leveldb) (win)
-      if: ${{ startsWith(matrix.runtime, 'win') }}
+    - if: ${{ startsWith(matrix.runtime, 'win') && steps.cache-leveldb-win-x64.outputs.cache-hit != 'false' }}
+      continue-on-error: false
+      name: Copy Files (leveldb) (win)
       run: cp -v ./leveldb/build/Release/leveldb.dll ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/libleveldb.dll
-
-    - name: Copy Files (sqlite3) (win)
-      if: ${{ startsWith(matrix.runtime, 'win') }}
-      run: cp -v ./neo-modules/bin/runtimes/${{ matrix.runtime }}/native/e_sqlite3.dll ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/e_sqlite3.dll
 
     - name: Copy Files (leveldb) (linux)
       if: ${{ startsWith(matrix.runtime, 'linux') }}
       run: cp -v ./leveldb/build/Release/libleveldb.so ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/libleveldb.so
-
-    - name: Copy Files (leveldb) (osx)
-      if: ${{ startsWith(matrix.runtime, 'osx') }}
-      run: cp -v ./leveldb/build/Release/libleveldb.dylib ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/libleveldb.dylib
 
     - name: Create Distribution Directory
       run: mkdir -p ${{ env.DIST_PATH }}
@@ -254,7 +180,7 @@ jobs:
         ls -l ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
 
     - name: Cache Distribution
-      uses: actions/cache/save@v3
+      uses: actions/cache@v3
       with:
         path: ${{ env.DIST_PATH }}/*
         key: ${{ matrix.runtime }}
