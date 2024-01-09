@@ -40,7 +40,7 @@ jobs:
   PublishGithub:
     #if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
     needs: Test
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
     - name: Chectout
       uses: actions/checkout@v4
