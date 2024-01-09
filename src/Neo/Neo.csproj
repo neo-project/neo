@@ -1,11 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.1;net7.0</TargetFrameworks>
     <LangVersion>10.0</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageTags>NEO;AntShares;Blockchain;Smart Contract</PackageTags>
-    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
