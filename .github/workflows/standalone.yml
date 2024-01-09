@@ -30,7 +30,7 @@ jobs:
         path: ./leveldb/build/Release/*
         key: leveldb-windows-${{ matrix.arch }}
         enableCrossOsArchive: true
-        lookup-only: true
+        #lookup-only: true # Check out issue https://github.com/actions/cache/issues/1301
 
     - if: ${{ steps.cache-leveldb.outputs.cache-hit != 'true' }}
       name: Checkout Repository Code (leveldb)
