@@ -45,21 +45,15 @@ namespace Neo.SmartContract
 
         public static ContractTask CompletedTask { get; }
 
-        static ContractTask()
-        {
-            CompletedTask = new ContractTask();
-            CompletedTask.GetAwaiter().SetResult();
-        }
-
         public ContractTask()
         {
             awaiter = CreateAwaiter();
         }
 
-        protected ContractTaskAwaiter<T> CreateAwaiter() => new();
+        protected virtual ContractTaskAwaiter<T> CreateAwaiter() => new();
 
-        public ContractTaskAwaiter<T> GetAwaiter() => (ContractTaskAwaiter<T>)awaiter;
+        public virtual ContractTaskAwaiter<T> GetAwaiter() => (ContractTaskAwaiter<T>)awaiter;
 
-        public object GetResult() => GetAwaiter().GetResult();
+        public virtual object GetResult() => GetAwaiter().GetResult();
     }
 }
