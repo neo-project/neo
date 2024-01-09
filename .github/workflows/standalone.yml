@@ -128,8 +128,6 @@ jobs:
       run: rm -v *.xml
 
     - if: ${{ startsWith(matrix.runtime, 'win-x64') }}
-      continue-on-error: false
-      id: cache-leveldb-win-x64
       name: Get Distribution Caches (win-x64)
       uses: actions/cache@v3
       with:
@@ -138,8 +136,6 @@ jobs:
         enableCrossOsArchive: true
 
     - if: ${{ startsWith(matrix.runtime, 'win-arm64') }}
-      id: cache-leveldb-win-arm64
-      continue-on-error: false
       name: Get Distribution Caches (win-arm64)
       uses: actions/cache@v3
       with:
@@ -147,8 +143,7 @@ jobs:
         key: leveldb-windows-latest-arm64
         enableCrossOsArchive: true
 
-    - if: ${{ startsWith(matrix.runtime, 'win') && steps.cache-leveldb-win-x64.outputs.cache-hit != 'false' }}
-      continue-on-error: false
+    - if: ${{ startsWith(matrix.runtime, 'win') }}
       name: Copy Files (leveldb) (win)
       run: cp -v ./leveldb/build/Release/leveldb.dll ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/libleveldb.dll
 
