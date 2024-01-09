@@ -38,8 +38,8 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
   PublishGithub:
-    #if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
-    #needs: Test
+    if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
+    needs: Test
     runs-on: ubuntu-latest
     steps:
     - name: Chectout
