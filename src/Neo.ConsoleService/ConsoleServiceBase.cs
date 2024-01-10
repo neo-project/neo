@@ -17,9 +17,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.Loader;
-using System.Security;
 using System.ServiceProcess;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
