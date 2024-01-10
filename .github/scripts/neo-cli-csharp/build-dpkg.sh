@@ -20,11 +20,6 @@ mkdir -p ${PKGS_PATH};
 
 # Copy workflow deb template
 cp -vpR ${TEMPLATE_PATH}/* ${PKGS_PATH}/;
-status=${?}
-
-if [ ${status} -ne 0 ]; then
-  exit ${status};
-fi
 
 # Create "bin" Path
 mkdir -vp ${PKGS_PATH}/usr/bin;
@@ -45,6 +40,9 @@ echo -e "Architecture: ${ARCH}" >> ${PKGS_PATH}/DEBIAN/control;
 # Create shortcut to "neo-cli" binary file
 ln -sv /srv/neo-node/neo-cli ${PKGS_PATH}/usr/bin/neo-cli;
 
+# Copy "neo-cli" Binaries
+cp -vp ${BIN_RUNTIME_PATH}/* ${PKGS_PATH}/srv/neo-node/;
+
 # Build "deb" package
 dpkg-deb --build ${PKGS_PATH};
 status=${?};
@@ -53,5 +51,8 @@ if [ ${status} -eq 0 ]; then
   # Debug Output
   dpkg-deb --info "${PKGS_PATH}.deb";
 fi
+
+# Set environment variables
+export PKGS_PATH=${PKGS_PATH}
 
 exit ${status};

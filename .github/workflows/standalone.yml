@@ -77,7 +77,7 @@ jobs:
 
   build-neo-cli:
     needs: [build-leveldb]
-    name: Build (${{ matrix.runtime }})
+    name: Build TarBalls (${{ matrix.runtime }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -182,7 +182,7 @@ jobs:
         key: ${{ matrix.runtime }}
 
   codesign-macos:
-    name: Build (${{ matrix.runtime }})
+    name: Build TarBalls (${{ matrix.runtime }})
     runs-on: macos-latest
     strategy:
       matrix:
@@ -262,9 +262,63 @@ jobs:
         path: ${{ env.DIST_PATH }}/*
         key: ${{ matrix.runtime }}
 
-  Release-neo-cli:
+  build-dpkgs:
+    needs: [build-neo-cli]
+    name: Build Debian Packags (${{ matrix.runtime }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        runtime: [linux-x64, linux-arm64, linux-musl-x64, linux-musl-arm64]
+    env:
+      OS_RUNTIME: ${{ matrix.runtime }} # Needed for "build-dpkg.sh"
+      BIN_RUNTIME_PATH: /tmp/${{ matrix.runtime }}
+
+    steps:
+    - name: Checkout Repository Code
+      uses: actions/checkout@v4
+      with:
+        path: scripts
+        sparse-checkout: .github/workflows/scripts
+        fetch-depth: 0
+
+    - name: Get Distribution Caches (${{ matrix.runtime }})
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.DIST_PATH }}/*
+        key: ${{ matrix.runtime }}
+
+    - name: Tarball Extraction (${{ matrix.runtime }}.tar.gz)
+      working-directory: /tmp
+      run: |
+        mkdir -p /tmp/${{ matrix.runtime }}
+        mkdir -p ${{ env.DPKGS_PATH }}
+        mv -v ${{ env.DIST_PATH }}/${{ matrix.runtime }}.tar.gz /tmp/
+        tar -xvf ${{ matrix.runtime }}.tar.gz -C ${{ matrix.runtime }}/
+        rm -v ${{ matrix.runtime }}/*.json
+
+    - if: ${{ EndsWith(matrix.runtime, 'amd64') }}
+      name: Execute Build Script (neo-cli-csharp-amd64)
+      working-directory: ./scripts/neo-cli-csharp
+      run: ./build-dpkg.sh amd64
+
+    - if: ${{ EndsWith(matrix.runtime, 'arm64') }}
+      name: Execute Build Script (neo-cli-csharp-arm64)
+      working-directory: ./scripts/neo-cli-csharp
+      run: ./build-dpkg.sh arm64
+
+    - name: Debian Package To Distribution Directory (Copy)
+      run: mv -v ${PKGS_PATH}.deb ${{ env.DIST_PATH }}/
+
+    - name: Cache Distribution
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.DIST_PATH }}/*
+        key: ${{ matrix.runtime }}
+
+
+  release-neo-cli:
+    needs: [build-neo-cli, codesign-macos, build-dpkgs]
     name: Release (github)
-    needs: [build-neo-cli, codesign-macos]
     runs-on: ubuntu-latest
 
     steps:
