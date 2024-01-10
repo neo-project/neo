@@ -56,7 +56,6 @@ namespace Neo.SmartContract
 
         protected override ContractTaskAwaiter CreateAwaiter() => new ContractTaskAwaiter<T>();
         public override ContractTaskAwaiter GetAwaiter() => awaiter;
-        public ContractTaskAwaiter<T> GetAwaiterWithReturn() => awaiter;
         public override object GetResult() => ((ContractTaskAwaiter<T>)GetAwaiter()).GetResult();
     }
 }
