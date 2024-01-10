@@ -311,7 +311,7 @@ jobs:
       uses: actions/cache/save@v3
       with:
         path: ${{ env.DIST_PATH }}/*
-        key: ${{ matrix.runtime }}
+        key: ${{ matrix.runtime }}-deb
 
 
   release-neo-cli:
@@ -367,6 +367,30 @@ jobs:
       with:
         path: ${{ env.DIST_PATH }}/*
         key: win-arm64
+
+    - name: Get Distribution Caches (linux-x64-dpkg)
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.DIST_PATH }}/*
+        key: linux-x64-deb
+
+    - name: Get Distribution Caches (linux-arm64-dpkg)
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.DIST_PATH }}/*
+        key: linux-arm64-deb
+
+    - name: Get Distribution Caches (linux-musl-x64-dpkg)
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.DIST_PATH }}/*
+        key: linux-musl-x64-deb
+
+    - name: Get Distribution Caches (linux-musl-arm64-dpkg)
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.DIST_PATH }}/*
+        key: linux-musl-arm64-deb
 
     - name: Publish Release (github)
       uses: marvinpinto/action-automatic-releases@latest
