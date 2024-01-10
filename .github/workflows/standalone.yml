@@ -297,7 +297,7 @@ jobs:
       env:
         TAR_NAME: neo-cli-${{ matrix.runtime }}-${{ github.event.inputs.version }}
 
-    - if: ${{ EndsWith(matrix.runtime, 'amd64') }}
+    - if: ${{ EndsWith(matrix.runtime, 'x64') }}
       name: Execute Build Script (neo-cli-csharp-amd64)
       working-directory: .github/scripts/neo-cli-csharp
       run: ./build-dpkg.sh amd64
