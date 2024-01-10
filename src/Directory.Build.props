@@ -24,7 +24,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!--<Compile Remove="C:\Red4Sec\neo\neo\src\IsExternalInit.cs" />-->
     <Compile Include="$(MSBuildThisFileDirectory)IsExternalInit.cs" Visible="false" />
   </ItemGroup>
 </Project>
