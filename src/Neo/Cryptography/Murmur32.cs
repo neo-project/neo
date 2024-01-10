@@ -79,7 +79,7 @@ namespace Neo.Cryptography
 
         protected override byte[] HashFinal()
         {
-            byte[] buffer = new byte[sizeof(uint)]; // GC.AllocateUninitializedArray<byte>(sizeof(uint));
+            byte[] buffer = new byte[sizeof(uint)];
             TryHashFinal(buffer, out _);
             return buffer;
         }
