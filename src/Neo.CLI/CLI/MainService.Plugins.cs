@@ -232,7 +232,7 @@ namespace Neo.CLI
         private async void OnPluginsCommandAsync()
         {
             var plugins = await GetPluginListAsync();
-            var installed = Plugin.Plugins.Select(p => p.Name.ToLower());
+            var installed = Plugin.Plugins.Select(p => p.Name.ToLowerInvariant());
             plugins.ForEach(
                 p =>
                 {
