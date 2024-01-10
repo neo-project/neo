@@ -71,7 +71,7 @@ namespace Neo.SmartContract
 
         public void SetResult(T result)
         {
-            Task.GetAwaiter().SetResult(result);
+            Task.GetAwaiterWithReturn().SetResult(result);
         }
 
         public void AwaitOnCompleted<TAwaiter, TStateMachine>(ref TAwaiter awaiter, ref TStateMachine stateMachine)
