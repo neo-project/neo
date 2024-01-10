@@ -69,7 +69,7 @@ jobs:
 
     - if: ${{ steps.cache-leveldb.outputs.cache-hit == 'false' || env.BYPASS_LEVELDB == true }}
       name: Cache Distribution
-      uses: actions/cache@v3
+      uses: actions/cache/save@v3
       with:
         path: ./leveldb/build/Release/*
         key: leveldb-windows-${{ matrix.arch }}
@@ -176,7 +176,7 @@ jobs:
         ls -la ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
 
     - name: Cache Distribution
-      uses: actions/cache@v3
+      uses: actions/cache/save@v3
       with:
         path: ${{ env.DIST_PATH }}/*
         key: ${{ matrix.runtime }}
@@ -257,7 +257,7 @@ jobs:
         ls -la ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
 
     - name: Cache Distribution
-      uses: actions/cache@v3
+      uses: actions/cache/save@v3
       with:
         path: ${{ env.DIST_PATH }}/*
         key: ${{ matrix.runtime }}
@@ -313,7 +313,7 @@ jobs:
       run: mv -v ${{ env.PKGS_PATH }}.deb ${{ env.DIST_PATH }}/
 
     - name: Cache Distribution
-      uses: actions/cache@v3
+      uses: actions/cache/save@v3
       with:
         path: ${{ env.DIST_PATH }}/*
         key: ${{ matrix.runtime }}
