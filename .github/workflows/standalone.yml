@@ -7,17 +7,12 @@ on:
         type: string
         description: 'Version Number (Example: 1.0.0)'
         required: true
-      clear-leveldb:
-        type: boolean
-        description: 'Rebuild Leveldb'
-        default: false
 
 env:
   DOTNET_VERSION: 7.0.x
   CONFIGURATION: Release
   DIST_PATH: /tmp/dist
   OUTPUT_PATH: /tmp/out
-  BYPASS_LEVELDB: ${{ github.event.inputs.clear-leveldb }}
   DPKGS_PATH: /tmp/dpkgs-builds
   NEO_VERSION: ${{ github.event.inputs.version }}
 
@@ -39,7 +34,7 @@ jobs:
         enableCrossOsArchive: true
         lookup-only: true
 
-    - if: ${{ steps.cache-leveldb.outputs.cache-hit == 'false' || env.BYPASS_LEVELDB == true }}
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit == 'false' }}
       name: Checkout Repository Code (leveldb)
       uses: actions/checkout@v4
       with:
@@ -48,26 +43,26 @@ jobs:
         submodules: true
         fetch-depth: 0
 
-    - if: ${{ steps.cache-leveldb.outputs.cache-hit == 'false' || env.BYPASS_LEVELDB == true }}
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit == 'false' }}
       name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
 
-    - if: ${{ steps.cache-leveldb.outputs.cache-hit == 'false' || env.BYPASS_LEVELDB == true }}
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit == 'false' }}
       name: Setup LevelDb
       working-directory: ./leveldb
       run: mkdir -p ./build/Release
 
-    - if: ${{ steps.cache-leveldb.outputs.cache-hit == 'false' || env.BYPASS_LEVELDB == true }}
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit == 'false' }}
       name: Create Build Files (win-${{ matrix.arch }})
       working-directory: ./leveldb/build
       run: cmake -DBUILD_SHARED_LIBS=ON -A ${{ matrix.arch }} ..
 
-    - if: ${{ steps.cache-leveldb.outputs.cache-hit == 'false' || env.BYPASS_LEVELDB == true }}
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit == 'false' }}
       name: Build (MSBuild)
       working-directory: ./leveldb/build
       run: msbuild ./leveldb.sln /p:Configuration=Release
 
-    - if: ${{ steps.cache-leveldb.outputs.cache-hit == 'false' || env.BYPASS_LEVELDB == true }}
+    - if: ${{ steps.cache-leveldb.outputs.cache-hit == 'false' }}
       name: Cache Distribution
       uses: actions/cache/save@v3
       with:
@@ -382,3 +377,29 @@ jobs:
         automatic_release_tag: "v${{ github.event.inputs.version }}"
         files: ${{ env.DIST_PATH }}/*
 
+  cleanup:
+    needs: [release-neo-cli]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup
+        run: |
+          gh extension install actions/gh-actions-cache
+          
+          echo "Fetching list of cache key"
+          cacheKeysForPR=$(gh actions-cache list -R $REPO -B $BRANCH -L 100 | cut -f 1 )
+
+          ## Setting this to not fail the workflow while deleting cache keys. 
+          set +e
+          echo "Deleting caches..."
+          for cacheKey in $cacheKeysForPR
+          do
+              if [ "$cacheKey" != "leveldb-windows-x64" ] && [ "$cacheKey" != "leveldb-windows-arm64" ]
+              then
+                gh actions-cache delete $cacheKey -R $REPO -B $BRANCH --confirm
+              fi
+          done
+          echo "Done"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.ref }}
