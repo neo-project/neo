@@ -118,7 +118,7 @@ namespace Neo.IO
         {
             int length = BinaryPrimitives.ReadInt32LittleEndian(data);
             if (length < 0 || length > maxOutput) throw new FormatException();
-            byte[] result = new byte[length]; // GC.AllocateUninitializedArray<byte>(length);
+            byte[] result = new byte[length];
             if (LZ4Codec.Decode(data[4..], result) != length)
                 throw new FormatException();
             return result;
