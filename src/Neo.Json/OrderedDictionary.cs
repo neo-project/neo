@@ -90,6 +90,8 @@ namespace Neo.Json
             return collection.Remove(key);
         }
 
+#pragma warning disable CS8767
+
         public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)
         {
             if (collection.TryGetValue(key, out var entry))
@@ -100,6 +102,8 @@ namespace Neo.Json
             value = default;
             return false;
         }
+
+#pragma warning restore CS8767
 
         void ICollection<KeyValuePair<TKey, TValue>>.Add(KeyValuePair<TKey, TValue> item)
         {
