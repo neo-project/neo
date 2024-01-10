@@ -409,7 +409,12 @@ namespace Neo.Ledger
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, system.Settings, 0))
                 {
                     engine.LoadScript(onPersistScript);
-                    if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
+                    if (engine.Execute() != VMState.HALT)
+                    {
+                        if (engine.FaultException != null)
+                            throw engine.FaultException;
+                        throw new InvalidOperationException();
+                    }
                     ApplicationExecuted application_executed = new(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
@@ -438,7 +443,12 @@ namespace Neo.Ledger
                 using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, system.Settings, 0))
                 {
                     engine.LoadScript(postPersistScript);
-                    if (engine.Execute() != VMState.HALT) throw new InvalidOperationException();
+                    if (engine.Execute() != VMState.HALT)
+                    {
+                        if (engine.FaultException != null)
+                            throw engine.FaultException;
+                        throw new InvalidOperationException();
+                    }
                     ApplicationExecuted application_executed = new(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
