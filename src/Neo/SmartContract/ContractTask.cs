@@ -43,11 +43,11 @@ namespace Neo.SmartContract
     {
         private readonly ContractTaskAwaiter<T> awaiter;
 
-        public static ContractTask CompletedTask { get; }
+        public static ContractTask<T> CompletedTask { get; }
 
         static ContractTask()
         {
-            CompletedTask = new ContractTask();
+            CompletedTask = new ContractTask<T>();
             CompletedTask.GetAwaiter().SetResult();
         }
 
