@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#if !NET5_0_OR_GREATER
 
 using System.ComponentModel;
 
@@ -24,5 +23,7 @@ namespace System.Runtime.CompilerServices
     {
     }
 }
+
+#if !NET5_0_OR_GREATER
 
 #endif

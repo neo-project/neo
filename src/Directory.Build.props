@@ -22,4 +22,9 @@
     <None Include="../neo.png" Pack="true" Visible="false" PackagePath=""/>
     <None Include="../README.md" Pack="true" Visible="false" PackagePath=""/>
   </ItemGroup>
+
+  <ItemGroup>
+    <!--<Compile Remove="C:\Red4Sec\neo\neo\src\IsExternalInit.cs" />-->
+    <Compile Include="$(MSBuildThisFileDirectory)IsExternalInit.cs" Visible="false" />
+  </ItemGroup>
 </Project>
