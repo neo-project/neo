@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Util.Internal;
 using Microsoft.Extensions.Configuration;
 using Neo.ConsoleService;
 using Neo.Json;
@@ -228,21 +229,52 @@ namespace Neo.CLI
         /// Process "plugins" command
         /// </summary>
         [ConsoleCommand("plugins", Category = "Plugin Commands")]
-        private void OnPluginsCommand()
+        private async void OnPluginsCommandAsync()
         {
-            if (Plugin.Plugins.Count > 0)
-            {
-                Console.WriteLine("Loaded plugins:");
-                foreach (Plugin plugin in Plugin.Plugins)
+            var plugins = await GetPluginListAsync();
+            var installed = Plugin.Plugins.Select(p => p.Name.ToLower());
+            plugins.ForEach(
+                p =>
                 {
-                    var name = $"{plugin.Name}@{plugin.Version}";
-                    Console.WriteLine($"\t{name,-25}{plugin.Description}");
-                }
-            }
-            else
-            {
-                ConsoleHelper.Warning("No loaded plugins");
-            }
+                    if (p.Contains(".zip")) p = p.Substring(0, p.Length - 4);
+                    var name = "";
+                    var installedPlugin = Plugin.Plugins.Where(pp => string.Equals(pp.Name, p, StringComparison.CurrentCultureIgnoreCase)).ToArray();
+                    if (installedPlugin.Length == 1)
+                    {
+                        var plugin = $"(installed) {p}";
+                        Console.WriteLine($"\t{plugin,-25} @{installedPlugin[0].Version} {installedPlugin[0].Description}");
+                    }
+                    else
+                    {
+                        var plugin = $"{p}";
+                        Console.WriteLine($"\t{plugin,-25}");
+                    }
+                });
+        }
+
+        private async Task<IEnumerable<string?>?> GetPluginListAsync()
+        {
+            using HttpClient http = new();
+
+            Version versionCore = typeof(Plugin).Assembly.GetName().Version!;
+            HttpRequestMessage request = new(HttpMethod.Get,
+                "https://api.github.com/repos/neo-project/neo-modules/releases");
+            request.Headers.UserAgent.ParseAdd(
+                $"{GetType().Assembly.GetName().Name}/{GetType().Assembly.GetVersion()}");
+            using HttpResponseMessage responseApi = await http.SendAsync(request);
+            byte[] buffer = await responseApi.Content.ReadAsByteArrayAsync();
+            if (JToken.Parse(buffer) is not JArray arr) throw new Exception("Plugin doesn't exist.");
+            return arr
+                .Where(p => p?["tag_name"] is not null && p["assets"] is not null)
+                .Where(p => !p!["tag_name"]!.GetString().Contains('-'))
+                .Select(p => new
+                {
+                    Version = Version.Parse(p!["tag_name"]!.GetString().TrimStart('v')),
+                    Assets = p["assets"] as JArray
+                })
+                .OrderByDescending(p => p.Version)
+                .First(p => p.Version <= versionCore).Assets?
+                .Select(p => p?["name"]?.GetString());
         }
     }
 }
