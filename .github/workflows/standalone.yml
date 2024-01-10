@@ -309,7 +309,7 @@ jobs:
       run: ./build-dpkg.sh arm64
 
     - name: Debian Package To Distribution Directory (Copy)
-      run: mv -v ${PKGS_PATH}.deb ${{ env.DIST_PATH }}/
+      run: mv -v ${{ env.PKGS_PATH }}.deb ${{ env.DIST_PATH }}/
 
     - name: Cache Distribution
       uses: actions/cache@v3
