@@ -13,7 +13,7 @@ namespace Neo
 {
     public enum ContainsTransactionType
     {
-        NoExists,
+        NotExist,
         ExistsInPool,
         ExistsInLedger
     }
