@@ -292,8 +292,8 @@ jobs:
       run: |
         mkdir -p /tmp/${{ matrix.runtime }}
         mkdir -p ${{ env.DPKGS_PATH }}
-        mv -v ${{ env.DIST_PATH }}/${{ env.TAR_BALL }}.tar.gz /tmp/
-        tar -xvf ${{ env.TAR_BALL }}.tar.gz -C ${{ matrix.runtime }}/
+        mv -v ${{ env.DIST_PATH }}/${{ env.TAR_NAME }}.tar.gz /tmp/
+        tar -xvf ${{ env.TAR_NAME }}.tar.gz -C ${{ matrix.runtime }}/
         rm -v ${{ matrix.runtime }}/*.json
       env:
         TAR_NAME: neo-cli-${{ matrix.runtime }}-${{ github.event.inputs.version }}
