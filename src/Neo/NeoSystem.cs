@@ -274,10 +274,11 @@ namespace Neo
         /// </summary>
         /// <param name="hash">The hash of the transaction</param>
         /// <returns><see langword="true"/> if the transaction exists; otherwise, <see langword="false"/>.</returns>
-        public bool ContainsTransaction(UInt256 hash)
+        public ContainsTransactionType ContainsTransaction(UInt256 hash)
         {
-            if (MemPool.ContainsKey(hash)) return true;
-            return NativeContract.Ledger.ContainsTransaction(StoreView, hash);
+            if (MemPool.ContainsKey(hash)) return ContainsTransactionType.ExistsInPool;
+            return NativeContract.Ledger.ContainsTransaction(StoreView, hash) ?
+                ContainsTransactionType.ExistsInLedger : ContainsTransactionType.NotExist;
         }
 
         /// <summary>

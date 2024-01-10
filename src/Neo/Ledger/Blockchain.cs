@@ -339,7 +339,11 @@ namespace Neo.Ledger
 
         private VerifyResult OnNewTransaction(Transaction transaction)
         {
-            if (system.ContainsTransaction(transaction.Hash)) return VerifyResult.AlreadyExists;
+            switch (system.ContainsTransaction(transaction.Hash))
+            {
+                case ContainsTransactionType.ExistsInPool: return VerifyResult.AlreadyInPool;
+                case ContainsTransactionType.ExistsInLedger: return VerifyResult.AlreadyExists;
+            }
             if (system.ContainsConflictHash(transaction.Hash, transaction.Signers.Select(s => s.Account))) return VerifyResult.HasConflicts;
             return system.MemPool.TryAdd(transaction, system.StoreView);
         }
@@ -393,11 +397,22 @@ namespace Neo.Ledger
 
         private void OnTransaction(Transaction tx)
         {
-            if (system.ContainsTransaction(tx.Hash))
-                SendRelayResult(tx, VerifyResult.AlreadyExists);
-            else if (system.ContainsConflictHash(tx.Hash, tx.Signers.Select(s => s.Account)))
-                SendRelayResult(tx, VerifyResult.HasConflicts);
-            else system.TxRouter.Forward(new TransactionRouter.Preverify(tx, true));
+            switch (system.ContainsTransaction(tx.Hash))
+            {
+                case ContainsTransactionType.ExistsInPool:
+                    SendRelayResult(tx, VerifyResult.AlreadyInPool);
+                    break;
+                case ContainsTransactionType.ExistsInLedger:
+                    SendRelayResult(tx, VerifyResult.AlreadyExists);
+                    break;
+                default:
+                    {
+                        if (system.ContainsConflictHash(tx.Hash, tx.Signers.Select(s => s.Account)))
+                            SendRelayResult(tx, VerifyResult.HasConflicts);
+                        else system.TxRouter.Forward(new TransactionRouter.Preverify(tx, true));
+                        break;
+                    }
+            }
         }
 
         private void Persist(Block block)
