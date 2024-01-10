@@ -293,7 +293,7 @@ jobs:
         mkdir -p /tmp/${{ matrix.runtime }}
         mkdir -p ${{ env.DPKGS_PATH }}
         mv -v ${{ env.DIST_PATH }}/${{ matrix.runtime }}.tar.gz /tmp/
-        tar -xvf ${{ matrix.runtime }}.tar.gz -C ${{ matrix.runtime }}/
+        tar -xvf neo-cli-${{ matrix.runtime }}-${{ github.event.inputs.version }}.tar.gz -C ${{ matrix.runtime }}/
         rm -v ${{ matrix.runtime }}/*.json
 
     - if: ${{ EndsWith(matrix.runtime, 'amd64') }}
