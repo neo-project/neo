@@ -278,7 +278,7 @@ namespace Neo
         {
             if (MemPool.ContainsKey(hash)) return ContainsTransactionType.ExistsInPool;
             return NativeContract.Ledger.ContainsTransaction(StoreView, hash) ?
-                ContainsTransactionType.ExistsInLedger : ContainsTransactionType.NotExists;
+                ContainsTransactionType.ExistsInLedger : ContainsTransactionType.NotExist;
         }
 
         /// <summary>
