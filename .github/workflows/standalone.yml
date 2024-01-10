@@ -11,7 +11,6 @@ on:
         type: boolean
         description: 'Rebuild Leveldb'
         default: false
-        required: true
 
 env:
   DOTNET_VERSION: 7.0.x
@@ -19,6 +18,8 @@ env:
   DIST_PATH: /tmp/dist
   OUTPUT_PATH: /tmp/out
   BYPASS_LEVELDB: ${{ github.event.inputs.clear-leveldb }}
+  DPKGS_PATH: /tmp/dpkgs-builds
+  NEO_VERSION: ${{ github.event.inputs.version }}
 
 jobs:
   build-leveldb:
@@ -80,7 +81,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        runtime: [linux-x64, linux-arm64, linux-musl-arm64, osx-x64, osx-arm64, win-x64, win-arm64]
+        runtime: [linux-x64, linux-arm64, linux-musl-x64, linux-musl-arm64, win-x64, win-arm64]
 
     steps:
     - name: Checkout Repository Code
@@ -162,22 +163,98 @@ jobs:
     - name: Create Tarball File (linux)
       if: ${{ startsWith(matrix.runtime, 'linux') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: tar -czvf ${{ env.DIST_PATH }}/neo-cli-${{ github.event.inputs.version }}-${{ matrix.runtime }}.tar.gz .
-
-    - name: Create Tarball File (osx)
-      if: ${{ startsWith(matrix.runtime, 'osx') }}
-      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: tar -cJf ${{ env.DIST_PATH }}/neo-cli-${{ github.event.inputs.version }}-${{ matrix.runtime }}.tar.xz .
+      run: tar -czvf ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}-${{ github.event.inputs.version }}.tar.gz .
 
     - name: Create Zip File (win)
       if: ${{ startsWith(matrix.runtime, 'win') }}
       working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
-      run: zip ${{ env.DIST_PATH }}/neo-cli-${{ github.event.inputs.version }}-${{ matrix.runtime }}.zip -r *
+      run: zip ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}-${{ github.event.inputs.version }}.zip -r *
 
     - name: Output/Distribution Directory Contents
       run: |
-        ls -l ${{ env.DIST_PATH }}
-        ls -l ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
+        ls -la ${{ env.DIST_PATH }}
+        ls -la ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
+
+    - name: Cache Distribution
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.DIST_PATH }}/*
+        key: ${{ matrix.runtime }}
+
+  codesign-macos:
+    name: Build (${{ matrix.runtime }})
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        runtime: [osx-x64, osx-arm64]
+
+    steps:
+    - name: Checkout Repository Code
+      uses: actions/checkout@v4
+      with:
+        path: neo
+        fetch-depth: 0
+
+    - name: Checkout Repository Code (neo-modules)
+      uses: actions/checkout@v4
+      with:
+        repository: neo-project/neo-modules
+        path: neo-modules
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: .NET Publish (neo-cli)
+      working-directory: ./neo
+      run: |
+        dotnet publish ./src/Neo.CLI \
+        --framework net7.0 \
+        --configuration ${{ env.CONFIGURATION }} \
+        --runtime ${{ matrix.runtime }} \
+        --self-contained true \
+        --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }} \
+        --verbosity normal \
+        -p:RuntimeIdentifier=${{ matrix.runtime }} \
+        -p:SelfContained=true \
+        -p:IncludeNativeLibrariesForSelfExtract=false \
+        -p:PublishTrimmed=false \
+        -p:PublishSingleFile=true \
+        -p:PublishReadyToRun=true \
+        -p:EnableCompressionInSingleFile=true \
+        -p:DebugType=embedded \
+        -p:ServerGarbageCollection=true
+
+    - name: .NET Build (LevelDBStore)
+      working-directory: ./neo-modules
+      run: |
+        dotnet build ./src/LevelDBStore/LevelDBStore.csproj \
+        --framework net7.0 \
+        --configuration ${{ env.CONFIGURATION }} \
+        --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore \
+        --verbosity normal
+
+    - name: Remove Xml Comment Files
+      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
+      run: rm -v *.xml
+
+    - name: CodeSign (neo-cli)
+      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
+      run: codesign --force --deep -s - neo-cli
+
+    - name: Create Distribution Directory
+      run: mkdir -p ${{ env.DIST_PATH }}
+
+    - name: Create Tarball File
+      working-directory: ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
+      run: tar -cJf ${{ env.DIST_PATH }}/neo-cli-${{ matrix.runtime }}-${{ github.event.inputs.version }}.tar.xz .
+
+    - name: Output/Distribution Directory Contents
+      run: |
+        ls -la ${{ env.DIST_PATH }}
+        ls -la ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}
 
     - name: Cache Distribution
       uses: actions/cache@v3
@@ -187,48 +264,54 @@ jobs:
 
   Release-neo-cli:
     name: Release (github)
-    needs: [build-neo-cli]
+    needs: [build-neo-cli, codesign-macos]
     runs-on: ubuntu-latest
 
     steps:
     - name: Get Distribution Caches (linux-x64)
-      uses: actions/cache/restore@v3
+      uses: actions/cache@v3
       with:
         path: ${{ env.DIST_PATH }}/*
         key: linux-x64
 
     - name: Get Distribution Caches (linux-arm64)
-      uses: actions/cache/restore@v3
+      uses: actions/cache@v3
       with:
         path: ${{ env.DIST_PATH }}/*
         key: linux-arm64
 
+    - name: Get Distribution Caches (linux-musl-x64)
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.DIST_PATH }}/*
+        key: linux-musl-x64
+
     - name: Get Distribution Caches (linux-musl-arm64)
-      uses: actions/cache/restore@v3
+      uses: actions/cache@v3
       with:
         path: ${{ env.DIST_PATH }}/*
         key: linux-musl-arm64
 
     - name: Get Distribution Caches (osx-x64)
-      uses: actions/cache/restore@v3
+      uses: actions/cache@v3
       with:
         path: ${{ env.DIST_PATH }}/*
         key: osx-x64
 
     - name: Get Distribution Caches (osx-arm64)
-      uses: actions/cache/restore@v3
+      uses: actions/cache@v3
       with:
         path: ${{ env.DIST_PATH }}/*
         key: osx-arm64
 
     - name: Get Distribution Caches (win-x64)
-      uses: actions/cache/restore@v3
+      uses: actions/cache@v3
       with:
         path: ${{ env.DIST_PATH }}/*
         key: win-x64
 
     - name: Get Distribution Caches (win-arm64)
-      uses: actions/cache/restore@v3
+      uses: actions/cache@v3
       with:
         path: ${{ env.DIST_PATH }}/*
         key: win-arm64
