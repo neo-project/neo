@@ -301,11 +301,13 @@ jobs:
       name: Execute Build Script (neo-cli-csharp-amd64)
       working-directory: .github/scripts/neo-cli-csharp
       run: ./build-dpkg.sh amd64
+      shell: bash
 
     - if: ${{ EndsWith(matrix.runtime, 'arm64') }}
       name: Execute Build Script (neo-cli-csharp-arm64)
       working-directory: .github/scripts/neo-cli-csharp
       run: ./build-dpkg.sh arm64
+      shell: bash
 
     - name: Debian Package To Distribution Directory (Copy)
       run: mv -v ${{ env.PKGS_PATH }}.deb ${{ env.DIST_PATH }}/
