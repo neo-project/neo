@@ -56,10 +56,10 @@ namespace Neo.Cryptography
             {
                 uint k = BinaryPrimitives.ReadUInt32LittleEndian(source);
                 k *= c1;
-                k = BitOperations.RotateLeft(k, r1);
+                k = Helper.RotateLeft(k, r1);
                 k *= c2;
                 hash ^= k;
-                hash = BitOperations.RotateLeft(hash, r2);
+                hash = Helper.RotateLeft(hash, r2);
                 hash = hash * m + n;
             }
             if (source.Length > 0)
@@ -72,7 +72,7 @@ namespace Neo.Cryptography
                     case 1: remainingBytes ^= source[0]; break;
                 }
                 remainingBytes *= c1;
-                remainingBytes = BitOperations.RotateLeft(remainingBytes, r1);
+                remainingBytes = Helper.RotateLeft(remainingBytes, r1);
                 remainingBytes *= c2;
                 hash ^= remainingBytes;
             }
