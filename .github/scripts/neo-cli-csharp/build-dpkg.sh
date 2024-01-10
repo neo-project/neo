@@ -52,6 +52,6 @@ if [ ${status} -eq 0 ]; then
   dpkg-deb --info "${PKGS_PATH}.deb";
 fi
 
-echo "PKGS_PATH=${PKGS_PATH}" >> ${GITHUB_ENV}
+echo -e "PKGS_PATH=${PKGS_PATH}" >> ${GITHUB_ENV}
 
 exit ${status};

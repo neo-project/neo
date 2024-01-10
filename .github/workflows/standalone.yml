@@ -277,8 +277,7 @@ jobs:
     - name: Checkout Repository Code
       uses: actions/checkout@v4
       with:
-        path: scripts
-        sparse-checkout: .github/workflows/scripts
+        sparse-checkout: .github/scripts
         fetch-depth: 0
 
     - name: Get Distribution Caches (${{ matrix.runtime }})
@@ -300,12 +299,12 @@ jobs:
 
     - if: ${{ EndsWith(matrix.runtime, 'amd64') }}
       name: Execute Build Script (neo-cli-csharp-amd64)
-      working-directory: ./scripts/neo-cli-csharp
+      working-directory: .github/scripts/neo-cli-csharp
       run: ./build-dpkg.sh amd64
 
     - if: ${{ EndsWith(matrix.runtime, 'arm64') }}
       name: Execute Build Script (neo-cli-csharp-arm64)
-      working-directory: ./scripts/neo-cli-csharp
+      working-directory: .github/scripts/neo-cli-csharp
       run: ./build-dpkg.sh arm64
 
     - name: Debian Package To Distribution Directory (Copy)
