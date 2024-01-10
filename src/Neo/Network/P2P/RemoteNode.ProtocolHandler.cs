@@ -319,7 +319,7 @@ namespace Neo.Network.P2P
             switch (inventory)
             {
                 case Transaction transaction:
-                    if (!(system.ContainsTransaction(transaction.Hash) || system.ContainsConflictHash(transaction.Hash, transaction.Signers.Select(s => s.Account))))
+                    if (!(system.ContainsTransaction(transaction.Hash) != ContainsTransactionType.NoExists || system.ContainsConflictHash(transaction.Hash, transaction.Signers.Select(s => s.Account))))
                         system.TxRouter.Tell(new TransactionRouter.Preverify(transaction, true));
                     break;
                 case Block block:
