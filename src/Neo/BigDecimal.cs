@@ -55,7 +55,7 @@ namespace Neo
         public unsafe BigDecimal(decimal value)
         {
             Span<int> span = stackalloc int[4];
-            span = decimal.GetBits(value);
+            decimal.GetBits(value, span);
             fixed (int* p = span)
             {
                 ReadOnlySpan<byte> buffer = new(p, 16);
@@ -73,7 +73,7 @@ namespace Neo
         public unsafe BigDecimal(decimal value, byte decimals)
         {
             Span<int> span = stackalloc int[4];
-            span = decimal.GetBits(value);
+            decimal.GetBits(value, span);
             fixed (int* p = span)
             {
                 ReadOnlySpan<byte> buffer = new(p, 16);

@@ -57,7 +57,7 @@ namespace Neo.SmartContract.Manifest
             };
             if (string.IsNullOrEmpty(parameter.Name))
                 throw new FormatException();
-            if (!Enum.IsDefined(typeof(ContractParameterType), parameter.Type) || parameter.Type == ContractParameterType.Void)
+            if (!Enum.IsDefined(parameter.Type) || parameter.Type == ContractParameterType.Void)
                 throw new FormatException();
             return parameter;
         }

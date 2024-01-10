@@ -37,7 +37,7 @@ namespace Neo.Cryptography.ECC
         private ECCurve(BigInteger Q, BigInteger A, BigInteger B, BigInteger N, byte[] G)
         {
             this.Q = Q;
-            this.ExpectedECPointLength = ((int)Helper.GetBitLength(Q) + 7) / 8; //((int)Q.GetBitLength() + 7) / 8;
+            this.ExpectedECPointLength = ((int)Q.GetBitLength() + 7) / 8;
             this.A = new ECFieldElement(A, this);
             this.B = new ECFieldElement(B, this);
             this.N = N;

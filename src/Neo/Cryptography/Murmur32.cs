@@ -11,6 +11,7 @@
 
 using System;
 using System.Buffers.Binary;
+using System.Numerics;
 using System.Security.Cryptography;
 
 namespace Neo.Cryptography
@@ -55,10 +56,10 @@ namespace Neo.Cryptography
             {
                 uint k = BinaryPrimitives.ReadUInt32LittleEndian(source);
                 k *= c1;
-                k = (k << r1) | (k >> (32 - r1)); // BitOperations.RotateLeft(k, r1);
+                k = BitOperations.RotateLeft(k, r1);
                 k *= c2;
                 hash ^= k;
-                hash = (hash << r2) | (hash >> (32 - r2)); // BitOperations.RotateLeft(hash, r2);
+                hash = BitOperations.RotateLeft(hash, r2);
                 hash = hash * m + n;
             }
             if (source.Length > 0)
@@ -71,7 +72,7 @@ namespace Neo.Cryptography
                     case 1: remainingBytes ^= source[0]; break;
                 }
                 remainingBytes *= c1;
-                remainingBytes = (remainingBytes << r1) | (remainingBytes >> (32 - r1));  //BitOperations.RotateLeft(remainingBytes, r1);
+                remainingBytes = BitOperations.RotateLeft(remainingBytes, r1);
                 remainingBytes *= c2;
                 hash ^= remainingBytes;
             }
@@ -79,7 +80,7 @@ namespace Neo.Cryptography
 
         protected override byte[] HashFinal()
         {
-            byte[] buffer = new byte[sizeof(uint)];
+            byte[] buffer = GC.AllocateUninitializedArray<byte>(sizeof(uint));
             TryHashFinal(buffer, out _);
             return buffer;
         }

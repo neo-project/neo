@@ -73,7 +73,7 @@ namespace Neo.SmartContract
         {
             if (cache is null)
             {
-                cache = new byte[sizeof(int) + Key.Length];
+                cache = GC.AllocateUninitializedArray<byte>(sizeof(int) + Key.Length);
                 BinaryPrimitives.WriteInt32LittleEndian(cache, Id);
                 Key.CopyTo(cache.AsMemory(sizeof(int)));
             }

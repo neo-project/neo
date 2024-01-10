@@ -18,7 +18,6 @@ using Org.BouncyCastle.Crypto.Parameters;
 using System;
 using System.Buffers.Binary;
 using System.Linq;
-using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using static Neo.Helper;
@@ -32,22 +31,6 @@ namespace Neo.Cryptography
     public static class Helper
     {
         private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
-
-        public static long GetBitLength(BigInteger num)
-        {
-            var bytes = num.ToByteArray();
-            var size = bytes.Length;
-            if (size == 0) return 0;
-            int v = bytes[size - 1]; // 8-bit value to find the log2 of 
-            if (v == 0) return (size - 1) * 8;
-            int r; // result of log2(v) will go here
-            int shift;
-            r = (v > 0xF) ? 4 : 0; v >>= r;
-            shift = (v > 0x3) ? 2 : 0; v >>= shift; r |= shift;
-            r |= (v >> 1);
-            return (size - 1) * 8 + r + 1;
-        }
-
         /// <summary>
         /// Computes the hash value for the specified byte array using the ripemd160 algorithm.
         /// </summary>
@@ -116,7 +99,7 @@ namespace Neo.Cryptography
         /// <returns>The computed hash code.</returns>
         public static byte[] Murmur128(this ReadOnlySpan<byte> value, uint seed)
         {
-            byte[] buffer = new byte[16];
+            byte[] buffer = GC.AllocateUninitializedArray<byte>(16);
             using Murmur128 murmur = new(seed);
             murmur.TryComputeHash(value, buffer, out _);
             return buffer;

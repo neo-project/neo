@@ -39,21 +39,12 @@ namespace Neo.SmartContract
     }
 
     [AsyncMethodBuilder(typeof(ContractTaskMethodBuilder<>))]
-    class ContractTask<T>
+    class ContractTask<T> : ContractTask
     {
-        private readonly ContractTaskAwaiter awaiter;
+        protected override ContractTaskAwaiter<T> CreateAwaiter() => new();
 
-        public static ContractTask CompletedTask { get; }
+        public override ContractTaskAwaiter<T> GetAwaiter() => (ContractTaskAwaiter<T>)base.GetAwaiter();
 
-        public ContractTask()
-        {
-            awaiter = CreateAwaiter();
-        }
-
-        protected virtual ContractTaskAwaiter<T> CreateAwaiter() => new();
-
-        public virtual ContractTaskAwaiter<T> GetAwaiter() => (ContractTaskAwaiter<T>)awaiter;
-
-        public virtual object GetResult() => GetAwaiter().GetResult();
+        public override object GetResult() => GetAwaiter().GetResult();
     }
 }

@@ -11,6 +11,7 @@
 
 using System;
 using System.Buffers.Binary;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 
@@ -62,19 +63,19 @@ namespace Neo.Cryptography
             {
                 ulong k1 = BinaryPrimitives.ReadUInt64LittleEndian(source[i..]);
                 k1 *= c1;
-                k1 = (k1 << r1) | (k1 >> (64 - r1)); //BitOperations.RotateLeft(k1, r1);
+                k1 = BitOperations.RotateLeft(k1, r1);
                 k1 *= c2;
                 H1 ^= k1;
-                H1 = (H1 << 27) | (H1 >> (64 - 27)); //BitOperations.RotateLeft(H1, 27);
+                H1 = BitOperations.RotateLeft(H1, 27);
                 H1 += H2;
                 H1 = H1 * m + n1;
 
                 ulong k2 = BinaryPrimitives.ReadUInt64LittleEndian(source[(i + 8)..]);
                 k2 *= c2;
-                k2 = (k2 << r2) | (k2 >> (64 - r2)); // BitOperations.RotateLeft(k2, r2);
+                k2 = BitOperations.RotateLeft(k2, r2);
                 k2 *= c1;
                 H2 ^= k2;
-                H2 = (H2 << 31) | (H2 >> (64 - 31)); // BitOperations.RotateLeft(H2, 31);
+                H2 = BitOperations.RotateLeft(H2, 31);
                 H2 += H1;
                 H2 = H2 * m + n2;
             }
@@ -101,14 +102,14 @@ namespace Neo.Cryptography
                     case 1: remainingBytesL ^= (ulong)source[alignedLength] << 0; break;
                 }
 
-                H2 ^= ((remainingBytesH * c2 << r2) | (remainingBytesH * c2 >> (64 - r2))) * c1; // BitOperations.RotateLeft(remainingBytesH * c2, r2) * c1;
-                H1 ^= ((remainingBytesL * c1 << r1) | (remainingBytesL * c1 >> (64 - r1))) * c2; //BitOperations.RotateLeft(remainingBytesL * c1, r1) * c2;
+                H2 ^= BitOperations.RotateLeft(remainingBytesH * c2, r2) * c1;
+                H1 ^= BitOperations.RotateLeft(remainingBytesL * c1, r1) * c2;
             }
         }
 
         protected override byte[] HashFinal()
         {
-            byte[] buffer = new byte[sizeof(ulong) * 2];
+            byte[] buffer = GC.AllocateUninitializedArray<byte>(sizeof(ulong) * 2);
             TryHashFinal(buffer, out _);
             return buffer;
         }
