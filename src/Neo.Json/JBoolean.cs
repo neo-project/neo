@@ -63,7 +63,7 @@ namespace Neo.Json
             writer.WriteBooleanValue(Value);
         }
 
-        public override JBoolean Clone()
+        public override JToken Clone()
         {
             return this;
         }
