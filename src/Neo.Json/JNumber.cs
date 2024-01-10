@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The Neo.Json is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// JNumber.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -116,6 +117,51 @@ namespace Neo.Json
         public static implicit operator JNumber(double value)
         {
             return new JNumber(value);
+        }
+
+        public static implicit operator JNumber(long value)
+        {
+            return new JNumber(value);
+        }
+
+        public static bool operator ==(JNumber left, JNumber? right)
+        {
+            if (right is null) return false;
+            return ReferenceEquals(left, right) || left.Value.Equals(right.Value);
+        }
+
+        public static bool operator !=(JNumber left, JNumber right)
+        {
+            return !(left == right);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is null) return false;
+            if (ReferenceEquals(this, obj)) return true;
+
+            var other = obj switch
+            {
+                JNumber jNumber => jNumber,
+                uint u => new JNumber(u),
+                int i => new JNumber(i),
+                ulong ul => new JNumber(ul),
+                long l => new JNumber(l),
+                byte b => new JNumber(b),
+                sbyte sb => new JNumber(sb),
+                short s => new JNumber(s),
+                ushort us => new JNumber(us),
+                decimal d => new JNumber((double)d),
+                float f => new JNumber(f),
+                double d => new JNumber(d),
+                _ => throw new ArgumentOutOfRangeException(nameof(obj), obj, null)
+            };
+            return other == this;
+        }
+
+        public override int GetHashCode()
+        {
+            return Value.GetHashCode();
         }
     }
 }

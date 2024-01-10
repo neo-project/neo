@@ -30,7 +30,7 @@ namespace Neo.CLI
                 new Option<string>(new[] { "--db-engine","/db-engine" }, "Specify the db engine."),
                 new Option<string>(new[] { "--db-path","/db-path" }, "Specify the db path."),
                 new Option<string>(new[] { "--noverify","/noverify" }, "Indicates whether the blocks need to be verified when importing."),
-                new Option<string[]>(new[] { "--plugins","/plugins" }, "The path of the plugin [plugin1 plugin2]."),
+                new Option<string[]>(new[] { "--plugins","/plugins" }, "The list of the plugins [plugin1 plugin2]."),
             };
 
             rootCommand.Handler = CommandHandler.Create<RootCommand, CommandLineOptions, InvocationContext>(Handle);

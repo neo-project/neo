@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// BigDecimal.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -24,17 +25,17 @@ namespace Neo
         /// <summary>
         /// The <see cref="BigInteger"/> value of the number.
         /// </summary>
-        public BigInteger Value => value;
+        public readonly BigInteger Value => value;
 
         /// <summary>
         /// The number of decimal places for this number.
         /// </summary>
-        public byte Decimals => decimals;
+        public readonly byte Decimals => decimals;
 
         /// <summary>
         /// The sign of the number.
         /// </summary>
-        public int Sign => value.Sign;
+        public readonly int Sign => value.Sign;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BigDecimal"/> struct.
@@ -92,7 +93,7 @@ namespace Neo
         /// </summary>
         /// <param name="decimals">The new decimals field.</param>
         /// <returns>The <see cref="BigDecimal"/> that has the new number of decimal places.</returns>
-        public BigDecimal ChangeDecimals(byte decimals)
+        public readonly BigDecimal ChangeDecimals(byte decimals)
         {
             if (this.decimals == decimals) return this;
             BigInteger value;
@@ -128,7 +129,7 @@ namespace Neo
         /// Gets a <see cref="string"/> representing the number.
         /// </summary>
         /// <returns>The <see cref="string"/> representing the number.</returns>
-        public override string ToString()
+        public override readonly string ToString()
         {
             BigInteger divisor = BigInteger.Pow(10, decimals);
             BigInteger result = BigInteger.DivRem(value, divisor, out BigInteger remainder);
@@ -181,7 +182,7 @@ namespace Neo
             return true;
         }
 
-        public int CompareTo(BigDecimal other)
+        public readonly int CompareTo(BigDecimal other)
         {
             BigInteger left = value, right = other.value;
             if (decimals < other.decimals)
@@ -191,18 +192,18 @@ namespace Neo
             return left.CompareTo(right);
         }
 
-        public override bool Equals(object obj)
+        public override readonly bool Equals(object obj)
         {
             if (obj is not BigDecimal @decimal) return false;
             return Equals(@decimal);
         }
 
-        public bool Equals(BigDecimal other)
+        public readonly bool Equals(BigDecimal other)
         {
             return CompareTo(other) == 0;
         }
 
-        public override int GetHashCode()
+        public override readonly int GetHashCode()
         {
             BigInteger divisor = BigInteger.Pow(10, decimals);
             BigInteger result = BigInteger.DivRem(value, divisor, out BigInteger remainder);
