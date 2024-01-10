@@ -3,7 +3,7 @@
 {
 	"name": "C# (.NET)",
 	"image": "mcr.microsoft.com/devcontainers/dotnet:1-7.0-jammy",
-	"postCreateCommand": "dotnet restore && dotnet build && dotnet test",
+	"postCreateCommand": "dotnet restore && dotnet build",
 	"customizations": {
 		"vscode": {
 			"extensions": [
