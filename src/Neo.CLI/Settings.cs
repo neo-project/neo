@@ -111,9 +111,9 @@ namespace Neo
 
     public class UnlockWalletSettings
     {
-        public string? Path { get; } = string.Empty;
-        public string? Password { get; } = string.Empty;
-        public bool IsActive { get; } = false;
+        public string? Path { get; init; } = string.Empty;
+        public string? Password { get; init; } = string.Empty;
+        public bool IsActive { get; init; } = false;
 
         public UnlockWalletSettings(IConfigurationSection section)
         {
