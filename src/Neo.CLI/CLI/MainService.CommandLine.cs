@@ -30,7 +30,7 @@ namespace Neo.CLI
                 new Option<string>(new[] { "--db-engine","/db-engine" }, "Specify the db engine."),
                 new Option<string>(new[] { "--db-path","/db-path" }, "Specify the db path."),
                 new Option<string>(new[] { "--noverify","/noverify" }, "Indicates whether the blocks need to be verified when importing."),
-                new Option<string[]>(new[] { "--plugins","/plugins" }, "The list of the plugins [plugin1 plugin2]."),
+                new Option<string[]>(new[] { "--plugins","/plugins" }, "The list of plugins, if not present, will be installed [plugin1 plugin2]."),
             };
 
             rootCommand.Handler = CommandHandler.Create<RootCommand, CommandLineOptions, InvocationContext>(Handle);
@@ -44,14 +44,14 @@ namespace Neo.CLI
 
         private static void CustomProtocolSettings(CommandLineOptions options, ProtocolSettings settings)
         {
-            ProtocolSettings tempSetting = settings;
+            var tempSetting = settings;
             // if specified config, then load the config and check the network
             if (!string.IsNullOrEmpty(options.Config))
             {
                 tempSetting = ProtocolSettings.Load(options.Config);
             }
 
-            ProtocolSettings customSetting = new ProtocolSettings
+            var customSetting = new ProtocolSettings
             {
                 Network = tempSetting.Network,
                 AddressVersion = tempSetting.AddressVersion,
@@ -71,8 +71,8 @@ namespace Neo.CLI
 
         private static void CustomApplicationSettings(CommandLineOptions options, Settings settings)
         {
-            Settings tempSetting = string.IsNullOrEmpty(options.Config) ? settings : new Settings(new ConfigurationBuilder().AddJsonFile(options.Config, optional: true).Build().GetSection("ApplicationConfiguration"));
-            Settings customSetting = new Settings
+            var tempSetting = string.IsNullOrEmpty(options.Config) ? settings : new Settings(new ConfigurationBuilder().AddJsonFile(options.Config, optional: true).Build().GetSection("ApplicationConfiguration"));
+            var customSetting = new Settings
             {
                 Logger = tempSetting.Logger,
                 Storage = new StorageSettings
@@ -87,11 +87,7 @@ namespace Neo.CLI
                     Password = options.Password ?? tempSetting.UnlockWallet.Password
                 }
             };
-            if (!string.IsNullOrEmpty(options.Config)
-                || !string.IsNullOrEmpty(options.DBEngine)
-                || !string.IsNullOrEmpty(options.DBPath)
-                || !string.IsNullOrEmpty(options.Wallet)
-                || !string.IsNullOrEmpty(options.Password)) Settings.Custom = customSetting;
+            if (options.IsValid) Settings.Custom = customSetting;
         }
     }
 }

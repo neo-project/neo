@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#nullable enable
-
 namespace Neo.CLI
 {
     public class CommandLineOptions
@@ -22,5 +20,16 @@ namespace Neo.CLI
         public string? DBEngine { get; init; }
         public string? DBPath { get; init; }
         public bool? NoVerify { get; init; }
+
+        /// <summary>
+        /// Check if CommandLineOptions was configured
+        /// </summary>
+        public bool IsValid =>
+                !string.IsNullOrEmpty(Config) ||
+                !string.IsNullOrEmpty(Wallet) ||
+                !string.IsNullOrEmpty(Password) ||
+                !string.IsNullOrEmpty(DBEngine) ||
+                !string.IsNullOrEmpty(DBPath) ||
+                (Plugins?.Length > 0);
     }
 }
