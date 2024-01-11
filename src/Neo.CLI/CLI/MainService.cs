@@ -382,7 +382,7 @@ namespace Neo.CLI
             LocalNode = NeoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
 
             // installing plugins
-            var installTasks = options.Plugins?.Select(p => p).Where(p => !string.IsNullOrEmpty(p)).ToList().Select( p => InstallPluginAsync(p));
+            var installTasks = options.Plugins?.Select(p => p).Where(p => !string.IsNullOrEmpty(p)).ToList().Select(p => InstallPluginAsync(p));
             if (installTasks is not null)
             {
                 await Task.WhenAll(installTasks);
