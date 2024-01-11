@@ -33,6 +33,15 @@ namespace Neo.Test
         }
 
         [TestMethod]
+        public void GetBitLengthTest()
+        {
+            foreach (var bi in new[] { BigInteger.Zero, BigInteger.One, BigInteger.MinusOne, new BigInteger(ulong.MaxValue), new BigInteger(long.MinValue) })
+            {
+                Assert.AreEqual(bi.GetBitLength(), Utility.GetBitLength(bi), message: $"Error comparing: {bi}");
+            }
+        }
+
+        [TestMethod]
         public void ModInverseTest()
         {
             Assert.ThrowsException<ArgumentOutOfRangeException>(() => BigInteger.One.ModInverse(BigInteger.Zero));
