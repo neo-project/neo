@@ -293,7 +293,7 @@ namespace Neo.Ledger
         {
             var poolItem = new PoolItem(tx);
 
-            if (_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.AlreadyExists;
+            if (_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.AlreadyInPool;
 
             List<Transaction> removedTransactions = null;
             _txRwLock.EnterWriteLock();

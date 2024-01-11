@@ -88,10 +88,11 @@ namespace Neo.ConsoleService
 
                             availableCommands.Add((command, arguments.ToArray()));
                         }
-                        catch
+                        catch (Exception ex)
                         {
                             // Skip parse errors
                             possibleHelp = command.Key;
+                            ConsoleHelper.Error($"{ex.InnerException?.Message ?? ex.Message}");
                         }
                     }
                 }
@@ -489,8 +490,10 @@ namespace Neo.ConsoleService
             }
             else
             {
-                Debug.Assert(OperatingSystem.IsWindows());
+                Debug.Assert(Environment.OSVersion.Platform == PlatformID.Win32NT);
+#pragma warning disable CA1416
                 ServiceBase.Run(new ServiceProxy(this));
+#pragma warning restore CA1416
             }
         }
 
