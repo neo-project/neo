@@ -69,28 +69,7 @@ namespace Neo.VM
         {
             if (value.IsZero) return 0;
 
-            var bytes = value.ToByteArray();
-            var size = bytes.Length;
-
-            if (size == 0) return 0;
-            if (value.Sign >= 0)
-            {
-                var v = bytes[size - 1]; // 8-bit value to find the log2 of 
-                if (v == 0) return (size - 1) * 8;
-                var r = (v > 0xF) ? 4 : 0; // result of log2(v) will go here
-                v >>= r;
-                var shift = (v > 0x3) ? 2 : 0;
-                v >>= shift;
-                r |= shift;
-                r |= v >> 1;
-                var bitLength = (size - 1) * 8 + r + 1;
-                return bitLength;
-            }
-            else
-            {
-                // TODO: Fix negative numbers
-                throw new InvalidOperationException("value can not be negative");
-            }
+            return (long)Math.Ceiling(BigInteger.Log(value.Sign < 0 ? -value : value + 1, 2.0));
         }
     }
 }
