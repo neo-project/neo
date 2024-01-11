@@ -242,12 +242,16 @@ namespace Neo.CLI
                     if (installedPlugin.Length == 1)
                     {
                         var plugin = $"(installed) {p}";
+                        plugin = plugin.PadLeft(25);
                         Console.WriteLine($"\t{plugin,-25} @{installedPlugin[0].Version} {installedPlugin[0].Description}");
                     }
                     else
                     {
                         var plugin = $"{p}";
+                        plugin = plugin.PadLeft(25);
+                        Console.ForegroundColor = ConsoleColor.Gray;
                         Console.WriteLine($"\t{plugin,-25}");
+                        Console.ForegroundColor = ConsoleColor.Yellow;
                     }
                 });
         }
