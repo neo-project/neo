@@ -65,15 +65,15 @@ namespace Neo.VM
         /// </summary>
         /// <returns>The minimum non-negative number of bits in two's complement notation without the sign bit.</returns>
         /// <remarks>This method returns 0 if the value of current object is equal to <see cref="BigInteger.Zero"/> or <see cref="BigInteger.MinusOne"/>. For positive integers the return value is equal to the ordinary binary representation string length.</remarks>
-        public static long GetBitLength(this BigInteger num)
+        public static long GetBitLength(this BigInteger value)
         {
-            if (num.IsZero) return 0;
+            if (value.IsZero) return 0;
 
-            var bytes = num.ToByteArray();
+            var bytes = value.ToByteArray();
             var size = bytes.Length;
 
             if (size == 0) return 0;
-            if (num.Sign >= 0)
+            if (value.Sign >= 0)
             {
                 var v = bytes[size - 1]; // 8-bit value to find the log2 of 
                 if (v == 0) return (size - 1) * 8;
