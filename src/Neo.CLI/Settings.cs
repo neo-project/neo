@@ -11,6 +11,7 @@
 
 using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
+using System;
 using System.Threading;
 
 namespace Neo
@@ -21,6 +22,7 @@ namespace Neo
         public StorageSettings Storage { get; }
         public P2PSettings P2P { get; }
         public UnlockWalletSettings UnlockWallet { get; }
+        public ContractsSettings Contracts { get; }
 
         static Settings? s_default;
 
@@ -51,6 +53,7 @@ namespace Neo
 
         public Settings(IConfigurationSection section)
         {
+            Contracts = new(section.GetSection(nameof(Contracts)));
             Logger = new(section.GetSection(nameof(Logger)));
             Storage = new(section.GetSection(nameof(Storage)));
             P2P = new(section.GetSection(nameof(P2P)));
@@ -113,6 +116,24 @@ namespace Neo
                 Path = section.GetValue(nameof(Path), string.Empty)!;
                 Password = section.GetValue(nameof(Password), string.Empty)!;
                 IsActive = section.GetValue(nameof(IsActive), false);
+            }
+        }
+    }
+
+    public class ContractsSettings
+    {
+        public UInt160 NeoNameService { get; } = UInt160.Zero;
+
+        public ContractsSettings(IConfigurationSection section)
+        {
+            if (section.Exists())
+            {
+                if (UInt160.TryParse(section.GetValue(nameof(NeoNameService), string.Empty), out var hash))
+                {
+                    NeoNameService = hash;
+                }
+                else
+                    throw new ArgumentException("Neo Name Service (NNS): NeoNameService hash is invalid. Check your config.json.", nameof(NeoNameService));
             }
         }
     }
