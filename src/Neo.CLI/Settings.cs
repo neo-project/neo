@@ -60,12 +60,16 @@ namespace Neo
 
         public Settings()
         {
+            Logger = new LoggerSettings();
+            Storage = new StorageSettings();
+            P2P = new P2PSettings();
+            UnlockWallet = new UnlockWalletSettings();
         }
     }
 
     public class LoggerSettings
     {
-        public string Path { get; init; }
+        public string Path { get; init; } = string.Empty;
         public bool ConsoleOutput { get; init; }
         public bool Active { get; init; }
 
@@ -75,6 +79,8 @@ namespace Neo
             ConsoleOutput = section.GetValue(nameof(ConsoleOutput), false);
             Active = section.GetValue(nameof(Active), false);
         }
+
+        public LoggerSettings() { }
     }
 
     public class StorageSettings
@@ -88,9 +94,7 @@ namespace Neo
             Path = section.GetValue(nameof(Path), "Data_LevelDB_{0}")!;
         }
 
-        public StorageSettings()
-        {
-        }
+        public StorageSettings() { }
     }
 
     public class P2PSettings
@@ -107,6 +111,8 @@ namespace Neo
             MaxConnections = section.GetValue(nameof(MaxConnections), Peer.DefaultMaxConnections);
             MaxConnectionsPerAddress = section.GetValue(nameof(MaxConnectionsPerAddress), 3);
         }
+
+        public P2PSettings() { }
     }
 
     public class UnlockWalletSettings
@@ -125,8 +131,6 @@ namespace Neo
             }
         }
 
-        public UnlockWalletSettings()
-        {
-        }
+        public UnlockWalletSettings() { }
     }
 }
