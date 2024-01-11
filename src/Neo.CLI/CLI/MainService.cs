@@ -664,10 +664,19 @@ namespace Neo.CLI
                         else
                             return addressData.ToScriptHash(NeoSystem.Settings.AddressVersion);
                     }
-                    catch
-                    {
-                        throw new Exception("Neo Name Service (NNS): Record invalid address format.");
-                    }
+                    catch { }
+                }
+                else if (data is Null)
+                {
+                    throw new Exception($"Neo Name Service (NNS): \"{domain}\" domain not found.");
+                }
+                throw new Exception("Neo Name Service (NNS): Record invalid address format.");
+            }
+            else
+            {
+                if (appEng.FaultException is not null)
+                {
+                    throw new Exception($"Neo Name Service (NNS): \"{appEng.FaultException.Message}\".");
                 }
             }
             throw new Exception($"Neo Name Service (NNS): \"{domain}\" domain not found.");
