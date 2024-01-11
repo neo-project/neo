@@ -20,8 +20,8 @@
       "Password": "",
       "IsActive": false
     },
-    "NeoNameService": {
-      "Contract": "0x7061fbd31562664b58f422c3dee4acfd70dba8af"
+    "Contracts": {
+      "NeoNameService": "0x7061fbd31562664b58f422c3dee4acfd70dba8af"
     }
   },
   "ProtocolConfiguration": {

@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Configuration;
-using Neo.ConsoleService;
 using Neo.Network.P2P;
 using System;
 using System.Threading;
@@ -23,7 +22,7 @@ namespace Neo
         public StorageSettings Storage { get; }
         public P2PSettings P2P { get; }
         public UnlockWalletSettings UnlockWallet { get; }
-        public NeoNameServiceSettings NNS { get; }
+        public ContractsSettings Contracts { get; }
 
         static Settings? s_default;
 
@@ -54,7 +53,7 @@ namespace Neo
 
         public Settings(IConfigurationSection section)
         {
-            NNS = new NeoNameServiceSettings(section.GetSection("NeoNameService"));
+            Contracts = new ContractsSettings(section.GetSection(nameof(Contracts)));
             Logger = new(section.GetSection(nameof(Logger)));
             Storage = new(section.GetSection(nameof(Storage)));
             P2P = new(section.GetSection(nameof(P2P)));
@@ -121,20 +120,20 @@ namespace Neo
         }
     }
 
-    public class NeoNameServiceSettings
+    public class ContractsSettings
     {
-        public UInt160 Contract { get; } = UInt160.Zero;
+        public UInt160 NeoNameService { get; } = UInt160.Zero;
 
-        public NeoNameServiceSettings(IConfigurationSection section)
+        public ContractsSettings(IConfigurationSection section)
         {
             if (section.Exists())
             {
-                if (UInt160.TryParse(section.GetValue(nameof(Contract), string.Empty), out var hash))
+                if (UInt160.TryParse(section.GetValue(nameof(NeoNameService), string.Empty), out var hash))
                 {
-                    this.Contract = hash;
+                    NeoNameService = hash;
                 }
                 else
-                    throw new Exception("Neo Name Service (NNS): Contract hash is invalid. Check your config.json.");
+                    throw new ArgumentException("Neo Name Service (NNS): NeoNameService hash is invalid. Check your config.json.", nameof(NeoNameService));
             }
         }
     }
