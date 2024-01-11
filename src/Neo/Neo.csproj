@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka" Version="1.5.15" />
+    <PackageReference Include="Akka" Version="1.5.14" />
     <PackageReference Include="BouncyCastle.NetCore" Version="2.2.1" />
     <PackageReference Include="K4os.Compression.LZ4" Version="1.3.6" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />

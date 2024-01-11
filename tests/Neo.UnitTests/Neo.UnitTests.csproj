@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka.TestKit" Version="1.5.15" />
-    <PackageReference Include="Akka.TestKit.Xunit2" Version="1.5.15" />
+    <PackageReference Include="Akka.TestKit" Version="1.5.14" />
+    <PackageReference Include="Akka.TestKit.Xunit2" Version="1.5.14" />
     <PackageReference Include="Moq" Version="4.20.70" />
   </ItemGroup>
 
