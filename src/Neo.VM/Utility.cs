@@ -75,12 +75,13 @@ namespace Neo.VM
             if (size == 0) return 0;
             if (num.Sign >= 0)
             {
-                int v = bytes[size - 1]; // 8-bit value to find the log2 of 
+                var v = bytes[size - 1]; // 8-bit value to find the log2 of 
                 if (v == 0) return (size - 1) * 8;
-                int r; // result of log2(v) will go here
-                int shift;
-                r = (v > 0xF) ? 4 : 0; v >>= r;
-                shift = (v > 0x3) ? 2 : 0; v >>= shift; r |= shift;
+                var r = (v > 0xF) ? 4 : 0; // result of log2(v) will go here
+                v >>= r;
+                var shift = (v > 0x3) ? 2 : 0;
+                v >>= shift;
+                r |= shift;
                 r |= v >> 1;
                 var bitLength = (size - 1) * 8 + r + 1;
                 return bitLength;
