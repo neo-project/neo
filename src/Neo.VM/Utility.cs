@@ -88,8 +88,7 @@ namespace Neo.VM
             }
             else
             {
-                // TODO: Fix negative numbers
-                throw new InvalidOperationException("value can not be negative");
+                return (long)Math.Ceiling(BigInteger.Log(value.Sign < 0 ? -value : value + 1, 2.0));
             }
         }
     }
