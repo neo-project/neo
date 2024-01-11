@@ -22,7 +22,7 @@ namespace Neo
         public StorageSettings Storage { get; init; }
         public P2PSettings P2P { get; init; }
         public UnlockWalletSettings UnlockWallet { get; init; }
-        public ContractsSettings Contracts { get; init;}
+        public ContractsSettings Contracts { get; init; }
 
         static Settings? s_default;
 
