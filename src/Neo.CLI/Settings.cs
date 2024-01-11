@@ -53,7 +53,7 @@ namespace Neo
 
         public Settings(IConfigurationSection section)
         {
-            Contracts = new ContractsSettings(section.GetSection(nameof(Contracts)));
+            Contracts = new(section.GetSection(nameof(Contracts)));
             Logger = new(section.GetSection(nameof(Logger)));
             Storage = new(section.GetSection(nameof(Storage)));
             P2P = new(section.GetSection(nameof(P2P)));
