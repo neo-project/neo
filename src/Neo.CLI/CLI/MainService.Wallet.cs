@@ -511,6 +511,7 @@ namespace Neo.CLI
                 ConsoleHelper.Error("Incorrect password");
                 return;
             }
+
             var snapshot = NeoSystem.StoreView;
             Transaction tx;
             AssetDescriptor descriptor = new(snapshot, NeoSystem.Settings, asset);
@@ -550,10 +551,10 @@ namespace Neo.CLI
                 return;
             }
 
-            ConsoleHelper.Info("Network fee: ",
-                $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)}\t",
-                "Total fee: ",
-                $"{new BigDecimal((BigInteger)(tx.SystemFee + tx.NetworkFee), NativeContract.GAS.Decimals)} GAS");
+            ConsoleHelper.Info(
+                "Send To: ", $"{to.ToAddress(NeoSystem.Settings.AddressVersion)}\n",
+                "Network fee: ", $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)}\t",
+                "Total fee: ", $"{new BigDecimal((BigInteger)(tx.SystemFee + tx.NetworkFee), NativeContract.GAS.Decimals)} GAS");
             if (!ConsoleHelper.ReadUserInput("Relay tx? (no|yes)").IsYes())
             {
                 return;
