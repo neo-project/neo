@@ -67,6 +67,7 @@ namespace Neo.CLI
         private void OnCloseWalletCommand()
         {
             if (NoWallet()) return;
+            CurrentWallet = null;
             ConsoleHelper.Info("Wallet is closed");
         }
 
