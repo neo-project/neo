@@ -67,6 +67,8 @@ namespace Neo.VM
         /// <remarks>This method returns 0 if the value of current object is equal to <see cref="BigInteger.Zero"/> or <see cref="BigInteger.MinusOne"/>. For positive integers the return value is equal to the ordinary binary representation string length.</remarks>
         public static long GetBitLength(this BigInteger num)
         {
+            if (num.IsZero) return 0;
+
             var bytes = num.ToByteArray();
             var size = bytes.Length;
 
@@ -83,9 +85,11 @@ namespace Neo.VM
                 var bitLength = (size - 1) * 8 + r + 1;
                 return bitLength;
             }
-
-            // TODO: Fix negative numbers
-            throw new NotImplementedException();
+            else
+            {
+                // TODO: Fix negative numbers
+                throw new InvalidOperationException("value can not be negative");
+            }
         }
     }
 }
