@@ -133,7 +133,7 @@ namespace Neo
                     this.Contract = hash;
                 }
                 else
-                    ConsoleHelper.Error("Neo Name Service (NNS): Contract hash is invalid. Check your config.json.");
+                    throw(new Exception("Neo Name Service (NNS): Contract hash is invalid. Check your config.json."));
             }
         }
     }
