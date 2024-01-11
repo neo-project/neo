@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-#if !NET5_0_OR_GREATER
-
 namespace System.Numerics
 {
     public static class BigIntegerExtensions
@@ -36,5 +34,3 @@ namespace System.Numerics
         }
     }
 }
-
-#endif

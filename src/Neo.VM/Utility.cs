@@ -60,8 +60,6 @@ namespace Neo.VM
             return z;
         }
 
-#if !NET5_0_OR_GREATER
-
         /// <summary>
         /// Gets the number of bits required for shortest two's complement representation of the current instance without the sign bit.
         /// </summary>
@@ -81,6 +79,5 @@ namespace Neo.VM
             r |= v >> 1;
             return (size - 1) * 8 + r + 1;
         }
-#endif
     }
 }
