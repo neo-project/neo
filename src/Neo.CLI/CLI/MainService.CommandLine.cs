@@ -25,7 +25,6 @@ namespace Neo.CLI
             RootCommand rootCommand = new(Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyTitleAttribute>()!.Title)
             {
                 new Option<string>(new[] { "-c", "--config","/config" }, "Specifies the config file."),
-                new Option<string>(new[] { "-n", "--network","/network" }, "Indicates the network of the chain [mainnet, testnet, privnet]."),
                 new Option<string>(new[] { "-w", "--wallet","/wallet" }, "The path of the neo3 wallet [*.json]."),
                 new Option<string>(new[] { "-p", "--password" ,"/password" }, "Password to decrypt the wallet, either from the command line or config file."),
                 new Option<string>(new[] { "--db-engine","/db-engine" }, "Specify the db engine."),
@@ -45,37 +44,16 @@ namespace Neo.CLI
 
         private static void CustomProtocolSettings(CommandLineOptions options, ProtocolSettings settings)
         {
-            uint network = settings.Network;
             ProtocolSettings tempSetting = settings;
-            // if specified network without specifying config, then load the default config
-            if (!string.IsNullOrEmpty(options.Network))
+            // if specified config, then load the config and check the network
+            if (!string.IsNullOrEmpty(options.Config))
             {
-                if (!uint.TryParse(options.Network, out network))
-                {
-                    network = options.Network switch
-                    {
-                        "mainnet" => 860833102,
-                        "testnet" => 894710606,
-                        _ => throw new Exception("Invalid network")
-                    };
-                }
-
-                // if also specified config, then load the config and check the network
-                if (!string.IsNullOrEmpty(options.Config))
-                {
-                    tempSetting = ProtocolSettings.Load(options.Config);
-                    // the network in config file must match the network from command line
-                    if (network != tempSetting.Network) throw new ArgumentException($"Network mismatch {network} {tempSetting.Network}");
-                }
-                else // if the network if specified without config, then load the default config
-                {
-                    tempSetting = ProtocolSettings.Load(network == 860833102 ? "config.mainnet.json" : "config.testnet.json");
-                }
+                tempSetting = ProtocolSettings.Load(options.Config);
             }
 
             ProtocolSettings customSetting = new ProtocolSettings
             {
-                Network = network,
+                Network = tempSetting.Network,
                 AddressVersion = tempSetting.AddressVersion,
                 StandbyCommittee = tempSetting.StandbyCommittee,
                 ValidatorsCount = tempSetting.ValidatorsCount,
@@ -88,13 +66,12 @@ namespace Neo.CLI
                 Hardforks = tempSetting.Hardforks
             };
 
-            if (!string.IsNullOrEmpty(options.Config) || !string.IsNullOrEmpty(options.Network)) ProtocolSettings.Custom = customSetting;
+            if (!string.IsNullOrEmpty(options.Config)) ProtocolSettings.Custom = customSetting;
         }
 
         private static void CustomApplicationSettings(CommandLineOptions options, Settings settings)
         {
             Settings tempSetting = string.IsNullOrEmpty(options.Config) ? settings : new Settings(new ConfigurationBuilder().AddJsonFile(options.Config, optional: true).Build().GetSection("ApplicationConfiguration"));
-
             Settings customSetting = new Settings
             {
                 Logger = tempSetting.Logger,
@@ -111,7 +88,6 @@ namespace Neo.CLI
                 }
             };
             if (!string.IsNullOrEmpty(options.Config)
-                || !string.IsNullOrEmpty(options.Network)
                 || !string.IsNullOrEmpty(options.DBEngine)
                 || !string.IsNullOrEmpty(options.DBPath)
                 || !string.IsNullOrEmpty(options.Wallet)

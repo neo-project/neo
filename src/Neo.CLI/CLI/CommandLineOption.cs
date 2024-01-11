@@ -16,7 +16,6 @@ namespace Neo.CLI
     public class CommandLineOptions
     {
         public string? Config { get; init; }
-        public string? Network { get; init; }
         public string? Wallet { get; init; }
         public string? Password { get; init; }
         public string[]? Plugins { get; set; }
