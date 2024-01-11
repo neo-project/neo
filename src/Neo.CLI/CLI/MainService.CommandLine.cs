@@ -84,7 +84,8 @@ namespace Neo.CLI
                 {
                     Path = options.Wallet ?? tempSetting.UnlockWallet.Path,
                     Password = options.Password ?? tempSetting.UnlockWallet.Password
-                }
+                },
+                Contracts = tempSetting.Contracts
             };
             if (options.IsValid) Settings.Custom = customSetting;
         }
