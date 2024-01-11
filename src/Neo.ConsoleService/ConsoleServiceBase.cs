@@ -489,8 +489,10 @@ namespace Neo.ConsoleService
             }
             else
             {
-                Debug.Assert(OperatingSystem.IsWindows());
+                Debug.Assert(Environment.OSVersion.Platform == PlatformID.Win32NT);
+#pragma warning disable CA1416
                 ServiceBase.Run(new ServiceProxy(this));
+#pragma warning restore CA1416
             }
         }
 

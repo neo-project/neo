@@ -36,6 +36,7 @@ jobs:
       uses: coverallsapp/github-action@master
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
+        path-to-lcov: ./coverage/lcov.net7.0.info
 
   # MyGet isn't working
   # PublishMyGet:
@@ -128,6 +129,12 @@ jobs:
       if: steps.check_tag.outputs.statusCode == '404'
       run: |
         dotnet pack ./src/Neo.ConsoleService \
+        --configuration Release \
+        --output ./out
+    - name : Pack (Neo.Cryptography.BLS12_381)
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack ./src/Neo.Cryptography.BLS12_381 \
         --configuration Release \
         --output ./out
     - name: Publish to NuGet
