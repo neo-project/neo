@@ -17,9 +17,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.Loader;
-using System.Security;
 using System.ServiceProcess;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -90,10 +88,11 @@ namespace Neo.ConsoleService
 
                             availableCommands.Add((command, arguments.ToArray()));
                         }
-                        catch
+                        catch (Exception ex)
                         {
                             // Skip parse errors
                             possibleHelp = command.Key;
+                            ConsoleHelper.Error($"{ex.InnerException?.Message ?? ex.Message}");
                         }
                     }
                 }
@@ -491,8 +490,10 @@ namespace Neo.ConsoleService
             }
             else
             {
-                Debug.Assert(OperatingSystem.IsWindows());
+                Debug.Assert(Environment.OSVersion.Platform == PlatformID.Win32NT);
+#pragma warning disable CA1416
                 ServiceBase.Run(new ServiceProxy(this));
+#pragma warning restore CA1416
             }
         }
 

@@ -96,12 +96,17 @@ namespace Neo.CLI
             Initialize_Logger();
         }
 
-        internal static UInt160 StringToAddress(string input, byte version)
+        internal UInt160 StringToAddress(string input, byte version)
         {
             switch (input.ToLowerInvariant())
             {
                 case "neo": return NativeContract.NEO.Hash;
                 case "gas": return NativeContract.GAS.Hash;
+            }
+
+            if (input.IndexOf('.') > 0 && input.LastIndexOf('.') < input.Length)
+            {
+                return ResolveNeoNameServiceAddress(input);
             }
 
             // Try to parse as UInt160
@@ -635,6 +640,46 @@ namespace Neo.CLI
             }
 
             return exception.Message;
+        }
+
+        public UInt160 ResolveNeoNameServiceAddress(string domain)
+        {
+            if (Settings.Default.Contracts.NeoNameService == UInt160.Zero)
+                throw new Exception("Neo Name Service (NNS): is disabled on this network.");
+
+            using var sb = new ScriptBuilder();
+            sb.EmitDynamicCall(Settings.Default.Contracts.NeoNameService, "resolve", CallFlags.ReadOnly, domain, 16);
+
+            using var appEng = ApplicationEngine.Run(sb.ToArray(), NeoSystem.StoreView, settings: NeoSystem.Settings);
+            if (appEng.State == VMState.HALT)
+            {
+                var data = appEng.ResultStack.Pop();
+                if (data is ByteString)
+                {
+                    try
+                    {
+                        var addressData = data.GetString();
+                        if (UInt160.TryParse(addressData, out var address))
+                            return address;
+                        else
+                            return addressData.ToScriptHash(NeoSystem.Settings.AddressVersion);
+                    }
+                    catch { }
+                }
+                else if (data is Null)
+                {
+                    throw new Exception($"Neo Name Service (NNS): \"{domain}\" domain not found.");
+                }
+                throw new Exception("Neo Name Service (NNS): Record invalid address format.");
+            }
+            else
+            {
+                if (appEng.FaultException is not null)
+                {
+                    throw new Exception($"Neo Name Service (NNS): \"{appEng.FaultException.Message}\".");
+                }
+            }
+            throw new Exception($"Neo Name Service (NNS): \"{domain}\" domain not found.");
         }
     }
 }
