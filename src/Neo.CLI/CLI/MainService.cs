@@ -35,6 +35,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using Array = System.Array;
 
 namespace Neo.CLI
@@ -381,8 +382,11 @@ namespace Neo.CLI
             LocalNode = NeoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
 
             // installing plugins
-            options.Plugins?.Select(p => p).Where(p => !string.IsNullOrEmpty(p)).ToList().ForEach(async p => await InstallPluginAsync(p));
-
+            var installTasks = options.Plugins?.Select(p => p).Where(p => !string.IsNullOrEmpty(p)).ToList().Select( p => InstallPluginAsync(p));
+            if (installTasks is not null)
+            {
+                await Task.WhenAll(installTasks);
+            }
             foreach (var plugin in Plugin.Plugins)
             {
                 // Register plugins commands
