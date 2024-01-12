@@ -78,12 +78,12 @@ namespace Neo
 
     public class StorageSettings
     {
-        public string? Engine { get; } = nameof(MemoryStore);
+        public string Engine { get; } = nameof(MemoryStore);
         public string Path { get; } = string.Empty;
 
         public StorageSettings(IConfigurationSection section)
         {
-            Engine = section.GetValue(nameof(Engine), nameof(MemoryStore));
+            Engine = section.GetValue(nameof(Engine), nameof(MemoryStore))!;
             Path = section.GetValue(nameof(Path), string.Empty)!;
         }
     }
