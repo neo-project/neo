@@ -189,7 +189,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void TestLoad()
         {
-            var loadedSetting = ProtocolSettings.Load("test.config.json", false);
+            var loadedSetting = ProtocolSettings.Load("test.config.xml", false);
 
             // Comparing all properties
             TestProtocolSettings.Default.Network.Should().Be(loadedSetting.Network);

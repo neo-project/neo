@@ -44,7 +44,7 @@ namespace Neo
             {
                 if (s_default == null)
                 {
-                    var config = new ConfigurationBuilder().AddJsonFile("config.json", optional: true).Build();
+                    var config = new ConfigurationBuilder().AddXmlFile("config.xml", optional: true).Build();
                     Initialize(config);
                 }
 
@@ -134,7 +134,7 @@ namespace Neo
                     NeoNameService = hash;
                 }
                 else
-                    throw new ArgumentException("Neo Name Service (NNS): NeoNameService hash is invalid. Check your config.json.", nameof(NeoNameService));
+                    throw new ArgumentException("Neo Name Service (NNS): NeoNameService hash is invalid. Check your config.xml.", nameof(NeoNameService));
             }
         }
     }

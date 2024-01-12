@@ -26,7 +26,7 @@ namespace Neo.UnitTests.Plugins
         {
             var pp = new TestPlugin();
             var file = pp.ConfigFile;
-            file.EndsWith("config.json").Should().BeTrue();
+            file.EndsWith("config.xml").Should().BeTrue();
         }
 
         [TestMethod]

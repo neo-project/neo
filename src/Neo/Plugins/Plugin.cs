@@ -45,7 +45,7 @@ namespace Neo.Plugins
         /// <summary>
         /// Indicates the location of the plugin configuration file.
         /// </summary>
-        public virtual string ConfigFile => Combine(RootPath, "config.json");
+        public virtual string ConfigFile => Combine(RootPath, "config.xml");
 
         /// <summary>
         /// Indicates the name of the plugin.
@@ -150,7 +150,7 @@ namespace Neo.Plugins
         /// <returns>The content of the configuration file read.</returns>
         protected IConfigurationSection GetConfiguration()
         {
-            return new ConfigurationBuilder().AddJsonFile(ConfigFile, optional: true).Build().GetSection("PluginConfiguration");
+            return new ConfigurationBuilder().AddXmlFile(ConfigFile, optional: true).Build().GetSection("PluginConfiguration");
         }
 
         private static void LoadPlugin(Assembly assembly)

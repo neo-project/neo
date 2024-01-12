@@ -138,7 +138,7 @@ namespace Neo.CLI
             }
 
             using ZipArchive zip = new(stream, ZipArchiveMode.Read);
-            ZipArchiveEntry? entry = zip.Entries.FirstOrDefault(p => p.Name == "config.json");
+            ZipArchiveEntry? entry = zip.Entries.FirstOrDefault(p => p.Name == "config.xml");
             if (entry is not null)
             {
                 await using Stream es = entry.Open();
@@ -197,7 +197,7 @@ namespace Neo.CLI
             {
                 try
                 {
-                    using var reader = File.OpenRead($"./Plugins/{p.Name}/config.json");
+                    using var reader = File.OpenRead($"./Plugins/{p.Name}/config.xml");
                     if (new ConfigurationBuilder()
                         .AddJsonStream(reader)
                         .Build()
