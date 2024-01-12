@@ -70,7 +70,7 @@ namespace Neo.Json
         public override T GetEnum<T>(bool ignoreCase = false)
         {
             T result = Enum.Parse<T>(Value, ignoreCase);
-            if (!Enum.IsDefined(result)) throw new InvalidCastException();
+            if (!Enum.IsDefined(typeof(T), result)) throw new InvalidCastException();
             return result;
         }
 
@@ -79,7 +79,7 @@ namespace Neo.Json
             writer.WriteStringValue(Value);
         }
 
-        public override JString Clone()
+        public override JToken Clone()
         {
             return this;
         }

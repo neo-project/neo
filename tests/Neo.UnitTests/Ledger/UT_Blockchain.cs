@@ -70,7 +70,7 @@ namespace Neo.UnitTests.Ledger
             senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Succeed);
 
             senderProbe.Send(system.Blockchain, tx);
-            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.AlreadyExists);
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.AlreadyInPool);
         }
 
         internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)

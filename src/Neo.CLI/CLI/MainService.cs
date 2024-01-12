@@ -99,12 +99,17 @@ namespace Neo.CLI
             Initialize_Logger();
         }
 
-        internal static UInt160 StringToAddress(string input, byte version)
+        internal UInt160 StringToAddress(string input, byte version)
         {
             switch (input.ToLowerInvariant())
             {
                 case "neo": return NativeContract.NEO.Hash;
                 case "gas": return NativeContract.GAS.Hash;
+            }
+
+            if (input.IndexOf('.') > 0 && input.LastIndexOf('.') < input.Length)
+            {
+                return ResolveNeoNameServiceAddress(input);
             }
 
             // Try to parse as UInt160
@@ -353,7 +358,7 @@ namespace Neo.CLI
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    if (ReadUserInput($"Missing pre requirements. Do you want to install them?").IsYes())
+                    if (ConsoleHelper.ReadUserInput($"Missing pre requirements. Do you want to install them?").IsYes())
                     {
                         await TryDownloadLevelDbDllAsync();
                     }
@@ -560,7 +565,7 @@ namespace Neo.CLI
                     if (engine.State == VMState.FAULT) return;
                 }
 
-                if (!ReadUserInput("Relay tx(no|yes)").IsYes())
+                if (!ConsoleHelper.ReadUserInput("Relay tx(no|yes)").IsYes())
                 {
                     return;
                 }
@@ -664,7 +669,7 @@ namespace Neo.CLI
         {
             if (Settings.Default.Storage.Engine != "LevelDBStore" && Settings.Default.Storage.Engine != "RocksDBStore") return Task.CompletedTask;
             if (PluginExists(Settings.Default.Storage.Engine)) return Task.CompletedTask;
-            return !ReadUserInput($"{Settings.Default.Storage.Engine} plugin is required but not installed. Do you want to install it now? (yes/no)").IsYes() ? Task.CompletedTask : InstallPluginAsync(Settings.Default.Storage.Engine);
+            return !ConsoleHelper.ReadUserInput($"{Settings.Default.Storage.Engine} plugin is required but not installed. Do you want to install it now? (yes/no)").IsYes() ? Task.CompletedTask : InstallPluginAsync(Settings.Default.Storage.Engine);
         }
 
         private async Task TryDownloadLevelDbDllAsync()
@@ -701,6 +706,46 @@ namespace Neo.CLI
                     File.Delete(tempFilePath);
                 }
             }
+        }
+
+        public UInt160 ResolveNeoNameServiceAddress(string domain)
+        {
+            if (Settings.Default.Contracts.NeoNameService == UInt160.Zero)
+                throw new Exception("Neo Name Service (NNS): is disabled on this network.");
+
+            using var sb = new ScriptBuilder();
+            sb.EmitDynamicCall(Settings.Default.Contracts.NeoNameService, "resolve", CallFlags.ReadOnly, domain, 16);
+
+            using var appEng = ApplicationEngine.Run(sb.ToArray(), NeoSystem.StoreView, settings: NeoSystem.Settings);
+            if (appEng.State == VMState.HALT)
+            {
+                var data = appEng.ResultStack.Pop();
+                if (data is ByteString)
+                {
+                    try
+                    {
+                        var addressData = data.GetString();
+                        if (UInt160.TryParse(addressData, out var address))
+                            return address;
+                        else
+                            return addressData.ToScriptHash(NeoSystem.Settings.AddressVersion);
+                    }
+                    catch { }
+                }
+                else if (data is Null)
+                {
+                    throw new Exception($"Neo Name Service (NNS): \"{domain}\" domain not found.");
+                }
+                throw new Exception("Neo Name Service (NNS): Record invalid address format.");
+            }
+            else
+            {
+                if (appEng.FaultException is not null)
+                {
+                    throw new Exception($"Neo Name Service (NNS): \"{appEng.FaultException.Message}\".");
+                }
+            }
+            throw new Exception($"Neo Name Service (NNS): \"{domain}\" domain not found.");
         }
     }
 }
