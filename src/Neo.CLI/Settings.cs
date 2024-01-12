@@ -89,8 +89,8 @@ namespace Neo
 
     public class StorageSettings
     {
-        public string Engine { get; } = nameof(MemoryStore);
-        public string Path { get; } = string.Empty;
+        public string Engine { get; init; } = nameof(MemoryStore);
+        public string Path { get; init; } = string.Empty;
 
         public StorageSettings(IConfigurationSection section)
         {
