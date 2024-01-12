@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0</TargetFrameworks>
+    <TargetFramework>net7.0</TargetFramework>
     <RootNamespace>neo_cli.Tests</RootNamespace>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
