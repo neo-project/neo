@@ -11,6 +11,7 @@
 
 using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
+using Neo.Persistence;
 using System;
 using System.Threading;
 
@@ -88,13 +89,13 @@ namespace Neo
 
     public class StorageSettings
     {
-        public string Engine { get; init; } = string.Empty;
-        public string Path { get; init; } = string.Empty;
+        public string Engine { get; } = nameof(MemoryStore);
+        public string Path { get; } = string.Empty;
 
         public StorageSettings(IConfigurationSection section)
         {
-            Engine = section.GetValue(nameof(Engine), "LevelDBStore")!;
-            Path = section.GetValue(nameof(Path), "Data_LevelDB_{0}")!;
+            Engine = section.GetValue(nameof(Engine), nameof(MemoryStore))!;
+            Path = section.GetValue(nameof(Path), string.Empty)!;
         }
 
         public StorageSettings() { }
