@@ -41,8 +41,6 @@
         <MaxTraceableBlocks>2102400</MaxTraceableBlocks> <!-- Maximum number of traceable blocks -->
         <!-- Hardfork settings -->
         <Hardforks>
-            <HF_Aspidochelone>1730000</HF_Aspidochelone> <!-- Hardfork Aspidochelone block number -->
-            <HF_Basilisk>4120000</HF_Basilisk> <!-- Hardfork Basilisk block number -->
         </Hardforks>
         <InitialGasDistribution>5200000000000000</InitialGasDistribution> <!-- Initial gas distribution amount -->
         <ValidatorsCount>7</ValidatorsCount> <!-- Number of validators -->
