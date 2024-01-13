@@ -379,7 +379,7 @@ namespace Neo.CLI
                         break;
                 }
 
-            ProtocolSettings protocol = ProtocolSettings.Load("config.xml");
+            ProtocolSettings protocol = ProtocolSettings.Load("config.json");
 
             NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
             NeoSystem.AddService(this);

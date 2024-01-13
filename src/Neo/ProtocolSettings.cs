@@ -126,7 +126,7 @@ namespace Neo
         /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
         public static ProtocolSettings Load(string path, bool optional = true)
         {
-            IConfigurationRoot config = new ConfigurationBuilder().AddXmlFile(path, optional).Build();
+            IConfigurationRoot config = new ConfigurationBuilder().AddJsonFile(path, optional).Build();
             IConfigurationSection section = config.GetSection("ProtocolConfiguration");
             var settings = Load(section);
             CheckingHardfork(settings);
@@ -145,21 +145,11 @@ namespace Neo
                 Network = section.GetValue("Network", Default.Network),
                 AddressVersion = section.GetValue("AddressVersion", Default.AddressVersion),
                 StandbyCommittee = section.GetSection("StandbyCommittee").Exists()
-                    ? section.GetSection("StandbyCommittee")
-                        .GetChildren()
-                        .FirstOrDefault()?
-                        .GetChildren()
-                        .Select(p => ECPoint.Parse(p.Get<string>(), ECCurve.Secp256r1))
-                        .ToArray()
+                    ? section.GetSection("StandbyCommittee").GetChildren().Select(p => ECPoint.Parse(p.Get<string>(), ECCurve.Secp256r1)).ToArray()
                     : Default.StandbyCommittee,
                 ValidatorsCount = section.GetValue("ValidatorsCount", Default.ValidatorsCount),
                 SeedList = section.GetSection("SeedList").Exists()
-                    ? section.GetSection("SeedList")
-                        .GetChildren()
-                        .FirstOrDefault()?
-                        .GetChildren()
-                        .Select(p => p.Get<string>())
-                        .ToArray()
+                    ? section.GetSection("SeedList").GetChildren().Select(p => p.Get<string>()).ToArray()
                     : Default.SeedList,
                 MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", Default.MillisecondsPerBlock),
                 MaxTransactionsPerBlock = section.GetValue("MaxTransactionsPerBlock", Default.MaxTransactionsPerBlock),
