@@ -9,8 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Util.Internal;
 using Microsoft.Extensions.Configuration;
 using Neo.ConsoleService;
+using Neo.Cryptography;
 using Neo.Json;
 using Neo.Plugins;
 using System;
@@ -20,7 +22,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
 
 namespace Neo.CLI
@@ -70,19 +71,21 @@ namespace Neo.CLI
             var url =
                 $"https://github.com/neo-project/neo-modules/releases/download/v{typeof(Plugin).Assembly.GetVersion()}/{pluginName}.zip";
             using HttpClient http = new();
-            HttpResponseMessage response = await http.GetAsync(url);
+            var response = await http.GetAsync(url);
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 response.Dispose();
-                Version versionCore = typeof(Plugin).Assembly.GetName().Version!;
+                var versionCore = typeof(Plugin).Assembly.GetName().Version!;
                 HttpRequestMessage request = new(HttpMethod.Get,
                     "https://api.github.com/repos/neo-project/neo-modules/releases");
                 request.Headers.UserAgent.ParseAdd(
                     $"{GetType().Assembly.GetName().Name}/{GetType().Assembly.GetVersion()}");
-                using HttpResponseMessage responseApi = await http.SendAsync(request);
-                byte[] buffer = await responseApi.Content.ReadAsByteArrayAsync();
-                if (JToken.Parse(buffer) is not JArray arr) throw new Exception("Plugin doesn't exist.");
-                var asset = arr
+                using var responseApi = await http.SendAsync(request);
+                var buffer = await responseApi.Content.ReadAsByteArrayAsync();
+                if (JToken.Parse(buffer) is not JArray arr)
+                    throw new Exception("Plugin doesn't exist.");
+
+                var asset = (arr
                     .Where(p => p?["tag_name"] is not null && p?["assets"] is not null)
                     .Where(p => !p!["tag_name"]!.GetString().Contains('-'))
                     .Select(p => new
@@ -92,25 +95,25 @@ namespace Neo.CLI
                     })
                     .OrderByDescending(p => p.Version)
                     .First(p => p.Version <= versionCore).Assets?
-                    .FirstOrDefault(p => p?["name"]?.GetString() == $"{pluginName}.zip");
-                if (asset is null) throw new Exception("Plugin doesn't exist.");
+                    .FirstOrDefault(p => p?["name"]?.GetString() == $"{pluginName}.zip"))
+                    ?? throw new Exception("Plugin doesn't exist.");
                 response = await http.GetAsync(asset["browser_download_url"]?.GetString());
             }
 
             using (response)
             {
                 var totalRead = 0L;
-                byte[] buffer = new byte[1024];
+                var buffer = new byte[1024];
                 int read;
-                await using Stream stream = await response.Content.ReadAsStreamAsync();
-                ConsoleHelper.Info("From ", $"{url}");
+                await using var stream = await response.Content.ReadAsStreamAsync();
+                ConsoleHelper.Info("From ", url);
                 var output = new MemoryStream();
                 while ((read = await stream.ReadAsync(buffer)) > 0)
                 {
                     output.Write(buffer, 0, read);
                     totalRead += read;
                     Console.Write(
-                        $"\rDownloading {pluginName}.zip {totalRead / 1024}KB/{response.Content.Headers.ContentLength / 1024}KB {(totalRead * 100) / response.Content.Headers.ContentLength}%");
+                        $"\rDownloading {pluginName}.zip {totalRead / 1024}KB/{response.Content.Headers.ContentLength / 1024}KB {totalRead * 100 / response.Content.Headers.ContentLength}%");
                 }
 
                 Console.WriteLine();
@@ -131,17 +134,14 @@ namespace Neo.CLI
             if (!installed.Add(pluginName)) return;
             if (!overWrite && PluginExists(pluginName)) return;
 
-            await using MemoryStream stream = await DownloadPluginAsync(pluginName);
-            using (SHA256 sha256 = SHA256.Create())
-            {
-                ConsoleHelper.Info("SHA256: ", $"{sha256.ComputeHash(stream.ToArray()).ToHexString()}");
-            }
+            await using var stream = await DownloadPluginAsync(pluginName);
+            ConsoleHelper.Info("SHA256: ", $"{stream.ToArray().Sha256().ToHexString()}");
 
-            using ZipArchive zip = new(stream, ZipArchiveMode.Read);
-            ZipArchiveEntry? entry = zip.Entries.FirstOrDefault(p => p.Name == "config.json");
+            using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
+            var entry = zip.Entries.FirstOrDefault(p => p.Name == "config.json");
             if (entry is not null)
             {
-                await using Stream es = entry.Open();
+                await using var es = entry.Open();
                 await InstallDependenciesAsync(es, installed);
             }
             zip.ExtractToDirectory("./", true);
@@ -154,7 +154,7 @@ namespace Neo.CLI
         /// <param name="installed">Dependency set</param>
         private async Task InstallDependenciesAsync(Stream config, HashSet<string> installed)
         {
-            IConfigurationSection dependency = new ConfigurationBuilder()
+            var dependency = new ConfigurationBuilder()
                 .AddJsonStream(config)
                 .Build()
                 .GetSection("Dependency");
@@ -163,7 +163,7 @@ namespace Neo.CLI
             var dependencies = dependency.GetChildren().Select(p => p.Get<string>()).ToArray();
             if (dependencies.Length == 0) return;
 
-            foreach (string? plugin in dependencies.Where(p => p is not null && !PluginExists(p)))
+            foreach (var plugin in dependencies.Where(p => p is not null && !PluginExists(p)))
             {
                 ConsoleHelper.Info($"Installing dependency: {plugin}");
                 await InstallPluginAsync(plugin!, installed);
@@ -228,21 +228,57 @@ namespace Neo.CLI
         /// Process "plugins" command
         /// </summary>
         [ConsoleCommand("plugins", Category = "Plugin Commands")]
-        private void OnPluginsCommand()
+        private async void OnPluginsCommandAsync()
         {
-            if (Plugin.Plugins.Count > 0)
-            {
-                Console.WriteLine("Loaded plugins:");
-                foreach (Plugin plugin in Plugin.Plugins)
+            var plugins = await GetPluginListAsync();
+            var installed = Plugin.Plugins.Select(p => p.Name.ToLowerInvariant());
+            plugins.ForEach(
+                p =>
                 {
-                    var name = $"{plugin.Name}@{plugin.Version}";
-                    Console.WriteLine($"\t{name,-25}{plugin.Description}");
-                }
-            }
-            else
-            {
-                ConsoleHelper.Warning("No loaded plugins");
-            }
+                    if (p.Contains(".zip")) p = p.Substring(0, p.Length - 4);
+                    var installedPlugin = Plugin.Plugins.Where(pp => string.Equals(pp.Name, p, StringComparison.CurrentCultureIgnoreCase)).ToArray();
+                    if (installedPlugin.Length == 1)
+                    {
+                        var plugin = $"(installed) {p}";
+                        plugin = plugin.PadLeft(25);
+                        Console.WriteLine($"\t{plugin,-25} @{installedPlugin[0].Version} {installedPlugin[0].Description}");
+                    }
+                    else
+                    {
+                        var plugin = $"{p}";
+                        plugin = plugin.PadLeft(25);
+                        Console.ForegroundColor = ConsoleColor.Gray;
+                        Console.WriteLine($"\t{plugin,-25}");
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                    }
+                });
+        }
+
+        private async Task<IEnumerable<string>?> GetPluginListAsync()
+        {
+            using HttpClient http = new();
+
+            var versionCore = typeof(Plugin).Assembly.GetName().Version!;
+            var request = new HttpRequestMessage(HttpMethod.Get,
+                "https://api.github.com/repos/neo-project/neo-modules/releases");
+            request.Headers.UserAgent.ParseAdd(
+                $"{GetType().Assembly.GetName().Name}/{GetType().Assembly.GetVersion()}");
+            using var responseApi = await http.SendAsync(request);
+            var buffer = await responseApi.Content.ReadAsByteArrayAsync();
+            if (JToken.Parse(buffer) is not JArray arr)
+                throw new Exception("Plugin doesn't exist.");
+            return arr
+                .Where(p => p?["tag_name"] is not null && p["assets"] is not null)
+                .Where(p => !p!["tag_name"]!.GetString().Contains('-'))
+                .Select(p => new
+                {
+                    Version = Version.Parse(p!["tag_name"]!.GetString().TrimStart('v')),
+                    Assets = p["assets"] as JArray
+                })
+                .OrderByDescending(p => p.Version)
+                .First(p => p.Version <= versionCore).Assets?
+                .Where(p => p?["name"]?.GetString() is not null)
+                .Select(p => p!["name"]!.GetString());
         }
     }
 }
