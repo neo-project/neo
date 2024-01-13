@@ -118,7 +118,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="pubKey">The public key of the account.</param>
         /// <returns>The hash of the account.</returns>
-        internal protected UInt160 CreateStandardAccount(ECPoint pubKey)
+        protected internal UInt160 CreateStandardAccount(ECPoint pubKey)
         {
             long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                 ? CheckSigPrice
@@ -134,8 +134,11 @@ namespace Neo.SmartContract
         /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="pubKeys">The public keys of the account.</param>
         /// <returns>The hash of the account.</returns>
-        internal protected UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
+        protected internal UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
         {
+            if (pubKeys == null || m < 1 || m > pubKeys.Length || pubKeys.Length > 1024)
+                throw new ArgumentOutOfRangeException(nameof(pubKeys));
+
             long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                 ? CheckSigPrice * pubKeys.Length
                 : 1 << 8;

@@ -126,6 +126,7 @@ namespace Neo.SmartContract
         /// <returns>The value of the entry. Or <see langword="null"/> if the entry doesn't exist.</returns>
         protected internal ReadOnlyMemory<byte>? Get(StorageContext context, byte[] key)
         {
+            if (key == null) throw new ArgumentNullException(nameof(key));
             return Snapshot.TryGet(new StorageKey
             {
                 Id = context.Id,
@@ -143,6 +144,7 @@ namespace Neo.SmartContract
         /// <returns>An iterator for the results.</returns>
         protected internal IIterator Find(StorageContext context, byte[] prefix, FindOptions options)
         {
+            if (prefix == null) throw new ArgumentNullException(nameof(prefix));
             if ((options & ~FindOptions.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(options));
             if (options.HasFlag(FindOptions.KeysOnly) && (options.HasFlag(FindOptions.ValuesOnly) || options.HasFlag(FindOptions.DeserializeValues) || options.HasFlag(FindOptions.PickField0) || options.HasFlag(FindOptions.PickField1)))
@@ -167,6 +169,8 @@ namespace Neo.SmartContract
         /// <param name="value">The value of the entry.</param>
         protected internal void Put(StorageContext context, byte[] key, byte[] value)
         {
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            if (value == null) throw new ArgumentNullException(nameof(value));
             if (key.Length > MaxStorageKeySize) throw new ArgumentException("Key length too big", nameof(key));
             if (value.Length > MaxStorageValueSize) throw new ArgumentException("Value length too big", nameof(value));
             if (context.IsReadOnly) throw new ArgumentException("StorageContext is readonly", nameof(context));
@@ -207,6 +211,7 @@ namespace Neo.SmartContract
         /// <param name="key">The key of the entry.</param>
         protected internal void Delete(StorageContext context, byte[] key)
         {
+            if (key == null) throw new ArgumentNullException(nameof(key));
             if (context.IsReadOnly) throw new ArgumentException(null, nameof(context));
             Snapshot.Delete(new StorageKey
             {

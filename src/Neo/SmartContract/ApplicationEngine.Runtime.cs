@@ -209,6 +209,7 @@ namespace Neo.SmartContract
         /// </summary>
         protected internal void RuntimeLoadScript(byte[] script, CallFlags callFlags, Array args)
         {
+            if (script == null) throw new ArgumentNullException(nameof(script));
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
 
@@ -232,6 +233,7 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the account has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
         protected internal bool CheckWitness(byte[] hashOrPubkey)
         {
+            if (hashOrPubkey == null) throw new ArgumentNullException(nameof(hashOrPubkey));
             UInt160 hash = hashOrPubkey.Length switch
             {
                 20 => new UInt160(hashOrPubkey),
@@ -327,6 +329,7 @@ namespace Neo.SmartContract
         /// <param name="state">The message of the log.</param>
         protected internal void RuntimeLog(byte[] state)
         {
+            if (state == null) throw new ArgumentNullException(nameof(state));
             if (state.Length > MaxNotificationSize) throw new ArgumentException(null, nameof(state));
             string message = Utility.StrictUTF8.GetString(state);
             Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash, message));
@@ -340,6 +343,7 @@ namespace Neo.SmartContract
         /// <param name="state">The arguments of the event.</param>
         protected internal void RuntimeNotify(byte[] eventName, Array state)
         {
+            if (eventName == null) throw new ArgumentNullException(nameof(eventName));
             if (!IsHardforkEnabled(Hardfork.HF_Basilisk))
             {
                 RuntimeNotifyV1(eventName, state);
@@ -369,6 +373,7 @@ namespace Neo.SmartContract
 
         protected internal void RuntimeNotifyV1(byte[] eventName, Array state)
         {
+            if (eventName == null) throw new ArgumentNullException(nameof(eventName));
             if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
             if (CurrentContext.GetState<ExecutionContextState>().Contract is null)
                 throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");

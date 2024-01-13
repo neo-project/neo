@@ -63,9 +63,12 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the signatures are valid; otherwise, <see langword="false"/>.</returns>
         protected internal bool CheckMultisig(byte[][] pubkeys, byte[][] signatures)
         {
-            byte[] message = ScriptContainer.GetSignData(ProtocolSettings.Network);
+            if (pubkeys == null) throw new ArgumentNullException(nameof(pubkeys));
+            if (signatures == null) throw new ArgumentNullException(nameof(signatures));
             int m = signatures.Length, n = pubkeys.Length;
             if (n == 0 || m == 0 || m > n) throw new ArgumentException();
+
+            byte[] message = ScriptContainer.GetSignData(ProtocolSettings.Network);
             AddGas(CheckSigPrice * n * ExecFeeFactor);
             try
             {
