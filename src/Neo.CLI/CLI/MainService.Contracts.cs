@@ -133,21 +133,28 @@ namespace Neo.CLI
         {
             var gas = new BigDecimal(maxGas, NativeContract.GAS.Decimals);
             Signer[] signers = Array.Empty<Signer>();
-            if (!NoWallet() && sender != null)
+            if (!NoWallet())
             {
-                if (signerAccounts == null)
-                    signerAccounts = new UInt160[1] { sender };
-                else if (signerAccounts.Contains(sender) && signerAccounts[0] != sender)
+                var defaultAccount = CurrentWallet!.GetDefaultAccount();
+                if (sender == null && defaultAccount != null)
+                    sender = defaultAccount.ScriptHash;
+
+                if (sender != null)
                 {
-                    var signersList = signerAccounts.ToList();
-                    signersList.Remove(sender);
-                    signerAccounts = signersList.Prepend(sender).ToArray();
+                    if (signerAccounts == null)
+                        signerAccounts = new UInt160[1] { sender };
+                    else if (signerAccounts.Contains(sender) && signerAccounts[0] != sender)
+                    {
+                        var signersList = signerAccounts.ToList();
+                        signersList.Remove(sender);
+                        signerAccounts = signersList.Prepend(sender).ToArray();
+                    }
+                    else if (!signerAccounts.Contains(sender))
+                    {
+                        signerAccounts = signerAccounts.Prepend(sender).ToArray();
+                    }
+                    signers = signerAccounts.Select(p => new Signer() { Account = p, Scopes = WitnessScope.CalledByEntry }).ToArray();
                 }
-                else if (!signerAccounts.Contains(sender))
-                {
-                    signerAccounts = signerAccounts.Prepend(sender).ToArray();
-                }
-                signers = signerAccounts.Select(p => new Signer() { Account = p, Scopes = WitnessScope.CalledByEntry }).ToArray();
             }
 
             Transaction tx = new Transaction
