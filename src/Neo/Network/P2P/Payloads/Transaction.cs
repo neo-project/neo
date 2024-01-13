@@ -458,7 +458,7 @@ namespace Neo.Network.P2P.Payloads
 
         public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            if(Sender == null) throw new ArgumentException("Sender is not specified in the transaction.");
+            if (Sender == null) throw new ArgumentException("Sender is not specified in the transaction.");
             return new Array(referenceCounter, new StackItem[]
             {
                 // Computed properties
