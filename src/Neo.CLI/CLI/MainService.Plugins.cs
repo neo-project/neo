@@ -43,7 +43,10 @@ namespace Neo.CLI
 
             var result = InstallPluginAsync(pluginName).GetAwaiter().GetResult();
             if (result)
-                ConsoleHelper.Info("", "Install successful, please restart neo-cli.");
+            {
+                var asmName = Assembly.GetExecutingAssembly().GetName().Name;
+                ConsoleHelper.Info("", $"Install successful, please restart \"{asmName}\".");
+            }
         }
 
         /// <summary>
@@ -55,8 +58,12 @@ namespace Neo.CLI
         [ConsoleCommand("reinstall", Category = "Plugin Commands", Description = "Overwrite existing plugin by force.")]
         private void OnReinstallCommand(string pluginName)
         {
-            InstallPluginAsync(pluginName, overWrite: true).GetAwaiter().GetResult();
-            ConsoleHelper.Warning("Reinstall successful, please restart neo-cli.");
+            var result = InstallPluginAsync(pluginName, overWrite: true).GetAwaiter().GetResult();
+            if (result)
+            {
+                var asmName = Assembly.GetExecutingAssembly().GetName().Name;
+                ConsoleHelper.Info("", $"Reinstall successful, please restart \"{asmName}\".");
+            }
         }
 
         /// <summary>
@@ -178,7 +185,7 @@ namespace Neo.CLI
         {
             if (!PluginExists(pluginName))
             {
-                ConsoleHelper.Warning("Plugin not found");
+                ConsoleHelper.Error("Plugin not found");
                 return;
             }
 
@@ -186,17 +193,17 @@ namespace Neo.CLI
             {
                 try
                 {
-                    using var reader = File.OpenRead($"./Plugins/{p.Name}/config.json");
+                    using var reader = File.OpenRead($"Plugins/{p.Name}/config.json");
                     if (new ConfigurationBuilder()
                         .AddJsonStream(reader)
                         .Build()
                         .GetSection("Dependency")
                         .GetChildren()
-                        .Select(d => d.Get<string>())
-                        .Any(v => v is not null && v.Equals(pluginName, StringComparison.InvariantCultureIgnoreCase)))
+                        .Select(s => s.Get<string>())
+                        .Any(a => a is not null && a.Equals(pluginName, StringComparison.InvariantCultureIgnoreCase)))
                     {
-                        ConsoleHelper.Error(
-                            $"Can not uninstall. Other plugins depend on this plugin, try `reinstall {pluginName}` if the plugin is broken.");
+                        ConsoleHelper.Error($"{pluginName} is required by other plugins.");
+                        ConsoleHelper.Info($"If plugin is damaged try to reinstall.");
                         return;
                     }
                 }
@@ -210,7 +217,7 @@ namespace Neo.CLI
                 Directory.Delete($"Plugins/{pluginName}", true);
             }
             catch (IOException) { }
-            ConsoleHelper.Info("Uninstall successful, please restart neo-cli.");
+            ConsoleHelper.Info("", "Uninstall successful, please restart neo-cli.");
         }
 
         /// <summary>
@@ -229,7 +236,13 @@ namespace Neo.CLI
                 {
                     var installedPlugin = Plugin.Plugins.SingleOrDefault(pp => string.Equals(pp.Name, f, StringComparison.CurrentCultureIgnoreCase));
                     if (installedPlugin != null)
-                        ConsoleHelper.Info("", $"[Installed]\t {f,6}\t ", "  @", $"{installedPlugin.Version.ToString(3)}  {installedPlugin.Description}");
+                    {
+                        var maxLength = plugins.Select(s => s.Length).OrderDescending().First();
+                        string tabs = string.Empty;
+                        if (f.Length < maxLength)
+                            tabs = "\t";
+                        ConsoleHelper.Info("", $"[Installed]\t {f,6}{tabs}", "  @", $"{installedPlugin.Version.ToString(3)}  {installedPlugin.Description}");
+                    }
                     else
                         ConsoleHelper.Info($"[Not Installed]\t {f}");
                 });
