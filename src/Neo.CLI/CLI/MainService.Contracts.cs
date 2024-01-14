@@ -135,9 +135,8 @@ namespace Neo.CLI
             Signer[] signers = Array.Empty<Signer>();
             if (!NoWallet())
             {
-                var defaultAccount = CurrentWallet!.GetDefaultAccount();
-                if (sender == null && defaultAccount != null)
-                    sender = defaultAccount.ScriptHash;
+                if (sender == null)
+                    sender = CurrentWallet!.GetDefaultAccount()?.ScriptHash;
 
                 if (sender != null)
                 {
