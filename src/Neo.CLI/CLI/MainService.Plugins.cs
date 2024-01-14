@@ -56,14 +56,8 @@ namespace Neo.CLI
         [ConsoleCommand("reinstall", Category = "Plugin Commands", Description = "Overwrite existing plugin by force.")]
         private void OnReinstallCommand(string pluginName)
         {
-            if (PluginExists(pluginName))
-            {
-                var result = InstallPluginAsync(pluginName, overWrite: true).GetAwaiter().GetResult();
-                if (result)
-                    ConsoleHelper.Warning("Reinstall successful, please restart neo-cli.");
-            }
-            else
-                ConsoleHelper.Warning($"Plugin doesn't exist.");
+            InstallPluginAsync(pluginName, overWrite: true).GetAwaiter().GetResult();
+            ConsoleHelper.Warning("Reinstall successful, please restart neo-cli.");
         }
 
         /// <summary>
