@@ -34,7 +34,7 @@ namespace Neo.CLI
         /// </summary>
         /// <param name="pluginName">Plugin name</param>
         [ConsoleCommand("install", Category = "Plugin Commands")]
-        private void OnInstallCommandAsync(string pluginName)
+        private void OnInstallCommand(string pluginName)
         {
             if (PluginExists(pluginName))
             {
