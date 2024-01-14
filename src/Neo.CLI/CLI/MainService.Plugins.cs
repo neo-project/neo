@@ -80,7 +80,7 @@ namespace Neo.CLI
             var jsonRelease = json.AsArray()
                 .SingleOrDefault(s =>
                     s != null &&
-                    s["name"]!.GetValue<string>() == $"v{pluginVersion.ToString(3)}" &&
+                    s["tag_name"]!.GetValue<string>() == $"v{pluginVersion.ToString(3)}" &&
                     s["prerelease"]!.GetValue<bool>() == prerelease) ?? throw new Exception($"Could not find Release {pluginVersion}");
 
             var jsonAssets = jsonRelease
@@ -90,9 +90,8 @@ namespace Neo.CLI
             var jsonPlugin = jsonAssets
                 .AsArray()
                 .SingleOrDefault(s =>
-                    s != null &&
                     Path.GetFileNameWithoutExtension(
-                        s["name"]!.GetValue<string>()).Equals(pluginName, StringComparison.InvariantCultureIgnoreCase))
+                        s!["name"]!.GetValue<string>()).Equals(pluginName, StringComparison.InvariantCultureIgnoreCase))
                 ?? throw new Exception($"Could not find {pluginName}");
 
             var downloadUrl = jsonPlugin["browser_download_url"]!.GetValue<string>();
@@ -220,11 +219,13 @@ namespace Neo.CLI
         [ConsoleCommand("plugins", Category = "Plugin Commands")]
         private void OnPluginsCommand()
         {
-            var plugins = GetPluginListAsync().GetAwaiter().GetResult();
-            if (plugins == null) return;
-            plugins
-            .Order()
-            .ForEach(f =>
+            try
+            {
+                var plugins = GetPluginListAsync().GetAwaiter().GetResult();
+                if (plugins == null) return;
+                plugins
+                .Order()
+                .ForEach(f =>
                 {
                     var installedPlugin = Plugin.Plugins.SingleOrDefault(pp => string.Equals(pp.Name, f, StringComparison.CurrentCultureIgnoreCase));
                     if (installedPlugin != null)
@@ -232,6 +233,11 @@ namespace Neo.CLI
                     else
                         ConsoleHelper.Info($"[Not Installed]\t {f}");
                 });
+            }
+            catch (Exception ex)
+            {
+                ConsoleHelper.Error(ex!.InnerException?.Message ?? ex!.Message);
+            }
         }
 
         private async Task<IEnumerable<string>> GetPluginListAsync()
@@ -245,7 +251,7 @@ namespace Neo.CLI
             return json.AsArray()
                 .Where(w =>
                     w != null &&
-                    w["name"]!.GetValue<string>() == $"v{Settings.Default.Plugins.Version.ToString(3)}")
+                    w["tag_name"]!.GetValue<string>() == $"v{Settings.Default.Plugins.Version.ToString(3)}")
                 .SelectMany(s => s!["assets"]!.AsArray())
                 .Select(s => Path.GetFileNameWithoutExtension(s!["name"]!.GetValue<string>()));
         }
