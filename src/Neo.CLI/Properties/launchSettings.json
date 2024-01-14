@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Neo.CLI": {
+      "commandName": "Project",
+      "workingDirectory": "C:\\Users\\Chris\\Projects\\cschuchardt88\\neo\\src\\Neo.CLI\\bin\\Debug\\net7.0\\publish"
+    }
+  }
+}

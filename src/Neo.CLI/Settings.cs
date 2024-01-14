@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
 using Neo.Persistence;
 using System;
+using System.Reflection;
 using System.Threading;
 
 namespace Neo
@@ -24,6 +25,7 @@ namespace Neo
         public P2PSettings P2P { get; }
         public UnlockWalletSettings UnlockWallet { get; }
         public ContractsSettings Contracts { get; }
+        public PluginsSettings Plugins { get; }
 
         static Settings? s_default;
 
@@ -54,11 +56,12 @@ namespace Neo
 
         public Settings(IConfigurationSection section)
         {
-            Contracts = new(section.GetSection(nameof(Contracts)));
             Logger = new(section.GetSection(nameof(Logger)));
             Storage = new(section.GetSection(nameof(Storage)));
             P2P = new(section.GetSection(nameof(P2P)));
             UnlockWallet = new(section.GetSection(nameof(UnlockWallet)));
+            Contracts = new(section.GetSection(nameof(Contracts)));
+            Plugins = new(section.GetSection(nameof(Plugins)));
         }
     }
 
@@ -135,6 +138,23 @@ namespace Neo
                 }
                 else
                     throw new ArgumentException("Neo Name Service (NNS): NeoNameService hash is invalid. Check your config.json.", nameof(NeoNameService));
+            }
+        }
+    }
+
+    public class PluginsSettings
+    {
+        public Uri DownloadUrl { get; } = new("https://api.github.com/repos/neo-project/neo-modules/releases");
+        public bool Prerelease { get; } = false;
+        public Version Version { get; } = Assembly.GetExecutingAssembly().GetName().Version!;
+
+        public PluginsSettings(IConfigurationSection section)
+        {
+            if (section.Exists())
+            {
+                DownloadUrl = section.GetValue(nameof(DownloadUrl), DownloadUrl)!;
+                Prerelease = section.GetValue(nameof(Prerelease), Prerelease);
+                Version = section.GetValue(nameof(Version), Version)!;
             }
         }
     }
