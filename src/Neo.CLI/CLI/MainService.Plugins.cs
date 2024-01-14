@@ -12,7 +12,6 @@
 using Akka.Util.Internal;
 using Microsoft.Extensions.Configuration;
 using Neo.ConsoleService;
-using Neo.Json;
 using Neo.Plugins;
 using System;
 using System.Collections.Generic;
@@ -119,7 +118,7 @@ namespace Neo.CLI
             try
             {
 
-                using var stream = await DownloadPluginAsync(pluginName, Settings.Default.Plugins.Version, false);
+                using var stream = await DownloadPluginAsync(pluginName, Settings.Default.Plugins.Version, Settings.Default.Plugins.Prerelease);
 
                 using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
                 var entry = zip.Entries.FirstOrDefault(p => p.Name == "config.json");
@@ -219,18 +218,14 @@ namespace Neo.CLI
         /// Process "plugins" command
         /// </summary>
         [ConsoleCommand("plugins", Category = "Plugin Commands")]
-        private void OnPluginsCommandAsync()
+        private void OnPluginsCommand()
         {
             var plugins = GetPluginListAsync().GetAwaiter().GetResult();
-            if (plugins == null)
-                return;
+            if (plugins == null) return;
             plugins
-            .OrderByDescending(o => o)
-            .ForEach(
-                f =>
+            .Order()
+            .ForEach(f =>
                 {
-                    if (f.Contains(".zip"))
-                        f = Path.GetFileNameWithoutExtension(f);
                     var installedPlugin = Plugin.Plugins.SingleOrDefault(pp => string.Equals(pp.Name, f, StringComparison.CurrentCultureIgnoreCase));
                     if (installedPlugin != null)
                         ConsoleHelper.Info("", $"[Installed]\t {f,6}\t ", "  @", $"{installedPlugin.Version.ToString(3)}  {installedPlugin.Description}");
@@ -239,33 +234,20 @@ namespace Neo.CLI
                 });
         }
 
-        private async Task<IEnumerable<string>?> GetPluginListAsync()
+        private async Task<IEnumerable<string>> GetPluginListAsync()
         {
-            using HttpClient http = new();
+            using var httpClient = new HttpClient();
 
-            var versionCore = typeof(Plugin).Assembly.GetName().Version!;
-            var request = new HttpRequestMessage(HttpMethod.Get, Settings.Default.Plugins.DownloadUrl);
+            var asmName = Assembly.GetExecutingAssembly().GetName();
+            httpClient.DefaultRequestHeaders.UserAgent.Add(new(asmName.Name!, asmName.Version!.ToString(3)));
 
-            request.Headers.UserAgent.ParseAdd($"{GetType().Assembly.GetName().Name}/{GetType().Assembly.GetVersion()}");
-
-            using var responseApi = await http.SendAsync(request);
-            var buffer = await responseApi.Content.ReadAsByteArrayAsync();
-
-            if (JToken.Parse(buffer) is not JArray arr)
-                throw new Exception("Plugin doesn't exist.");
-
-            return arr
-                .Where(p => p?["tag_name"] is not null && p["assets"] is not null)
-                .Where(p => !p!["tag_name"]!.GetString().Contains('-'))
-                .Select(p => new
-                {
-                    Version = Version.Parse(p!["tag_name"]!.GetString().TrimStart('v')),
-                    Assets = p["assets"] as JArray
-                })
-                .OrderByDescending(p => p.Version)
-                .First(p => p.Version <= versionCore).Assets?
-                .Where(p => p?["name"]?.GetString() is not null)
-                .Select(p => p!["name"]!.GetString());
+            var json = await httpClient.GetFromJsonAsync<JsonArray>(Settings.Default.Plugins.DownloadUrl) ?? throw new HttpRequestException($"Failed: {Settings.Default.Plugins.DownloadUrl}");
+            return json.AsArray()
+                .Where(w =>
+                    w != null &&
+                    w["name"]!.GetValue<string>() == $"v{Settings.Default.Plugins.Version.ToString(3)}")
+                .SelectMany(s => s!["assets"]!.AsArray())
+                .Select(s => Path.GetFileNameWithoutExtension(s!["name"]!.GetValue<string>()));
         }
     }
 }
