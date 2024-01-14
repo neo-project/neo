@@ -203,7 +203,7 @@ namespace Neo.CLI
                         .Any(a => a is not null && a.Equals(pluginName, StringComparison.InvariantCultureIgnoreCase)))
                     {
                         ConsoleHelper.Error($"{pluginName} is required by other plugins.");
-                        ConsoleHelper.Info($"If plugin is damaged try to reinstall.");
+                        ConsoleHelper.Info("Info: ", $"If plugin is damaged try to reinstall.");
                         return;
                     }
                 }
