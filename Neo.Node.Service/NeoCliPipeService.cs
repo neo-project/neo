@@ -20,10 +20,15 @@ using System.Threading.Tasks;
 
 namespace Neo.Node.Service
 {
-    public class NeoCliPipeService : BackgroundService
+    internal class NeoCliPipeService : BackgroundService
     {
+        public static JsonSerializerOptions JsonOptions => new()
+        {
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
+            WriteIndented = false,
+        };
+
         private readonly ILogger<NeoCliPipeService> _logger;
-        private readonly JsonSerializerOptions _serializerOptions;
 
         private NamedPipeServerStream? _neoPipeServer;
         private int _pipeServerThreadId = -1;
@@ -32,11 +37,6 @@ namespace Neo.Node.Service
             ILogger<NeoCliPipeService> logger)
         {
             _logger = logger;
-            _serializerOptions = new JsonSerializerOptions()
-            {
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
-                WriteIndented = false,
-            };
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -49,15 +49,15 @@ namespace Neo.Node.Service
                 while (stoppingToken.IsCancellationRequested == false)
                 {
                     await _neoPipeServer!.WaitForConnectionAsync(stoppingToken);
-                    var command = await JsonSerializer.DeserializeAsync<PipeCommand>(_neoPipeServer, _serializerOptions, stoppingToken);
+                    var command = await JsonSerializer.DeserializeAsync<PipeCommand>(_neoPipeServer, JsonOptions, stoppingToken);
 
-                    if (command == null)
+                    if (command == null || command.Command == CommandType.None)
                     {
                         _neoPipeServer.Disconnect();
                         continue;
                     }
 
-
+                    await command.ExecuteAsync(stoppingToken);
                 }
             }
             catch (Exception ex)
