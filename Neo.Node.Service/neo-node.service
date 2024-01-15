@@ -1,0 +1,9 @@
+[Unit]
+Description=NEO N3 blockchain node
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/neo-node
+
+[Install]
+WantedBy=multi-user.target
