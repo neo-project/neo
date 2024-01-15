@@ -25,7 +25,7 @@ namespace Neo.VM
         private const bool TrackAllItems = false;
 
         private readonly HashSet<StackItem> tracked_items = new(ReferenceEqualityComparer.Instance);
-        private readonly HashSet<StackItem> zero_referred = new(ReferenceEqualityComparer.Instance);
+        private HashSet<StackItem> zero_referred = new(ReferenceEqualityComparer.Instance);
         private LinkedList<HashSet<StackItem>>? cached_components;
         private int references_count = 0;
 
@@ -81,7 +81,8 @@ namespace Neo.VM
         {
             if (zero_referred.Count > 0)
             {
-                zero_referred.Clear();
+                // Overhead: 16.5%
+                zero_referred = new(ReferenceEqualityComparer.Instance);//.Clear();
                 if (cached_components is null)
                 {
                     //Tarjan<StackItem> tarjan = new(tracked_items.Where(p => p.StackReferences == 0));
