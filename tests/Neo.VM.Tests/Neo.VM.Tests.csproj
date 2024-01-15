@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFrameworks>net7.0</TargetFrameworks>
-    <LangVersion>9.0</LangVersion>
     <RootNamespace>Neo.Test</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsPackable>false</IsPackable>

@@ -106,7 +106,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="context">The storage context to convert.</param>
         /// <returns>The readonly storage context.</returns>
-        internal protected static StorageContext AsReadOnly(StorageContext context)
+        protected internal static StorageContext AsReadOnly(StorageContext context)
         {
             if (!context.IsReadOnly)
                 context = new StorageContext
@@ -167,8 +167,9 @@ namespace Neo.SmartContract
         /// <param name="value">The value of the entry.</param>
         protected internal void Put(StorageContext context, byte[] key, byte[] value)
         {
-            if (key.Length > MaxStorageKeySize || value.Length > MaxStorageValueSize || context.IsReadOnly)
-                throw new ArgumentException();
+            if (key.Length > MaxStorageKeySize) throw new ArgumentException("Key length too big", nameof(key));
+            if (value.Length > MaxStorageValueSize) throw new ArgumentException("Value length too big", nameof(value));
+            if (context.IsReadOnly) throw new ArgumentException("StorageContext is readonly", nameof(context));
 
             int newDataSize;
             StorageKey skey = new()

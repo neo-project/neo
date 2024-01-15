@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <TargetFrameworks>net7.0</TargetFrameworks>
     <AssemblyTitle>Neo.CLI</AssemblyTitle>
     <AssemblyName>neo-cli</AssemblyName>
     <OutputType>Exe</OutputType>
@@ -10,6 +11,10 @@
     <ApplicationIcon>neo.ico</ApplicationIcon>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
 
   <ItemGroup>
     <Content Include="neo.ico" />

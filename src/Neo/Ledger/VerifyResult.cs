@@ -29,6 +29,11 @@ namespace Neo.Ledger
         AlreadyExists,
 
         /// <summary>
+        /// Indicates that an <see cref="IInventory"/> with the same hash already exists in the memory pool.
+        /// </summary>
+        AlreadyInPool,
+
+        /// <summary>
         /// Indicates that the <see cref="MemoryPool"/> is full and the transaction cannot be verified.
         /// </summary>
         OutOfMemory,

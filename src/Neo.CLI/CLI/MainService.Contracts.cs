@@ -49,7 +49,7 @@ namespace Neo.CLI
             ConsoleHelper.Info("Gas consumed: ", $"{new BigDecimal((BigInteger)tx.SystemFee, NativeContract.GAS.Decimals)}");
             ConsoleHelper.Info("Network fee: ", $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)}");
             ConsoleHelper.Info("Total fee: ", $"{new BigDecimal((BigInteger)(tx.SystemFee + tx.NetworkFee), NativeContract.GAS.Decimals)} GAS");
-            if (!ReadUserInput("Relay tx? (no|yes)").IsYes()) // Add this in case just want to get hash but not relay
+            if (!ConsoleHelper.ReadUserInput("Relay tx? (no|yes)").IsYes()) // Add this in case just want to get hash but not relay
             {
                 return;
             }
@@ -111,7 +111,7 @@ namespace Neo.CLI
                 ConsoleHelper.Info("Gas consumed: ", $"{new BigDecimal((BigInteger)tx.SystemFee, NativeContract.GAS.Decimals)}");
                 ConsoleHelper.Info("Network fee: ", $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)}");
                 ConsoleHelper.Info("Total fee: ", $"{new BigDecimal((BigInteger)(tx.SystemFee + tx.NetworkFee), NativeContract.GAS.Decimals)} GAS");
-                if (!ReadUserInput("Relay tx? (no|yes)").IsYes()) // Add this in case just want to get hash but not relay
+                if (!ConsoleHelper.ReadUserInput("Relay tx? (no|yes)").IsYes()) // Add this in case just want to get hash but not relay
                 {
                     return;
                 }
@@ -133,21 +133,27 @@ namespace Neo.CLI
         {
             var gas = new BigDecimal(maxGas, NativeContract.GAS.Decimals);
             Signer[] signers = Array.Empty<Signer>();
-            if (!NoWallet() && sender != null)
+            if (!NoWallet())
             {
-                if (signerAccounts == null)
-                    signerAccounts = new UInt160[1] { sender };
-                else if (signerAccounts.Contains(sender) && signerAccounts[0] != sender)
+                if (sender == null)
+                    sender = CurrentWallet!.GetDefaultAccount()?.ScriptHash;
+
+                if (sender != null)
                 {
-                    var signersList = signerAccounts.ToList();
-                    signersList.Remove(sender);
-                    signerAccounts = signersList.Prepend(sender).ToArray();
+                    if (signerAccounts == null)
+                        signerAccounts = new UInt160[1] { sender };
+                    else if (signerAccounts.Contains(sender) && signerAccounts[0] != sender)
+                    {
+                        var signersList = signerAccounts.ToList();
+                        signersList.Remove(sender);
+                        signerAccounts = signersList.Prepend(sender).ToArray();
+                    }
+                    else if (!signerAccounts.Contains(sender))
+                    {
+                        signerAccounts = signerAccounts.Prepend(sender).ToArray();
+                    }
+                    signers = signerAccounts.Select(p => new Signer() { Account = p, Scopes = WitnessScope.CalledByEntry }).ToArray();
                 }
-                else if (!signerAccounts.Contains(sender))
-                {
-                    signerAccounts = signerAccounts.Prepend(sender).ToArray();
-                }
-                signers = signerAccounts.Select(p => new Signer() { Account = p, Scopes = WitnessScope.CalledByEntry }).ToArray();
             }
 
             Transaction tx = new Transaction
@@ -173,7 +179,7 @@ namespace Neo.CLI
                 $"{new BigDecimal((BigInteger)tx.NetworkFee, NativeContract.GAS.Decimals)}\t",
                 "Total fee: ",
                 $"{new BigDecimal((BigInteger)(tx.SystemFee + tx.NetworkFee), NativeContract.GAS.Decimals)} GAS");
-            if (!ReadUserInput("Relay tx? (no|yes)").IsYes())
+            if (!ConsoleHelper.ReadUserInput("Relay tx? (no|yes)").IsYes())
             {
                 return;
             }
