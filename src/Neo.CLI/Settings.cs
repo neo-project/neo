@@ -60,7 +60,7 @@ namespace Neo
             Storage = new(section.GetSection(nameof(Storage)));
             P2P = new(section.GetSection(nameof(P2P)));
             UnlockWallet = new(section.GetSection(nameof(UnlockWallet)));
-           this.Plugins = section.GetSection("Plugins").Get<string[]>() ?? Array.Empty<string>();
+            this.Plugins = section.GetSection("Plugins").Get<string[]>() ?? Array.Empty<string>();
         }
     }
 
