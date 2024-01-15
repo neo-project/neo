@@ -30,7 +30,7 @@ namespace Neo.Node.Service
         Task<object?> ExecuteAsync(CancellationToken cancellationToken);
     }
 
-    internal class PipeCommand : INeoCliCommand
+    internal sealed class PipeCommand : INeoCliCommand
     {
         private static readonly ConcurrentDictionary<CommandType, Func<string[], CancellationToken, object?>> s_methods = new();
 
@@ -46,7 +46,7 @@ namespace Neo.Node.Service
                 var pipeAttr = method.GetCustomAttribute<PipeMethodAttribute>();
                 if (pipeAttr == null) continue;
                 if (s_methods.ContainsKey(pipeAttr.Command) && pipeAttr.Overwrite == false)
-                    throw new MethodAccessException($"{handlerType.FullName}::{method.Name}: Pipe command {pipeAttr.Command} already exists.");
+                    throw new MethodAccessException($"Failed to add {handlerType.FullName}.{method.Name} method to pipe commands. {pipeAttr.Command} already exists.");
                 s_methods[pipeAttr.Command] = method.CreateDelegate<Func<string[], CancellationToken, object?>>(handler);
             }
         }

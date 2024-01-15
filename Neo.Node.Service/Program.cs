@@ -11,25 +11,14 @@
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Neo.Node.Service;
-using System;
 
-var builder = Host.CreateDefaultBuilder(args);
-
-if (OperatingSystem.IsLinux())
-    builder = builder.UseSystemd();
-else if (OperatingSystem.IsWindows())
-#pragma warning disable CA1416 // Validate platform compatibility
-    builder = builder.ConfigureLogging(c => c.AddEventLog())
-        .UseWindowsService();
-#pragma warning restore CA1416 // Validate platform compatibility
-
-
-var host = builder
+var host = Host.CreateDefaultBuilder(args)
+    .UseSystemd()
+    .UseWindowsService()
     .ConfigureServices(services =>
     {
-        services.AddHostedService<NeoCliPipeService>();
+        services.AddHostedService<NodeService>();
     })
     .Build();
 

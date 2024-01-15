@@ -25,7 +25,7 @@ namespace Neo.Node.Service.Test
         {
             var json = "{\"Command\":238,\"Args\":[]}";
 
-            var commandObj = JsonSerializer.Deserialize<PipeCommand>(json, NeoCliPipeService.JsonOptions);
+            var commandObj = JsonSerializer.Deserialize<PipeCommand>(json, NodeService.JsonOptions);
 
             // basic checks
             Assert.NotNull(commandObj);
