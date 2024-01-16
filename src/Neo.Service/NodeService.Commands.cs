@@ -12,7 +12,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Node.Service
+namespace Neo.Service
 {
     internal partial class NodeService
     {

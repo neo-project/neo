@@ -12,7 +12,7 @@
 using System;
 using System.Reflection;
 
-namespace Neo.Node.Service
+namespace Neo.Service
 {
     internal static class NodeUtilities
     {

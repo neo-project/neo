@@ -16,7 +16,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Node.Service
+namespace Neo.Service
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
     internal enum CommandType

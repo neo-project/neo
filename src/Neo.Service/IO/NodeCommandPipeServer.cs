@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Logging;
-using Neo.Node.Service.Json;
+using Neo.Service.Json;
 using System;
 using System.IO;
 using System.IO.Pipes;
@@ -20,7 +20,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Node.Service.IO
+namespace Neo.Service.IO
 {
     internal sealed class NodeCommandPipeServer
     {

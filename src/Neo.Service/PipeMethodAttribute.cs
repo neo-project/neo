@@ -11,7 +11,7 @@
 
 using System;
 
-namespace Neo.Node.Service
+namespace Neo.Service
 {
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     internal class PipeMethodAttribute : Attribute

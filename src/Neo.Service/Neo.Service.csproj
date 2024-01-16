@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net7.0</TargetFrameworks>
-    <AssemblyTitle>Neo.Node.Service</AssemblyTitle>
+    <AssemblyTitle>Neo.Service</AssemblyTitle>
     <AssemblyName>neo-node</AssemblyName>
     <Nullable>enable</Nullable>
   </PropertyGroup>

@@ -14,11 +14,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Neo.Node.Service.Test
+namespace Neo.Service.Test
 {
     public class UT_NodeService
     {
-        private static NodeService? _nodeService;
+        private static NodeService? s_nodeService;
 
         public UT_NodeService()
         {
@@ -28,7 +28,7 @@ namespace Neo.Node.Service.Test
             services.AddSingleton<ILoggerFactory, NullLoggerFactory>();
             services.AddSingleton<NodeService>();
             var servicesProvider = services.BuildServiceProvider();
-            _nodeService = servicesProvider.GetService<NodeService>();
+            s_nodeService = servicesProvider.GetService<NodeService>();
         }
 
         [Fact]

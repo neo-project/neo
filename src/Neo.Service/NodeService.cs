@@ -12,13 +12,13 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Neo.Node.Service.IO;
+using Neo.Service.IO;
 using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Node.Service
+namespace Neo.Service
 {
     internal sealed partial class NodeService : BackgroundService
     {

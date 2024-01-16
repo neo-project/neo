@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Neo.Node.Service\Neo.Node.Service.csproj" />
+    <ProjectReference Include="..\..\src\Neo.Service\Neo.Service.csproj" />
   </ItemGroup>
 
 </Project>

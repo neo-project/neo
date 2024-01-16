@@ -13,7 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
 using Neo.Persistence;
 
-namespace Neo.Node.Service
+namespace Neo.Service
 {
     internal sealed class NodeSettings
     {

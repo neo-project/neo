@@ -11,7 +11,7 @@
 
 using System.Text.Json;
 
-namespace Neo.Node.Service.Json
+namespace Neo.Service.Json
 {
     internal class LowerInvariantCaseNamingPolicy : JsonNamingPolicy
     {

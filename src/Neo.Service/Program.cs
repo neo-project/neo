@@ -11,9 +11,11 @@
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Neo.Node.Service;
+using Neo.Service;
+using System;
 
 var host = Host.CreateDefaultBuilder(args)
+    .UseContentRoot(AppContext.BaseDirectory)
     .UseSystemd()
     .UseWindowsService()
     .ConfigureServices(services =>
