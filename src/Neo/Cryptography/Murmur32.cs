@@ -52,7 +52,7 @@ namespace Neo.Cryptography
         protected override void HashCore(ReadOnlySpan<byte> source)
         {
             length += source.Length;
-            for (; source.Length >= 4; source = source[4..])
+            for (; source.Length >= 4; source = source.Slice(4))
             {
                 uint k = BinaryPrimitives.ReadUInt32LittleEndian(source);
                 k *= c1;

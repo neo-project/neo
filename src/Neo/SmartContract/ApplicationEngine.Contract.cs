@@ -14,6 +14,8 @@ using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -153,11 +155,10 @@ namespace Neo.SmartContract
             {
                 if (Trigger != TriggerType.OnPersist)
                     throw new InvalidOperationException();
-                foreach (NativeContract contract in NativeContract.Contracts)
-                {
-                    if (contract.IsActive(ProtocolSettings, PersistingBlock.Index))
-                        await contract.OnPersist(this);
-                }
+                var taskList = NativeContract.Contracts
+                    .Where(w => w.IsActive(ProtocolSettings, PersistingBlock.Index))
+                    .Select(async s => await s.OnPersist(this));
+                await Task.WhenAll(taskList);
             }
             catch (Exception ex)
             {
@@ -175,11 +176,10 @@ namespace Neo.SmartContract
             {
                 if (Trigger != TriggerType.PostPersist)
                     throw new InvalidOperationException();
-                foreach (NativeContract contract in NativeContract.Contracts)
-                {
-                    if (contract.IsActive(ProtocolSettings, PersistingBlock.Index))
-                        await contract.PostPersist(this);
-                }
+                var taskList = NativeContract.Contracts
+                    .Where(w => w.IsActive(ProtocolSettings, PersistingBlock.Index))
+                    .Select(async s => await s.PostPersist(this));
+                await Task.WhenAll(taskList);
             }
             catch (Exception ex)
             {

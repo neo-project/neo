@@ -21,6 +21,7 @@ namespace Neo.Cryptography
     public static class Crypto
     {
         private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+        private static readonly ECDsa s_ecdsa = ECDsa.Create();
 
         /// <summary>
         /// Calculates the 160-bit hash value of the specified message.
@@ -51,7 +52,7 @@ namespace Neo.Cryptography
         /// <returns>The ECDSA signature for the specified message.</returns>
         public static byte[] Sign(byte[] message, byte[] prikey, byte[] pubkey)
         {
-            using var ecdsa = ECDsa.Create(new ECParameters
+            s_ecdsa.ImportParameters(new ECParameters
             {
                 Curve = ECCurve.NamedCurves.nistP256,
                 D = prikey,
@@ -61,7 +62,7 @@ namespace Neo.Cryptography
                     Y = pubkey[32..]
                 }
             });
-            return ecdsa.SignData(message, HashAlgorithmName.SHA256);
+            return s_ecdsa.SignData(message, HashAlgorithmName.SHA256);
         }
 
         /// <summary>
@@ -99,7 +100,7 @@ namespace Neo.Cryptography
                     pubkey.Curve == ECC.ECCurve.Secp256k1 ? ECCurve.CreateFromFriendlyName("secP256k1") :
                     throw new NotSupportedException();
                 byte[] buffer = pubkey.EncodePoint(false);
-                using var ecdsa = ECDsa.Create(new ECParameters
+                s_ecdsa.ImportParameters(new ECParameters
                 {
                     Curve = curve,
                     Q = new ECPoint
@@ -108,7 +109,7 @@ namespace Neo.Cryptography
                         Y = buffer[33..]
                     }
                 });
-                return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
+                return s_ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
             }
         }
 

@@ -12,6 +12,7 @@
 using Neo.IO;
 using Neo.SmartContract;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -43,7 +44,7 @@ namespace Neo.Persistence
             public TrackState State;
         }
 
-        private readonly Dictionary<StorageKey, Trackable> dictionary = new();
+        private readonly ConcurrentDictionary<StorageKey, Trackable> dictionary = new();
         private readonly HashSet<StorageKey> changeSet = new();
 
         /// <summary>
@@ -56,25 +57,22 @@ namespace Neo.Persistence
         {
             get
             {
-                lock (dictionary)
+                if (dictionary.TryGetValue(key, out Trackable trackable))
                 {
-                    if (dictionary.TryGetValue(key, out Trackable trackable))
-                    {
-                        if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
-                            throw new KeyNotFoundException();
-                    }
-                    else
-                    {
-                        trackable = new Trackable
-                        {
-                            Key = key,
-                            Item = GetInternal(key),
-                            State = TrackState.None
-                        };
-                        dictionary.Add(key, trackable);
-                    }
-                    return trackable.Item;
+                    if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
+                        throw new KeyNotFoundException();
                 }
+                else
+                {
+                    trackable = new Trackable
+                    {
+                        Key = key,
+                        Item = GetInternal(key),
+                        State = TrackState.None
+                    };
+                    dictionary.TryAdd(key, trackable);
+                }
+                return trackable.Item;
             }
         }
 
@@ -87,29 +85,26 @@ namespace Neo.Persistence
         /// <remarks>Note: This method does not read the internal storage to check whether the record already exists.</remarks>
         public void Add(StorageKey key, StorageItem value)
         {
-            lock (dictionary)
+            if (dictionary.TryGetValue(key, out Trackable trackable))
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                trackable.Item = value;
+                trackable.State = trackable.State switch
                 {
-                    trackable.Item = value;
-                    trackable.State = trackable.State switch
-                    {
-                        TrackState.Deleted => TrackState.Changed,
-                        TrackState.NotFound => TrackState.Added,
-                        _ => throw new ArgumentException()
-                    };
-                }
-                else
-                {
-                    dictionary[key] = new Trackable
-                    {
-                        Key = key,
-                        Item = value,
-                        State = TrackState.Added
-                    };
-                }
-                changeSet.Add(key);
+                    TrackState.Deleted => TrackState.Changed,
+                    TrackState.NotFound => TrackState.Added,
+                    _ => throw new ArgumentException()
+                };
             }
+            else
+            {
+                dictionary[key] = new Trackable
+                {
+                    Key = key,
+                    Item = value,
+                    State = TrackState.Added
+                };
+            }
+            changeSet.Add(key);
         }
 
         /// <summary>
@@ -143,7 +138,7 @@ namespace Neo.Persistence
                 }
             foreach (StorageKey key in deletedItem)
             {
-                dictionary.Remove(key);
+                dictionary.TryRemove(key, out _);
             }
             changeSet.Clear();
         }
@@ -163,33 +158,30 @@ namespace Neo.Persistence
         /// <param name="key">The key of the entry.</param>
         public void Delete(StorageKey key)
         {
-            lock (dictionary)
+            if (dictionary.TryGetValue(key, out Trackable trackable))
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (trackable.State == TrackState.Added)
                 {
-                    if (trackable.State == TrackState.Added)
-                    {
-                        trackable.State = TrackState.NotFound;
-                        changeSet.Remove(key);
-                    }
-                    else if (trackable.State != TrackState.NotFound)
-                    {
-                        trackable.State = TrackState.Deleted;
-                        changeSet.Add(key);
-                    }
+                    trackable.State = TrackState.NotFound;
+                    changeSet.Remove(key);
                 }
-                else
+                else if (trackable.State != TrackState.NotFound)
                 {
-                    StorageItem item = TryGetInternal(key);
-                    if (item == null) return;
-                    dictionary.Add(key, new Trackable
-                    {
-                        Key = key,
-                        Item = item,
-                        State = TrackState.Deleted
-                    });
+                    trackable.State = TrackState.Deleted;
                     changeSet.Add(key);
                 }
+            }
+            else
+            {
+                StorageItem item = TryGetInternal(key);
+                if (item == null) return;
+                dictionary.TryAdd(key, new Trackable
+                {
+                    Key = key,
+                    Item = item,
+                    State = TrackState.Deleted
+                });
+                changeSet.Add(key);
             }
         }
 
@@ -267,11 +259,9 @@ namespace Neo.Persistence
         /// <returns>The change set.</returns>
         public IEnumerable<Trackable> GetChangeSet()
         {
-            lock (dictionary)
-            {
-                foreach (StorageKey key in changeSet)
-                    yield return dictionary[key];
-            }
+            //foreach (StorageKey key in changeSet)
+            //    yield return dictionary[key];
+            return changeSet.Select(s => dictionary[s]);
         }
 
         /// <summary>
@@ -281,12 +271,9 @@ namespace Neo.Persistence
         /// <returns><see langword="true"/> if the cache contains an entry with the specified key; otherwise, <see langword="false"/>.</returns>
         public bool Contains(StorageKey key)
         {
-            lock (dictionary)
-            {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
-                    return trackable.State != TrackState.Deleted && trackable.State != TrackState.NotFound;
-                return ContainsInternal(key);
-            }
+            if (dictionary.TryGetValue(key, out Trackable trackable))
+                return trackable.State != TrackState.Deleted && trackable.State != TrackState.NotFound;
+            return ContainsInternal(key);
         }
 
         /// <summary>
@@ -311,52 +298,49 @@ namespace Neo.Persistence
         /// <returns>The cached data. Or <see langword="null"/> if it doesn't exist and the <paramref name="factory"/> is not provided.</returns>
         public StorageItem GetAndChange(StorageKey key, Func<StorageItem> factory = null)
         {
-            lock (dictionary)
+            if (dictionary.TryGetValue(key, out Trackable trackable))
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
                 {
-                    if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
-                    {
-                        if (factory == null) return null;
-                        trackable.Item = factory();
-                        if (trackable.State == TrackState.Deleted)
-                        {
-                            trackable.State = TrackState.Changed;
-                        }
-                        else
-                        {
-                            trackable.State = TrackState.Added;
-                            changeSet.Add(key);
-                        }
-                    }
-                    else if (trackable.State == TrackState.None)
+                    if (factory == null) return null;
+                    trackable.Item = factory();
+                    if (trackable.State == TrackState.Deleted)
                     {
                         trackable.State = TrackState.Changed;
-                        changeSet.Add(key);
-                    }
-                }
-                else
-                {
-                    trackable = new Trackable
-                    {
-                        Key = key,
-                        Item = TryGetInternal(key)
-                    };
-                    if (trackable.Item == null)
-                    {
-                        if (factory == null) return null;
-                        trackable.Item = factory();
-                        trackable.State = TrackState.Added;
                     }
                     else
                     {
-                        trackable.State = TrackState.Changed;
+                        trackable.State = TrackState.Added;
+                        changeSet.Add(key);
                     }
-                    dictionary.Add(key, trackable);
+                }
+                else if (trackable.State == TrackState.None)
+                {
+                    trackable.State = TrackState.Changed;
                     changeSet.Add(key);
                 }
-                return trackable.Item;
             }
+            else
+            {
+                trackable = new Trackable
+                {
+                    Key = key,
+                    Item = TryGetInternal(key)
+                };
+                if (trackable.Item == null)
+                {
+                    if (factory == null) return null;
+                    trackable.Item = factory();
+                    trackable.State = TrackState.Added;
+                }
+                else
+                {
+                    trackable.State = TrackState.Changed;
+                }
+                dictionary.TryAdd(key, trackable);
+                changeSet.Add(key);
+            }
+            return trackable.Item;
         }
 
         /// <summary>
@@ -367,45 +351,42 @@ namespace Neo.Persistence
         /// <returns>The cached data.</returns>
         public StorageItem GetOrAdd(StorageKey key, Func<StorageItem> factory)
         {
-            lock (dictionary)
+            if (dictionary.TryGetValue(key, out Trackable trackable))
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
                 {
-                    if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
+                    trackable.Item = factory();
+                    if (trackable.State == TrackState.Deleted)
                     {
-                        trackable.Item = factory();
-                        if (trackable.State == TrackState.Deleted)
-                        {
-                            trackable.State = TrackState.Changed;
-                        }
-                        else
-                        {
-                            trackable.State = TrackState.Added;
-                            changeSet.Add(key);
-                        }
-                    }
-                }
-                else
-                {
-                    trackable = new Trackable
-                    {
-                        Key = key,
-                        Item = TryGetInternal(key)
-                    };
-                    if (trackable.Item == null)
-                    {
-                        trackable.Item = factory();
-                        trackable.State = TrackState.Added;
-                        changeSet.Add(key);
+                        trackable.State = TrackState.Changed;
                     }
                     else
                     {
-                        trackable.State = TrackState.None;
+                        trackable.State = TrackState.Added;
+                        changeSet.Add(key);
                     }
-                    dictionary.Add(key, trackable);
                 }
-                return trackable.Item;
             }
+            else
+            {
+                trackable = new Trackable
+                {
+                    Key = key,
+                    Item = TryGetInternal(key)
+                };
+                if (trackable.Item == null)
+                {
+                    trackable.Item = factory();
+                    trackable.State = TrackState.Added;
+                    changeSet.Add(key);
+                }
+                else
+                {
+                    trackable.State = TrackState.None;
+                }
+                dictionary.TryAdd(key, trackable);
+            }
+            return trackable.Item;
         }
 
         /// <summary>
@@ -419,9 +400,7 @@ namespace Neo.Persistence
             IEnumerable<(byte[], StorageKey, StorageItem)> cached;
             HashSet<StorageKey> cachedKeySet;
             ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
-            lock (dictionary)
-            {
-                cached = dictionary
+            cached = dictionary
                     .Where(p => p.Value.State != TrackState.Deleted && p.Value.State != TrackState.NotFound && (keyOrPrefix == null || comparer.Compare(p.Key.ToArray(), keyOrPrefix) >= 0))
                     .Select(p =>
                     (
@@ -431,8 +410,7 @@ namespace Neo.Persistence
                     ))
                     .OrderBy(p => p.KeyBytes, comparer)
                     .ToArray();
-                cachedKeySet = new HashSet<StorageKey>(dictionary.Keys);
-            }
+            cachedKeySet = new HashSet<StorageKey>(dictionary.Keys);
             var uncached = SeekInternal(keyOrPrefix ?? Array.Empty<byte>(), direction)
                 .Where(p => !cachedKeySet.Contains(p.Key))
                 .Select(p =>
@@ -480,24 +458,21 @@ namespace Neo.Persistence
         /// <returns>The cached data. Or <see langword="null"/> if it is neither in the cache nor in the underlying storage.</returns>
         public StorageItem TryGet(StorageKey key)
         {
-            lock (dictionary)
+            if (dictionary.TryGetValue(key, out Trackable trackable))
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
-                {
-                    if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
-                        return null;
-                    return trackable.Item;
-                }
-                StorageItem value = TryGetInternal(key);
-                if (value == null) return null;
-                dictionary.Add(key, new Trackable
-                {
-                    Key = key,
-                    Item = value,
-                    State = TrackState.None
-                });
-                return value;
+                if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
+                    return null;
+                return trackable.Item;
             }
+            StorageItem value = TryGetInternal(key);
+            if (value == null) return null;
+            dictionary.TryAdd(key, new Trackable
+            {
+                Key = key,
+                Item = value,
+                State = TrackState.None
+            });
+            return value;
         }
 
         /// <summary>

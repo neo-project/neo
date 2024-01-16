@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Array = System.Array;
 using VMArray = Neo.VM.Types.Array;
 
@@ -503,6 +504,7 @@ namespace Neo.SmartContract
                 throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override void OnSysCall(uint method)
         {
             OnSysCall(services[method]);
@@ -512,16 +514,16 @@ namespace Neo.SmartContract
         /// Invokes the specified interoperable service.
         /// </summary>
         /// <param name="descriptor">The descriptor of the interoperable service.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual void OnSysCall(InteropDescriptor descriptor)
         {
             ValidateCallFlags(descriptor.RequiredCallFlags);
             AddGas(descriptor.FixedPrice * ExecFeeFactor);
 
-            object[] parameters = new object[descriptor.Parameters.Count];
-            for (int i = 0; i < parameters.Length; i++)
-                parameters[i] = Convert(Pop(), descriptor.Parameters[i]);
-
-            object returnValue = descriptor.Handler.Invoke(this, parameters);
+            var parameters = descriptor.Parameters
+                .Select(s => Convert(Pop(), s))
+                .ToArray();
+            var returnValue = descriptor.Handler.Invoke(this, parameters);
             if (descriptor.Handler.ReturnType != typeof(void))
                 Push(Convert(returnValue));
         }
