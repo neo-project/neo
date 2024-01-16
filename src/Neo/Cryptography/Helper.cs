@@ -125,8 +125,7 @@ namespace Neo.Cryptography
         /// <returns>The computed hash code.</returns>
         public static byte[] Sha256(this byte[] value, int offset, int count)
         {
-            using var sha256 = SHA256.Create();
-            return sha256.ComputeHash(value, offset, count);
+            return SHA256.HashData(value.AsSpan(offset, count));
         }
 
         /// <summary>
@@ -136,9 +135,8 @@ namespace Neo.Cryptography
         /// <returns>The computed hash code.</returns>
         public static byte[] Sha256(this ReadOnlySpan<byte> value)
         {
-            byte[] buffer = new byte[32];
-            using var sha256 = SHA256.Create();
-            sha256.TryComputeHash(value, buffer, out _);
+            var buffer = new byte[32];
+            SHA256.TryHashData(value, buffer, out _);
             return buffer;
         }
 
