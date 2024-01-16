@@ -30,7 +30,7 @@ namespace Neo.Node.Service.Test
             // basic checks
             Assert.NotNull(commandObj);
             Assert.Equal(CommandType.Exit, commandObj.Command);
-            Assert.Empty(commandObj.Args);
+            Assert.Empty(commandObj.Arguments);
 
             // pre-defined command exist
             Assert.True(PipeCommand.Contains(CommandType.Exit));

@@ -9,6 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
+using System.Reflection;
+
 namespace Neo.Node.Service
 {
     internal static class NodeUtilities
@@ -20,5 +23,8 @@ namespace Neo.Node.Service
                 return result;
             return default;
         }
+
+        public static Version GetApplicationVersion() =>
+            Assembly.GetExecutingAssembly().GetName().Version!;
     }
 }

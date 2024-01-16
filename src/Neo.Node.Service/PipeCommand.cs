@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// INeoCliCommand.cs file belongs to the neo project and is free
+// PipeCommand.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -12,30 +12,34 @@
 using System;
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Node.Service
 {
-    internal enum CommandType : byte
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    internal enum CommandType
     {
-        None = 0x00,
-        Exit = 0xee,
+        Exit,
     }
 
-    internal interface INeoCliCommand
+    internal interface IPipeCommand
     {
         CommandType Command { get; }
-        string[] Args { get; }
+        string[] Arguments { get; }
         Task<object?> ExecuteAsync(CancellationToken cancellationToken);
     }
 
-    internal sealed class PipeCommand : INeoCliCommand
+    internal sealed class PipeCommand : IPipeCommand
     {
         private static readonly ConcurrentDictionary<CommandType, Func<string[], CancellationToken, object?>> s_methods = new();
 
-        public CommandType Command { get; set; } = CommandType.None;
-        public string[] Args { get; set; } = Array.Empty<string>();
+        [JsonInclude]
+        public required CommandType Command { get; set; }
+
+        [JsonInclude]
+        public required string[] Arguments { get; set; }
 
         public static void RegisterMethods(object handler)
         {
@@ -59,7 +63,7 @@ namespace Neo.Node.Service
             if (s_methods.TryGetValue(Command, out var commandFunc) == false)
                 throw new MissingMethodException($"{Command}");
 
-            var methodObj = commandFunc(Args, cancellationToken);
+            var methodObj = commandFunc(Arguments, cancellationToken);
 
             if (methodObj is Task<object?> awaitMethodTask)
                 methodObj = await awaitMethodTask;

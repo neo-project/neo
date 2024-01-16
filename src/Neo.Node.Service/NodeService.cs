@@ -12,10 +12,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System;
-using System.IO.Pipes;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,17 +19,10 @@ namespace Neo.Node.Service
 {
     internal sealed partial class NodeService : BackgroundService
     {
-        public static JsonSerializerOptions JsonOptions => new()
-        {
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
-            WriteIndented = false,
-        };
-
         private readonly ILogger<NodeService> _logger;
         private readonly NeoSystem? _neoSystem;
         private readonly ProtocolSettings _nodeProtocolSettings;
-
-        private NamedPipeServerStream? _neoPipeServer;
+        private readonly NodeSettings _nodeSettings;
 
         public NodeService(
             IConfiguration config,
@@ -41,8 +30,14 @@ namespace Neo.Node.Service
         {
             _logger = logger;
             _nodeProtocolSettings = ProtocolSettings.Load(config.GetSection("ProtocolConfiguration"));
-            NodeSettings.Load(config.GetSection("ApplicationConfiguration"));
+            _nodeSettings = NodeSettings.Load(config.GetSection("ApplicationConfiguration"));
             PipeCommand.RegisterMethods(this);
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            _neoSystem?.Dispose();
         }
 
         public override Task StartAsync(CancellationToken cancellationToken)
@@ -59,28 +54,7 @@ namespace Neo.Node.Service
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            try
-            {
-                _neoPipeServer = new("neoclipipe", PipeDirection.InOut, 1, PipeTransmissionMode.Byte);
 
-                while (stoppingToken.IsCancellationRequested == false)
-                {
-                    await _neoPipeServer.WaitForConnectionAsync(stoppingToken);
-                    var command = await JsonSerializer.DeserializeAsync<PipeCommand>(_neoPipeServer, JsonOptions, stoppingToken);
-
-                    if (command == null || command.Command == CommandType.None)
-                    {
-                        _neoPipeServer.Disconnect();
-                        continue;
-                    }
-
-                    await command.ExecuteAsync(stoppingToken);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical("{Exception}", ex!.InnerException?.Message ?? ex.Message);
-            }
         }
     }
 }
