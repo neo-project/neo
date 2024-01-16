@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// NodePipeServer.cs file belongs to the neo project and is free
+// NodeCommandPipeServer.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -34,21 +34,21 @@ namespace Neo.Node.Service.IO
             WriteIndented = false,
         };
 
-        private readonly Logger<NodeCommandPipeServer> _logger;
+        private readonly ILogger<NodeCommandPipeServer> _logger;
         private readonly NamedPipeServerStream _neoPipeStream;
 
         private CancellationTokenSource? _cancellationTokenSource;
 
         public NodeCommandPipeServer(
-            Logger<NodeCommandPipeServer> logger)
+            ILogger<NodeCommandPipeServer> logger)
         {
-            _logger = logger;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _neoPipeStream = new(PipeName, PipeDirection.In, 4, PipeTransmissionMode.Byte, PipeOptions.CurrentUserOnly);
         }
 
         public async Task StartAsync(CancellationToken stoppingToken)
         {
-            if (_cancellationTokenSource != null || _cancellationTokenSource!.IsCancellationRequested == false) return;
+            if (_cancellationTokenSource?.IsCancellationRequested == false) return;
             _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
 
             var commandTypeNames = Enum.GetNames<CommandType>();
@@ -74,7 +74,7 @@ namespace Neo.Node.Service.IO
                             continue;
                         }
 
-                        _logger.LogDebug("Exec: {Command} {Arguments}", command.Command, string.Join(' ', command.Arguments));
+                        _logger.LogDebug("Exec: {Command} {Arguments}", command.Exec, string.Join(' ', command.Arguments));
 
                         try
                         {

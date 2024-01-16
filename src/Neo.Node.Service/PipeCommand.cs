@@ -21,12 +21,12 @@ namespace Neo.Node.Service
     [JsonConverter(typeof(JsonStringEnumConverter))]
     internal enum CommandType
     {
-        Exit,
+        Exit = 0xee,
     }
 
     internal interface IPipeCommand
     {
-        CommandType Command { get; }
+        CommandType Exec { get; }
         string[] Arguments { get; }
         Task<object?> ExecuteAsync(CancellationToken cancellationToken);
     }
@@ -36,7 +36,7 @@ namespace Neo.Node.Service
         private static readonly ConcurrentDictionary<CommandType, Func<string[], CancellationToken, object?>> s_methods = new();
 
         [JsonInclude]
-        public required CommandType Command { get; set; }
+        public required CommandType Exec { get; set; }
 
         [JsonInclude]
         public required string[] Arguments { get; set; }
@@ -60,8 +60,8 @@ namespace Neo.Node.Service
 
         public async Task<object?> ExecuteAsync(CancellationToken cancellationToken)
         {
-            if (s_methods.TryGetValue(Command, out var commandFunc) == false)
-                throw new MissingMethodException($"{Command}");
+            if (s_methods.TryGetValue(Exec, out var commandFunc) == false)
+                throw new MissingMethodException($"{Exec}");
 
             var methodObj = commandFunc(Arguments, cancellationToken);
 

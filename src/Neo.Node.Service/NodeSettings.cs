@@ -41,6 +41,7 @@ namespace Neo.Node.Service
 
         public static LoggerSettings Default => new()
         {
+            Path = "logs",
             ConsoleOutput = false,
             Active = false,
         };
@@ -72,6 +73,7 @@ namespace Neo.Node.Service
 
     internal sealed class P2PSettings
     {
+        public string? Listen { get; private init; }
         public ushort Port { get; private init; }
         public int MinDesiredConnections { get; private init; }
         public int MaxConnections { get; private init; }
@@ -79,6 +81,7 @@ namespace Neo.Node.Service
 
         public static P2PSettings Default => new()
         {
+            Listen = "0.0.0.0",
             Port = 10333,
             MinDesiredConnections = Peer.DefaultMinDesiredConnections,
             MaxConnections = Peer.DefaultMaxConnections,
@@ -87,6 +90,7 @@ namespace Neo.Node.Service
 
         public static P2PSettings Load(IConfigurationSection section) => new()
         {
+            Listen = section.GetValue(nameof(Listen), Default.Listen),
             Port = section.GetValue(nameof(Port), Default.Port),
             MinDesiredConnections = section.GetValue(nameof(MinDesiredConnections), Default.MinDesiredConnections),
             MaxConnections = section.GetValue(nameof(MaxConnections), Default.MaxConnections),
