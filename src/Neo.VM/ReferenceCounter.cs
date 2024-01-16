@@ -82,6 +82,7 @@ namespace Neo.VM
             if (zero_referred.Count > 0)
             {
                 // Overhead: 16.5%
+                zero_referred = null; // tell GC to collect
                 zero_referred = new(ReferenceEqualityComparer.Instance);//.Clear();
                 if (cached_components is null)
                 {
