@@ -20,7 +20,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -61,14 +60,7 @@ namespace Neo.Service
             else
                 _logger.LogDebug("Import blocks finished!");
 
-            _neoSystem.StartNode(new()
-            {
-                Tcp = new(IPAddress.Parse(_nodeSettings.P2P.Listen!), _nodeSettings.P2P.Port),
-                MinDesiredConnections = _nodeSettings.P2P.MinDesiredConnections,
-                MaxConnections = _nodeSettings.P2P.MaxConnections,
-                MaxConnectionsPerAddress = _nodeSettings.P2P.MaxConnectionsPerAddress,
-            });
-            _logger.LogInformation("Neo system node started.");
+            await StartNodeAsync(cancellationToken);
         }
 
         private IEnumerable<Block> GetBlocksFromFile()

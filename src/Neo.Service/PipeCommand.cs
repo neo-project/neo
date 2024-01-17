@@ -19,8 +19,10 @@ using System.Threading.Tasks;
 namespace Neo.Service
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    internal enum CommandType
+    internal enum CommandType : byte
     {
+        Start = 0x10,
+        Stop = 0x11,
         Exit = 0xee,
     }
 
