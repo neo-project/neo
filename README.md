@@ -38,7 +38,7 @@
       src=".github/images/nnt-logo.jpg"
       width="23px">
   </a>
-  &nbsp;  
+  &nbsp;
   <a href="https://t.me/NEO_EN">
       <img
       src=".github/images/telegram-logo.png"
@@ -94,40 +94,60 @@
   </a>
 </p>
 
-
-## Table of Contents
-1. [Overview](#overview)
-2. [Project structure](#project-structure)
-3. [Related projects](#related-projects)
-4. [Opening a new issue](#opening-a-new-issue)  
-5. [Bounty program](#bounty-program)
-6. [License](#license)
-
 ## Overview
-This repository contain main classes of the 
-[Neo](https://www.neo.org) blockchain.   
+This repository contain main classes of the
+[Neo](https://www.neo.org) blockchain.
 Visit the [documentation](https://docs.neo.org/docs/en-us/index.html) to get started.
-
 
 ## Project structure
 An overview of the project folders can be seen below.
 
-|Folder|Content|
-|---|---|
-|Consensus| Classes used in the dBFT consensus algorithm, including the `ConsensusService` actor.|
-|Cryptography|General cryptography classes including ECC implementation.|
-|IO|Data structures used for caching and collection interaction.|
-|Ledger|Classes responsible for the state control, including the `MemoryPool` and `Blockchain` classes.|
-|Network|Peer-to-peer protocol implementation classes.|
-|Persistence|Classes used to allow other classes to access application state.|
-|Plugins|Interfaces used to extend Neo, including the storage interface.|
-|SmartContract|Native contracts, `ApplicationEngine`, `InteropService` and other smart-contract related classes.|
-|VM|Helper methods used to interact with the VM.|
-|Wallet|Wallet and account implementation. |
+| Folder        | Content                                                                                           |
+|---------------|---------------------------------------------------------------------------------------------------|
+| Consensus     | Classes used in the dBFT consensus algorithm, including the `ConsensusService` actor.             |
+| Cryptography  | General cryptography classes including ECC implementation.                                        |
+| IO            | Data structures used for caching and collection interaction.                                      |
+| Ledger        | Classes responsible for the state control, including the `MemoryPool` and `Blockchain` classes.   |
+| Network       | Peer-to-peer protocol implementation classes.                                                     |
+| Persistence   | Classes used to allow other classes to access application state.                                  |
+| Plugins       | Interfaces used to extend Neo, including the storage interface.                                   |
+| SmartContract | Native contracts, `ApplicationEngine`, `InteropService` and other smart-contract related classes. |
+| VM            | Helper methods used to interact with the VM.                                                      |
+| Wallet        | Wallet and account implementation.                                                                |
 
+## Downloads
+
+Below are the available downloads for our project. Please select the appropriate file for your needs.
+
+### NEO CLI Node
+| Platform    | File                    | SHA256                                                           | Download                                                                                           |
+|-------------|-------------------------|------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| Linux       | neo-cli-linux-x64.zip   | 8195918E942D2B3BF5BD0ACC8A29157197F4594EC484E1AAC719E6605E4EF299 | [V3.6.2](https://github.com/neo-project/neo-node/releases/download/v3.6.2/neo-cli-linux-x64.zip)   |
+| Windows     | neo-cli-win-x64.zip     | 4CFDD39DD7C0D37940BBBC4D42403599FFF96D4A8F9A8D394BB9A07400CAB47D | [V3.6.2](https://github.com/neo-project/neo-node/releases/download/v3.6.2/neo-cli-win-x64.zip)     |
+| Mac OS      | neo-cli-osx-x64.zip     | D0A5A50751353E22886C11EE4F8AE6C3DDBDE7EA090FE7B58A3064BAB3C8950D | [V3.6.2](https://github.com/neo-project/neo-node/releases/download/v3.6.2/neo-cli-osx-x64.zip)     |
+| Mac OS ARM  | neo-cli-osx-arm-x64.zip | CAC83365F9E9E24F20BEB98C1BB9AD1FD9240E0A28F1D5DDDE0C58E5AA8D49F3 | [V3.6.2](https://github.com/neo-project/neo-node/releases/download/v3.6.2/neo-cli-osx-arm-x64.zip) |
+| Portable    | neo-cli-portable.zip    | D268777F2A6C7E801E8FC3856BE72D336E0E2B6623BD76F2F8816D3A0F00D1D8 | [V3.6.2](https://github.com/neo-project/neo-node/releases/download/v3.6.2/neo-cli-portable.zip)    |
+
+### NEO Modules
+
+| File                | Description                                                                 | Download                                                                                           |
+|---------------------|-----------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| ApplicationLogs.zip | Synchronizes the smart contract log with the NativeContract log (Notify)    | [V3.6.3](https://github.com/neo-project/neo-modules/releases/download/v3.6.3/ApplicationLogs.zip)  |
+| DBFTPlugin.zip      | Consensus plugin with dBFT algorithm.                                       | [V3.6.3](https://github.com/neo-project/neo-modules/releases/download/v3.6.3/DBFTPlugin.zip)       |
+| LevelDBStore.zip    | Uses LevelDB to store the blockchain data                                   | [V3.6.3](https://github.com/neo-project/neo-modules/releases/download/v3.6.3/LevelDBStore.zip)     |
+| MPTTrie.zip         | 11.8 KB                                                                     | [V3.6.3](https://github.com/neo-project/neo-modules/releases/download/v3.6.3/MPTTrie.zip)          |
+| OracleService.zip   | Built-in oracle plugin                                                      | [V3.6.3](https://github.com/neo-project/neo-modules/releases/download/v3.6.3/OracleService.zip)    |
+| RocksDBStore.zip    | Uses RocksDBStore to store the blockchain data                              | [V3.6.3](https://github.com/neo-project/neo-modules/releases/download/v3.6.3/RocksDBStore.zip)     |
+| RpcClient.zip       | 53.9 KB                                                                     | [V3.6.3](https://github.com/neo-project/neo-modules/releases/download/v3.6.3/RpcClient.zip)        |
+| RpcServer.zip       | Enables RPC for the node                                                    | [V3.6.3](https://github.com/neo-project/neo-modules/releases/download/v3.6.3/ApplicationLogs.zip)  |
+| SQLiteWallet.zip    | A SQLite-based wallet provider that supports wallet files with .db3 suffix. | [V3.6.3](https://github.com/neo-project/neo-modules/releases/download/v3.6.3/SQLiteWallet.zip)     |
+| StatesDumper.zip    | Exports Neo-CLI status data                                                 | [V3.6.3](https://github.com/neo-project/neo-modules/releases/download/v3.6.3/StatesDumper.zip)     |
+| StateService.zip    | Enables MPT for the node                                                    | [V3.6.3](https://github.com/neo-project/neo-modules/releases/download/v3.6.3/StateService.zip)     |
+| StorageDumper.zip   | Exports Neo-CLI status data                                                 | [V3.6.3](https://github.com/neo-project/neo-modules/releases/download/v3.6.3/StorageDumper.zip)    |
+| TokensTracker.zip   | Enquiries balances and transaction history of accounts through RPC          | [V3.6.3](https://github.com/neo-project/neo-modules/releases/download/v3.6.3/TokensTracker.zip)    |
 
 ## Related projects
-Code references are provided for all platform building blocks. That includes the base library, the VM, a command line application and the compiler. 
+Code references are provided for all platform building blocks. That includes the base library, the VM, a command line application and the compiler.
 
 * [neo:](https://github.com/neo-project/neo/) Neo core library, contains base classes, including ledger, p2p and IO modules.
 * [neo-modules:](https://github.com/neo-project/neo-modules/) Neo modules include additional tools and plugins to be used with Neo.
