@@ -6,8 +6,8 @@
       "Active": false
     },
     "Storage": {
-      "Engine": "LevelDBStore",
-      "Path": "Data_LevelDB_{0}"
+      "Engine": "LevelDBStore", // Candidates [MemoryStore, LevelDBStore, RocksDBStore]
+      "Path": "Data_LevelDB_{0}" // {0} is a placeholder for the network id
     },
     "P2P": {
       "Port": 10333,
