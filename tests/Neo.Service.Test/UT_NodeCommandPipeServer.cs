@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// Program.cs file belongs to the neo project and is free
+// UT_NodeCommandPipeServer.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,17 +9,20 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Neo.Service;
-
-var host = Host.CreateDefaultBuilder(args)
-    .UseSystemd()
-    .UseWindowsService()
-    .ConfigureServices(services =>
+namespace Neo.Service.Test
+{
+    public class UT_NodeCommandPipeServer
     {
-        services.AddHostedService<NodeService>();
-    })
-    .Build();
 
-host.Run();
+        public UT_NodeCommandPipeServer()
+        {
+
+        }
+
+        [Fact]
+        public void Test_PreDefinedMethodsExist()
+        {
+
+        }
+    }
+}

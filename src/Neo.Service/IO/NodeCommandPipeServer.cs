@@ -22,7 +22,7 @@ using System.Threading.Tasks;
 
 namespace Neo.Service.IO
 {
-    internal sealed class NodeCommandPipeServer
+    internal sealed class NodeCommandPipeServer : IDisposable
     {
         public static Version Version => NodeUtilities.GetApplicationVersion();
         public static string PipeName => $"neo.node\\{Version.ToString(3)}\\CommandShell";
@@ -40,13 +40,21 @@ namespace Neo.Service.IO
         private CancellationTokenSource? _cancellationTokenSource;
 
         public NodeCommandPipeServer(
+            int instances,
             ILogger<NodeCommandPipeServer> logger)
         {
+            if (instances > NamedPipeServerStream.MaxAllowedServerInstances) { }
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _neoPipeStream = new(PipeName, PipeDirection.In, 4, PipeTransmissionMode.Byte, PipeOptions.CurrentUserOnly);
+            _neoPipeStream = new(PipeName, PipeDirection.In, instances, PipeTransmissionMode.Byte, PipeOptions.CurrentUserOnly);
         }
 
-        public async Task StartAsync(CancellationToken stoppingToken)
+        public void Dispose()
+        {
+            _cancellationTokenSource?.Dispose();
+            _neoPipeStream?.Dispose();
+        }
+
+        public async Task ListenAsync(CancellationToken stoppingToken)
         {
             if (_cancellationTokenSource?.IsCancellationRequested == false) return;
             _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);

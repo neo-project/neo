@@ -21,6 +21,8 @@ namespace Neo.Service
         public StorageSettings Storage { get; private init; } = StorageSettings.Default;
         public P2PSettings P2P { get; private init; } = P2PSettings.Default;
         public ContractsSettings Contracts { get; private init; } = ContractsSettings.Default;
+        public PipeSettings Pipe { get; private init; } = PipeSettings.Default;
+        public PluginSettings Plugin { get; private init; } = PluginSettings.Default;
 
         public static NodeSettings Default => new();
 
@@ -107,6 +109,36 @@ namespace Neo.Service
         public static ContractsSettings Load(IConfigurationSection section) => new()
         {
             NeoNameService = NodeUtilities.TryParseUInt160(section.GetValue<string?>(nameof(NeoNameService))),
+        };
+    }
+
+    internal sealed class PipeSettings
+    {
+        public int Instances { get; private init; }
+
+        public static PipeSettings Default => new()
+        {
+            Instances = 4,
+        };
+
+        public static PipeSettings Load(IConfigurationSection section) => new()
+        {
+            Instances = section.GetValue(nameof(Instances), Default.Instances),
+        };
+    }
+
+    internal sealed class PluginSettings
+    {
+        public string? DownloadUrl { get; private init; }
+
+        public static PluginSettings Default => new()
+        {
+            DownloadUrl = "",
+        };
+
+        public static PluginSettings Load(IConfigurationSection section) => new()
+        {
+            DownloadUrl = section.GetValue(nameof(DownloadUrl), Default.DownloadUrl),
         };
     }
 }

@@ -9,12 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Actor;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Neo.Network.P2P;
 using Neo.Service.IO;
 using System;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -28,6 +29,8 @@ namespace Neo.Service
         private readonly NodeSettings _nodeSettings;
 
         private NeoSystem? _neoSystem;
+        private LocalNode? _localNode;
+        private CancellationTokenSource? _importBlocksTask;
 
         public NodeService(
             IConfiguration config,
@@ -44,43 +47,54 @@ namespace Neo.Service
 
         public override void Dispose()
         {
-            base.Dispose();
+            _importBlocksTask?.Dispose();
             _neoSystem?.Dispose();
+            base.Dispose();
         }
 
-        public override Task StartAsync(CancellationToken cancellationToken)
+        public override async Task StartAsync(CancellationToken cancellationToken)
         {
-            _neoSystem ??= new(_nodeProtocolSettings, _nodeSettings.Storage.Engine, _nodeSettings.Storage.Path);
+            string? storagePath = null;
+            if (string.IsNullOrEmpty(_nodeSettings.Storage.Path) == false)
+                storagePath = string.Format(_nodeSettings.Storage.Path, _nodeProtocolSettings.Network);
+
+            _neoSystem ??= new(_nodeProtocolSettings, _nodeSettings.Storage.Engine, storagePath);
             _logger.LogInformation("Neo system initialized.");
 
-            _neoSystem.StartNode(new()
-            {
-                Tcp = new(IPAddress.Parse(_nodeSettings.P2P.Listen!), _nodeSettings.P2P.Port),
-                MinDesiredConnections = _nodeSettings.P2P.MinDesiredConnections,
-                MaxConnections = _nodeSettings.P2P.MaxConnections,
-                MaxConnectionsPerAddress = _nodeSettings.P2P.MaxConnectionsPerAddress,
-            }); ;
-            _logger.LogInformation("Neo system node started.");
+            _localNode ??= await _neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance(), cancellationToken);
+            _logger.LogInformation("Neo system LocalNode started.");
 
-            return base.StartAsync(cancellationToken);
+            _importBlocksTask ??= CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+            _ = Task.Run(() => StartImport(false, _importBlocksTask.Token).ConfigureAwait(false), cancellationToken);
+
+            await base.StartAsync(cancellationToken);
         }
 
         public override Task StopAsync(CancellationToken cancellationToken)
         {
+            _importBlocksTask?.Dispose();
+            _importBlocksTask = null;
+
             _neoSystem?.Dispose();
             _neoSystem = null;
+
             return base.StopAsync(cancellationToken);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var linkedSourceToken = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-            var taskList = GC.AllocateUninitializedArray<Task>(4);
+            var taskList = GC.AllocateUninitializedArray<Task>(_nodeSettings.Pipe.Instances);
             for (var i = 0; i < taskList.Length; i++)
             {
                 var pipLogger = _loggerFactory.CreateLogger<NodeCommandPipeServer>();
-                var pipeServer = new NodeCommandPipeServer(pipLogger);
-                taskList[i] = Task.Run(async () => await pipeServer.StartAsync(linkedSourceToken.Token).ConfigureAwait(false), stoppingToken);
+                taskList[i] = Task.Run(async () =>
+                {
+                    var pipeServer = new NodeCommandPipeServer(_nodeSettings.Pipe.Instances, pipLogger);
+                    await pipeServer.ListenAsync(linkedSourceToken.Token).ConfigureAwait(false);
+                    pipeServer.Dispose();
+                }, stoppingToken);
             }
             await Task.WhenAll(taskList);
         }
