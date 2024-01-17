@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Logging;
+using Neo.Service.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,14 +19,14 @@ namespace Neo.Service
     internal partial class NodeService
     {
         [PipeMethod(CommandType.Exit)]
-        private async Task<bool> ShutdownAsync(string[] args, CancellationToken cancellationToken)
+        private async Task<object> ShutdownAsync(string[] args, CancellationToken cancellationToken)
         {
             await StopAsync(CancellationToken.None);
             return true;
         }
 
         [PipeMethod(CommandType.Start)]
-        private async Task<bool> StartNodeAsync(string[] args, CancellationToken cancellationToken)
+        private async Task<object> StartNodeAsync(string[] args, CancellationToken cancellationToken)
         {
             // No import processing
             if (_importBlocksTask is null)
@@ -43,17 +44,17 @@ namespace Neo.Service
         }
 
         [PipeMethod(CommandType.Stop)]
-        private Task<bool> StopNodeAsync(string[] args, CancellationToken cancellationToken)
+        private Task<object> StopNodeAsync(string[] args, CancellationToken cancellationToken)
         {
             if (_neoSystem is null)
-                return Task.FromResult(false);
+                return Task.FromResult<object>(false);
 
             _neoSystem.Dispose();
             _neoSystem = null;
 
             _logger.LogInformation("Neo system node stopped.");
 
-            return Task.FromResult(true);
+            return Task.FromResult<object>(true);
         }
     }
 }

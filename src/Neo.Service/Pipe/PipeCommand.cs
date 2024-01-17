@@ -16,7 +16,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Service
+namespace Neo.Service.Pipes
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
     internal enum CommandType : byte
@@ -26,16 +26,9 @@ namespace Neo.Service
         Exit = 0xee,
     }
 
-    internal interface IPipeCommand
+    internal sealed class PipeCommand
     {
-        CommandType Exec { get; }
-        string[] Arguments { get; }
-        Task<object?> ExecuteAsync(CancellationToken cancellationToken);
-    }
-
-    internal sealed class PipeCommand : IPipeCommand
-    {
-        private static readonly ConcurrentDictionary<CommandType, Func<string[], CancellationToken, object?>> s_methods = new();
+        private static readonly ConcurrentDictionary<CommandType, Func<string[], CancellationToken, object>> s_methods = new();
 
         [JsonInclude]
         public required CommandType Exec { get; set; }
@@ -52,23 +45,26 @@ namespace Neo.Service
                 var pipeAttr = method.GetCustomAttribute<PipeMethodAttribute>();
                 if (pipeAttr == null) continue;
                 if (s_methods.ContainsKey(pipeAttr.Command) && pipeAttr.Overwrite == false)
-                    throw new MethodAccessException($"Failed to add {handlerType.FullName}.{method.Name} method to pipe commands. {pipeAttr.Command} already exists.");
-                s_methods[pipeAttr.Command] = method.CreateDelegate<Func<string[], CancellationToken, object?>>(handler);
+                    throw new AmbiguousMatchException($"{handlerType.FullName}.{method.Name}: Command {pipeAttr.Command} already exists.");
+                s_methods[pipeAttr.Command] = method.CreateDelegate<Func<string[], CancellationToken, object>>(handler);
             }
         }
 
         public static bool Contains(CommandType command) =>
             s_methods.ContainsKey(command);
 
-        public async Task<object?> ExecuteAsync(CancellationToken cancellationToken)
+        public async Task<object> ExecuteAsync(CancellationToken cancellationToken)
         {
             if (s_methods.TryGetValue(Exec, out var commandFunc) == false)
                 throw new MissingMethodException($"{Exec}");
 
             var methodObj = commandFunc(Arguments, cancellationToken);
 
-            if (methodObj is Task<object?> awaitMethodTask)
+            if (methodObj is Task<object> awaitMethodTask)
                 methodObj = await awaitMethodTask;
+
+            if (methodObj is null)
+                throw new NullReferenceException($"{Exec}");
 
             return methodObj;
         }

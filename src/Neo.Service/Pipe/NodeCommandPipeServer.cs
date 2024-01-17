@@ -14,13 +14,12 @@ using Neo.Service.Json;
 using System;
 using System.IO;
 using System.IO.Pipes;
-using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Service.IO
+namespace Neo.Service.Pipes
 {
     internal sealed class NodeCommandPipeServer : IDisposable
     {
@@ -59,15 +58,13 @@ namespace Neo.Service.IO
             if (_cancellationTokenSource?.IsCancellationRequested == false) return;
             _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
 
-            var commandTypeNames = Enum.GetNames<CommandType>();
-
             while (_cancellationTokenSource.IsCancellationRequested == false)
             {
                 _logger.LogInformation("Waiting for connection on thread {ThreadId}.", Environment.CurrentManagedThreadId);
 
                 await _neoPipeStream.WaitForConnectionAsync(stoppingToken);
 
-                _logger.LogDebug("Got a connection.");
+                _logger.LogInformation("Got a connection.");
 
                 try
                 {
@@ -75,20 +72,13 @@ namespace Neo.Service.IO
                     {
                         var command = await JsonSerializer.DeserializeAsync<PipeCommand>(_neoPipeStream, JsonOptions, _cancellationTokenSource.Token);
 
-                        if (command == null || commandTypeNames.Any(a => a == $"{command}") == false)
-                        {
-                            _logger.LogDebug("Command null or not found.");
-                            _neoPipeStream.Disconnect();
-                            continue;
-                        }
+                        if (command is null) continue;
 
-                        _logger.LogDebug("Exec: {Command} {Arguments}", command.Exec, string.Join(' ', command.Arguments));
+                        _logger.LogInformation("Exec: {Command} {Arguments}", command.Exec, string.Join(' ', command.Arguments));
 
                         try
                         {
                             var result = await command.ExecuteAsync(_cancellationTokenSource.Token);
-
-                            _logger.LogDebug("Got result {Result}.", result?.GetType().Name);
 
                             await JsonSerializer.SerializeAsync(_neoPipeStream, result, JsonOptions, _cancellationTokenSource.Token);
                         }
