@@ -256,3 +256,4 @@ paket-files/
 
 PublishProfiles
 /.vscode
+launchSettings.json
