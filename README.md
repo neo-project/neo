@@ -120,13 +120,13 @@ An overview of the project folders can be seen below.
 Below are the available downloads for our project. Please select the appropriate file for your needs.
 
 ### NEO CLI Node
-| Platform    | File                    | SHA256                                                           | Download                                                                                           |
-|-------------|-------------------------|------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
-| Linux       | neo-cli-linux-x64.zip   | 8195918E942D2B3BF5BD0ACC8A29157197F4594EC484E1AAC719E6605E4EF299 | [V3.6.2](https://github.com/neo-project/neo-node/releases/download/v3.6.2/neo-cli-linux-x64.zip)   |
-| Windows     | neo-cli-win-x64.zip     | 4CFDD39DD7C0D37940BBBC4D42403599FFF96D4A8F9A8D394BB9A07400CAB47D | [V3.6.2](https://github.com/neo-project/neo-node/releases/download/v3.6.2/neo-cli-win-x64.zip)     |
-| Mac OS      | neo-cli-osx-x64.zip     | D0A5A50751353E22886C11EE4F8AE6C3DDBDE7EA090FE7B58A3064BAB3C8950D | [V3.6.2](https://github.com/neo-project/neo-node/releases/download/v3.6.2/neo-cli-osx-x64.zip)     |
-| Mac OS ARM  | neo-cli-osx-arm-x64.zip | CAC83365F9E9E24F20BEB98C1BB9AD1FD9240E0A28F1D5DDDE0C58E5AA8D49F3 | [V3.6.2](https://github.com/neo-project/neo-node/releases/download/v3.6.2/neo-cli-osx-arm-x64.zip) |
-| Portable    | neo-cli-portable.zip    | D268777F2A6C7E801E8FC3856BE72D336E0E2B6623BD76F2F8816D3A0F00D1D8 | [V3.6.2](https://github.com/neo-project/neo-node/releases/download/v3.6.2/neo-cli-portable.zip)    |
+| Platform    | File                    | SHA256                                                                                               | Download                                                                                           |
+|-------------|-------------------------|------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| Linux       | neo-cli-linux-x64.zip   | <abbr title="8195918E942D2B3BF5BD0ACC8A29157197F4594EC484E1AAC719E6605E4EF299">819591...EF299</abbr> | [V3.6.2](https://github.com/neo-project/neo-node/releases/download/v3.6.2/neo-cli-linux-x64.zip)   |
+| Windows     | neo-cli-win-x64.zip     | <abbr title="4CFDD39DD7C0D37940BBBC4D42403599FFF96D4A8F9A8D394BB9A07400CAB47D">4CFDD3...AB47D</abbr> | [V3.6.2](https://github.com/neo-project/neo-node/releases/download/v3.6.2/neo-cli-win-x64.zip)     |
+| Mac OS      | neo-cli-osx-x64.zip     | <abbr title="D0A5A50751353E22886C11EE4F8AE6C3DDBDE7EA090FE7B58A3064BAB3C8950D">D0A5A5...8950D</abbr> | [V3.6.2](https://github.com/neo-project/neo-node/releases/download/v3.6.2/neo-cli-osx-x64.zip)     |
+| Mac OS ARM  | neo-cli-osx-arm-x64.zip | <abbr title="CAC83365F9E9E24F20BEB98C1BB9AD1FD9240E0A28F1D5DDDE0C58E5AA8D49F3">CAC833...D49F3</abbr> | [V3.6.2](https://github.com/neo-project/neo-node/releases/download/v3.6.2/neo-cli-osx-arm-x64.zip) |
+| Portable    | neo-cli-portable.zip    | <abbr title="D268777F2A6C7E801E8FC3856BE72D336E0E2B6623BD76F2F8816D3A0F00D1D8">D26877...0D1D8</abbr> | [V3.6.2](https://github.com/neo-project/neo-node/releases/download/v3.6.2/neo-cli-portable.zip)    |
 
 ### NEO Modules
 
