@@ -66,7 +66,7 @@ namespace Neo.Service
 
             _importBlocksTask ??= CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-            _ = Task.Run(() => StartImport(false, _importBlocksTask.Token).ConfigureAwait(false), cancellationToken);
+            _ = Task.Run(() => StartImport(_nodeSettings.Storage.ImportVerify, _importBlocksTask.Token).ConfigureAwait(false), cancellationToken);
 
             await base.StartAsync(cancellationToken);
         }

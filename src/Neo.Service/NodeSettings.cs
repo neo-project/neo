@@ -60,16 +60,19 @@ namespace Neo.Service
     {
         public string? Engine { get; private init; }
         public string? Path { get; private init; }
+        public bool ImportVerify { get; private init; }
 
         public static StorageSettings Default => new()
         {
             Engine = nameof(MemoryStore),
+            ImportVerify = true,
         };
 
         public static StorageSettings Load(IConfigurationSection section) => new()
         {
             Engine = section.GetValue(nameof(Engine), Default.Engine),
             Path = section.GetValue(nameof(Path), Default.Path),
+            ImportVerify = section.GetValue(nameof(ImportVerify), Default.ImportVerify),
         };
     }
 
