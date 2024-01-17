@@ -12,6 +12,7 @@
 using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
 using Neo.Persistence;
+using System;
 
 namespace Neo.Service
 {
@@ -133,15 +134,21 @@ namespace Neo.Service
     internal sealed class PluginSettings
     {
         public string? DownloadUrl { get; private init; }
+        public bool Prerelease { get; private init; }
+        public Version? Version { get; private init; }
 
         public static PluginSettings Default => new()
         {
-            DownloadUrl = "",
+            DownloadUrl = "https://api.github.com/repos/neo-project/neo-modules/releases",
+            Prerelease = false,
+            Version = NodeUtilities.GetApplicationVersion(),
         };
 
         public static PluginSettings Load(IConfigurationSection section) => new()
         {
             DownloadUrl = section.GetValue(nameof(DownloadUrl), Default.DownloadUrl),
+            Prerelease = section.GetValue(nameof(Prerelease), Default.Prerelease),
+            Version = section.GetValue(nameof(Version), Default.Version),
         };
     }
 }
