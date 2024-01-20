@@ -442,7 +442,7 @@ namespace Neo.Ledger
                     Transaction tx = transactionState.Transaction;
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee);
                     engine.LoadScript(tx.Script);
-                    transactionState.State = engine.Execute();
+                    transactionState.State = engine.Execute(tx.Hash.ToString());
                     if (transactionState.State == VMState.HALT)
                     {
                         clonedSnapshot.Commit();
