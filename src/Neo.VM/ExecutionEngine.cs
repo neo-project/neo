@@ -158,24 +158,24 @@ namespace Neo.VM
                 case OpCode.PUSHINT64:
                 case OpCode.PUSHINT128:
                 case OpCode.PUSHINT256:
-                    PUSHINT(instruction);
+                    PushInt(instruction);
                     break;
                 case OpCode.PUSHT:
-                    PUSHT(instruction);
+                    PushT(instruction);
                     break;
                 case OpCode.PUSHF:
-                    PUSHF(instruction);
+                    PushF(instruction);
                     break;
                 case OpCode.PUSHA:
-                    PUSHA(instruction);
+                    PushA(instruction);
                     break;
                 case OpCode.PUSHNULL:
-                    PUSHNULL(instruction);
+                    PushNull(instruction);
                     break;
                 case OpCode.PUSHDATA1:
                 case OpCode.PUSHDATA2:
                 case OpCode.PUSHDATA4:
-                    PUSHDATA(instruction);
+                    PushData(instruction);
                     break;
                 case OpCode.PUSHM1:
                 case OpCode.PUSH0:
@@ -195,161 +195,161 @@ namespace Neo.VM
                 case OpCode.PUSH14:
                 case OpCode.PUSH15:
                 case OpCode.PUSH16:
-                    PUSH(instruction);
+                    Push(instruction);
                     break;
 
                 // Control
                 case OpCode.NOP: break;
                 case OpCode.JMP:
-                    JMP(instruction);
+                    Jmp(instruction);
                     break;
                 case OpCode.JMP_L:
-                    JMP_L(instruction);
+                    Jmp_L(instruction);
                     break;
                 case OpCode.JMPIF:
-                    JMPIF(instruction);
+                    JmpIf(instruction);
                     break;
                 case OpCode.JMPIF_L:
-                    JMPIF_L(instruction);
+                    JmpIf_L(instruction);
                     break;
                 case OpCode.JMPIFNOT:
-                    JMPIFNOT(instruction);
+                    JmpIfNot(instruction);
                     break;
                 case OpCode.JMPIFNOT_L:
-                    JMPIFNOT_L(instruction);
+                    JmpIfNot_L(instruction);
                     break;
                 case OpCode.JMPEQ:
-                    JMPEQ(instruction);
+                    JmpEq(instruction);
                     break;
                 case OpCode.JMPEQ_L:
-                    JMPEQ_L(instruction);
+                    JmpEq_L(instruction);
                     break;
                 case OpCode.JMPNE:
-                    JMPNE(instruction);
+                    JmpNe(instruction);
                     break;
                 case OpCode.JMPNE_L:
-                    JMPNE_L(instruction);
+                    JmpNe_L(instruction);
                     break;
                 case OpCode.JMPGT:
-                    JMPGT(instruction);
+                    JmpGt(instruction);
                     break;
                 case OpCode.JMPGT_L:
-                    JMPGT_L(instruction);
+                    JmpGt_L(instruction);
                     break;
                 case OpCode.JMPGE:
-                    JMPGE(instruction);
+                    JmpGe(instruction);
                     break;
                 case OpCode.JMPGE_L:
-                    JMPGE_L(instruction);
+                    JmpGe_L(instruction);
                     break;
                 case OpCode.JMPLT:
-                    JMPLT(instruction);
+                    JmpLt(instruction);
                     break;
                 case OpCode.JMPLT_L:
-                    JMPLT_L(instruction);
+                    JmpLt_L(instruction);
                     break;
                 case OpCode.JMPLE:
-                    JMPLE(instruction);
+                    JmpLe(instruction);
                     break;
                 case OpCode.JMPLE_L:
-                    JMPLE_L(instruction);
+                    JmpLe_L(instruction);
                     break;
                 case OpCode.CALL:
-                    CALL(instruction);
+                    Call(instruction);
                     break;
                 case OpCode.CALL_L:
-                    CALL_L(instruction);
+                    Call_L(instruction);
                     break;
                 case OpCode.CALLA:
-                    CALLA(instruction);
+                    CallA(instruction);
                     break;
                 case OpCode.CALLT:
-                    CALLT(instruction);
+                    CallT(instruction);
                     break;
                 case OpCode.ABORT:
-                    ABORT(instruction);
+                    Abort(instruction);
                     break;
                 case OpCode.ASSERT:
-                    ASSERT(instruction);
+                    Assert(instruction);
                     break;
                 case OpCode.THROW:
-                    THROW(instruction);
+                    Throw(instruction);
                     break;
                 case OpCode.TRY:
-                    TRY(instruction);
+                    Try(instruction);
                     break;
                 case OpCode.TRY_L:
-                    TRY_L(instruction);
+                    Try_L(instruction);
                     break;
                 case OpCode.ENDTRY:
-                    ENDTRY(instruction);
+                    EndTry(instruction);
                     break;
                 case OpCode.ENDTRY_L:
-                    ENDTRY_L(instruction);
+                    EndTry_L(instruction);
                     break;
                 case OpCode.ENDFINALLY:
-                    ENDFINALLY(instruction);
+                    EndFinally(instruction);
                     break;
                 case OpCode.RET:
-                    RET(instruction);
+                    Ret(instruction);
                     break;
                 case OpCode.SYSCALL:
-                    SYSCALL(instruction);
+                    Syscall(instruction);
                     break;
 
                 // Stack ops
                 case OpCode.DEPTH:
-                    DEPTH(instruction);
+                    Depth(instruction);
                     break;
                 case OpCode.DROP:
-                    DROP(instruction);
+                    Drop(instruction);
                     break;
                 case OpCode.NIP:
-                    NIP(instruction);
+                    Nip(instruction);
                     break;
                 case OpCode.XDROP:
-                    XDROP(instruction);
+                    XDrop(instruction);
                     break;
                 case OpCode.CLEAR:
-                    CLEAR(instruction);
+                    Clear(instruction);
                     break;
                 case OpCode.DUP:
-                    DUP(instruction);
+                    Dup(instruction);
                     break;
                 case OpCode.OVER:
-                    OVER(instruction);
+                    Over(instruction);
                     break;
                 case OpCode.PICK:
-                    PICK(instruction);
+                    Pick(instruction);
                     break;
                 case OpCode.TUCK:
-                    TUCK(instruction);
+                    Tuck(instruction);
                     break;
                 case OpCode.SWAP:
-                    SWAP(instruction);
+                    Swap(instruction);
                     break;
                 case OpCode.ROT:
-                    ROT(instruction);
+                    Rot(instruction);
                     break;
                 case OpCode.ROLL:
-                    ROLL(instruction);
+                    Roll(instruction);
                     break;
                 case OpCode.REVERSE3:
-                    REVERSE3(instruction);
+                    Reverse3(instruction);
                     break;
                 case OpCode.REVERSE4:
-                    REVERSE4(instruction);
+                    Reverse4(instruction);
                     break;
                 case OpCode.REVERSEN:
-                    REVERSEN(instruction);
+                    ReverseN(instruction);
                     break;
 
                 //Slot
                 case OpCode.INITSSLOT:
-                    INITSSLOT(instruction);
+                    InitSSlot(instruction);
                     break;
                 case OpCode.INITSLOT:
-                    INITSLOT(instruction);
+                    InitSlot(instruction);
                     break;
                 case OpCode.LDSFLD0:
                 case OpCode.LDSFLD1:
@@ -358,10 +358,10 @@ namespace Neo.VM
                 case OpCode.LDSFLD4:
                 case OpCode.LDSFLD5:
                 case OpCode.LDSFLD6:
-                    LDSFLDM(instruction);
+                    LdSFldM(instruction);
                     break;
                 case OpCode.LDSFLD:
-                    LDSFLD(instruction);
+                    LdSFld(instruction);
                     break;
                 case OpCode.STSFLD0:
                 case OpCode.STSFLD1:
@@ -370,10 +370,10 @@ namespace Neo.VM
                 case OpCode.STSFLD4:
                 case OpCode.STSFLD5:
                 case OpCode.STSFLD6:
-                    STSFLDM(instruction);
+                    StSFldM(instruction);
                     break;
                 case OpCode.STSFLD:
-                    STSFLD(instruction);
+                    StSFld(instruction);
                     break;
                 case OpCode.LDLOC0:
                 case OpCode.LDLOC1:
@@ -382,10 +382,10 @@ namespace Neo.VM
                 case OpCode.LDLOC4:
                 case OpCode.LDLOC5:
                 case OpCode.LDLOC6:
-                    LDLOCM(instruction);
+                    LdLocM(instruction);
                     break;
                 case OpCode.LDLOC:
-                    LDLOC(instruction);
+                    LdLoc(instruction);
                     break;
                 case OpCode.STLOC0:
                 case OpCode.STLOC1:
@@ -394,10 +394,10 @@ namespace Neo.VM
                 case OpCode.STLOC4:
                 case OpCode.STLOC5:
                 case OpCode.STLOC6:
-                    STLOCM(instruction);
+                    StLocM(instruction);
                     break;
                 case OpCode.STLOC:
-                    STLOC(instruction);
+                    StLoc(instruction);
                     break;
                 case OpCode.LDARG0:
                 case OpCode.LDARG1:
@@ -406,10 +406,10 @@ namespace Neo.VM
                 case OpCode.LDARG4:
                 case OpCode.LDARG5:
                 case OpCode.LDARG6:
-                    LDARGM(instruction);
+                    LdArgM(instruction);
                     break;
                 case OpCode.LDARG:
-                    LDARG(instruction);
+                    LdArg(instruction);
                     break;
                 case OpCode.STARG0:
                 case OpCode.STARG1:
@@ -418,219 +418,219 @@ namespace Neo.VM
                 case OpCode.STARG4:
                 case OpCode.STARG5:
                 case OpCode.STARG6:
-                    STARGM(instruction);
+                    StArgM(instruction);
                     break;
                 case OpCode.STARG:
-                    STARG(instruction);
+                    StArg(instruction);
                     break;
 
                 // Splice
                 case OpCode.NEWBUFFER:
-                    NEWBUFFER(instruction);
+                    NewBuffer(instruction);
                     break;
                 case OpCode.MEMCPY:
-                    MEMCPY(instruction);
+                    Memcpy(instruction);
                     break;
                 case OpCode.CAT:
-                    CAT(instruction);
+                    Cat(instruction);
                     break;
                 case OpCode.SUBSTR:
-                    SUBSTR(instruction);
+                    Substr(instruction);
                     break;
                 case OpCode.LEFT:
-                    LEFT(instruction);
+                    Left(instruction);
                     break;
                 case OpCode.RIGHT:
-                    RIGHT(instruction);
+                    Right(instruction);
                     break;
 
                 // Bitwise logic
                 case OpCode.INVERT:
-                    INVERT(instruction);
+                    Invert(instruction);
                     break;
                 case OpCode.AND:
-                    AND(instruction);
+                    And(instruction);
                     break;
                 case OpCode.OR:
-                    OR(instruction);
+                    Or(instruction);
                     break;
                 case OpCode.XOR:
-                    XOR(instruction);
+                    Xor(instruction);
                     break;
                 case OpCode.EQUAL:
-                    EQUAL(instruction);
+                    Equal(instruction);
                     break;
                 case OpCode.NOTEQUAL:
-                    NOTEQUAL(instruction);
+                    NotEqual(instruction);
                     break;
 
                 // Numeric
                 case OpCode.SIGN:
-                    SIGN(instruction);
+                    Sign(instruction);
                     break;
                 case OpCode.ABS:
-                    ABS(instruction);
+                    Abs(instruction);
                     break;
                 case OpCode.NEGATE:
-                    NEGATE(instruction);
+                    Negate(instruction);
                     break;
                 case OpCode.INC:
-                    INC(instruction);
+                    Inc(instruction);
                     break;
                 case OpCode.DEC:
-                    DEC(instruction);
+                    Dec(instruction);
                     break;
                 case OpCode.ADD:
-                    ADD(instruction);
+                    Add(instruction);
                     break;
                 case OpCode.SUB:
-                    SUB(instruction);
+                    Sub(instruction);
                     break;
                 case OpCode.MUL:
-                    MUL(instruction);
+                    Mul(instruction);
                     break;
                 case OpCode.DIV:
-                    DIV(instruction);
+                    Div(instruction);
                     break;
                 case OpCode.MOD:
-                    MOD(instruction);
+                    Mod(instruction);
                     break;
                 case OpCode.POW:
-                    POW(instruction);
+                    Pow(instruction);
                     break;
                 case OpCode.SQRT:
-                    SQRT(instruction);
+                    Sqrt(instruction);
                     break;
                 case OpCode.MODMUL:
-                    MODMUL(instruction);
+                    ModMul(instruction);
                     break;
                 case OpCode.MODPOW:
-                    MODPOW(instruction);
+                    ModPow(instruction);
                     break;
                 case OpCode.SHL:
-                    SHL(instruction);
+                    Shl(instruction);
                     break;
                 case OpCode.SHR:
-                    SHR(instruction);
+                    Shr(instruction);
                     break;
                 case OpCode.NOT:
-                    NOT(instruction);
+                    Not(instruction);
                     break;
                 case OpCode.BOOLAND:
-                    BOOLAND(instruction);
+                    BoolAnd(instruction);
                     break;
                 case OpCode.BOOLOR:
-                    BOOLOR(instruction);
+                    BoolOr(instruction);
                     break;
                 case OpCode.NZ:
-                    NZ(instruction);
+                    Nz(instruction);
                     break;
                 case OpCode.NUMEQUAL:
-                    NUMEQUAL(instruction);
+                    NumEqual(instruction);
                     break;
                 case OpCode.NUMNOTEQUAL:
-                    NUMNOTEQUAL(instruction);
+                    NumNotEqual(instruction);
                     break;
                 case OpCode.LT:
-                    LT(instruction);
+                    Lt(instruction);
                     break;
                 case OpCode.LE:
-                    LE(instruction);
+                    Le(instruction);
                     break;
                 case OpCode.GT:
-                    GT(instruction);
+                    Gt(instruction);
                     break;
                 case OpCode.GE:
-                    GE(instruction);
+                    Ge(instruction);
                     break;
                 case OpCode.MIN:
-                    MIN(instruction);
+                    Min(instruction);
                     break;
                 case OpCode.MAX:
-                    MAX(instruction);
+                    Max(instruction);
                     break;
                 case OpCode.WITHIN:
-                    WITHIN(instruction);
+                    Within(instruction);
                     break;
 
                 // Compound-type
                 case OpCode.PACKMAP:
-                    PACKMAP(instruction);
+                    PackMap(instruction);
                     break;
                 case OpCode.PACKSTRUCT:
-                    PACKSTRUCT(instruction);
+                    PackStruct(instruction);
                     break;
                 case OpCode.PACK:
-                    PACK(instruction);
+                    Pack(instruction);
                     break;
                 case OpCode.UNPACK:
-                    UNPACK(instruction);
+                    Unpack(instruction);
                     break;
                 case OpCode.NEWARRAY0:
-                    NEWARRAY0(instruction);
+                    NewArray0(instruction);
                     break;
                 case OpCode.NEWARRAY:
                 case OpCode.NEWARRAY_T:
-                    NEWARRAY_T(instruction);
+                    NewArray_T(instruction);
                     break;
                 case OpCode.NEWSTRUCT0:
-                    NEWSTRUCT0(instruction);
+                    NewStruct0(instruction);
                     break;
                 case OpCode.NEWSTRUCT:
-                    NEWSTRUCT(instruction);
+                    NewStruct(instruction);
                     break;
                 case OpCode.NEWMAP:
-                    NEWMAP(instruction);
+                    NewMap(instruction);
                     break;
                 case OpCode.SIZE:
-                    SIZE(instruction);
+                    Size(instruction);
                     break;
                 case OpCode.HASKEY:
-                    HASKEY(instruction);
+                    HasKey(instruction);
                     break;
                 case OpCode.KEYS:
-                    KEYS(instruction);
+                    Keys(instruction);
                     break;
                 case OpCode.VALUES:
-                    VALUES(instruction);
+                    Values(instruction);
                     break;
                 case OpCode.PICKITEM:
-                    PICKITEM(instruction);
+                    PickItem(instruction);
                     break;
                 case OpCode.APPEND:
-                    APPEND(instruction);
+                    Append(instruction);
                     break;
                 case OpCode.SETITEM:
-                    SETITEM(instruction);
+                    SetItem(instruction);
                     break;
                 case OpCode.REVERSEITEMS:
-                    REVERSEITEMS(instruction);
+                    ReverseItems(instruction);
                     break;
                 case OpCode.REMOVE:
-                    REMOVE(instruction);
+                    Remove(instruction);
                     break;
                 case OpCode.CLEARITEMS:
-                    CLEARITEMS(instruction);
+                    ClearItems(instruction);
                     break;
                 case OpCode.POPITEM:
-                    POPITEM(instruction);
+                    PopItem(instruction);
                     break;
 
                 //Types
                 case OpCode.ISNULL:
-                    ISNULL(instruction);
+                    IsNull(instruction);
                     break;
                 case OpCode.ISTYPE:
-                    ISTYPE(instruction);
+                    IsType(instruction);
                     break;
                 case OpCode.CONVERT:
-                    CONVERT(instruction);
+                    Convert(instruction);
                     break;
                 case OpCode.ABORTMSG:
-                    ABORTMSG(instruction);
+                    AbortMsg(instruction);
                     break;
                 case OpCode.ASSERTMSG:
-                    ASSERTMSG(instruction);
+                    AssertMsg(instruction);
                     break;
                 default:
                     throw new InvalidOperationException($"Opcode {instruction.OpCode} is undefined.");

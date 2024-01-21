@@ -23,24 +23,24 @@ namespace Neo.VM
     partial class ExecutionEngine
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void PUSHINT(Instruction instruction)
+        private void PushInt(Instruction instruction)
         {
             Push(new BigInteger(instruction.Operand.Span));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void PUSHT(Instruction instruction)
+        private void PushT(Instruction instruction)
         {
             Push(StackItem.True);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void PUSHF(Instruction instruction)
+        private void PushF(Instruction instruction)
         {
             Push(StackItem.False);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void PUSHA(Instruction instruction)
+        private void PushA(Instruction instruction)
         {
             int position = checked(CurrentContext!.InstructionPointer + instruction.TokenI32);
             if (position < 0 || position > CurrentContext.Script.Length)
@@ -49,67 +49,67 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void PUSHNULL(Instruction instruction)
+        private void PushNull(Instruction instruction)
         {
             Push(StackItem.Null);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void PUSHDATA(Instruction instruction)
+        private void PushData(Instruction instruction)
         {
             Limits.AssertMaxItemSize(instruction.Operand.Length);
             Push(instruction.Operand);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void PUSH(Instruction instruction)
+        private void Push(Instruction instruction)
         {
             Push((int)instruction.OpCode - (int)OpCode.PUSH0);
         }
 
         // Control
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void JMP(Instruction instruction)
+        private void Jmp(Instruction instruction)
         {
             ExecuteJumpOffset(instruction.TokenI8);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void JMP_L(Instruction instruction)
+        private void Jmp_L(Instruction instruction)
         {
             ExecuteJumpOffset(instruction.TokenI32);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void JMPIF(Instruction instruction)
+        private void JmpIf(Instruction instruction)
         {
             if (Pop().GetBoolean())
                 ExecuteJumpOffset(instruction.TokenI8);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void JMPIF_L(Instruction instruction)
+        private void JmpIf_L(Instruction instruction)
         {
             if (Pop().GetBoolean())
                 ExecuteJumpOffset(instruction.TokenI32);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void JMPIFNOT(Instruction instruction)
+        private void JmpIfNot(Instruction instruction)
         {
             if (!Pop().GetBoolean())
                 ExecuteJumpOffset(instruction.TokenI8);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void JMPIFNOT_L(Instruction instruction)
+        private void JmpIfNot_L(Instruction instruction)
         {
             if (!Pop().GetBoolean())
                 ExecuteJumpOffset(instruction.TokenI32);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void JMPEQ(Instruction instruction)
+        private void JmpEq(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -118,7 +118,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void JMPEQ_L(Instruction instruction)
+        private void JmpEq_L(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -127,7 +127,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void JMPNE(Instruction instruction)
+        private void JmpNe(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -136,7 +136,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void JMPNE_L(Instruction instruction)
+        private void JmpNe_L(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -145,7 +145,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void JMPGT(Instruction instruction)
+        private void JmpGt(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -154,7 +154,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void JMPGT_L(Instruction instruction)
+        private void JmpGt_L(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -163,7 +163,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void JMPGE(Instruction instruction)
+        private void JmpGe(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -172,7 +172,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void JMPGE_L(Instruction instruction)
+        private void JmpGe_L(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -181,7 +181,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void JMPLT(Instruction instruction)
+        private void JmpLt(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -189,7 +189,7 @@ namespace Neo.VM
                 ExecuteJumpOffset(instruction.TokenI8);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void JMPLT_L(Instruction instruction)
+        private void JmpLt_L(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -197,7 +197,7 @@ namespace Neo.VM
                 ExecuteJumpOffset(instruction.TokenI32);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void JMPLE(Instruction instruction)
+        private void JmpLe(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -206,7 +206,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void JMPLE_L(Instruction instruction)
+        private void JmpLe_L(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -215,19 +215,19 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void CALL(Instruction instruction)
+        private void Call(Instruction instruction)
         {
             ExecuteCall(checked(CurrentContext!.InstructionPointer + instruction.TokenI8));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void CALL_L(Instruction instruction)
+        private void Call_L(Instruction instruction)
         {
             ExecuteCall(checked(CurrentContext!.InstructionPointer + instruction.TokenI32));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void CALLA(Instruction instruction)
+        private void CallA(Instruction instruction)
         {
             var x = Pop<Pointer>();
             if (x.Script != CurrentContext!.Script)
@@ -236,19 +236,19 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void CALLT(Instruction instruction)
+        private void CallT(Instruction instruction)
         {
             LoadToken(instruction.TokenU16);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ABORT(Instruction instruction)
+        private void Abort(Instruction instruction)
         {
             throw new Exception($"{OpCode.ABORT} is executed.");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ASSERT(Instruction instruction)
+        private void Assert(Instruction instruction)
         {
             var x = Pop().GetBoolean();
             if (!x)
@@ -256,13 +256,13 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void THROW(Instruction instruction)
+        private void Throw(Instruction instruction)
         {
             ExecuteThrow(Pop());
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void TRY(Instruction instruction)
+        private void Try(Instruction instruction)
         {
             int catchOffset = instruction.TokenI8;
             int finallyOffset = instruction.TokenI8_1;
@@ -270,7 +270,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void TRY_L(Instruction instruction)
+        private void Try_L(Instruction instruction)
         {
             int catchOffset = instruction.TokenI32;
             int finallyOffset = instruction.TokenI32_1;
@@ -278,21 +278,21 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ENDTRY(Instruction instruction)
+        private void EndTry(Instruction instruction)
         {
             int endOffset = instruction.TokenI8;
             ExecuteEndTry(endOffset);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ENDTRY_L(Instruction instruction)
+        private void EndTry_L(Instruction instruction)
         {
             int endOffset = instruction.TokenI32;
             ExecuteEndTry(endOffset);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ENDFINALLY(Instruction instruction)
+        private void EndFinally(Instruction instruction)
         {
             if (CurrentContext!.TryStack is null)
                 throw new InvalidOperationException($"The corresponding TRY block cannot be found.");
@@ -308,7 +308,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void RET(Instruction instruction)
+        private void Ret(Instruction instruction)
         {
             ExecutionContext context_pop = InvocationStack.Pop();
             EvaluationStack stack_eval = InvocationStack.Count == 0 ? ResultStack : InvocationStack.Peek().EvaluationStack;
@@ -325,32 +325,32 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SYSCALL(Instruction instruction)
+        private void Syscall(Instruction instruction)
         {
             OnSysCall(instruction.TokenU32);
         }
 
         // Stack ops
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void DEPTH(Instruction instruction)
+        private void Depth(Instruction instruction)
         {
             Push(CurrentContext!.EvaluationStack.Count);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void DROP(Instruction instruction)
+        private void Drop(Instruction instruction)
         {
             Pop();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void NIP(Instruction instruction)
+        private void Nip(Instruction instruction)
         {
             CurrentContext!.EvaluationStack.Remove<StackItem>(1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void XDROP(Instruction instruction)
+        private void XDrop(Instruction instruction)
         {
             int n = (int)Pop().GetInteger();
             if (n < 0)
@@ -359,25 +359,25 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void CLEAR(Instruction instruction)
+        private void Clear(Instruction instruction)
         {
             CurrentContext!.EvaluationStack.Clear();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void DUP(Instruction instruction)
+        private void Dup(Instruction instruction)
         {
             Push(Peek());
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void OVER(Instruction instruction)
+        private void Over(Instruction instruction)
         {
             Push(Peek(1));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void PICK(Instruction instruction)
+        private void Pick(Instruction instruction)
         {
             int n = (int)Pop().GetInteger();
             if (n < 0)
@@ -386,27 +386,27 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void TUCK(Instruction instruction)
+        private void Tuck(Instruction instruction)
         {
             CurrentContext!.EvaluationStack.Insert(2, Peek());
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SWAP(Instruction instruction)
+        private void Swap(Instruction instruction)
         {
             var x = CurrentContext!.EvaluationStack.Remove<StackItem>(1);
             Push(x);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ROT(Instruction instruction)
+        private void Rot(Instruction instruction)
         {
             var x = CurrentContext!.EvaluationStack.Remove<StackItem>(2);
             Push(x);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ROLL(Instruction instruction)
+        private void Roll(Instruction instruction)
         {
             int n = (int)Pop().GetInteger();
             if (n < 0)
@@ -417,19 +417,19 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void REVERSE3(Instruction instruction)
+        private void Reverse3(Instruction instruction)
         {
             CurrentContext!.EvaluationStack.Reverse(3);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void REVERSE4(Instruction instruction)
+        private void Reverse4(Instruction instruction)
         {
             CurrentContext!.EvaluationStack.Reverse(4);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void REVERSEN(Instruction instruction)
+        private void ReverseN(Instruction instruction)
         {
             int n = (int)Pop().GetInteger();
             CurrentContext!.EvaluationStack.Reverse(n);
@@ -437,7 +437,7 @@ namespace Neo.VM
 
         //Slot
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void INITSSLOT(Instruction instruction)
+        private void InitSSlot(Instruction instruction)
         {
             if (CurrentContext!.StaticFields != null)
                 throw new InvalidOperationException($"{instruction.OpCode} cannot be executed twice.");
@@ -447,7 +447,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void INITSLOT(Instruction instruction)
+        private void InitSlot(Instruction instruction)
         {
             if (CurrentContext!.LocalVariables != null || CurrentContext.Arguments != null)
                 throw new InvalidOperationException($"{instruction.OpCode} cannot be executed twice.");
@@ -469,80 +469,80 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void LDSFLDM(Instruction instruction)
+        private void LdSFldM(Instruction instruction)
         {
             ExecuteLoadFromSlot(CurrentContext!.StaticFields, instruction.OpCode - OpCode.LDSFLD0);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void LDSFLD(Instruction instruction)
+        private void LdSFld(Instruction instruction)
         {
             ExecuteLoadFromSlot(CurrentContext!.StaticFields, instruction.TokenU8);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void STSFLDM(Instruction instruction)
+        private void StSFldM(Instruction instruction)
         {
             ExecuteStoreToSlot(CurrentContext!.StaticFields, instruction.OpCode - OpCode.STSFLD0);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void STSFLD(Instruction instruction)
+        private void StSFld(Instruction instruction)
         {
             ExecuteStoreToSlot(CurrentContext!.StaticFields, instruction.TokenU8);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void LDLOCM(Instruction instruction)
+        private void LdLocM(Instruction instruction)
         {
             ExecuteLoadFromSlot(CurrentContext!.LocalVariables, instruction.OpCode - OpCode.LDLOC0);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void LDLOC(Instruction instruction)
+        private void LdLoc(Instruction instruction)
         {
             ExecuteLoadFromSlot(CurrentContext!.LocalVariables, instruction.TokenU8);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void STLOCM(Instruction instruction)
+        private void StLocM(Instruction instruction)
         {
             ExecuteStoreToSlot(CurrentContext!.LocalVariables, instruction.OpCode - OpCode.STLOC0);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void STLOC(Instruction instruction)
+        private void StLoc(Instruction instruction)
         {
             ExecuteStoreToSlot(CurrentContext!.LocalVariables, instruction.TokenU8);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void LDARGM(Instruction instruction)
+        private void LdArgM(Instruction instruction)
         {
             ExecuteLoadFromSlot(CurrentContext!.Arguments, instruction.OpCode - OpCode.LDARG0);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void LDARG(Instruction instruction)
+        private void LdArg(Instruction instruction)
         {
             ExecuteLoadFromSlot(CurrentContext!.Arguments, instruction.TokenU8);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void STARGM(Instruction instruction)
+        private void StArgM(Instruction instruction)
         {
             ExecuteStoreToSlot(CurrentContext!.Arguments, instruction.OpCode - OpCode.STARG0);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void STARG(Instruction instruction)
+        private void StArg(Instruction instruction)
         {
             ExecuteStoreToSlot(CurrentContext!.Arguments, instruction.TokenU8);
         }
 
         // Splice
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void NEWBUFFER(Instruction instruction)
+        private void NewBuffer(Instruction instruction)
         {
             int length = (int)Pop().GetInteger();
             Limits.AssertMaxItemSize(length);
@@ -550,7 +550,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void MEMCPY(Instruction instruction)
+        private void Memcpy(Instruction instruction)
         {
             int count = (int)Pop().GetInteger();
             if (count < 0)
@@ -571,7 +571,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void CAT(Instruction instruction)
+        private void Cat(Instruction instruction)
         {
             var x2 = Pop().GetSpan();
             var x1 = Pop().GetSpan();
@@ -584,7 +584,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SUBSTR(Instruction instruction)
+        private void Substr(Instruction instruction)
         {
             int count = (int)Pop().GetInteger();
             if (count < 0)
@@ -601,7 +601,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void LEFT(Instruction instruction)
+        private void Left(Instruction instruction)
         {
             int count = (int)Pop().GetInteger();
             if (count < 0)
@@ -615,7 +615,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void RIGHT(Instruction instruction)
+        private void Right(Instruction instruction)
         {
             int count = (int)Pop().GetInteger();
             if (count < 0)
@@ -630,14 +630,14 @@ namespace Neo.VM
 
         // Bitwise logic
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void INVERT(Instruction instruction)
+        private void Invert(Instruction instruction)
         {
             var x = Pop().GetInteger();
             Push(~x);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void AND(Instruction instruction)
+        private void And(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -645,7 +645,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void OR(Instruction instruction)
+        private void Or(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -653,7 +653,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void XOR(Instruction instruction)
+        private void Xor(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -661,7 +661,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void EQUAL(Instruction instruction)
+        private void Equal(Instruction instruction)
         {
             StackItem x2 = Pop();
             StackItem x1 = Pop();
@@ -669,7 +669,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void NOTEQUAL(Instruction instruction)
+        private void NotEqual(Instruction instruction)
         {
             StackItem x2 = Pop();
             StackItem x1 = Pop();
@@ -678,42 +678,42 @@ namespace Neo.VM
 
         // Numeric
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SIGN(Instruction instruction)
+        private void Sign(Instruction instruction)
         {
             var x = Pop().GetInteger();
             Push(x.Sign);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ABS(Instruction instruction)
+        private void Abs(Instruction instruction)
         {
             var x = Pop().GetInteger();
             Push(BigInteger.Abs(x));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void NEGATE(Instruction instruction)
+        private void Negate(Instruction instruction)
         {
             var x = Pop().GetInteger();
             Push(-x);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void INC(Instruction instruction)
+        private void Inc(Instruction instruction)
         {
             var x = Pop().GetInteger();
             Push(x + 1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void DEC(Instruction instruction)
+        private void Dec(Instruction instruction)
         {
             var x = Pop().GetInteger();
             Push(x - 1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ADD(Instruction instruction)
+        private void Add(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -721,7 +721,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SUB(Instruction instruction)
+        private void Sub(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -729,7 +729,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void MUL(Instruction instruction)
+        private void Mul(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -737,7 +737,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void DIV(Instruction instruction)
+        private void Div(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -745,7 +745,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void MOD(Instruction instruction)
+        private void Mod(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -753,7 +753,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void POW(Instruction instruction)
+        private void Pow(Instruction instruction)
         {
             var exponent = (int)Pop().GetInteger();
             Limits.AssertShift(exponent);
@@ -762,13 +762,13 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SQRT(Instruction instruction)
+        private void Sqrt(Instruction instruction)
         {
             Push(Pop().GetInteger().Sqrt());
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void MODMUL(Instruction instruction)
+        private void ModMul(Instruction instruction)
         {
             var modulus = Pop().GetInteger();
             var x2 = Pop().GetInteger();
@@ -777,7 +777,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void MODPOW(Instruction instruction)
+        private void ModPow(Instruction instruction)
         {
             var modulus = Pop().GetInteger();
             var exponent = Pop().GetInteger();
@@ -789,7 +789,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SHL(Instruction instruction)
+        private void Shl(Instruction instruction)
         {
             int shift = (int)Pop().GetInteger();
             Limits.AssertShift(shift);
@@ -799,7 +799,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SHR(Instruction instruction)
+        private void Shr(Instruction instruction)
         {
             int shift = (int)Pop().GetInteger();
             Limits.AssertShift(shift);
@@ -809,14 +809,14 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void NOT(Instruction instruction)
+        private void Not(Instruction instruction)
         {
             var x = Pop().GetBoolean();
             Push(!x);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void BOOLAND(Instruction instruction)
+        private void BoolAnd(Instruction instruction)
         {
             var x2 = Pop().GetBoolean();
             var x1 = Pop().GetBoolean();
@@ -824,7 +824,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void BOOLOR(Instruction instruction)
+        private void BoolOr(Instruction instruction)
         {
             var x2 = Pop().GetBoolean();
             var x1 = Pop().GetBoolean();
@@ -832,14 +832,14 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void NZ(Instruction instruction)
+        private void Nz(Instruction instruction)
         {
             var x = Pop().GetInteger();
             Push(!x.IsZero);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void NUMEQUAL(Instruction instruction)
+        private void NumEqual(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -847,7 +847,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void NUMNOTEQUAL(Instruction instruction)
+        private void NumNotEqual(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -855,7 +855,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void LT(Instruction instruction)
+        private void Lt(Instruction instruction)
         {
             var x2 = Pop();
             var x1 = Pop();
@@ -866,7 +866,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void LE(Instruction instruction)
+        private void Le(Instruction instruction)
         {
             var x2 = Pop();
             var x1 = Pop();
@@ -877,7 +877,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void GT(Instruction instruction)
+        private void Gt(Instruction instruction)
         {
             var x2 = Pop();
             var x1 = Pop();
@@ -888,7 +888,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void GE(Instruction instruction)
+        private void Ge(Instruction instruction)
         {
             var x2 = Pop();
             var x1 = Pop();
@@ -899,7 +899,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void MIN(Instruction instruction)
+        private void Min(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -907,7 +907,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void MAX(Instruction instruction)
+        private void Max(Instruction instruction)
         {
             var x2 = Pop().GetInteger();
             var x1 = Pop().GetInteger();
@@ -915,7 +915,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void WITHIN(Instruction instruction)
+        private void Within(Instruction instruction)
         {
             BigInteger b = Pop().GetInteger();
             BigInteger a = Pop().GetInteger();
@@ -925,7 +925,7 @@ namespace Neo.VM
 
         // Compound-type
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void PACKMAP(Instruction instruction)
+        private void PackMap(Instruction instruction)
         {
             int size = (int)Pop().GetInteger();
             if (size < 0 || size * 2 > CurrentContext!.EvaluationStack.Count)
@@ -941,7 +941,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void PACKSTRUCT(Instruction instruction)
+        private void PackStruct(Instruction instruction)
         {
             int size = (int)Pop().GetInteger();
             if (size < 0 || size > CurrentContext!.EvaluationStack.Count)
@@ -956,7 +956,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void PACK(Instruction instruction)
+        private void Pack(Instruction instruction)
         {
             int size = (int)Pop().GetInteger();
             if (size < 0 || size > CurrentContext!.EvaluationStack.Count)
@@ -971,7 +971,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void UNPACK(Instruction instruction)
+        private void Unpack(Instruction instruction)
         {
             CompoundType compound = Pop<CompoundType>();
             switch (compound)
@@ -996,13 +996,13 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void NEWARRAY0(Instruction instruction)
+        private void NewArray0(Instruction instruction)
         {
             Push(new VMArray(ReferenceCounter));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void NEWARRAY_T(Instruction instruction)
+        private void NewArray_T(Instruction instruction)
         {
             int n = (int)Pop().GetInteger();
             if (n < 0 || n > Limits.MaxStackSize)
@@ -1029,13 +1029,13 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void NEWSTRUCT0(Instruction instruction)
+        private void NewStruct0(Instruction instruction)
         {
             Push(new Struct(ReferenceCounter));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void NEWSTRUCT(Instruction instruction)
+        private void NewStruct(Instruction instruction)
         {
             int n = (int)Pop().GetInteger();
             if (n < 0 || n > Limits.MaxStackSize)
@@ -1047,13 +1047,13 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void NEWMAP(Instruction instruction)
+        private void NewMap(Instruction instruction)
         {
             Push(new Map(ReferenceCounter));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SIZE(Instruction instruction)
+        private void Size(Instruction instruction)
         {
             var x = Pop();
             switch (x)
@@ -1073,7 +1073,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void HASKEY(Instruction instruction)
+        private void HasKey(Instruction instruction)
         {
             PrimitiveType key = Pop<PrimitiveType>();
             var x = Pop();
@@ -1114,14 +1114,14 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void KEYS(Instruction instruction)
+        private void Keys(Instruction instruction)
         {
             Map map = Pop<Map>();
             Push(new VMArray(ReferenceCounter, map.Keys));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void VALUES(Instruction instruction)
+        private void Values(Instruction instruction)
         {
             var x = Pop();
             IEnumerable<StackItem> values = x switch
@@ -1140,7 +1140,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void PICKITEM(Instruction instruction)
+        private void PickItem(Instruction instruction)
         {
             PrimitiveType key = Pop<PrimitiveType>();
             var x = Pop();
@@ -1184,7 +1184,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void APPEND(Instruction instruction)
+        private void Append(Instruction instruction)
         {
             StackItem newItem = Pop();
             VMArray array = Pop<VMArray>();
@@ -1193,7 +1193,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SETITEM(Instruction instruction)
+        private void SetItem(Instruction instruction)
         {
             StackItem value = Pop();
             if (value is Struct s) value = s.Clone(Limits);
@@ -1233,7 +1233,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void REVERSEITEMS(Instruction instruction)
+        private void ReverseItems(Instruction instruction)
         {
             var x = Pop();
             switch (x)
@@ -1250,7 +1250,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void REMOVE(Instruction instruction)
+        private void Remove(Instruction instruction)
         {
             PrimitiveType key = Pop<PrimitiveType>();
             var x = Pop();
@@ -1271,14 +1271,14 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void CLEARITEMS(Instruction instruction)
+        private void ClearItems(Instruction instruction)
         {
             CompoundType x = Pop<CompoundType>();
             x.Clear();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void POPITEM(Instruction instruction)
+        private void PopItem(Instruction instruction)
         {
             VMArray x = Pop<VMArray>();
             int index = x.Count - 1;
@@ -1288,14 +1288,14 @@ namespace Neo.VM
 
         //Types
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ISNULL(Instruction instruction)
+        private void IsNull(Instruction instruction)
         {
             var x = Pop();
             Push(x.IsNull);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ISTYPE(Instruction instruction)
+        private void IsType(Instruction instruction)
         {
             var x = Pop();
             StackItemType type = (StackItemType)instruction.TokenU8;
@@ -1305,21 +1305,21 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void CONVERT(Instruction instruction)
+        private void Convert(Instruction instruction)
         {
             var x = Pop();
             Push(x.ConvertTo((StackItemType)instruction.TokenU8));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ABORTMSG(Instruction instruction)
+        private void AbortMsg(Instruction instruction)
         {
             var msg = Pop().GetString();
             throw new Exception($"{OpCode.ABORTMSG} is executed. Reason: {msg}");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ASSERTMSG(Instruction instruction)
+        private void AssertMsg(Instruction instruction)
         {
             var msg = Pop().GetString();
             var x = Pop().GetBoolean();
