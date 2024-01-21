@@ -31,6 +31,7 @@ jobs:
       timeout-minutes: 3
       run: |
         dotnet build ./src/Neo.Service --output ./bin
+        cd ./bin
         dotnet ./bin/neo-node.dll &
       shell: bash
     - name: Test

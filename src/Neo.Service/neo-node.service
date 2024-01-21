@@ -1,9 +1,21 @@
 [Unit]
-Description=NEO N3 blockchain node
+Description=NEO N3 blockchain node service
+
+After=network-online.target
+Requires=network-online.target
 
 [Service]
 Type=notify
+WorkingDirectory=/opt/neo-node
 ExecStart=/usr/bin/neo-node
+Restart=always
+TimeoutSec=5
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=neonode
+User=node
+Group=node
 
 [Install]
 WantedBy=multi-user.target
