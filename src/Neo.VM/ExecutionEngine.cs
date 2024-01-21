@@ -158,24 +158,24 @@ namespace Neo.VM
                 case OpCode.PUSHINT64:
                 case OpCode.PUSHINT128:
                 case OpCode.PUSHINT256:
-                    ExecutePUSHINT(instruction);
+                    PUSHINT(instruction);
                     break;
                 case OpCode.PUSHT:
-                    ExecutePUSHT(instruction);
+                    PUSHT(instruction);
                     break;
                 case OpCode.PUSHF:
-                    ExecutePUSHF(instruction);
+                    PUSHF(instruction);
                     break;
                 case OpCode.PUSHA:
-                    ExecutePUSHA(instruction);
+                    PUSHA(instruction);
                     break;
                 case OpCode.PUSHNULL:
-                    ExecutePUSHNULL(instruction);
+                    PUSHNULL(instruction);
                     break;
                 case OpCode.PUSHDATA1:
                 case OpCode.PUSHDATA2:
                 case OpCode.PUSHDATA4:
-                    ExecutePUSHDATA(instruction);
+                    PUSHDATA(instruction);
                     break;
                 case OpCode.PUSHM1:
                 case OpCode.PUSH0:
@@ -195,161 +195,161 @@ namespace Neo.VM
                 case OpCode.PUSH14:
                 case OpCode.PUSH15:
                 case OpCode.PUSH16:
-                    ExecutePUSH(instruction);
+                    PUSH(instruction);
                     break;
 
                 // Control
                 case OpCode.NOP: break;
                 case OpCode.JMP:
-                    ExecuteJMP(instruction);
+                    JMP(instruction);
                     break;
                 case OpCode.JMP_L:
-                    ExecuteJMP_L(instruction);
+                    JMP_L(instruction);
                     break;
                 case OpCode.JMPIF:
-                    ExecuteJMPIF(instruction);
+                    JMPIF(instruction);
                     break;
                 case OpCode.JMPIF_L:
-                    ExecuteJMPIF_L(instruction);
+                    JMPIF_L(instruction);
                     break;
                 case OpCode.JMPIFNOT:
-                    ExecuteJMPIFNOT(instruction);
+                    JMPIFNOT(instruction);
                     break;
                 case OpCode.JMPIFNOT_L:
-                    ExecuteJMPIFNOT_L(instruction);
+                    JMPIFNOT_L(instruction);
                     break;
                 case OpCode.JMPEQ:
-                    ExecuteJMPEQ(instruction);
+                    JMPEQ(instruction);
                     break;
                 case OpCode.JMPEQ_L:
-                    ExecuteJMPEQ_L(instruction);
+                    JMPEQ_L(instruction);
                     break;
                 case OpCode.JMPNE:
-                    ExecuteJMPNE(instruction);
+                    JMPNE(instruction);
                     break;
                 case OpCode.JMPNE_L:
-                    ExecuteJMPNE_L(instruction);
+                    JMPNE_L(instruction);
                     break;
                 case OpCode.JMPGT:
-                    ExecuteJMPGT(instruction);
+                    JMPGT(instruction);
                     break;
                 case OpCode.JMPGT_L:
-                    ExecuteJMPGT_L(instruction);
+                    JMPGT_L(instruction);
                     break;
                 case OpCode.JMPGE:
-                    ExecuteJMPGE(instruction);
+                    JMPGE(instruction);
                     break;
                 case OpCode.JMPGE_L:
-                    ExecuteJMPGE_L(instruction);
+                    JMPGE_L(instruction);
                     break;
                 case OpCode.JMPLT:
-                    ExecuteJMPLT(instruction);
+                    JMPLT(instruction);
                     break;
                 case OpCode.JMPLT_L:
-                    ExecuteJMPLT_L(instruction);
+                    JMPLT_L(instruction);
                     break;
                 case OpCode.JMPLE:
-                    ExecuteJMPLE(instruction);
+                    JMPLE(instruction);
                     break;
                 case OpCode.JMPLE_L:
-                    ExecuteJMPLE_L(instruction);
+                    JMPLE_L(instruction);
                     break;
                 case OpCode.CALL:
-                    ExecuteCALL(instruction);
+                    CALL(instruction);
                     break;
                 case OpCode.CALL_L:
-                    ExecuteCALL_L(instruction);
+                    CALL_L(instruction);
                     break;
                 case OpCode.CALLA:
-                    ExecuteCALLA(instruction);
+                    CALLA(instruction);
                     break;
                 case OpCode.CALLT:
-                    ExecuteCALLT(instruction);
+                    CALLT(instruction);
                     break;
                 case OpCode.ABORT:
-                    ExecuteABORT(instruction);
+                    ABORT(instruction);
                     break;
                 case OpCode.ASSERT:
-                    ExecuteASSERT(instruction);
+                    ASSERT(instruction);
                     break;
                 case OpCode.THROW:
-                    ExecuteTHROW(instruction);
+                    THROW(instruction);
                     break;
                 case OpCode.TRY:
-                    ExecuteTRY(instruction);
+                    TRY(instruction);
                     break;
                 case OpCode.TRY_L:
-                    ExecuteTRY_L(instruction);
+                    TRY_L(instruction);
                     break;
                 case OpCode.ENDTRY:
-                    ExecuteENDTRY(instruction);
+                    ENDTRY(instruction);
                     break;
                 case OpCode.ENDTRY_L:
-                    ExecuteENDTRY_L(instruction);
+                    ENDTRY_L(instruction);
                     break;
                 case OpCode.ENDFINALLY:
-                    ExecuteENDFINALLY(instruction);
+                    ENDFINALLY(instruction);
                     break;
                 case OpCode.RET:
-                    ExecuteRET(instruction);
+                    RET(instruction);
                     break;
                 case OpCode.SYSCALL:
-                    ExecuteSYSCALL(instruction);
+                    SYSCALL(instruction);
                     break;
 
                 // Stack ops
                 case OpCode.DEPTH:
-                    ExecuteDEPTH(instruction);
+                    DEPTH(instruction);
                     break;
                 case OpCode.DROP:
-                    ExecuteDROP(instruction);
+                    DROP(instruction);
                     break;
                 case OpCode.NIP:
-                    ExecuteNIP(instruction);
+                    NIP(instruction);
                     break;
                 case OpCode.XDROP:
-                    ExecuteXDROP(instruction);
+                    XDROP(instruction);
                     break;
                 case OpCode.CLEAR:
-                    ExecuteCLEAR(instruction);
+                    CLEAR(instruction);
                     break;
                 case OpCode.DUP:
-                    ExecuteDUP(instruction);
+                    DUP(instruction);
                     break;
                 case OpCode.OVER:
-                    ExecuteOVER(instruction);
+                    OVER(instruction);
                     break;
                 case OpCode.PICK:
-                    ExecutePICK(instruction);
+                    PICK(instruction);
                     break;
                 case OpCode.TUCK:
-                    ExecuteTUCK(instruction);
+                    TUCK(instruction);
                     break;
                 case OpCode.SWAP:
-                    ExecuteSWAP(instruction);
+                    SWAP(instruction);
                     break;
                 case OpCode.ROT:
-                    ExecuteROT(instruction);
+                    ROT(instruction);
                     break;
                 case OpCode.ROLL:
-                    ExecuteROLL(instruction);
+                    ROLL(instruction);
                     break;
                 case OpCode.REVERSE3:
-                    ExecuteREVERSE3(instruction);
+                    REVERSE3(instruction);
                     break;
                 case OpCode.REVERSE4:
-                    ExecuteREVERSE4(instruction);
+                    REVERSE4(instruction);
                     break;
                 case OpCode.REVERSEN:
-                    ExecuteREVERSEN(instruction);
+                    REVERSEN(instruction);
                     break;
 
                 //Slot
                 case OpCode.INITSSLOT:
-                    ExecuteINITSSLOT(instruction);
+                    INITSSLOT(instruction);
                     break;
                 case OpCode.INITSLOT:
-                    ExecuteINITSLOT(instruction);
+                    INITSLOT(instruction);
                     break;
                 case OpCode.LDSFLD0:
                 case OpCode.LDSFLD1:
@@ -358,10 +358,10 @@ namespace Neo.VM
                 case OpCode.LDSFLD4:
                 case OpCode.LDSFLD5:
                 case OpCode.LDSFLD6:
-                    ExecuteLDSFLDM(instruction);
+                    LDSFLDM(instruction);
                     break;
                 case OpCode.LDSFLD:
-                    ExecuteLDSFLD(instruction);
+                    LDSFLD(instruction);
                     break;
                 case OpCode.STSFLD0:
                 case OpCode.STSFLD1:
@@ -370,10 +370,10 @@ namespace Neo.VM
                 case OpCode.STSFLD4:
                 case OpCode.STSFLD5:
                 case OpCode.STSFLD6:
-                    ExecuteSTSFLDM(instruction);
+                    STSFLDM(instruction);
                     break;
                 case OpCode.STSFLD:
-                    ExecuteSTSFLD(instruction);
+                    STSFLD(instruction);
                     break;
                 case OpCode.LDLOC0:
                 case OpCode.LDLOC1:
@@ -382,10 +382,10 @@ namespace Neo.VM
                 case OpCode.LDLOC4:
                 case OpCode.LDLOC5:
                 case OpCode.LDLOC6:
-                    ExecuteLDLOCM(instruction);
+                    LDLOCM(instruction);
                     break;
                 case OpCode.LDLOC:
-                    ExecuteLDLOC(instruction);
+                    LDLOC(instruction);
                     break;
                 case OpCode.STLOC0:
                 case OpCode.STLOC1:
@@ -394,10 +394,10 @@ namespace Neo.VM
                 case OpCode.STLOC4:
                 case OpCode.STLOC5:
                 case OpCode.STLOC6:
-                    ExecuteSTLOCM(instruction);
+                    STLOCM(instruction);
                     break;
                 case OpCode.STLOC:
-                    ExecuteSTLOC(instruction);
+                    STLOC(instruction);
                     break;
                 case OpCode.LDARG0:
                 case OpCode.LDARG1:
@@ -406,10 +406,10 @@ namespace Neo.VM
                 case OpCode.LDARG4:
                 case OpCode.LDARG5:
                 case OpCode.LDARG6:
-                    ExecuteLDARGM(instruction);
+                    LDARGM(instruction);
                     break;
                 case OpCode.LDARG:
-                    ExecuteLDARG(instruction);
+                    LDARG(instruction);
                     break;
                 case OpCode.STARG0:
                 case OpCode.STARG1:
@@ -418,219 +418,219 @@ namespace Neo.VM
                 case OpCode.STARG4:
                 case OpCode.STARG5:
                 case OpCode.STARG6:
-                    ExecuteSTARGM(instruction);
+                    STARGM(instruction);
                     break;
                 case OpCode.STARG:
-                    ExecuteSTARG(instruction);
+                    STARG(instruction);
                     break;
 
                 // Splice
                 case OpCode.NEWBUFFER:
-                    ExecuteNEWBUFFER(instruction);
+                    NEWBUFFER(instruction);
                     break;
                 case OpCode.MEMCPY:
-                    ExecuteMEMCPY(instruction);
+                    MEMCPY(instruction);
                     break;
                 case OpCode.CAT:
-                    ExecuteCAT(instruction);
+                    CAT(instruction);
                     break;
                 case OpCode.SUBSTR:
-                    ExecuteSUBSTR(instruction);
+                    SUBSTR(instruction);
                     break;
                 case OpCode.LEFT:
-                    ExecuteLEFT(instruction);
+                    LEFT(instruction);
                     break;
                 case OpCode.RIGHT:
-                    ExecuteRIGHT(instruction);
+                    RIGHT(instruction);
                     break;
 
                 // Bitwise logic
                 case OpCode.INVERT:
-                    ExecuteINVERT(instruction);
+                    INVERT(instruction);
                     break;
                 case OpCode.AND:
-                    ExecuteAND(instruction);
+                    AND(instruction);
                     break;
                 case OpCode.OR:
-                    ExecuteOR(instruction);
+                    OR(instruction);
                     break;
                 case OpCode.XOR:
-                    ExecuteXOR(instruction);
+                    XOR(instruction);
                     break;
                 case OpCode.EQUAL:
-                    ExecuteEQUAL(instruction);
+                    EQUAL(instruction);
                     break;
                 case OpCode.NOTEQUAL:
-                    ExecuteNOTEQUAL(instruction);
+                    NOTEQUAL(instruction);
                     break;
 
                 // Numeric
                 case OpCode.SIGN:
-                    ExecuteSIGN(instruction);
+                    SIGN(instruction);
                     break;
                 case OpCode.ABS:
-                    ExecuteABS(instruction);
+                    ABS(instruction);
                     break;
                 case OpCode.NEGATE:
-                    ExecuteNEGATE(instruction);
+                    NEGATE(instruction);
                     break;
                 case OpCode.INC:
-                    ExecuteINC(instruction);
+                    INC(instruction);
                     break;
                 case OpCode.DEC:
-                    ExecuteDEC(instruction);
+                    DEC(instruction);
                     break;
                 case OpCode.ADD:
-                    ExecuteADD(instruction);
+                    ADD(instruction);
                     break;
                 case OpCode.SUB:
-                    ExecuteSUB(instruction);
+                    SUB(instruction);
                     break;
                 case OpCode.MUL:
-                    ExecuteMUL(instruction);
+                    MUL(instruction);
                     break;
                 case OpCode.DIV:
-                    ExecuteDIV(instruction);
+                    DIV(instruction);
                     break;
                 case OpCode.MOD:
-                    ExecuteMOD(instruction);
+                    MOD(instruction);
                     break;
                 case OpCode.POW:
-                    ExecutePOW(instruction);
+                    POW(instruction);
                     break;
                 case OpCode.SQRT:
-                    ExecuteSQRT(instruction);
+                    SQRT(instruction);
                     break;
                 case OpCode.MODMUL:
-                    ExecuteMODMUL(instruction);
+                    MODMUL(instruction);
                     break;
                 case OpCode.MODPOW:
-                    ExecuteMODPOW(instruction);
+                    MODPOW(instruction);
                     break;
                 case OpCode.SHL:
-                    ExecuteSHL(instruction);
+                    SHL(instruction);
                     break;
                 case OpCode.SHR:
-                    ExecuteSHR(instruction);
+                    SHR(instruction);
                     break;
                 case OpCode.NOT:
-                    ExecuteNOT(instruction);
+                    NOT(instruction);
                     break;
                 case OpCode.BOOLAND:
-                    ExecuteBOOLAND(instruction);
+                    BOOLAND(instruction);
                     break;
                 case OpCode.BOOLOR:
-                    ExecuteBOOLOR(instruction);
+                    BOOLOR(instruction);
                     break;
                 case OpCode.NZ:
-                    ExecuteNZ(instruction);
+                    NZ(instruction);
                     break;
                 case OpCode.NUMEQUAL:
-                    ExecuteNUMEQUAL(instruction);
+                    NUMEQUAL(instruction);
                     break;
                 case OpCode.NUMNOTEQUAL:
-                    ExecuteNUMNOTEQUAL(instruction);
+                    NUMNOTEQUAL(instruction);
                     break;
                 case OpCode.LT:
-                    ExecuteLT(instruction);
+                    LT(instruction);
                     break;
                 case OpCode.LE:
-                    ExecuteLE(instruction);
+                    LE(instruction);
                     break;
                 case OpCode.GT:
-                    ExecuteGT(instruction);
+                    GT(instruction);
                     break;
                 case OpCode.GE:
-                    ExecuteGE(instruction);
+                    GE(instruction);
                     break;
                 case OpCode.MIN:
-                    ExecuteMIN(instruction);
+                    MIN(instruction);
                     break;
                 case OpCode.MAX:
-                    ExecuteMAX(instruction);
+                    MAX(instruction);
                     break;
                 case OpCode.WITHIN:
-                    ExecuteWITHIN(instruction);
+                    WITHIN(instruction);
                     break;
 
                 // Compound-type
                 case OpCode.PACKMAP:
-                    ExecutePACKMAP(instruction);
+                    PACKMAP(instruction);
                     break;
                 case OpCode.PACKSTRUCT:
-                    ExecutePACKSTRUCT(instruction);
+                    PACKSTRUCT(instruction);
                     break;
                 case OpCode.PACK:
-                    ExecutePACK(instruction);
+                    PACK(instruction);
                     break;
                 case OpCode.UNPACK:
-                    ExecuteUNPACK(instruction);
+                    UNPACK(instruction);
                     break;
                 case OpCode.NEWARRAY0:
-                    ExecuteNEWARRAY0(instruction);
+                    NEWARRAY0(instruction);
                     break;
                 case OpCode.NEWARRAY:
                 case OpCode.NEWARRAY_T:
-                    ExecuteNEWARRAY_T(instruction);
+                    NEWARRAY_T(instruction);
                     break;
                 case OpCode.NEWSTRUCT0:
-                    ExecuteNEWSTRUCT0(instruction);
+                    NEWSTRUCT0(instruction);
                     break;
                 case OpCode.NEWSTRUCT:
-                    ExecuteNEWSTRUCT(instruction);
+                    NEWSTRUCT(instruction);
                     break;
                 case OpCode.NEWMAP:
-                    ExecuteNEWMAP(instruction);
+                    NEWMAP(instruction);
                     break;
                 case OpCode.SIZE:
-                    ExecuteSIZE(instruction);
+                    SIZE(instruction);
                     break;
                 case OpCode.HASKEY:
-                    ExecuteHASKEY(instruction);
+                    HASKEY(instruction);
                     break;
                 case OpCode.KEYS:
-                    ExecuteKEYS(instruction);
+                    KEYS(instruction);
                     break;
                 case OpCode.VALUES:
-                    ExecuteVALUES(instruction);
+                    VALUES(instruction);
                     break;
                 case OpCode.PICKITEM:
-                    ExecutePICKITEM(instruction);
+                    PICKITEM(instruction);
                     break;
                 case OpCode.APPEND:
-                    ExecuteAPPEND(instruction);
+                    APPEND(instruction);
                     break;
                 case OpCode.SETITEM:
-                    ExecuteSETITEM(instruction);
+                    SETITEM(instruction);
                     break;
                 case OpCode.REVERSEITEMS:
-                    ExecuteREVERSEITEMS(instruction);
+                    REVERSEITEMS(instruction);
                     break;
                 case OpCode.REMOVE:
-                    ExecuteREMOVE(instruction);
+                    REMOVE(instruction);
                     break;
                 case OpCode.CLEARITEMS:
-                    ExecuteCLEARITEMS(instruction);
+                    CLEARITEMS(instruction);
                     break;
                 case OpCode.POPITEM:
-                    ExecutePOPITEM(instruction);
+                    POPITEM(instruction);
                     break;
 
                 //Types
                 case OpCode.ISNULL:
-                    ExecuteISNULL(instruction);
+                    ISNULL(instruction);
                     break;
                 case OpCode.ISTYPE:
-                    ExecuteISTYPE(instruction);
+                    ISTYPE(instruction);
                     break;
                 case OpCode.CONVERT:
-                    ExecuteCONVERT(instruction);
+                    CONVERT(instruction);
                     break;
                 case OpCode.ABORTMSG:
-                    ExecuteABORTMSG(instruction);
+                    ABORTMSG(instruction);
                     break;
                 case OpCode.ASSERTMSG:
-                    ExecuteASSERTMSG(instruction);
+                    ASSERTMSG(instruction);
                     break;
                 default:
                     throw new InvalidOperationException($"Opcode {instruction.OpCode} is undefined.");
