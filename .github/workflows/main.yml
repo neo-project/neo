@@ -31,8 +31,9 @@ jobs:
     - name: Run Neo.Service
       timeout-minutes: 1
       run: |
-        dotnet build --no-restore --output ./bin
+        dotnet build ./src/Neo.Service --no-restore --output ./bin
         dotnet ./bin/Neo.Service.dll &
+      shell: bash
     - name: Test
       run: |
         find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
