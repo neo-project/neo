@@ -11,10 +11,10 @@
 
 using Microsoft.Extensions.Logging;
 using Neo.Service.Json;
+using Neo.Service.Pipe;
 using System;
 using System.IO;
 using System.IO.Pipes;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -64,25 +64,29 @@ namespace Neo.Service.Pipes
                 {
                     try
                     {
-                        using var sr = new StreamReader(_neoPipeStream, encoding: Encoding.UTF8, leaveOpen: true);
-                        var jsonString = await sr.ReadLineAsync(stopReadTokenSource.Token);
+                        var jsonString = await _neoPipeStream.ReadLineAsync(stopReadTokenSource.Token);
 
                         if (string.IsNullOrEmpty(jsonString)) break;
                         var command = JsonSerializer.Deserialize<PipeCommand>(jsonString, JsonOptions);
 
                         if (stoppingToken.IsCancellationRequested) break;
                         if (command is null) break;
-                        _logger.LogInformation("Exec: {Command} {Arguments}", command.Exec, command.Arguments);
+                        _logger.LogInformation("Exec: {Command} {Arguments} by {User}", command.Exec, command.Arguments, _neoPipeStream.GetImpersonationUserName());
 
                         var result = await command.ExecuteAsync(stoppingToken);
                         jsonString = JsonSerializer.Serialize(result, JsonOptions);
 
-                        using var sw = new StreamWriter(_neoPipeStream, encoding: Encoding.UTF8, leaveOpen: true);
-                        sw.AutoFlush = true;
-                        await sw.WriteLineAsync(jsonString);
+                        await _neoPipeStream.WriteLineAsync(jsonString);
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        if (_neoPipeStream.IsConnected)
+                            await _neoPipeStream.WriteLineAsync(JsonSerializer.Serialize(new
+                            {
+                                Type = ex.GetType().Name,
+                                Code = ex.HResult,
+                                ex.Message,
+                            }, typeof(object), JsonOptions));
                         throw;
                     }
                 }

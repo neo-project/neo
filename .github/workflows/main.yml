@@ -26,7 +26,13 @@ jobs:
     - name: Check format
       if: matrix.os == 'ubuntu-latest'
       run: |
-         dotnet format --verify-no-changes --verbosity diagnostic
+        dotnet restore
+        dotnet format --no-restore --verify-no-changes --verbosity diagnostic
+    - name: Run Neo.Service
+      timeout-minutes: 1
+      run: |
+        dotnet build --no-restore --ouput ./bin
+        dotnet ./bin/Neo.Service.dll &
     - name: Test
       run: |
         find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild

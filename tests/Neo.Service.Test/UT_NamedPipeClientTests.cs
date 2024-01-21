@@ -22,39 +22,35 @@ namespace Neo.Service.Tests
 {
     internal class UT_NamedPipeClientTests
     {
+        private readonly NamedPipeClientStream _clientStream;
+
+        public UT_NamedPipeClientTests()
+        {
+            _clientStream = new(".", NodeCommandPipeServer.PipeName);
+        }
+
         public JsonNode? TestCommandExit()
         {
-            var clientStream = new NamedPipeClientStream(".", NodeCommandPipeServer.PipeName);
-            clientStream.Connect();
+            _clientStream.Connect();
 
-            Assert.True(clientStream.IsConnected);
-            Assert.True(clientStream.CanWrite);
-            Assert.True(clientStream.CanRead);
+            Assert.True(_clientStream.IsConnected);
+            Assert.True(_clientStream.CanWrite);
+            Assert.True(_clientStream.CanRead);
 
             var pipeCommentObject = new PipeCommand()
             {
                 Exec = CommandType.Shutdown,
-                Arguments = new Dictionary<string, string>()
-                {
-                    { "--close1", bool.TrueString },
-                    { "--close2", bool.TrueString },
-                    { "--close3", bool.TrueString },
-                    { "--close4", bool.TrueString },
-                    { "--close5", bool.TrueString },
-                    { "--close6", bool.TrueString },
-                    { "--close7", bool.TrueString },
-                    { "--close8", bool.TrueString },
-                },
+                Arguments = new Dictionary<string, string>(),
             };
 
-            using var sw = new StreamWriter(clientStream, encoding: Encoding.UTF8, leaveOpen: true);
+            using var sw = new StreamWriter(_clientStream, encoding: Encoding.UTF8, leaveOpen: true);
             sw.AutoFlush = true;
             sw.WriteLine(JsonSerializer.Serialize(pipeCommentObject, pipeCommentObject.GetType(), NodeCommandPipeServer.JsonOptions));
 
             if (OperatingSystem.IsWindows())
-                clientStream.WaitForPipeDrain();
+                _clientStream.WaitForPipeDrain();
 
-            using var sr = new StreamReader(clientStream, encoding: Encoding.UTF8, leaveOpen: true);
+            using var sr = new StreamReader(_clientStream, encoding: Encoding.UTF8, leaveOpen: true);
             return JsonSerializer.Deserialize<JsonNode>(sr.ReadLine()!, NodeCommandPipeServer.JsonOptions);
         }
     }

@@ -47,7 +47,7 @@ namespace Neo.Service.Tests
         }
 
         [PipeMethod(CommandType.Shutdown, Overwrite = true)]
-        private Task<object> TestBoolFunction(string[] args, CancellationToken cancellationToken) =>
+        private Task<object> TestBoolFunction(IReadOnlyDictionary<string, string> args, CancellationToken cancellationToken) =>
             Task.FromResult<object>(true);
     }
 }
