@@ -31,7 +31,7 @@ jobs:
     - name: Run Neo.Service
       timeout-minutes: 1
       run: |
-        dotnet build --no-restore --ouput ./bin
+        dotnet build --no-restore --output ./bin
         dotnet ./bin/Neo.Service.dll &
     - name: Test
       run: |
