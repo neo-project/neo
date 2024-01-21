@@ -26,12 +26,11 @@ jobs:
     - name: Check format
       if: matrix.os == 'ubuntu-latest'
       run: |
-        dotnet restore
         dotnet format --no-restore --verify-no-changes --verbosity diagnostic
     - name: Run Neo.Service
       timeout-minutes: 1
       run: |
-        dotnet build ./src/Neo.Service --no-restore --output ./bin
+        dotnet build ./src/Neo.Service --output ./bin
         dotnet ./bin/Neo.Service.dll &
       shell: bash
     - name: Test
