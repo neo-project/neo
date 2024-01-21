@@ -28,7 +28,7 @@ jobs:
       run: |
         dotnet format --no-restore --verify-no-changes --verbosity diagnostic
     - name: Run Neo.Service
-      timeout-minutes: 1
+      timeout-minutes: 3
       run: |
         dotnet build ./src/Neo.Service --output ./bin
         dotnet ./bin/neo-node.dll &
