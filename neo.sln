@@ -38,7 +38,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.Cryptography.BLS12_381.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.Service", "src\Neo.Service\Neo.Service.csproj", "{A680BEF0-6895-4DA6-A355-304EEC9B4861}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.Service.Test", "tests\Neo.Service.Test\Neo.Service.Test.csproj", "{6400F5B3-CFD6-4F95-A733-94A326B14B2C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.Service.Tests", "tests\Neo.Service.Test\Neo.Service.Tests.csproj", "{6400F5B3-CFD6-4F95-A733-94A326B14B2C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

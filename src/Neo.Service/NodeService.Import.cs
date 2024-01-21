@@ -16,6 +16,7 @@ using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -37,7 +38,7 @@ namespace Neo.Service
 
             _logger.LogInformation("Started importing blocks.");
 
-            using var blocksBeingImported = GetBlocksFromFile().GetEnumerator();
+            using var blocksBeingImported = GetBlocksFromFile(AppContext.BaseDirectory).GetEnumerator();
 
             while (cancellationToken.IsCancellationRequested == false)
             {
@@ -56,30 +57,32 @@ namespace Neo.Service
             }
 
             if (cancellationToken.IsCancellationRequested)
-                _logger.LogDebug("Import blocks canceled!");
+                _logger.LogInformation("Import blocks canceled!");
             else
-                _logger.LogDebug("Import blocks finished!");
+                _logger.LogInformation("Import blocks finished!");
 
-            await StartNodeAsync(cancellationToken);
+            await StartNeoSystemAsync(cancellationToken);
         }
 
-        private IEnumerable<Block> GetBlocksFromFile()
+        private IEnumerable<Block> GetBlocksFromFile(string dir = "")
         {
             if (_neoSystem is null) yield break;
+            if (Directory.Exists(dir) == false)
+                throw new DirectoryNotFoundException(dir);
 
             const string PathAcc = "chain.acc";
             const string PathAccZip = PathAcc + ".zip";
 
             if (File.Exists(PathAcc))
             {
-                using FileStream fs = new(PathAcc, FileMode.Open, FileAccess.Read, FileShare.Read);
+                using FileStream fs = new(Path.Combine(dir, PathAcc), FileMode.Open, FileAccess.Read, FileShare.Read);
                 foreach (var block in GetBlocks(fs))
                     yield return block;
             }
 
             if (File.Exists(PathAccZip))
             {
-                using var fs = new FileStream(PathAccZip, FileMode.Open, FileAccess.Read, FileShare.Read);
+                using var fs = new FileStream(Path.Combine(dir, PathAccZip), FileMode.Open, FileAccess.Read, FileShare.Read);
                 using var zip = new ZipArchive(fs, ZipArchiveMode.Read);
                 var entry = zip.GetEntry(PathAcc);
                 if (entry is null) yield break;
@@ -88,8 +91,8 @@ namespace Neo.Service
                     yield return block;
             }
 
-            var paths = Directory.EnumerateFiles(".", "chain.*.acc", SearchOption.TopDirectoryOnly)
-                .Concat(Directory.EnumerateFiles(".", "chain.*.acc.zip", SearchOption.TopDirectoryOnly))
+            var paths = Directory.EnumerateFiles(dir, "chain.*.acc", SearchOption.TopDirectoryOnly)
+                .Concat(Directory.EnumerateFiles(dir, "chain.*.acc.zip", SearchOption.TopDirectoryOnly))
                 .Select(p => new
                 {
                     FileName = Path.GetFileName(p),

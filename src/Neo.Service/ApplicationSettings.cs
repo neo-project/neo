@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// NodeSettings.cs file belongs to the neo project and is free
+// ApplicationSettings.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -16,64 +16,59 @@ using System;
 
 namespace Neo.Service
 {
-    internal sealed class NodeSettings
+    internal sealed class ApplicationSettings
     {
-        public LoggerSettings Logger { get; private init; } = LoggerSettings.Default;
         public StorageSettings Storage { get; private init; } = StorageSettings.Default;
         public P2PSettings P2P { get; private init; } = P2PSettings.Default;
         public ContractsSettings Contracts { get; private init; } = ContractsSettings.Default;
-        public PipeSettings Pipe { get; private init; } = PipeSettings.Default;
+        public NamedPipeSettings NamedPipe { get; private init; } = NamedPipeSettings.Default;
         public PluginSettings Plugin { get; private init; } = PluginSettings.Default;
 
-        public static NodeSettings Default => new();
+        public static ApplicationSettings Default => new();
 
-        public static NodeSettings Load(IConfigurationSection section) => new()
+        public static ApplicationSettings Load(IConfigurationSection section) => new()
         {
-            Logger = LoggerSettings.Load(section.GetSection(nameof(Logger))),
             Storage = StorageSettings.Load(section.GetSection(nameof(Storage))),
             P2P = P2PSettings.Load(section.GetSection(nameof(P2P))),
             Contracts = ContractsSettings.Load(section.GetSection(nameof(Contracts))),
-        };
-    }
-
-    internal sealed class LoggerSettings
-    {
-        public string? Path { get; private init; }
-        public bool ConsoleOutput { get; private init; }
-        public bool Active { get; private init; }
-
-        public static LoggerSettings Default => new()
-        {
-            Path = "logs",
-            ConsoleOutput = false,
-            Active = false,
-        };
-
-        public static LoggerSettings Load(IConfigurationSection section) => new()
-        {
-            Path = section.GetValue(nameof(Path), Default.Path),
-            ConsoleOutput = section.GetValue(nameof(ConsoleOutput), Default.ConsoleOutput),
-            Active = section.GetValue(nameof(Active), Default.Active),
+            NamedPipe = NamedPipeSettings.Load(section.GetSection(nameof(NamedPipe))),
+            Plugin = PluginSettings.Load(section.GetSection(nameof(Plugin))),
         };
     }
 
     internal sealed class StorageSettings
     {
+        public class ImportSettings
+        {
+            public string? Path { get; init; }
+            public bool Verify { get; init; }
+
+            internal static ImportSettings Default => new()
+            {
+                Verify = true,
+            };
+
+            internal static ImportSettings Load(IConfigurationSection section) => new()
+            {
+                Verify = section.GetValue(nameof(Verify), Default.Verify),
+            };
+        }
+
         public string? Engine { get; private init; }
         public string? Path { get; private init; }
-        public bool ImportVerify { get; private init; }
+        public ImportSettings Import { get; private init; } = ImportSettings.Default;
 
         public static StorageSettings Default => new()
         {
             Engine = nameof(MemoryStore),
-            ImportVerify = true,
+            Import = ImportSettings.Default,
         };
 
         public static StorageSettings Load(IConfigurationSection section) => new()
         {
             Engine = section.GetValue(nameof(Engine), Default.Engine),
             Path = section.GetValue(nameof(Path), Default.Path),
-            ImportVerify = section.GetValue(nameof(ImportVerify), Default.ImportVerify),
+            Import = ImportSettings.Load(section.GetSection(nameof(Import))),
         };
     }
 
@@ -116,18 +111,24 @@ namespace Neo.Service
         };
     }
 
-    internal sealed class PipeSettings
+    internal sealed class NamedPipeSettings
     {
         public int Instances { get; private init; }
+        public int ReadTimeout { get; private init; }
+        public bool DebugMode { get; private init; }
 
-        public static PipeSettings Default => new()
+        public static NamedPipeSettings Default => new()
         {
             Instances = 4,
+            ReadTimeout = 1000,
+            DebugMode = false,
         };
 
-        public static PipeSettings Load(IConfigurationSection section) => new()
+        public static NamedPipeSettings Load(IConfigurationSection section) => new()
         {
             Instances = section.GetValue(nameof(Instances), Default.Instances),
+            ReadTimeout = section.GetValue(nameof(ReadTimeout), Default.ReadTimeout),
+            DebugMode = section.GetValue(nameof(DebugMode), Default.DebugMode),
         };
     }
 

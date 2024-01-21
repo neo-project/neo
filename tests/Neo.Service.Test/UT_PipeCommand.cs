@@ -10,11 +10,11 @@
 // modifications are permitted.
 
 using Neo.Service.Pipes;
-using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Service.Test
+namespace Neo.Service.Tests
 {
     public class UT_PipeCommand
     {
@@ -27,7 +27,7 @@ namespace Neo.Service.Test
         [Fact]
         public void Test_DefinedMethodsExist()
         {
-            Assert.True(PipeCommand.Contains(CommandType.Exit));
+            Assert.True(PipeCommand.Contains(CommandType.Shutdown));
         }
 
         [Fact]
@@ -35,8 +35,8 @@ namespace Neo.Service.Test
         {
             var pcom = new PipeCommand()
             {
-                Exec = CommandType.Exit,
-                Arguments = Array.Empty<string>(),
+                Exec = CommandType.Shutdown,
+                Arguments = new Dictionary<string, string>(),
             };
 
             var taskObj = await pcom.ExecuteAsync(CancellationToken.None);
@@ -46,7 +46,7 @@ namespace Neo.Service.Test
             Assert.Equal(true, taskObj);
         }
 
-        [PipeMethod(CommandType.Exit, Overwrite = true)]
+        [PipeMethod(CommandType.Shutdown, Overwrite = true)]
         private Task<object> TestBoolFunction(string[] args, CancellationToken cancellationToken) =>
             Task.FromResult<object>(true);
     }

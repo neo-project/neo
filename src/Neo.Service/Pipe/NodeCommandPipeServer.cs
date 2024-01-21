@@ -14,6 +14,7 @@ using Neo.Service.Json;
 using System;
 using System.IO;
 using System.IO.Pipes;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -33,74 +34,73 @@ namespace Neo.Service.Pipes
             WriteIndented = false,
         };
 
+        private readonly int _waitForReadInMillseconds;
         private readonly ILogger<NodeCommandPipeServer> _logger;
         private readonly NamedPipeServerStream _neoPipeStream;
 
-        private CancellationTokenSource? _cancellationTokenSource;
-
         public NodeCommandPipeServer(
             int instances,
+            int waitForReadInMilliseconds,
             ILogger<NodeCommandPipeServer> logger)
         {
-            if (instances > NamedPipeServerStream.MaxAllowedServerInstances) { }
+            _waitForReadInMillseconds = waitForReadInMilliseconds;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _neoPipeStream = new(PipeName, PipeDirection.In, instances, PipeTransmissionMode.Byte, PipeOptions.CurrentUserOnly);
+            _neoPipeStream ??= new(PipeName, PipeDirection.InOut, instances, PipeTransmissionMode.Byte);
         }
 
         public void Dispose()
         {
-            _cancellationTokenSource?.Dispose();
             _neoPipeStream?.Dispose();
         }
 
-        public async Task ListenAsync(CancellationToken stoppingToken)
+        public async Task StartAndWaitAsync(CancellationToken stoppingToken)
         {
-            if (_cancellationTokenSource?.IsCancellationRequested == false) return;
-            _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+            await _neoPipeStream.WaitForConnectionAsync(stoppingToken);
+            var stopReadTokenSource = new CancellationTokenSource(_waitForReadInMillseconds);
 
-            while (_cancellationTokenSource.IsCancellationRequested == false)
+            try
             {
-                _logger.LogInformation("Waiting for connection on thread {ThreadId}.", Environment.CurrentManagedThreadId);
-
-                await _neoPipeStream.WaitForConnectionAsync(stoppingToken);
-
-                _logger.LogInformation("Got a connection.");
-
-                try
+                while (stoppingToken.IsCancellationRequested == false)
                 {
-                    while (_cancellationTokenSource.IsCancellationRequested == false)
+                    try
                     {
-                        var command = await JsonSerializer.DeserializeAsync<PipeCommand>(_neoPipeStream, JsonOptions, _cancellationTokenSource.Token);
+                        using var sr = new StreamReader(_neoPipeStream, encoding: Encoding.UTF8, leaveOpen: true);
+                        var jsonString = await sr.ReadLineAsync(stopReadTokenSource.Token);
 
-                        if (command is null) continue;
+                        if (string.IsNullOrEmpty(jsonString)) break;
+                        var command = JsonSerializer.Deserialize<PipeCommand>(jsonString, JsonOptions);
 
-                        _logger.LogInformation("Exec: {Command} {Arguments}", command.Exec, string.Join(' ', command.Arguments));
+                        if (stoppingToken.IsCancellationRequested) break;
+                        if (command is null) break;
+                        _logger.LogInformation("Exec: {Command} {Arguments}", command.Exec, command.Arguments);
 
-                        try
-                        {
-                            var result = await command.ExecuteAsync(_cancellationTokenSource.Token);
+                        var result = await command.ExecuteAsync(stoppingToken);
+                        jsonString = JsonSerializer.Serialize(result, JsonOptions);
 
-                            await JsonSerializer.SerializeAsync(_neoPipeStream, result, JsonOptions, _cancellationTokenSource.Token);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogCritical("{ExceptionType}: {Exception}", ex.GetType().Name, ex.InnerException?.Message ?? ex.Message);
-                        }
+                        using var sw = new StreamWriter(_neoPipeStream, encoding: Encoding.UTF8, leaveOpen: true);
+                        sw.AutoFlush = true;
+                        await sw.WriteLineAsync(jsonString);
+                    }
+                    catch (Exception)
+                    {
+                        throw;
                     }
                 }
-                catch (IOException ex) // client disconnected or read error
-                {
-                    _logger.LogInformation("{Exception}", ex.InnerException?.Message ?? ex.Message);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogCritical("{ExceptionType}: {Exception}", ex.GetType().Name, ex.InnerException?.Message ?? ex.Message);
-                }
-                finally
-                {
-                    if (_neoPipeStream.IsConnected)
-                        _neoPipeStream.Disconnect();
-                }
+            }
+            catch (IOException) // client disconnected or IO error
+            {
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical("{ExceptionType}: {Exception}.",
+                    ex.GetType().Name, ex.InnerException?.Message ?? ex.Message);
+            }
+            finally
+            {
+                if (_neoPipeStream.IsConnected)
+                    _neoPipeStream.Disconnect();
+                _neoPipeStream.Close();
             }
         }
     }

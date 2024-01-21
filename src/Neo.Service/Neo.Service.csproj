@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="$(AssemblyTitle).Test" />
+    <InternalsVisibleTo Include="$(AssemblyTitle).Tests" />
   </ItemGroup>
 
   <ItemGroup>

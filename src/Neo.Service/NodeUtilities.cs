@@ -16,12 +16,12 @@ namespace Neo.Service
 {
     internal static class NodeUtilities
     {
-        public static UInt160? TryParseUInt160(string? value)
+        public static UInt160 TryParseUInt160(string? value)
         {
             if (string.IsNullOrEmpty(value)) return default;
             if (UInt160.TryParse(value, out var result))
                 return result;
-            return default;
+            return UInt160.Zero;
         }
 
         public static Version GetApplicationVersion() =>

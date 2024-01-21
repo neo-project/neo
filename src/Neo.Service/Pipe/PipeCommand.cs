@@ -11,6 +11,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -21,20 +22,20 @@ namespace Neo.Service.Pipes
     [JsonConverter(typeof(JsonStringEnumConverter))]
     internal enum CommandType : byte
     {
-        Start = 0x10,
-        Stop = 0x11,
-        Exit = 0xee,
+        StartNeoSystem = 0x10,
+        StopNeoSystem = 0x11,
+        Shutdown = 0xe1,
     }
 
     internal sealed class PipeCommand
     {
-        private static readonly ConcurrentDictionary<CommandType, Func<string[], CancellationToken, object>> s_methods = new();
+        private static readonly ConcurrentDictionary<CommandType, Func<IReadOnlyDictionary<string, string>, CancellationToken, object>> s_methods = new();
 
         [JsonInclude]
         public required CommandType Exec { get; set; }
 
         [JsonInclude]
-        public required string[] Arguments { get; set; }
+        public required IReadOnlyDictionary<string, string> Arguments { get; set; }
 
         public static void RegisterMethods(object handler)
         {
@@ -46,7 +47,7 @@ namespace Neo.Service.Pipes
                 if (pipeAttr == null) continue;
                 if (s_methods.ContainsKey(pipeAttr.Command) && pipeAttr.Overwrite == false)
                     throw new AmbiguousMatchException($"{handlerType.FullName}.{method.Name}: Command {pipeAttr.Command} already exists.");
-                s_methods[pipeAttr.Command] = method.CreateDelegate<Func<string[], CancellationToken, object>>(handler);
+                s_methods[pipeAttr.Command] = method.CreateDelegate<Func<IReadOnlyDictionary<string, string>, CancellationToken, object>>(handler);
             }
         }
 
