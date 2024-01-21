@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.ConsoleService;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -45,6 +46,21 @@ namespace Neo.CLI
 
             WriteBlocks(start, count, path, true);
         }
+
+#if FALLBACK
+        [ConsoleCommand("fallback blocks", Category = "Blockchain Commands")]
+        private void OnBlockFallbackCommand(uint target)
+        {
+            uint height = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
+            if (height < target)
+            {
+                ConsoleHelper.Error("invalid fallback target height.");
+                return;
+            }
+
+            Blockchain.OnBlockFallback(NeoSystem, target);
+        }
+#endif
 
         [ConsoleCommand("show block", Category = "Blockchain Commands")]
         private void OnShowBlockCommand(string indexOrHash)

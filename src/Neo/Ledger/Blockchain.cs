@@ -469,6 +469,9 @@ namespace Neo.Ledger
                     all_application_executed.Add(application_executed);
                 }
                 Committing?.Invoke(system, block, snapshot, all_application_executed);
+#if FALLBACK
+                SaveFallback(snapshot, block.Index);
+#endif
                 snapshot.Commit();
             }
             Committed?.Invoke(system, block);
