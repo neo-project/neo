@@ -83,7 +83,7 @@ namespace Neo.Service
                     while (stoppingToken.IsCancellationRequested == false)
                     {
                         using var pipeServer = new NodeCommandPipeServer(_appSettings.NamedPipe.Instances, _appSettings.NamedPipe.ReadTimeout, pipLogger);
-                        await pipeServer.StartAndWaitAsync(stoppingToken);
+                        await pipeServer.ListenAndWaitAsync(stoppingToken);
                     }
                 }, stoppingToken);
             }

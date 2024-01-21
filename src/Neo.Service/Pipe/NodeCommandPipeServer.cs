@@ -34,16 +34,16 @@ namespace Neo.Service.Pipes
             WriteIndented = false,
         };
 
-        private readonly int _waitForReadInMillseconds;
+        private readonly int _readTimeout;
         private readonly ILogger<NodeCommandPipeServer> _logger;
         private readonly NamedPipeServerStream _neoPipeStream;
 
         public NodeCommandPipeServer(
             int instances,
-            int waitForReadInMilliseconds,
+            int readTimeout,
             ILogger<NodeCommandPipeServer> logger)
         {
-            _waitForReadInMillseconds = waitForReadInMilliseconds;
+            _readTimeout = readTimeout;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _neoPipeStream ??= new(PipeName, PipeDirection.InOut, instances, PipeTransmissionMode.Byte);
         }
@@ -53,10 +53,10 @@ namespace Neo.Service.Pipes
             _neoPipeStream?.Dispose();
         }
 
-        public async Task StartAndWaitAsync(CancellationToken stoppingToken)
+        public async Task ListenAndWaitAsync(CancellationToken stoppingToken)
         {
             await _neoPipeStream.WaitForConnectionAsync(stoppingToken);
-            var stopReadTokenSource = new CancellationTokenSource(_waitForReadInMillseconds);
+            var stopReadTokenSource = new CancellationTokenSource(_readTimeout);
 
             try
             {
