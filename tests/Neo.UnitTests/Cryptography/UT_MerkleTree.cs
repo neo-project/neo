@@ -12,6 +12,8 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using Neo.Cryptography.Crypto;
+using Neo.Cryptography.MerkleTree;
 using Neo.IO;
 using System;
 using System.Collections;
@@ -42,14 +44,14 @@ namespace Neo.UnitTests.Cryptography
             var hash3 = GetByteArrayHash(array3);
 
             UInt256[] hashes = { hash1, hash2, hash3 };
-            MerkleTree tree = new MerkleTree(hashes);
+            MerkleTree<UInt256> tree = new MerkleTree<UInt256>(hashes);
             var hashArray = tree.ToHashArray();
             hashArray[0].Should().Be(hash1);
             hashArray[1].Should().Be(hash2);
             hashArray[2].Should().Be(hash3);
             hashArray[3].Should().Be(hash3);
 
-            var rootHash = MerkleTree.ComputeRoot(hashes);
+            var rootHash = MerkleTree<UInt256>.ComputeRoot(hashes);
             var hash4 = Crypto.Hash256(hash1.ToArray().Concat(hash2.ToArray()).ToArray());
             var hash5 = Crypto.Hash256(hash3.ToArray().Concat(hash3.ToArray()).ToArray());
             var result = new UInt256(Crypto.Hash256(hash4.ToArray().Concat(hash5.ToArray()).ToArray()));
@@ -69,7 +71,7 @@ namespace Neo.UnitTests.Cryptography
             var hash3 = GetByteArrayHash(array3);
 
             UInt256[] hashes = { hash1, hash2, hash3 };
-            MerkleTree tree = new MerkleTree(hashes);
+            MerkleTree<UInt256> tree = new MerkleTree<UInt256>(hashes);
 
             bool[] boolArray = { false, false, false };
             BitArray bitArray = new BitArray(boolArray);
@@ -77,7 +79,7 @@ namespace Neo.UnitTests.Cryptography
             var hashArray = tree.ToHashArray();
 
             hashArray.Length.Should().Be(1);
-            var rootHash = MerkleTree.ComputeRoot(hashes);
+            var rootHash = MerkleTree<UInt256>.ComputeRoot(hashes);
             var hash4 = Crypto.Hash256(hash1.ToArray().Concat(hash2.ToArray()).ToArray());
             var hash5 = Crypto.Hash256(hash3.ToArray().Concat(hash3.ToArray()).ToArray());
             var result = new UInt256(Crypto.Hash256(hash4.ToArray().Concat(hash5.ToArray()).ToArray()));

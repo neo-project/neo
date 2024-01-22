@@ -12,6 +12,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using Neo.Cryptography.BloomFilter;
 using System;
 
 namespace Neo.UnitTests.Cryptography

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+      <TargetFrameworks>netstandard2.1;net7.0</TargetFrameworks>
+      <ImplicitUsings>enable</ImplicitUsings>
+      <Nullable>enable</Nullable>
+      <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+      <LangVersion>11.0</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Neo.Cryptography.Murmur\Neo.Cryptography.Murmur.csproj" />
+      <ProjectReference Include="..\Neo.Cryptography.RIPEMD160\Neo.Cryptography.RIPEMD160.csproj" />
+    </ItemGroup>
+
+</Project>

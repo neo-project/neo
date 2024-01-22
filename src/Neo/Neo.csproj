@@ -17,7 +17,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Neo.Cryptography.BLS12_381\Neo.Cryptography.BLS12_381.csproj" />
+    <ProjectReference Include="..\Neo.Cryptography\Neo.Cryptography.Base58\Neo.Cryptography.Base58.csproj" />
+    <ProjectReference Include="..\Neo.Cryptography\Neo.Cryptography.BloomFilter\Neo.Cryptography.BloomFilter.csproj" />
+    <ProjectReference Include="..\Neo.Cryptography\Neo.Cryptography.BLS12_381\Neo.Cryptography.BLS12_381.csproj" />
+    <ProjectReference Include="..\Neo.Cryptography\Neo.Cryptography.Crypto\Neo.Cryptography.Crypto.csproj" />
+    <ProjectReference Include="..\Neo.Cryptography\Neo.Cryptography.MerkleTree\Neo.Cryptography.MerkleTree.csproj" />
     <ProjectReference Include="..\Neo.Json\Neo.Json.csproj" />
     <ProjectReference Include="..\Neo.VM\Neo.VM.csproj" />
   </ItemGroup>

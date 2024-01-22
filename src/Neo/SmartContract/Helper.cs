@@ -10,7 +10,8 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
-using Neo.Cryptography.ECC;
+using Neo.Cryptography.Crypto;
+using Neo.ECC;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;

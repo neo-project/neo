@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
-using Neo.Cryptography.ECC;
+using Neo.ECC;
 using Neo.Network.P2P;
 using System;
 
@@ -46,7 +46,7 @@ namespace Neo.SmartContract
         {
             try
             {
-                return Crypto.VerifySignature(ScriptContainer.GetSignData(ProtocolSettings.Network), signature, pubkey, ECCurve.Secp256r1);
+                return Utility.VerifySignature(ScriptContainer.GetSignData(ProtocolSettings.Network), signature, pubkey, ECCurve.Secp256r1);
             }
             catch (ArgumentException)
             {
@@ -71,7 +71,7 @@ namespace Neo.SmartContract
             {
                 for (int i = 0, j = 0; i < m && j < n;)
                 {
-                    if (Crypto.VerifySignature(message, signatures[i], pubkeys[j], ECCurve.Secp256r1))
+                    if (Utility.VerifySignature(message, signatures[i], pubkeys[j], ECCurve.Secp256r1))
                         i++;
                     j++;
                     if (m - i > n - j)

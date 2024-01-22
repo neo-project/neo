@@ -10,6 +10,8 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
+using Neo.Cryptography.Base58;
+using Neo.Cryptography.Crypto;
 using Neo.IO;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;

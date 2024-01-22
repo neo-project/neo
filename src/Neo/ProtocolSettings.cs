@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Configuration;
-using Neo.Cryptography.ECC;
+using Neo.ECC;
 using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Generic;

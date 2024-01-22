@@ -12,6 +12,7 @@
 #pragma warning disable IDE0051
 
 using Neo.Cryptography;
+using Neo.Cryptography.Crypto;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;

@@ -9,8 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Cryptography.ECC;
-using Neo.IO;
+using Neo.Cryptography.Crypto;
+using Neo.ECC;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -308,12 +308,12 @@ namespace Neo.SmartContract
             long price;
             if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
             {
-                buffer = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + random_times++);
+                buffer = nonceData.Murmur128(ProtocolSettings.Network + random_times++);
                 price = 1 << 13;
             }
             else
             {
-                buffer = nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
+                buffer = nonceData = nonceData.Murmur128(ProtocolSettings.Network);
                 price = 1 << 4;
             }
             AddGas(price * ExecFeeFactor);

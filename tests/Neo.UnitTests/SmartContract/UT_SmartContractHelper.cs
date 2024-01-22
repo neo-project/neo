@@ -20,7 +20,7 @@ using Neo.Wallets;
 using System;
 using System.Linq;
 using System.Security.Cryptography;
-using ECPoint = Neo.Cryptography.ECC.ECPoint;
+using ECPoint = Neo.ECC.ECPoint;
 
 namespace Neo.UnitTests.SmartContract
 {

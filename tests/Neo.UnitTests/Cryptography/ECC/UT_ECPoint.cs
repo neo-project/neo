@@ -11,14 +11,14 @@
 
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography.ECC;
+using Neo.ECC;
 using Neo.IO;
 using System;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using ECCurve = Neo.Cryptography.ECC.ECCurve;
-using ECPoint = Neo.Cryptography.ECC.ECPoint;
+using ECCurve = Neo.ECC.ECCurve;
+using ECPoint = Neo.ECC.ECPoint;
 
 namespace Neo.UnitTests.Cryptography.ECC
 {

@@ -126,7 +126,7 @@ namespace Neo.SmartContract
         /// <returns>The checksum of the nef file.</returns>
         public static uint ComputeChecksum(NefFile file)
         {
-            return BinaryPrimitives.ReadUInt32LittleEndian(Crypto.Hash256(file.ToArray().AsSpan(..^sizeof(uint))));
+            return BinaryPrimitives.ReadUInt32LittleEndian(Neo.Cryptography.Utility.Utility.Hash256(file.ToArray().AsSpan(..^sizeof(uint))));
         }
 
         /// <summary>

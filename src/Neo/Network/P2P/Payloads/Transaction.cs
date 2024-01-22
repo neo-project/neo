@@ -9,8 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Cryptography;
-using Neo.Cryptography.ECC;
+using Neo.ECC;
 using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
@@ -421,7 +420,7 @@ namespace Neo.Network.P2P.Payloads
                     var pubkey = witnesses[i].VerificationScript.Span[2..35];
                     try
                     {
-                        if (!Crypto.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript.Span[2..], pubkey, ECCurve.Secp256r1))
+                        if (!Utility.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript.Span[2..], pubkey, ECCurve.Secp256r1))
                             return VerifyResult.InvalidSignature;
                     }
                     catch
@@ -440,7 +439,7 @@ namespace Neo.Network.P2P.Payloads
                     {
                         for (int x = 0, y = 0; x < m && y < n;)
                         {
-                            if (Crypto.VerifySignature(message, signatures[x].Span, points[y]))
+                            if (Utility.VerifySignature(message, signatures[x].Span, points[y]))
                                 x++;
                             y++;
                             if (m - x > n - y)

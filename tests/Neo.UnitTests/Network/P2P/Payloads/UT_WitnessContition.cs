@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.Cryptography.ECC;
+using Neo.ECC;
 using Neo.Json;
 using Neo.Network.P2P.Payloads.Conditions;
 

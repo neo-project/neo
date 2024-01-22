@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
-using Neo.Cryptography.ECC;
+using Neo.ECC;
 using Neo.IO;
 using Neo.Json;
 using Neo.VM;
@@ -71,7 +71,7 @@ namespace Neo.SmartContract.Manifest
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
         public bool IsValid(UInt160 hash)
         {
-            return Crypto.VerifySignature(hash.ToArray(), Signature, PubKey);
+            return Utility.VerifySignature(hash.ToArray(), Signature, PubKey);
         }
 
         /// <summary>

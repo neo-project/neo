@@ -11,6 +11,7 @@
 
 using Akka.Actor;
 using Neo.Cryptography;
+using Neo.Cryptography.BloomFilter;
 using Neo.IO.Caching;
 using Neo.Ledger;
 using Neo.Network.P2P.Capabilities;

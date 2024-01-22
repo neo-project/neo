@@ -11,7 +11,8 @@
 
 using FluentAssertions;
 using Neo.Cryptography;
-using Neo.Cryptography.ECC;
+using Neo.Cryptography.MerkleTree;
+using Neo.ECC;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
@@ -231,7 +232,7 @@ namespace Neo.UnitTests
             block.Header = header;
             block.Transactions = transactionsVal;
 
-            header.MerkleRoot = merkRootVal = MerkleTree.ComputeRoot(block.Transactions.Select(p => p.Hash).ToArray());
+            header.MerkleRoot = merkRootVal = MerkleTree<UInt256>.ComputeRoot(block.Transactions.Select(p => p.Hash).ToArray());
         }
 
         public static Transaction CreateRandomHashTransaction()

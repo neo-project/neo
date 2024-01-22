@@ -10,6 +10,8 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
+using Neo.Cryptography.Base58;
+using Neo.Cryptography.Crypto;
 using Neo.SmartContract;
 using Neo.Wallets.NEP6;
 using Org.BouncyCastle.Crypto.Generators;
@@ -17,6 +19,8 @@ using System;
 using System.Security.Cryptography;
 using System.Text;
 using static Neo.Wallets.Helper;
+using ECCurve = Neo.ECC.ECCurve;
+using ECPoint = Neo.ECC.ECPoint;
 
 namespace Neo.Wallets
 {
@@ -33,7 +37,7 @@ namespace Neo.Wallets
         /// <summary>
         /// The public key.
         /// </summary>
-        public readonly Cryptography.ECC.ECPoint PublicKey;
+        public readonly ECPoint PublicKey;
 
         /// <summary>
         /// The hash of the public key.
@@ -51,11 +55,11 @@ namespace Neo.Wallets
             this.PrivateKey = privateKey[^32..];
             if (privateKey.Length == 32)
             {
-                this.PublicKey = Cryptography.ECC.ECCurve.Secp256r1.G * privateKey;
+                this.PublicKey = ECCurve.Secp256r1.G * privateKey;
             }
             else
             {
-                this.PublicKey = Cryptography.ECC.ECPoint.FromBytes(privateKey, Cryptography.ECC.ECCurve.Secp256r1);
+                this.PublicKey = ECPoint.FromBytes(privateKey, ECCurve.Secp256r1);
             }
         }
 

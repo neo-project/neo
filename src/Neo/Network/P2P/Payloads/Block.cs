@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
+using Neo.Cryptography.MerkleTree;
 using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
@@ -92,7 +93,7 @@ namespace Neo.Network.P2P.Payloads
             Transactions = reader.ReadSerializableArray<Transaction>(ushort.MaxValue);
             if (Transactions.Distinct().Count() != Transactions.Length)
                 throw new FormatException();
-            if (MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != Header.MerkleRoot)
+            if (MerkleTree<UInt256>.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != Header.MerkleRoot)
                 throw new FormatException();
         }
 

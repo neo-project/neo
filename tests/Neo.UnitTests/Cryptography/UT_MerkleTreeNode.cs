@@ -12,6 +12,8 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
+using Neo.Cryptography.Crypto;
+using Neo.Cryptography.MerkleTree;
 using System.Text;
 
 namespace Neo.UnitTests.Cryptography
@@ -19,7 +21,7 @@ namespace Neo.UnitTests.Cryptography
     [TestClass]
     public class UT_MerkleTreeNode
     {
-        private readonly MerkleTreeNode node = new MerkleTreeNode();
+        private readonly MerkleTreeNode<UInt256> node = new MerkleTreeNode<UInt256>();
 
         [TestInitialize]
         public void TestSetup()
@@ -48,7 +50,7 @@ namespace Neo.UnitTests.Cryptography
         {
             node.IsLeaf.Should().BeTrue();
 
-            MerkleTreeNode child = new MerkleTreeNode();
+            MerkleTreeNode<UInt256> child = new MerkleTreeNode<UInt256>();
             node.LeftChild = child;
             node.IsLeaf.Should().BeFalse();
         }

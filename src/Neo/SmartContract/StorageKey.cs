@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
+using Neo.Cryptography.Crypto;
 using System;
 using System.Buffers.Binary;
 

@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Neo.ConsoleService;
-using Neo.Cryptography.ECC;
+using Neo.ECC;
 using Neo.Json;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;

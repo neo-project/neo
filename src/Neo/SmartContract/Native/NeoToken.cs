@@ -11,7 +11,7 @@
 
 #pragma warning disable IDE0051
 
-using Neo.Cryptography.ECC;
+using Neo.ECC;
 using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;

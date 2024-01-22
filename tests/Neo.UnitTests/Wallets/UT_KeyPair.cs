@@ -12,7 +12,8 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
-using Neo.Cryptography.ECC;
+using Neo.Cryptography.Base58;
+using Neo.ECC;
 using Neo.Wallets;
 using System;
 using System.Linq;

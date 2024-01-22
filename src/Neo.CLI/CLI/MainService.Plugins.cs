@@ -13,6 +13,7 @@ using Akka.Util.Internal;
 using Microsoft.Extensions.Configuration;
 using Neo.ConsoleService;
 using Neo.Cryptography;
+using Neo.Cryptography.Crypto;
 using Neo.Json;
 using Neo.Plugins;
 using System;

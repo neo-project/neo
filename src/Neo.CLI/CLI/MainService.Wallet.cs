@@ -11,7 +11,7 @@
 
 using Akka.Actor;
 using Neo.ConsoleService;
-using Neo.Cryptography.ECC;
+using Neo.ECC;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;

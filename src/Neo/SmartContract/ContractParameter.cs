@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Cryptography.ECC;
+using Neo.ECC;
 using Neo.Json;
 using System;
 using System.Collections.Generic;

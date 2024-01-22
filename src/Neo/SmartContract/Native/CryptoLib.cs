@@ -10,7 +10,9 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
-using Neo.Cryptography.ECC;
+using Neo.Cryptography.Crypto;
+using Neo.Cryptography.Murmur;
+using Neo.ECC;
 using System;
 using System.Collections.Generic;
 
@@ -77,7 +79,7 @@ namespace Neo.SmartContract.Native
         {
             try
             {
-                return Crypto.VerifySignature(message, signature, pubkey, curves[curve]);
+                return Utility.VerifySignature(message, signature, pubkey, curves[curve]);
             }
             catch (ArgumentException)
             {

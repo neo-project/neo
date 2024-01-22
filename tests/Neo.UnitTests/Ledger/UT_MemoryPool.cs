@@ -14,6 +14,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Neo.Cryptography;
+using Neo.Cryptography.Crypto;
 using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;

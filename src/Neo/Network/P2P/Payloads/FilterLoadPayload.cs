@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
+using Neo.Cryptography.BloomFilter;
 using Neo.IO;
 using System;
 using System.IO;

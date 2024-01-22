@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.VM.Cryptography;
+using Neo.Cryptography.Murmur;
 using System;
 using System.Buffers.Binary;
 using System.Diagnostics;
