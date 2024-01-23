@@ -82,8 +82,10 @@ namespace Neo.VM
             if (zero_referred.Count > 0)
             {
                 // Overhead: 16.5%
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                 zero_referred = null; // tell GC to collect
-                zero_referred = new(ReferenceEqualityComparer.Instance);//.Clear();
+                zero_referred = new(ReferenceEqualityComparer.Instance); // .Clear();
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
                 if (cached_components is null)
                 {
                     //Tarjan<StackItem> tarjan = new(tracked_items.Where(p => p.StackReferences == 0));
