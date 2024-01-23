@@ -111,11 +111,11 @@ namespace Neo.Test
             Assert.AreEqual(VMState.BREAK, debugger.StepInto());
             Assert.AreEqual(9, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.BREAK, debugger.StepInto());
-            Assert.AreEqual(3, engine.ReferenceCounter.Count);
+            Assert.AreEqual(6, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.BREAK, debugger.StepInto());
-            Assert.AreEqual(2, engine.ReferenceCounter.Count);
+            Assert.AreEqual(5, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.HALT, debugger.Execute());
-            Assert.AreEqual(0, engine.ReferenceCounter.Count);
+            Assert.AreEqual(4, engine.ReferenceCounter.Count);
         }
 
         [TestMethod]
@@ -156,9 +156,9 @@ namespace Neo.Test
             Assert.AreEqual(VMState.BREAK, debugger.StepInto());
             Assert.AreEqual(3, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.BREAK, debugger.StepInto());
-            Assert.AreEqual(1, engine.ReferenceCounter.Count);
+            Assert.AreEqual(2, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.HALT, debugger.Execute());
-            Assert.AreEqual(0, engine.ReferenceCounter.Count);
+            Assert.AreEqual(1, engine.ReferenceCounter.Count);
         }
 
         [TestMethod]
@@ -172,7 +172,7 @@ namespace Neo.Test
             Array array = new(engine.ReferenceCounter, new StackItem[] { 1, 2, 3, 4 });
             Assert.AreEqual(array.Count, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.HALT, engine.Execute());
-            Assert.AreEqual(0, engine.ReferenceCounter.Count);
+            Assert.AreEqual(array.Count, engine.ReferenceCounter.Count);
         }
     }
 }
