@@ -9,8 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Cryptography.Utility;
+using Neo.IO;
 using Neo.Persistence;
+using System;
+using System.Collections.Generic;
+using static Neo.Helper;
 
 namespace Neo.Cryptography.MPTTrie
 {

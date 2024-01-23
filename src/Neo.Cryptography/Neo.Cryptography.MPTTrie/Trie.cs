@@ -9,8 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-
 using Neo.Persistence;
+using System;
 
 namespace Neo.Cryptography.MPTTrie
 {
@@ -19,7 +19,7 @@ namespace Neo.Cryptography.MPTTrie
         private const byte Prefix = 0xf0;
         private readonly bool full;
         private readonly ISnapshot store;
-        private readonly Node root;
+        private Node root;
         private readonly Cache cache;
         public Node Root => root;
 

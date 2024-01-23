@@ -11,6 +11,8 @@
 
 using Neo.IO;
 using Neo.SmartContract;
+using System;
+using System.IO;
 
 namespace Neo.Cryptography.MPTTrie
 {

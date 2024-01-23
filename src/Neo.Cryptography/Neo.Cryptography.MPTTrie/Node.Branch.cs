@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.IO;
+using System.IO;
 
 namespace Neo.Cryptography.MPTTrie
 {

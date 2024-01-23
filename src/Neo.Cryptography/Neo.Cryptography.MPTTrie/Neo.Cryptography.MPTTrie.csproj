@@ -1,13 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-      <TargetFrameworks>net7.0</TargetFrameworks>
+      <TargetFramework>net7.0</TargetFramework>
       <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\Neo\Neo.csproj" />
-      <ProjectReference Include="..\Neo.Cryptography.Utility\Neo.Cryptography.Utility.csproj" />
     </ItemGroup>
 
 </Project>

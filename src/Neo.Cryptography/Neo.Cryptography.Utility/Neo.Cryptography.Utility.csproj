@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-      <TargetFrameworks>netstandard2.1;net7.0</TargetFrameworks>
-      <ImplicitUsings>enable</ImplicitUsings>
-      <Nullable>enable</Nullable>
-      <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-      <LangVersion>11.0</LangVersion>
+        <TargetFrameworks>netstandard2.1;net7.0</TargetFrameworks>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <LangVersion>11.0</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>

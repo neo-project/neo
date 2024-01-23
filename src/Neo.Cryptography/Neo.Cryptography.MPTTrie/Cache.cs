@@ -13,6 +13,8 @@
 
 using Neo.IO;
 using Neo.Persistence;
+using System.Collections.Generic;
+using System.IO;
 
 namespace Neo.Cryptography.MPTTrie
 {
