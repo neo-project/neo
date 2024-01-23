@@ -11,7 +11,7 @@
 
 namespace Neo.Cryptography.MerkleTree
 {
-    public class MerkleTreeNode<T> where T : IArrayConvertible, new()
+    public class MerkleTreeNode<T> where T : IArrayConvertible<T>, new()
     {
         public T Hash;
         public MerkleTreeNode<T> Parent;

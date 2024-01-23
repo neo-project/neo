@@ -18,7 +18,7 @@ namespace Neo.Cryptography.MerkleTree
     /// <summary>
     /// Represents a merkle tree.
     /// </summary>
-    public class MerkleTree<T> where T : IArrayConvertible, new()
+    public class MerkleTree<T> where T : IArrayConvertible<T>, new()
     {
         private readonly MerkleTreeNode<T> root;
 
@@ -70,8 +70,8 @@ namespace Neo.Cryptography.MerkleTree
         {
             hash1.ToArray().CopyTo(buffer);
             hash2.ToArray().CopyTo(buffer[32..]);
-
-            return (T)Activator.CreateInstance(typeof(T), Utility.Utility.Hash256(buffer));
+            var value = new T();
+            return value.SetValue(Utility.Utility.Hash256(buffer));
         }
 
         /// <summary>

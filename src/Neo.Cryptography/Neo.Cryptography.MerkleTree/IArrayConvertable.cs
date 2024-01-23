@@ -11,8 +11,9 @@
 
 namespace Neo.Cryptography.MerkleTree
 {
-    public interface IArrayConvertible
+    public interface IArrayConvertible<T> where T : IArrayConvertible<T>
     {
         byte[] ToArray();
+        T SetValue(byte[] value);
     }
 }
