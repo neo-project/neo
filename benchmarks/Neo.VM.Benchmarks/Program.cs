@@ -9,10 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using BenchmarkDotNet.Running;
 using Neo.VM;
-using System.Reflection;
 
-foreach (var method in typeof(Benchmarks).GetMethods(BindingFlags.Public | BindingFlags.Static))
-{
-    method.CreateDelegate<Action>().Invoke();
-}
+// BenchmarkRunner.Run<Benchmarks>();
+BenchmarkRunner.Run<BenchmarkOpCodes>();
