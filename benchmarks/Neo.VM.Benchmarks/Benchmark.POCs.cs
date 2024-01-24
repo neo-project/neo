@@ -14,7 +14,7 @@ using System.Diagnostics;
 
 namespace Neo.VM
 {
-    public class Benchmarks
+    public class BenchmarksPoCs
     {
         [Benchmark]
         public void NeoIssue2528()
