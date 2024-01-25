@@ -648,7 +648,6 @@ namespace Neo.VM
         public void TestOpCodesControlJmpGt() => RunTest(_opCodesControlJmpGt);
 
         [Benchmark]
-
         public void TestOpCodesControlJmpL() => RunTest(_opCodesControlJmpL);
 
         [Benchmark]
