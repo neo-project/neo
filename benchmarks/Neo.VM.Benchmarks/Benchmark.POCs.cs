@@ -106,11 +106,8 @@ namespace Neo.VM
             byte[] script = Convert.FromBase64String(poc);
             using ExecutionEngine engine = new();
             engine.LoadScript(script);
-            Stopwatch stopwatch = Stopwatch.StartNew();
             engine.Execute();
-            stopwatch.Stop();
             Debug.Assert(engine.State == VMState.HALT);
-            Console.WriteLine($"Benchmark: {name},\tTime: {stopwatch.Elapsed}");
         }
     }
 }
