@@ -21,6 +21,7 @@ namespace Neo.VM
     public class BenchmarkOpCodes : VMJsonTestBase
     {
         #region Fields
+
         private const string Root = "../../../../../../../../../tests/Neo.VM.Tests/";
         private VMUT? _othersDebugger;
         private VMUT? _othersStackItemLimits;
@@ -183,6 +184,7 @@ namespace Neo.VM
         private VMUT? _opCodesTypesConvert;
         private VMUT? _opCodesTypesIsType;
         private VMUT? _opCodesTypesIsNull;
+
         #endregion
 
         [GlobalSetup]
@@ -469,7 +471,6 @@ namespace Neo.VM
         public void TestOpCodesStackTuck() => RunTest(_opCodesStackTuck);
 
         [Benchmark]
-
         public void TestOpCodesStackOver() => RunTest(_opCodesStackOver);
 
         [Benchmark]
@@ -620,7 +621,6 @@ namespace Neo.VM
         public void TestOpCodesSpliceRight() => RunTest(_opCodesSpliceRight);
 
         [Benchmark]
-
         public void TestOpCodesSpliceNewBuffer() => RunTest(_opCodesSpliceNewBuffer);
 
         [Benchmark]
@@ -685,7 +685,6 @@ namespace Neo.VM
         public void TestOpCodesControlJmpEq() => RunTest(_opCodesControlJmpEq);
 
         [Benchmark]
-
         public void TestOpCodesControlSysCall() => RunTest(_opCodesControlSysCall);
 
         [Benchmark]
@@ -809,7 +808,6 @@ namespace Neo.VM
         public void TestOpCodesArithmeticSqrt() => RunTest(_opCodesArithmeticSqrt);
 
         [Benchmark]
-
         public void TestOpCodesArithmeticShr() => RunTest(_opCodesArithmeticShr);
 
         [Benchmark]
