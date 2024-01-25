@@ -12,5 +12,4 @@
 using BenchmarkDotNet.Running;
 using Neo.VM;
 
-// BenchmarkRunner.Run<BenchmarksPoCs>();
 BenchmarkRunner.Run<BenchmarkOpCodes>();
