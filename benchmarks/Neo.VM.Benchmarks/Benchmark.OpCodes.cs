@@ -434,7 +434,6 @@ namespace Neo.VM
         public void TestOpCodesStackTuck() => RunBench(_opCodesStackTuck);
 
         [Benchmark]
-
         public void TestOpCodesStackOver() => RunBench(_opCodesStackOver);
 
         [Benchmark]
@@ -585,7 +584,6 @@ namespace Neo.VM
         public void TestOpCodesSpliceRight() => RunBench(_opCodesSpliceRight);
 
         [Benchmark]
-
         public void TestOpCodesSpliceNewBuffer() => RunBench(_opCodesSpliceNewBuffer);
 
         [Benchmark]
@@ -613,7 +611,6 @@ namespace Neo.VM
         public void TestOpCodesControlJmpGt() => RunBench(_opCodesControlJmpGt);
 
         [Benchmark]
-
         public void TestOpCodesControlJmpL() => RunBench(_opCodesControlJmpL);
 
         [Benchmark]
@@ -650,7 +647,6 @@ namespace Neo.VM
         public void TestOpCodesControlJmpEq() => RunBench(_opCodesControlJmpEq);
 
         [Benchmark]
-
         public void TestOpCodesControlSysCall() => RunBench(_opCodesControlSysCall);
 
         [Benchmark]
@@ -774,7 +770,6 @@ namespace Neo.VM
         public void TestOpCodesArithmeticSqrt() => RunBench(_opCodesArithmeticSqrt);
 
         [Benchmark]
-
         public void TestOpCodesArithmeticShr() => RunBench(_opCodesArithmeticShr);
 
         [Benchmark]
