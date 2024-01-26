@@ -153,8 +153,10 @@ namespace Neo
             if (section.Exists())
             {
                 DownloadUrl = section.GetValue(nameof(DownloadUrl), DownloadUrl)!;
+#if DEBUG
                 Prerelease = section.GetValue(nameof(Prerelease), Prerelease);
                 Version = section.GetValue(nameof(Version), Version)!;
+#endif
             }
         }
     }
