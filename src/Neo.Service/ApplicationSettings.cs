@@ -145,8 +145,10 @@ namespace Neo.Service
         public static PluginSettings Load(IConfigurationSection section) => new()
         {
             DownloadUrl = section.GetValue(nameof(DownloadUrl), Default.DownloadUrl),
+#if DEBUG
             Prerelease = section.GetValue(nameof(Prerelease), Default.Prerelease),
             Version = section.GetValue(nameof(Version), Default.Version),
+#endif
         };
     }
 }

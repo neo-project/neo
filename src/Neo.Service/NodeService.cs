@@ -44,7 +44,7 @@ namespace Neo.Service
             _logger = _loggerFactory.CreateLogger<NodeService>();
             _nodeProtocolSettings = ProtocolSettings.Load(config.GetRequiredSection("ProtocolConfiguration"));
             _appSettings = ApplicationSettings.Load(config.GetRequiredSection("ApplicationConfiguration"));
-            _namedPipeService = new(loggerFactory);
+            _namedPipeService = new(_nodeProtocolSettings, loggerFactory);
             NamedPipeService.RegisterMethods(this);
         }
 

@@ -10,10 +10,10 @@
 // modifications are permitted.
 
 using Neo.IO;
-using Neo.Service.Exceptions;
 using Neo.Service.Pipes.Payloads;
 using System;
 using System.IO;
+using System.Text;
 
 namespace Neo.Service.Pipes
 {
@@ -37,37 +37,31 @@ namespace Neo.Service.Pipes
                 Payload = message,
             };
 
-        public static PipeMessage? TryDeserialize(BinaryReader reader)
+        public static PipeMessage? ReadFromStream(Stream stream)
         {
-            try
+            using var reader = new BinaryReader(stream, Encoding.UTF8, true);
+            var message = new PipeMessage()
             {
-                var message = new PipeMessage()
-                {
-                    Command = (PipeMessageCommand)reader.ReadByte(),
-                };
+                Command = (PipeMessageCommand)reader.ReadByte(),
+            };
 
-                var size = reader.ReadInt32();
+            var size = reader.ReadInt32();
 
-                if (size <= 0)
-                    return default;
+            if (size <= 0)
+                return default;
 
-                var data = reader.ReadBytes(size);
+            var data = reader.ReadBytes(size);
 
-                switch (message.Command)
-                {
-                    case PipeMessageCommand.Version:
-                        message.Payload = data.AsSerializable<PipeVersionPayload>();
-                        break;
-                    default:
-                        break;
-                }
-
-                return message;
-            }
-            catch (Exception ex)
+            switch (message.Command)
             {
-                return Create(PipeMessageCommand.Error, GenericException.Create(ex));
+                case PipeMessageCommand.Version:
+                    message.Payload = data.AsSerializable<PipeVersionPayload>();
+                    break;
+                default:
+                    break;
             }
+
+            return message;
         }
 
         public void Deserialize(ref MemoryReader reader)

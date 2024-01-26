@@ -19,14 +19,18 @@ namespace Neo.Service.Exceptions
     {
         public int Code { get; private set; }
         public string? Message { get; private set; }
+#if DEBUG
         public string? StackTrace { get; private set; }
+#endif
 
         public static GenericException Create(Exception exception) =>
             new()
             {
                 Code = exception.HResult,
                 Message = exception.Message,
+#if DEBUG
                 StackTrace = exception.StackTrace,
+#endif
             };
 
         public int Size =>
@@ -37,14 +41,18 @@ namespace Neo.Service.Exceptions
         {
             Code = reader.ReadInt32();
             Message = reader.ReadVarString();
+#if DEBUG
             StackTrace = reader.ReadVarString();
+#endif
         }
 
         public void Serialize(BinaryWriter writer)
         {
             writer.WriteVarInt(Code);
             writer.WriteVarString(Message);
+#if DEBUG
             writer.WriteVarString(StackTrace);
+#endif
         }
     }
 }

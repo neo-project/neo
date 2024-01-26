@@ -60,11 +60,20 @@ namespace Neo.Service.Pipes.Payloads
         public bool Equals(PipeVersionPayload? other)
         {
             if (other is null) return false;
-            if (ReferenceEquals(this, other)) return true;
             return Version == other.Version &&
                 Timestamp == other.Timestamp &&
                 Network == other.Network &&
                 Nonce == other.Nonce;
         }
+
+        public override bool Equals(object? other)
+        {
+            if (other is null) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return Equals(other as PipeVersionPayload);
+        }
+
+        public override int GetHashCode() =>
+            HashCode.Combine(Version, Timestamp, Network, Nonce);
     }
 }

@@ -31,10 +31,13 @@ namespace Neo.Service.Pipes
         private readonly ILogger<NamedPipeService> _logger;
         private readonly List<PipeServer> _pipeServers;
         private readonly PeriodicTimer _periodicTimer;
+        private readonly ProtocolSettings _protocolSettings;
 
         public NamedPipeService(
+            ProtocolSettings protocolSettings,
             ILoggerFactory loggerFactory)
         {
+            _protocolSettings = protocolSettings;
             _pipeServers = new();
             _pipeServerLogger = loggerFactory.CreateLogger<PipeServer>();
             _logger = loggerFactory.CreateLogger<NamedPipeService>();
@@ -63,8 +66,7 @@ namespace Neo.Service.Pipes
 
         public async Task StartAsync(int maxAllowConnections, CancellationToken cancellationToken)
         {
-            for (var i = 0; i < maxAllowConnections; i++)
-                CreateNewServer();
+            for (var i = 0; i < maxAllowConnections; CreateNewServer(), i++) { }
 
             _logger.LogInformation("Created {Connections} instances.", maxAllowConnections);
 
@@ -73,7 +75,10 @@ namespace Neo.Service.Pipes
 
         private void CreateNewServer()
         {
-            var server = new PipeServer(_pipeServerLogger);
+            var server = new PipeServer(
+                NodeUtilities.GetApplicationVersionNumber(),
+                _protocolSettings.Network,
+                _pipeServerLogger);
             _pipeServers.Add(server);
             _ = Task.Factory.StartNew(server.StartAndListen);
             _logger.LogInformation("Created new instance.");
