@@ -38,7 +38,7 @@ namespace Neo.Service.Pipes
             _neoPipeStream = new(
                 NamedPipeService.PipeName, PipeDirection.InOut,
                 NamedPipeServerStream.MaxAllowedServerInstances,
-                PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+                PipeTransmissionMode.Byte, PipeOptions.CurrentUserOnly);
             _versionProtocol = PipeVersionPayload.Create(version, network);
         }
 
@@ -67,9 +67,9 @@ namespace Neo.Service.Pipes
 
         private PipeMessage? TryReadMessage()
         {
-            if (_neoPipeStream is null) throw new NullReferenceException();
             try
             {
+                if (_neoPipeStream is null) throw new NullReferenceException();
                 var message = PipeMessage.ReadFromStream(_neoPipeStream);
                 _logger.LogDebug("Read {MessageType} from stream.", message?.Payload?.GetType().Name);
                 return message;
@@ -82,7 +82,7 @@ namespace Neo.Service.Pipes
             {
                 ex = ex.InnerException ?? ex;
                 _logger.LogDebug("{Exception}: {Message}", ex.GetType().Name, ex.Message);
-                return null;
+                throw ex;
             }
         }
 
@@ -95,6 +95,8 @@ namespace Neo.Service.Pipes
                 bw.Write(message);
                 bw.Flush();
                 _logger.LogDebug("Wrote {MessageType} to stream.", message.Payload?.GetType().Name);
+                if (OperatingSystem.IsWindows())
+                    _neoPipeStream.WaitForPipeDrain();
             }
             catch (Exception ex)
             {
