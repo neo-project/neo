@@ -40,7 +40,7 @@ namespace Neo
         {
             RunBench();
         }
-        
+
         private (int id, byte[], byte[]) LoadSnapshot(byte[] encodedData)
         {
             using (var memoryStream = new MemoryStream(encodedData))
