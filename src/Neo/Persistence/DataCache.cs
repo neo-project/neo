@@ -1,9 +1,8 @@
-// Copyright (C) 2015-2024 The Neo Project.
+// Copyright (C) 2015-2022 The Neo Project.
 //
-// DataCache.cs file belongs to the neo project and is free
-// software distributed under the MIT software license, see the
-// accompanying file LICENSE in the main directory of the
-// repository or http://www.opensource.org/licenses/mit-license.php
+// The neo is free software distributed under the MIT software license,
+// see the accompanying file LICENSE in the main directory of the
+// project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
 //
 // Redistribution and use in source and binary forms with or without
@@ -46,6 +45,10 @@ namespace Neo.Persistence
         private readonly Dictionary<StorageKey, Trackable> dictionary = new();
         private readonly HashSet<StorageKey> changeSet = new();
 
+        private readonly HashSet<StorageKey> readSet = new();
+
+        public bool isRandomNumberCalled = false;
+
         /// <summary>
         /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
         /// </summary>
@@ -68,7 +71,7 @@ namespace Neo.Persistence
                         trackable = new Trackable
                         {
                             Key = key,
-                            Item = GetInternal(key),
+                            Item = GetInternalWrapper(key),
                             State = TrackState.None
                         };
                         dictionary.Add(key, trackable);
@@ -180,7 +183,7 @@ namespace Neo.Persistence
                 }
                 else
                 {
-                    StorageItem item = TryGetInternal(key);
+                    StorageItem item = TryGetInternalWrapper(key);
                     if (item == null) return;
                     dictionary.Add(key, new Trackable
                     {
@@ -274,6 +277,11 @@ namespace Neo.Persistence
             }
         }
 
+        public HashSet<StorageKey> GetWriteSet()
+        {
+            return changeSet;
+        }
+
         /// <summary>
         /// Determines whether the cache contains the specified entry.
         /// </summary>
@@ -285,7 +293,7 @@ namespace Neo.Persistence
             {
                 if (dictionary.TryGetValue(key, out Trackable trackable))
                     return trackable.State != TrackState.Deleted && trackable.State != TrackState.NotFound;
-                return ContainsInternal(key);
+                return ContainsInternalWrapper(key);
             }
         }
 
@@ -296,12 +304,24 @@ namespace Neo.Persistence
         /// <returns><see langword="true"/> if the underlying storage contains an entry with the specified key; otherwise, <see langword="false"/>.</returns>
         protected abstract bool ContainsInternal(StorageKey key);
 
+        private bool ContainsInternalWrapper(StorageKey key)
+        {
+            RecordRead(key);
+            return ContainsInternal(key);
+        }
+
         /// <summary>
         /// Reads a specified entry from the underlying storage.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <returns>The data of the entry. Or <see langword="null"/> if the entry doesn't exist.</returns>
         protected abstract StorageItem GetInternal(StorageKey key);
+
+        private StorageItem GetInternalWrapper(StorageKey key)
+        {
+            RecordRead(key);
+            return GetInternal(key);
+        }
 
         /// <summary>
         /// Reads a specified entry from the cache, and mark it as <see cref="TrackState.Changed"/>. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
@@ -340,7 +360,7 @@ namespace Neo.Persistence
                     trackable = new Trackable
                     {
                         Key = key,
-                        Item = TryGetInternal(key)
+                        Item = TryGetInternalWrapper(key)
                     };
                     if (trackable.Item == null)
                     {
@@ -390,7 +410,7 @@ namespace Neo.Persistence
                     trackable = new Trackable
                     {
                         Key = key,
-                        Item = TryGetInternal(key)
+                        Item = TryGetInternalWrapper(key)
                     };
                     if (trackable.Item == null)
                     {
@@ -473,6 +493,16 @@ namespace Neo.Persistence
         /// <returns>An enumerator containing all the entries after seeking.</returns>
         protected abstract IEnumerable<(StorageKey Key, StorageItem Value)> SeekInternal(byte[] keyOrPrefix, SeekDirection direction);
 
+
+        private IEnumerable<(StorageKey Key, StorageItem Value)> SeekInternalWrapper(byte[] keyOrPrefix, SeekDirection direction)
+        {
+            foreach (var (key, value) in SeekInternal(keyOrPrefix, direction))
+            {
+                RecordRead(key);
+                yield return (key, value);
+            }
+        }
+
         /// <summary>
         /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
         /// </summary>
@@ -488,7 +518,7 @@ namespace Neo.Persistence
                         return null;
                     return trackable.Item;
                 }
-                StorageItem value = TryGetInternal(key);
+                StorageItem value = TryGetInternalWrapper(key);
                 if (value == null) return null;
                 dictionary.Add(key, new Trackable
                 {
@@ -507,11 +537,33 @@ namespace Neo.Persistence
         /// <returns>The data of the entry. Or <see langword="null"/> if it doesn't exist.</returns>
         protected abstract StorageItem TryGetInternal(StorageKey key);
 
+        private StorageItem TryGetInternalWrapper(StorageKey key)
+        {
+            RecordRead(key);
+            return TryGetInternal(key);
+        }
+
         /// <summary>
         /// Updates an entry in the underlying storage.
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <param name="value">The data of the entry.</param>
         protected abstract void UpdateInternal(StorageKey key, StorageItem value);
+
+        private void RecordRead(StorageKey key)
+        {
+            lock (dictionary)
+            {
+                readSet.Add(key);
+            }
+        }
+
+        public HashSet<StorageKey> GetReadSet()
+        {
+            lock (dictionary)
+            {
+                return readSet;
+            }
+        }
     }
 }
