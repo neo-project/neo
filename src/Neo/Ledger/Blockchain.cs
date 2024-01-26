@@ -436,7 +436,7 @@ namespace Neo.Ledger
                 2212278,4222547, 4229846, 2501961, 1955263, 1073113, 1073120, 2173910, 1093317, 2398072, 3053852, 2212681, 2212454, 2212544, 2508698, 2212723, 2212440, 2212575, 2212800, 2212206, 2212833, 2212278, 2398019, 2212212, 2212242, 2655903, 2212261, 2692530, 1976901, 715707, 470619, 288842, 288854, 288856, 288857, 288858
             };
 
-            List<byte> dataList = null ;
+            List<byte> dataList = null;
             using (SnapshotCache snapshot2 = system.GetSnapshot())
             {
                 var snapshot3 = snapshot2.CreateSnapshot();
@@ -493,9 +493,9 @@ namespace Neo.Ledger
                 if (blockList.Contains(block.Index) && block.Transactions.Length != 0)
                 {
                     var data = snapshot3.GetReadSet();
-                    if(Directory.Exists("./blocks") == false)
+                    if (Directory.Exists("./blocks") == false)
                         Directory.CreateDirectory("./blocks");
-                    File.AppendAllText($"./blocks/{block.Index}.txt",$"{Convert.ToBase64String(block.ToArray())}\n" );
+                    File.AppendAllText($"./blocks/{block.Index}.txt", $"{Convert.ToBase64String(block.ToArray())}\n");
                     foreach (var storageKey in data)
                     {
                         var item = snapshot2.TryGet(storageKey);
@@ -503,7 +503,7 @@ namespace Neo.Ledger
                         {
                             var value = Encode(storageKey.Key.Span, item.Value.Span);
                             value = BitConverter.GetBytes(storageKey.Id).Concat(value).ToArray();
-                            File.AppendAllText($"./blocks/{block.Index}.txt",$"{Convert.ToBase64String(value)}\n");
+                            File.AppendAllText($"./blocks/{block.Index}.txt", $"{Convert.ToBase64String(value)}\n");
                         }
                     }
                 }
