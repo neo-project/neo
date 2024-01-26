@@ -6,7 +6,7 @@
       "Active": false
     },
     "Storage": {
-      "Engine": "LevelDBStore", // Candidates [MemoryStore, LevelDBStore, RocksDBStore]
+      "Engine": "MemoryStore", // Candidates [MemoryStore, LevelDBStore, RocksDBStore]
       "Path": "Data_LevelDB_{0}" // {0} is a placeholder for the network id
     },
     "P2P": {

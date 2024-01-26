@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// Benchmarks.cs file belongs to the neo project and is free
+// Benchmarks.POCs.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -20,7 +20,7 @@ namespace Neo
     public class BenchmarkPoCs
     {
         private static readonly ProtocolSettings s_protocol = ProtocolSettings.Load("config.json");
-        private static readonly NeoSystem s_system= new NeoSystem(s_protocol);
+        private static readonly NeoSystem s_system = new NeoSystem(s_protocol);
 
         // [GlobalSetup]
         // public void Setup()
@@ -58,7 +58,7 @@ namespace Neo
             // L22: DUP
             // L23: STSFLD0
             // L24: JMPIF L17
-            Run( "VgHCDAVhYWFhYQH0AWBLS0GVAW9hWJ1KYCT1SUHb/qh0AUAfYEpBJ0M18UVYnUpgJPU=");
+            Run("VgHCDAVhYWFhYQH0AWBLS0GVAW9hWJ1KYCT1SUHb/qh0AUAfYEpBJ0M18UVYnUpgJPU=");
         }
 
         private static void Run(string poc)
