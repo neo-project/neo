@@ -3,12 +3,20 @@
   <PropertyGroup>
     <TargetFrameworks>net7.0</TargetFrameworks>
     <AssemblyTitle>Neo.Service</AssemblyTitle>
-    <AssemblyName>neo-node</AssemblyName>
+    <AssemblyName>neo-host</AssemblyName>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Remove="appsettings.json" />
+    <Content Include="neo-host.service">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -22,18 +30,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="appsettings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Neo\Neo.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="neo-node.service">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 </Project>

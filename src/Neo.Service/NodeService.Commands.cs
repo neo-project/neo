@@ -9,8 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.IO;
 using Neo.Service.Pipes;
-using System.Collections.Generic;
+using Neo.Service.Pipes.Payloads;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,38 +19,26 @@ namespace Neo.Service
 {
     internal partial class NodeService
     {
-        [PipeMethod(CommandType.Shutdown)]
-        private Task<object> ShutdownAsync(
-            IReadOnlyDictionary<string, string> args, CancellationToken cancellationToken)
-        {
-            return Task.FromResult<object>(true);
-        }
+        [PipeMethod(PipeMessageCommand.Test, false)]
+        private ISerializable? ProtocolPing(ISerializable? message) => null;
 
-        [PipeMethod(CommandType.StartNeoSystem)]
-        private async Task<object> StartNodeAsync(
-            IReadOnlyDictionary<string, string> args, CancellationToken cancellationToken)
+        [PipeMethod(PipeMessageCommand.Start, true)]
+        private async Task<ISerializable> StartNodeAsync(ISerializable? message)
         {
             // No import processing
             if (_importBlocksToken is null)
             {
-                await StartNeoSystemAsync(cancellationToken);
-                return true;
+                await StartNeoSystemAsync(CancellationToken.None);
+                return BooleanPayload.True;
             }
-
-            // We are processing import of blocks
-            if (_importBlocksToken.IsCancellationRequested == false)
-                _importBlocksToken.Cancel();
-
-            await StartNeoSystemAsync(cancellationToken);
-            return true;
+            return BooleanPayload.False;
         }
 
-        [PipeMethod(CommandType.StopNeoSystem)]
-        private async Task<object> StopNodeAsync(
-            IReadOnlyDictionary<string, string> args, CancellationToken cancellationToken)
+        [PipeMethod(PipeMessageCommand.Stop, true)]
+        private async Task<ISerializable> StopNodeAsync(ISerializable? message)
         {
             await StopNeoSystemAsync();
-            return true;
+            return BooleanPayload.True;
         }
     }
 }

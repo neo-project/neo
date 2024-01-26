@@ -14,15 +14,25 @@ using System;
 namespace Neo.Service.Pipes
 {
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-    internal class PipeMethodAttribute : Attribute
+    internal class PipeMethodAttribute : Attribute, IEquatable<PipeMethodAttribute>
     {
-        public CommandType Command { get; }
+        public PipeMessageCommand Command { get; }
         public bool Overwrite { get; set; } = false;
+        public bool Awaited { get; } = false;
 
         public PipeMethodAttribute(
-            CommandType command)
+            PipeMessageCommand command,
+            bool shouldAwait)
         {
             Command = command;
+            Awaited = shouldAwait;
+        }
+
+        public bool Equals(PipeMethodAttribute? other)
+        {
+            if (other is null) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return Command == other.Command;
         }
     }
 }

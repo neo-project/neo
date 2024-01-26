@@ -29,6 +29,7 @@ namespace Neo.Service
         private readonly ILogger<NodeService> _logger;
         private readonly ProtocolSettings _nodeProtocolSettings;
         private readonly ApplicationSettings _appSettings;
+        private readonly NamedPipeService _namedPipeService;
 
         private NeoSystem? _neoSystem;
         private LocalNode? _localNode;
@@ -43,7 +44,8 @@ namespace Neo.Service
             _logger = _loggerFactory.CreateLogger<NodeService>();
             _nodeProtocolSettings = ProtocolSettings.Load(config.GetRequiredSection("ProtocolConfiguration"));
             _appSettings = ApplicationSettings.Load(config.GetRequiredSection("ApplicationConfiguration"));
-            PipeCommand.RegisterMethods(this);
+            _namedPipeService = new(loggerFactory);
+            NamedPipeService.RegisterMethods(this);
         }
 
         public override void Dispose()
@@ -72,23 +74,8 @@ namespace Neo.Service
             await base.StopAsync(cancellationToken);
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            var namedPipeTasks = GC.AllocateUninitializedArray<Task>(_appSettings.NamedPipe.Instances);
-            for (var i = 0; i < namedPipeTasks.Length; i++)
-            {
-                var pipLogger = _loggerFactory.CreateLogger<NodeCommandPipeServer>();
-                namedPipeTasks[i] = Task.Run(async () =>
-                {
-                    while (stoppingToken.IsCancellationRequested == false)
-                    {
-                        using var pipeServer = new NodeCommandPipeServer(_appSettings.NamedPipe.Instances, _appSettings.NamedPipe.ReadTimeout, pipLogger);
-                        await pipeServer.ListenAndWaitAsync(stoppingToken);
-                    }
-                }, stoppingToken);
-            }
-            await Task.WhenAll(namedPipeTasks);
-        }
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken) =>
+            await _namedPipeService.StartAsync(_appSettings.NamedPipe.Instances, stoppingToken);
 
         private async Task CreateNeoSystemAsync(CancellationToken cancellationToken)
         {

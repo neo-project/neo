@@ -9,13 +9,23 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Neo.Service;
+using System;
 
 var host = Host.CreateDefaultBuilder(args)
     .UseSystemd()
     .UseWindowsService()
+    .ConfigureHostConfiguration(builder =>
+    {
+        builder.SetBasePath(AppContext.BaseDirectory);
+    })
+    .ConfigureAppConfiguration(config =>
+    {
+        config.SetBasePath(AppContext.BaseDirectory);
+    })
     .ConfigureServices(services =>
     {
         services.AddHostedService<NodeService>();

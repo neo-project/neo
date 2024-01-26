@@ -114,20 +114,17 @@ namespace Neo.Service
     internal sealed class NamedPipeSettings
     {
         public int Instances { get; private init; }
-        public int ReadTimeout { get; private init; }
         public bool DebugMode { get; private init; }
 
         public static NamedPipeSettings Default => new()
         {
             Instances = 4,
-            ReadTimeout = 1000,
             DebugMode = false,
         };
 
         public static NamedPipeSettings Load(IConfigurationSection section) => new()
         {
             Instances = section.GetValue(nameof(Instances), Default.Instances),
-            ReadTimeout = section.GetValue(nameof(ReadTimeout), Default.ReadTimeout),
             DebugMode = section.GetValue(nameof(DebugMode), Default.DebugMode),
         };
     }

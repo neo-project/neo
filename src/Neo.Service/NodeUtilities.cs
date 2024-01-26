@@ -26,5 +26,11 @@ namespace Neo.Service
 
         public static Version GetApplicationVersion() =>
             Assembly.GetExecutingAssembly().GetName().Version!;
+
+        public static int GetApplicationVersionNumber()
+        {
+            var version = Assembly.GetExecutingAssembly().GetName().Version!;
+            return version.Major * 1000 + version.Minor * 100 + version.Build * 10 + version.Revision;
+        }
     }
 }

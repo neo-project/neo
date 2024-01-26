@@ -6,8 +6,8 @@ Requires=network-online.target
 
 [Service]
 Type=notify
-WorkingDirectory=/opt/neo-node
-ExecStart=/usr/bin/neo-node
+WorkingDirectory=/opt/neo-host
+ExecStart=/usr/bin/neo-host
 Restart=always
 TimeoutSec=5
 RestartSec=10
