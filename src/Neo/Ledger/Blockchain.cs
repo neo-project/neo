@@ -12,7 +12,6 @@
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.IO;
-using Neo.IO;
 using Neo.IO.Actors;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -24,27 +23,22 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 
 namespace Neo.Ledger
 {
     public delegate void CommittingHandler(NeoSystem system, Block block, DataCache snapshot, IReadOnlyList<Blockchain.ApplicationExecuted> applicationExecutedList);
     public delegate void CommittedHandler(NeoSystem system, Block block);
+
     /// <summary>
     /// Actor used to verify and relay <see cref="IInventory"/>.
     /// </summary>
     public sealed partial class Blockchain : UntypedActor
     {
-
-        public static IStore benchStore = StoreFactory.GetStore("LevelDBStore", "./bench");
-
         /// <summary>
         /// Sent by the <see cref="Blockchain"/> when a smart contract is executed.
         /// </summary>
-        public partial class ApplicationExecuted
-        {
-        }
+        public partial class ApplicationExecuted { }
 
         /// <summary>
         /// Sent by the <see cref="Blockchain"/> when a <see cref="Network.P2P.Payloads.Block"/> is persisted.
@@ -423,26 +417,11 @@ namespace Neo.Ledger
 
         private void Persist(Block block)
         {
-            var blockList = new List<uint>{
-                1466600, 1691562, 1693182, 1695163, 1941906, 2212440, 1545151, 1691721, 1693194, 1695746, 1952842,
-                2212544, 1551539, 1691783, 1693241, 1695896, 1955515, 2212575, 1551550, 1691784, 1693269, 1696740,
-                1976901, 2212681, 1551551, 1691811, 1693274, 1696758, 1991342, 2212706, 1551552, 1691968, 1693286,
-                1696759, 2027305, 2212723, 1570420, 1692023, 1693294, 1723984, 2037494, 2212800, 1584313, 1692102,
-                1693308, 1855694, 2080810, 2212807, 1667870, 1692302, 1693343, 1855827, 2116627, 2212833, 1667871,
-                1692680, 1693373, 1882087, 2137993, 2230072, 1683031, 1692682, 1693398, 1882106, 2141425, 2268049,
-                1690032, 1692692, 1693399, 1899635, 2141551, 2351614, 1690810, 1692735, 1693428, 1900762, 2158835,
-                2363914, 1691179, 1692772, 1693650, 1900767, 2171359, 470619, 1691180, 1692921, 1694343, 1900768,
-                2194622, 715707, 1691181, 1693099, 1694410, 1900845, 2212242, 1691492, 1693100, 1694594, 1907366,
-                2212278,4222547, 4229846, 2501961, 1955263, 1073113, 1073120, 2173910, 1093317, 2398072, 3053852, 2212681, 2212454, 2212544, 2508698, 2212723, 2212440, 2212575, 2212800, 2212206, 2212833, 2212278, 2398019, 2212212, 2212242, 2655903, 2212261, 2692530, 1976901, 715707, 470619, 288842, 288854, 288856, 288857, 288858
-            };
-
-            List<byte> dataList = null;
-            using (SnapshotCache snapshot2 = system.GetSnapshot())
+            using (SnapshotCache snapshot = system.GetSnapshot())
             {
-                var snapshot3 = snapshot2.CreateSnapshot();
                 List<ApplicationExecuted> all_application_executed = new();
                 TransactionState[] transactionStates;
-                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot3, block, system.Settings, 0))
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, system.Settings, 0))
                 {
                     engine.LoadScript(onPersistScript);
                     if (engine.Execute() != VMState.HALT)
@@ -456,7 +435,7 @@ namespace Neo.Ledger
                     all_application_executed.Add(application_executed);
                     transactionStates = engine.GetState<TransactionState[]>();
                 }
-                DataCache clonedSnapshot = snapshot3.CreateSnapshot();
+                DataCache clonedSnapshot = snapshot.CreateSnapshot();
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (TransactionState transactionState in transactionStates)
                 {
@@ -470,13 +449,13 @@ namespace Neo.Ledger
                     }
                     else
                     {
-                        clonedSnapshot = snapshot3.CreateSnapshot();
+                        clonedSnapshot = snapshot.CreateSnapshot();
                     }
                     ApplicationExecuted application_executed = new(engine);
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
-                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot3, block, system.Settings, 0))
+                using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, system.Settings, 0))
                 {
                     engine.LoadScript(postPersistScript);
                     if (engine.Execute() != VMState.HALT)
@@ -489,26 +468,8 @@ namespace Neo.Ledger
                     Context.System.EventStream.Publish(application_executed);
                     all_application_executed.Add(application_executed);
                 }
-                Committing?.Invoke(system, block, snapshot3, all_application_executed);
-                if (blockList.Contains(block.Index) && block.Transactions.Length != 0)
-                {
-                    var data = snapshot3.GetReadSet();
-                    if (Directory.Exists("./blocks") == false)
-                        Directory.CreateDirectory("./blocks");
-                    File.AppendAllText($"./blocks/{block.Index}.txt", $"{Convert.ToBase64String(block.ToArray())}\n");
-                    foreach (var storageKey in data)
-                    {
-                        var item = snapshot2.TryGet(storageKey);
-                        if (item != null)
-                        {
-                            var value = Encode(storageKey.Key.Span, item.Value.Span);
-                            value = BitConverter.GetBytes(storageKey.Id).Concat(value).ToArray();
-                            File.AppendAllText($"./blocks/{block.Index}.txt", $"{Convert.ToBase64String(value)}\n");
-                        }
-                    }
-                }
-                snapshot3.Commit();
-                snapshot2.Commit();
+                Committing?.Invoke(system, block, snapshot, all_application_executed);
+                snapshot.Commit();
             }
             Committed?.Invoke(system, block);
             system.MemPool.UpdatePoolForBlockPersisted(block, system.StoreView);
@@ -519,19 +480,6 @@ namespace Neo.Ledger
                 Debug.Assert(header.Index == block.Index);
         }
 
-        public static byte[] Encode(ReadOnlySpan<byte> array1, ReadOnlySpan<byte> array2)
-        {
-            byte[] result = new byte[sizeof(int) * 2 + array1.Length + array2.Length];
-            Span<byte> resultSpan = result;
-
-            BitConverter.GetBytes(array1.Length).CopyTo(resultSpan);
-            array1.CopyTo(resultSpan.Slice(sizeof(int)));
-
-            BitConverter.GetBytes(array2.Length).CopyTo(resultSpan.Slice(sizeof(int) + array1.Length));
-            array2.CopyTo(resultSpan.Slice(sizeof(int) * 2 + array1.Length));
-
-            return result;
-        }
         /// <summary>
         /// Gets a <see cref="Akka.Actor.Props"/> object used for creating the <see cref="Blockchain"/> actor.
         /// </summary>
