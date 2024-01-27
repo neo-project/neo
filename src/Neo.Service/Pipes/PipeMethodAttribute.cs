@@ -31,8 +31,17 @@ namespace Neo.Service.Pipes
         public bool Equals(PipeMethodAttribute? other)
         {
             if (other is null) return false;
-            if (ReferenceEquals(this, other)) return true;
             return Command == other.Command;
         }
+
+        public override bool Equals(object? other)
+        {
+            if (other is null) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return Equals(other as PipeMethodAttribute);
+        }
+
+        public override int GetHashCode() =>
+            HashCode.Combine(Command, Awaited, Overwrite);
     }
 }
