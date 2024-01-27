@@ -20,8 +20,8 @@ namespace Neo.Service.Pipes.Payloads
     {
         public uint Network { get; private set; }
         public int Version { get; private set; }
-        public uint Nonce { get; private set; }
-        public long Timestamp { get; private set; }
+        public uint Nonce { get; private set; }     // future use (handshake)
+        public long Timestamp { get; private set; } // future use (handshake)
 
         public int Size =>
             sizeof(int) +   // Version
@@ -75,5 +75,10 @@ namespace Neo.Service.Pipes.Payloads
 
         public override int GetHashCode() =>
             HashCode.Combine(Version, Timestamp, Network, Nonce);
+
+        public override string ToString() =>
+            string.Format(
+                "Name={0} Version={1}, Timestamp={2}, Network={3}, Nonce={4}",
+                GetType().Name, Version, Timestamp, Network, Nonce);
     }
 }

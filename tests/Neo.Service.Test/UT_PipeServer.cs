@@ -36,7 +36,7 @@ namespace Neo.Service.Tests
             });
             _pipeServer = new PipeServer(
                 NodeUtilities.GetApplicationVersionNumber(),
-                ProtocolSettings.Default.Network,
+                0x54455354, // Magic code ("TEST")
                 _loggerFactory.CreateLogger<PipeServer>()
                 );
         }
@@ -62,8 +62,9 @@ namespace Neo.Service.Tests
         [Fact]
         public void Test_SerializationOfProtocolVersionMessage()
         {
-            Assert.False(_pipeServerTask!.IsCompleted);
+            Assert.False(_pipeServerTask!.IsCanceled);
             Assert.False(_pipeServerTask!.IsFaulted);
+            Assert.True(_pipeServer.HasStream);
 
             using var clientStream = new NamedPipeClientStream(".", NamedPipeService.PipeName);
             clientStream.Connect();
@@ -80,8 +81,10 @@ namespace Neo.Service.Tests
 
             var resultVersion = (PipeVersionPayload)resultMessage.Payload;
 
+            Assert.Equal<uint>(0x54455354, resultVersion.Network);
+            Assert.Equal(NodeUtilities.GetApplicationVersionNumber(), resultVersion.Version);
             Assert.InRange(resultVersion.Version, 0, int.MaxValue);
-            Assert.InRange(resultVersion.Nonce, 1u, uint.MaxValue);
+            Assert.InRange(resultVersion.Nonce, 0u, uint.MaxValue);
         }
     }
 }

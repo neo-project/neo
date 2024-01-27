@@ -22,7 +22,7 @@ namespace Neo.Service.Pipes
     internal sealed class PipeServer : IDisposable
     {
         public bool IsConnected => _neoPipeStream is null ? false : _neoPipeStream.IsConnected;
-        public bool IsShutdown => _neoPipeStream is null;
+        public bool HasStream => _neoPipeStream is not null;
 
         private readonly ILogger<PipeServer> _logger;
 
@@ -51,8 +51,10 @@ namespace Neo.Service.Pipes
         public void StartAndListen()
         {
             if (_neoPipeStream is null) throw new NullReferenceException();
+
             _logger.LogDebug("Waiting for connections.");
             _neoPipeStream.WaitForConnection();
+
             _logger.LogDebug("New client connection.");
             TryWriteMessage(PipeMessage.Create(PipeMessageCommand.Version, _versionProtocol));
 
@@ -62,7 +64,7 @@ namespace Neo.Service.Pipes
                 if (message is null) break;
             }
 
-            _logger.LogDebug("Lost connection.");
+            _logger.LogDebug("Connection Closed.");
         }
 
         private PipeMessage? TryReadMessage()
@@ -71,7 +73,9 @@ namespace Neo.Service.Pipes
             {
                 if (_neoPipeStream is null) throw new NullReferenceException();
                 var message = PipeMessage.ReadFromStream(_neoPipeStream);
-                _logger.LogDebug("Read {MessageType} from stream.", message?.Payload?.GetType().Name);
+                _logger.LogDebug("New Payload \"{PayloadType}\" from stream.", message?.Payload?.GetType().Name);
+                if (message?.Payload is not null)
+                    _logger.LogDebug("Payload: {Payload}", message.Payload.ToString());
                 return message;
             }
             catch (EndOfStreamException) // Connection lost of closed
@@ -94,7 +98,9 @@ namespace Neo.Service.Pipes
                 using var bw = new BinaryWriter(_neoPipeStream, Encoding.UTF8, true);
                 bw.Write(message);
                 bw.Flush();
-                _logger.LogDebug("Wrote {MessageType} to stream.", message.Payload?.GetType().Name);
+                _logger.LogDebug("Sent Payload \"{PayloadType}\" to stream.", message.Payload?.GetType().Name);
+                if (message.Payload is not null)
+                    _logger.LogDebug("Payload: {Payload}", message.Payload.ToString());
                 if (OperatingSystem.IsWindows())
                     _neoPipeStream.WaitForPipeDrain();
             }

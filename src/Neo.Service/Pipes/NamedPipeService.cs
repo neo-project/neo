@@ -99,7 +99,7 @@ namespace Neo.Service.Pipes
             {
                 for (var i = 0; i < _pipeServers.Count; i++)
                 {
-                    if (_pipeServers[i].IsShutdown == false) continue;
+                    if (_pipeServers[i].HasStream == false) continue;
 
                     _logger.LogError("Restarting instance {Instance}.", i);
 
