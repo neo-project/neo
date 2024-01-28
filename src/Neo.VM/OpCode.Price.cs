@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using System.Collections.Generic;
+
 namespace Neo.VM
 {
     public class OpCodePrice
