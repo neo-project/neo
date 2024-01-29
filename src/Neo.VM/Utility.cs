@@ -31,7 +31,7 @@ namespace Neo.VM
         {
             try
             {
-                value = Encoding.UTF8.GetString(byteArray);
+                value = StrictUTF8.GetString(byteArray);
                 return true;
             }
             catch (DecoderFallbackException)
