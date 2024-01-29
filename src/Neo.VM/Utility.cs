@@ -27,6 +27,25 @@ namespace Neo.VM
             StrictUTF8.EncoderFallback = EncoderFallback.ExceptionFallback;
         }
 
+        public static bool TryGetString(this byte[] byteArray, out string? value)
+        {
+            try
+            {
+                value = Encoding.UTF8.GetString(byteArray);
+                return true;
+            }
+            catch (DecoderFallbackException)
+            {
+                value = default;
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                value = default;
+                return false;
+            }
+        }
+
         public static BigInteger ModInverse(this BigInteger value, BigInteger modulus)
         {
             if (value <= 0) throw new ArgumentOutOfRangeException(nameof(value));
