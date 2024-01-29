@@ -218,7 +218,7 @@ namespace Neo.Test
         {
             var stack = new EvaluationStack(new ReferenceCounter());
             stack.Insert(0, "4CC95219999D421243C8161E3FC0F4290C067845".FromHexString());
-            Assert.AreEqual("[ByteString(\"TMlSGZmdQhJDyBYeP8D0KQwGeEU=\")]", stack.ToString());
+            Assert.AreEqual("[ByteString(\"Base64: TMlSGZmdQhJDyBYeP8D0KQwGeEU=\")]", stack.ToString());
         }
     }
 }
