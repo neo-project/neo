@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Test.Extensions;
+using Neo.Test.Helpers;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -201,7 +202,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        public void TestToString()
+        public void TestPrint()
         {
             var stack = new EvaluationStack(new ReferenceCounter());
 
@@ -210,15 +211,15 @@ namespace Neo.Test
             stack.Insert(2, "test");
             stack.Insert(3, true);
 
-            Assert.AreEqual("[Boolean(True), ByteString(\"test\"), Integer(1), Integer(3)]", stack.ToString());
+            Assert.AreEqual("[Boolean(True), ByteString(\"test\"), Integer(1), Integer(3)]", stack.Print());
         }
 
         [TestMethod]
-        public void TestToStringInvalidUTF8()
+        public void TestPrintInvalidUTF8()
         {
             var stack = new EvaluationStack(new ReferenceCounter());
             stack.Insert(0, "4CC95219999D421243C8161E3FC0F4290C067845".FromHexString());
-            Assert.AreEqual("[ByteString(\"Base64: TMlSGZmdQhJDyBYeP8D0KQwGeEU=\")]", stack.ToString());
+            Assert.AreEqual("[ByteString(\"Base64: TMlSGZmdQhJDyBYeP8D0KQwGeEU=\")]", stack.Print());
         }
     }
 }

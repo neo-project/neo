@@ -36,27 +36,6 @@ namespace Neo.VM
         /// </summary>
         public int Count => innerList.Count;
 
-        public override string ToString()
-        {
-            return $@"[{string.Join(", ", innerList.Select(p =>
-                    {
-                        var value = p.Type switch
-                        {
-                            StackItemType.Pointer => $"({((Pointer)p).Position})",
-                            StackItemType.Boolean => $"({p.GetBoolean()})",
-                            StackItemType.Integer => $"({p.GetInteger()})",
-                            // If the bytestring is not a valid UTF-8 string, we'll just print the base64 representation
-                            StackItemType.ByteString => p.GetSpan().ToArray().TryGetString(out var str) ? $"(\"{str}\")" : $"(\"Base64: {Convert.ToBase64String(p.GetSpan())}\")",
-                            StackItemType.Array
-                                or StackItemType.Map
-                                or StackItemType.Struct => $"({((CompoundType)p).Count})",
-                            _ => ""
-                        };
-                        return $"{p.Type.ToString()}{value}";
-                    }
-                    ))}]";
-        }
-
         internal void Clear()
         {
             foreach (StackItem item in innerList)
