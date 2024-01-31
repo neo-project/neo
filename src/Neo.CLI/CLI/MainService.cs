@@ -371,7 +371,7 @@ namespace Neo.CLI
         public async void Start(CommandLineOptions options)
         {
             if (NeoSystem != null) return;
-            bool verifyImport = options.NoVerify ?? true;
+            bool verifyImport = !(options.NoVerify ?? false);
 
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
             CustomProtocolSettings(options, protocol);
