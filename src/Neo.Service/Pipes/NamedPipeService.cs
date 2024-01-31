@@ -10,11 +10,8 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Logging;
-using Neo.IO;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,16 +19,17 @@ namespace Neo.Service.Pipes
 {
     internal sealed class NamedPipeService : IDisposable
     {
-        private static readonly ConcurrentDictionary<PipeMethodAttribute, Func<ISerializable, ISerializable?>> s_methods = new();
-
         public static Version Version => NodeUtilities.GetApplicationVersion();
         public static string PipeName => $"neo.node\\{Version.ToString(3)}\\CommandShell";
+
+        public int Instances => _pipeServers.Count;
 
         private readonly ILogger<PipeServer> _pipeServerLogger;
         private readonly ILogger<NamedPipeService> _logger;
         private readonly List<PipeServer> _pipeServers;
-        private readonly PeriodicTimer _periodicTimer;
         private readonly ProtocolSettings _protocolSettings;
+
+        private PeriodicTimer? _periodicTimer;
 
         public NamedPipeService(
             ProtocolSettings protocolSettings,
@@ -41,51 +39,39 @@ namespace Neo.Service.Pipes
             _pipeServers = new();
             _pipeServerLogger = loggerFactory.CreateLogger<PipeServer>();
             _logger = loggerFactory.CreateLogger<NamedPipeService>();
-            _periodicTimer = new(TimeSpan.FromSeconds(1));
         }
 
         public void Dispose()
         {
-            _periodicTimer.Dispose();
             ShutdownServers();
-        }
-
-        public static void RegisterMethods(object handler)
-        {
-            var handlerType = handler.GetType();
-            var methods = handlerType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            foreach (var method in methods)
-            {
-                var pipeAttr = method.GetCustomAttribute<PipeMethodAttribute>();
-                if (pipeAttr == null) continue;
-                if (s_methods.ContainsKey(pipeAttr) && pipeAttr.Overwrite == false)
-                    throw new AmbiguousMatchException($"{handlerType.FullName}.{method.Name}: Command {pipeAttr.Command} already exists.");
-                s_methods[pipeAttr] = method.CreateDelegate<Func<ISerializable, ISerializable?>>(handler);
-            }
         }
 
         public async Task StartAsync(int maxAllowConnections, CancellationToken cancellationToken)
         {
-            for (var i = 0; i < maxAllowConnections; CreateNewServer(), i++) { }
-
+            for (var i = 1; i < maxAllowConnections; i++)
+                await CreateNewServer(cancellationToken);
             _logger.LogInformation("Created {Connections} instances.", maxAllowConnections);
 
+            _periodicTimer = new(TimeSpan.FromSeconds(1));
             await WaitAsync(cancellationToken);
         }
 
-        private void CreateNewServer()
+        private Task CreateNewServer(CancellationToken cancellationToken = default)
         {
             var server = new PipeServer(
                 NodeUtilities.GetApplicationVersionNumber(),
                 _protocolSettings.Network,
                 _pipeServerLogger);
             _pipeServers.Add(server);
-            _ = Task.Factory.StartNew(server.StartAndListen);
-            _logger.LogInformation("Created new instance.");
+            _ = server.StartAndListenAsync(cancellationToken);
+            _logger.LogDebug("Created new instance.");
+            return Task.CompletedTask;
         }
 
         private void ShutdownServers()
         {
+            _periodicTimer?.Dispose();
+
             foreach (var server in _pipeServers)
                 server.Dispose();
 
@@ -95,17 +81,24 @@ namespace Neo.Service.Pipes
 
         private async Task WaitAsync(CancellationToken cancellationToken)
         {
+            if (_periodicTimer is null) return;
+
             while (await _periodicTimer.WaitForNextTickAsync(cancellationToken))
             {
                 for (var i = 0; i < _pipeServers.Count; i++)
                 {
-                    if (_pipeServers[i].HasStream == false) continue;
+                    if (_pipeServers[i].IsStreamOpen) continue;
 
-                    _logger.LogError("Restarting instance {Instance}.", i);
+                    _logger.LogWarning("Restarting instance {Instance}.", i);
 
-                    _pipeServers.RemoveAt(i);
-                    CreateNewServer();
+                    _pipeServers[i].Dispose();
+                    _pipeServers[i] = new PipeServer(
+                        NodeUtilities.GetApplicationVersionNumber(),
+                        _protocolSettings.Network,
+                        _pipeServerLogger);
+                    _ = _pipeServers[i].StartAndListenAsync(cancellationToken);
                 }
+                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
             }
 
             _logger.LogDebug("Shutting down...");

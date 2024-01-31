@@ -11,34 +11,30 @@
 
 using Microsoft.Extensions.Logging;
 using Neo.Service.Pipes;
-using Neo.Service.Pipes.Payloads;
 using Neo.Service.Tests.Helpers;
 using System;
-using System.IO.Pipes;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
 
 namespace Neo.Service.Tests
 {
-    public class UT_PipeServer : IAsyncLifetime, IDisposable
+    public partial class UT_PipeServer : IAsyncLifetime, IDisposable
     {
+        private const uint TEST_NETWORK = 0x54455354; // Magic code ("TEST")
+
         private readonly ILoggerFactory _loggerFactory;
         private readonly PipeServer _pipeServer;
+
         private Task? _pipeServerTask;
 
         public UT_PipeServer(
             ITestOutputHelper outputHelper)
         {
-            _loggerFactory = LoggerFactory.Create(builder =>
-            {
-                builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Debug);
-                builder.AddProvider(new UT_XUnitLoggerProvider(outputHelper));
-            });
+            _loggerFactory = UT_Utilities.CreateLogFactory(outputHelper);
             _pipeServer = new PipeServer(
                 NodeUtilities.GetApplicationVersionNumber(),
-                0x54455354, // Magic code ("TEST")
-                _loggerFactory.CreateLogger<PipeServer>()
-                );
+                TEST_NETWORK,
+                _loggerFactory.CreateLogger<PipeServer>());
         }
 
         public void Dispose()
@@ -49,7 +45,11 @@ namespace Neo.Service.Tests
 
         public Task InitializeAsync()
         {
-            _pipeServerTask = Task.Factory.StartNew(_pipeServer.StartAndListen);
+            _pipeServerTask = _pipeServer.StartAndListenAsync();
+
+            Assert.False(_pipeServerTask.IsFaulted);
+            Assert.True(_pipeServer.IsStreamOpen);
+
             return Task.CompletedTask;
         }
 
@@ -57,34 +57,6 @@ namespace Neo.Service.Tests
         {
             _pipeServer?.Dispose();
             return _pipeServerTask!;
-        }
-
-        [Fact]
-        public void Test_SerializationOfProtocolVersionMessage()
-        {
-            Assert.False(_pipeServerTask!.IsCanceled);
-            Assert.False(_pipeServerTask!.IsFaulted);
-            Assert.True(_pipeServer.HasStream);
-
-            using var clientStream = new NamedPipeClientStream(".", NamedPipeService.PipeName);
-            clientStream.Connect();
-
-            Assert.True(clientStream.IsConnected);
-            Assert.True(clientStream.CanWrite);
-            Assert.True(clientStream.CanRead);
-
-            var resultMessage = PipeMessage.ReadFromStream(clientStream);
-
-            Assert.NotNull(resultMessage);
-            Assert.NotNull(resultMessage.Payload);
-            Assert.IsType<PipeVersionPayload>(resultMessage.Payload);
-
-            var resultVersion = (PipeVersionPayload)resultMessage.Payload;
-
-            Assert.Equal<uint>(0x54455354, resultVersion.Network);
-            Assert.Equal(NodeUtilities.GetApplicationVersionNumber(), resultVersion.Version);
-            Assert.InRange(resultVersion.Version, 0, int.MaxValue);
-            Assert.InRange(resultVersion.Nonce, 0u, uint.MaxValue);
         }
     }
 }

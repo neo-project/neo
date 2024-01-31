@@ -32,7 +32,7 @@ namespace Neo.Service
         [GeneratedRegex("\\d+")]
         private static partial Regex ImportBlockchainRegexMatch();
 
-        private async Task StartImport(bool verify, CancellationToken cancellationToken)
+        private async Task StartImportAsync(bool verify, CancellationToken cancellationToken)
         {
             if (_neoSystem is null) return;
 

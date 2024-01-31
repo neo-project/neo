@@ -25,6 +25,8 @@ namespace Neo.Service
 {
     internal sealed partial class NodeService : BackgroundService
     {
+        public static NodeService? Instance { get; private set; }
+
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<NodeService> _logger;
         private readonly ProtocolSettings _nodeProtocolSettings;
@@ -34,25 +36,25 @@ namespace Neo.Service
         private NeoSystem? _neoSystem;
         private LocalNode? _localNode;
         private Task? _importBlocksTask;
-        private CancellationTokenSource? _importBlocksToken;
+        private CancellationTokenSource? _importBlocksTokenSource;
 
         public NodeService(
             IConfiguration config,
             ILoggerFactory loggerFactory)
         {
-            _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+            if (Instance is not null) throw new ApplicationException("Instance already running.");
+            _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<NodeService>();
             _nodeProtocolSettings = ProtocolSettings.Load(config.GetRequiredSection("ProtocolConfiguration"));
             _appSettings = ApplicationSettings.Load(config.GetRequiredSection("ApplicationConfiguration"));
             _namedPipeService = new(_nodeProtocolSettings, loggerFactory);
-            NamedPipeService.RegisterMethods(this);
+            Instance = this;
         }
 
         public override void Dispose()
         {
-            _importBlocksToken?.Dispose();
-            _importBlocksTask?.Dispose();
-            _neoSystem?.Dispose();
+            _namedPipeService.Dispose();
+            Instance = null;
             base.Dispose();
         }
 
@@ -60,9 +62,9 @@ namespace Neo.Service
         {
             await CreateNeoSystemAsync(cancellationToken);
 
-            _importBlocksToken ??= CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _importBlocksTokenSource ??= CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-            _importBlocksTask = Task.Run(() => StartImport(_appSettings.Storage.Import.Verify, _importBlocksToken.Token).ConfigureAwait(false), cancellationToken);
+            _ = StartImportAsync(_appSettings.Storage.Import.Verify, _importBlocksTokenSource.Token);
 
             await base.StartAsync(cancellationToken);
         }
@@ -76,6 +78,44 @@ namespace Neo.Service
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) =>
             await _namedPipeService.StartAsync(_appSettings.NamedPipe.Instances, stoppingToken);
+
+        internal async Task StartNeoSystemAsync(CancellationToken cancellationToken = default)
+        {
+            if (_neoSystem is null)
+                await CreateNeoSystemAsync(cancellationToken);
+
+            _neoSystem!.StartNode(new()
+            {
+                Tcp = new(IPAddress.Parse(_appSettings.P2P.Listen!), _appSettings.P2P.Port),
+                MinDesiredConnections = _appSettings.P2P.MinDesiredConnections,
+                MaxConnections = _appSettings.P2P.MaxConnections,
+                MaxConnectionsPerAddress = _appSettings.P2P.MaxConnectionsPerAddress,
+            });
+            _logger.LogInformation("Started system node.");
+        }
+
+        internal async Task StopImportBlocksAsync()
+        {
+
+            if (_importBlocksTask is not null)
+            {
+                _importBlocksTokenSource?.Cancel();
+                await _importBlocksTask;
+                _logger.LogInformation("Stopped importing blocks.");
+            }
+
+            _importBlocksTokenSource?.Dispose();
+            _importBlocksTokenSource = null;
+        }
+
+        internal Task StopNeoSystemAsync()
+        {
+            _neoSystem?.Dispose();
+            _neoSystem = null;
+            _logger.LogInformation("Stopped system node.");
+
+            return Task.CompletedTask;
+        }
 
         private async Task CreateNeoSystemAsync(CancellationToken cancellationToken)
         {
@@ -94,42 +134,6 @@ namespace Neo.Service
             _logger.LogInformation("Initialized system node.");
 
             _localNode ??= await _neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance(), cancellationToken);
-        }
-
-        private async Task StartNeoSystemAsync(CancellationToken cancellationToken)
-        {
-            if (_neoSystem is null)
-                await CreateNeoSystemAsync(cancellationToken);
-
-            _neoSystem!.StartNode(new()
-            {
-                Tcp = new(IPAddress.Parse(_appSettings.P2P.Listen!), _appSettings.P2P.Port),
-                MinDesiredConnections = _appSettings.P2P.MinDesiredConnections,
-                MaxConnections = _appSettings.P2P.MaxConnections,
-                MaxConnectionsPerAddress = _appSettings.P2P.MaxConnectionsPerAddress,
-            });
-            _logger.LogInformation("Started system node.");
-        }
-
-        private async Task StopImportBlocksAsync()
-        {
-            _importBlocksToken?.Cancel();
-
-            if (_importBlocksTask is not null)
-                await _importBlocksTask;
-
-            _importBlocksToken?.Dispose();
-            _importBlocksToken = null;
-            _logger.LogInformation("Stopped importing blocks.");
-        }
-
-        private Task StopNeoSystemAsync()
-        {
-            _neoSystem?.Dispose();
-            _neoSystem = null;
-            _logger.LogInformation("Stopped system node.");
-
-            return Task.CompletedTask;
         }
     }
 }

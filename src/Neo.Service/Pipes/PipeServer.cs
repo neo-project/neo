@@ -16,13 +16,15 @@ using System;
 using System.IO;
 using System.IO.Pipes;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Neo.Service.Pipes
 {
-    internal sealed class PipeServer : IDisposable
+    internal sealed partial class PipeServer : IDisposable
     {
-        public bool IsConnected => _neoPipeStream is null ? false : _neoPipeStream.IsConnected;
-        public bool HasStream => _neoPipeStream is not null;
+        public bool IsClientConnected => _neoPipeStream is null ? false : _neoPipeStream.IsConnected;
+        public bool IsStreamOpen => _neoPipeStream is not null;
 
         private readonly ILogger<PipeServer> _logger;
 
@@ -48,23 +50,48 @@ namespace Neo.Service.Pipes
             _neoPipeStream = null;
         }
 
-        public void StartAndListen()
+        public async Task StartAndListenAsync(CancellationToken cancellationToken = default)
         {
             if (_neoPipeStream is null) throw new NullReferenceException();
 
             _logger.LogDebug("Waiting for connections.");
-            _neoPipeStream.WaitForConnection();
+            await _neoPipeStream.WaitForConnectionAsync(cancellationToken);
+
+            if (_neoPipeStream is null || cancellationToken.IsCancellationRequested) return;
 
             _logger.LogDebug("New client connection.");
-            TryWriteMessage(PipeMessage.Create(PipeMessageCommand.Version, _versionProtocol));
+            TryWriteMessage(PipeMessage.Create(PipeCommand.Version, _versionProtocol));
 
-            while (_neoPipeStream != null && _neoPipeStream.IsConnected)
+            while (_neoPipeStream != null &&
+                _neoPipeStream.IsConnected &&
+                cancellationToken.IsCancellationRequested == false)
             {
                 var message = TryReadMessage();
                 if (message is null) break;
+                try
+                {
+                    await OnReceive(message, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    message = PipeMessage.Create(PipeCommand.Error, ExceptionPayload.Create(ex));
+                    TryWriteMessage(message);
+                }
             }
 
             _logger.LogDebug("Connection Closed.");
+        }
+
+        private async Task OnReceive(PipeMessage message, CancellationToken cancellationToken = default)
+        {
+            switch (message.Command)
+            {
+                case PipeCommand.Stop:
+                    await StopNeoSystemNodeAsync();
+                    break;
+                default:
+                    break;
+            }
         }
 
         private PipeMessage? TryReadMessage()
@@ -108,6 +135,7 @@ namespace Neo.Service.Pipes
             {
                 ex = ex.InnerException ?? ex;
                 _logger.LogDebug("{Exception}: {Message}", ex.GetType().Name, ex.Message);
+                throw ex;
             }
         }
     }

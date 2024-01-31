@@ -20,17 +20,17 @@ namespace Neo.Service.Pipes
     internal sealed class PipeMessage : ISerializable
     {
         public static int HeaderSize =>
-            sizeof(PipeMessageCommand) +
+            sizeof(PipeCommand) +
             sizeof(int);
 
-        public PipeMessageCommand Command { get; private set; }
+        public PipeCommand Command { get; private set; }
         public ISerializable? Payload { get; private set; }
 
         public int Size =>
-            sizeof(PipeMessageCommand) +
+            sizeof(PipeCommand) +
             (Payload is null ? 0 : Payload.Size);
 
-        public static PipeMessage Create(PipeMessageCommand command, ISerializable message) =>
+        public static PipeMessage Create(PipeCommand command, ISerializable message) =>
             new()
             {
                 Command = command,
@@ -42,7 +42,7 @@ namespace Neo.Service.Pipes
             using var reader = new BinaryReader(stream, Encoding.UTF8, true);
             var message = new PipeMessage()
             {
-                Command = (PipeMessageCommand)reader.ReadByte(),
+                Command = (PipeCommand)reader.ReadByte(),
             };
 
             var size = reader.ReadInt32();
@@ -54,7 +54,7 @@ namespace Neo.Service.Pipes
 
             switch (message.Command)
             {
-                case PipeMessageCommand.Version:
+                case PipeCommand.Version:
                     message.Payload = data.AsSerializable<PipeVersionPayload>();
                     break;
                 default:
