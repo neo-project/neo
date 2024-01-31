@@ -15,6 +15,7 @@ using Neo.IO;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
@@ -32,9 +33,28 @@ namespace Neo.Service
         [GeneratedRegex("\\d+")]
         private static partial Regex ImportBlockchainRegexMatch();
 
-        private async Task StartImportAsync(bool verify, CancellationToken cancellationToken)
+        internal async Task StopImportBlocksAsync()
+        {
+
+            if (_importBlocksTask is not null)
+            {
+                _importBlocksTokenSource?.Cancel();
+                await _importBlocksTask;
+                _logger.LogInformation("Stopped importing blocks.");
+            }
+
+            _importBlocksTokenSource?.Dispose();
+            _importBlocksTokenSource = null;
+        }
+
+        private async Task ImportThenStartNeoSystemAsync(bool verify, CancellationToken cancellationToken)
         {
             if (_neoSystem is null) return;
+            if (_appSettings.Storage.Engine == nameof(MemoryStore))
+            {
+                await StartNeoSystemAsync(cancellationToken);
+                return;
+            }
 
             _logger.LogInformation("Started importing blocks.");
 
