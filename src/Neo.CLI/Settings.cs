@@ -72,6 +72,7 @@ namespace Neo
             P2P = new P2PSettings();
             UnlockWallet = new UnlockWalletSettings();
             Contracts = new ContractsSettings();
+            Plugins = new PluginsSettings();
         }
     }
 
@@ -164,9 +165,9 @@ namespace Neo
 
     public class PluginsSettings
     {
-        public Uri DownloadUrl { get; } = new("https://api.github.com/repos/neo-project/neo-modules/releases");
-        public bool Prerelease { get; } = false;
-        public Version Version { get; } = Assembly.GetExecutingAssembly().GetName().Version!;
+        public Uri DownloadUrl { get; init; } = new("https://api.github.com/repos/neo-project/neo-modules/releases");
+        public bool Prerelease { get; init; } = false;
+        public Version Version { get; init; } = Assembly.GetExecutingAssembly().GetName().Version!;
 
         public PluginsSettings(IConfigurationSection section)
         {
@@ -179,5 +180,7 @@ namespace Neo
 #endif
             }
         }
+
+        public PluginsSettings() { }
     }
 }
