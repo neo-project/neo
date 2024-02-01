@@ -103,7 +103,7 @@ namespace Neo
         /// <summary>
         /// The default protocol settings for NEO MainNet.
         /// </summary>
-        public static ProtocolSettings Default { get; } = new ProtocolSettings
+        public static ProtocolSettings Default { get; } = Custom ?? new ProtocolSettings
         {
             Network = 0u,
             AddressVersion = 0x35,
@@ -117,6 +117,8 @@ namespace Neo
             InitialGasDistribution = 52_000_000_00000000,
             Hardforks = ImmutableDictionary<Hardfork, uint>.Empty
         };
+
+        public static ProtocolSettings? Custom { get; set; }
 
         /// <summary>
         /// Loads the <see cref="ProtocolSettings"/> at the specified path.
