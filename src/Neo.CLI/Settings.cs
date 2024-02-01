@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
 using Neo.Persistence;
 using System;
+using System.Reflection;
 using System.Threading;
 
 namespace Neo
@@ -24,6 +25,7 @@ namespace Neo
         public P2PSettings P2P { get; init; }
         public UnlockWalletSettings UnlockWallet { get; init; }
         public ContractsSettings Contracts { get; init; }
+        public PluginsSettings Plugins { get; init; }
 
         static Settings? s_default;
 
@@ -60,6 +62,7 @@ namespace Neo
             Storage = new(section.GetSection(nameof(Storage)));
             P2P = new(section.GetSection(nameof(P2P)));
             UnlockWallet = new(section.GetSection(nameof(UnlockWallet)));
+            Plugins = new(section.GetSection(nameof(Plugins)));
         }
 
         public Settings()
@@ -69,6 +72,7 @@ namespace Neo
             P2P = new P2PSettings();
             UnlockWallet = new UnlockWalletSettings();
             Contracts = new ContractsSettings();
+            Plugins = new PluginsSettings();
         }
     }
 
@@ -157,5 +161,26 @@ namespace Neo
         }
 
         public ContractsSettings() { }
+    }
+
+    public class PluginsSettings
+    {
+        public Uri DownloadUrl { get; init; } = new("https://api.github.com/repos/neo-project/neo-modules/releases");
+        public bool Prerelease { get; init; } = false;
+        public Version Version { get; init; } = Assembly.GetExecutingAssembly().GetName().Version!;
+
+        public PluginsSettings(IConfigurationSection section)
+        {
+            if (section.Exists())
+            {
+                DownloadUrl = section.GetValue(nameof(DownloadUrl), DownloadUrl)!;
+#if DEBUG
+                Prerelease = section.GetValue(nameof(Prerelease), Prerelease);
+                Version = section.GetValue(nameof(Version), Version)!;
+#endif
+            }
+        }
+
+        public PluginsSettings() { }
     }
 }
