@@ -68,6 +68,7 @@ namespace Neo
             Storage = new StorageSettings();
             P2P = new P2PSettings();
             UnlockWallet = new UnlockWalletSettings();
+            Contracts = new ContractsSettings();
         }
     }
 
@@ -140,7 +141,7 @@ namespace Neo
 
     public class ContractsSettings
     {
-        public UInt160 NeoNameService { get; } = UInt160.Zero;
+        public UInt160 NeoNameService { get; init; } = UInt160.Zero;
 
         public ContractsSettings(IConfigurationSection section)
         {
@@ -154,5 +155,7 @@ namespace Neo
                     throw new ArgumentException("Neo Name Service (NNS): NeoNameService hash is invalid. Check your config.json.", nameof(NeoNameService));
             }
         }
+
+        public ContractsSettings() { }
     }
 }
