@@ -34,7 +34,7 @@ namespace Neo.Service
 
         private NeoSystem? _neoSystem;
         private LocalNode? _localNode;
-        private Task? _importBlocksTask;
+        private readonly Task? _importBlocksTask;
         private CancellationTokenSource? _importBlocksTokenSource;
 
         public NodeService(
