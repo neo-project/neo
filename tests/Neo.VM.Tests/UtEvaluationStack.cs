@@ -202,7 +202,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        public void TestPrint()
+        public void UT_TestPrint()
         {
             var stack = new EvaluationStack(new ReferenceCounter());
 
