@@ -34,12 +34,7 @@ namespace Neo.VM
                 value = StrictUTF8.GetString(byteArray);
                 return true;
             }
-            catch (DecoderFallbackException)
-            {
-                value = default;
-                return false;
-            }
-            catch (ArgumentException)
+            catch
             {
                 value = default;
                 return false;
