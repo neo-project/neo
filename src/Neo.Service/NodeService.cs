@@ -34,7 +34,7 @@ namespace Neo.Service
 
         private NeoSystem? _neoSystem;
         private LocalNode? _localNode;
-        private readonly Task? _importBlocksTask;
+        private Task? _importBlocksTask;
         private CancellationTokenSource? _importBlocksTokenSource;
 
         public NodeService(
@@ -69,7 +69,7 @@ namespace Neo.Service
         {
             await CreateNeoSystemAsync(stoppingToken);
             _importBlocksTokenSource ??= CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-            _ = ImportThenStartNeoSystemAsync(_appSettings.Storage.Import.Verify, _importBlocksTokenSource.Token);
+            _importBlocksTask = ImportThenStartNeoSystemAsync(_appSettings.Storage.Import.Verify, _importBlocksTokenSource.Token);
 
             await _namedPipeService.StartAsync(_appSettings.NamedPipe.Instances, stoppingToken); // Block Thread and Listen
 
