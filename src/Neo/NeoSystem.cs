@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
+using static Neo.Network.P2P.RemoteNode;
 
 namespace Neo
 {
@@ -206,6 +207,16 @@ namespace Neo
             inbox.Watch(actor);
             ActorSystem.Stop(actor);
             inbox.Receive(TimeSpan.FromMinutes(5));
+        }
+
+        /// <summary>
+        /// Loads an <see cref="IStore"/> at the specified path.
+        /// </summary>
+        /// <param name="path">The path of the storage.</param>
+        /// <returns>The loaded <see cref="IStore"/>.</returns>
+        public IStore LoadStore(string path)
+        {
+            return StoreFactory.GetStore(store.GetType().Name, path);
         }
 
         /// <summary>
