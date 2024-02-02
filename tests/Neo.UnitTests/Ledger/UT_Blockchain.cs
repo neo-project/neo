@@ -48,6 +48,12 @@ namespace Neo.UnitTests.Ledger
             system.MemPool.TryAdd(txSample, TestBlockchain.GetTestSnapshot());
         }
 
+        [TestCleanup]
+        public void Clean()
+        {
+            TestBlockchain.ResetStore();
+        }
+
         [TestMethod]
         public void TestValidTransaction()
         {
@@ -113,7 +119,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestMaliciousOnChainConflict()
         {
-            var snapshot = TestBlockchain.TheNeoSystem.GetSnapshot();
+            using var snapshot = TestBlockchain.TheNeoSystem.GetSnapshot();
             var walletA = TestUtils.GenerateTestWallet("123");
             var accA = walletA.CreateAccount();
             var walletB = TestUtils.GenerateTestWallet("456");
