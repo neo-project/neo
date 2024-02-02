@@ -24,7 +24,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
-using static Neo.Network.P2P.RemoteNode;
 
 namespace Neo
 {
