@@ -66,7 +66,7 @@ namespace Neo.Persistence
             return innerData.ContainsKey(key);
         }
 
-        internal void Clean()
+        internal void Clear()
         {
             innerData.Clear();
         }
