@@ -648,8 +648,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void TestReVerifyTopUnverifiedTransactionsIfNeeded()
         {
-            var store = new MemoryStore();
-            _unit = new MemoryPool(new NeoSystem(TestProtocolSettings.Default with { MemoryPoolMaxTransactions = 600 }, store));
+            _unit = new MemoryPool(new NeoSystem(TestProtocolSettings.Default with { MemoryPoolMaxTransactions = 600 }, new MemoryStore()));
 
             AddTransaction(CreateTransaction(100000001));
             AddTransaction(CreateTransaction(100000001));

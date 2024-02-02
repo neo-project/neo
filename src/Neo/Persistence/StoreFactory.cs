@@ -25,7 +25,13 @@ public static class StoreFactory
 
     static StoreFactory()
     {
-        RegisterProvider(new MemoryStoreProvider());
+        var memProvider = new MemoryStoreProvider();
+        RegisterProvider(memProvider);
+
+        // Default cases
+
+        providers.Add("", memProvider);
+        providers.Add(null, memProvider);
     }
 
     public static void RegisterProvider(IStoreProvider provider)
