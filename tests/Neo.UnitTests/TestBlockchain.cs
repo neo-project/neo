@@ -30,7 +30,7 @@ namespace Neo.UnitTests
 
         internal static void ResetStore()
         {
-            Store.Clear();
+            Store.Reset();
             TheNeoSystem.Blockchain.Ask(new Blockchain.Initialize()).Wait();
         }
 
