@@ -22,7 +22,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -30,9 +29,6 @@ namespace Neo.Service
 {
     internal partial class NodeService
     {
-        [GeneratedRegex("\\d+")]
-        private static partial Regex ImportBlockchainRegexMatch();
-
         internal async Task StopImportBlocksAsync()
         {
 
@@ -116,8 +112,8 @@ namespace Neo.Service
                 .Select(p => new
                 {
                     FileName = Path.GetFileName(p),
-                    Start = uint.Parse(ImportBlockchainRegexMatch().Match(p).Value),
-                    IsCompressed = p.EndsWith(".zip")
+                    Start = uint.Parse(RegexUtility.SearchNumbersOnly().Match(p).Value),
+                    IsCompressed = Path.GetExtension(p).Equals(".zip", StringComparison.InvariantCultureIgnoreCase)
                 }).OrderBy(p => p.Start);
 
             if (paths.Any() == false) yield break;
@@ -126,7 +122,7 @@ namespace Neo.Service
 
             foreach (var path in paths)
             {
-                if (path.Start > height + 1) break;
+                if (path.Start > height + 1u) break;
                 if (path.IsCompressed)
                 {
                     using var fs = new FileStream(path.FileName, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -149,9 +145,9 @@ namespace Neo.Service
         private IEnumerable<Block> GetBlocks(Stream stream, bool read_start = false)
         {
             using var r = new BinaryReader(stream);
-            var start = read_start ? r.ReadUInt32() : 0;
+            var start = read_start ? r.ReadUInt32() : 0u;
             var count = r.ReadUInt32();
-            var end = start + count - 1;
+            var end = start + count - 1u;
             var currentHeight = NativeContract.Ledger.CurrentIndex(_neoSystem?.StoreView);
             if (end <= currentHeight) yield break;
             for (var height = start; height <= end; height++)
@@ -167,8 +163,8 @@ namespace Neo.Service
                 if (height > currentHeight)
                 {
                     var block = array.AsSerializable<Block>();
-                    if (block.Index % 10000 == 0) // every 10,000 blocks; report!
-                        _logger.LogInformation("Imported block index {Index}", block.Index);
+                    if (block.Index % 10000u == 0u) // every 10,000 blocks; report!
+                        _logger.LogInformation("Imported block {Index}.", block.Index);
                     yield return block;
                 }
             }

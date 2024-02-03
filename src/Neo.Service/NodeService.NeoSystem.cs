@@ -24,6 +24,10 @@ namespace Neo.Service
     {
         internal async Task StartNeoSystemAsync(CancellationToken cancellationToken = default)
         {
+            if (_importBlocksTokenSource is not null &&
+                _importBlocksTokenSource.IsCancellationRequested)
+                throw new ApplicationException("Import process is running.");
+
             if (_neoSystem is null)
                 await CreateNeoSystemAsync(cancellationToken);
 
@@ -46,8 +50,10 @@ namespace Neo.Service
             return Task.CompletedTask;
         }
 
-        private async Task CreateNeoSystemAsync(CancellationToken cancellationToken)
+        private async Task CreateNeoSystemAsync(CancellationToken cancellationToken = default)
         {
+            if (cancellationToken.IsCancellationRequested) return;
+
             string? storagePath = null;
             if (string.IsNullOrEmpty(_appSettings.Storage.Path) == false)
             {

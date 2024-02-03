@@ -13,7 +13,7 @@ using Neo.IO;
 using System;
 using System.IO;
 
-namespace Neo.Service.Pipes.Payloads
+namespace Neo.Service.IO.Pipes.Payloads
 {
     public class ExceptionPayload : ISerializable
     {

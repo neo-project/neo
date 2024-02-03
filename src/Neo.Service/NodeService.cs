@@ -14,7 +14,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Neo.Ledger;
 using Neo.Network.P2P;
-using Neo.Service.Pipes;
+using Neo.Service.IO.Pipes;
 using Neo.SmartContract;
 using System;
 using System.Threading;

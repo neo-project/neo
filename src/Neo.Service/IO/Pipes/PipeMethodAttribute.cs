@@ -11,7 +11,7 @@
 
 using System;
 
-namespace Neo.Service.Pipes
+namespace Neo.Service.IO.Pipes
 {
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     internal class PipeMethodAttribute : Attribute, IEquatable<PipeMethodAttribute>

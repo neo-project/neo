@@ -11,7 +11,8 @@
 
 using Microsoft.Extensions.Logging;
 using Neo.IO;
-using Neo.Service.Pipes.Payloads;
+using Neo.Service.IO.Pipes;
+using Neo.Service.IO.Pipes.Payloads;
 using System;
 using System.IO;
 using System.IO.Pipes;

@@ -9,8 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Service.Pipes;
-using Neo.Service.Pipes.Payloads;
+using Neo.Service.IO.Pipes;
+using Neo.Service.IO.Pipes.Payloads;
 using System.IO.Pipes;
 
 namespace Neo.Service.Tests

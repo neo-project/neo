@@ -10,12 +10,13 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Logging;
+using Neo.Service.Pipes;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Service.Pipes
+namespace Neo.Service.IO.Pipes
 {
     internal sealed class NamedPipeService : IDisposable
     {
@@ -46,7 +47,7 @@ namespace Neo.Service.Pipes
             ShutdownServers();
         }
 
-        public async Task StartAsync(int maxAllowConnections, CancellationToken cancellationToken)
+        public async Task StartAsync(int maxAllowConnections, CancellationToken cancellationToken = default)
         {
             for (var i = 1; i < maxAllowConnections; i++)
                 await CreateNewServer(cancellationToken);
@@ -79,7 +80,7 @@ namespace Neo.Service.Pipes
             _logger.LogInformation("Shutdown complete.");
         }
 
-        private async Task WaitAsync(CancellationToken cancellationToken)
+        private async Task WaitAsync(CancellationToken cancellationToken = default)
         {
             if (_periodicTimer is null) return;
 
@@ -100,10 +101,6 @@ namespace Neo.Service.Pipes
                 }
                 await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
             }
-
-            _logger.LogDebug("Shutting down...");
-
-            ShutdownServers();
         }
     }
 }

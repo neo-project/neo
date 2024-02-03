@@ -10,12 +10,12 @@
 // modifications are permitted.
 
 using Neo.IO;
-using Neo.Service.Pipes.Payloads;
+using Neo.Service.IO.Pipes.Payloads;
 using System;
 using System.IO;
 using System.Text;
 
-namespace Neo.Service.Pipes
+namespace Neo.Service.IO.Pipes
 {
     internal sealed class PipeMessage : ISerializable
     {

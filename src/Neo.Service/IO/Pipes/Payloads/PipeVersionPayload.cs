@@ -14,7 +14,7 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 
-namespace Neo.Service.Pipes.Payloads
+namespace Neo.Service.IO.Pipes.Payloads
 {
     internal sealed class PipeVersionPayload : ISerializable, IEquatable<PipeVersionPayload>
     {

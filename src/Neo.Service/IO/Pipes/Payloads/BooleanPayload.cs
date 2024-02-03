@@ -12,7 +12,7 @@
 using Neo.IO;
 using System.IO;
 
-namespace Neo.Service.Pipes.Payloads
+namespace Neo.Service.IO.Pipes.Payloads
 {
     internal sealed class BooleanPayload : ISerializable
     {
