@@ -55,12 +55,12 @@ namespace Neo.Service.Pipes
         {
             if (_neoPipeStream is null) throw new NullReferenceException();
 
-            _logger.LogDebug("Waiting for connections.");
+            _logger.LogDebug("Waiting for connection.");
             await _neoPipeStream.WaitForConnectionAsync(cancellationToken);
 
             if (_neoPipeStream is null || cancellationToken.IsCancellationRequested) return;
 
-            _logger.LogDebug("New client connection.");
+            _logger.LogDebug("Client connected.");
             TryWriteMessage(PipeMessage.Create(PipeCommand.Version, _versionProtocol));
 
             while (_neoPipeStream != null &&
@@ -80,7 +80,7 @@ namespace Neo.Service.Pipes
                 }
             }
 
-            _logger.LogDebug("Connection Closed.");
+            _logger.LogDebug("Connection closed.");
         }
 
         private async Task OnReceive(PipeMessage message, CancellationToken cancellationToken = default)
@@ -108,14 +108,14 @@ namespace Neo.Service.Pipes
             }
             catch (EndOfStreamException) // Connection lost of closed
             {
-                return null;
+                return default;
             }
             catch (Exception ex)
             {
                 ex = ex.InnerException ?? ex;
-                _logger.LogDebug("{Exception}: {Message}", ex.GetType().Name, ex.Message);
-                throw ex;
+                _logger.LogError("{Exception}: {Message}", ex.GetType().Name, ex.Message);
             }
+            return default;
         }
 
         private void TryWriteMessage(PipeMessage message)
@@ -135,8 +135,7 @@ namespace Neo.Service.Pipes
             catch (Exception ex)
             {
                 ex = ex.InnerException ?? ex;
-                _logger.LogDebug("{Exception}: {Message}", ex.GetType().Name, ex.Message);
-                throw ex;
+                _logger.LogError("{Exception}: {Message}", ex.GetType().Name, ex.Message);
             }
         }
     }

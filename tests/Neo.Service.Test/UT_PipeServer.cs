@@ -53,10 +53,10 @@ namespace Neo.Service.Tests
             return Task.CompletedTask;
         }
 
-        public Task DisposeAsync()
+        public async Task DisposeAsync()
         {
             _pipeServer?.Dispose();
-            return _pipeServerTask!;
+            await _pipeServerTask!;
         }
     }
 }
