@@ -18,7 +18,7 @@ namespace Neo;
 
 static class Benchmarks
 {
-    private static readonly ProtocolSettings protocol = ProtocolSettings.Default;
+    private static readonly ProtocolSettings protocol = ProtocolSettings.Load("config.json");
     private static readonly NeoSystem system = new(protocol);
 
     public static void NeoIssue2725()

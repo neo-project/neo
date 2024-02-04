@@ -327,9 +327,16 @@ namespace Neo.SmartContract
         /// <param name="state">The message of the log.</param>
         protected internal void RuntimeLog(byte[] state)
         {
-            if (state.Length > MaxNotificationSize) throw new ArgumentException(null, nameof(state));
-            string message = Utility.StrictUTF8.GetString(state);
-            Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash, message));
+            if (state.Length > MaxNotificationSize) throw new ArgumentException("Message is too long.", nameof(state));
+            try
+            {
+                string message = Utility.StrictUTF8.GetString(state);
+                Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash, message));
+            }
+            catch
+            {
+                throw new ArgumentException("Failed to convert byte array to string: Invalid or non-printable UTF-8 sequence detected.", nameof(state));
+            }
         }
 
         /// <summary>
