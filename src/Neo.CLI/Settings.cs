@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
 using Neo.Persistence;
 using System;
+using System.Reflection;
 using System.Threading;
 
 namespace Neo
@@ -23,8 +24,12 @@ namespace Neo
         public StorageSettings Storage { get; }
         public P2PSettings P2P { get; }
         public UnlockWalletSettings UnlockWallet { get; }
-        public string[] Plugins { get; } = Array.Empty<string>();
-        public ContractsSettings Contracts { get; }
+        public LoggerSettings Logger { get; init; }
+        public StorageSettings Storage { get; init; }
+        public P2PSettings P2P { get; init; }
+        public UnlockWalletSettings UnlockWallet { get; init; }
+        public ContractsSettings Contracts { get; init; }
+        public PluginsSettings Plugins { get; init; }
 
         static Settings? s_default;
 
@@ -48,10 +53,11 @@ namespace Neo
                     var config = new ConfigurationBuilder().AddJsonFile("config.json", optional: true).Build();
                     Initialize(config);
                 }
-
-                return s_default!;
+                return Custom ?? s_default!;
             }
         }
+
+        public static Settings? Custom { get; set; }
 
         public Settings(IConfigurationSection section)
         {
@@ -60,15 +66,25 @@ namespace Neo
             Storage = new(section.GetSection(nameof(Storage)));
             P2P = new(section.GetSection(nameof(P2P)));
             UnlockWallet = new(section.GetSection(nameof(UnlockWallet)));
-            this.Plugins = section.GetSection("Plugins").Get<string[]>() ?? Array.Empty<string>();
+            Plugins = new(section.GetSection(nameof(Plugins)));
+        }
+
+        public Settings()
+        {
+            Logger = new LoggerSettings();
+            Storage = new StorageSettings();
+            P2P = new P2PSettings();
+            UnlockWallet = new UnlockWalletSettings();
+            Contracts = new ContractsSettings();
+            Plugins = new PluginsSettings();
         }
     }
 
     public class LoggerSettings
     {
-        public string Path { get; }
-        public bool ConsoleOutput { get; }
-        public bool Active { get; }
+        public string Path { get; init; } = string.Empty;
+        public bool ConsoleOutput { get; init; }
+        public bool Active { get; init; }
 
         public LoggerSettings(IConfigurationSection section)
         {
@@ -76,18 +92,22 @@ namespace Neo
             ConsoleOutput = section.GetValue(nameof(ConsoleOutput), false);
             Active = section.GetValue(nameof(Active), false);
         }
+
+        public LoggerSettings() { }
     }
 
     public class StorageSettings
     {
-        public string Engine { get; } = nameof(MemoryStore);
-        public string Path { get; } = string.Empty;
+        public string Engine { get; init; } = nameof(MemoryStore);
+        public string Path { get; init; } = string.Empty;
 
         public StorageSettings(IConfigurationSection section)
         {
             Engine = section.GetValue(nameof(Engine), nameof(MemoryStore))!;
             Path = section.GetValue(nameof(Path), string.Empty)!;
         }
+
+        public StorageSettings() { }
     }
 
     public class P2PSettings
@@ -104,13 +124,15 @@ namespace Neo
             MaxConnections = section.GetValue(nameof(MaxConnections), Peer.DefaultMaxConnections);
             MaxConnectionsPerAddress = section.GetValue(nameof(MaxConnectionsPerAddress), 3);
         }
+
+        public P2PSettings() { }
     }
 
     public class UnlockWalletSettings
     {
-        public string Path { get; } = string.Empty;
-        public string Password { get; } = string.Empty;
-        public bool IsActive { get; } = false;
+        public string? Path { get; init; } = string.Empty;
+        public string? Password { get; init; } = string.Empty;
+        public bool IsActive { get; init; } = false;
 
         public UnlockWalletSettings(IConfigurationSection section)
         {
@@ -121,11 +143,13 @@ namespace Neo
                 IsActive = section.GetValue(nameof(IsActive), false);
             }
         }
+
+        public UnlockWalletSettings() { }
     }
 
     public class ContractsSettings
     {
-        public UInt160 NeoNameService { get; } = UInt160.Zero;
+        public UInt160 NeoNameService { get; init; } = UInt160.Zero;
 
         public ContractsSettings(IConfigurationSection section)
         {
@@ -139,5 +163,28 @@ namespace Neo
                     throw new ArgumentException("Neo Name Service (NNS): NeoNameService hash is invalid. Check your config.json.", nameof(NeoNameService));
             }
         }
+
+        public ContractsSettings() { }
+    }
+
+    public class PluginsSettings
+    {
+        public Uri DownloadUrl { get; init; } = new("https://api.github.com/repos/neo-project/neo-modules/releases");
+        public bool Prerelease { get; init; } = false;
+        public Version Version { get; init; } = Assembly.GetExecutingAssembly().GetName().Version!;
+
+        public PluginsSettings(IConfigurationSection section)
+        {
+            if (section.Exists())
+            {
+                DownloadUrl = section.GetValue(nameof(DownloadUrl), DownloadUrl)!;
+#if DEBUG
+                Prerelease = section.GetValue(nameof(Prerelease), Prerelease);
+                Version = section.GetValue(nameof(Version), Version)!;
+#endif
+            }
+        }
+
+        public PluginsSettings() { }
     }
 }
