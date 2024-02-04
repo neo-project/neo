@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
 using Neo.Persistence;
 using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 
@@ -20,10 +21,6 @@ namespace Neo
 {
     public class Settings
     {
-        public LoggerSettings Logger { get; }
-        public StorageSettings Storage { get; }
-        public P2PSettings P2P { get; }
-        public UnlockWalletSettings UnlockWallet { get; }
         public LoggerSettings Logger { get; init; }
         public StorageSettings Storage { get; init; }
         public P2PSettings P2P { get; init; }
@@ -173,11 +170,14 @@ namespace Neo
         public bool Prerelease { get; init; } = false;
         public Version Version { get; init; } = Assembly.GetExecutingAssembly().GetName().Version!;
 
+        public string?[] Install { get; init; } = Array.Empty<string>();
+
         public PluginsSettings(IConfigurationSection section)
         {
             if (section.Exists())
             {
                 DownloadUrl = section.GetValue(nameof(DownloadUrl), DownloadUrl)!;
+                Install = section.GetSection(nameof(Install)).GetChildren().Select(p => p.Value).ToArray();
 #if DEBUG
                 Prerelease = section.GetValue(nameof(Prerelease), Prerelease);
                 Version = section.GetValue(nameof(Version), Version)!;

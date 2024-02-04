@@ -376,7 +376,7 @@ namespace Neo.CLI
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
 
             // install configured plugins
-            Settings.Default.Plugins?.Where(p => !string.IsNullOrEmpty(p)).ToList().ForEach(p => InstallPluginAsync(p).GetAwaiter().GetResult());
+            Settings.Default.Plugins.Install.Where(p => !string.IsNullOrEmpty(p)).ToList().ForEach(p => InstallPluginAsync(p).GetAwaiter().GetResult());
 
             CustomProtocolSettings(options, protocol);
             CustomApplicationSettings(options, Settings.Default);

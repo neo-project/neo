@@ -24,7 +24,8 @@
       "NeoNameService": "0x50ac1c37690cc2cfc594472833cf57505d5f46de"
     },
     "Plugins": {
-      "DownloadUrl": "https://api.github.com/repos/neo-project/neo-modules/releases"
+      "DownloadUrl": "https://api.github.com/repos/neo-project/neo-modules/releases",
+      "Install": ["LevelDBStore"]
     }
   },
   "ProtocolConfiguration": {
