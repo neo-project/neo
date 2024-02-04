@@ -35,6 +35,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using Array = System.Array;
 
 namespace Neo.CLI
@@ -347,7 +348,8 @@ namespace Neo.CLI
         public override void OnStart(string[] args)
         {
             base.OnStart(args);
-            Start(args);
+            OnStartWithCommandLine(args);
+
         }
 
         public override void OnStop()
@@ -366,26 +368,25 @@ namespace Neo.CLI
             CurrentWallet = Wallet.Open(path, password, NeoSystem.Settings) ?? throw new NotSupportedException();
         }
 
-        public async void Start(string[] args)
+        public async void Start(CommandLineOptions options)
         {
             if (NeoSystem != null) return;
-            bool verifyImport = true;
-            for (int i = 0; i < args.Length; i++)
-                switch (args[i])
-                {
-                    case "/noverify":
-                    case "--noverify":
-                        verifyImport = false;
-                        break;
-                }
+            bool verifyImport = !(options.NoVerify ?? false);
 
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
-
+            CustomProtocolSettings(options, protocol);
+            CustomApplicationSettings(options, Settings.Default);
             NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
             NeoSystem.AddService(this);
 
             LocalNode = NeoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
 
+            // installing plugins
+            var installTasks = options.Plugins?.Select(p => p).Where(p => !string.IsNullOrEmpty(p)).ToList().Select(p => InstallPluginAsync(p));
+            if (installTasks is not null)
+            {
+                await Task.WhenAll(installTasks);
+            }
             foreach (var plugin in Plugin.Plugins)
             {
                 // Register plugins commands
