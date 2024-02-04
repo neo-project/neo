@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// UtUtility.cs file belongs to the neo project and is free
+// UT_Utility.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -17,10 +17,10 @@ using System.Numerics;
 namespace Neo.Test
 {
     [TestClass]
-    public class UtUtility
+    public class UT_Utility
     {
         [TestMethod]
-        public void SqrtTest()
+        public void TestSqrtTest()
         {
             Assert.ThrowsException<InvalidOperationException>(() => BigInteger.MinusOne.Sqrt());
 
@@ -33,7 +33,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        public void ModInverseTest()
+        public void TestModInverseTest()
         {
             Assert.ThrowsException<ArgumentOutOfRangeException>(() => BigInteger.One.ModInverse(BigInteger.Zero));
             Assert.ThrowsException<ArgumentOutOfRangeException>(() => BigInteger.One.ModInverse(BigInteger.One));

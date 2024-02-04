@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// UtStackItem.cs file belongs to the neo project and is free
+// UT_StackItem.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -17,10 +17,10 @@ using System.Numerics;
 namespace Neo.Test
 {
     [TestClass]
-    public class UtStackItem
+    public class UT_StackItem
     {
         [TestMethod]
-        public void HashCodeTest()
+        public void TestHashCodeTest()
         {
             StackItem itemA = "NEO";
             StackItem itemB = "NEO";
@@ -80,7 +80,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        public void NullTest()
+        public void TestNullTest()
         {
             StackItem nullItem = System.Array.Empty<byte>();
             Assert.AreNotEqual(StackItem.Null, nullItem);
@@ -90,7 +90,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        public void EqualTest()
+        public void TestEqualTest()
         {
             StackItem itemA = "NEO";
             StackItem itemB = "NEO";
@@ -106,7 +106,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        public void CastTest()
+        public void TestCastTest()
         {
             // Signed byte
 
@@ -187,7 +187,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        public void DeepCopyTest()
+        public void TestDeepCopyTest()
         {
             Array a = new()
             {
