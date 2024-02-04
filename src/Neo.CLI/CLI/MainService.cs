@@ -347,10 +347,11 @@ namespace Neo.CLI
             }
         }
 
-        public override async Task OnStartAsync(string[] args)
+        public override Task OnStartAsync(string[] args)
         {
-            base.OnStart(args);
+            base.OnStartAsync(args).GetAwaiter().GetResult();
             OnStartWithCommandLine(args);
+            return Task.CompletedTask;
         }
 
         public override void OnStop()
