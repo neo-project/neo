@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using Neo.IO;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 
@@ -21,16 +20,16 @@ namespace Neo.Service.IO
         public uint MagicCode { get; } = 0x48435241; // ARCH
         public uint Version { get; } = 0x00000001;
         public uint Network { get; private set; }
-        public IReadOnlyDictionary<uint, BlockItem> BlockTable => _blockTable;
+        public IReadOnlyDictionary<uint, ArchiveBlockTableItem> BlockTable => _blockTable;
 
-        private readonly ConcurrentDictionary<uint, BlockItem> _blockTable = new();
+        private readonly Dictionary<uint, ArchiveBlockTableItem> _blockTable = new();
 
         public int Size =>
             sizeof(uint) +                                          // Magic Code
             sizeof(uint) +                                          // Version
             sizeof(uint) +                                          // Neo Network
             sizeof(int) +                                           // Size of Blocks List
-            ((sizeof(uint) + BlockItem.Length) * _blockTable.Count);  // Neo Blocks SHA Checksums
+            ((sizeof(uint) + ArchiveBlockTableItem.Length) * _blockTable.Count);  // Neo Blocks SHA Checksums
 
         public static ArchiveManifestFile Create(uint network) =>
             new()
@@ -39,13 +38,13 @@ namespace Neo.Service.IO
             };
 
         public void AddOrUpdateBlockEntry(uint blockIndex, ulong checksum, int size) =>
-            _blockTable[blockIndex] = BlockItem.Create(checksum, size);
+            _blockTable[blockIndex] = ArchiveBlockTableItem.Create(checksum, size);
 
-        public void AddOrUpdateBlockEntry(uint blockIndex, BlockItem blockItem) =>
+        public void AddOrUpdateBlockEntry(uint blockIndex, ArchiveBlockTableItem blockItem) =>
             _blockTable[blockIndex] = blockItem;
 
         public void RemoveBlockEntry(uint blockIndex) =>
-            _blockTable.TryRemove(blockIndex, out var _);
+            _blockTable.Remove(blockIndex, out var _);
 
         public void Deserialize(ref MemoryReader reader)
         {
@@ -58,7 +57,7 @@ namespace Neo.Service.IO
             for (var i = 0u; i < size; i++)
             {
                 var blockIndex = reader.ReadUInt32();
-                var blockItem = new BlockItem();
+                var blockItem = new ArchiveBlockTableItem();
                 blockItem.Deserialize(ref reader);
                 AddOrUpdateBlockEntry(blockIndex, blockItem);
             }
@@ -69,7 +68,7 @@ namespace Neo.Service.IO
             writer.Write(MagicCode);
             writer.Write(Version);
             writer.Write(Network);
-            writer.Write(BlockTable.Count);
+            writer.Write(_blockTable.Count);
 
             foreach (var item in _blockTable)
             {
@@ -79,7 +78,7 @@ namespace Neo.Service.IO
         }
     }
 
-    internal sealed class BlockItem : ISerializable
+    internal sealed class ArchiveBlockTableItem : ISerializable
     {
         public static int Length { get; } = sizeof(ulong) + sizeof(int);
 
@@ -90,7 +89,7 @@ namespace Neo.Service.IO
             sizeof(ulong) + // Checksum
             sizeof(int);    // FileSize
 
-        public static BlockItem Create(ulong checksum, int fileSize) =>
+        public static ArchiveBlockTableItem Create(ulong checksum, int fileSize) =>
             new()
             {
                 Checksum = checksum,

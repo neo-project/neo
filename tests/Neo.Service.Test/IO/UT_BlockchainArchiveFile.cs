@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Network.P2P.Payloads;
 using Neo.Service.IO;
 using Neo.Service.Tests.Helpers;
 using System;
@@ -37,24 +36,31 @@ namespace Neo.Service.Tests.IO
             return Task.CompletedTask;
         }
 
-        [Fact]
-        public void Test_Write_Block()
+        [Theory]
+        [InlineData(1u)]
+        [InlineData(2u)]
+        [InlineData(3u)]
+        [InlineData(4u)]
+        [InlineData(uint.MaxValue)]
+        public void Test_Write_Block(uint blockIndex)
         {
-            var randomBlock = UT_Builder.CreateRandomFilledBlock(1u);
-            var result = Record.Exception(() => _blockchainFile?.Write(randomBlock));
+            Assert.NotNull(_blockchainFile);
+
+            var randomBlock = UT_Utilities.CreateRandomFilledBlock(blockIndex);
+            var result = Record.Exception(() => _blockchainFile.Write(randomBlock));
             Assert.Null(result);
         }
 
         [Fact]
         public void Test_Read_Block()
         {
-            Block? block = null;
-            var result = Record.Exception(() => block = _blockchainFile?.Read(0u));
+            Assert.NotNull(_blockchainFile);
 
-            Assert.Null(result);
-            Assert.NotNull(block);
-            Assert.Equal(0u, block.Index);
-            Assert.Equal(UInt256.Zero, block.MerkleRoot);
+            var blockResult = _blockchainFile.Read(0u);
+
+            Assert.NotNull(blockResult);
+            Assert.Equal(0u, blockResult.Index);
+            Assert.Equal(UInt256.Zero, blockResult.MerkleRoot);
         }
     }
 }
