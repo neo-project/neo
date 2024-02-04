@@ -6,8 +6,8 @@
       "Active": false
     },
     "Storage": {
-      "Engine": "LevelDBStore",
-      "Path": "Data_LevelDB_{0}"
+      "Engine": "LevelDBStore", // Candidates [MemoryStore, LevelDBStore, RocksDBStore]
+      "Path": "Data_LevelDB_{0}" // {0} is a placeholder for the network id
     },
     "P2P": {
       "Port": 40333,
@@ -22,6 +22,9 @@
     },
     "Contracts": {
       "NeoNameService": "0x7061fbd31562664b58f422c3dee4acfd70dba8af"
+    },
+    "Plugins": {
+      "DownloadUrl": "https://api.github.com/repos/neo-project/neo-modules/releases"
     }
   },
   "ProtocolConfiguration": {
