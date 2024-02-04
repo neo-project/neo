@@ -38,4 +38,18 @@ public static class EvaluationStackHelper
             }
         ))}]";
     }
+
+    private static bool TryGetString(this byte[] byteArray, out string? value)
+    {
+        try
+        {
+            value = Utility.StrictUTF8.GetString(byteArray);
+            return true;
+        }
+        catch
+        {
+            value = default;
+            return false;
+        }
+    }
 }
