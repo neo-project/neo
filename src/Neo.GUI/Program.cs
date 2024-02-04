@@ -68,7 +68,7 @@ namespace Neo
                     return;
                 }
             }
-            Service.Start(args);
+            Service.OnStartWithCommandLine(args);
             Application.Run(MainForm = new MainForm(xdoc));
             Service.Stop();
         }
