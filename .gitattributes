@@ -45,6 +45,9 @@
 *.gif binary
 *.ico binary
 
+# Zip files
+*.zip binary
+
 ###############################################################################
 # diff behavior for common document formats
 # 
