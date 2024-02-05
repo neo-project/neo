@@ -1,13 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <TargetFrameworks>net7.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Akka.TestKit" Version="1.5.14" />
     <PackageReference Include="Akka.TestKit.Xunit2" Version="1.5.14" />
-    <PackageReference Include="Moq" Version="4.20.69" />
+    <PackageReference Include="Moq" Version="4.20.70" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,11 +23,4 @@
     <ProjectReference Include="..\..\src\Neo\Neo.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.8.0" />
-  </ItemGroup>
 </Project>

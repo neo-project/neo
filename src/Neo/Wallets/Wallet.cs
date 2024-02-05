@@ -1,20 +1,14 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// Wallet.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
@@ -24,6 +18,13 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets.NEP6;
 using Org.BouncyCastle.Crypto.Generators;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using static Neo.SmartContract.Helper;
 using static Neo.Wallets.Helper;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
@@ -126,8 +127,8 @@ namespace Neo.Wallets
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> to be used by the wallet.</param>
         protected Wallet(string path, ProtocolSettings settings)
         {
-            this.ProtocolSettings = settings;
-            this.Path = path;
+            ProtocolSettings = settings;
+            Path = path;
         }
 
         /// <summary>
@@ -136,24 +137,26 @@ namespace Neo.Wallets
         /// <returns>The created account.</returns>
         public WalletAccount CreateAccount()
         {
-            byte[] privateKey = new byte[32];
-        generate:
-            try
+            var privateKey = new byte[32];
+            using var rng = RandomNumberGenerator.Create();
+
+            do
             {
-                using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+                try
                 {
                     rng.GetBytes(privateKey);
+                    return CreateAccount(privateKey);
                 }
-                return CreateAccount(privateKey);
+                catch (ArgumentException)
+                {
+                    // Try again
+                }
+                finally
+                {
+                    Array.Clear(privateKey, 0, privateKey.Length);
+                }
             }
-            catch (ArgumentException)
-            {
-                goto generate;
-            }
-            finally
-            {
-                Array.Clear(privateKey, 0, privateKey.Length);
-            }
+            while (true);
         }
 
         /// <summary>
@@ -171,7 +174,7 @@ namespace Neo.Wallets
         private static List<(UInt160 Account, BigInteger Value)> FindPayingAccounts(List<(UInt160 Account, BigInteger Value)> orderedAccounts, BigInteger amount)
         {
             var result = new List<(UInt160 Account, BigInteger Value)>();
-            BigInteger sum_balance = orderedAccounts.Select(p => p.Value).Sum();
+            var sum_balance = orderedAccounts.Select(p => p.Value).Sum();
             if (sum_balance == amount)
             {
                 result.AddRange(orderedAccounts);

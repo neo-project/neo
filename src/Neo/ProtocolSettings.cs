@@ -1,20 +1,21 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// ProtocolSettings.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Configuration;
+using Neo.Cryptography.ECC;
+using Neo.Network.P2P.Payloads;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Microsoft.Extensions.Configuration;
-using Neo.Cryptography.ECC;
-using Neo.Network.P2P.Payloads;
 
 namespace Neo
 {
@@ -102,7 +103,7 @@ namespace Neo
         /// <summary>
         /// The default protocol settings for NEO MainNet.
         /// </summary>
-        public static ProtocolSettings Default { get; } = new ProtocolSettings
+        public static ProtocolSettings Default { get; } = Custom ?? new ProtocolSettings
         {
             Network = 0u,
             AddressVersion = 0x35,
@@ -116,6 +117,8 @@ namespace Neo
             InitialGasDistribution = 52_000_000_00000000,
             Hardforks = ImmutableDictionary<Hardfork, uint>.Empty
         };
+
+        public static ProtocolSettings? Custom { get; set; }
 
         /// <summary>
         /// Loads the <see cref="ProtocolSettings"/> at the specified path.

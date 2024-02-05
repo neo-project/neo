@@ -1,10 +1,11 @@
-// Copyright (C) 2016-2023 The Neo Project.
-// 
-// The Neo.ConsoleService is free software distributed under the MIT 
-// software license, see the accompanying file LICENSE in the main directory
-// of the project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// CommandToken.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -29,7 +30,7 @@ namespace Neo.ConsoleService
         /// <summary>
         /// Value
         /// </summary>
-        public string Value { get; protected init; }
+        public string Value { get; protected init; } = string.Empty;
 
         /// <summary>
         /// Constructor
@@ -49,7 +50,7 @@ namespace Neo.ConsoleService
         /// <returns></returns>
         public static IEnumerable<CommandToken> Parse(string commandLine)
         {
-            CommandToken lastToken = null;
+            CommandToken? lastToken = null;
 
             for (int index = 0, count = commandLine.Length; index < count;)
             {
@@ -79,7 +80,10 @@ namespace Neo.ConsoleService
                             lastToken = CommandStringToken.Parse(commandLine, ref index,
                                 lastToken is CommandQuoteToken quote ? quote : null);
 
-                            yield return lastToken;
+                            if (lastToken is not null)
+                            {
+                                yield return lastToken;
+                            }
                             break;
                         }
                 }
@@ -96,7 +100,7 @@ namespace Neo.ConsoleService
         {
             var list = new List<string>();
 
-            CommandToken lastToken = null;
+            CommandToken? lastToken = null;
 
             foreach (var token in tokens)
             {
@@ -164,7 +168,7 @@ namespace Neo.ConsoleService
         /// <param name="args">Args</param>
         /// <param name="consumeAll">Consume all if not quoted</param>
         /// <returns>String</returns>
-        public static string ReadString(List<CommandToken> args, bool consumeAll)
+        public static string? ReadString(List<CommandToken> args, bool consumeAll)
         {
             Trim(args);
 

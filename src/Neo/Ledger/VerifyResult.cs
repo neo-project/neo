@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// VerifyResult.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -26,6 +27,11 @@ namespace Neo.Ledger
         /// Indicates that an <see cref="IInventory"/> with the same hash already exists.
         /// </summary>
         AlreadyExists,
+
+        /// <summary>
+        /// Indicates that an <see cref="IInventory"/> with the same hash already exists in the memory pool.
+        /// </summary>
+        AlreadyInPool,
 
         /// <summary>
         /// Indicates that the <see cref="MemoryPool"/> is full and the transaction cannot be verified.

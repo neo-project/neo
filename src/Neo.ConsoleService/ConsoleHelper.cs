@@ -1,4 +1,17 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// ConsoleHelper.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using System;
+using System.Security;
+using System.Text;
 
 namespace Neo.ConsoleService
 {
@@ -7,6 +20,8 @@ namespace Neo.ConsoleService
         private static readonly ConsoleColorSet InfoColor = new(ConsoleColor.Cyan);
         private static readonly ConsoleColorSet WarningColor = new(ConsoleColor.Yellow);
         private static readonly ConsoleColorSet ErrorColor = new(ConsoleColor.Red);
+
+        public static bool ReadingPassword { get; private set; } = false;
 
         /// <summary>
         /// Info handles message in the format of "[tag]:[message]",
@@ -60,6 +75,89 @@ namespace Neo.ConsoleService
             Console.Write($"{tag}: ");
             currentColor.Apply();
             Console.WriteLine(msg);
+        }
+
+        public static string ReadUserInput(string prompt, bool password = false)
+        {
+            const string t = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+            var sb = new StringBuilder();
+
+            if (!string.IsNullOrEmpty(prompt))
+            {
+                Console.Write(prompt + ": ");
+            }
+
+            if (password) ReadingPassword = true;
+            var prevForeground = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Yellow;
+
+            if (Console.IsInputRedirected)
+            {
+                // neo-gui Console require it
+                sb.Append(Console.ReadLine());
+            }
+            else
+            {
+                ConsoleKeyInfo key;
+                do
+                {
+                    key = Console.ReadKey(true);
+
+                    if (t.IndexOf(key.KeyChar) != -1)
+                    {
+                        sb.Append(key.KeyChar);
+                        Console.Write(password ? '*' : key.KeyChar);
+                    }
+                    else if (key.Key == ConsoleKey.Backspace && sb.Length > 0)
+                    {
+                        sb.Length--;
+                        Console.Write("\b \b");
+                    }
+                } while (key.Key != ConsoleKey.Enter);
+            }
+
+            Console.ForegroundColor = prevForeground;
+            if (password) ReadingPassword = false;
+            Console.WriteLine();
+            return sb.ToString();
+        }
+
+        public static SecureString ReadSecureString(string prompt)
+        {
+            const string t = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+            SecureString securePwd = new SecureString();
+            ConsoleKeyInfo key;
+
+            if (!string.IsNullOrEmpty(prompt))
+            {
+                Console.Write(prompt + ": ");
+            }
+
+            ReadingPassword = true;
+            Console.ForegroundColor = ConsoleColor.Yellow;
+
+            do
+            {
+                key = Console.ReadKey(true);
+                if (t.IndexOf(key.KeyChar) != -1)
+                {
+                    securePwd.AppendChar(key.KeyChar);
+                    Console.Write('*');
+                }
+                else if (key.Key == ConsoleKey.Backspace && securePwd.Length > 0)
+                {
+                    securePwd.RemoveAt(securePwd.Length - 1);
+                    Console.Write(key.KeyChar);
+                    Console.Write(' ');
+                    Console.Write(key.KeyChar);
+                }
+            } while (key.Key != ConsoleKey.Enter);
+
+            Console.ForegroundColor = ConsoleColor.White;
+            ReadingPassword = false;
+            Console.WriteLine();
+            securePwd.MakeReadOnly();
+            return securePwd;
         }
     }
 }
