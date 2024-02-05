@@ -17,7 +17,7 @@ using System.Collections.Generic;
 namespace Neo.Test
 {
     [TestClass]
-    public class UT__ExecutionContext
+    public class UT_ExecutionContext
     {
         class TestState
         {
