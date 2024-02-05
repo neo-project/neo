@@ -44,7 +44,7 @@ namespace Neo.Test
             }
             else
             {
-                byteValue = random.Next(32, 128);
+                byteValue = random.Next(byte.MaxValue, 4096);
                 value = new byte[byteValue];
             }
 
