@@ -80,7 +80,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        public void TestNullTest()
+        public void TestNull()
         {
             StackItem nullItem = System.Array.Empty<byte>();
             Assert.AreNotEqual(StackItem.Null, nullItem);
