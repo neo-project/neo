@@ -187,7 +187,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        public void TestDeepCopyTest()
+        public void TestDeepCopy()
         {
             Array a = new()
             {
