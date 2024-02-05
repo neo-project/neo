@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.VM.Types;
 using System;
 using System.Numerics;
 using System.Text;
@@ -34,11 +33,11 @@ namespace Neo.VM
             BigInteger r = value, old_r = modulus, s = 1, old_s = 0;
             while (r > 0)
             {
-                BigInteger q = old_r / r;
+                var q = old_r / r;
                 (old_r, r) = (r, old_r % r);
                 (old_s, s) = (s, old_s - q * s);
             }
-            BigInteger result = old_s % modulus;
+            var result = old_s % modulus;
             if (result < 0) result += modulus;
             if (!(value * result % modulus).IsOne) throw new InvalidOperationException();
             return result;
