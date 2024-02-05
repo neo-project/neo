@@ -20,7 +20,7 @@ namespace Neo.Test
     public class UT_StackItem
     {
         [TestMethod]
-        public void TestHashCodeTest()
+        public void TestHashCode()
         {
             StackItem itemA = "NEO";
             StackItem itemB = "NEO";
