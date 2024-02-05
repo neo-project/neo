@@ -21,7 +21,7 @@ using System.Text;
 namespace Neo.Test
 {
     [TestClass]
-    public class UT__ScriptBuilder
+    public class UT_ScriptBuilder
     {
         [TestMethod]
         public void TestEmit()
