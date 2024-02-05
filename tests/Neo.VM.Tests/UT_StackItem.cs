@@ -90,7 +90,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        public void TestEqualTest()
+        public void TestEqual()
         {
             StackItem itemA = "NEO";
             StackItem itemB = "NEO";
