@@ -13,6 +13,7 @@ using Neo.IO;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Neo.Persistence
 {
@@ -23,6 +24,7 @@ namespace Neo.Persistence
     {
         private readonly ConcurrentDictionary<byte[], byte[]> _innerData = new(ByteArrayEqualityComparer.Default);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Delete(byte[] key)
         {
             _innerData.TryRemove(key, out _);
@@ -32,11 +34,13 @@ namespace Neo.Persistence
         {
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ISnapshot GetSnapshot()
         {
             return new MemorySnapshot(_innerData);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Put(byte[] key, byte[] value)
         {
             _innerData[key[..]] = value[..];
@@ -55,17 +59,20 @@ namespace Neo.Persistence
                 yield return (pair.Key[..], pair.Value[..]);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte[] TryGet(byte[] key)
         {
-            _innerData.TryGetValue(key, out byte[] value);
-            return value?[..];
+            if (!_innerData.TryGetValue(key, out byte[] value)) return null;
+            return value[..];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Contains(byte[] key)
         {
             return _innerData.ContainsKey(key);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Reset()
         {
             _innerData.Clear();
