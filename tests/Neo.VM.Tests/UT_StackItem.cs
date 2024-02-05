@@ -106,7 +106,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        public void TestCastTest()
+        public void TestCast()
         {
             // Signed byte
 
