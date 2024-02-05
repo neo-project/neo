@@ -54,14 +54,18 @@ namespace Neo.Test
 
         private void VerifyGetBitLength(BigInteger value, long expected)
         {
-            Assert.AreEqual(expected, value.GetBitLength());
-            Assert.AreEqual(expected, Utility.GetBitLength(value));
+            var result = value.GetBitLength();
+            Assert.AreEqual(expected, value.GetBitLength(), "Native method has not the expected result");
+            Assert.AreEqual(result, Utility.GetBitLength(value), "Result doesn't match");
         }
 
         [TestMethod]
         public void GetBitLengthTest()
         {
             var random = new Random();
+
+            // Max
+            Assert.ThrowsException<InvalidOperationException>(() => Utility.GetBitLength(BigInteger.One << 32 << int.MaxValue));
 
             // Trivial cases
             //                     sign bit|shortest two's complement
