@@ -11,15 +11,16 @@
 
 using Neo.Service.IO;
 using Neo.Service.Tests.Helpers;
-using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Neo.Service.Tests.IO
 {
     public class UT_BlockchainArchiveFile : IAsyncLifetime
     {
-        private static readonly string s_testArchFileName = Path.Combine(Path.GetTempPath(), $"Test.{Random.Shared.Next()}.zip");
+        private static readonly string s_testArchFileName = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
         private BlockchainArchiveFile? _blockchainFile;
 
@@ -57,10 +58,25 @@ namespace Neo.Service.Tests.IO
             Assert.NotNull(_blockchainFile);
 
             var blockResult = _blockchainFile.Read(0u);
-
             Assert.NotNull(blockResult);
             Assert.Equal(0u, blockResult.Index);
             Assert.Equal(UInt256.Zero, blockResult.MerkleRoot);
+        }
+
+        [Fact]
+        public void Test_Delete_Block()
+        {
+            Assert.NotNull(_blockchainFile);
+
+            var result = Record.Exception(() => _blockchainFile.Delete(0u));
+            Assert.Null(result);
+
+            var blockIndexResult = _blockchainFile.Entries.Any(a => a == 0u);
+            Assert.False(blockIndexResult);
+
+            result = Record.Exception(() => _ = _blockchainFile.Read(0u));
+            Assert.NotNull(result);
+            Assert.IsType<KeyNotFoundException>(result);
         }
     }
 }

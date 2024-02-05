@@ -16,6 +16,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="chain.0.acc.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Neo.Service\Neo.Service.csproj" />
   </ItemGroup>
 

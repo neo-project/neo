@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -22,7 +23,9 @@ namespace Neo.Service.IO
 {
     internal sealed class BlockchainArchiveFile : IDisposable
     {
-        private static readonly string s_zipFileExtension = ".zip";
+        public IReadOnlyCollection<uint> Entries => _manifest.BlockTable.Keys.ToArray();
+
+        private static readonly string s_archiveFileExtension = ".bar";
         private static readonly string s_manifestFileName = "MANIFEST";
 
         private readonly FileStream _fs;
@@ -30,10 +33,11 @@ namespace Neo.Service.IO
         private readonly ArchiveManifestFile _manifest;
 
         public BlockchainArchiveFile(
-            string fileName, uint network)
+            string fileName,
+            uint network)
         {
-            if (Path.GetExtension(fileName).Equals(".zip", StringComparison.InvariantCultureIgnoreCase) == false)
-                fileName += s_zipFileExtension;
+            if (Path.GetExtension(fileName).Equals(s_archiveFileExtension, StringComparison.InvariantCultureIgnoreCase) == false)
+                fileName += s_archiveFileExtension;
 
             _fs = new(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096, FileOptions.WriteThrough);
             _zip = new(_fs, ZipArchiveMode.Update, false, Encoding.UTF8);
@@ -47,6 +51,13 @@ namespace Neo.Service.IO
             _zip.Dispose();
             _fs.Dispose();
             GC.SuppressFinalize(this);
+        }
+
+        public void Delete(uint blockIndex)
+        {
+            var entry = _zip.GetEntry($"{blockIndex}") ?? throw new KeyNotFoundException(nameof(blockIndex));
+            _manifest.RemoveBlockEntry(blockIndex);
+            entry.Delete();
         }
 
         public Block? Read(uint blockIndex)

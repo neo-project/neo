@@ -48,6 +48,8 @@ namespace Neo.Service
             _appSettings = ApplicationSettings.Load(config.GetRequiredSection("ApplicationConfiguration"));
             _namedPipeService = new(_nodeProtocolSettings, loggerFactory);
             Instance = this;
+            _importProgress = new();
+            _importProgress.ProgressChanged += OnImportBlocksProgressChanged;
             Utility.Logging += OnNeoUtilityLogging;
             Blockchain.Committed += OnNeoBlockchainCommitted;
             ApplicationEngine.Log += OnNeoApplicationEngineLog;
@@ -56,13 +58,21 @@ namespace Neo.Service
 
         public override void Dispose()
         {
-            _namedPipeService.Dispose();
+            _logger.LogInformation("Shutting down...");
+
+            Instance = null;
+            _importBlocksTokenSource?.Cancel();
+            _neoSystem?.Dispose();
+            _importBlocksTask?.Dispose();
+
             Utility.Logging -= OnNeoUtilityLogging;
             Blockchain.Committed -= OnNeoBlockchainCommitted;
             ApplicationEngine.Log -= OnNeoApplicationEngineLog;
             ApplicationEngine.Notify -= OnNeoApplicationEngineNotify;
-            Instance = null;
+
+            _namedPipeService.Dispose();
             base.Dispose();
+            _logger.LogInformation("Shutdown completed.");
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -72,11 +82,6 @@ namespace Neo.Service
             _importBlocksTask = ImportThenStartNeoSystemAsync(_appSettings.Storage.Import.Verify, _importBlocksTokenSource.Token);
 
             await _namedPipeService.StartAsync(_appSettings.NamedPipe.Instances, stoppingToken); // Block Thread and Listen
-
-            _logger.LogInformation("Shutting down...");
-            await StopImportBlocksAsync();
-            await StopNeoSystemAsync();
-            _logger.LogInformation("Shutdown completed.");
         }
     }
 }

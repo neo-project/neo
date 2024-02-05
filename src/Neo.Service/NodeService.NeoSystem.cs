@@ -22,6 +22,8 @@ namespace Neo.Service
 {
     internal partial class NodeService
     {
+        public NeoSystem? NeoSystem => _neoSystem;
+
         internal async Task StartNeoSystemAsync(CancellationToken cancellationToken = default)
         {
             if (_importBlocksTokenSource is not null &&

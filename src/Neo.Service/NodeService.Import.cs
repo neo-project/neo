@@ -11,17 +11,13 @@
 
 using Akka.Actor;
 using Microsoft.Extensions.Logging;
-using Neo.IO;
 using Neo.Ledger;
-using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.Service.IO;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -29,6 +25,9 @@ namespace Neo.Service
 {
     internal partial class NodeService
     {
+        private readonly Progress<double> _importProgress;
+        private uint _importCounter;
+
         internal async Task StopImportBlocksAsync()
         {
 
@@ -54,7 +53,11 @@ namespace Neo.Service
 
             _logger.LogInformation("Started importing blocks.");
 
-            using var blocksBeingImported = GetBlocksFromFile(AppContext.BaseDirectory).GetEnumerator();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(_neoSystem.StoreView);
+
+            using var blocksBeingImported = BlockchainBackup.ReadBlocksFromAccFile(
+                currentHeight, AppContext.BaseDirectory, _importProgress)
+                .GetEnumerator();
 
             while (cancellationToken.IsCancellationRequested == false)
             {
@@ -80,94 +83,10 @@ namespace Neo.Service
             await StartNeoSystemAsync(cancellationToken);
         }
 
-        private IEnumerable<Block> GetBlocksFromFile(string dir = "")
+        private void OnImportBlocksProgressChanged(object? sender, double e)
         {
-            if (_neoSystem is null) yield break;
-            if (Directory.Exists(dir) == false)
-                throw new DirectoryNotFoundException(dir);
-
-            const string PathAcc = "chain.acc";
-            const string PathAccZip = PathAcc + ".zip";
-
-            if (File.Exists(PathAcc))
-            {
-                using FileStream fs = new(Path.Combine(dir, PathAcc), FileMode.Open, FileAccess.Read, FileShare.Read);
-                foreach (var block in GetBlocks(fs))
-                    yield return block;
-            }
-
-            if (File.Exists(PathAccZip))
-            {
-                using var fs = new FileStream(Path.Combine(dir, PathAccZip), FileMode.Open, FileAccess.Read, FileShare.Read);
-                using var zip = new ZipArchive(fs, ZipArchiveMode.Read);
-                var entry = zip.GetEntry(PathAcc);
-                if (entry is null) yield break;
-                using var zs = entry.Open();
-                foreach (var block in GetBlocks(zs))
-                    yield return block;
-            }
-
-            var paths = Directory.EnumerateFiles(dir, "chain.*.acc", SearchOption.TopDirectoryOnly)
-                .Concat(Directory.EnumerateFiles(dir, "chain.*.acc.zip", SearchOption.TopDirectoryOnly))
-                .Select(p => new
-                {
-                    FileName = Path.GetFileName(p),
-                    Start = uint.Parse(RegexUtility.SearchNumbersOnly().Match(p).Value),
-                    IsCompressed = Path.GetExtension(p).Equals(".zip", StringComparison.InvariantCultureIgnoreCase)
-                }).OrderBy(p => p.Start);
-
-            if (paths.Any() == false) yield break;
-
-            var height = NativeContract.Ledger.CurrentIndex(_neoSystem.StoreView);
-
-            foreach (var path in paths)
-            {
-                if (path.Start > height + 1u) break;
-                if (path.IsCompressed)
-                {
-                    using var fs = new FileStream(path.FileName, FileMode.Open, FileAccess.Read, FileShare.Read);
-                    using var zip = new ZipArchive(fs, ZipArchiveMode.Read);
-                    var entry = zip.GetEntry(Path.GetFileNameWithoutExtension(path.FileName));
-                    if (entry is null) yield break;
-                    using var zs = entry.Open();
-                    foreach (var block in GetBlocks(zs, true))
-                        yield return block;
-                }
-                else
-                {
-                    using var fs = new FileStream(path.FileName, FileMode.Open, FileAccess.Read, FileShare.Read);
-                    foreach (var block in GetBlocks(fs, true))
-                        yield return block;
-                }
-            }
-        }
-
-        private IEnumerable<Block> GetBlocks(Stream stream, bool read_start = false)
-        {
-            using var r = new BinaryReader(stream);
-            var start = read_start ? r.ReadUInt32() : 0u;
-            var count = r.ReadUInt32();
-            var end = start + count - 1u;
-            var currentHeight = NativeContract.Ledger.CurrentIndex(_neoSystem?.StoreView);
-            if (end <= currentHeight) yield break;
-            for (var height = start; height <= end; height++)
-            {
-                var size = r.ReadInt32();
-                if (size > Message.PayloadMaxSize)
-                {
-                    _logger.LogError("Block {Height} exceeds the maximum allowed size.", height);
-                    yield break;
-                }
-
-                var array = r.ReadBytes(size);
-                if (height > currentHeight)
-                {
-                    var block = array.AsSerializable<Block>();
-                    if (block.Index % 10000u == 0u) // every 10,000 blocks; report!
-                        _logger.LogInformation("Imported block {Index}.", block.Index);
-                    yield return block;
-                }
-            }
+            if (_importCounter++ % 50000 == 0)
+                _logger.LogInformation("Importing blocks {Precent}% complete.", Math.Round(e, 2));
         }
     }
 }
