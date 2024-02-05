@@ -19,7 +19,7 @@ using System.Linq;
 namespace Neo.Test
 {
     [TestClass]
-    public class TestEvaluationStack
+    public class UT_EvaluationStack
     {
         private static EvaluationStack CreateOrderedStack(int count)
         {
