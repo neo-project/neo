@@ -10,23 +10,39 @@
 // modifications are permitted.
 
 using Neo.Service.IO;
-using System.Linq;
 
 namespace Neo.Service.Tests.IO
 {
     public class UT_BlockchainBackup
     {
+        private int i;
+
         [Fact]
         public void Test_Read_Blocks_From_Acc_File()
         {
-            var i = 0u;
+            var count = 0u;
             var blocks = BlockchainBackup.ReadBlocksFromAccFile();
-            Assert.Equal(999, blocks.Count());
 
             foreach (var block in blocks)
             {
-                Assert.Equal(++i, block.Index);
+                Assert.Equal(++count, block.Index);
             }
+
+            Assert.Equal(999u, count);
+        }
+
+        [Fact]
+        public void Test_Read_Blocks_From_Barc_File()
+        {
+            var count = 0u;
+            var blocks = BlockchainBackup.ReadBlocksFromBarFile(ProtocolSettings.Default.Network);
+
+            foreach (var block in blocks)
+            {
+                Assert.Equal(++count, block.Index);
+            }
+
+            Assert.Equal(5u, count);
         }
     }
 }

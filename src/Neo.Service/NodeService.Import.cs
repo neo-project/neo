@@ -18,6 +18,7 @@ using Neo.Service.IO;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -55,8 +56,7 @@ namespace Neo.Service
 
             var currentHeight = NativeContract.Ledger.CurrentIndex(_neoSystem.StoreView);
 
-            using var blocksBeingImported = BlockchainBackup.ReadBlocksFromAccFile(
-                currentHeight, AppContext.BaseDirectory, _importProgress)
+            var blocksBeingImported = BlockchainBackup.ReadBlocksFromAccFile(currentHeight, progress: _importProgress)
                 .GetEnumerator();
 
             while (cancellationToken.IsCancellationRequested == false)
@@ -83,9 +83,17 @@ namespace Neo.Service
             await StartNeoSystemAsync(cancellationToken);
         }
 
+        private IEnumerable<Block> GetBlocks(uint startIndex = 0)
+        {
+            if (File.Exists(Path.Combine(AppContext.BaseDirectory, "chain.barc")))
+                return BlockchainBackup.ReadBlocksFromBarFile(
+                    _nodeProtocolSettings.Network, startIndex, progress: _importProgress);
+            return BlockchainBackup.ReadBlocksFromAccFile(startIndex, progress: _importProgress);
+        }
+
         private void OnImportBlocksProgressChanged(object? sender, double e)
         {
-            if (_importCounter++ % 50000 == 0)
+            if (_importCounter++ % 50000 == 0 || e >= 100.0)
                 _logger.LogInformation("Importing blocks {Precent}% complete.", Math.Round(e, 2));
         }
     }

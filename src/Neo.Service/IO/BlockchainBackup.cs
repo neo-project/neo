@@ -22,28 +22,36 @@ namespace Neo.Service.IO
 {
     internal static class BlockchainBackup
     {
+        public static IEnumerable<Block> ReadBlocksFromBarFile(uint network, uint currentBlockHeight = 0, string directory = "", IProgress<double>? progress = null)
+        {
+            var barcFileNames = GetImportFileNames(directory)
+                .Where(w => Path.GetExtension(w.FileName).Equals(".barc", StringComparison.InvariantCultureIgnoreCase))
+                .OrderBy(o => o.StartIndex);
+
+            foreach (var barcFileItem in barcFileNames)
+            {
+                var baf = new BlockchainArchiveFile(barcFileItem.FileName, network);
+                foreach (var blockIndex in baf.IndexEntries.Where(w => w > currentBlockHeight).Order())
+                {
+                    var block = baf.Read(blockIndex);
+                    if (block is null) yield break;
+                    yield return block;
+                }
+            }
+        }
+
         public static IEnumerable<Block> ReadBlocksFromAccFile(uint currentBlockHeight = 0, string directory = "", IProgress<double>? progress = null)
         {
-            if (string.IsNullOrEmpty(directory))
-                directory = AppContext.BaseDirectory;
+            var accFileNames = GetImportFileNames(directory)
+                .Where(w => Path.GetExtension(w.FileName).Equals(".barc", StringComparison.InvariantCultureIgnoreCase) == false)
+                .OrderBy(o => o.StartIndex);
 
-            if (Directory.Exists(directory) == false) throw new DirectoryNotFoundException(directory);
+            if (accFileNames.Any() == false) yield break;
 
-            var accFilesNames = Directory.EnumerateFiles(directory, "chain.*.acc", SearchOption.TopDirectoryOnly)
-                .Concat(Directory.EnumerateFiles(directory, "chain.*.acc.zip", SearchOption.TopDirectoryOnly))
-                .Select(s => new
-                {
-                    FileName = Path.GetFileName(s),
-                    Start = uint.Parse(RegexUtility.SearchNumbersOnly().Match(s).Value),
-                    IsCompressed = Path.GetExtension(s).Equals(".zip", System.StringComparison.InvariantCultureIgnoreCase)
-                }).OrderBy(o => o.Start);
-
-            if (accFilesNames.Any() == false) yield break;
-
-            foreach (var accFile in accFilesNames)
+            foreach (var accFile in accFileNames)
             {
                 using var fs = new FileStream(accFile.FileName, FileMode.Open, FileAccess.Read, FileShare.Read);
-                if (accFile.IsCompressed == false)
+                if (Path.GetExtension(accFile.FileName).Equals(".zip", StringComparison.InvariantCultureIgnoreCase) == false)
                 {
                     foreach (var block in ReadAccBlocksFromStream(fs, currentBlockHeight, true, progress))
                         yield return block;
@@ -79,5 +87,28 @@ namespace Neo.Service.IO
                     yield return array.AsSerializable<Block>();
             }
         }
+
+        private static IEnumerable<ImportFileItem> GetImportFileNames(string directory = "")
+        {
+            if (string.IsNullOrEmpty(directory))
+                directory = AppContext.BaseDirectory;
+
+            if (Directory.Exists(directory) == false) throw new DirectoryNotFoundException(directory);
+
+            return Directory.EnumerateFiles(directory, "chain.*.acc", SearchOption.TopDirectoryOnly)
+                .Concat(Directory.EnumerateFiles(directory, "chain.*.acc.zip", SearchOption.TopDirectoryOnly))
+                .Concat(Directory.EnumerateFiles(directory, "chain.*.barc", SearchOption.TopDirectoryOnly))
+                .Select(s => new ImportFileItem()
+                {
+                    FileName = Path.GetFileName(s),
+                    StartIndex = uint.Parse(RegexUtility.SearchNumbersOnly().Match(s).Value),
+                });
+        }
+    }
+
+    internal sealed class ImportFileItem
+    {
+        public required string FileName { get; init; }
+        public required uint StartIndex { get; init; }
     }
 }

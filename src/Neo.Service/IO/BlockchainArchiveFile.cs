@@ -23,9 +23,9 @@ namespace Neo.Service.IO
 {
     internal sealed class BlockchainArchiveFile : IDisposable
     {
-        public IReadOnlyCollection<uint> Entries => _manifest.BlockTable.Keys.ToArray();
+        public IReadOnlyCollection<uint> IndexEntries => _manifest.BlockTable.Keys.ToArray();
 
-        private static readonly string s_archiveFileExtension = ".bar";
+        private static readonly string s_archiveFileExtension = ".barc";
         private static readonly string s_manifestFileName = "MANIFEST";
 
         private readonly FileStream _fs;
@@ -55,6 +55,8 @@ namespace Neo.Service.IO
 
         public void Delete(uint blockIndex)
         {
+            if (blockIndex == 0) throw new ArgumentOutOfRangeException(nameof(blockIndex));
+
             var entry = _zip.GetEntry($"{blockIndex}") ?? throw new KeyNotFoundException(nameof(blockIndex));
             _manifest.RemoveBlockEntry(blockIndex);
             entry.Delete();
@@ -62,6 +64,8 @@ namespace Neo.Service.IO
 
         public Block? Read(uint blockIndex)
         {
+            if (blockIndex == 0) throw new ArgumentOutOfRangeException(nameof(blockIndex));
+
             var entry = _zip.GetEntry($"{blockIndex}") ?? throw new KeyNotFoundException(nameof(blockIndex));
             var manifestBlockTableItem = _manifest.BlockTable[blockIndex];
             var blockBuffer = new byte[manifestBlockTableItem.FileSize];
@@ -77,6 +81,8 @@ namespace Neo.Service.IO
 
         public void Write(Block block)
         {
+            if (block.Index == 0) throw new ArgumentOutOfRangeException(nameof(block));
+
             var entry = _zip.GetEntry($"{block.Index}") ?? _zip.CreateEntry($"{block.Index}");
             var blockBuffer = block.ToArray();
             var shaData = SHA256.HashData(blockBuffer);

@@ -33,7 +33,7 @@ namespace Neo.Service.Tests.Helpers
         {
             // Dispose to force save of the manifest file in archive
             using (var archFile = new BlockchainArchiveFile(fileName, ProtocolSettings.Default.Network))
-                archFile.Write(CreateRandomFilledBlock(0u));
+                archFile.Write(CreateRandomFilledBlock(1u));
             // Reopens archive file to read saved manifest
             return new BlockchainArchiveFile(fileName, ProtocolSettings.Default.Network);
         }

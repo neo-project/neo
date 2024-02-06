@@ -38,11 +38,10 @@ namespace Neo.Service.Tests.IO
         }
 
         [Theory]
-        [InlineData(1u)]
         [InlineData(2u)]
         [InlineData(3u)]
         [InlineData(4u)]
-        [InlineData(uint.MaxValue)]
+        [InlineData(5u)]
         public void Test_Write_Block(uint blockIndex)
         {
             Assert.NotNull(_blockchainFile);
@@ -57,9 +56,9 @@ namespace Neo.Service.Tests.IO
         {
             Assert.NotNull(_blockchainFile);
 
-            var blockResult = _blockchainFile.Read(0u);
+            var blockResult = _blockchainFile.Read(1u);
             Assert.NotNull(blockResult);
-            Assert.Equal(0u, blockResult.Index);
+            Assert.Equal(1u, blockResult.Index);
             Assert.Equal(UInt256.Zero, blockResult.MerkleRoot);
         }
 
@@ -68,13 +67,13 @@ namespace Neo.Service.Tests.IO
         {
             Assert.NotNull(_blockchainFile);
 
-            var result = Record.Exception(() => _blockchainFile.Delete(0u));
+            var result = Record.Exception(() => _blockchainFile.Delete(1u));
             Assert.Null(result);
 
-            var blockIndexResult = _blockchainFile.Entries.Any(a => a == 0u);
+            var blockIndexResult = _blockchainFile.IndexEntries.Any(a => a == 1u);
             Assert.False(blockIndexResult);
 
-            result = Record.Exception(() => _ = _blockchainFile.Read(0u));
+            result = Record.Exception(() => _ = _blockchainFile.Read(1u));
             Assert.NotNull(result);
             Assert.IsType<KeyNotFoundException>(result);
         }

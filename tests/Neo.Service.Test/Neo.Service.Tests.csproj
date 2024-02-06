@@ -19,6 +19,15 @@
     <None Update="chain.0.acc.zip">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <Visible>false</Visible>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="chain.1.barc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <Visible>false</Visible>
     </None>
   </ItemGroup>
 
