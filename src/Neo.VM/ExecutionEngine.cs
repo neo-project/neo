@@ -132,20 +132,16 @@ namespace Neo.VM
         /// <summary>
         /// Start execution of the VM.
         /// </summary>
-        /// <returns></returns>
-        public virtual VMState Execute(string txHash = "")
+        /// <param name="measurement">Performance measurement</param>
+        /// <returns>Execution state.</returns>
+        public virtual VMState Execute(ExecutionMeasurement? measurement = null)
         {
             if (State == VMState.BREAK)
                 State = VMState.NONE;
             while (State != VMState.HALT && State != VMState.FAULT)
-                ExecuteNext();
-#if MEASURE_EXECUTION_TIME
-            if (!string.IsNullOrEmpty(txHash))
-            {
-                using var writer = new StreamWriter($"./measurement/{txHash}_{_executionTimeMeasurement.Sum(p => p.TotalExecutionTime)}.txt", append: true);
-                _executionTimeMeasurement.ForEach(p => writer.WriteLine(p.ToString()));
-            }
-#endif
+                ExecuteNext(measurement);
+
+            measurement?.Dump();
             return State;
         }
 
@@ -1466,44 +1462,35 @@ namespace Neo.VM
         /// <summary>
         /// Execute the next instruction.
         /// </summary>
-        protected internal void ExecuteNext()
+        /// <param name="measurement">Performance measurement</param>
+        protected internal void ExecuteNext(ExecutionMeasurement? measurement)
         {
-#if MEASURE_EXECUTION_TIME
-            var measurement = new ExecutionMeasurement();
-#endif
             if (InvocationStack.Count == 0)
             {
                 State = VMState.HALT;
             }
             else
             {
+                ExecutionMeasurementEntry? watcher = measurement?.NewMeasurement();
+
                 try
                 {
                     ExecutionContext context = CurrentContext!;
                     Instruction instruction = context.CurrentInstruction ?? Instruction.RET;
-#if MEASURE_EXECUTION_TIME
-                    measurement.Start(instruction.OpCode);
-#endif
+                    watcher?.Start(instruction);
                     PreExecuteInstruction(instruction);
-#if MEASURE_EXECUTION_TIME
-                    measurement.MeasurePreExecution();
-#endif
+                    watcher?.MeasurePreExecution();
                     try
                     {
                         ExecuteInstruction(instruction);
-#if MEASURE_EXECUTION_TIME
-                        measurement.MeasureExecution();
-#endif
+                        watcher?.MeasureExecution();
                     }
                     catch (CatchableException ex) when (Limits.CatchEngineExceptions)
                     {
                         ExecuteThrow(ex.Message);
                     }
                     PostExecuteInstruction(instruction);
-#if MEASURE_EXECUTION_TIME
-                    measurement.MeasurePostExecution();
-                    _executionTimeMeasurement.Add(measurement);
-#endif
+                    watcher?.MeasurePostExecution();
                     if (!isJumping) context.MoveNext();
                     isJumping = false;
                 }
