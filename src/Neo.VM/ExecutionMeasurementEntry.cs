@@ -25,6 +25,7 @@ namespace Neo.VM
         public double ExecutionTime { get; private set; }
         public double PostExecutionTime { get; private set; }
         public Func<long> GasLeft { get; private set; }
+        public double TotalExecutionTime => PreExecutionTime + ExecutionTime + PostExecutionTime;
 
         /// <summary>
         /// Constructor
@@ -34,8 +35,6 @@ namespace Neo.VM
         {
             GasLeft = gasLeft;
         }
-
-        public double TotalExecutionTime => PreExecutionTime + ExecutionTime + PostExecutionTime;
 
         public void Start(Instruction instruction)
         {

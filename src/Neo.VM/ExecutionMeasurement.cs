@@ -18,7 +18,6 @@ namespace Neo.VM
 {
     public class ExecutionMeasurement
     {
-
         private readonly List<ExecutionMeasurementEntry> _executionTimeMeasurement = new();
 
         /// <summary>
@@ -41,7 +40,7 @@ namespace Neo.VM
             Description = description;
             GasLeft = gasLeft;
 
-            string dir = $"./measurement/{Description}";
+            var dir = $"./measurement/{Description}";
 
             if (!Directory.Exists(dir))
             {
