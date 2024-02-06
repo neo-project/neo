@@ -19,7 +19,7 @@ namespace Neo.VM
     /// <summary>
     /// Represents the VM used to execute the script.
     /// </summary>
-    public partial class ExecutionEngine : IDisposable
+    public class ExecutionEngine : IDisposable
     {
         private VMState state = VMState.BREAK;
         private bool isJumping = false;
