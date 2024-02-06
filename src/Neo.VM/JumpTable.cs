@@ -17,7 +17,7 @@ namespace Neo.VM
     public partial class JumpTable
     {
         public delegate void DelAction(ExecutionEngine engine, Instruction instruction);
-        private readonly DelAction[] _table = new DelAction[byte.MaxValue];
+        protected readonly DelAction[] _table = new DelAction[byte.MaxValue];
 
         /// <summary>
         /// Get Method
@@ -187,26 +187,6 @@ namespace Neo.VM
                     break;
                 case OpCode.STARG:
                     StArg(instruction);
-                    break;
-
-                // Splice
-                case OpCode.NEWBUFFER:
-                    NewBuffer(instruction);
-                    break;
-                case OpCode.MEMCPY:
-                    Memcpy(instruction);
-                    break;
-                case OpCode.CAT:
-                    Cat(instruction);
-                    break;
-                case OpCode.SUBSTR:
-                    Substr(instruction);
-                    break;
-                case OpCode.LEFT:
-                    Left(instruction);
-                    break;
-                case OpCode.RIGHT:
-                    Right(instruction);
                     break;
 
                 // Bitwise logic
