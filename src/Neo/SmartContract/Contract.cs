@@ -25,14 +25,14 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script of the contract.
         /// </summary>
-        public byte[] Script;
+        public byte[]? Script;
 
         /// <summary>
         /// The parameters of the contract.
         /// </summary>
-        public ContractParameterType[] ParameterList;
+        public ContractParameterType[] ParameterList= Array.Empty<ContractParameterType>();
 
-        private UInt160 _scriptHash;
+        private UInt160? _scriptHash;
         /// <summary>
         /// The hash of the contract.
         /// </summary>
@@ -42,9 +42,9 @@ namespace Neo.SmartContract
             {
                 if (_scriptHash == null)
                 {
-                    _scriptHash = Script.ToScriptHash();
+                    _scriptHash = Script?.ToScriptHash();
                 }
-                return _scriptHash;
+                return _scriptHash!;
             }
         }
 

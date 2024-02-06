@@ -32,12 +32,12 @@ namespace Neo.Persistence
         public SnapshotCache(IReadOnlyStore store)
         {
             this.store = store;
-            this.snapshot = store as ISnapshot;
+            this.snapshot = (store as ISnapshot)!;
         }
 
         protected override void AddInternal(StorageKey key, StorageItem value)
         {
-            snapshot?.Put(key.ToArray(), value.ToArray());
+            snapshot.Put(key.ToArray(), value.ToArray());
         }
 
         protected override void DeleteInternal(StorageKey key)
@@ -58,12 +58,12 @@ namespace Neo.Persistence
 
         public void Dispose()
         {
-            snapshot?.Dispose();
+            snapshot.Dispose();
         }
 
         protected override StorageItem GetInternal(StorageKey key)
         {
-            byte[] value = store.TryGet(key.ToArray());
+            byte[]? value = store.TryGet(key.ToArray());
             if (value == null) throw new KeyNotFoundException();
             return new(value);
         }
@@ -73,16 +73,16 @@ namespace Neo.Persistence
             return store.Seek(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key), new StorageItem(p.Value)));
         }
 
-        protected override StorageItem TryGetInternal(StorageKey key)
+        protected override StorageItem? TryGetInternal(StorageKey key)
         {
-            byte[] value = store.TryGet(key.ToArray());
+            byte[]? value = store.TryGet(key.ToArray());
             if (value == null) return null;
             return new(value);
         }
 
         protected override void UpdateInternal(StorageKey key, StorageItem value)
         {
-            snapshot?.Put(key.ToArray(), value.ToArray());
+            snapshot.Put(key.ToArray(), value.ToArray());
         }
     }
 }

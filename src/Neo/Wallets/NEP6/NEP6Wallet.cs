@@ -27,18 +27,18 @@ namespace Neo.Wallets.NEP6
     /// <remarks>https://github.com/neo-project/proposals/blob/master/nep-6.mediawiki</remarks>
     public class NEP6Wallet : Wallet
     {
-        private string password;
-        private string name;
-        private Version version;
+        private string _password;
+        private string? name;
+        private Version version = null!;
         private readonly Dictionary<UInt160, NEP6Account> accounts;
-        private readonly JToken extra;
+        private readonly JToken? extra;
 
         /// <summary>
         /// The parameters of the SCrypt algorithm used for encrypting and decrypting the private keys in the wallet.
         /// </summary>
         public readonly ScryptParameters Scrypt;
 
-        public override string Name => name;
+        public override string? Name => name;
 
         /// <summary>
         /// The version of the wallet standard. It is currently fixed at 1.0 and will be used for functional upgrades in the future.
@@ -52,12 +52,12 @@ namespace Neo.Wallets.NEP6
         /// <param name="password">The password of the wallet.</param>
         /// <param name="settings">The <see cref="ProtocolSettings"/> to be used by the wallet.</param>
         /// <param name="name">The name of the wallet. If the wallet is loaded from an existing file, this parameter is ignored.</param>
-        public NEP6Wallet(string path, string password, ProtocolSettings settings, string name = null) : base(path, settings)
+        public NEP6Wallet(string path, string password, ProtocolSettings settings, string? name = null) : base(path, settings)
         {
-            this.password = password;
+            this._password = password;
             if (File.Exists(path))
             {
-                JObject wallet = (JObject)JToken.Parse(File.ReadAllBytes(path));
+                JObject wallet = JToken.Parse(File.ReadAllBytes(path)).NullExceptionOr<JObject>();
                 LoadFromJson(wallet, out Scrypt, out accounts, out extra);
             }
             else
@@ -79,18 +79,18 @@ namespace Neo.Wallets.NEP6
         /// <param name="json">The JSON object representing the wallet.</param>
         public NEP6Wallet(string path, string password, ProtocolSettings settings, JObject json) : base(path, settings)
         {
-            this.password = password;
+            this._password = password;
             LoadFromJson(json, out Scrypt, out accounts, out extra);
         }
 
-        private void LoadFromJson(JObject wallet, out ScryptParameters scrypt, out Dictionary<UInt160, NEP6Account> accounts, out JToken extra)
+        private void LoadFromJson(JObject wallet, out ScryptParameters scrypt, out Dictionary<UInt160, NEP6Account> accounts, out JToken? extra)
         {
-            this.version = Version.Parse(wallet["version"].AsString());
+            this.version = Version.Parse(wallet["version"]!.AsString());
             this.name = wallet["name"]?.AsString();
-            scrypt = ScryptParameters.FromJson((JObject)wallet["scrypt"]);
-            accounts = ((JArray)wallet["accounts"]).Select(p => NEP6Account.FromJson((JObject)p, this)).ToDictionary(p => p.ScriptHash);
+            scrypt = ScryptParameters.FromJson((JObject)wallet["scrypt"].NotNull());
+            accounts = wallet["accounts"].NullExceptionOr<JArray>().Select(p => NEP6Account.FromJson(p.NullExceptionOr<JObject>(), this)).ToDictionary(p => p.ScriptHash);
             extra = wallet["extra"];
-            if (!VerifyPasswordInternal(password))
+            if (!VerifyPasswordInternal(_password))
                 throw new InvalidOperationException("Wrong password.");
         }
 
@@ -98,7 +98,7 @@ namespace Neo.Wallets.NEP6
         {
             lock (accounts)
             {
-                if (accounts.TryGetValue(account.ScriptHash, out NEP6Account account_old))
+                if (accounts.TryGetValue(account.ScriptHash, out NEP6Account? account_old))
                 {
                     account.Label = account_old.Label;
                     account.IsDefault = account_old.IsDefault;
@@ -109,7 +109,7 @@ namespace Neo.Wallets.NEP6
                     }
                     else
                     {
-                        NEP6Contract contract_old = (NEP6Contract)account_old.Contract;
+                        NEP6Contract? contract_old = (NEP6Contract?)account_old.Contract;
                         if (contract_old != null)
                         {
                             NEP6Contract contract = (NEP6Contract)account.Contract;
@@ -143,7 +143,7 @@ namespace Neo.Wallets.NEP6
                 ParameterNames = new[] { "signature" },
                 Deployed = false
             };
-            NEP6Account account = new(this, contract.ScriptHash, key, password)
+            NEP6Account account = new(this, contract.ScriptHash, key, _password)
             {
                 Contract = contract
             };
@@ -151,7 +151,7 @@ namespace Neo.Wallets.NEP6
             return account;
         }
 
-        public override WalletAccount CreateAccount(Contract contract, KeyPair key = null)
+        public override WalletAccount CreateAccount(Contract contract, KeyPair? key = null)
         {
             if (contract is not NEP6Contract nep6contract)
             {
@@ -167,7 +167,7 @@ namespace Neo.Wallets.NEP6
             if (key == null)
                 account = new NEP6Account(this, nep6contract.ScriptHash);
             else
-                account = new NEP6Account(this, nep6contract.ScriptHash, key, password);
+                account = new NEP6Account(this, nep6contract.ScriptHash, key, _password);
             account.Contract = nep6contract;
             AddAccount(account);
             return account;
@@ -187,7 +187,7 @@ namespace Neo.Wallets.NEP6
         /// <returns>The decrypted private key.</returns>
         internal KeyPair DecryptKey(string nep2key)
         {
-            return new KeyPair(GetPrivateKeyFromNEP2(nep2key, password, ProtocolSettings.AddressVersion, Scrypt.N, Scrypt.R, Scrypt.P));
+            return new KeyPair(GetPrivateKeyFromNEP2(nep2key, _password, ProtocolSettings!.AddressVersion, Scrypt.N, Scrypt.R, Scrypt.P));
         }
 
         public override void Delete()
@@ -203,11 +203,11 @@ namespace Neo.Wallets.NEP6
             }
         }
 
-        public override WalletAccount GetAccount(UInt160 scriptHash)
+        public override WalletAccount? GetAccount(UInt160 scriptHash)
         {
             lock (accounts)
             {
-                accounts.TryGetValue(scriptHash, out NEP6Account account);
+                accounts.TryGetValue(scriptHash, out NEP6Account? account);
                 return account;
             }
         }
@@ -224,9 +224,9 @@ namespace Neo.Wallets.NEP6
         public override WalletAccount Import(X509Certificate2 cert)
         {
             KeyPair key;
-            using (ECDsa ecdsa = cert.GetECDsaPrivateKey())
+            using (ECDsa ecdsa = cert.GetECDsaPrivateKey()!)
             {
-                key = new KeyPair(ecdsa.ExportParameters(true).D);
+                key = new KeyPair(ecdsa.ExportParameters(true).D!);
             }
             NEP6Contract contract = new()
             {
@@ -235,7 +235,7 @@ namespace Neo.Wallets.NEP6
                 ParameterNames = new[] { "signature" },
                 Deployed = false
             };
-            NEP6Account account = new(this, contract.ScriptHash, key, password)
+            NEP6Account account = new(this, contract.ScriptHash, key, _password)
             {
                 Contract = contract
             };
@@ -253,7 +253,7 @@ namespace Neo.Wallets.NEP6
                 ParameterNames = new[] { "signature" },
                 Deployed = false
             };
-            NEP6Account account = new(this, contract.ScriptHash, key, password)
+            NEP6Account account = new(this, contract.ScriptHash, key, _password)
             {
                 Contract = contract
             };
@@ -263,7 +263,7 @@ namespace Neo.Wallets.NEP6
 
         public override WalletAccount Import(string nep2, string passphrase, int N = 16384, int r = 8, int p = 8)
         {
-            KeyPair key = new(GetPrivateKeyFromNEP2(nep2, passphrase, ProtocolSettings.AddressVersion, N, r, p));
+            KeyPair key = new(GetPrivateKeyFromNEP2(nep2, passphrase, ProtocolSettings!.AddressVersion, N, r, p));
             NEP6Contract contract = new()
             {
                 Script = Contract.CreateSignatureRedeemScript(key.PublicKey),
@@ -286,14 +286,17 @@ namespace Neo.Wallets.NEP6
         /// </summary>
         public JObject ToJson()
         {
-            return new()
+            lock (accounts)
             {
-                ["name"] = name,
-                ["version"] = version.ToString(),
-                ["scrypt"] = Scrypt.ToJson(),
-                ["accounts"] = accounts.Values.Select(p => p.ToJson()).ToArray(),
-                ["extra"] = extra
-            };
+                return new()
+                {
+                    ["name"] = name,
+                    ["version"] = version.ToString(),
+                    ["scrypt"] = Scrypt.ToJson(),
+                    ["accounts"] = accounts.Values.Select(p => p.ToJson()).ToArray(),
+                    ["extra"] = extra
+                };
+            }
         }
 
         public override void Save()
@@ -303,14 +306,14 @@ namespace Neo.Wallets.NEP6
 
         public override bool VerifyPassword(string password)
         {
-            return this.password == password;
+            return this._password == password;
         }
 
         private bool VerifyPasswordInternal(string password)
         {
             lock (accounts)
             {
-                NEP6Account account = accounts.Values.FirstOrDefault(p => !p.Decrypted);
+                NEP6Account? account = accounts.Values.FirstOrDefault(p => !p.Decrypted);
                 if (account == null)
                 {
                     account = accounts.Values.FirstOrDefault(p => p.HasKey);
@@ -351,14 +354,21 @@ namespace Neo.Wallets.NEP6
             }
             if (succeed)
             {
-                foreach (NEP6Account account in accounts.Values)
-                    account.ChangePasswordCommit();
-                password = newPassword;
+                lock (accounts)
+                {
+                    foreach (NEP6Account account in accounts.Values)
+                        account.ChangePasswordCommit();
+                }
+
+                _password = newPassword;
             }
             else
             {
-                foreach (NEP6Account account in accounts.Values)
-                    account.ChangePasswordRoolback();
+                lock (accounts)
+                {
+                    foreach (NEP6Account account in accounts.Values)
+                        account.ChangePasswordRoolback();
+                }
             }
             return succeed;
         }

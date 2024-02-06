@@ -61,15 +61,15 @@ namespace Neo
             }
         }
 
-        public int CompareTo(UInt256 other)
+        public int CompareTo(UInt256? other)
         {
-            int result = value4.CompareTo(other.value4);
+            int result = value4.CompareTo(other?.value4);
             if (result != 0) return result;
-            result = value3.CompareTo(other.value3);
+            result = value3.CompareTo(other?.value3);
             if (result != 0) return result;
-            result = value2.CompareTo(other.value2);
+            result = value2.CompareTo(other?.value2);
             if (result != 0) return result;
-            return value1.CompareTo(other.value1);
+            return value1.CompareTo(other?.value1);
         }
 
         public void Deserialize(ref MemoryReader reader)
@@ -80,13 +80,13 @@ namespace Neo
             value4 = reader.ReadUInt64();
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(obj, this)) return true;
             return Equals(obj as UInt256);
         }
 
-        public bool Equals(UInt256 other)
+        public bool Equals(UInt256? other)
         {
             if (other is null) return false;
             return value1 == other.value1
@@ -106,7 +106,7 @@ namespace Neo
         /// <param name="value">An <see cref="UInt256"/> represented by a <see cref="string"/>.</param>
         /// <returns>The parsed <see cref="UInt256"/>.</returns>
         /// <exception cref="FormatException"><paramref name="value"/> is not in the correct format.</exception>
-        public static UInt256 Parse(string value)
+        public static UInt256? Parse(string value)
         {
             if (!TryParse(value, out var result)) throw new FormatException();
             return result;
@@ -131,7 +131,7 @@ namespace Neo
         /// <param name="s">An <see cref="UInt256"/> represented by a <see cref="string"/>.</param>
         /// <param name="result">The parsed <see cref="UInt256"/>.</param>
         /// <returns><see langword="true"/> if an <see cref="UInt256"/> is successfully parsed; otherwise, <see langword="false"/>.</returns>
-        public static bool TryParse(string s, out UInt256 result)
+        public static bool TryParse(string? s, out UInt256? result)
         {
             if (s == null)
             {
@@ -156,14 +156,14 @@ namespace Neo
             return true;
         }
 
-        public static bool operator ==(UInt256 left, UInt256 right)
+        public static bool operator ==(UInt256? left, UInt256? right)
         {
             if (ReferenceEquals(left, right)) return true;
             if (left is null || right is null) return false;
             return left.Equals(right);
         }
 
-        public static bool operator !=(UInt256 left, UInt256 right)
+        public static bool operator !=(UInt256? left, UInt256? right)
         {
             return !(left == right);
         }

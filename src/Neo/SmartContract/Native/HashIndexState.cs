@@ -17,7 +17,7 @@ namespace Neo.SmartContract.Native
 {
     class HashIndexState : IInteroperable
     {
-        public UInt256 Hash;
+        public UInt256 Hash= null!;
         public uint Index;
 
         void IInteroperable.FromStackItem(StackItem stackItem)
@@ -27,7 +27,7 @@ namespace Neo.SmartContract.Native
             Index = (uint)@struct[1].GetInteger();
         }
 
-        StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
+        StackItem IInteroperable.ToStackItem(ReferenceCounter? referenceCounter)
         {
             return new Struct(referenceCounter) { Hash.ToArray(), Index };
         }

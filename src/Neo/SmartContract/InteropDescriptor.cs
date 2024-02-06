@@ -47,7 +47,7 @@ namespace Neo.SmartContract
         /// </summary>
         public MethodInfo Handler { get; init; }
 
-        private IReadOnlyList<InteropParameterDescriptor> _parameters;
+        private IReadOnlyList<InteropParameterDescriptor>? _parameters;
         /// <summary>
         /// The parameters of the interoperable service.
         /// </summary>

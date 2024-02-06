@@ -51,17 +51,17 @@ namespace Neo.SmartContract
         /// <summary>
         /// The name and version of the compiler that generated this nef file.
         /// </summary>
-        public string Compiler { get; set; }
+        public string Compiler { get; set; } = null!;
 
         /// <summary>
         /// The url of the source files.
         /// </summary>
-        public string Source { get; set; }
+        public string Source { get; set; } = null!;
 
         /// <summary>
         /// The methods that to be called statically.
         /// </summary>
-        public MethodToken[] Tokens { get; set; }
+        public MethodToken[] Tokens { get; set; } = null!;
 
         /// <summary>
         /// The script of the contract.

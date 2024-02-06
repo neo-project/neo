@@ -26,7 +26,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <summary>
         /// The group to be checked.
         /// </summary>
-        public ECPoint Group;
+        public ECPoint Group = null!;
 
         public override int Size => base.Size + Group.Size;
         public override WitnessConditionType Type => WitnessConditionType.CalledByGroup;
@@ -39,7 +39,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         public override bool Match(ApplicationEngine engine)
         {
             engine.ValidateCallFlags(CallFlags.ReadStates);
-            ContractState contract = NativeContract.ContractManagement.GetContract(engine.Snapshot, engine.CallingScriptHash);
+            ContractState? contract = NativeContract.ContractManagement.GetContract(engine.Snapshot, engine.CallingScriptHash.NotNull());
             return contract is not null && contract.Manifest.Groups.Any(p => p.PubKey.Equals(Group));
         }
 
@@ -50,7 +50,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         private protected override void ParseJson(JObject json, int maxNestDepth)
         {
-            Group = ECPoint.Parse(json["group"].GetString(), ECCurve.Secp256r1);
+            Group = ECPoint.Parse(json["group"]!.GetString(), ECCurve.Secp256r1);
         }
 
         public override JObject ToJson()
@@ -60,9 +60,9 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return json;
         }
 
-        public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(ReferenceCounter? referenceCounter)
         {
-            var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
+            var result = (Array)base.ToStackItem(referenceCounter);
             result.Add(Group.ToArray());
             return result;
         }

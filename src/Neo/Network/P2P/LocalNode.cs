@@ -31,12 +31,12 @@ namespace Neo.Network.P2P
         /// <summary>
         /// Sent to <see cref="LocalNode"/> to relay an <see cref="IInventory"/>.
         /// </summary>
-        public class RelayDirectly { public IInventory Inventory; }
+        public class RelayDirectly { public IInventory Inventory = null!; }
 
         /// <summary>
         /// Sent to <see cref="LocalNode"/> to send an <see cref="IInventory"/>.
         /// </summary>
-        public class SendDirectly { public IInventory Inventory; }
+        public class SendDirectly { public IInventory Inventory = null!; }
 
         /// <summary>
         /// Sent to <see cref="LocalNode"/> to request for an instance of <see cref="LocalNode"/>.
@@ -105,7 +105,7 @@ namespace Neo.Network.P2P
         /// </summary>
         /// <param name="command">The message command to be packed.</param>
         /// <param name="payload">Optional payload to be Serialized along the message.</param>
-        private void BroadcastMessage(MessageCommand command, ISerializable payload = null)
+        private void BroadcastMessage(MessageCommand command, ISerializable? payload = null)
         {
             BroadcastMessage(Message.Create(command, payload));
         }
@@ -127,9 +127,9 @@ namespace Neo.Network.P2P
             }
         }
 
-        private static IPEndPoint GetIPEndpointFromHostPort(string hostNameOrAddress, int port)
+        private static IPEndPoint? GetIPEndpointFromHostPort(string hostNameOrAddress, int port)
         {
-            if (IPAddress.TryParse(hostNameOrAddress, out IPAddress ipAddress))
+            if (IPAddress.TryParse(hostNameOrAddress, out IPAddress? ipAddress))
                 return new IPEndPoint(ipAddress, port);
             IPHostEntry entry;
             try
@@ -145,7 +145,7 @@ namespace Neo.Network.P2P
             return new IPEndPoint(ipAddress, port);
         }
 
-        internal static IPEndPoint GetIpEndPoint(string hostAndPort)
+        internal static IPEndPoint? GetIpEndPoint(string hostAndPort)
         {
             if (string.IsNullOrEmpty(hostAndPort)) return null;
 

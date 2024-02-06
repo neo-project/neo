@@ -20,7 +20,7 @@ namespace Neo
     public struct BigDecimal : IComparable<BigDecimal>, IEquatable<BigDecimal>
     {
         private readonly BigInteger value;
-        private readonly byte decimals;
+        private readonly byte _decimals;
 
         /// <summary>
         /// The <see cref="BigInteger"/> value of the number.
@@ -30,7 +30,7 @@ namespace Neo
         /// <summary>
         /// The number of decimal places for this number.
         /// </summary>
-        public readonly byte Decimals => decimals;
+        public readonly byte Decimals => _decimals;
 
         /// <summary>
         /// The sign of the number.
@@ -45,7 +45,7 @@ namespace Neo
         public BigDecimal(BigInteger value, byte decimals)
         {
             this.value = value;
-            this.decimals = decimals;
+            this._decimals = decimals;
         }
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace Neo
                 ReadOnlySpan<byte> buffer = new(p, 16);
                 this.value = new BigInteger(buffer[..12], isUnsigned: true);
                 if (buffer[15] != 0) this.value = -this.value;
-                this.decimals = buffer[14];
+                this._decimals = buffer[14];
             }
         }
 
@@ -85,7 +85,7 @@ namespace Neo
                 if (buffer[15] != 0)
                     this.value = -this.value;
             }
-            this.decimals = decimals;
+            this._decimals = decimals;
         }
 
         /// <summary>
@@ -95,20 +95,20 @@ namespace Neo
         /// <returns>The <see cref="BigDecimal"/> that has the new number of decimal places.</returns>
         public readonly BigDecimal ChangeDecimals(byte decimals)
         {
-            if (this.decimals == decimals) return this;
-            BigInteger value;
-            if (this.decimals < decimals)
+            if (this._decimals == decimals) return this;
+            BigInteger integer;
+            if (this._decimals < decimals)
             {
-                value = this.value * BigInteger.Pow(10, decimals - this.decimals);
+                integer = this.value * BigInteger.Pow(10, decimals - this._decimals);
             }
             else
             {
-                BigInteger divisor = BigInteger.Pow(10, this.decimals - decimals);
-                value = BigInteger.DivRem(this.value, divisor, out BigInteger remainder);
+                BigInteger divisor = BigInteger.Pow(10, this._decimals - decimals);
+                integer = BigInteger.DivRem(this.value, divisor, out BigInteger remainder);
                 if (remainder > BigInteger.Zero)
                     throw new ArgumentOutOfRangeException(nameof(decimals));
             }
-            return new BigDecimal(value, decimals);
+            return new BigDecimal(integer, decimals);
         }
 
         /// <summary>
@@ -131,10 +131,10 @@ namespace Neo
         /// <returns>The <see cref="string"/> representing the number.</returns>
         public override readonly string ToString()
         {
-            BigInteger divisor = BigInteger.Pow(10, decimals);
+            BigInteger divisor = BigInteger.Pow(10, _decimals);
             BigInteger result = BigInteger.DivRem(value, divisor, out BigInteger remainder);
             if (remainder == 0) return result.ToString();
-            return $"{result}.{remainder.ToString("d" + decimals)}".TrimEnd('0');
+            return $"{result}.{remainder.ToString("d" + _decimals)}".TrimEnd('0');
         }
 
         /// <summary>
@@ -185,14 +185,14 @@ namespace Neo
         public readonly int CompareTo(BigDecimal other)
         {
             BigInteger left = value, right = other.value;
-            if (decimals < other.decimals)
-                left *= BigInteger.Pow(10, other.decimals - decimals);
-            else if (decimals > other.decimals)
-                right *= BigInteger.Pow(10, decimals - other.decimals);
+            if (_decimals < other._decimals)
+                left *= BigInteger.Pow(10, other._decimals - _decimals);
+            else if (_decimals > other._decimals)
+                right *= BigInteger.Pow(10, _decimals - other._decimals);
             return left.CompareTo(right);
         }
 
-        public override readonly bool Equals(object obj)
+        public readonly override bool Equals(object? obj)
         {
             if (obj is not BigDecimal @decimal) return false;
             return Equals(@decimal);
@@ -205,7 +205,7 @@ namespace Neo
 
         public override readonly int GetHashCode()
         {
-            BigInteger divisor = BigInteger.Pow(10, decimals);
+            BigInteger divisor = BigInteger.Pow(10, _decimals);
             BigInteger result = BigInteger.DivRem(value, divisor, out BigInteger remainder);
             return HashCode.Combine(result, remainder);
         }

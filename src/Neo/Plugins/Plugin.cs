@@ -33,14 +33,14 @@ namespace Neo.Plugins
         /// <summary>
         /// The directory containing the plugin folders. Files can be contained in any subdirectory.
         /// </summary>
-        public static readonly string PluginsDirectory = Combine(GetDirectoryName(System.AppContext.BaseDirectory), "Plugins");
+        public static readonly string PluginsDirectory = Combine(GetDirectoryName(System.AppContext.BaseDirectory)!, "Plugins");
 
-        private static readonly FileSystemWatcher configWatcher;
+        private static readonly FileSystemWatcher configWatcher = null!;
 
         /// <summary>
         /// Indicates the root path of the plugin.
         /// </summary>
-        public string RootPath => Combine(PluginsDirectory, GetType().Assembly.GetName().Name);
+        public string RootPath => Combine(PluginsDirectory, GetType().Assembly.GetName().Name!);
 
         /// <summary>
         /// Indicates the location of the plugin configuration file.
@@ -65,7 +65,7 @@ namespace Neo.Plugins
         /// <summary>
         /// Indicates the version of the plugin.
         /// </summary>
-        public virtual Version Version => GetType().Assembly.GetName().Version;
+        public virtual Version Version => GetType().Assembly.GetName().Version!;
 
         static Plugin()
         {
@@ -111,22 +111,22 @@ namespace Neo.Plugins
             }
         }
 
-        private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+        private static Assembly? CurrentDomain_AssemblyResolve(object? sender, ResolveEventArgs args)
         {
             if (args.Name.Contains(".resources"))
                 return null;
 
             AssemblyName an = new(args.Name);
 
-            Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name) ??
+            Assembly? assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name) ??
                                 AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == an.Name);
             if (assembly != null) return assembly;
 
             string filename = an.Name + ".dll";
             string path = filename;
-            if (!File.Exists(path)) path = Combine(GetDirectoryName(System.AppContext.BaseDirectory), filename);
+            if (!File.Exists(path)) path = Combine(GetDirectoryName(System.AppContext.BaseDirectory)!, filename);
             if (!File.Exists(path)) path = Combine(PluginsDirectory, filename);
-            if (!File.Exists(path)) path = Combine(PluginsDirectory, args.RequestingAssembly.GetName().Name, filename);
+            if (!File.Exists(path)) path = Combine(PluginsDirectory, args.RequestingAssembly!.GetName().Name!, filename);
             if (!File.Exists(path)) return null;
 
             try
@@ -160,7 +160,7 @@ namespace Neo.Plugins
                 if (!type.IsSubclassOf(typeof(Plugin))) continue;
                 if (type.IsAbstract) continue;
 
-                ConstructorInfo constructor = type.GetConstructor(Type.EmptyTypes);
+                ConstructorInfo? constructor = type.GetConstructor(Type.EmptyTypes);
                 try
                 {
                     constructor?.Invoke(null);

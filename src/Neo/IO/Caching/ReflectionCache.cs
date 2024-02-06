@@ -26,7 +26,7 @@ namespace Neo.IO.Caching
             foreach (FieldInfo field in typeof(T).GetFields(BindingFlags.Public | BindingFlags.Static))
             {
                 // Get attribute
-                ReflectionCacheAttribute attribute = field.GetCustomAttribute<ReflectionCacheAttribute>();
+                ReflectionCacheAttribute? attribute = field.GetCustomAttribute<ReflectionCacheAttribute>();
                 if (attribute == null) continue;
 
                 // Append to cache
@@ -34,19 +34,19 @@ namespace Neo.IO.Caching
             }
         }
 
-        public static object CreateInstance(T key, object def = null)
+        public static object? CreateInstance(T key, object? def = null)
         {
             // Get Type from cache
-            if (dictionary.TryGetValue(key, out Type t))
+            if (dictionary.TryGetValue(key, out Type? t))
                 return Activator.CreateInstance(t);
 
             // return null
             return def;
         }
 
-        public static ISerializable CreateSerializable(T key, ReadOnlyMemory<byte> data)
+        public static ISerializable? CreateSerializable(T key, ReadOnlyMemory<byte> data)
         {
-            if (dictionary.TryGetValue(key, out Type t))
+            if (dictionary.TryGetValue(key, out Type? t))
                 return data.AsSerializable(t);
             return null;
         }

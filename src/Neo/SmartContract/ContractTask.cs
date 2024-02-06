@@ -35,7 +35,7 @@ namespace Neo.SmartContract
 
         public virtual ContractTaskAwaiter GetAwaiter() => awaiter;
 
-        public virtual object GetResult() => null;
+        public virtual object? GetResult() => null;
     }
 
     [AsyncMethodBuilder(typeof(ContractTaskMethodBuilder<>))]
@@ -45,6 +45,6 @@ namespace Neo.SmartContract
 
         public override ContractTaskAwaiter<T> GetAwaiter() => (ContractTaskAwaiter<T>)base.GetAwaiter();
 
-        public override object GetResult() => GetAwaiter().GetResult();
+        public override object? GetResult() => GetAwaiter().GetResult();
     }
 }

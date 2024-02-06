@@ -33,7 +33,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The account of the signer.
         /// </summary>
-        public UInt160 Account;
+        public UInt160 Account = null!;
 
         /// <summary>
         /// The scopes of the witness.
@@ -44,19 +44,19 @@ namespace Neo.Network.P2P.Payloads
         /// The contracts that allowed by the witness.
         /// Only available when the <see cref="WitnessScope.CustomContracts"/> flag is set.
         /// </summary>
-        public UInt160[] AllowedContracts;
+        public UInt160[] AllowedContracts = null!;
 
         /// <summary>
         /// The groups that allowed by the witness.
         /// Only available when the <see cref="WitnessScope.CustomGroups"/> flag is set.
         /// </summary>
-        public ECPoint[] AllowedGroups;
+        public ECPoint[] AllowedGroups = null!;
 
         /// <summary>
         /// The rules that the witness must meet.
         /// Only available when the <see cref="WitnessScope.WitnessRules"/> flag is set.
         /// </summary>
-        public WitnessRule[] Rules;
+        public WitnessRule[] Rules = null!;
 
         public int Size =>
             /*Account*/             UInt160.Length +
@@ -154,14 +154,14 @@ namespace Neo.Network.P2P.Payloads
         public static Signer FromJson(JObject json)
         {
             Signer signer = new();
-            signer.Account = UInt160.Parse(json["account"].GetString());
-            signer.Scopes = Enum.Parse<WitnessScope>(json["scopes"].GetString());
+            signer.Account = UInt160.Parse(json["account"]!.GetString());
+            signer.Scopes = Enum.Parse<WitnessScope>(json["scopes"]!.GetString());
             if (signer.Scopes.HasFlag(WitnessScope.CustomContracts))
-                signer.AllowedContracts = ((JArray)json["allowedcontracts"]).Select(p => UInt160.Parse(p.GetString())).ToArray();
+                signer.AllowedContracts = json["allowedcontracts"].NullExceptionOr<JArray>().Select(p => UInt160.Parse(p!.GetString())).ToArray();
             if (signer.Scopes.HasFlag(WitnessScope.CustomGroups))
-                signer.AllowedGroups = ((JArray)json["allowedgroups"]).Select(p => ECPoint.Parse(p.GetString(), ECCurve.Secp256r1)).ToArray();
+                signer.AllowedGroups = json["allowedgroups"].NullExceptionOr<JArray>().Select(p => ECPoint.Parse(p!.GetString(), ECCurve.Secp256r1)).ToArray();
             if (signer.Scopes.HasFlag(WitnessScope.WitnessRules))
-                signer.Rules = ((JArray)json["rules"]).Select(p => WitnessRule.FromJson((JObject)p)).ToArray();
+                signer.Rules = json["rules"].NullExceptionOr<JArray>().Select(p => WitnessRule.FromJson(p.NullExceptionOr<JObject>())).ToArray();
             return signer;
         }
 
@@ -175,9 +175,9 @@ namespace Neo.Network.P2P.Payloads
             json["account"] = Account.ToString();
             json["scopes"] = Scopes;
             if (Scopes.HasFlag(WitnessScope.CustomContracts))
-                json["allowedcontracts"] = AllowedContracts.Select(p => (JToken)p.ToString()).ToArray();
+                json["allowedcontracts"] = AllowedContracts.Select(p => (JToken)p.ToString()!).ToArray();
             if (Scopes.HasFlag(WitnessScope.CustomGroups))
-                json["allowedgroups"] = AllowedGroups.Select(p => (JToken)p.ToString()).ToArray();
+                json["allowedgroups"] = AllowedGroups.Select(p => (JToken)p.ToString()!).ToArray();
             if (Scopes.HasFlag(WitnessScope.WitnessRules))
                 json["rules"] = Rules.Select(p => p.ToJson()).ToArray();
             return json;
@@ -188,7 +188,7 @@ namespace Neo.Network.P2P.Payloads
             throw new NotSupportedException();
         }
 
-        VM.Types.StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
+        VM.Types.StackItem IInteroperable.ToStackItem(ReferenceCounter? referenceCounter)
         {
             return new VM.Types.Array(referenceCounter, new VM.Types.StackItem[]
             {

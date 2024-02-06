@@ -49,7 +49,7 @@ namespace Neo.Network.P2P
         private readonly HashSetCache<UInt256> knownHashes;
         private readonly HashSetCache<UInt256> sentHashes;
         private bool verack = false;
-        private BloomFilter bloom_filter;
+        private BloomFilter? bloom_filter;
 
         private static readonly TimeSpan TimerInterval = TimeSpan.FromSeconds(30);
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
@@ -61,7 +61,7 @@ namespace Neo.Network.P2P
                     return;
             if (Version == null)
             {
-                if (msg.Command != MessageCommand.Version)
+                if (msg.Command != MessageCommand.Version || msg.Payload is null)
                     throw new ProtocolViolationException();
                 OnVersionMessageReceived((VersionPayload)msg.Payload);
                 return;
@@ -73,71 +73,73 @@ namespace Neo.Network.P2P
                 OnVerackMessageReceived();
                 return;
             }
-            switch (msg.Command)
+            switch (msg.Command, msg.Payload)
             {
-                case MessageCommand.Addr:
-                    OnAddrMessageReceived((AddrPayload)msg.Payload);
+                case (MessageCommand.Addr, AddrPayload payload):
+                    OnAddrMessageReceived(payload);
                     break;
-                case MessageCommand.Block:
-                case MessageCommand.Extensible:
+                case (MessageCommand.Block,IInventory):
+                case (MessageCommand.Extensible, IInventory):
                     OnInventoryReceived((IInventory)msg.Payload);
                     break;
-                case MessageCommand.FilterAdd:
-                    OnFilterAddMessageReceived((FilterAddPayload)msg.Payload);
+                case (MessageCommand.FilterAdd, FilterAddPayload payload):
+                    OnFilterAddMessageReceived(payload);
                     break;
-                case MessageCommand.FilterClear:
+                case (MessageCommand.FilterClear, _):
                     OnFilterClearMessageReceived();
                     break;
-                case MessageCommand.FilterLoad:
-                    OnFilterLoadMessageReceived((FilterLoadPayload)msg.Payload);
+                case (MessageCommand.FilterLoad, FilterLoadPayload payload):
+                    OnFilterLoadMessageReceived(payload);
                     break;
-                case MessageCommand.GetAddr:
+                case (MessageCommand.GetAddr, _):
                     OnGetAddrMessageReceived();
                     break;
-                case MessageCommand.GetBlocks:
-                    OnGetBlocksMessageReceived((GetBlocksPayload)msg.Payload);
+                case (MessageCommand.GetBlocks, GetBlocksPayload payload):
+                    OnGetBlocksMessageReceived(payload);
                     break;
-                case MessageCommand.GetBlockByIndex:
-                    OnGetBlockByIndexMessageReceived((GetBlockByIndexPayload)msg.Payload);
+                case (MessageCommand.GetBlockByIndex, GetBlockByIndexPayload payload):
+                    OnGetBlockByIndexMessageReceived(payload);
                     break;
-                case MessageCommand.GetData:
-                    OnGetDataMessageReceived((InvPayload)msg.Payload);
+                case (MessageCommand.GetData, InvPayload payload):
+                    OnGetDataMessageReceived(payload);
                     break;
-                case MessageCommand.GetHeaders:
-                    OnGetHeadersMessageReceived((GetBlockByIndexPayload)msg.Payload);
+                case (MessageCommand.GetHeaders, GetBlockByIndexPayload payload):
+                    OnGetHeadersMessageReceived(payload);
                     break;
-                case MessageCommand.Headers:
-                    OnHeadersMessageReceived((HeadersPayload)msg.Payload);
+                case (MessageCommand.Headers, HeadersPayload payload):
+                    OnHeadersMessageReceived(payload);
                     break;
-                case MessageCommand.Inv:
-                    OnInvMessageReceived((InvPayload)msg.Payload);
+                case (MessageCommand.Inv, InvPayload payload):
+                    OnInvMessageReceived(payload);
                     break;
-                case MessageCommand.Mempool:
+                case (MessageCommand.Mempool,_):
                     OnMemPoolMessageReceived();
                     break;
-                case MessageCommand.Ping:
-                    OnPingMessageReceived((PingPayload)msg.Payload);
+                case (MessageCommand.Ping, PingPayload payload):
+                    OnPingMessageReceived(payload);
                     break;
-                case MessageCommand.Pong:
-                    OnPongMessageReceived((PingPayload)msg.Payload);
+                case (MessageCommand.Pong, PingPayload payload):
+                    OnPongMessageReceived(payload);
                     break;
-                case MessageCommand.Transaction:
-                    if (msg.Payload.Size <= Transaction.MaxTransactionSize)
-                        OnInventoryReceived((Transaction)msg.Payload);
+                case (MessageCommand.Transaction, Transaction payload):
+                    if (payload.Size <= Transaction.MaxTransactionSize)
+                        OnInventoryReceived(payload);
                     break;
-                case MessageCommand.Verack:
-                case MessageCommand.Version:
+                case (MessageCommand.Verack, _):
+                case (MessageCommand.Version, _):
                     throw new ProtocolViolationException();
-                case MessageCommand.Alert:
-                case MessageCommand.MerkleBlock:
-                case MessageCommand.NotFound:
-                case MessageCommand.Reject:
+                break;
+                case (MessageCommand.Alert, _):
+                case (MessageCommand.MerkleBlock, _):
+                case (MessageCommand.NotFound, _):
+                case (MessageCommand.Reject, _):
                 default: break;
             }
         }
 
-        private void OnAddrMessageReceived(AddrPayload payload)
+        private void OnAddrMessageReceived(AddrPayload? payload)
         {
+            if (payload == null) throw new NullReferenceException($"AddrPayload {nameof(payload)} is null.");
             ref bool sent = ref sentCommands[(byte)MessageCommand.GetAddr];
             if (!sent) return;
             sent = false;
@@ -191,8 +193,8 @@ namespace Neo.Network.P2P
             // The default value of payload.Count is -1
             int count = payload.Count < 0 || payload.Count > InvPayload.MaxHashesCount ? InvPayload.MaxHashesCount : payload.Count;
             DataCache snapshot = system.StoreView;
-            UInt256 hash = payload.HashStart;
-            TrimmedBlock state = NativeContract.Ledger.GetTrimmedBlock(snapshot, hash);
+            UInt256? hash = payload.HashStart;
+            TrimmedBlock? state = NativeContract.Ledger.GetTrimmedBlock(snapshot, hash);
             if (state == null) return;
             uint currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
             List<UInt256> hashes = new();
@@ -214,7 +216,7 @@ namespace Neo.Network.P2P
             uint count = payload.Count == -1 ? InvPayload.MaxHashesCount : Math.Min((uint)payload.Count, InvPayload.MaxHashesCount);
             for (uint i = payload.IndexStart, max = payload.IndexStart + count; i < max; i++)
             {
-                Block block = NativeContract.Ledger.GetBlock(system.StoreView, i);
+                Block? block = NativeContract.Ledger.GetBlock(system.StoreView, i);
                 if (block == null)
                     break;
 
@@ -245,13 +247,13 @@ namespace Neo.Network.P2P
                 switch (payload.Type)
                 {
                     case InventoryType.TX:
-                        if (system.MemPool.TryGetValue(hash, out Transaction tx))
+                        if (system.MemPool.TryGetValue(hash, out Transaction? tx))
                             EnqueueMessage(Message.Create(MessageCommand.Transaction, tx));
                         else
                             notFound.Add(hash);
                         break;
                     case InventoryType.Block:
-                        Block block = NativeContract.Ledger.GetBlock(system.StoreView, hash);
+                        Block? block = NativeContract.Ledger.GetBlock(system.StoreView, hash);
                         if (block != null)
                         {
                             if (bloom_filter == null)
@@ -382,9 +384,10 @@ namespace Neo.Network.P2P
             CheckMessageQueue();
         }
 
-        private void OnVersionMessageReceived(VersionPayload payload)
+        private void OnVersionMessageReceived(VersionPayload? payload)
         {
-            Version = payload;
+            Version = payload ?? throw new NullReferenceException($"AddrPayload {nameof(payload)} is null.");
+
             foreach (NodeCapability capability in payload.Capabilities)
             {
                 switch (capability)

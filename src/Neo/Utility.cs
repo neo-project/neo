@@ -31,7 +31,7 @@ namespace Neo
             }
         }
 
-        public static event LogEventHandler Logging;
+        public static event LogEventHandler Logging= null!;
 
         /// <summary>
         /// A strict UTF8 encoding used in NEO system.

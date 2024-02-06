@@ -13,10 +13,10 @@ namespace Neo.Cryptography
 {
     internal class MerkleTreeNode
     {
-        public UInt256 Hash;
-        public MerkleTreeNode Parent;
-        public MerkleTreeNode LeftChild;
-        public MerkleTreeNode RightChild;
+        public UInt256 Hash= null!;
+        public MerkleTreeNode? Parent;
+        public MerkleTreeNode? LeftChild;
+        public MerkleTreeNode? RightChild;
 
         public bool IsLeaf => LeftChild == null && RightChild == null;
 

@@ -115,17 +115,20 @@ namespace Neo.Ledger
         }
 
         internal class Initialize { }
-        private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new(); public HashSet<IActorRef> Nodes = new(); }
+        private class UnverifiedBlocksList {
+            public LinkedList<Block> Blocks = new();
+            public HashSet<IActorRef> Nodes = new();
+        }
 
-        public static event CommittingHandler Committing;
-        public static event CommittedHandler Committed;
+        public static event CommittingHandler Committing= null!;
+        public static event CommittedHandler Committed= null!;
 
         private readonly static Script onPersistScript, postPersistScript;
         private const int MaxTxToReverifyPerIdle = 10;
         private readonly NeoSystem system;
         private readonly Dictionary<UInt256, Block> block_cache = new();
         private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new();
-        private ImmutableHashSet<UInt160> extensibleWitnessWhiteList;
+        private ImmutableHashSet<UInt160>? extensibleWitnessWhiteList;
 
         static Blockchain()
         {
@@ -261,19 +264,19 @@ namespace Neo.Ledger
             }
             else
             {
-                if (!block.Hash.Equals(system.HeaderCache[block.Index].Hash))
+                if (!block.Hash.Equals(system.HeaderCache[block.Index]!.Hash))
                     return VerifyResult.Invalid;
             }
             block_cache.TryAdd(block.Hash, block);
             if (block.Index == currentHeight + 1)
             {
-                Block block_persist = block;
+                Block? block_persist = block;
                 List<Block> blocksToPersistList = new();
                 while (true)
                 {
                     blocksToPersistList.Add(block_persist);
                     if (block_persist.Index + 1 > headerHeight) break;
-                    UInt256 hash = system.HeaderCache[block_persist.Index + 1].Hash;
+                    UInt256 hash = system.HeaderCache[block_persist.Index + 1]!.Hash;
                     if (!block_cache.TryGetValue(hash, out block_persist)) break;
                 }
 
@@ -439,7 +442,7 @@ namespace Neo.Ledger
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (TransactionState transactionState in transactionStates)
                 {
-                    Transaction tx = transactionState.Transaction;
+                    Transaction? tx = transactionState.Transaction;
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee);
                     engine.LoadScript(tx.Script);
                     transactionState.State = engine.Execute();

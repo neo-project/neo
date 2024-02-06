@@ -58,7 +58,7 @@ namespace Neo.Wallets.NEP6
         /// <returns>The converted parameters.</returns>
         public static ScryptParameters FromJson(JObject json)
         {
-            return new ScryptParameters((int)json["n"].AsNumber(), (int)json["r"].AsNumber(), (int)json["p"].AsNumber());
+            return new ScryptParameters((int)json["n"]!.AsNumber(), (int)json["r"]!.AsNumber(), (int)json["p"]!.AsNumber());
         }
 
         /// <summary>

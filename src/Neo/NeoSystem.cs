@@ -99,7 +99,7 @@ namespace Neo
         private ImmutableList<object> services = ImmutableList<object>.Empty;
         private readonly string storage_engine;
         private readonly IStore store;
-        private ChannelsConfig start_message = null;
+        private ChannelsConfig? start_message = null;
         private int suspend = 0;
 
         static NeoSystem()
@@ -116,12 +116,12 @@ namespace Neo
         /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
         /// <param name="storageEngine">The storage engine used to create the <see cref="IStore"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
         /// <param name="storagePath">The path of the storage. If <paramref name="storageEngine"/> is the default in-memory storage engine, this parameter is ignored.</param>
-        public NeoSystem(ProtocolSettings settings, string storageEngine = null, string storagePath = null)
+        public NeoSystem(ProtocolSettings settings, string? storageEngine = null, string? storagePath = null)
         {
             this.Settings = settings;
             this.GenesisBlock = CreateGenesisBlock(settings);
             this.storage_engine = storageEngine ?? nameof(MemoryStore);
-            this.store = LoadStore(storagePath);
+            if (storagePath != null)  this.store = LoadStore(storagePath);
             this.MemPool = new MemoryPool(this);
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
@@ -191,7 +191,7 @@ namespace Neo
         /// <typeparam name="T">The type of the service object.</typeparam>
         /// <param name="filter">An action used to filter the service objects. This parameter can be <see langword="null"/>.</param>
         /// <returns>The service object found.</returns>
-        public T GetService<T>(Func<T, bool> filter = null)
+        public T? GetService<T>(Func<T, bool>? filter = null)
         {
             IEnumerable<T> result = services.OfType<T>();
             if (filter is null)

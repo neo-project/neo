@@ -31,7 +31,7 @@ namespace Neo.Ledger
         /// </summary>
         /// <param name="index">The zero-based index of the <see cref="Header"/> to get.</param>
         /// <returns>The <see cref="Header"/> at the specified index in the cache.</returns>
-        public Header this[uint index]
+        public Header? this[uint index]
         {
             get
             {
@@ -65,7 +65,7 @@ namespace Neo.Ledger
         /// <summary>
         /// Gets the last <see cref="Header"/> in the cache. Or <see langword="null"/> if the cache is empty.
         /// </summary>
-        public Header Last
+        public Header? Last
         {
             get
             {

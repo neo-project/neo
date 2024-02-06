@@ -44,7 +44,7 @@ namespace Neo.Network.P2P
         /// <summary>
         /// The payload of the message.
         /// </summary>
-        public ISerializable Payload;
+        public ISerializable? Payload;
 
         private ReadOnlyMemory<byte> _payload_compressed;
 
@@ -56,7 +56,7 @@ namespace Neo.Network.P2P
         /// <param name="command">The command of the message.</param>
         /// <param name="payload">The payload of the message. For the messages that don't require a payload, it should be <see langword="null"/>.</param>
         /// <returns></returns>
-        public static Message Create(MessageCommand command, ISerializable payload = null)
+        public static Message Create(MessageCommand command, ISerializable? payload = null)
         {
             Message message = new()
             {
@@ -114,7 +114,7 @@ namespace Neo.Network.P2P
             writer.WriteVarBytes(_payload_compressed.Span);
         }
 
-        internal static int TryDeserialize(ByteString data, out Message msg)
+        internal static int TryDeserialize(ByteString data, out Message? msg)
         {
             msg = null;
             if (data.Count < 3) return 0;

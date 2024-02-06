@@ -31,7 +31,7 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <returns>The data of the entry. Or <see langword="null"/> if it doesn't exist.</returns>
-        byte[] TryGet(byte[] key);
+        byte[]? TryGet(byte[] key);
 
         /// <summary>
         /// Determines whether the database contains the specified entry.

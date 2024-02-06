@@ -63,9 +63,9 @@ namespace Neo.Persistence
             return records.Select(p => (p.Key[..], p.Value[..]));
         }
 
-        public byte[] TryGet(byte[] key)
+        public byte[]? TryGet(byte[] key)
         {
-            immutableData.TryGetValue(key, out byte[] value);
+            immutableData.TryGetValue(key, out byte[]? value);
             return value?[..];
         }
 

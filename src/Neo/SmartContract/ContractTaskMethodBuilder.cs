@@ -58,7 +58,7 @@ namespace Neo.SmartContract
 
     sealed class ContractTaskMethodBuilder<T>
     {
-        private ContractTask<T> task;
+        private ContractTask<T>? task;
 
         public ContractTask<T> Task => task ??= new ContractTask<T>();
 

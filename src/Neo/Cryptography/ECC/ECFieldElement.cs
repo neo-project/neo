@@ -29,14 +29,14 @@ namespace Neo.Cryptography.ECC
             this.curve = curve;
         }
 
-        public int CompareTo(ECFieldElement other)
+        public int CompareTo(ECFieldElement? other)
         {
             if (ReferenceEquals(this, other)) return 0;
-            if (!curve.Equals(other.curve)) throw new InvalidOperationException("Invalid comparision for points with different curves");
+            if (!curve.Equals(other?.curve)) throw new InvalidOperationException("Invalid comparision for points with different curves");
             return Value.CompareTo(other.Value);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj == this)
                 return true;
@@ -47,9 +47,9 @@ namespace Neo.Cryptography.ECC
             return Equals(other);
         }
 
-        public bool Equals(ECFieldElement other)
+        public bool Equals(ECFieldElement? other)
         {
-            return Value.Equals(other.Value) && curve.Equals(other.curve);
+            return Value.Equals(other?.Value) && curve.Equals(other.curve);
         }
 
         private static BigInteger[] FastLucasSequence(BigInteger p, BigInteger P, BigInteger Q, BigInteger k)
@@ -104,7 +104,7 @@ namespace Neo.Cryptography.ECC
             return Value.GetHashCode();
         }
 
-        public ECFieldElement Sqrt()
+        public ECFieldElement? Sqrt()
         {
             if (curve.Q.TestBit(1))
             {

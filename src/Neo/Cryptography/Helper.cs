@@ -152,7 +152,7 @@ namespace Neo.Cryptography
             return Sha256((ReadOnlySpan<byte>)value);
         }
 
-        public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[] associatedData = null)
+        public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[]? associatedData = null)
         {
             if (nonce.Length != 12) throw new ArgumentOutOfRangeException(nameof(nonce));
             var tag = new byte[16];
@@ -178,7 +178,7 @@ namespace Neo.Cryptography
             return Concat(nonce, cipherBytes, tag);
         }
 
-        public static byte[] AES256Decrypt(this byte[] encryptedData, byte[] key, byte[] associatedData = null)
+        public static byte[] AES256Decrypt(this byte[] encryptedData, byte[] key, byte[]? associatedData = null)
         {
             ReadOnlySpan<byte> encrypted = encryptedData;
             var nonce = encrypted[..12];

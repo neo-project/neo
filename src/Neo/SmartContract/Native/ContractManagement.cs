@@ -143,7 +143,7 @@ namespace Neo.SmartContract.Native
         /// <param name="hash">The hash of the deployed contract.</param>
         /// <returns>The deployed contract.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public ContractState GetContract(DataCache snapshot, UInt160 hash)
+        public ContractState? GetContract(DataCache snapshot, UInt160 hash)
         {
             return snapshot.TryGet(CreateStorageKey(Prefix_Contract).Add(hash))?.GetInteroperable<ContractState>();
         }
@@ -155,7 +155,7 @@ namespace Neo.SmartContract.Native
         /// <param name="id">Contract ID.</param>
         /// <returns>The deployed contract.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public ContractState GetContractById(DataCache snapshot, int id)
+        public ContractState? GetContractById(DataCache snapshot, int id)
         {
             StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_ContractHash).AddBigEndian(id));
             if (item is null) return null;

@@ -61,7 +61,7 @@ namespace Neo.IO
         {
             if (!typeof(ISerializable).GetTypeInfo().IsAssignableFrom(type))
                 throw new InvalidCastException();
-            ISerializable serializable = (ISerializable)Activator.CreateInstance(type);
+            ISerializable serializable = (ISerializable)Activator.CreateInstance(type)!;
             MemoryReader reader = new(value);
             serializable.Deserialize(ref reader);
             return serializable;
@@ -229,9 +229,9 @@ namespace Neo.IO
         /// <param name="reader">The <see cref="MemoryReader"/> for reading data.</param>
         /// <param name="max">The maximum number of elements in the array.</param>
         /// <returns>The array read from the <see cref="MemoryReader"/>.</returns>
-        public static T[] ReadNullableArray<T>(this ref MemoryReader reader, int max = 0x1000000) where T : class, ISerializable, new()
+        public static T?[] ReadNullableArray<T>(this ref MemoryReader reader, int max = 0x1000000) where T : class, ISerializable, new()
         {
-            T[] array = new T[reader.ReadVarInt((ulong)max)];
+            T?[] array = new T[reader.ReadVarInt((ulong)max)];
             for (int i = 0; i < array.Length; i++)
                 array[i] = reader.ReadBoolean() ? reader.ReadSerializable<T>() : null;
             return array;
@@ -381,7 +381,7 @@ namespace Neo.IO
         /// <typeparam name="T">The type of the array element.</typeparam>
         /// <param name="writer">The <see cref="BinaryWriter"/> for writing data.</param>
         /// <param name="value">The <see cref="ISerializable"/> array to be written.</param>
-        public static void WriteNullableArray<T>(this BinaryWriter writer, T[] value) where T : class, ISerializable
+        public static void WriteNullableArray<T>(this BinaryWriter writer, T?[] value) where T : class, ISerializable
         {
             writer.WriteVarInt(value.Length);
             foreach (var item in value)
@@ -389,7 +389,7 @@ namespace Neo.IO
                 bool isNull = item is null;
                 writer.Write(!isNull);
                 if (isNull) continue;
-                item.Serialize(writer);
+                item!.Serialize(writer);
             }
         }
 

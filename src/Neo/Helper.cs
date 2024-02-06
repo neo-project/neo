@@ -135,9 +135,9 @@ namespace Neo
 
         internal static string GetVersion(this Assembly assembly)
         {
-            CustomAttributeData attribute = assembly.CustomAttributes.FirstOrDefault(p => p.AttributeType == typeof(AssemblyInformationalVersionAttribute));
-            if (attribute == null) return assembly.GetName().Version.ToString(3);
-            return (string)attribute.ConstructorArguments[0].Value;
+            CustomAttributeData? attribute = assembly.CustomAttributes.FirstOrDefault(p => p.AttributeType == typeof(AssemblyInformationalVersionAttribute));
+            if (attribute == null) return assembly.GetName().Version!.ToString(3);
+            return (string)attribute.ConstructorArguments[0].Value!;
         }
 
         /// <summary>
@@ -145,9 +145,9 @@ namespace Neo
         /// </summary>
         /// <param name="value">The hex <see cref="string"/> to convert.</param>
         /// <returns>The converted byte array.</returns>
-        public static byte[] HexToBytes(this string value)
+        public static byte[] HexToBytes(this string? value)
         {
-            if (value == null || value.Length == 0)
+            if (string.IsNullOrEmpty(value))
                 return Array.Empty<byte>();
             if (value.Length % 2 == 1)
                 throw new FormatException();
@@ -308,6 +308,20 @@ namespace Neo
             if (!endPoint.Address.IsIPv4MappedToIPv6)
                 return endPoint;
             return new IPEndPoint(endPoint.Address.Unmap(), endPoint.Port);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static T NullExceptionOr<T>(this object? obj) where T : class
+        {
+            if (obj == null) throw new NullReferenceException($"Object {nameof(obj)} is null.");
+            return (T)obj;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static T NotNull<T>(this T? obj) where T : class
+        {
+            if (obj == null) throw new NullReferenceException($"Object {nameof(obj)} is null.");
+            return obj;
         }
     }
 }
