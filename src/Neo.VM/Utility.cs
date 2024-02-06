@@ -68,8 +68,6 @@ namespace Neo.VM
         public static long GetBitLength(this BigInteger value)
         {
             if (value.IsZero) return 0;
-            if (value.GetByteCount(false) > 4096) // Integer.MaxSize = 32
-                throw new InvalidOperationException();
 
             return (long)Math.Ceiling(BigInteger.Log(value.Sign < 0 ? -value : value + 1, 2.0));
         }
