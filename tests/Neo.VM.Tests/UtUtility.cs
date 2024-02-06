@@ -32,21 +32,10 @@ namespace Neo.Test
             Assert.AreEqual(new BigInteger(9), new BigInteger(81).Sqrt());
         }
 
-        private static byte[] GetRandomByteArray(Random random, bool isSmall)
+        private static byte[] GetRandomByteArray(Random random)
         {
-            byte[] value;
-            int byteValue;
-
-            if (isSmall)
-            {
-                byteValue = random.Next(0, 32);
-                value = new byte[byteValue];
-            }
-            else
-            {
-                byteValue = random.Next(byte.MaxValue, 4096);
-                value = new byte[byteValue];
-            }
+            var byteValue = random.Next(0, 32);
+            var value = new byte[byteValue];
 
             random.NextBytes(value);
             return value;
@@ -65,7 +54,7 @@ namespace Neo.Test
             var random = new Random();
 
             // Big Number
-            VerifyGetBitLength(BigInteger.One << 32 << int.MaxValue, 2147483680);
+            Assert.ThrowsException<InvalidOperationException>(() => VerifyGetBitLength(BigInteger.One << 32 << int.MaxValue, 2147483680));
 
             // Trivial cases
             //                     sign bit|shortest two's complement
@@ -91,9 +80,7 @@ namespace Neo.Test
             // Random cases
             for (uint i = 0; i < 1000; i++)
             {
-                var bi = new BigInteger(GetRandomByteArray(random, true));
-                Assert.AreEqual(bi.GetBitLength(), Utility.GetBitLength(bi), message: $"Error comparing: {bi}");
-                bi = new BigInteger(GetRandomByteArray(random, false));
+                var bi = new BigInteger(GetRandomByteArray(random));
                 Assert.AreEqual(bi.GetBitLength(), Utility.GetBitLength(bi), message: $"Error comparing: {bi}");
             }
 

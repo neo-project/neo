@@ -60,6 +60,39 @@ namespace Neo.VM
             return z;
         }
 
+        public static bool Is256Bit(this BigInteger bigInt)
+        {
+            byte[] bytes = bigInt.ToByteArray();
+            int bitLength = 0;
+            bool foundSignificantBit = false;
+
+            // Iterate over each byte from the most significant byte.
+            for (int i = bytes.Length - 1; i >= 0; i--)
+            {
+                byte b = bytes[i];
+                for (int bit = 7; bit >= 0; bit--)
+                {
+                    bool isBitSet = (b & (1 << bit)) != 0;
+
+                    // For positive numbers, find the first set bit.
+                    // For negative numbers (two's complement), find the first unset bit.
+                    if (bigInt.Sign > 0 && isBitSet || bigInt.Sign < 0 && !isBitSet)
+                    {
+                        bitLength = i * 8 + bit + 1;
+                        foundSignificantBit = true;
+                        break;
+                    }
+                }
+                if (foundSignificantBit)
+                {
+                    break;
+                }
+            }
+
+            // Check if the calculated bit length is within 256 bits.
+            return bitLength <= 256;
+        }
+
         /// <summary>
         /// Gets the number of bits required for shortest two's complement representation of the current instance without the sign bit.
         /// </summary>
@@ -67,7 +100,11 @@ namespace Neo.VM
         /// <remarks>This method returns 0 if the value of current object is equal to <see cref="BigInteger.Zero"/> or <see cref="BigInteger.MinusOne"/>. For positive integers the return value is equal to the ordinary binary representation string length.</remarks>
         public static long GetBitLength(this BigInteger value)
         {
-            if (value.IsZero) return 0;
+            if (value.IsZero || value == BigInteger.MinusOne)
+                return 0;
+
+            if (!value.Is256Bit())
+                throw new InvalidOperationException();
 
             return (long)Math.Ceiling(BigInteger.Log(value.Sign < 0 ? -value : value + 1, 2.0));
         }
