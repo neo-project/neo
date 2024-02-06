@@ -16,17 +16,17 @@ namespace Neo.VM
 {
     public partial class JumpTable
     {
-        public delegate void delAction(ExecutionEngine engine, Instruction instruction);
-        public readonly delAction[] Table = new delAction[byte.MaxValue];
+        public delegate void DelAction(ExecutionEngine engine, Instruction instruction);
+        private readonly DelAction[] _table = new DelAction[byte.MaxValue];
 
         /// <summary>
         /// Get Method
         /// </summary>
         /// <param name="opCode">OpCode</param>
         /// <returns>Action</returns>
-        public delAction GetMethod(OpCode opCode)
+        public DelAction GetMethod(OpCode opCode)
         {
-            return Table[(byte)opCode];
+            return _table[(byte)opCode];
         }
 
         public JumpTable()
@@ -37,28 +37,29 @@ namespace Neo.VM
             {
                 foreach (var attr in mi.GetCustomAttributes<OpcodeMethodAttribute>(true))
                 {
-                    if (Table[(byte)attr.OpCode] is not null)
+                    if (_table[(byte)attr.OpCode] is not null)
                     {
                         throw new InvalidOperationException($"Opcode {attr.OpCode} is already defined.");
                     }
 
-                    Table[(byte)attr.OpCode] = (delAction)mi.CreateDelegate(typeof(delAction), this);
+                    _table[(byte)attr.OpCode] = (DelAction)mi.CreateDelegate(typeof(DelAction), this);
                 }
             }
 
             // Fill with undefined
 
-            for (int x = 0; x < Table.Length; x++)
+            for (int x = 0; x < _table.Length; x++)
             {
-                if (Table[x] is not null) continue;
+                if (_table[x] is not null) continue;
 
-                Table[x] = (engine, instruction) =>
+                _table[x] = (engine, instruction) =>
                 {
                     throw new InvalidOperationException($"Opcode {instruction.OpCode} is undefined.");
                 };
             }
 
-            /*
+            /* TODO:
+
             switch (instruction.OpCode)
             {
                 // Stack ops
@@ -379,25 +380,6 @@ namespace Neo.VM
                 case OpCode.POPITEM:
                     PopItem(instruction);
                     break;
-
-                //Types
-                case OpCode.ISNULL:
-                    IsNull(instruction);
-                    break;
-                case OpCode.ISTYPE:
-                    IsType(instruction);
-                    break;
-                case OpCode.CONVERT:
-                    Convert(instruction);
-                    break;
-                case OpCode.ABORTMSG:
-                    AbortMsg(instruction);
-                    break;
-                case OpCode.ASSERTMSG:
-                    AssertMsg(instruction);
-                    break;
-                default:
-                    throw new InvalidOperationException($"Opcode {instruction.OpCode} is undefined.");
             }
             */
         }
