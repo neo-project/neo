@@ -12,4 +12,11 @@
     <ProjectReference Include="..\..\src\Neo\Neo.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

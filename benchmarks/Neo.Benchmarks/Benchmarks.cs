@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.VM;
 using System.Diagnostics;
@@ -18,8 +19,8 @@ namespace Neo;
 
 static class Benchmarks
 {
-    private static readonly ProtocolSettings protocol = ProtocolSettings.Default;
-    private static readonly NeoSystem system = new(protocol);
+    private static readonly ProtocolSettings protocol = ProtocolSettings.Load("config.json");
+    private static readonly NeoSystem system = new(protocol, new MemoryStore());
 
     public static void NeoIssue2725()
     {
