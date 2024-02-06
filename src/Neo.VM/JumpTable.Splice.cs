@@ -16,18 +16,16 @@ namespace Neo.VM
 {
     public partial class JumpTable
     {
-        [OpcodeMethod(OpCode.NEWBUFFER)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void NewBuffer(ExecutionEngine engine, Instruction instruction)
+        public virtual void NEWBUFFER(ExecutionEngine engine, Instruction instruction)
         {
             int length = (int)engine.Pop().GetInteger();
             engine.Limits.AssertMaxItemSize(length);
             engine.Push(new Types.Buffer(length));
         }
 
-        [OpcodeMethod(OpCode.MEMCPY)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void Memcpy(ExecutionEngine engine, Instruction instruction)
+        public virtual void MEMCPY(ExecutionEngine engine, Instruction instruction)
         {
             int count = (int)engine.Pop().GetInteger();
             if (count < 0)
@@ -47,9 +45,8 @@ namespace Neo.VM
             src.Slice(si, count).CopyTo(dst.InnerBuffer.Span[di..]);
         }
 
-        [OpcodeMethod(OpCode.CAT)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void Cat(ExecutionEngine engine, Instruction instruction)
+        public virtual void CAT(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetSpan();
             var x1 = engine.Pop().GetSpan();
@@ -61,9 +58,8 @@ namespace Neo.VM
             engine.Push(result);
         }
 
-        [OpcodeMethod(OpCode.SUBSTR)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void Substr(ExecutionEngine engine, Instruction instruction)
+        public virtual void SUBSTR(ExecutionEngine engine, Instruction instruction)
         {
             int count = (int)engine.Pop().GetInteger();
             if (count < 0)
@@ -79,9 +75,8 @@ namespace Neo.VM
             engine.Push(result);
         }
 
-        [OpcodeMethod(OpCode.LEFT)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void Left(ExecutionEngine engine, Instruction instruction)
+        public virtual void LEFT(ExecutionEngine engine, Instruction instruction)
         {
             int count = (int)engine.Pop().GetInteger();
             if (count < 0)
@@ -94,9 +89,8 @@ namespace Neo.VM
             engine.Push(result);
         }
 
-        [OpcodeMethod(OpCode.RIGHT)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void Right(ExecutionEngine engine, Instruction instruction)
+        public virtual void RIGHT(ExecutionEngine engine, Instruction instruction)
         {
             int count = (int)engine.Pop().GetInteger();
             if (count < 0)

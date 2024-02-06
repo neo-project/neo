@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using System;
-using System.Reflection;
 
 namespace Neo.VM
 {
@@ -35,14 +34,14 @@ namespace Neo.VM
 
             foreach (var mi in GetType().GetMethods())
             {
-                foreach (var attr in mi.GetCustomAttributes<OpcodeMethodAttribute>(true))
+                if (Enum.TryParse<OpCode>(mi.Name, false, out var opCode))
                 {
-                    if (_table[(byte)attr.OpCode] is not null)
+                    if (_table[(byte)opCode] is not null)
                     {
-                        throw new InvalidOperationException($"Opcode {attr.OpCode} is already defined.");
+                        throw new InvalidOperationException($"Opcode {opCode} is already defined.");
                     }
 
-                    _table[(byte)attr.OpCode] = (DelAction)mi.CreateDelegate(typeof(DelAction), this);
+                    _table[(byte)opCode] = (DelAction)mi.CreateDelegate(typeof(DelAction), this);
                 }
             }
 

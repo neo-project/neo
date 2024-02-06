@@ -17,17 +17,14 @@ namespace Neo.VM
 {
     public partial class JumpTable
     {
-        [OpcodeMethod(OpCode.ISNULL)]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void IsNull(ExecutionEngine engine, Instruction instruction)
+        public virtual void ISNULL(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop();
             engine.Push(x.IsNull);
         }
 
-        [OpcodeMethod(OpCode.ISTYPE)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void IsType(ExecutionEngine engine, Instruction instruction)
+        public virtual void ISTYPE(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop();
             var type = (StackItemType)instruction.TokenU8;
@@ -36,25 +33,22 @@ namespace Neo.VM
             engine.Push(x.Type == type);
         }
 
-        [OpcodeMethod(OpCode.CONVERT)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void Convert(ExecutionEngine engine, Instruction instruction)
+        public virtual void CONVERT(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop();
             engine.Push(x.ConvertTo((StackItemType)instruction.TokenU8));
         }
 
-        [OpcodeMethod(OpCode.ABORTMSG)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void AbortMsg(ExecutionEngine engine, Instruction instruction)
+        public virtual void ABORTMSG(ExecutionEngine engine, Instruction instruction)
         {
             var msg = engine.Pop().GetString();
             throw new Exception($"{OpCode.ABORTMSG} is executed. Reason: {msg}");
         }
 
-        [OpcodeMethod(OpCode.ASSERTMSG)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void AssertMsg(ExecutionEngine engine, Instruction instruction)
+        public virtual void ASSERTMSG(ExecutionEngine engine, Instruction instruction)
         {
             var msg = engine.Pop().GetString();
             var x = engine.Pop().GetBoolean();
