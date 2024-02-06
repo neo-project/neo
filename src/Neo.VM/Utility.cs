@@ -73,7 +73,7 @@ namespace Neo.VM
 #if NET5_0_OR_GREATER
             return value.GetBitLength();
 #else
-            // Note: this method it's imprecise and it could not work as expected with more than 256 bits integer
+            // Note: This method is imprecise and might not work as expected with integers larger than 256 bits.
             return (long)Math.Ceiling(BigInteger.Log(value.Sign < 0 ? -value : value + 1, 2.0));
 #endif
         }
