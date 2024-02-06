@@ -15,31 +15,6 @@ namespace Neo.VM
 {
     public partial class JumpTable
     {
-        /* TODO
-                case OpCode.JMPGT:
-                case OpCode.JMPGT_L:
-                case OpCode.JMPGE:
-                case OpCode.JMPGE_L:
-                case OpCode.JMPLT:
-                case OpCode.JMPLT_L:
-                case OpCode.JMPLE:
-                case OpCode.JMPLE_L:
-                case OpCode.CALL:
-                case OpCode.CALL_L:
-                case OpCode.CALLA:
-                case OpCode.CALLT:
-                case OpCode.ABORT:
-                case OpCode.ASSERT:
-                case OpCode.THROW:
-                case OpCode.TRY:
-                case OpCode.TRY_L:
-                case OpCode.ENDTRY:
-                case OpCode.ENDTRY_L:
-                case OpCode.ENDFINALLY:
-                case OpCode.RET:
-                case OpCode.SYSCALL:
-         */
-
         [OpcodeMethod(OpCode.NOP)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Nop(ExecutionEngine engine, Instruction instruction)
@@ -131,5 +106,114 @@ namespace Neo.VM
             if (x1 != x2)
                 engine.ExecuteJumpOffset(instruction.TokenI32);
         }
+
+        [OpcodeMethod(OpCode.JMPGT)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public virtual void JmpGt(ExecutionEngine engine, Instruction instruction)
+        {
+            var x2 = engine.Pop().GetInteger();
+            var x1 = engine.Pop().GetInteger();
+            if (x1 > x2)
+                engine.ExecuteJumpOffset(instruction.TokenI8);
+        }
+
+        [OpcodeMethod(OpCode.JMPGT_L)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public virtual void JmpGtL(ExecutionEngine engine, Instruction instruction)
+        {
+            var x2 = engine.Pop().GetInteger();
+            var x1 = engine.Pop().GetInteger();
+            if (x1 > x2)
+                engine.ExecuteJumpOffset(instruction.TokenI32);
+        }
+
+        [OpcodeMethod(OpCode.JMPGE)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public virtual void JmpGe(ExecutionEngine engine, Instruction instruction)
+        {
+            var x2 = engine.Pop().GetInteger();
+            var x1 = engine.Pop().GetInteger();
+            if (x1 >= x2)
+                engine.ExecuteJumpOffset(instruction.TokenI8);
+        }
+
+        [OpcodeMethod(OpCode.JMPGE_L)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public virtual void JmpGeL(ExecutionEngine engine, Instruction instruction)
+        {
+            var x2 = engine.Pop().GetInteger();
+            var x1 = engine.Pop().GetInteger();
+            if (x1 >= x2)
+                engine.ExecuteJumpOffset(instruction.TokenI32);
+        }
+
+        [OpcodeMethod(OpCode.JMPLT)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public virtual void JmpLt(ExecutionEngine engine, Instruction instruction)
+        {
+            var x2 = engine.Pop().GetInteger();
+            var x1 = engine.Pop().GetInteger();
+            if (x1 < x2)
+                engine.ExecuteJumpOffset(instruction.TokenI8);
+        }
+
+        [OpcodeMethod(OpCode.JMPLT_L)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public virtual void JmpLtL(ExecutionEngine engine, Instruction instruction)
+        {
+            var x2 = engine.Pop().GetInteger();
+            var x1 = engine.Pop().GetInteger();
+            if (x1 < x2)
+                engine.ExecuteJumpOffset(instruction.TokenI32);
+        }
+
+        [OpcodeMethod(OpCode.JMPLE)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public virtual void JmpLe(ExecutionEngine engine, Instruction instruction)
+        {
+            var x2 = engine.Pop().GetInteger();
+            var x1 = engine.Pop().GetInteger();
+            if (x1 <= x2)
+                engine.ExecuteJumpOffset(instruction.TokenI8);
+        }
+
+        [OpcodeMethod(OpCode.JMPLE_L)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public virtual void JmpLeL(ExecutionEngine engine, Instruction instruction)
+        {
+            var x2 = engine.Pop().GetInteger();
+            var x1 = engine.Pop().GetInteger();
+            if (x1 <= x2)
+                engine.ExecuteJumpOffset(instruction.TokenI32);
+        }
+
+        [OpcodeMethod(OpCode.CALL)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public virtual void Call(ExecutionEngine engine, Instruction instruction)
+        {
+            engine.ExecuteCall(checked(engine.CurrentContext!.InstructionPointer + instruction.TokenI8));
+        }
+
+        [OpcodeMethod(OpCode.CALL_L)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public virtual void CallL(ExecutionEngine engine, Instruction instruction)
+        {
+            engine.ExecuteCall(checked(engine.CurrentContext!.InstructionPointer + instruction.TokenI32));
+        }
+
+        /* TODO
+               case OpCode.CALLA:
+               case OpCode.CALLT:
+               case OpCode.ABORT:
+               case OpCode.ASSERT:
+               case OpCode.THROW:
+               case OpCode.TRY:
+               case OpCode.TRY_L:
+               case OpCode.ENDTRY:
+               case OpCode.ENDTRY_L:
+               case OpCode.ENDFINALLY:
+               case OpCode.RET:
+               case OpCode.SYSCALL:
+        */
     }
 }

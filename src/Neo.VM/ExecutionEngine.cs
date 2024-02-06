@@ -142,7 +142,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ExecuteCall(int position)
+        public void ExecuteCall(int position)
         {
             LoadContext(CurrentContext!.Clone(position));
         }
