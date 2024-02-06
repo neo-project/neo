@@ -70,12 +70,11 @@ namespace Neo.VM
             if (value.IsZero || value == BigInteger.MinusOne)
                 return 0;
 
-            var ret = (long)Math.Ceiling(BigInteger.Log(value.Sign < 0 ? -value : value + 1, 2.0));
-
-            if (ret > 256)
-                throw new InvalidOperationException();
-
-            return ret;
+#if NET5_0_OR_GREATER
+            return value.GetBitLength();
+#else
+            return (long)Math.Ceiling(BigInteger.Log(value.Sign < 0 ? -value : value + 1, 2.0));
+#endif
         }
     }
 }
