@@ -162,6 +162,72 @@ namespace Neo.Test
         }
 
         [TestMethod]
+        public void TestCheckZeroReferredWithArray()
+        {
+            using ScriptBuilder sb = new();
+
+            sb.EmitPush(ExecutionEngineLimits.Default.MaxStackSize - 1);
+            sb.Emit(OpCode.NEWARRAY);
+
+            // Good with MaxStackSize
+
+            using (ExecutionEngine engine = new())
+            {
+                engine.LoadScript(sb.ToArray());
+                Assert.AreEqual(0, engine.ReferenceCounter.Count);
+
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.AreEqual((int)ExecutionEngineLimits.Default.MaxStackSize, engine.ReferenceCounter.Count);
+            }
+
+            // Fault with MaxStackSize+1
+
+            sb.Emit(OpCode.PUSH1);
+
+            using (ExecutionEngine engine = new())
+            {
+                engine.LoadScript(sb.ToArray());
+                Assert.AreEqual(0, engine.ReferenceCounter.Count);
+
+                Assert.AreEqual(VMState.FAULT, engine.Execute());
+                Assert.AreEqual((int)ExecutionEngineLimits.Default.MaxStackSize + 1, engine.ReferenceCounter.Count);
+            }
+        }
+
+        [TestMethod]
+        public void TestCheckZeroReferred()
+        {
+            using ScriptBuilder sb = new();
+
+            for (int x = 0; x < ExecutionEngineLimits.Default.MaxStackSize; x++)
+                sb.Emit(OpCode.PUSH1);
+
+            // Good with MaxStackSize
+
+            using (ExecutionEngine engine = new())
+            {
+                engine.LoadScript(sb.ToArray());
+                Assert.AreEqual(0, engine.ReferenceCounter.Count);
+
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.AreEqual((int)ExecutionEngineLimits.Default.MaxStackSize, engine.ReferenceCounter.Count);
+            }
+
+            // Fault with MaxStackSize+1
+
+            sb.Emit(OpCode.PUSH1);
+
+            using (ExecutionEngine engine = new())
+            {
+                engine.LoadScript(sb.ToArray());
+                Assert.AreEqual(0, engine.ReferenceCounter.Count);
+
+                Assert.AreEqual(VMState.FAULT, engine.Execute());
+                Assert.AreEqual((int)ExecutionEngineLimits.Default.MaxStackSize + 1, engine.ReferenceCounter.Count);
+            }
+        }
+
+        [TestMethod]
         public void TestArrayNoPush()
         {
             using ScriptBuilder sb = new();
