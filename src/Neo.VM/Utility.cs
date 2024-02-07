@@ -91,15 +91,15 @@ namespace Neo.VM
             var b = value.ToByteArray();
             if (b.Length == 1 || (b.Length == 2 && b[1] == 0))
             {
-                return BitLen(value.Sign > 0 ? b[0] : (byte)(255 - b[0]));
+                return BitCount(value.Sign > 0 ? b[0] : (byte)(255 - b[0]));
             }
-            return (b.Length - 1) * 8 + BitLen(value.Sign > 0 ? b[^1] : 255 - b[^1]);
+            return (b.Length - 1) * 8 + BitCount(value.Sign > 0 ? b[^1] : 255 - b[^1]);
 #endif
         }
 
 #if !NET5_0_OR_GREATER
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static int BitLen(int w)
+        private static int BitCount(int w)
         {
             return w < 1 << 15 ? (w < 1 << 7
                 ? (w < 1 << 3 ? (w < 1 << 1
