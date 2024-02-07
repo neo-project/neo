@@ -36,6 +36,12 @@ namespace Neo.UnitTests.SmartContract.Native
             _snapshot = TestBlockchain.GetTestSnapshot();
         }
 
+        [TestCleanup]
+        public void Clean()
+        {
+            TestBlockchain.ResetStore();
+        }
+
         [TestMethod]
         public void TestSetAndGet()
         {
