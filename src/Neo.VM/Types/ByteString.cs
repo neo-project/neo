@@ -136,7 +136,7 @@ namespace Neo.VM.Types
 
         public override string ToString()
         {
-            return GetSpan().TryGetString(out var str) ? $"\"{str}\"" : $"Base64: {Convert.ToBase64String(GetSpan())}";
+            return GetSpan().TryGetString(out var str) ? $"\"{str}\"" : $"\"Base64: {Convert.ToBase64String(GetSpan())}\"";
         }
     }
 }
