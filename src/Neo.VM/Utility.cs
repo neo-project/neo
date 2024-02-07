@@ -69,7 +69,7 @@ namespace Neo.VM
         public static long GetBitLength(this BigInteger value)
         {
 #if NET5_0_OR_GREATER
-            return i.GetBitLength();
+            return value.GetBitLength();
 #else
             if (value == 0 || value == BigInteger.MinusOne) return 0;
 
