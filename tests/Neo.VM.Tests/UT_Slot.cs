@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// UtSlot.cs file belongs to the neo project and is free
+// UT_Slot.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -20,7 +20,7 @@ using System.Numerics;
 namespace Neo.Test
 {
     [TestClass]
-    public class UtSlot
+    public class UT_Slot
     {
         private static Slot CreateOrderedSlot(int count)
         {
