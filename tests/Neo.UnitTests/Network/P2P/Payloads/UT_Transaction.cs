@@ -38,6 +38,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             uut = new Transaction();
         }
 
+        [TestCleanup]
+        public void Clean()
+        {
+            TestBlockchain.ResetStore();
+        }
+
         [TestMethod]
         public void Script_Get()
         {
