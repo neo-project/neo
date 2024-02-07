@@ -48,6 +48,12 @@ namespace Neo.UnitTests.Ledger
             system.MemPool.TryAdd(txSample, TestBlockchain.GetTestSnapshot());
         }
 
+        [TestCleanup]
+        public void Clean()
+        {
+            TestBlockchain.ResetStore();
+        }
+
         [TestMethod]
         public void TestValidTransaction()
         {
