@@ -74,7 +74,7 @@ namespace Neo.SmartContract.Manifest
             };
             if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException();
             _ = descriptor.Parameters.ToDictionary(p => p.Name);
-            if (!Enum.IsDefined(descriptor.ReturnType)) throw new FormatException();
+            if (!Enum.IsDefined(typeof(ContractParameterType), descriptor.ReturnType)) throw new FormatException();
             if (descriptor.Offset < 0) throw new FormatException();
             return descriptor;
         }
