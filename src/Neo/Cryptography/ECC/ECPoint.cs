@@ -237,7 +237,7 @@ namespace Neo.Cryptography.ECC
         internal static ECPoint Multiply(ECPoint p, BigInteger k)
         {
             // floor(log2(k))
-            int m = (int)k.GetBitLength();
+            int m = (int)VM.Utility.GetBitLength(k);
 
             // width of the Window NAF
             sbyte width;
@@ -391,7 +391,7 @@ namespace Neo.Cryptography.ECC
 
         private static sbyte[] WindowNaf(sbyte width, BigInteger k)
         {
-            sbyte[] wnaf = new sbyte[k.GetBitLength() + 1];
+            sbyte[] wnaf = new sbyte[VM.Utility.GetBitLength(k) + 1];
             short pow2wB = (short)(1 << width);
             int i = 0;
             int length = 0;
