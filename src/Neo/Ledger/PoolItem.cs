@@ -44,7 +44,7 @@ namespace Neo.Ledger
             LastBroadcastTimestamp = Timestamp;
         }
 
-        public int CompareTo(Transaction otherTx)
+        public int CompareTo(Transaction? otherTx)
         {
             if (otherTx == null) return 1;
             int ret = (Tx.GetAttribute<HighPriorityAttribute>() != null).CompareTo(otherTx.GetAttribute<HighPriorityAttribute>() != null);
@@ -58,7 +58,7 @@ namespace Neo.Ledger
             return otherTx.Hash.CompareTo(Tx.Hash);
         }
 
-        public int CompareTo(PoolItem otherItem)
+        public int CompareTo(PoolItem? otherItem)
         {
             if (otherItem == null) return 1;
             return CompareTo(otherItem.Tx);

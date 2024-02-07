@@ -35,7 +35,7 @@ namespace Neo
         /// <summary>
         /// Triggered when a service is added to the <see cref="NeoSystem"/>.
         /// </summary>
-        public event EventHandler<object> ServiceAdded;
+        public event EventHandler<object> ServiceAdded = null!;
 
         /// <summary>
         /// The protocol settings of the <see cref="NeoSystem"/>.
@@ -179,7 +179,7 @@ namespace Neo
         public void AddService(object service)
         {
             ImmutableInterlocked.Update(ref services, p => p.Add(service));
-            ServiceAdded?.Invoke(this, service);
+            ServiceAdded.Invoke(this, service);
         }
 
         /// <summary>
@@ -188,7 +188,7 @@ namespace Neo
         /// <typeparam name="T">The type of the service object.</typeparam>
         /// <param name="filter">An action used to filter the service objects. This parameter can be <see langword="null"/>.</param>
         /// <returns>The service object found.</returns>
-        public T GetService<T>(Func<T, bool> filter = null)
+        public T? GetService<T>(Func<T, bool>? filter = null)
         {
             IEnumerable<T> result = services.OfType<T>();
             if (filter is null)

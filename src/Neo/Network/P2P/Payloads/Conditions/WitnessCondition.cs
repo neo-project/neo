@@ -103,7 +103,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <returns>The converted <see cref="WitnessCondition"/>.</returns>
         public static WitnessCondition FromJson(JObject json, int maxNestDepth)
         {
-            WitnessConditionType type = Enum.Parse<WitnessConditionType>(json["type"].GetString());
+            WitnessConditionType type = Enum.Parse<WitnessConditionType>(json["type"]!.GetString());
             if (ReflectionCache<WitnessConditionType>.CreateInstance(type) is not WitnessCondition condition)
                 throw new FormatException("Invalid WitnessConditionType.");
             condition.ParseJson(json, maxNestDepth);
@@ -127,7 +127,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             throw new NotSupportedException();
         }
 
-        public virtual StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public virtual StackItem ToStackItem(ReferenceCounter? referenceCounter)
         {
             return new VM.Types.Array(referenceCounter, new StackItem[] { (byte)Type });
         }

@@ -52,7 +52,7 @@ namespace Neo.IO.Caching
         {
             if (Contains(item)) return false;
             Count++;
-            if (sets.First.Value.Count < bucketCapacity) return sets.First.Value.Add(item);
+            if (sets.First?.Value.Count < bucketCapacity) return sets.First.Value.Add(item);
             var newSet = new HashSet<T>
             {
                 item
@@ -60,7 +60,7 @@ namespace Neo.IO.Caching
             sets.AddFirst(newSet);
             if (sets.Count > maxBucketCount)
             {
-                Count -= sets.Last.Value.Count;
+                Count -= sets.Last!.Value.Count;
                 sets.RemoveLast();
             }
             return true;
@@ -77,7 +77,7 @@ namespace Neo.IO.Caching
 
         public void ExceptWith(IEnumerable<T> items)
         {
-            List<HashSet<T>> removeList = null;
+            List<HashSet<T>>? removeList = null;
             foreach (var item in items)
             {
                 foreach (var set in sets)

@@ -23,7 +23,7 @@ namespace Neo.SmartContract
     public class StorageItem : ISerializable
     {
         private ReadOnlyMemory<byte> value;
-        private object cache;
+        private object? cache;
 
         public int Size => Value.GetVarSize();
 

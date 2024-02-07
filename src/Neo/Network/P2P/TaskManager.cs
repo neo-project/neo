@@ -31,9 +31,9 @@ namespace Neo.Network.P2P
     /// </summary>
     public class TaskManager : UntypedActor
     {
-        internal class Register { public VersionPayload Version; }
+        internal class Register { public VersionPayload Version = null!; }
         internal class Update { public uint LastBlockIndex; }
-        internal class NewTasks { public InvPayload Payload; }
+        internal class NewTasks { public InvPayload Payload = null!; }
 
         /// <summary>
         /// Sent to <see cref="TaskManager"/> to restart tasks for inventories.
@@ -43,7 +43,7 @@ namespace Neo.Network.P2P
             /// <summary>
             /// The inventories that need to restart.
             /// </summary>
-            public InvPayload Payload { get; init; }
+            public InvPayload Payload { get; init; } = null!;
         }
 
         private class Timer { }
@@ -81,7 +81,7 @@ namespace Neo.Network.P2P
 
         private void OnHeaders(Header[] _)
         {
-            if (!sessions.TryGetValue(Sender, out TaskSession session))
+            if (!sessions.TryGetValue(Sender, out TaskSession? session))
                 return;
             if (session.InvTasks.Remove(HeaderTaskHash))
                 DecrementGlobalTask(HeaderTaskHash);
@@ -91,14 +91,14 @@ namespace Neo.Network.P2P
         private void OnInvalidBlock(Block invalidBlock)
         {
             foreach (var (actor, session) in sessions)
-                if (session.ReceivedBlock.TryGetValue(invalidBlock.Index, out Block block))
+                if (session.ReceivedBlock.TryGetValue(invalidBlock.Index, out Block? block))
                     if (block.Hash == invalidBlock.Hash)
                         actor.Tell(Tcp.Abort.Instance);
         }
 
         private void OnNewTasks(InvPayload payload)
         {
-            if (!sessions.TryGetValue(Sender, out TaskSession session))
+            if (!sessions.TryGetValue(Sender, out TaskSession? session))
                 return;
 
             // Do not accept payload of type InventoryType.TX if not synced on HeaderHeight
@@ -141,7 +141,7 @@ namespace Neo.Network.P2P
             lastSeenPersistedIndex = block.Index;
 
             foreach (var (actor, session) in sessions)
-                if (session.ReceivedBlock.Remove(block.Index, out Block receivedBlock))
+                if (session.ReceivedBlock.Remove(block.Index, out Block? receivedBlock))
                 {
                     if (block.Hash == receivedBlock.Hash)
                         RequestTasks(actor, session);
@@ -198,7 +198,7 @@ namespace Neo.Network.P2P
 
         private void OnUpdate(Update update)
         {
-            if (!sessions.TryGetValue(Sender, out TaskSession session))
+            if (!sessions.TryGetValue(Sender, out TaskSession? session))
                 return;
             session.LastBlockIndex = update.LastBlockIndex;
         }
@@ -214,14 +214,14 @@ namespace Neo.Network.P2P
 
         private void OnTaskCompleted(IInventory inventory)
         {
-            Block block = inventory as Block;
+            var block = inventory as Block;
             knownHashes.Add(inventory.Hash);
             globalInvTasks.Remove(inventory.Hash);
             if (block is not null)
                 globalIndexTasks.Remove(block.Index);
             foreach (TaskSession ms in sessions.Values)
                 ms.AvailableTasks.Remove(inventory.Hash);
-            if (sessions.TryGetValue(Sender, out TaskSession session))
+            if (sessions.TryGetValue(Sender, out TaskSession? session))
             {
                 session.InvTasks.Remove(inventory.Hash);
                 if (block is not null)
@@ -303,7 +303,7 @@ namespace Neo.Network.P2P
 
         private void OnTerminated(IActorRef actor)
         {
-            if (!sessions.TryGetValue(actor, out TaskSession session))
+            if (!sessions.TryGetValue(actor, out TaskSession? session))
                 return;
             foreach (UInt256 hash in session.InvTasks.Keys)
                 DecrementGlobalTask(hash);
@@ -419,7 +419,7 @@ namespace Neo.Network.P2P
         {
         }
 
-        internal protected override bool IsHighPriority(object message)
+        protected internal override bool IsHighPriority(object message)
         {
             switch (message)
             {

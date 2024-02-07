@@ -37,7 +37,7 @@ namespace Neo.Network.P2P
             /// <summary>
             /// The unconnected peers to be added.
             /// </summary>
-            public IEnumerable<IPEndPoint> EndPoints { get; init; }
+            public IEnumerable<IPEndPoint> EndPoints { get; init; } = null!;
         }
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace Neo.Network.P2P
             /// <summary>
             /// The address of the remote node.
             /// </summary>
-            public IPEndPoint EndPoint { get; init; }
+            public IPEndPoint EndPoint { get; init; } = null!;
 
             /// <summary>
             /// Indicates whether the remote node is trusted. A trusted node will always be connected.
@@ -69,8 +69,8 @@ namespace Neo.Network.P2P
         public const int DefaultMaxConnections = DefaultMinDesiredConnections * 4;
 
         private static readonly IActorRef tcp_manager = Context.System.Tcp();
-        private IActorRef tcp_listener;
-        private ICancelable timer;
+        private IActorRef tcp_listener = null!;
+        private ICancelable timer = null!;
 
         private static readonly HashSet<IPAddress> localAddresses = new();
         private readonly Dictionary<IPAddress, int> ConnectedAddresses = new();
@@ -309,7 +309,7 @@ namespace Neo.Network.P2P
 
         private void OnTerminated(IActorRef actorRef)
         {
-            if (ConnectedPeers.TryRemove(actorRef, out IPEndPoint endPoint))
+            if (ConnectedPeers.TryRemove(actorRef, out IPEndPoint? endPoint))
             {
                 ConnectedAddresses.TryGetValue(endPoint.Address, out int count);
                 if (count > 0) count--;
@@ -325,7 +325,7 @@ namespace Neo.Network.P2P
             // Check if the number of desired connections is already enough
             if (ConnectedPeers.Count >= MinDesiredConnections) return;
 
-            // If there aren't available UnconnectedPeers, it triggers an abstract implementation of NeedMorePeers 
+            // If there aren't available UnconnectedPeers, it triggers an abstract implementation of NeedMorePeers
             if (UnconnectedPeers.Count == 0)
                 NeedMorePeers(MinDesiredConnections - ConnectedPeers.Count);
 

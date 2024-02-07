@@ -59,7 +59,7 @@ namespace Neo.Ledger
 
             internal ApplicationExecuted(ApplicationEngine engine)
             {
-                Transaction = engine.ScriptContainer as Transaction;
+                Transaction = (engine.ScriptContainer as Transaction)!;
                 Trigger = engine.Trigger;
                 VMState = engine.State;
                 GasConsumed = engine.GasConsumed;

@@ -27,18 +27,18 @@ namespace Neo.Network.P2P.Payloads
     public sealed class Header : IEquatable<Header>, IVerifiable
     {
         private uint version;
-        private UInt256 prevHash;
-        private UInt256 merkleRoot;
+        private UInt256 prevHash = null!;
+        private UInt256 merkleRoot = null!;
         private ulong timestamp;
         private ulong nonce;
         private uint index;
         private byte primaryIndex;
-        private UInt160 nextConsensus;
+        private UInt160 nextConsensus = null!;
 
         /// <summary>
         /// The witness of the block.
         /// </summary>
-        public Witness Witness;
+        public Witness Witness = null!;
 
         /// <summary>
         /// The version of the block.
@@ -112,7 +112,7 @@ namespace Neo.Network.P2P.Payloads
             set { nextConsensus = value; _hash = null; }
         }
 
-        private UInt256 _hash = null;
+        private UInt256? _hash;
         public UInt256 Hash
         {
             get
@@ -171,14 +171,14 @@ namespace Neo.Network.P2P.Payloads
             nextConsensus = reader.ReadSerializable<UInt160>();
         }
 
-        public bool Equals(Header other)
+        public bool Equals(Header? other)
         {
             if (other is null) return false;
             if (ReferenceEquals(other, this)) return true;
             return Hash.Equals(other.Hash);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return Equals(obj as Header);
         }
@@ -191,7 +191,7 @@ namespace Neo.Network.P2P.Payloads
         UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
         {
             if (prevHash == UInt256.Zero) return new[] { Witness.ScriptHash };
-            TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
+            TrimmedBlock? prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
             if (prev is null) throw new InvalidOperationException();
             return new[] { prev.Header.nextConsensus };
         }
@@ -199,7 +199,7 @@ namespace Neo.Network.P2P.Payloads
         public void Serialize(BinaryWriter writer)
         {
             ((IVerifiable)this).SerializeUnsigned(writer);
-            writer.Write(new Witness[] { Witness });
+            writer.Write(new[] { Witness });
         }
 
         void IVerifiable.SerializeUnsigned(BinaryWriter writer)
@@ -240,7 +240,7 @@ namespace Neo.Network.P2P.Payloads
         {
             if (primaryIndex >= settings.ValidatorsCount)
                 return false;
-            TrimmedBlock prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
+            TrimmedBlock? prev = NativeContract.Ledger.GetTrimmedBlock(snapshot, prevHash);
             if (prev is null) return false;
             if (prev.Index + 1 != index) return false;
             if (prev.Hash != prevHash) return false;
@@ -251,7 +251,7 @@ namespace Neo.Network.P2P.Payloads
 
         internal bool Verify(ProtocolSettings settings, DataCache snapshot, HeaderCache headerCache)
         {
-            Header prev = headerCache.Last;
+            Header? prev = headerCache.Last;
             if (prev is null) return Verify(settings, snapshot);
             if (primaryIndex >= settings.ValidatorsCount)
                 return false;

@@ -26,7 +26,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The name of the interoperable service.
         /// </summary>
-        public string Name { get; init; }
+        public string Name { get; init; } = null!;
 
         private uint _hash;
         /// <summary>
@@ -45,9 +45,9 @@ namespace Neo.SmartContract
         /// <summary>
         /// The <see cref="MethodInfo"/> used to handle the interoperable service.
         /// </summary>
-        public MethodInfo Handler { get; init; }
+        public MethodInfo Handler { get; init; } = null!;
 
-        private IReadOnlyList<InteropParameterDescriptor> _parameters;
+        private IReadOnlyList<InteropParameterDescriptor>? _parameters;
         /// <summary>
         /// The parameters of the interoperable service.
         /// </summary>

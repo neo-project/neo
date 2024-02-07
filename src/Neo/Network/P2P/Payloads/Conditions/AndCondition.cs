@@ -28,7 +28,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <summary>
         /// The expressions of the condition.
         /// </summary>
-        public WitnessCondition[] Expressions;
+        public WitnessCondition[] Expressions = null!;
 
         public override int Size => base.Size + Expressions.GetVarSize();
         public override WitnessConditionType Type => WitnessConditionType.And;
@@ -53,9 +53,9 @@ namespace Neo.Network.P2P.Payloads.Conditions
         private protected override void ParseJson(JObject json, int maxNestDepth)
         {
             if (maxNestDepth <= 0) throw new FormatException();
-            JArray expressions = (JArray)json["expressions"];
+            JArray expressions = (JArray)json["expressions"]!;
             if (expressions.Count > MaxSubitems) throw new FormatException();
-            Expressions = expressions.Select(p => FromJson((JObject)p, maxNestDepth - 1)).ToArray();
+            Expressions = expressions.Select(p => FromJson((JObject)p!, maxNestDepth - 1)).ToArray();
             if (Expressions.Length == 0) throw new FormatException();
         }
 
@@ -66,7 +66,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return json;
         }
 
-        public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(ReferenceCounter? referenceCounter)
         {
             var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
             result.Add(new VM.Types.Array(referenceCounter, Expressions.Select(p => p.ToStackItem(referenceCounter))));

@@ -23,7 +23,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <summary>
         /// The script hash to be checked.
         /// </summary>
-        public UInt160 Hash;
+        public UInt160 Hash = null!;
 
         public override int Size => base.Size + UInt160.Length;
         public override WitnessConditionType Type => WitnessConditionType.ScriptHash;
@@ -45,7 +45,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         private protected override void ParseJson(JObject json, int maxNestDepth)
         {
-            Hash = UInt160.Parse(json["hash"].GetString());
+            Hash = UInt160.Parse(json["hash"]!.GetString());
         }
 
         public override JObject ToJson()
@@ -55,9 +55,9 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return json;
         }
 
-        public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(ReferenceCounter? referenceCounter)
         {
-            var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
+            var result = (Array)base.ToStackItem(referenceCounter);
             result.Add(Hash.ToArray());
             return result;
         }

@@ -27,7 +27,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The category of the extension.
         /// </summary>
-        public string Category;
+        public string Category = null!;
 
         /// <summary>
         /// Indicates that the payload is only valid when the block height is greater than or equal to this value.
@@ -42,7 +42,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The sender of the payload.
         /// </summary>
-        public UInt160 Sender;
+        public UInt160 Sender = null!;
 
         /// <summary>
         /// The data of the payload.
@@ -52,9 +52,9 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The witness of the payload. It must match the <see cref="Sender"/>.
         /// </summary>
-        public Witness Witness;
+        public Witness Witness = null!;
 
-        private UInt256 _hash = null;
+        private UInt256? _hash;
         public UInt256 Hash
         {
             get

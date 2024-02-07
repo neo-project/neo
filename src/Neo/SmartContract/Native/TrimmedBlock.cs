@@ -15,7 +15,6 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
-using System.Linq;
 
 namespace Neo.SmartContract.Native
 {
@@ -27,12 +26,12 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The header of the block.
         /// </summary>
-        public Header Header;
+        public Header Header = null!;
 
         /// <summary>
         /// The hashes of the transactions of the block.
         /// </summary>
-        public UInt256[] Hashes;
+        public UInt256[] Hashes = null!;
 
         /// <summary>
         /// The hash of the block.
@@ -79,7 +78,7 @@ namespace Neo.SmartContract.Native
             throw new NotSupportedException();
         }
 
-        StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
+        StackItem IInteroperable.ToStackItem(ReferenceCounter? referenceCounter)
         {
             return new VM.Types.Array(referenceCounter, new StackItem[]
             {

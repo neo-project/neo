@@ -37,7 +37,7 @@ namespace Neo
         /// <summary>
         /// The public keys of the standby committee members.
         /// </summary>
-        public IReadOnlyList<ECPoint> StandbyCommittee { get; init; }
+        public IReadOnlyList<ECPoint> StandbyCommittee { get; init; } = null!;
 
         /// <summary>
         /// The number of members of the committee in NEO system.
@@ -52,7 +52,7 @@ namespace Neo
         /// <summary>
         /// The default seed nodes list.
         /// </summary>
-        public string[] SeedList { get; init; }
+        public string[] SeedList { get; init; } = null!;
 
         /// <summary>
         /// Indicates the time in milliseconds between two blocks.
@@ -87,14 +87,14 @@ namespace Neo
         /// <summary>
         /// Sets the block height from which a hardfork is activated.
         /// </summary>
-        public ImmutableDictionary<Hardfork, uint> Hardforks { get; init; }
+        public ImmutableDictionary<Hardfork, uint> Hardforks { get; init; } = null!;
 
         /// <summary>
         /// Indicates the amount of gas to distribute during initialization.
         /// </summary>
         public ulong InitialGasDistribution { get; init; }
 
-        private IReadOnlyList<ECPoint> _standbyValidators;
+        private IReadOnlyList<ECPoint>? _standbyValidators;
         /// <summary>
         /// The public keys of the standby validators.
         /// </summary>
@@ -147,19 +147,19 @@ namespace Neo
                 Network = section.GetValue("Network", Default.Network),
                 AddressVersion = section.GetValue("AddressVersion", Default.AddressVersion),
                 StandbyCommittee = section.GetSection("StandbyCommittee").Exists()
-                    ? section.GetSection("StandbyCommittee").GetChildren().Select(p => ECPoint.Parse(p.Get<string>(), ECCurve.Secp256r1)).ToArray()
+                    ? section.GetSection("StandbyCommittee").GetChildren().Select(p => ECPoint.Parse(p.Get<string>()!, ECCurve.Secp256r1)).ToArray()
                     : Default.StandbyCommittee,
                 ValidatorsCount = section.GetValue("ValidatorsCount", Default.ValidatorsCount),
-                SeedList = section.GetSection("SeedList").Exists()
+                SeedList = (section.GetSection("SeedList").Exists()
                     ? section.GetSection("SeedList").GetChildren().Select(p => p.Get<string>()).ToArray()
-                    : Default.SeedList,
+                    : Default.SeedList)!,
                 MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", Default.MillisecondsPerBlock),
                 MaxTransactionsPerBlock = section.GetValue("MaxTransactionsPerBlock", Default.MaxTransactionsPerBlock),
                 MemoryPoolMaxTransactions = section.GetValue("MemoryPoolMaxTransactions", Default.MemoryPoolMaxTransactions),
                 MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", Default.MaxTraceableBlocks),
                 InitialGasDistribution = section.GetValue("InitialGasDistribution", Default.InitialGasDistribution),
                 Hardforks = section.GetSection("Hardforks").Exists()
-                    ? section.GetSection("Hardforks").GetChildren().ToImmutableDictionary(p => Enum.Parse<Hardfork>(p.Key), p => uint.Parse(p.Value))
+                    ? section.GetSection("Hardforks").GetChildren().ToImmutableDictionary(p => Enum.Parse<Hardfork>(p.Key), p => uint.Parse(p.Value!))
                     : Default.Hardforks
             };
         }

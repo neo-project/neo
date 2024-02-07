@@ -38,9 +38,9 @@ namespace Neo.Persistence
             return innerCache.Contains(key);
         }
 
-        protected override StorageItem GetInternal(StorageKey key)
+        protected override StorageItem? GetInternal(StorageKey key)
         {
-            return innerCache[key].Clone();
+            return innerCache[key]?.Clone();
         }
 
         protected override IEnumerable<(StorageKey, StorageItem)> SeekInternal(byte[] keyOrPreifx, SeekDirection direction)
@@ -49,14 +49,14 @@ namespace Neo.Persistence
                 yield return (key, value.Clone());
         }
 
-        protected override StorageItem TryGetInternal(StorageKey key)
+        protected override StorageItem? TryGetInternal(StorageKey key)
         {
             return innerCache.TryGet(key)?.Clone();
         }
 
         protected override void UpdateInternal(StorageKey key, StorageItem value)
         {
-            innerCache.GetAndChange(key).FromReplica(value);
+            innerCache.GetAndChange(key)?.FromReplica(value);
         }
     }
 }

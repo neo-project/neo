@@ -39,7 +39,7 @@ namespace Neo.SmartContract
                 ElementCount = count;
             }
 
-            public override bool Equals(StackItem other) => throw new NotSupportedException();
+            public override bool Equals(StackItem? other) => throw new NotSupportedException();
 
             public override int GetHashCode() => throw new NotSupportedException();
 
@@ -53,7 +53,7 @@ namespace Neo.SmartContract
         /// <param name="limits">The limits for the deserialization.</param>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(ReadOnlyMemory<byte> data, ExecutionEngineLimits limits, ReferenceCounter referenceCounter = null)
+        public static StackItem Deserialize(ReadOnlyMemory<byte> data, ExecutionEngineLimits limits, ReferenceCounter? referenceCounter = null)
         {
             MemoryReader reader = new(data);
             return Deserialize(ref reader, (uint)Math.Min(data.Length, limits.MaxItemSize), limits.MaxStackSize, referenceCounter);
@@ -66,7 +66,7 @@ namespace Neo.SmartContract
         /// <param name="limits">The limits for the deserialization.</param>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(ref MemoryReader reader, ExecutionEngineLimits limits, ReferenceCounter referenceCounter = null)
+        public static StackItem Deserialize(ref MemoryReader reader, ExecutionEngineLimits limits, ReferenceCounter? referenceCounter = null)
         {
             return Deserialize(ref reader, limits.MaxItemSize, limits.MaxStackSize, referenceCounter);
         }
@@ -79,7 +79,7 @@ namespace Neo.SmartContract
         /// <param name="maxItems">The max of items to serialize</param>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(ref MemoryReader reader, uint maxSize, uint maxItems, ReferenceCounter referenceCounter = null)
+        public static StackItem Deserialize(ref MemoryReader reader, uint maxSize, uint maxItems, ReferenceCounter? referenceCounter = null)
         {
             Stack<StackItem> deserialized = new();
             int undeserialized = 1;

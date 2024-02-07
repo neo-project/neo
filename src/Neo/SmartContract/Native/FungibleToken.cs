@@ -96,11 +96,11 @@ namespace Neo.SmartContract.Native
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
-            StorageItem storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Account).Add(account), () => new StorageItem(new TState()));
+            StorageItem storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Account).Add(account), () => new StorageItem(new TState())).NullExceptionOr<StorageItem>();
             TState state = storage.GetInteroperable<TState>();
             OnBalanceChanging(engine, account, state, amount);
             state.Balance += amount;
-            storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem(BigInteger.Zero));
+            storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_TotalSupply), () => new StorageItem(BigInteger.Zero)).NullExceptionOr<StorageItem>();
             storage.Add(amount);
             await PostTransfer(engine, null, account, amount, StackItem.Null, callOnPayment);
         }
@@ -110,7 +110,7 @@ namespace Neo.SmartContract.Native
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
             StorageKey key = CreateStorageKey(Prefix_Account).Add(account);
-            StorageItem storage = engine.Snapshot.GetAndChange(key);
+            StorageItem storage = engine.Snapshot.GetAndChange(key).NullExceptionOr<StorageItem>();
             TState state = storage.GetInteroperable<TState>();
             if (state.Balance < amount) throw new InvalidOperationException();
             OnBalanceChanging(engine, account, state, -amount);
@@ -118,7 +118,7 @@ namespace Neo.SmartContract.Native
                 engine.Snapshot.Delete(key);
             else
                 state.Balance -= amount;
-            storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
+            storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_TotalSupply)).NullExceptionOr<StorageItem>();
             storage.Add(-amount);
             await PostTransfer(engine, account, null, amount, StackItem.Null, false);
         }
@@ -131,7 +131,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public virtual BigInteger TotalSupply(DataCache snapshot)
         {
-            StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_TotalSupply));
+            StorageItem? storage = snapshot.TryGet(CreateStorageKey(Prefix_TotalSupply));
             if (storage is null) return BigInteger.Zero;
             return storage;
         }
@@ -145,7 +145,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public virtual BigInteger BalanceOf(DataCache snapshot, UInt160 account)
         {
-            StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account));
+            StorageItem? storage = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account));
             if (storage is null) return BigInteger.Zero;
             return storage.GetInteroperable<TState>().Balance;
         }
@@ -159,7 +159,7 @@ namespace Neo.SmartContract.Native
             if (!from.Equals(engine.CallingScriptHash) && !engine.CheckWitnessInternal(from))
                 return false;
             StorageKey key_from = CreateStorageKey(Prefix_Account).Add(from);
-            StorageItem storage_from = engine.Snapshot.GetAndChange(key_from);
+            StorageItem? storage_from = engine.Snapshot.GetAndChange(key_from);
             if (amount.IsZero)
             {
                 if (storage_from != null)
@@ -185,7 +185,7 @@ namespace Neo.SmartContract.Native
                     else
                         state_from.Balance -= amount;
                     StorageKey key_to = CreateStorageKey(Prefix_Account).Add(to);
-                    StorageItem storage_to = engine.Snapshot.GetAndChange(key_to, () => new StorageItem(new TState()));
+                    StorageItem storage_to = engine.Snapshot.GetAndChange(key_to, () => new StorageItem(new TState())).NullExceptionOr<StorageItem>();
                     TState state_to = storage_to.GetInteroperable<TState>();
                     OnBalanceChanging(engine, to, state_to, amount);
                     state_to.Balance += amount;
@@ -199,7 +199,7 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        private protected virtual async ContractTask PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data, bool callOnPayment)
+        private protected virtual async ContractTask PostTransfer(ApplicationEngine engine, UInt160? from, UInt160? to, BigInteger amount, StackItem data, bool callOnPayment)
         {
             // Send notification
 

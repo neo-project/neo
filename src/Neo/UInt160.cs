@@ -60,13 +60,13 @@ namespace Neo
             }
         }
 
-        public int CompareTo(UInt160 other)
+        public int CompareTo(UInt160? other)
         {
-            int result = value3.CompareTo(other.value3);
+            int result = value3.CompareTo(other?.value3);
             if (result != 0) return result;
-            result = value2.CompareTo(other.value2);
+            result = value2.CompareTo(other?.value2);
             if (result != 0) return result;
-            return value1.CompareTo(other.value1);
+            return value1.CompareTo(other?.value1);
         }
 
         public void Deserialize(ref MemoryReader reader)
@@ -76,13 +76,13 @@ namespace Neo
             value3 = reader.ReadUInt32();
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(obj, this)) return true;
             return Equals(obj as UInt160);
         }
 
-        public bool Equals(UInt160 other)
+        public bool Equals(UInt160? other)
         {
             if (other is null) return false;
             return value1 == other.value1
@@ -104,7 +104,7 @@ namespace Neo
         public static UInt160 Parse(string value)
         {
             if (!TryParse(value, out var result)) throw new FormatException();
-            return result;
+            return result!;
         }
 
         public void Serialize(BinaryWriter writer)
@@ -125,7 +125,7 @@ namespace Neo
         /// <param name="s">An <see cref="UInt160"/> represented by a <see cref="string"/>.</param>
         /// <param name="result">The parsed <see cref="UInt160"/>.</param>
         /// <returns><see langword="true"/> if an <see cref="UInt160"/> is successfully parsed; otherwise, <see langword="false"/>.</returns>
-        public static bool TryParse(string s, out UInt160 result)
+        public static bool TryParse(string? s, out UInt160? result)
         {
             if (s == null)
             {
@@ -150,14 +150,14 @@ namespace Neo
             return true;
         }
 
-        public static bool operator ==(UInt160 left, UInt160 right)
+        public static bool operator ==(UInt160? left, UInt160? right)
         {
             if (ReferenceEquals(left, right)) return true;
             if (left is null || right is null) return false;
             return left.Equals(right);
         }
 
-        public static bool operator !=(UInt160 left, UInt160 right)
+        public static bool operator !=(UInt160? left, UInt160? right)
         {
             return !(left == right);
         }

@@ -13,9 +13,9 @@ using System.Collections.Generic;
 
 namespace Neo.IO.Caching
 {
-    internal abstract class FIFOCache<TKey, TValue> : Cache<TKey, TValue>
+    internal abstract class FIFOCache<TKey, TValue> : Cache<TKey, TValue> where TKey : notnull
     {
-        public FIFOCache(int max_capacity, IEqualityComparer<TKey> comparer = null)
+        public FIFOCache(int max_capacity, IEqualityComparer<TKey>? comparer = null)
             : base(max_capacity, comparer)
         {
         }

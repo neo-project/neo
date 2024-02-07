@@ -121,7 +121,7 @@ namespace Neo.SmartContract.Native
             List<ContractMethodMetadata> descriptors = new();
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
             {
-                ContractMethodAttribute attribute = member.GetCustomAttribute<ContractMethodAttribute>();
+                ContractMethodAttribute? attribute = member.GetCustomAttribute<ContractMethodAttribute>();
                 if (attribute is null) continue;
                 descriptors.Add(new ContractMethodMetadata(member, attribute));
             }
@@ -223,7 +223,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="hash">The hash of the native contract.</param>
         /// <returns>The native contract with the specified hash.</returns>
-        public static NativeContract GetContract(UInt160 hash)
+        public static NativeContract? GetContract(UInt160 hash)
         {
             contractsDictionary.TryGetValue(hash, out var contract);
             return contract;
@@ -235,7 +235,7 @@ namespace Neo.SmartContract.Native
             {
                 if (version != 0)
                     throw new InvalidOperationException($"The native contract of version {version} is not active.");
-                ExecutionContext context = engine.CurrentContext;
+                ExecutionContext context = engine.CurrentContext ?? throw new InvalidOperationException("No context available.");
                 ContractMethodMetadata method = methods[context.InstructionPointer];
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
                 if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
@@ -246,7 +246,7 @@ namespace Neo.SmartContract.Native
                 if (method.NeedSnapshot) parameters.Add(engine.Snapshot);
                 for (int i = 0; i < method.Parameters.Length; i++)
                     parameters.Add(engine.Convert(context.EvaluationStack.Peek(i), method.Parameters[i]));
-                object returnValue = method.Handler.Invoke(this, parameters.ToArray());
+                object? returnValue = method.Handler.Invoke(this, parameters.ToArray());
                 if (returnValue is ContractTask task)
                 {
                     await task;
@@ -256,7 +256,7 @@ namespace Neo.SmartContract.Native
                 {
                     context.EvaluationStack.Pop();
                 }
-                if (method.Handler.ReturnType != typeof(void) && method.Handler.ReturnType != typeof(ContractTask))
+                if (returnValue != null && method.Handler.ReturnType != typeof(void) && method.Handler.ReturnType != typeof(ContractTask))
                 {
                     context.EvaluationStack.Push(engine.Convert(returnValue));
                 }
