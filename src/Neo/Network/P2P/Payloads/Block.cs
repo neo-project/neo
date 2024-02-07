@@ -28,7 +28,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The header of the block.
         /// </summary>
-        public Header Header= null!;
+        public Header Header = null!;
 
         /// <summary>
         /// The transaction list of the block.

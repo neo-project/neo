@@ -154,9 +154,9 @@ namespace Neo.SmartContract.Manifest
         /// Converts the permission descriptor to byte array.
         /// </summary>
         /// <returns>The converted byte array. Or <see langword="null"/> if it is a wildcard.</returns>
-        public byte[] ToArray()
+        public byte[]? ToArray()
         {
-            return Hash?.ToArray() ?? Group.NullExceptionOr<ECPoint>().EncodePoint(true);
+            return Hash?.ToArray() ?? Group?.EncodePoint(true);
         }
     }
 }

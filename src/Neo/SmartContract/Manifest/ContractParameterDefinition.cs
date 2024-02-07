@@ -24,7 +24,7 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// The name of the parameter.
         /// </summary>
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
 
         /// <summary>
         /// The type of the parameter. It can be any value of <see cref="ContractParameterType"/> except <see cref="ContractParameterType.Void"/>.

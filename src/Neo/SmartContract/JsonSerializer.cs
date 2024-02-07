@@ -71,7 +71,10 @@ namespace Neo.SmartContract
                             var key = entry.Key.GetString();
                             var value = Serialize(entry.Value);
 
-                            ret[key] = value;
+                            if (key != null)
+                            {
+                                ret[key] = value;
+                            }
                         }
 
                         return ret;
@@ -142,7 +145,7 @@ namespace Neo.SmartContract
                         writer.WriteEndObject();
                         break;
                     case JsonTokenType.PropertyName:
-                        writer.WritePropertyName(((StackItem)stack.Pop()).GetString());
+                        writer.WritePropertyName(((StackItem)stack.Pop()!).GetString()!);
                         break;
                     case Null _:
                         writer.WriteNullValue();
@@ -183,7 +186,7 @@ namespace Neo.SmartContract
                 case JArray array:
                     {
                         List<StackItem> list = new(array.Count);
-                        foreach (JToken obj in array.Select(p=>p!=null))
+                        foreach (JToken obj in array.Select(p => p != null))
                             list.Add(Deserialize(engine, obj, ref maxStackSize, referenceCounter));
                         return new Array(referenceCounter, list);
                     }
@@ -213,7 +216,7 @@ namespace Neo.SmartContract
                             if (maxStackSize-- == 0) throw new FormatException();
 
                             var key = entry.Key;
-                            var value = Deserialize(engine, entry.Value, ref maxStackSize, referenceCounter);
+                            var value = Deserialize(engine, entry.Value!, ref maxStackSize, referenceCounter);
 
                             item[key] = value;
                         }

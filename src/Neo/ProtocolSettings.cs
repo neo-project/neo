@@ -94,7 +94,7 @@ namespace Neo
         /// </summary>
         public ulong InitialGasDistribution { get; init; }
 
-        private IReadOnlyList<ECPoint> _standbyValidators = null!;
+        private IReadOnlyList<ECPoint>? _standbyValidators;
         /// <summary>
         /// The public keys of the standby validators.
         /// </summary>
@@ -159,7 +159,7 @@ namespace Neo
                 MaxTraceableBlocks = section.GetValue("MaxTraceableBlocks", Default.MaxTraceableBlocks),
                 InitialGasDistribution = section.GetValue("InitialGasDistribution", Default.InitialGasDistribution),
                 Hardforks = section.GetSection("Hardforks").Exists()
-                    ? section.GetSection("Hardforks").GetChildren().ToImmutableDictionary(p => Enum.Parse<Hardfork>(p.Key), p => uint.Parse(p.Value))
+                    ? section.GetSection("Hardforks").GetChildren().ToImmutableDictionary(p => Enum.Parse<Hardfork>(p.Key), p => uint.Parse(p.Value!))
                     : Default.Hardforks
             };
         }

@@ -43,7 +43,7 @@ namespace Neo.Network.P2P
         private readonly bool[] sentCommands = new bool[1 << (sizeof(MessageCommand) * 8)];
         private ByteString msg_buffer = ByteString.Empty;
         private bool ack = true;
-        private uint lastHeightSent = 0;
+        private uint lastHeightSent;
 
         /// <summary>
         /// The address of the remote Tcp server.
@@ -53,22 +53,22 @@ namespace Neo.Network.P2P
         /// <summary>
         /// The port listened by the remote Tcp server. If the remote node is not a server, this field is 0.
         /// </summary>
-        public int ListenerTcpPort { get; private set; } = 0;
+        public int ListenerTcpPort { get; private set; }
 
         /// <summary>
         /// The <see cref="VersionPayload"/> sent by the remote node.
         /// </summary>
-        public VersionPayload Version { get; private set; }
+        public VersionPayload Version { get; private set; } = null!;
 
         /// <summary>
         /// The index of the last block sent by the remote node.
         /// </summary>
-        public uint LastBlockIndex { get; private set; } = 0;
+        public uint LastBlockIndex { get; private set; }
 
         /// <summary>
         /// Indicates whether the remote node is a full node.
         /// </summary>
-        public bool IsFullNode { get; private set; } = false;
+        public bool IsFullNode { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RemoteNode"/> class.

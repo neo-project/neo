@@ -48,7 +48,7 @@ namespace Neo.Ledger
             /// <summary>
             /// The <see cref="Network.P2P.Payloads.Block"/> that is persisted.
             /// </summary>
-            public Block Block { get; init; }
+            public Block Block { get; init; } = null!;
         }
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace Neo.Ledger
             /// <summary>
             /// The blocks to be imported.
             /// </summary>
-            public IEnumerable<Block> Blocks { get; init; }
+            public IEnumerable<Block> Blocks { get; init; } = null!;
 
             /// <summary>
             /// Indicates whether the blocks need to be verified when importing.
@@ -80,7 +80,7 @@ namespace Neo.Ledger
             /// <summary>
             /// The transactions to be sent.
             /// </summary>
-            public IEnumerable<Transaction> Transactions { get; init; }
+            public IEnumerable<Transaction> Transactions { get; init; } = null!;
         }
 
         /// <summary>
@@ -96,7 +96,7 @@ namespace Neo.Ledger
             /// <summary>
             /// The inventories to be re-verified.
             /// </summary>
-            public IReadOnlyList<IInventory> Inventories { get; init; }
+            public IReadOnlyList<IInventory> Inventories { get; init; } = null!;
         }
 
         /// <summary>
@@ -107,7 +107,7 @@ namespace Neo.Ledger
             /// <summary>
             /// The <see cref="IInventory"/> that is relayed.
             /// </summary>
-            public IInventory Inventory { get; init; }
+            public IInventory Inventory { get; init; } = null!;
             /// <summary>
             /// The result.
             /// </summary>
@@ -115,13 +115,14 @@ namespace Neo.Ledger
         }
 
         internal class Initialize { }
-        private class UnverifiedBlocksList {
+        private class UnverifiedBlocksList
+        {
             public LinkedList<Block> Blocks = new();
             public HashSet<IActorRef> Nodes = new();
         }
 
-        public static event CommittingHandler Committing= null!;
-        public static event CommittedHandler Committed= null!;
+        public static event CommittingHandler Committing = null!;
+        public static event CommittedHandler Committed = null!;
 
         private readonly static Script onPersistScript, postPersistScript;
         private const int MaxTxToReverifyPerIdle = 10;
@@ -442,7 +443,7 @@ namespace Neo.Ledger
                 // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
                 foreach (TransactionState transactionState in transactionStates)
                 {
-                    Transaction? tx = transactionState.Transaction;
+                    Transaction tx = transactionState.Transaction!;
                     using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, system.Settings, tx.SystemFee);
                     engine.LoadScript(tx.Script);
                     transactionState.State = engine.Execute();
@@ -479,8 +480,8 @@ namespace Neo.Ledger
             extensibleWitnessWhiteList = null;
             block_cache.Remove(block.PrevHash);
             Context.System.EventStream.Publish(new PersistCompleted { Block = block });
-            if (system.HeaderCache.TryRemoveFirst(out Header header))
-                Debug.Assert(header.Index == block.Index);
+            if (system.HeaderCache.TryRemoveFirst(out Header? header))
+                Debug.Assert(header?.Index == block.Index);
         }
 
         /// <summary>

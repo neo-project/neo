@@ -23,7 +23,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The starting hash of the blocks to request.
         /// </summary>
-        public UInt256 HashStart;
+        public UInt256 HashStart = null!;
 
         /// <summary>
         /// The number of blocks to request.

@@ -39,10 +39,10 @@ namespace Neo.SmartContract.Native
         {
             var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
             {
-                new ContractEventDescriptor
+                new()
                 {
                     Name = "Deploy",
-                    Parameters = new ContractParameterDefinition[]
+                    Parameters = new[]
                     {
                         new ContractParameterDefinition()
                         {
@@ -51,10 +51,10 @@ namespace Neo.SmartContract.Native
                         }
                     }
                 },
-                new ContractEventDescriptor
+                new()
                 {
                     Name = "Update",
-                    Parameters = new ContractParameterDefinition[]
+                    Parameters = new[]
                     {
                         new ContractParameterDefinition()
                         {
@@ -63,10 +63,10 @@ namespace Neo.SmartContract.Native
                         }
                     }
                 },
-                new ContractEventDescriptor
+                new()
                 {
                     Name = "Destroy",
-                    Parameters = new ContractParameterDefinition[]
+                    Parameters = new[]
                     {
                         new ContractParameterDefinition()
                         {
@@ -82,7 +82,7 @@ namespace Neo.SmartContract.Native
 
         private int GetNextAvailableId(DataCache snapshot)
         {
-            StorageItem item = snapshot.GetAndChange(CreateStorageKey(Prefix_NextAvailableId));
+            StorageItem item = snapshot.GetAndChange(CreateStorageKey(Prefix_NextAvailableId))!;
             int value = (int)(BigInteger)item;
             item.Add(1);
             return value;
@@ -97,7 +97,7 @@ namespace Neo.SmartContract.Native
 
         private async ContractTask OnDeploy(ApplicationEngine engine, ContractState contract, StackItem data, bool update)
         {
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy", 2);
+            ContractMethodDescriptor? md = contract.Manifest.Abi.GetMethod("_deploy", 2);
             if (md is not null)
                 await engine.CallFromNativeContract(Hash, contract.Hash, md.Name, data, update);
             engine.SendNotification(Hash, update ? "Update" : "Deploy", new VM.Types.Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
@@ -107,7 +107,7 @@ namespace Neo.SmartContract.Native
         {
             foreach (NativeContract contract in Contracts)
             {
-                if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.PersistingBlock.Index))
+                if (contract.IsInitializeBlock(engine.ProtocolSettings!, engine.PersistingBlock!.Index))
                 {
                     engine.Snapshot.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
                     {
@@ -125,7 +125,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private long GetMinimumDeploymentFee(DataCache snapshot)
         {
-            return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_MinimumDeploymentFee)];
+            return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_MinimumDeploymentFee)]!;
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -133,7 +133,7 @@ namespace Neo.SmartContract.Native
         {
             if (value < 0) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_MinimumDeploymentFee)).Set(value);
+            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_MinimumDeploymentFee))!.Set(value);
         }
 
         /// <summary>
@@ -157,7 +157,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public ContractState? GetContractById(DataCache snapshot, int id)
         {
-            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_ContractHash).AddBigEndian(id));
+            StorageItem? item = snapshot.TryGet(CreateStorageKey(Prefix_ContractHash).AddBigEndian(id));
             if (item is null) return null;
             var hash = new UInt160(item.Value.Span);
             return GetContract(snapshot, hash);
@@ -273,7 +273,7 @@ namespace Neo.SmartContract.Native
 
             engine.AddGas(engine.StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
 
-            var contract = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Contract).Add(engine.CallingScriptHash))?.GetInteroperable<ContractState>();
+            var contract = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Contract).Add(engine.CallingScriptHash!))?.GetInteroperable<ContractState>();
             if (contract is null) throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
             if (contract.UpdateCounter == ushort.MaxValue) throw new InvalidOperationException($"The contract reached the maximum number of updates.");
 
@@ -304,9 +304,9 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private void Destroy(ApplicationEngine engine)
         {
-            UInt160 hash = engine.CallingScriptHash;
+            UInt160 hash = engine.CallingScriptHash!;
             StorageKey ckey = CreateStorageKey(Prefix_Contract).Add(hash);
-            ContractState contract = engine.Snapshot.TryGet(ckey)?.GetInteroperable<ContractState>();
+            ContractState? contract = engine.Snapshot.TryGet(ckey)?.GetInteroperable<ContractState>();
             if (contract is null) return;
             engine.Snapshot.Delete(ckey);
             engine.Snapshot.Delete(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id));

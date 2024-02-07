@@ -76,7 +76,7 @@ namespace Neo.SmartContract
                 Type = Enum.Parse<ContractParameterType>(json["type"]!.GetString())
             };
             var value = json["value"];
-            if ( value != null)
+            if (value != null)
                 parameter.Value = parameter.Type switch
                 {
                     ContractParameterType.Signature or ContractParameterType.ByteArray => Convert.FromBase64String(value.AsString()),
@@ -248,7 +248,7 @@ namespace Neo.SmartContract
                         return sb.ToString();
                     }
                 default:
-                    return parameter.Value.ToString()??"(null)";
+                    return parameter.Value.ToString() ?? "(null)";
             }
         }
     }

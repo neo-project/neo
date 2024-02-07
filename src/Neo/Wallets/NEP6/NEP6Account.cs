@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
 using Neo.Json;
 using System;
 using System.Threading;
@@ -22,7 +21,7 @@ namespace Neo.Wallets.NEP6
         private string? nep2key;
         private string? nep2KeyNew;
         private KeyPair? key;
-        public JToken Extra;
+        public JToken Extra = null!;
 
         public bool Decrypted => nep2key == null || key != null;
         public override bool HasKey => nep2key != null;
@@ -35,14 +34,14 @@ namespace Neo.Wallets.NEP6
         }
 
         public NEP6Account(NEP6Wallet wallet, UInt160 scriptHash, KeyPair key, string password)
-            : this(wallet, scriptHash, key.Export(password, wallet.ProtocolSettings!.AddressVersion, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P))
+            : this(wallet, scriptHash, key.Export(password, wallet.ProtocolSettings.AddressVersion, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P))
         {
             this.key = key;
         }
 
         public static NEP6Account FromJson(JObject json, NEP6Wallet wallet)
         {
-            return new NEP6Account(wallet, json["address"]!.GetString().ToScriptHash(wallet.ProtocolSettings!.AddressVersion), json["key"]?.GetString())
+            return new NEP6Account(wallet, json["address"]!.GetString().ToScriptHash(wallet.ProtocolSettings.AddressVersion), json["key"]?.GetString())
             {
                 Label = json["label"]!.GetString(),
                 IsDefault = json["isDefault"]!.GetBoolean(),

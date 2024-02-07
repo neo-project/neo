@@ -235,7 +235,7 @@ namespace Neo.SmartContract.Native
             {
                 if (version != 0)
                     throw new InvalidOperationException($"The native contract of version {version} is not active.");
-                ExecutionContext context = engine.CurrentContext?? throw new InvalidOperationException("No context available.");
+                ExecutionContext context = engine.CurrentContext ?? throw new InvalidOperationException("No context available.");
                 ContractMethodMetadata method = methods[context.InstructionPointer];
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
                 if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
@@ -256,7 +256,7 @@ namespace Neo.SmartContract.Native
                 {
                     context.EvaluationStack.Pop();
                 }
-                if (method.Handler.ReturnType != typeof(void) && method.Handler.ReturnType != typeof(ContractTask))
+                if (returnValue != null && method.Handler.ReturnType != typeof(void) && method.Handler.ReturnType != typeof(ContractTask))
                 {
                     context.EvaluationStack.Push(engine.Convert(returnValue));
                 }

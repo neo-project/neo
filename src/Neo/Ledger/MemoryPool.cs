@@ -28,8 +28,8 @@ namespace Neo.Ledger
     /// </summary>
     public class MemoryPool : IReadOnlyCollection<Transaction>
     {
-        public event EventHandler<Transaction> TransactionAdded;
-        public event EventHandler<TransactionRemovedEventArgs> TransactionRemoved;
+        public event EventHandler<Transaction> TransactionAdded = null!;
+        public event EventHandler<TransactionRemovedEventArgs> TransactionRemoved = null!;
 
         // Allow a reverified transaction to be rebroadcast if it has been this many block times since last broadcast.
         private const int BlocksTillRebroadcast = 10;
@@ -296,7 +296,7 @@ namespace Neo.Ledger
 
             if (_unsortedTransactions.ContainsKey(tx.Hash)) return VerifyResult.AlreadyInPool;
 
-            List<Transaction>? removedTransactions = null;
+            List<Transaction>? removedTransactions;
             _txRwLock.EnterWriteLock();
             try
             {
@@ -408,7 +408,7 @@ namespace Neo.Ledger
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool TryRemoveVerified(UInt256 hash, [MaybeNullWhen(false)]out PoolItem item)
+        private bool TryRemoveVerified(UInt256 hash, [MaybeNullWhen(false)] out PoolItem item)
         {
             if (!_unsortedTransactions.TryGetValue(hash, out item))
                 return false;

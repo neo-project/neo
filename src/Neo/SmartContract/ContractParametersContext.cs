@@ -31,7 +31,7 @@ namespace Neo.SmartContract
     {
         private class ContextItem
         {
-            public readonly byte[] Script;
+            public readonly byte[]? Script;
             public readonly ContractParameter[] Parameters;
             public readonly Dictionary<ECPoint, byte[]> Signatures;
 
@@ -56,7 +56,7 @@ namespace Neo.SmartContract
             public JObject ToJson()
             {
                 JObject json = new();
-                json["script"] = Convert.ToBase64String(Script);
+                json["script"] = Convert.ToBase64String(Script!);
                 json["parameters"] = new JArray(Parameters.Select(p => p.ToJson()));
                 json["signatures"] = new JObject();
                 foreach (var signature in Signatures)
@@ -229,14 +229,14 @@ namespace Neo.SmartContract
             var type = typeof(ContractParametersContext).GetTypeInfo().Assembly.GetType(json["type"]!.AsString());
             if (!typeof(IVerifiable).IsAssignableFrom(type)) throw new FormatException();
 
-            var verifiable = (IVerifiable?)Activator.CreateInstance(type);
+            var verifiable = (IVerifiable)Activator.CreateInstance(type)!;
             byte[] data = Convert.FromBase64String(json["data"]!.AsString());
             MemoryReader reader = new(data);
-            verifiable?.DeserializeUnsigned(ref reader);
+            verifiable.DeserializeUnsigned(ref reader);
             if (json.ContainsProperty("hash"))
             {
                 UInt256? hash = UInt256.Parse(json["hash"]!.GetString());
-                if (hash != verifiable?.Hash) throw new FormatException();
+                if (hash != verifiable.Hash) throw new FormatException();
             }
             ContractParametersContext context = new(snapshot, verifiable, (uint)json["network"]!.GetInt32());
             foreach (var (key, value) in ((JObject)json["items"]!).Properties)
@@ -305,7 +305,7 @@ namespace Neo.SmartContract
             for (int i = 0; i < ScriptHashes.Count; i++)
             {
                 ContextItem? item = ContextItems[ScriptHashes[i]];
-                if(item == null) continue;
+                if (item == null) continue;
                 using ScriptBuilder sb = new();
                 for (int j = item.Parameters.Length - 1; j >= 0; j--)
                 {

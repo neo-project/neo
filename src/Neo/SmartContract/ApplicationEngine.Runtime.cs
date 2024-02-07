@@ -10,14 +10,12 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
-using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -37,7 +35,7 @@ namespace Neo.SmartContract
         /// </summary>
         public const int MaxNotificationSize = 1024;
 
-        private uint random_times = 0;
+        private uint random_times;
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.Platform.
@@ -261,8 +259,8 @@ namespace Neo.SmartContract
                 }
                 else
                 {
-                    OracleRequest? request = NativeContract.Oracle.GetRequest(Snapshot, response.Id);
-                    signers = NativeContract.Ledger.GetTransaction(Snapshot, request.OriginalTxid).Signers;
+                    OracleRequest request = NativeContract.Oracle.GetRequest(Snapshot, response.Id).NotNull();
+                    signers = NativeContract.Ledger.GetTransaction(Snapshot, request.OriginalTxid)!.Signers;
                 }
                 Signer? signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
                 if (signer is null) return false;
@@ -397,8 +395,8 @@ namespace Neo.SmartContract
         /// <param name="state">The arguments of the event.</param>
         protected internal void SendNotification(UInt160 hash, string eventName, Array state)
         {
-            NotifyEventArgs notification = new(ScriptContainer, hash, eventName, (Array)state.DeepCopy(asImmutable: true));
-            Notify?.Invoke(this, notification);
+            NotifyEventArgs notification = new(ScriptContainer!, hash, eventName, (Array)state.DeepCopy(asImmutable: true));
+            Notify.Invoke(this, notification);
             notifications ??= new List<NotifyEventArgs>();
             notifications.Add(notification);
             if (CurrentContext != null)
@@ -470,7 +468,10 @@ namespace Neo.SmartContract
                                 _ = Utility.StrictUTF8.GetString(item.GetSpan()); // Prevent any non-UTF8 string
                                 return true;
                             }
-                            catch { }
+                            catch
+                            {
+                                // ignored
+                            }
                         }
                         return false;
                     }

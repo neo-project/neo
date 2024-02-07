@@ -100,7 +100,7 @@ namespace Neo.Ledger
             }
         }
 
-        internal bool TryRemoveFirst(out Header header)
+        internal bool TryRemoveFirst(out Header? header)
         {
             readerWriterLock.EnterWriteLock();
             try

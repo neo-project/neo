@@ -30,7 +30,7 @@ namespace Neo.Persistence
             /// <summary>
             /// The key of the entry.
             /// </summary>
-            public StorageKey Key= null!;
+            public StorageKey Key = null!;
 
             /// <summary>
             /// The data of the entry.
@@ -304,7 +304,7 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <returns>The data of the entry. Or <see langword="null"/> if the entry doesn't exist.</returns>
-        protected abstract StorageItem GetInternal(StorageKey key);
+        protected abstract StorageItem? GetInternal(StorageKey key);
 
         /// <summary>
         /// Reads a specified entry from the cache, and mark it as <see cref="TrackState.Changed"/>. If the entry is not in the cache, it will be automatically loaded from the underlying storage.

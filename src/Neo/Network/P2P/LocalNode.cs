@@ -49,7 +49,7 @@ namespace Neo.Network.P2P
         public const uint ProtocolVersion = 0;
 
         private const int MaxCountFromSeedList = 5;
-        private readonly IPEndPoint[] SeedList;
+        private readonly IPEndPoint?[] SeedList;
 
         private readonly NeoSystem system;
         internal readonly ConcurrentDictionary<IActorRef, RemoteNode> RemoteNodes = new();
@@ -221,7 +221,7 @@ namespace Neo.Network.P2P
                 // It will try to add those, sequentially, to the list of currently unconnected ones.
 
                 Random rand = new();
-                AddPeers(SeedList.Where(u => u != null).OrderBy(p => rand.Next()).Take(count));
+                AddPeers(SeedList.Where(u => u != null).OrderBy(p => rand.Next()).Take(count)!);
             }
         }
 

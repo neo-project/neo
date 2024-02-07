@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
 using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
@@ -26,7 +25,7 @@ namespace Neo.SmartContract.Manifest
     /// <remarks>For more details, see NEP-14.</remarks>
     public class ContractAbi : IInteroperable
     {
-        private IReadOnlyDictionary<(string, int), ContractMethodDescriptor> methodDictionary = null!;
+        private IReadOnlyDictionary<(string, int), ContractMethodDescriptor>? methodDictionary;
 
         /// <summary>
         /// Gets the methods in the ABI.

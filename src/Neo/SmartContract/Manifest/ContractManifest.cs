@@ -35,27 +35,27 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// The name of the contract.
         /// </summary>
-        public string Name { get; set; }= null!;
+        public string Name { get; set; } = null!;
 
         /// <summary>
         /// The groups of the contract.
         /// </summary>
-        public ContractGroup[] Groups { get; set; }= null!;
+        public ContractGroup[] Groups { get; set; } = null!;
 
         /// <summary>
         /// Indicates which standards the contract supports. It can be a list of NEPs.
         /// </summary>
-        public string[] SupportedStandards { get; set; }= null!;
+        public string[] SupportedStandards { get; set; } = null!;
 
         /// <summary>
         /// The ABI of the contract.
         /// </summary>
-        public ContractAbi Abi { get; set; }= null!;
+        public ContractAbi Abi { get; set; } = null!;
 
         /// <summary>
         /// The permissions of the contract.
         /// </summary>
-        public ContractPermission[] Permissions { get; set; }= null!;
+        public ContractPermission[] Permissions { get; set; } = null!;
 
         /// <summary>
         /// The trusted contracts and groups of the contract.
@@ -85,7 +85,7 @@ namespace Neo.SmartContract.Manifest
                 Array array => WildcardContainer<ContractPermissionDescriptor>.Create(array.Select(ContractPermissionDescriptor.Create).ToArray()),
                 _ => throw new ArgumentException(null, nameof(stackItem))
             };
-            Extra = (JObject)JToken.Parse(@struct[7].GetSpan());
+            Extra = (JObject)JToken.Parse(@struct[7].GetSpan())!;
         }
 
         public StackItem ToStackItem(ReferenceCounter? referenceCounter)
@@ -114,7 +114,7 @@ namespace Neo.SmartContract.Manifest
             {
                 Name = json["name"]!.GetString(),
                 Groups = json["groups"].NullExceptionOr<JArray>().Select(u => ContractGroup.FromJson(u.NullExceptionOr<JObject>())).ToArray(),
-                SupportedStandards = json["supportedstandards"].NullExceptionOr<JArray>().Select(u => u.GetString()).ToArray(),
+                SupportedStandards = json["supportedstandards"].NullExceptionOr<JArray>().Select(u => u!.GetString()).ToArray(),
                 Abi = ContractAbi.FromJson(json["abi"].NullExceptionOr<JObject>()),
                 Permissions = json["permissions"].NullExceptionOr<JArray>().Select(u => ContractPermission.FromJson(u.NullExceptionOr<JObject>())).ToArray(),
                 Trusts = WildcardContainer<ContractPermissionDescriptor>.FromJson(json["trusts"]!, u => ContractPermissionDescriptor.FromJson((JString)u)),

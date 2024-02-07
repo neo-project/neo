@@ -28,7 +28,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <summary>
         /// The expressions of the condition.
         /// </summary>
-        public WitnessCondition[] Expressions;
+        public WitnessCondition[] Expressions = null!;
 
         public override int Size => base.Size + Expressions.GetVarSize();
         public override WitnessConditionType Type => WitnessConditionType.Or;

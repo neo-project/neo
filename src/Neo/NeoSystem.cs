@@ -35,7 +35,7 @@ namespace Neo
         /// <summary>
         /// Triggered when a service is added to the <see cref="NeoSystem"/>.
         /// </summary>
-        public event EventHandler<object> ServiceAdded;
+        public event EventHandler<object> ServiceAdded = null!;
 
         /// <summary>
         /// The protocol settings of the <see cref="NeoSystem"/>.
@@ -98,8 +98,8 @@ namespace Neo
 
         private ImmutableList<object> services = ImmutableList<object>.Empty;
         private readonly string storage_engine;
-        private readonly IStore store;
-        private ChannelsConfig? start_message = null;
+        private readonly IStore store = null!;
+        private ChannelsConfig? start_message;
         private int suspend = 0;
 
         static NeoSystem()
@@ -121,7 +121,7 @@ namespace Neo
             this.Settings = settings;
             this.GenesisBlock = CreateGenesisBlock(settings);
             this.storage_engine = storageEngine ?? nameof(MemoryStore);
-            if (storagePath != null)  this.store = LoadStore(storagePath);
+            if (storagePath != null) this.store = LoadStore(storagePath);
             this.MemPool = new MemoryPool(this);
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
@@ -182,7 +182,7 @@ namespace Neo
         public void AddService(object service)
         {
             ImmutableInterlocked.Update(ref services, p => p.Add(service));
-            ServiceAdded?.Invoke(this, service);
+            ServiceAdded.Invoke(this, service);
         }
 
         /// <summary>

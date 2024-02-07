@@ -90,7 +90,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The snapshot used to read or write data.
         /// </summary>
-        public DataCache Snapshot => CurrentContext?.GetState<ExecutionContextState>().Snapshot ?? originalSnapshot?? throw new InvalidOperationException("No snapshot available.");
+        public DataCache Snapshot => CurrentContext?.GetState<ExecutionContextState>().Snapshot ?? originalSnapshot ?? throw new InvalidOperationException("No snapshot available.");
 
         /// <summary>
         /// The block being persisted. This field could be <see langword="null"/> if the <see cref="Trigger"/> is <see cref="TriggerType.Verification"/>.
@@ -131,7 +131,7 @@ namespace Neo.SmartContract
             {
                 if (CurrentContext is null) return null;
                 var state = CurrentContext.GetState<ExecutionContextState>();
-                return state.NativeCallingScriptHash ?? state.CallingContext?.GetState<ExecutionContextState>().ScriptHash;
+                return state.NativeCallingScriptHash ?? state.CallingContext.GetState<ExecutionContextState>().ScriptHash;
             }
         }
 

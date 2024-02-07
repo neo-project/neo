@@ -30,7 +30,7 @@ namespace Neo.IO.Caching
                 if (attribute == null) continue;
 
                 // Append to cache
-                dictionary.Add((T)field.GetValue(null), attribute.Type);
+                dictionary.Add((T)field.GetValue(null)!, attribute.Type);
             }
         }
 

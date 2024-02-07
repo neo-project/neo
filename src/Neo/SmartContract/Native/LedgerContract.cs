@@ -38,7 +38,7 @@ namespace Neo.SmartContract.Native
 
         internal override ContractTask OnPersist(ApplicationEngine engine)
         {
-            if(engine.PersistingBlock == null) throw new NullReferenceException("engine.PersistingBlock");
+            if (engine.PersistingBlock == null) throw new NullReferenceException("engine.PersistingBlock");
 
             TransactionState[] transactions = engine.PersistingBlock.Transactions.Select(p => new TransactionState
             {

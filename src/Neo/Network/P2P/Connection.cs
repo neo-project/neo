@@ -45,8 +45,8 @@ namespace Neo.Network.P2P
         public IPEndPoint Local { get; }
 
         private ICancelable timer;
-        private readonly IActorRef tcp;
-        private bool disconnected = false;
+        private readonly IActorRef? _tcp;
+        private bool disconnected;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Connection"/> class.
@@ -62,7 +62,7 @@ namespace Neo.Network.P2P
             switch (connection)
             {
                 case IActorRef tcp:
-                    this.tcp = tcp;
+                    this._tcp = tcp;
                     break;
             }
         }
@@ -74,9 +74,9 @@ namespace Neo.Network.P2P
         public void Disconnect(bool abort = false)
         {
             disconnected = true;
-            if (tcp != null)
+            if (_tcp != null)
             {
-                tcp.Tell(abort ? Tcp.Abort.Instance : Tcp.Close.Instance);
+                _tcp.Tell(abort ? Tcp.Abort.Instance : Tcp.Close.Instance);
             }
             Context.Stop(Self);
         }
@@ -130,7 +130,7 @@ namespace Neo.Network.P2P
         protected override void PostStop()
         {
             if (!disconnected)
-                tcp?.Tell(Tcp.Close.Instance);
+                _tcp?.Tell(Tcp.Close.Instance);
             timer.CancelIfNotNull();
             base.PostStop();
         }
@@ -141,9 +141,9 @@ namespace Neo.Network.P2P
         /// <param name="data"></param>
         protected void SendData(ByteString data)
         {
-            if (tcp != null)
+            if (_tcp != null)
             {
-                tcp.Tell(Tcp.Write.Create(data, Ack.Instance));
+                _tcp.Tell(Tcp.Write.Create(data, Ack.Instance));
             }
         }
     }

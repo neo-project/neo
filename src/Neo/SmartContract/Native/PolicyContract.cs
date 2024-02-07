@@ -84,7 +84,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public long GetFeePerByte(DataCache snapshot)
         {
-            return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_FeePerByte)];
+            return (long)(BigInteger)snapshot[CreateStorageKey(Prefix_FeePerByte)]!;
         }
 
         /// <summary>
@@ -95,7 +95,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public uint GetExecFeeFactor(DataCache snapshot)
         {
-            return (uint)(BigInteger)snapshot[CreateStorageKey(Prefix_ExecFeeFactor)];
+            return (uint)(BigInteger)snapshot[CreateStorageKey(Prefix_ExecFeeFactor)]!;
         }
 
         /// <summary>

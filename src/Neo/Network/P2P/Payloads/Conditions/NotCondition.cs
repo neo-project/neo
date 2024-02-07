@@ -27,7 +27,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <summary>
         /// The expression of the condition to be reversed.
         /// </summary>
-        public WitnessCondition Expression;
+        public WitnessCondition Expression = null!;
 
         public override int Size => base.Size + Expression.Size;
         public override WitnessConditionType Type => WitnessConditionType.Not;
@@ -51,7 +51,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         private protected override void ParseJson(JObject json, int maxNestDepth)
         {
             if (maxNestDepth <= 0) throw new FormatException();
-            Expression = FromJson((JObject)json["expression"], maxNestDepth - 1);
+            Expression = FromJson((JObject)json["expression"]!, maxNestDepth - 1);
         }
 
         public override JObject ToJson()

@@ -78,7 +78,7 @@ namespace Neo.Network.P2P
                 case (MessageCommand.Addr, AddrPayload payload):
                     OnAddrMessageReceived(payload);
                     break;
-                case (MessageCommand.Block,IInventory):
+                case (MessageCommand.Block, IInventory):
                 case (MessageCommand.Extensible, IInventory):
                     OnInventoryReceived((IInventory)msg.Payload);
                     break;
@@ -112,7 +112,7 @@ namespace Neo.Network.P2P
                 case (MessageCommand.Inv, InvPayload payload):
                     OnInvMessageReceived(payload);
                     break;
-                case (MessageCommand.Mempool,_):
+                case (MessageCommand.Mempool, _):
                     OnMemPoolMessageReceived();
                     break;
                 case (MessageCommand.Ping, PingPayload payload):
@@ -128,12 +128,12 @@ namespace Neo.Network.P2P
                 case (MessageCommand.Verack, _):
                 case (MessageCommand.Version, _):
                     throw new ProtocolViolationException();
-                break;
-                case (MessageCommand.Alert, _):
-                case (MessageCommand.MerkleBlock, _):
-                case (MessageCommand.NotFound, _):
-                case (MessageCommand.Reject, _):
-                default: break;
+                    // break;
+                    // case (MessageCommand.Alert, _):
+                    // case (MessageCommand.MerkleBlock, _):
+                    // case (MessageCommand.NotFound, _):
+                    // case (MessageCommand.Reject, _):
+                    // default: break;
             }
         }
 

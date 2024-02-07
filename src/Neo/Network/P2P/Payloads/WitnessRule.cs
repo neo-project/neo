@@ -33,7 +33,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The condition of the rule.
         /// </summary>
-        public WitnessCondition Condition;
+        public WitnessCondition Condition = null!;
 
         int ISerializable.Size => sizeof(WitnessRuleAction) + Condition.Size;
 
@@ -90,7 +90,7 @@ namespace Neo.Network.P2P.Payloads
 
         public StackItem ToStackItem(ReferenceCounter? referenceCounter)
         {
-            return new VM.Types.Array(referenceCounter, new StackItem[]
+            return new VM.Types.Array(referenceCounter, new[]
             {
                 (byte)Action,
                 Condition.ToStackItem(referenceCounter)

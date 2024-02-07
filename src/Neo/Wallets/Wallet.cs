@@ -20,7 +20,6 @@ using Neo.Wallets.NEP6;
 using Org.BouncyCastle.Crypto.Generators;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
@@ -418,8 +417,8 @@ namespace Neo.Wallets
             {
                 privateKey = ecdsa?.ExportParameters(true).D;
             }
-            WalletAccount account = CreateAccount(privateKey);
-            Array.Clear(privateKey, 0, privateKey.Length);
+            WalletAccount account = CreateAccount(privateKey.NotNull());
+            Array.Clear(privateKey!, 0, privateKey!.Length);
             return account;
         }
 
@@ -447,7 +446,7 @@ namespace Neo.Wallets
         /// <returns>The imported account.</returns>
         public virtual WalletAccount Import(string nep2, string passphrase, int N = 16384, int r = 8, int p = 8)
         {
-            byte[] privateKey = GetPrivateKeyFromNEP2(nep2, passphrase, ProtocolSettings!.AddressVersion, N, r, p);
+            byte[] privateKey = GetPrivateKeyFromNEP2(nep2, passphrase, ProtocolSettings.AddressVersion, N, r, p);
             WalletAccount account = CreateAccount(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
             return account;
@@ -478,7 +477,11 @@ namespace Neo.Wallets
             List<(UInt160 Account, BigInteger Value)>? balances_gas = null;
             using (ScriptBuilder sb = new())
             {
-                foreach (var (assetId, group, sum) in outputs.GroupBy(p => p.AssetId, (k, g) => (k, g, g.Select(p => p.Value.Value).Sum())))
+                foreach (var (assetId, group, sum) in outputs.GroupBy(p => p.AssetId, (k, g) =>
+                         {
+                             var transferOutputs = g as TransferOutput[] ?? g.ToArray();
+                             return (k, g: transferOutputs, transferOutputs.Select(p => p.Value.Value).Sum());
+                         }))
                 {
                     var balances = new List<(UInt160 Account, BigInteger Value)>();
                     foreach (UInt160 account in accounts)
@@ -564,7 +567,7 @@ namespace Neo.Wallets
                     Version = 0,
                     Nonce = (uint)rand.Next(),
                     Script = script,
-                    ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + ProtocolSettings!.MaxValidUntilBlockIncrement,
+                    ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + ProtocolSettings.MaxValidUntilBlockIncrement,
                     Signers = GetSigners(account, cosigners),
                     Attributes = attributes,
                 };
@@ -613,12 +616,12 @@ namespace Neo.Wallets
                     {
                         // Try to find the script in the witnesses
                         Witness witness = tx.Witnesses[index];
-                        witness_script = witness?.VerificationScript.ToArray();
+                        witness_script = witness.VerificationScript.ToArray();
 
-                        if (witness_script is null || witness_script.Length == 0)
+                        if (witness_script.Length == 0)
                         {
                             // Then it's a contract-based witness, so try to get the corresponding invocation script for it
-                            invocationScript = witness?.InvocationScript.ToArray();
+                            invocationScript = witness.InvocationScript.ToArray();
                         }
                     }
                 }
@@ -679,7 +682,7 @@ namespace Neo.Wallets
         /// <returns><see langword="true"/> if the signature is successfully added to the context; otherwise, <see langword="false"/>.</returns>
         public bool Sign(ContractParametersContext context)
         {
-            if (context.Network != ProtocolSettings!.Network) return false;
+            if (context.Network != ProtocolSettings.Network) return false;
             bool fSuccess = false;
             foreach (UInt160 scriptHash in context.ScriptHashes)
             {

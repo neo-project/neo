@@ -24,7 +24,7 @@ namespace Neo.SmartContract
     /// </summary>
     public class InteropParameterDescriptor
     {
-        private readonly ValidatorAttribute[] validators= null!;
+        private readonly ValidatorAttribute[] validators = null!;
 
         /// <summary>
         /// The name of the parameter.

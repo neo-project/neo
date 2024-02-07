@@ -37,7 +37,7 @@ namespace Neo.SmartContract.Native
             long totalNetworkFee = 0;
             foreach (Transaction? tx in engine.PersistingBlock!.Transactions)
             {
-                if(tx == null) continue;
+                if (tx == null) continue;
                 await Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
                 totalNetworkFee += tx.NetworkFee;
             }

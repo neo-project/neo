@@ -20,7 +20,17 @@ abstract class KeyedCollectionSlim<TKey, TItem> where TKey : notnull
     private readonly Dictionary<TKey, LinkedListNode<TItem>> dict = new();
 
     public int Count => dict.Count;
-    public TItem First => _items.First.Value;
+    public TItem? First
+    {
+        get
+        {
+            if (_items.First != null)
+            {
+                return _items.First.Value;
+            }
+            return default;
+        }
+    }
 
     protected abstract TKey GetKeyForItem(TItem item);
 
@@ -45,8 +55,11 @@ abstract class KeyedCollectionSlim<TKey, TItem> where TKey : notnull
 
     public void RemoveFirst()
     {
-        var key = GetKeyForItem(_items.First.Value);
-        dict.Remove(key);
-        _items.RemoveFirst();
+        if (_items.First != null)
+        {
+            var key = GetKeyForItem(_items.First.Value);
+            dict.Remove(key);
+            _items.RemoveFirst();
+        }
     }
 }

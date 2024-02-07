@@ -11,7 +11,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Neo.IO
@@ -28,8 +27,14 @@ namespace Neo.IO
             this.direction = direction;
         }
 
-        public int Compare(byte[] x, byte[] y)
+        public int Compare(byte[]? x, byte[]? y)
         {
+            if (x == null || y == null)
+            {
+                if (x == null && y == null) return 0;
+                return x == null ? -1 : 1;
+            }
+
             return direction > 0
                 ? CompareInternal(x, y)
                 : -CompareInternal(x, y);

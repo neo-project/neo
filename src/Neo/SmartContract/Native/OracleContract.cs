@@ -189,7 +189,7 @@ namespace Neo.SmartContract.Native
         internal override async ContractTask PostPersist(ApplicationEngine engine)
         {
             (UInt160 Account, BigInteger GAS)[]? nodes = null;
-            foreach (Transaction? tx in engine.PersistingBlock?.Transactions?? Array.Empty<Transaction>())
+            foreach (Transaction? tx in engine.PersistingBlock?.Transactions ?? Array.Empty<Transaction>())
             {
                 //Filter the response transactions
                 OracleResponse? response = tx.GetAttribute<OracleResponse>();
@@ -251,7 +251,7 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException();
             engine.Snapshot.Add(CreateStorageKey(Prefix_Request).AddBigEndian(id), new StorageItem(new OracleRequest
             {
-                OriginalTxid = GetOriginalTxid(engine),
+                OriginalTxid = GetOriginalTxid(engine)!,
                 GasForResponse = gasForResponse,
                 Url = url,
                 Filter = filter,
@@ -283,7 +283,7 @@ namespace Neo.SmartContract.Native
                 return (ulong)item.GetInteger();
             }
 
-            protected override StackItem ElementToStackItem(ulong element, ReferenceCounter referenceCounter)
+            protected override StackItem ElementToStackItem(ulong element, ReferenceCounter? referenceCounter)
             {
                 return element;
             }

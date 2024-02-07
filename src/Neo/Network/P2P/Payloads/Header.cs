@@ -27,8 +27,8 @@ namespace Neo.Network.P2P.Payloads
     public sealed class Header : IEquatable<Header>, IVerifiable
     {
         private uint version;
-        private UInt256 prevHash= null!;
-        private UInt256 merkleRoot= null!;
+        private UInt256 prevHash = null!;
+        private UInt256 merkleRoot = null!;
         private ulong timestamp;
         private ulong nonce;
         private uint index;
@@ -38,7 +38,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The witness of the block.
         /// </summary>
-        public Witness Witness= null!;
+        public Witness Witness = null!;
 
         /// <summary>
         /// The version of the block.

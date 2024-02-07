@@ -30,7 +30,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The parameters of the contract.
         /// </summary>
-        public ContractParameterType[] ParameterList= Array.Empty<ContractParameterType>();
+        public ContractParameterType[] ParameterList = Array.Empty<ContractParameterType>();
 
         private UInt160? _scriptHash;
         /// <summary>

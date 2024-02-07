@@ -238,7 +238,7 @@ namespace Neo.IO.Caching
             }
         }
 
-        public bool TryGet(TKey key, [NotNullWhen(true)]out TValue item)
+        public bool TryGet(TKey key, [NotNullWhen(true)] out TValue item)
         {
             RwSyncRootLock.EnterReadLock();
             try
