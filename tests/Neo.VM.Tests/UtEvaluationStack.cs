@@ -211,7 +211,7 @@ namespace Neo.Test
             stack.Insert(2, "test");
             stack.Insert(3, true);
 
-            Assert.AreEqual("[Boolean(True), ByteString(\"test\"), Integer(1), Integer(3)]", stack.Print());
+            Assert.AreEqual("[Boolean(True), ByteString(\"test\"), Integer(1), Integer(3)]", stack.ToString());
         }
 
         [TestMethod]
@@ -219,7 +219,7 @@ namespace Neo.Test
         {
             var stack = new EvaluationStack(new ReferenceCounter());
             stack.Insert(0, "4CC95219999D421243C8161E3FC0F4290C067845".FromHexString());
-            Assert.AreEqual("[ByteString(\"Base64: TMlSGZmdQhJDyBYeP8D0KQwGeEU=\")]", stack.Print());
+            Assert.AreEqual("[ByteString(\"Base64: TMlSGZmdQhJDyBYeP8D0KQwGeEU=\")]", stack.ToString());
         }
     }
 }

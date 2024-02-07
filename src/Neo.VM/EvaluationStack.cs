@@ -15,6 +15,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace Neo.VM
 {
@@ -158,6 +159,11 @@ namespace Neo.VM
             innerList.RemoveAt(index);
             referenceCounter.RemoveStackReference(item);
             return item;
+        }
+
+        public override string ToString()
+        {
+            return $"[{string.Join(", ", innerList.Select(p => $"{p.Type}({p})"))}]";
         }
     }
 }

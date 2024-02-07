@@ -58,7 +58,7 @@ namespace Neo.VM.Types
 
         public override string ToString()
         {
-            return _object.ToString();
+            return _object.ToString() ?? "NULL";
         }
     }
 }
