@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// UtScript.cs file belongs to the neo project and is free
+// UT_Script.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -17,10 +17,10 @@ using System.Text;
 namespace Neo.Test
 {
     [TestClass]
-    public class UtScript
+    public class UT_Script
     {
         [TestMethod]
-        public void Conversion()
+        public void TestConversion()
         {
             byte[] rawScript;
             using (var builder = new ScriptBuilder())
@@ -39,7 +39,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        public void StrictMode()
+        public void TestStrictMode()
         {
             var rawScript = new byte[] { (byte)OpCode.PUSH0, 0xFF };
             Assert.ThrowsException<BadScriptException>(() => new Script(rawScript, true));
@@ -58,7 +58,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        public void Parse()
+        public void TestParse()
         {
             Script script;
 
