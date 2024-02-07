@@ -183,8 +183,8 @@ namespace Neo.Network
             request.Headers.Add("Content-Type", "text/xml; charset=\"utf-8\"");
             request.Content = new StringContent(req);
             using HttpClient http = new();
-            using HttpResponseMessage response = http.Send(request);
-            using Stream stream = response.EnsureSuccessStatusCode().Content.ReadAsStream();
+            using HttpResponseMessage response = http.SendAsync(request).GetAwaiter().GetResult();
+            using Stream stream = response.EnsureSuccessStatusCode().Content.ReadAsStreamAsync().GetAwaiter().GetResult();
             XmlDocument resp = new() { XmlResolver = null };
             resp.Load(stream);
             return resp;
