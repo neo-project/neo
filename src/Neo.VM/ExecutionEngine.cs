@@ -22,8 +22,9 @@ namespace Neo.VM
     public class ExecutionEngine : IDisposable
     {
         private VMState state = VMState.BREAK;
-        private bool isJumping = false;
-        private readonly JumpTable JumpTable;
+        internal bool isJumping = false;
+
+        public JumpTable JumpTable { get; }
 
         /// <summary>
         /// Restrictions on the VM.
@@ -58,7 +59,7 @@ namespace Neo.VM
         /// <summary>
         /// The VM object representing the uncaught exception.
         /// </summary>
-        public StackItem? UncaughtException { get; private set; }
+        public StackItem? UncaughtException { get; internal set; }
 
         /// <summary>
         /// The current state of the VM.
@@ -100,29 +101,6 @@ namespace Neo.VM
             this.ResultStack = new EvaluationStack(referenceCounter);
         }
 
-        /// <summary>
-        /// Called when a context is unloaded.
-        /// </summary>
-        /// <param name="context">The context being unloaded.</param>
-        protected virtual void ContextUnloaded(ExecutionContext context)
-        {
-            if (InvocationStack.Count == 0)
-            {
-                CurrentContext = null;
-                EntryContext = null;
-            }
-            else
-            {
-                CurrentContext = InvocationStack.Peek();
-            }
-            if (context.StaticFields != null && context.StaticFields != CurrentContext?.StaticFields)
-            {
-                context.StaticFields.ClearReferences();
-            }
-            context.LocalVariables?.ClearReferences();
-            context.Arguments?.ClearReferences();
-        }
-
         public virtual void Dispose()
         {
             InvocationStack.Clear();
@@ -139,60 +117,6 @@ namespace Neo.VM
             while (State != VMState.HALT && State != VMState.FAULT)
                 ExecuteNext();
             return State;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ExecuteCall(int position)
-        {
-            LoadContext(CurrentContext!.Clone(position));
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ExecuteEndTry(int endOffset)
-        {
-            if (CurrentContext!.TryStack is null)
-                throw new InvalidOperationException($"The corresponding TRY block cannot be found.");
-            if (!CurrentContext.TryStack.TryPeek(out ExceptionHandlingContext? currentTry))
-                throw new InvalidOperationException($"The corresponding TRY block cannot be found.");
-            if (currentTry.State == ExceptionHandlingState.Finally)
-                throw new InvalidOperationException($"The opcode {OpCode.ENDTRY} can't be executed in a FINALLY block.");
-
-            int endPointer = checked(CurrentContext.InstructionPointer + endOffset);
-            if (currentTry.HasFinally)
-            {
-                currentTry.State = ExceptionHandlingState.Finally;
-                currentTry.EndPointer = endPointer;
-                CurrentContext.InstructionPointer = currentTry.FinallyPointer;
-            }
-            else
-            {
-                CurrentContext.TryStack.Pop();
-                CurrentContext.InstructionPointer = endPointer;
-            }
-            isJumping = true;
-        }
-
-        /// <summary>
-        /// Jump to the specified position.
-        /// </summary>
-        /// <param name="position">The position to jump to.</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void ExecuteJump(int position)
-        {
-            if (position < 0 || position >= CurrentContext!.Script.Length)
-                throw new ArgumentOutOfRangeException($"Jump out of range for position: {position}");
-            CurrentContext.InstructionPointer = position;
-            isJumping = true;
-        }
-
-        /// <summary>
-        /// Jump to the specified offset from the current position.
-        /// </summary>
-        /// <param name="offset">The offset from the current position to jump to.</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ExecuteJumpOffset(int offset)
-        {
-            ExecuteJump(checked(CurrentContext!.InstructionPointer + offset));
         }
 
         private void ExecuteLoadFromSlot(Slot? slot, int index)
@@ -222,11 +146,11 @@ namespace Neo.VM
                     PreExecuteInstruction(instruction);
                     try
                     {
-                        JumpTable.GetMethod(instruction.OpCode)(this, instruction);
+                        JumpTable[instruction.OpCode](this, instruction);
                     }
                     catch (CatchableException ex) when (Limits.CatchEngineExceptions)
                     {
-                        ExecuteThrow(ex.Message);
+                        JumpTable.ExecuteThrow(this, ex.Message);
                     }
                     PostExecuteInstruction(instruction);
                     if (!isJumping) context.MoveNext();
@@ -249,80 +173,39 @@ namespace Neo.VM
         }
 
         /// <summary>
-        /// Throws a specified exception in the VM.
-        /// </summary>
-        /// <param name="ex">The exception to be thrown.</param>
-        protected void ExecuteThrow(StackItem ex)
-        {
-            UncaughtException = ex;
-            HandleException();
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ExecuteTry(int catchOffset, int finallyOffset)
-        {
-            if (catchOffset == 0 && finallyOffset == 0)
-                throw new InvalidOperationException($"catchOffset and finallyOffset can't be 0 in a TRY block");
-            if (CurrentContext!.TryStack is null)
-                CurrentContext.TryStack = new Stack<ExceptionHandlingContext>();
-            else if (CurrentContext.TryStack.Count >= Limits.MaxTryNestingDepth)
-                throw new InvalidOperationException("MaxTryNestingDepth exceed.");
-            int catchPointer = catchOffset == 0 ? -1 : checked(CurrentContext.InstructionPointer + catchOffset);
-            int finallyPointer = finallyOffset == 0 ? -1 : checked(CurrentContext.InstructionPointer + finallyOffset);
-            CurrentContext.TryStack.Push(new ExceptionHandlingContext(catchPointer, finallyPointer));
-        }
-
-        private void HandleException()
-        {
-            int pop = 0;
-            foreach (var executionContext in InvocationStack)
-            {
-                if (executionContext.TryStack != null)
-                {
-                    while (executionContext.TryStack.TryPeek(out var tryContext))
-                    {
-                        if (tryContext.State == ExceptionHandlingState.Finally || (tryContext.State == ExceptionHandlingState.Catch && !tryContext.HasFinally))
-                        {
-                            executionContext.TryStack.Pop();
-                            continue;
-                        }
-                        for (int i = 0; i < pop; i++)
-                        {
-                            ContextUnloaded(InvocationStack.Pop());
-                        }
-                        if (tryContext.State == ExceptionHandlingState.Try && tryContext.HasCatch)
-                        {
-                            tryContext.State = ExceptionHandlingState.Catch;
-                            Push(UncaughtException!);
-                            executionContext.InstructionPointer = tryContext.CatchPointer;
-                            UncaughtException = null;
-                        }
-                        else
-                        {
-                            tryContext.State = ExceptionHandlingState.Finally;
-                            executionContext.InstructionPointer = tryContext.FinallyPointer;
-                        }
-                        isJumping = true;
-                        return;
-                    }
-                }
-                ++pop;
-            }
-
-            throw new VMUnhandledException(UncaughtException!);
-        }
-
-        /// <summary>
         /// Loads the specified context into the invocation stack.
         /// </summary>
         /// <param name="context">The context to load.</param>
-        protected virtual void LoadContext(ExecutionContext context)
+        public virtual void LoadContext(ExecutionContext context)
         {
             if (InvocationStack.Count >= Limits.MaxInvocationStackSize)
                 throw new InvalidOperationException($"MaxInvocationStackSize exceed: {InvocationStack.Count}");
             InvocationStack.Push(context);
             if (EntryContext is null) EntryContext = context;
             CurrentContext = context;
+        }
+
+        /// <summary>
+        /// Called when a context is unloaded.
+        /// </summary>
+        /// <param name="context">The context being unloaded.</param>
+        public virtual void UnloadedContext(ExecutionContext context)
+        {
+            if (InvocationStack.Count == 0)
+            {
+                CurrentContext = null;
+                EntryContext = null;
+            }
+            else
+            {
+                CurrentContext = InvocationStack.Peek();
+            }
+            if (context.StaticFields != null && context.StaticFields != CurrentContext?.StaticFields)
+            {
+                context.StaticFields.ClearReferences();
+            }
+            context.LocalVariables?.ClearReferences();
+            context.Arguments?.ClearReferences();
         }
 
         /// <summary>
@@ -356,17 +239,6 @@ namespace Neo.VM
         }
 
         /// <summary>
-        /// When overridden in a derived class, loads the specified method token.
-        /// Called when <see cref="OpCode.CALLT"/> is executed.
-        /// </summary>
-        /// <param name="token">The method token to be loaded.</param>
-        /// <returns>The created context.</returns>
-        protected virtual ExecutionContext LoadToken(ushort token)
-        {
-            throw new InvalidOperationException($"Token not found: {token}");
-        }
-
-        /// <summary>
         /// Called when an exception that cannot be caught by the VM is thrown.
         /// </summary>
         /// <param name="ex">The exception that caused the <see cref="VMState.FAULT"/> state.</param>
@@ -380,16 +252,6 @@ namespace Neo.VM
         /// </summary>
         protected virtual void OnStateChanged()
         {
-        }
-
-        /// <summary>
-        /// When overridden in a derived class, invokes the specified system call.
-        /// Called when <see cref="OpCode.SYSCALL"/> is executed.
-        /// </summary>
-        /// <param name="method">The system call to be invoked.</param>
-        protected virtual void OnSysCall(uint method)
-        {
-            throw new InvalidOperationException($"Syscall not found: {method}");
         }
 
         /// <summary>

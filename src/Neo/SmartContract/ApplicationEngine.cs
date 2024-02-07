@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Configuration.Hocon;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
@@ -32,6 +33,8 @@ namespace Neo.SmartContract
     /// </summary>
     public partial class ApplicationEngine : ExecutionEngine
     {
+        private static readonly JumpTable JumpTable = ComposeJumpTable();
+
         /// <summary>
         /// The maximum cost that can be spent when a contract is executed in test mode.
         /// </summary>
@@ -177,6 +180,58 @@ namespace Neo.SmartContract
             diagnostic?.Initialized(this);
         }
 
+        #region JumpTable
+
+        private static JumpTable ComposeJumpTable()
+        {
+            var table = new JumpTable();
+
+            table[OpCode.SYSCALL] = OnSysCall;
+            table[OpCode.CALLT] = OnCallT;
+
+            return table;
+        }
+
+        private static void OnCallT(ExecutionEngine engine, Instruction instruction)
+        {
+            if (engine is ApplicationEngine app)
+            {
+                uint tokenId = instruction.TokenU16;
+
+                app.ValidateCallFlags(CallFlags.ReadStates | CallFlags.AllowCall);
+                ContractState contract = app.CurrentContext.GetState<ExecutionContextState>().Contract;
+                if (contract is null || tokenId >= contract.Nef.Tokens.Length)
+                    throw new InvalidOperationException();
+                MethodToken token = contract.Nef.Tokens[tokenId];
+                if (token.ParametersCount > app.CurrentContext.EvaluationStack.Count)
+                    throw new InvalidOperationException();
+                StackItem[] args = new StackItem[token.ParametersCount];
+                for (int i = 0; i < token.ParametersCount; i++)
+                    args[i] = app.Pop();
+                app.CallContractInternal(token.Hash, token.Method, token.CallFlags, token.HasReturnValue, args);
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+        }
+
+        private static void OnSysCall(ExecutionEngine engine, Instruction instruction)
+        {
+            if (engine is ApplicationEngine app)
+            {
+                uint method = instruction.TokenU16;
+
+                app.OnSysCall(services[method]);
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+        }
+
+        #endregion
+
         /// <summary>
         /// Adds GAS to <see cref="GasConsumed"/> and checks if it has exceeded the maximum limit.
         /// </summary>
@@ -270,9 +325,9 @@ namespace Neo.SmartContract
             return task;
         }
 
-        protected override void ContextUnloaded(ExecutionContext context)
+        public override void UnloadedContext(ExecutionContext context)
         {
-            base.ContextUnloaded(context);
+            base.UnloadedContext(context);
             if (context.Script != CurrentContext?.Script)
             {
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
@@ -324,7 +379,7 @@ namespace Neo.SmartContract
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic);
         }
 
-        protected override void LoadContext(ExecutionContext context)
+        public override void LoadContext(ExecutionContext context)
         {
             // Set default execution context state
             var state = context.GetState<ExecutionContextState>();
@@ -389,21 +444,6 @@ namespace Neo.SmartContract
             // Load context
             LoadContext(context);
             return context;
-        }
-
-        protected override ExecutionContext LoadToken(ushort tokenId)
-        {
-            ValidateCallFlags(CallFlags.ReadStates | CallFlags.AllowCall);
-            ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
-            if (contract is null || tokenId >= contract.Nef.Tokens.Length)
-                throw new InvalidOperationException();
-            MethodToken token = contract.Nef.Tokens[tokenId];
-            if (token.ParametersCount > CurrentContext.EvaluationStack.Count)
-                throw new InvalidOperationException();
-            StackItem[] args = new StackItem[token.ParametersCount];
-            for (int i = 0; i < token.ParametersCount; i++)
-                args[i] = Pop();
-            return CallContractInternal(token.Hash, token.Method, token.CallFlags, token.HasReturnValue, args);
         }
 
         /// <summary>
@@ -501,11 +541,6 @@ namespace Neo.SmartContract
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(requiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
-        }
-
-        protected override void OnSysCall(uint method)
-        {
-            OnSysCall(services[method]);
         }
 
         /// <summary>

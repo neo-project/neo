@@ -18,14 +18,16 @@ namespace Neo.VM
         public delegate void DelAction(ExecutionEngine engine, Instruction instruction);
         protected readonly DelAction[] _table = new DelAction[byte.MaxValue];
 
-        /// <summary>
-        /// Get Method
-        /// </summary>
-        /// <param name="opCode">OpCode</param>
-        /// <returns>Action</returns>
-        public DelAction GetMethod(OpCode opCode)
+        public DelAction this[OpCode opCode]
         {
-            return _table[(byte)opCode];
+            get
+            {
+                return _table[(byte)opCode];
+            }
+            set
+            {
+                _table[(byte)opCode] = value;
+            }
         }
 
         public JumpTable()
