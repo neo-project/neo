@@ -75,11 +75,7 @@ namespace Neo.VM
 
             // Note: This method is imprecise and might not work as expected with integers larger than 256 bits.
             byte[] b = value.ToByteArray();
-            if (b.Length == 1 || (b.Length == 2 && b[1] == 0))
-            {
-                return BitLen(value.Sign > 0 ? b[0] : (byte)(255 - b[0]));
-            }
-            return (b.Length - 1) * 8 + BitLen(value.Sign > 0 ? b[b.Length - 1] : 255 - b[b.Length - 1]);
+            return (b.Length - 1) * 8 + BitLen(value.Sign > 0 ? b[^1] : 255 - b[^1]);
 #endif
         }
 
