@@ -49,7 +49,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        public void GetBitLengthTest()
+        public void TestGetBitLength()
         {
             var random = new Random();
 
