@@ -71,9 +71,10 @@ namespace Neo.VM
 #if NET5_0_OR_GREATER
             return i.GetBitLength();
 #else
+            if (value == 0 || value == BigInteger.MinusOne) return 0;
+
             // Note: This method is imprecise and might not work as expected with integers larger than 256 bits.
             byte[] b = value.ToByteArray();
-            if (value == 0) return 0;
             if (b.Length == 1 || (b.Length == 2 && b[1] == 0))
             {
                 return BitLen(value.Sign > 0 ? b[0] : (byte)(255 - b[0]));
