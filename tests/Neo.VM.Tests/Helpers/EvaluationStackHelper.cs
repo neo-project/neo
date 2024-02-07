@@ -18,6 +18,6 @@ public static class EvaluationStackHelper
 {
     public static string Print(this EvaluationStack stack)
     {
-        return $"[{string.Join(", ", stack.Select(p => $"{p.Type}{p}"))}]";
+        return $"[{string.Join(", ", stack.Select(p => $"{p.Type}({p})"))}]";
     }
 }
