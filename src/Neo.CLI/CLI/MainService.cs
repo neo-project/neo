@@ -17,6 +17,7 @@ using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
@@ -380,7 +381,8 @@ namespace Neo.CLI
 
             CustomProtocolSettings(options, protocol);
             CustomApplicationSettings(options, Settings.Default);
-            NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
+            var store = StoreFactory.GetStore(Settings.Default.Storage.Engine, string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
+            NeoSystem = new NeoSystem(protocol, store);
             NeoSystem.AddService(this);
 
             LocalNode = NeoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
