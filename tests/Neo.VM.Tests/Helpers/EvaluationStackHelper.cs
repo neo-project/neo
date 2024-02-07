@@ -10,8 +10,6 @@
 // modifications are permitted.
 
 using Neo.VM;
-using Neo.VM.Types;
-using System;
 using System.Linq;
 
 namespace Neo.Test.Helpers;
@@ -20,36 +18,6 @@ public static class EvaluationStackHelper
 {
     public static string Print(this EvaluationStack stack)
     {
-        return $"[{string.Join(", ", stack.Select(p =>
-            {
-                var value = p.Type switch
-                {
-                    StackItemType.Pointer => $"({((Pointer)p).Position})",
-                    StackItemType.Boolean => $"({p.GetBoolean()})",
-                    StackItemType.Integer => $"({p.GetInteger()})",
-                    // If the bytestring is not a valid UTF-8 string, we'll just print the base64 representation
-                    StackItemType.ByteString => p.GetSpan().ToArray().TryGetString(out var str) ? $"(\"{str}\")" : $"(\"Base64: {Convert.ToBase64String(p.GetSpan())}\")",
-                    StackItemType.Array
-                        or StackItemType.Map
-                        or StackItemType.Struct => $"({((CompoundType)p).Count})",
-                    _ => ""
-                };
-                return $"{p.Type.ToString()}{value}";
-            }
-        ))}]";
-    }
-
-    private static bool TryGetString(this byte[] byteArray, out string? value)
-    {
-        try
-        {
-            value = Utility.StrictUTF8.GetString(byteArray);
-            return true;
-        }
-        catch
-        {
-            value = default;
-            return false;
-        }
+        return $"[{string.Join(", ", stack.Select(p => $"{p.Type}{p}"))}]";
     }
 }
