@@ -119,15 +119,6 @@ namespace Neo.VM
             return State;
         }
 
-        private void ExecuteLoadFromSlot(Slot? slot, int index)
-        {
-            if (slot is null)
-                throw new InvalidOperationException("Slot has not been initialized.");
-            if (index < 0 || index >= slot.Count)
-                throw new InvalidOperationException($"Index out of range when loading from slot: {index}");
-            Push(slot[index]);
-        }
-
         /// <summary>
         /// Execute the next instruction.
         /// </summary>
@@ -161,15 +152,6 @@ namespace Neo.VM
                     OnFault(e);
                 }
             }
-        }
-
-        private void ExecuteStoreToSlot(Slot? slot, int index)
-        {
-            if (slot is null)
-                throw new InvalidOperationException("Slot has not been initialized.");
-            if (index < 0 || index >= slot.Count)
-                throw new InvalidOperationException($"Index out of range when storing to slot: {index}");
-            slot[index] = Pop();
         }
 
         /// <summary>
