@@ -19,7 +19,7 @@ namespace Neo.Wallets
         /// <summary>
         /// The id of the asset to transfer.
         /// </summary>
-        public UInt160 AssetId;
+        public UInt160 AssetId = null!;
 
         /// <summary>
         /// The amount of the asset to transfer.
@@ -29,11 +29,11 @@ namespace Neo.Wallets
         /// <summary>
         /// The account to transfer to.
         /// </summary>
-        public UInt160 ScriptHash;
+        public UInt160 ScriptHash = null!;
 
         /// <summary>
         /// The object to be passed to the transfer method of NEP-17.
         /// </summary>
-        public object Data;
+        public object Data = null!;
     }
 }

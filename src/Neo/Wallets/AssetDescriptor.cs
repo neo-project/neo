@@ -64,7 +64,7 @@ namespace Neo.Wallets
             if (engine.State != VMState.HALT) throw new ArgumentException(null, nameof(asset_id));
             this.AssetId = asset_id;
             this.AssetName = contract.Manifest.Name;
-            this.Symbol = engine.ResultStack.Pop().GetString();
+            this.Symbol = engine.ResultStack.Pop().GetString()!;
             this.Decimals = (byte)engine.ResultStack.Pop().GetInteger();
         }
 

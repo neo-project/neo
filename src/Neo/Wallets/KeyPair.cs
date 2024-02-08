@@ -59,14 +59,14 @@ namespace Neo.Wallets
             }
         }
 
-        public bool Equals(KeyPair other)
+        public bool Equals(KeyPair? other)
         {
             if (ReferenceEquals(this, other)) return true;
             if (other is null) return false;
             return PublicKey.Equals(other.PublicKey);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return Equals(obj as KeyPair);
         }
