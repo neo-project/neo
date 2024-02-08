@@ -148,7 +148,7 @@ namespace Neo.SmartContract.Native
 
             // Reflection to get the events
             eventsDescriptors =
-                GetType().GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, Array.Empty<Type>())?.
+                GetType().GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)?.
                 GetCustomAttributes<ContractEventAttribute>().
                 OrderBy(p => p.Order).ToList().AsReadOnly();
 
