@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Neo.VM
 {
@@ -20,14 +21,10 @@ namespace Neo.VM
 
         public DelAction this[OpCode opCode]
         {
-            get
-            {
-                return Table[(byte)opCode];
-            }
-            set
-            {
-                Table[(byte)opCode] = value;
-            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => Table[(byte)opCode];
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set { Table[(byte)opCode] = value; }
         }
 
         public JumpTable()
@@ -58,8 +55,6 @@ namespace Neo.VM
                     throw new InvalidOperationException($"Opcode {instruction.OpCode} is undefined.");
                 };
             }
-
-            
         }
     }
 }
