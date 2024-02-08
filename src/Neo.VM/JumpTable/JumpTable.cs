@@ -54,7 +54,7 @@ namespace Neo.VM
             }
         }
 
-        private static void InvalidOpcode(ExecutionEngine engine, Instruction instruction)
+        public virtual void InvalidOpcode(ExecutionEngine engine, Instruction instruction)
         {
             throw new InvalidOperationException($"Opcode {instruction.OpCode} is undefined.");
         }
