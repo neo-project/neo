@@ -107,5 +107,10 @@ namespace Neo.VM.Types
         {
             return InnerBuffer.Span;
         }
+
+        public override string ToString()
+        {
+            return GetSpan().TryGetString(out var str) ? $"(\"{str}\")" : $"(\"Base64: {Convert.ToBase64String(GetSpan())}\")";
+        }
     }
 }

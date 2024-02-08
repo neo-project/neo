@@ -130,5 +130,10 @@ namespace Neo.VM.Types
         {
             return new Integer(value);
         }
+
+        public override string ToString()
+        {
+            return value.ToString();
+        }
     }
 }
