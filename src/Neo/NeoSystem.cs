@@ -219,6 +219,16 @@ namespace Neo
         }
 
         /// <summary>
+        /// Loads an <see cref="IStore"/> at the specified path.
+        /// </summary>
+        /// <param name="path">The path of the storage.</param>
+        /// <returns>The loaded <see cref="IStore"/>.</returns>
+        public IStore LoadStore(string path)
+        {
+            return StoreFactory.GetStore(store.GetType().Name, path);
+        }
+
+        /// <summary>
         /// Resumes the startup process of <see cref="LocalNode"/>.
         /// </summary>
         /// <returns><see langword="true"/> if the startup process is resumed; otherwise, <see langword="false"/>.</returns>
