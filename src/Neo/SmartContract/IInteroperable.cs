@@ -31,7 +31,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The converted <see cref="StackItem"/>.</returns>
-        StackItem ToStackItem(ReferenceCounter? referenceCounter);
+        StackItem ToStackItem(ReferenceCounter referenceCounter);
 
         public IInteroperable Clone()
         {

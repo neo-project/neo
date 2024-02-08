@@ -23,9 +23,9 @@ namespace Neo.SmartContract.Manifest
     /// <typeparam name="T">The type of the elements.</typeparam>
     public class WildcardContainer<T> : IReadOnlyList<T>
     {
-        private readonly T[]? _data;
+        private readonly T[] _data;
 
-        public T this[int index] => _data![index];
+        public T this[int index] => _data[index];
 
         public int Count => _data?.Length ?? 0;
 
@@ -34,7 +34,7 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public bool IsWildcard => _data is null;
 
-        private WildcardContainer(T[]? data)
+        private WildcardContainer(T[] data)
         {
             _data = data;
         }
@@ -66,7 +66,7 @@ namespace Neo.SmartContract.Manifest
                     if (str.Value != "*") throw new FormatException();
                     return CreateWildcard();
                 case JArray array:
-                    return Create(array.Select(p => elementSelector(p!)).ToArray());
+                    return Create(array.Select(p => elementSelector(p)).ToArray());
                 default:
                     throw new FormatException();
             }
@@ -87,8 +87,8 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The list represented by a JSON object.</returns>
         public JToken ToJson(Func<T, JToken> elementSelector)
         {
-            if (IsWildcard) return "*"!;
-            return _data!.Select(p => elementSelector(p)).ToArray();
+            if (IsWildcard) return "*";
+            return _data.Select(p => elementSelector(p)).ToArray();
         }
     }
 }

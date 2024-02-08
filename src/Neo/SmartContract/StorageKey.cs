@@ -30,7 +30,7 @@ namespace Neo.SmartContract
         /// </summary>
         public ReadOnlyMemory<byte> Key { get; init; }
 
-        private byte[]? cache = null;
+        private byte[] cache = null;
 
         public StorageKey() { }
 
@@ -55,7 +55,7 @@ namespace Neo.SmartContract
             return buffer;
         }
 
-        public bool Equals(StorageKey? other)
+        public bool Equals(StorageKey other)
         {
             if (other is null)
                 return false;

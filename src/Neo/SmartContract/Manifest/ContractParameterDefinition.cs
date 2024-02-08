@@ -24,7 +24,7 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// The name of the parameter.
         /// </summary>
-        public string Name { get; set; } = null!;
+        public string Name { get; set; }
 
         /// <summary>
         /// The type of the parameter. It can be any value of <see cref="ContractParameterType"/> except <see cref="ContractParameterType.Void"/>.
@@ -34,11 +34,11 @@ namespace Neo.SmartContract.Manifest
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
-            Name = @struct[0].GetString()!;
+            Name = @struct[0].GetString();
             Type = (ContractParameterType)(byte)@struct[1].GetInteger();
         }
 
-        public StackItem ToStackItem(ReferenceCounter? referenceCounter)
+        public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
             return new Struct(referenceCounter) { Name, (byte)Type };
         }
@@ -52,8 +52,8 @@ namespace Neo.SmartContract.Manifest
         {
             ContractParameterDefinition parameter = new()
             {
-                Name = json["name"]!.GetString(),
-                Type = Enum.Parse<ContractParameterType>(json["type"]!.GetString())
+                Name = json["name"].GetString(),
+                Type = Enum.Parse<ContractParameterType>(json["type"].GetString())
             };
             if (string.IsNullOrEmpty(parameter.Name))
                 throw new FormatException();

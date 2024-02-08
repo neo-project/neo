@@ -17,15 +17,15 @@ namespace Neo.SmartContract
 {
     class ContractTaskAwaiter : INotifyCompletion
     {
-        private Action _continuation = null!;
-        private Exception _exception = null!;
+        private Action continuation;
+        private Exception exception;
 
         public bool IsCompleted { get; private set; }
 
         public void GetResult()
         {
-            if (_exception is not null)
-                throw _exception;
+            if (exception is not null)
+                throw exception;
         }
 
         public void SetResult() => RunContinuation();
@@ -34,35 +34,35 @@ namespace Neo.SmartContract
 
         public void SetException(Exception exception)
         {
-            this._exception = exception;
+            this.exception = exception;
             RunContinuation();
         }
 
         public void OnCompleted(Action continuation)
         {
-            Interlocked.CompareExchange(ref this._continuation, continuation, null);
+            Interlocked.CompareExchange(ref this.continuation, continuation, null);
         }
 
         protected void RunContinuation()
         {
             IsCompleted = true;
-            _continuation.Invoke();
+            continuation?.Invoke();
         }
     }
 
     class ContractTaskAwaiter<T> : ContractTaskAwaiter
     {
-        private T _result = default!;
+        private T result;
 
         public new T GetResult()
         {
             base.GetResult();
-            return _result;
+            return result;
         }
 
         public void SetResult(T result)
         {
-            this._result = result;
+            this.result = result;
             RunContinuation();
         }
 

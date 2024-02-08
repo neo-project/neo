@@ -24,12 +24,12 @@ namespace Neo.SmartContract
     /// </summary>
     public class InteropParameterDescriptor
     {
-        private readonly ValidatorAttribute[] validators = null!;
+        private readonly ValidatorAttribute[] validators;
 
         /// <summary>
         /// The name of the parameter.
         /// </summary>
-        public string Name { get; } = null!;
+        public string Name { get; }
 
         /// <summary>
         /// The type of the parameter.
@@ -56,7 +56,7 @@ namespace Neo.SmartContract
         /// </summary>
         public bool IsInterface { get; }
 
-        private static readonly Dictionary<Type, Func<StackItem, object?>> converters = new()
+        private static readonly Dictionary<Type, Func<StackItem, object>> converters = new()
         {
             [typeof(StackItem)] = p => p,
             [typeof(VM.Types.Pointer)] = p => p,
@@ -82,7 +82,7 @@ namespace Neo.SmartContract
         internal InteropParameterDescriptor(ParameterInfo parameterInfo)
             : this(parameterInfo.ParameterType)
         {
-            this.Name = parameterInfo.Name!;
+            this.Name = parameterInfo.Name;
             this.validators = parameterInfo.GetCustomAttributes<ValidatorAttribute>(true).ToArray();
         }
 
@@ -91,19 +91,19 @@ namespace Neo.SmartContract
             this.Type = type;
             if (IsEnum)
             {
-                Converter = converters[type.GetEnumUnderlyingType()]!;
+                Converter = converters[type.GetEnumUnderlyingType()];
             }
             else if (IsArray)
             {
-                Converter = converters[type.GetElementType()!]!;
+                Converter = converters[type.GetElementType()];
             }
             else
             {
                 IsInterface = !converters.TryGetValue(type, out var converter);
                 if (IsInterface)
-                    Converter = converters[typeof(InteropInterface)]!;
+                    Converter = converters[typeof(InteropInterface)];
                 else
-                    Converter = converter!;
+                    Converter = converter;
             }
         }
 

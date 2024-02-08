@@ -29,12 +29,12 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// The public key of the group.
         /// </summary>
-        public ECPoint PubKey { get; set; } = null!;
+        public ECPoint PubKey { get; set; }
 
         /// <summary>
         /// The signature of the contract hash which can be verified by <see cref="PubKey"/>.
         /// </summary>
-        public byte[] Signature { get; set; } = null!;
+        public byte[] Signature { get; set; }
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
@@ -43,7 +43,7 @@ namespace Neo.SmartContract.Manifest
             Signature = @struct[1].GetSpan().ToArray();
         }
 
-        public StackItem ToStackItem(ReferenceCounter? referenceCounter)
+        public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
             return new Struct(referenceCounter) { PubKey.ToArray(), Signature };
         }
@@ -57,8 +57,8 @@ namespace Neo.SmartContract.Manifest
         {
             ContractGroup group = new()
             {
-                PubKey = ECPoint.Parse(json["pubkey"]!.GetString(), ECCurve.Secp256r1),
-                Signature = Convert.FromBase64String(json["signature"]!.GetString()),
+                PubKey = ECPoint.Parse(json["pubkey"].GetString(), ECCurve.Secp256r1),
+                Signature = Convert.FromBase64String(json["signature"].GetString()),
             };
             if (group.Signature.Length != 64) throw new FormatException();
             return group;

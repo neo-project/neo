@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
 using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
@@ -48,7 +47,7 @@ namespace Neo.SmartContract.Manifest
             Safe = @struct[4].GetBoolean();
         }
 
-        public override StackItem ToStackItem(ReferenceCounter? referenceCounter)
+        public override StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
             Struct @struct = (Struct)base.ToStackItem(referenceCounter);
             @struct.Add((byte)ReturnType);
@@ -66,11 +65,11 @@ namespace Neo.SmartContract.Manifest
         {
             ContractMethodDescriptor descriptor = new()
             {
-                Name = json["name"]!.GetString(),
-                Parameters = json["parameters"].NullExceptionOr<JArray>().Select(u => ContractParameterDefinition.FromJson(u.NullExceptionOr<JObject>())).ToArray(),
-                ReturnType = Enum.Parse<ContractParameterType>(json["returntype"]!.GetString()),
-                Offset = json["offset"]!.GetInt32(),
-                Safe = json["safe"]!.GetBoolean()
+                Name = json["name"].GetString(),
+                Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JObject)u)).ToArray(),
+                ReturnType = Enum.Parse<ContractParameterType>(json["returntype"].GetString()),
+                Offset = json["offset"].GetInt32(),
+                Safe = json["safe"].GetBoolean()
             };
             if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException();
             _ = descriptor.Parameters.ToDictionary(p => p.Name);

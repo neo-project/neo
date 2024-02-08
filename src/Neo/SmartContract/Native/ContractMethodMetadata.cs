@@ -42,7 +42,7 @@ namespace Neo.SmartContract.Native
                 MethodInfo m => m,
                 PropertyInfo p => p.GetMethod,
                 _ => throw new ArgumentException(null, nameof(member))
-            } ?? throw new NullReferenceException("Method not found");
+            };
             ParameterInfo[] parameterInfos = this.Handler.GetParameters();
             if (parameterInfos.Length > 0)
             {

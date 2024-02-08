@@ -24,12 +24,12 @@ namespace Neo.SmartContract
         /// <summary>
         /// The hash of the contract to be called.
         /// </summary>
-        public UInt160 Hash = null!;
+        public UInt160 Hash;
 
         /// <summary>
         /// The name of the method to be called.
         /// </summary>
-        public string Method = null!;
+        public string Method;
 
         /// <summary>
         /// The number of parameters of the method to be called.

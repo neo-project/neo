@@ -30,7 +30,7 @@ namespace Neo.SmartContract.Native
             Balance = ((Struct)stackItem)[0].GetInteger();
         }
 
-        public virtual StackItem ToStackItem(ReferenceCounter? referenceCounter)
+        public virtual StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
             return new Struct(referenceCounter) { Balance };
         }

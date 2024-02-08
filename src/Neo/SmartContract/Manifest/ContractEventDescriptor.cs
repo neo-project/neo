@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
 using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
@@ -27,21 +26,21 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// The name of the event or method.
         /// </summary>
-        public string Name { get; set; } = null!;
+        public string Name { get; set; }
 
         /// <summary>
         /// The parameters of the event or method.
         /// </summary>
-        public ContractParameterDefinition[] Parameters { get; set; } = null!;
+        public ContractParameterDefinition[] Parameters { get; set; }
 
         public virtual void FromStackItem(StackItem stackItem)
         {
             Struct @struct = (Struct)stackItem;
-            Name = @struct[0].GetString()!;
+            Name = @struct[0].GetString();
             Parameters = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractParameterDefinition>()).ToArray();
         }
 
-        public virtual StackItem ToStackItem(ReferenceCounter? referenceCounter)
+        public virtual StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
             return new Struct(referenceCounter)
             {
@@ -59,8 +58,8 @@ namespace Neo.SmartContract.Manifest
         {
             ContractEventDescriptor descriptor = new()
             {
-                Name = json["name"]!.GetString(),
-                Parameters = json["parameters"].NullExceptionOr<JArray>().Select(u => ContractParameterDefinition.FromJson(u.NullExceptionOr<JObject>())).ToArray(),
+                Name = json["name"].GetString(),
+                Parameters = ((JArray)json["parameters"]).Select(u => ContractParameterDefinition.FromJson((JObject)u)).ToArray(),
             };
             if (string.IsNullOrEmpty(descriptor.Name)) throw new FormatException();
             _ = descriptor.Parameters.ToDictionary(p => p.Name);

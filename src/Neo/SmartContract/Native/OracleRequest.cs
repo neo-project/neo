@@ -24,7 +24,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The original transaction that sent the related request.
         /// </summary>
-        public UInt256 OriginalTxid = null!;
+        public UInt256 OriginalTxid;
 
         /// <summary>
         /// The maximum amount of GAS that can be used when executing response callback.
@@ -34,41 +34,41 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The url of the request.
         /// </summary>
-        public string Url = null!;
+        public string Url;
 
         /// <summary>
         /// The filter for the response.
         /// </summary>
-        public string? Filter;
+        public string Filter;
 
         /// <summary>
         /// The hash of the callback contract.
         /// </summary>
-        public UInt160 CallbackContract = null!;
+        public UInt160 CallbackContract;
 
         /// <summary>
         /// The name of the callback method.
         /// </summary>
-        public string CallbackMethod = null!;
+        public string CallbackMethod;
 
         /// <summary>
         /// The user-defined object that will be passed to the callback.
         /// </summary>
-        public byte[] UserData = null!;
+        public byte[] UserData;
 
         public void FromStackItem(StackItem stackItem)
         {
             Array array = (Array)stackItem;
             OriginalTxid = new UInt256(array[0].GetSpan());
             GasForResponse = (long)array[1].GetInteger();
-            Url = array[2].GetString()!;
+            Url = array[2].GetString();
             Filter = array[3].GetString();
             CallbackContract = new UInt160(array[4].GetSpan());
-            CallbackMethod = array[5].GetString()!;
+            CallbackMethod = array[5].GetString();
             UserData = array[6].GetSpan().ToArray();
         }
 
-        public StackItem ToStackItem(ReferenceCounter? referenceCounter)
+        public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
             return new Array(referenceCounter)
             {

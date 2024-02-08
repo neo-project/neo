@@ -36,7 +36,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="item">The <see cref="StackItem"/> to serialize.</param>
         /// <returns>The serialized object.</returns>
-        public static JToken? Serialize(StackItem item)
+        public static JToken Serialize(StackItem item)
         {
             switch (item)
             {
@@ -71,10 +71,7 @@ namespace Neo.SmartContract
                             var key = entry.Key.GetString();
                             var value = Serialize(entry.Value);
 
-                            if (key != null)
-                            {
-                                ret[key] = value;
-                            }
+                            ret[key] = value;
                         }
 
                         return ret;
@@ -145,7 +142,7 @@ namespace Neo.SmartContract
                         writer.WriteEndObject();
                         break;
                     case JsonTokenType.PropertyName:
-                        writer.WritePropertyName(((StackItem)stack.Pop()!).GetString()!);
+                        writer.WritePropertyName(((StackItem)stack.Pop()).GetString());
                         break;
                     case Null _:
                         writer.WriteNullValue();
@@ -168,13 +165,13 @@ namespace Neo.SmartContract
         /// <param name="limits">The limits for the deserialization.</param>
         /// <param name="referenceCounter">The <see cref="ReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(ApplicationEngine engine, JToken json, ExecutionEngineLimits limits, ReferenceCounter? referenceCounter = null)
+        public static StackItem Deserialize(ApplicationEngine engine, JToken json, ExecutionEngineLimits limits, ReferenceCounter referenceCounter = null)
         {
             uint maxStackSize = limits.MaxStackSize;
             return Deserialize(engine, json, ref maxStackSize, referenceCounter);
         }
 
-        private static StackItem Deserialize(ApplicationEngine engine, JToken json, ref uint maxStackSize, ReferenceCounter? referenceCounter)
+        private static StackItem Deserialize(ApplicationEngine engine, JToken json, ref uint maxStackSize, ReferenceCounter referenceCounter)
         {
             if (maxStackSize-- == 0) throw new FormatException();
             switch (json)
@@ -186,7 +183,7 @@ namespace Neo.SmartContract
                 case JArray array:
                     {
                         List<StackItem> list = new(array.Count);
-                        foreach (JToken obj in array.Select(p => p != null))
+                        foreach (JToken obj in array)
                             list.Add(Deserialize(engine, obj, ref maxStackSize, referenceCounter));
                         return new Array(referenceCounter, list);
                     }
@@ -216,7 +213,7 @@ namespace Neo.SmartContract
                             if (maxStackSize-- == 0) throw new FormatException();
 
                             var key = entry.Key;
-                            var value = Deserialize(engine, entry.Value!, ref maxStackSize, referenceCounter);
+                            var value = Deserialize(engine, entry.Value, ref maxStackSize, referenceCounter);
 
                             item[key] = value;
                         }

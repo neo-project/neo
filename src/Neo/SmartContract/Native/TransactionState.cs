@@ -31,7 +31,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The transaction, if the transaction is trimmed this value will be null
         /// </summary>
-        public Transaction? Transaction;
+        public Transaction Transaction;
 
         /// <summary>
         /// The execution state
@@ -75,7 +75,7 @@ namespace Neo.SmartContract.Native
             State = (VMState)(byte)@struct[2].GetInteger();
         }
 
-        StackItem IInteroperable.ToStackItem(ReferenceCounter? referenceCounter)
+        StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
         {
             if (Transaction is null)
                 return new Struct(referenceCounter) { BlockIndex };
