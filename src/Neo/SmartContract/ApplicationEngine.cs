@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.Configuration.Hocon;
 using Neo.IO;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
