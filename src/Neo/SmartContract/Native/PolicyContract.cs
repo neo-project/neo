@@ -119,7 +119,7 @@ namespace Neo.SmartContract.Native
         public uint GetAttributeFee(DataCache snapshot, byte attributeType)
         {
             if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType)) throw new InvalidOperationException();
-            StorageItem entry = snapshot.TryGet(CreateStorageKey(Prefix_AttributeFee).AddBigEndian(attributeType));
+            StorageItem entry = snapshot.TryGet(CreateStorageKey(Prefix_AttributeFee).Add(attributeType));
             if (entry == null) return DefaultAttributeFee;
 
             return (uint)(BigInteger)entry;
@@ -144,7 +144,7 @@ namespace Neo.SmartContract.Native
             if (value > MaxAttributeFee) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
-            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_AttributeFee).AddBigEndian(attributeType), () => new StorageItem(DefaultAttributeFee)).Set(value);
+            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_AttributeFee).Add(attributeType), () => new StorageItem(DefaultAttributeFee)).Set(value);
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]

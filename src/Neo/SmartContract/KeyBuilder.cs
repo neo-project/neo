@@ -42,6 +42,17 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="key">Part of the key.</param>
         /// <returns>A reference to this instance after the add operation has completed.</returns>
+        public KeyBuilder Add(byte key)
+        {
+            stream.WriteByte(key);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds part of the key to the builder.
+        /// </summary>
+        /// <param name="key">Part of the key.</param>
+        /// <returns>A reference to this instance after the add operation has completed.</returns>
         public KeyBuilder Add(ReadOnlySpan<byte> key)
         {
             stream.Write(key);
