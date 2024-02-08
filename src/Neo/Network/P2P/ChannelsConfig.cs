@@ -21,7 +21,7 @@ namespace Neo.Network.P2P
         /// <summary>
         /// Tcp configuration.
         /// </summary>
-        public IPEndPoint Tcp { get; set; }
+        public IPEndPoint Tcp { get; set; } = null!;
 
         /// <summary>
         /// Minimum desired connections.

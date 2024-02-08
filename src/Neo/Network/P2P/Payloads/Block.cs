@@ -28,12 +28,12 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The header of the block.
         /// </summary>
-        public Header Header;
+        public Header Header = null!;
 
         /// <summary>
         /// The transaction list of the block.
         /// </summary>
-        public Transaction[] Transactions;
+        public Transaction[] Transactions = Array.Empty<Transaction>();
 
         public UInt256 Hash => Header.Hash;
 
@@ -92,20 +92,20 @@ namespace Neo.Network.P2P.Payloads
             Transactions = reader.ReadSerializableArray<Transaction>(ushort.MaxValue);
             if (Transactions.Distinct().Count() != Transactions.Length)
                 throw new FormatException();
-            if (MerkleTree.ComputeRoot(Transactions.Select(p => p.Hash).ToArray()) != Header.MerkleRoot)
+            if (MerkleTree.ComputeRoot(Transactions.Select(p => p!.Hash).ToArray()) != Header.MerkleRoot)
                 throw new FormatException();
         }
 
         void IVerifiable.DeserializeUnsigned(ref MemoryReader reader) => throw new NotSupportedException();
 
-        public bool Equals(Block other)
+        public bool Equals(Block? other)
         {
             if (ReferenceEquals(this, other)) return true;
             if (other is null) return false;
             return Hash.Equals(other.Hash);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return Equals(obj as Block);
         }

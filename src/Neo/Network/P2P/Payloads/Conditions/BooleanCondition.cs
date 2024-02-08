@@ -45,7 +45,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
 
         private protected override void ParseJson(JObject json, int maxNestDepth)
         {
-            Expression = json["expression"].GetBoolean();
+            Expression = json["expression"]!.GetBoolean();
         }
 
         public override JObject ToJson()
@@ -55,7 +55,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return json;
         }
 
-        public override StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public override StackItem ToStackItem(ReferenceCounter? referenceCounter)
         {
             var result = (VM.Types.Array)base.ToStackItem(referenceCounter);
             result.Add(Expression);

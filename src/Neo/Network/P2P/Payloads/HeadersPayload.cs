@@ -28,7 +28,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The list of headers.
         /// </summary>
-        public Header[] Headers;
+        public Header[] Headers = null!;
 
         public int Size => Headers.GetVarSize();
 

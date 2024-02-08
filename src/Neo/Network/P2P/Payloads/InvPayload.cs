@@ -34,7 +34,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The hashes of the inventories.
         /// </summary>
-        public UInt256[] Hashes;
+        public UInt256[] Hashes = null!;
 
         public int Size => sizeof(InventoryType) + Hashes.GetVarSize();
 

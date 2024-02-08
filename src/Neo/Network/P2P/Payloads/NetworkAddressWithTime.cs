@@ -31,12 +31,12 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The address of the node.
         /// </summary>
-        public IPAddress Address;
+        public IPAddress Address = null!;
 
         /// <summary>
         /// The capabilities of the node.
         /// </summary>
-        public NodeCapability[] Capabilities;
+        public NodeCapability[] Capabilities = null!;
 
         /// <summary>
         /// The <see cref="IPEndPoint"/> of the Tcp server.

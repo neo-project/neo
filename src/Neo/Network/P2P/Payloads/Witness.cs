@@ -39,7 +39,7 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         public ReadOnlyMemory<byte> VerificationScript;
 
-        private UInt160 _scriptHash;
+        private UInt160? _scriptHash;
         /// <summary>
         /// The hash of the <see cref="VerificationScript"/>.
         /// </summary>

@@ -49,10 +49,10 @@ namespace Neo.Network.P2P.Payloads
         private long sysfee;
         private long netfee;
         private uint validUntilBlock;
-        private Signer[] _signers;
-        private TransactionAttribute[] attributes;
+        private Signer[] _signers = null!;
+        private TransactionAttribute[] attributes = null!;
         private ReadOnlyMemory<byte> script;
-        private Witness[] witnesses;
+        private Witness[] witnesses = null!;
 
         /// <summary>
         /// The size of a transaction header.
@@ -64,7 +64,7 @@ namespace Neo.Network.P2P.Payloads
             sizeof(long) +  //NetworkFee
             sizeof(uint);   //ValidUntilBlock
 
-        private Dictionary<Type, TransactionAttribute[]> _attributesCache;
+        private Dictionary<Type, TransactionAttribute[]>? _attributesCache;
         /// <summary>
         /// The attributes of the transaction.
         /// </summary>
@@ -79,7 +79,7 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         public long FeePerByte => NetworkFee / Size;
 
-        private UInt256 _hash = null;
+        private UInt256? _hash;
         public UInt256 Hash
         {
             get
@@ -242,14 +242,14 @@ namespace Neo.Network.P2P.Payloads
             if (Script.Length == 0) throw new FormatException();
         }
 
-        public bool Equals(Transaction other)
+        public bool Equals(Transaction? other)
         {
             if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
             return Hash.Equals(other.Hash);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return Equals(obj as Transaction);
         }
@@ -264,7 +264,7 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         /// <typeparam name="T">The type of the attribute.</typeparam>
         /// <returns>The first attribute of this type. Or <see langword="null"/> if there is no attribute of this type.</returns>
-        public T GetAttribute<T>() where T : TransactionAttribute
+        public T? GetAttribute<T>() where T : TransactionAttribute
         {
             return GetAttributes<T>().FirstOrDefault();
         }
@@ -287,7 +287,7 @@ namespace Neo.Network.P2P.Payloads
             return Hash.GetHashCode();
         }
 
-        public UInt160[] GetScriptHashesForVerifying(DataCache snapshot)
+        public UInt160[] GetScriptHashesForVerifying(DataCache? snapshot)
         {
             return Signers.Select(p => p.Account).ToArray();
         }
@@ -429,11 +429,11 @@ namespace Neo.Network.P2P.Payloads
                         return VerifyResult.Invalid;
                     }
                 }
-                else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out var m, out ECPoint[] points))
+                else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out var m, out ECPoint[]? points))
                 {
                     if (hashes[i] != witnesses[i].ScriptHash) return VerifyResult.Invalid;
                     var signatures = GetMultiSignatures(witnesses[i].InvocationScript);
-                    if (signatures.Length != m) return VerifyResult.Invalid;
+                    if (signatures?.Length != m) return VerifyResult.Invalid;
                     var n = points.Length;
                     var message = this.GetSignData(settings.Network);
                     try
@@ -456,7 +456,7 @@ namespace Neo.Network.P2P.Payloads
             return VerifyResult.Succeed;
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(ReferenceCounter? referenceCounter)
         {
             if (_signers == null || _signers.Length == 0) throw new ArgumentException("Sender is not specified in the transaction.");
             return new Array(referenceCounter, new StackItem[]
@@ -475,7 +475,7 @@ namespace Neo.Network.P2P.Payloads
             });
         }
 
-        private static ReadOnlyMemory<byte>[] GetMultiSignatures(ReadOnlyMemory<byte> script)
+        private static ReadOnlyMemory<byte>[]? GetMultiSignatures(ReadOnlyMemory<byte> script)
         {
             ReadOnlySpan<byte> span = script.Span;
             int i = 0;

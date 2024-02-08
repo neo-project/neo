@@ -33,7 +33,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// The condition of the rule.
         /// </summary>
-        public WitnessCondition Condition;
+        public WitnessCondition Condition = null!;
 
         int ISerializable.Size => sizeof(WitnessRuleAction) + Condition.Size;
 
@@ -58,7 +58,7 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The converted <see cref="WitnessRule"/>.</returns>
         public static WitnessRule FromJson(JObject json)
         {
-            WitnessRuleAction action = Enum.Parse<WitnessRuleAction>(json["action"].GetString());
+            WitnessRuleAction action = Enum.Parse<WitnessRuleAction>(json["action"]!.GetString());
 
             if (action != WitnessRuleAction.Allow && action != WitnessRuleAction.Deny)
                 throw new FormatException();
@@ -66,7 +66,7 @@ namespace Neo.Network.P2P.Payloads
             return new()
             {
                 Action = action,
-                Condition = WitnessCondition.FromJson((JObject)json["condition"], WitnessCondition.MaxNestingDepth)
+                Condition = WitnessCondition.FromJson(json["condition"].NullExceptionOr<JObject>(), WitnessCondition.MaxNestingDepth)
             };
         }
 
@@ -88,9 +88,9 @@ namespace Neo.Network.P2P.Payloads
             throw new NotSupportedException();
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(ReferenceCounter? referenceCounter)
         {
-            return new VM.Types.Array(referenceCounter, new StackItem[]
+            return new VM.Types.Array(referenceCounter, new[]
             {
                 (byte)Action,
                 Condition.ToStackItem(referenceCounter)
