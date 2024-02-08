@@ -11,6 +11,7 @@
 
 using Neo.IO;
 using System;
+using System.Buffers.Binary;
 using System.IO;
 
 namespace Neo.SmartContract
@@ -29,7 +30,9 @@ namespace Neo.SmartContract
         /// <param name="prefix">The prefix of the key.</param>
         public KeyBuilder(int id, byte prefix)
         {
-            Add(id);
+            var keyId = new byte[4];
+            BinaryPrimitives.WriteInt32LittleEndian(keyId, id);
+            Add(keyId);
             this.stream.WriteByte(prefix);
         }
 
@@ -79,7 +82,7 @@ namespace Neo.SmartContract
         unsafe public KeyBuilder AddBigEndian<T>(T key) where T : unmanaged
         {
             ReadOnlySpan<byte> buffer = new(&key, sizeof(T));
-            for (int i = buffer.Length - 1; i >= 0; i--)
+            for (var i = buffer.Length - 1; i >= 0; i--)
                 stream.WriteByte(buffer[i]);
             return this;
         }
