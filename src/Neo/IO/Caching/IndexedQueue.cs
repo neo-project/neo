@@ -123,7 +123,7 @@ namespace Neo.IO.Caching
         /// </summary>
         /// <param name="item">The item</param>
         /// <returns>True if the queue returned an item or false if the queue is empty</returns>
-        public bool TryPeek(out T item)
+        public bool TryPeek(out T? item)
         {
             if (_count == 0)
             {
@@ -157,7 +157,7 @@ namespace Neo.IO.Caching
         /// </summary>
         /// <param name="item">The item</param>
         /// <returns>True if the queue returned an item or false if the queue is empty</returns>
-        public bool TryDequeue(out T item)
+        public bool TryDequeue(out T? item)
         {
             if (_count == 0)
             {

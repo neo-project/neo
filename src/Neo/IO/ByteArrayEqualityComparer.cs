@@ -17,7 +17,7 @@ namespace Neo.IO
     {
         public static readonly ByteArrayEqualityComparer Default = new();
 
-        public unsafe bool Equals(byte[] x, byte[] y)
+        public unsafe bool Equals(byte[]? x, byte[]? y)
         {
             if (ReferenceEquals(x, y)) return true;
             if (x is null || y is null) return false;
