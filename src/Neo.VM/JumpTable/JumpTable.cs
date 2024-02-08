@@ -50,11 +50,13 @@ namespace Neo.VM
             {
                 if (Table[x] is not null) continue;
 
-                Table[x] = (engine, instruction) =>
-                {
-                    throw new InvalidOperationException($"Opcode {instruction.OpCode} is undefined.");
-                };
+                Table[x] = InvalidOpcode;
             }
+        }
+
+        private static void InvalidOpcode(ExecutionEngine engine, Instruction instruction)
+        {
+            throw new InvalidOperationException($"Opcode {instruction.OpCode} is undefined.");
         }
     }
 }
