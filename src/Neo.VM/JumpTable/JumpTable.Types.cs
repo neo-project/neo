@@ -17,6 +17,7 @@ namespace Neo.VM
 {
     public partial class JumpTable
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void ISNULL(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop();
