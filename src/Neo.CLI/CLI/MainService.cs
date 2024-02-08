@@ -371,7 +371,7 @@ namespace Neo.CLI
 
         public async void Start(CommandLineOptions options)
         {
-            if (NeoSystem != null) return;
+            if (_neoSystem != null) return;
             bool verifyImport = !(options.NoVerify ?? false);
 
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
@@ -411,7 +411,7 @@ namespace Neo.CLI
                         Blocks = blocksToImport,
                         Verify = verifyImport
                     });
-                    if (NeoSystem is null) return;
+                    if (_neoSystem is null) return;
                 }
             }
             NeoSystem.StartNode(new ChannelsConfig
