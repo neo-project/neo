@@ -116,7 +116,7 @@ namespace Neo.SmartContract.Native
                         Hash = contract.Hash,
                         Manifest = contract.Manifest
                     }));
-                    engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(contract.Hash.ToArray()));
+                    engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).Add(contract.Id), new StorageItem(contract.Hash.ToArray()));
                     await contract.Initialize(engine);
                 }
             }
@@ -157,7 +157,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public ContractState GetContractById(DataCache snapshot, int id)
         {
-            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_ContractHash).AddBigEndian(id));
+            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_ContractHash).Add(id));
             if (item is null) return null;
             var hash = new UInt160(item.Value.Span);
             return GetContract(snapshot, hash);
@@ -253,7 +253,7 @@ namespace Neo.SmartContract.Native
             if (!contract.Manifest.IsValid(engine.Limits, hash)) throw new InvalidOperationException($"Invalid Manifest: {hash}");
 
             engine.Snapshot.Add(key, new StorageItem(contract));
-            engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(hash.ToArray()));
+            engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).Add(contract.Id), new StorageItem(hash.ToArray()));
 
             await OnDeploy(engine, contract, data, false);
 
@@ -309,7 +309,7 @@ namespace Neo.SmartContract.Native
             ContractState contract = engine.Snapshot.TryGet(ckey)?.GetInteroperable<ContractState>();
             if (contract is null) return;
             engine.Snapshot.Delete(ckey);
-            engine.Snapshot.Delete(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id));
+            engine.Snapshot.Delete(CreateStorageKey(Prefix_ContractHash).Add(contract.Id));
             foreach (var (key, _) in engine.Snapshot.Find(StorageKey.CreateSearchPrefix(contract.Id, ReadOnlySpan<byte>.Empty)))
                 engine.Snapshot.Delete(key);
             // lock contract

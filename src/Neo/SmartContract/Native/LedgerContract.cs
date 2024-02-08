@@ -44,7 +44,7 @@ namespace Neo.SmartContract.Native
                 Transaction = p,
                 State = VMState.NONE
             }).ToArray();
-            engine.Snapshot.Add(CreateStorageKey(Prefix_BlockHash).AddBigEndian(engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray()));
+            engine.Snapshot.Add(CreateStorageKey(Prefix_BlockHash).Add(engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray()));
             engine.Snapshot.Add(CreateStorageKey(Prefix_Block).Add(engine.PersistingBlock.Hash), new StorageItem(Trim(engine.PersistingBlock).ToArray()));
             foreach (TransactionState tx in transactions)
             {
@@ -95,7 +95,7 @@ namespace Neo.SmartContract.Native
         /// <returns>The hash of the block.</returns>
         public UInt256 GetBlockHash(DataCache snapshot, uint index)
         {
-            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_BlockHash).AddBigEndian(index));
+            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_BlockHash).Add(index));
             if (item is null) return null;
             return new UInt256(item.Value.Span);
         }

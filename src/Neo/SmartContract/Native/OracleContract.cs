@@ -146,7 +146,7 @@ namespace Neo.SmartContract.Native
         /// <returns>The pending request. Or <see langword="null"/> if no request with the specified id is found.</returns>
         public OracleRequest GetRequest(DataCache snapshot, ulong id)
         {
-            return snapshot.TryGet(CreateStorageKey(Prefix_Request).AddBigEndian(id))?.GetInteroperable<OracleRequest>();
+            return snapshot.TryGet(CreateStorageKey(Prefix_Request).Add(id))?.GetInteroperable<OracleRequest>();
         }
 
         /// <summary>
@@ -170,7 +170,7 @@ namespace Neo.SmartContract.Native
             IdList list = snapshot.TryGet(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)))?.GetInteroperable<IdList>();
             if (list is null) yield break;
             foreach (ulong id in list)
-                yield return (id, snapshot[CreateStorageKey(Prefix_Request).AddBigEndian(id)].GetInteroperable<OracleRequest>());
+                yield return (id, snapshot[CreateStorageKey(Prefix_Request).Add(id)].GetInteroperable<OracleRequest>());
         }
 
         private static byte[] GetUrlHash(string url)
@@ -195,7 +195,7 @@ namespace Neo.SmartContract.Native
                 if (response is null) continue;
 
                 //Remove the request from storage
-                StorageKey key = CreateStorageKey(Prefix_Request).AddBigEndian(response.Id);
+                StorageKey key = CreateStorageKey(Prefix_Request).Add(response.Id);
                 OracleRequest request = engine.Snapshot.TryGet(key)?.GetInteroperable<OracleRequest>();
                 if (request == null) continue;
                 engine.Snapshot.Delete(key);
@@ -248,7 +248,7 @@ namespace Neo.SmartContract.Native
             //Put the request to storage
             if (ContractManagement.GetContract(engine.Snapshot, engine.CallingScriptHash) is null)
                 throw new InvalidOperationException();
-            engine.Snapshot.Add(CreateStorageKey(Prefix_Request).AddBigEndian(id), new StorageItem(new OracleRequest
+            engine.Snapshot.Add(CreateStorageKey(Prefix_Request).Add(id), new StorageItem(new OracleRequest
             {
                 OriginalTxid = GetOriginalTxid(engine),
                 GasForResponse = gasForResponse,

@@ -39,12 +39,12 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual("010000000203040000000000000000000000000000000000000000", key.ToArray().ToHexString());
 
             key = new KeyBuilder(1, 2);
-            key = key.Add(new TestKey { Value = 123 });
+            key = key.Add(123);
             Assert.AreEqual("01000000027b000000", key.ToArray().ToHexString());
 
             key = new KeyBuilder(1, 0);
-            key = key.AddBigEndian(new TestKey { Value = 1 });
-            Assert.AreEqual("010000000000000001", key.ToArray().ToHexString());
+            key = key.Add(1);
+            Assert.AreEqual("010000000001000000", key.ToArray().ToHexString());
         }
     }
 }

@@ -30,9 +30,7 @@ namespace Neo.SmartContract
         /// <param name="prefix">The prefix of the key.</param>
         public KeyBuilder(int id, byte prefix)
         {
-            var keyId = new byte[4];
-            BinaryPrimitives.WriteInt32LittleEndian(keyId, id);
-            Add(keyId);
+            Add(id);
             this.stream.WriteByte(prefix);
         }
 
@@ -63,28 +61,55 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// Adds part of the key to the builder.
+        /// Adds part of the key to the builder in LittleEndian.
         /// </summary>
-        /// <typeparam name="T">The type of the <paramref name="key"/> parameter.</typeparam>
         /// <param name="key">Part of the key.</param>
         /// <returns>A reference to this instance after the add operation has completed.</returns>
-        unsafe public KeyBuilder Add<T>(T key) where T : unmanaged
+        public KeyBuilder Add(int key)
         {
-            return Add(new ReadOnlySpan<byte>(&key, sizeof(T)));
+            var data = new byte[sizeof(int)];
+            BinaryPrimitives.WriteInt32LittleEndian(data, key);
+
+            return Add(data);
         }
 
         /// <summary>
-        /// Adds part of the key to the builder with big-endian.
+        /// Adds part of the key to the builder in LittleEndian.
         /// </summary>
-        /// <typeparam name="T">The type of the <paramref name="key"/> parameter.</typeparam>
         /// <param name="key">Part of the key.</param>
         /// <returns>A reference to this instance after the add operation has completed.</returns>
-        unsafe public KeyBuilder AddBigEndian<T>(T key) where T : unmanaged
+        public KeyBuilder Add(uint key)
         {
-            ReadOnlySpan<byte> buffer = new(&key, sizeof(T));
-            for (var i = buffer.Length - 1; i >= 0; i--)
-                stream.WriteByte(buffer[i]);
-            return this;
+            var data = new byte[sizeof(uint)];
+            BinaryPrimitives.WriteUInt32LittleEndian(data, key);
+
+            return Add(data);
+        }
+
+        /// <summary>
+        /// Adds part of the key to the builder in LittleEndian.
+        /// </summary>
+        /// <param name="key">Part of the key.</param>
+        /// <returns>A reference to this instance after the add operation has completed.</returns>
+        public KeyBuilder Add(long key)
+        {
+            var data = new byte[sizeof(long)];
+            BinaryPrimitives.WriteInt64LittleEndian(data, key);
+
+            return Add(data);
+        }
+
+        /// <summary>
+        /// Adds part of the key to the builder in LittleEndian.
+        /// </summary>
+        /// <param name="key">Part of the key.</param>
+        /// <returns>A reference to this instance after the add operation has completed.</returns>
+        public KeyBuilder Add(ulong key)
+        {
+            var data = new byte[sizeof(ulong)];
+            BinaryPrimitives.WriteUInt64LittleEndian(data, key);
+
+            return Add(data);
         }
 
         /// <summary>
