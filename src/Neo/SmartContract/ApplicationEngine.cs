@@ -221,7 +221,7 @@ namespace Neo.SmartContract
         {
             if (engine is ApplicationEngine app)
             {
-                uint method = instruction.TokenU16;
+                uint method = instruction.TokenU32;
 
                 app.OnSysCall(services[method]);
             }
