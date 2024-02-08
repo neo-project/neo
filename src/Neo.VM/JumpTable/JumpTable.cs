@@ -16,17 +16,17 @@ namespace Neo.VM
     public partial class JumpTable
     {
         public delegate void DelAction(ExecutionEngine engine, Instruction instruction);
-        protected readonly DelAction[] _table = new DelAction[byte.MaxValue];
+        protected readonly DelAction[] Table = new DelAction[byte.MaxValue];
 
         public DelAction this[OpCode opCode]
         {
             get
             {
-                return _table[(byte)opCode];
+                return Table[(byte)opCode];
             }
             set
             {
-                _table[(byte)opCode] = value;
+                Table[(byte)opCode] = value;
             }
         }
 
@@ -38,22 +38,22 @@ namespace Neo.VM
             {
                 if (Enum.TryParse<OpCode>(mi.Name, false, out var opCode))
                 {
-                    if (_table[(byte)opCode] is not null)
+                    if (Table[(byte)opCode] is not null)
                     {
                         throw new InvalidOperationException($"Opcode {opCode} is already defined.");
                     }
 
-                    _table[(byte)opCode] = (DelAction)mi.CreateDelegate(typeof(DelAction), this);
+                    Table[(byte)opCode] = (DelAction)mi.CreateDelegate(typeof(DelAction), this);
                 }
             }
 
             // Fill with undefined
 
-            for (int x = 0; x < _table.Length; x++)
+            for (var x = 0; x < Table.Length; x++)
             {
-                if (_table[x] is not null) continue;
+                if (Table[x] is not null) continue;
 
-                _table[x] = (engine, instruction) =>
+                Table[x] = (engine, instruction) =>
                 {
                     throw new InvalidOperationException($"Opcode {instruction.OpCode} is undefined.");
                 };
@@ -63,56 +63,8 @@ namespace Neo.VM
 
             switch (instruction.OpCode)
             {
-                // Stack ops
-                case OpCode.DEPTH:
-                    Depth(instruction);
-                    break;
-                case OpCode.DROP:
-                    Drop(instruction);
-                    break;
-                case OpCode.NIP:
-                    Nip(instruction);
-                    break;
-                case OpCode.XDROP:
-                    XDrop(instruction);
-                    break;
-                case OpCode.CLEAR:
-                    Clear(instruction);
-                    break;
-                case OpCode.DUP:
-                    Dup(instruction);
-                    break;
-                case OpCode.OVER:
-                    Over(instruction);
-                    break;
-                case OpCode.PICK:
-                    Pick(instruction);
-                    break;
-                case OpCode.TUCK:
-                    Tuck(instruction);
-                    break;
-                case OpCode.SWAP:
-                    Swap(instruction);
-                    break;
-                case OpCode.ROT:
-                    Rot(instruction);
-                    break;
-                case OpCode.ROLL:
-                    Roll(instruction);
-                    break;
-                case OpCode.REVERSE3:
-                    Reverse3(instruction);
-                    break;
-                case OpCode.REVERSE4:
-                    Reverse4(instruction);
-                    break;
-                case OpCode.REVERSEN:
-                    ReverseN(instruction);
-                    break;
-
                 //Slot
                 case OpCode.INITSSLOT:
-                    InitSSlot(instruction);
                     break;
                 case OpCode.INITSLOT:
                     InitSlot(instruction);
