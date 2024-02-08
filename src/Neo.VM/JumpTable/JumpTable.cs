@@ -142,26 +142,6 @@ namespace Neo.VM
                     StArg(instruction);
                     break;
 
-                // Bitwise logic
-                case OpCode.INVERT:
-                    Invert(instruction);
-                    break;
-                case OpCode.AND:
-                    And(instruction);
-                    break;
-                case OpCode.OR:
-                    Or(instruction);
-                    break;
-                case OpCode.XOR:
-                    Xor(instruction);
-                    break;
-                case OpCode.EQUAL:
-                    Equal(instruction);
-                    break;
-                case OpCode.NOTEQUAL:
-                    NotEqual(instruction);
-                    break;
-
                 // Numeric
                 case OpCode.SIGN:
                     Sign(instruction);
