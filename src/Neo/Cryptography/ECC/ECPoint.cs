@@ -23,9 +23,9 @@ namespace Neo.Cryptography.ECC
     /// </summary>
     public class ECPoint : IComparable<ECPoint>, IEquatable<ECPoint>, ISerializable
     {
-        internal ECFieldElement? X, Y;
+        internal ECFieldElement X, Y;
         internal readonly ECCurve Curve;
-        private byte[]? _compressedPoint, _uncompressedPoint;
+        private byte[] _compressedPoint, _uncompressedPoint;
 
         /// <summary>
         /// Indicates whether it is a point at infinity.
@@ -37,15 +37,15 @@ namespace Neo.Cryptography.ECC
 
         public int Size => IsInfinity ? 1 : 33;
 
-        private static ECPointCache pointCacheK1 { get; } = new(1000);
-        private static ECPointCache pointCacheR1 { get; } = new(1000);
+        private static IO.Caching.ECPointCache pointCacheK1 { get; } = new(1000);
+        private static IO.Caching.ECPointCache pointCacheR1 { get; } = new(1000);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ECPoint"/> class with the secp256r1 curve.
         /// </summary>
         public ECPoint() : this(null, null, ECCurve.Secp256r1) { }
 
-        internal ECPoint(ECFieldElement? x, ECFieldElement? y, ECCurve curve)
+        internal ECPoint(ECFieldElement x, ECFieldElement y, ECCurve curve)
         {
             if ((x is null ^ y is null) || (curve is null))
                 throw new ArgumentException("Exactly one of the field elements is null");
@@ -54,13 +54,13 @@ namespace Neo.Cryptography.ECC
             this.Curve = curve;
         }
 
-        public int CompareTo(ECPoint? other)
+        public int CompareTo(ECPoint other)
         {
-            if (!Curve.Equals(other?.Curve)) throw new InvalidOperationException("Invalid comparision for points with different curves");
+            if (!Curve.Equals(other.Curve)) throw new InvalidOperationException("Invalid comparision for points with different curves");
             if (ReferenceEquals(this, other)) return 0;
-            int result = X!.CompareTo(other.X);
+            int result = X.CompareTo(other.X);
             if (result != 0) return result;
-            return Y!.CompareTo(other.Y);
+            return Y.CompareTo(other.Y);
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace Neo.Cryptography.ECC
         /// <returns>The decoded point.</returns>
         public static ECPoint DecodePoint(ReadOnlySpan<byte> encoded, ECCurve curve)
         {
-            ECPoint? p = null;
+            ECPoint p = null;
             switch (encoded[0])
             {
                 case 0x02: // compressed
@@ -102,7 +102,7 @@ namespace Neo.Cryptography.ECC
 
         private static ECPoint DecompressPoint(ReadOnlySpan<byte> encoded, ECCurve curve)
         {
-            ECPointCache? pointCache;
+            ECPointCache pointCache = null;
             if (curve == ECCurve.Secp256k1) pointCache = pointCacheK1;
             else if (curve == ECCurve.Secp256r1) pointCache = pointCacheR1;
             else throw new FormatException("Invalid curve " + curve);
@@ -123,7 +123,7 @@ namespace Neo.Cryptography.ECC
         {
             ECFieldElement x = new(X1, curve);
             ECFieldElement alpha = x * (x.Square() + curve.A) + curve.B;
-            ECFieldElement? beta = alpha.Sqrt();
+            ECFieldElement beta = alpha.Sqrt();
 
             //
             // if we can't find a sqrt we haven't got a point on the
@@ -187,27 +187,27 @@ namespace Neo.Cryptography.ECC
             {
                 if (_uncompressedPoint != null) return _uncompressedPoint;
                 data = new byte[65];
-                byte[] yBytes = Y!.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
+                byte[] yBytes = Y.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
                 Buffer.BlockCopy(yBytes, 0, data, 65 - yBytes.Length, yBytes.Length);
             }
-            byte[] xBytes = X!.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
+            byte[] xBytes = X.Value.ToByteArray(isUnsigned: true, isBigEndian: true);
             Buffer.BlockCopy(xBytes, 0, data, 33 - xBytes.Length, xBytes.Length);
-            data[0] = commpressed ? Y!.Value.IsEven ? (byte)0x02 : (byte)0x03 : (byte)0x04;
+            data[0] = commpressed ? Y.Value.IsEven ? (byte)0x02 : (byte)0x03 : (byte)0x04;
             if (commpressed) _compressedPoint = data;
             else _uncompressedPoint = data;
             return data;
         }
 
-        public bool Equals(ECPoint? other)
+        public bool Equals(ECPoint other)
         {
             if (ReferenceEquals(this, other)) return true;
             if (other is null) return false;
             if (IsInfinity && other.IsInfinity) return true;
             if (IsInfinity || other.IsInfinity) return false;
-            return X!.Equals(other.X) && Y!.Equals(other.Y);
+            return X.Equals(other.X) && Y.Equals(other.Y);
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals(object obj)
         {
             return Equals(obj as ECPoint);
         }
@@ -231,7 +231,7 @@ namespace Neo.Cryptography.ECC
 
         public override int GetHashCode()
         {
-            return X!.GetHashCode() + Y!.GetHashCode();
+            return X.GetHashCode() + Y.GetHashCode();
         }
 
         internal static ECPoint Multiply(ECPoint p, BigInteger k)
@@ -361,7 +361,7 @@ namespace Neo.Cryptography.ECC
         /// <param name="curve">The <see cref="ECCurve"/> object used to construct the <see cref="ECPoint"/>.</param>
         /// <param name="point">The parsed point.</param>
         /// <returns><see langword="true"/> if <paramref name="value"/> was converted successfully; otherwise, <see langword="false"/>.</returns>
-        public static bool TryParse(string value, ECCurve curve, out ECPoint? point)
+        public static bool TryParse(string value, ECCurve curve, out ECPoint point)
         {
             try
             {
@@ -379,13 +379,13 @@ namespace Neo.Cryptography.ECC
         {
             if (this.IsInfinity)
                 return this;
-            if (this.Y?.Value.Sign == 0)
+            if (this.Y.Value.Sign == 0)
                 return Curve.Infinity;
             ECFieldElement TWO = new(2, Curve);
             ECFieldElement THREE = new(3, Curve);
-            ECFieldElement gamma = (this.X!.Square() * THREE + Curve.A) / (Y! * TWO);
+            ECFieldElement gamma = (this.X.Square() * THREE + Curve.A) / (Y * TWO);
             ECFieldElement x3 = gamma.Square() - this.X * TWO;
-            ECFieldElement y3 = gamma * (this.X - x3) - this.Y!;
+            ECFieldElement y3 = gamma * (this.X - x3) - this.Y;
             return new ECPoint(x3, y3, Curve);
         }
 
@@ -426,7 +426,7 @@ namespace Neo.Cryptography.ECC
 
         public static ECPoint operator -(ECPoint x)
         {
-            return new ECPoint(x.X, -x.Y!, x.Curve);
+            return new ECPoint(x.X, -x.Y, x.Curve);
         }
 
         public static ECPoint operator *(ECPoint p, byte[] n)
@@ -449,15 +449,15 @@ namespace Neo.Cryptography.ECC
                 return y;
             if (y.IsInfinity)
                 return x;
-            if (x.X!.Equals(y.X))
+            if (x.X.Equals(y.X))
             {
-                if (x.Y!.Equals(y.Y))
+                if (x.Y.Equals(y.Y))
                     return x.Twice();
                 return x.Curve.Infinity;
             }
-            ECFieldElement gamma = (y.Y! - x.Y!) / (y.X! - x.X);
-            ECFieldElement x3 = gamma.Square() - x.X - y.X!;
-            ECFieldElement y3 = gamma * (x.X - x3) - x.Y!;
+            ECFieldElement gamma = (y.Y - x.Y) / (y.X - x.X);
+            ECFieldElement x3 = gamma.Square() - x.X - y.X;
+            ECFieldElement y3 = gamma * (x.X - x3) - x.Y;
             return new ECPoint(x3, y3, x.Curve);
         }
 

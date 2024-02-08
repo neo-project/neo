@@ -23,7 +23,7 @@ namespace Neo.Cryptography
     /// </summary>
     public class MerkleTree
     {
-        private readonly MerkleTreeNode? root;
+        private readonly MerkleTreeNode root;
 
         /// <summary>
         /// The depth of the tree.
@@ -40,7 +40,7 @@ namespace Neo.Cryptography
             this.Depth = depth;
         }
 
-        private static MerkleTreeNode? Build(MerkleTreeNode[] leaves)
+        private static MerkleTreeNode Build(MerkleTreeNode[] leaves)
         {
             if (leaves.Length == 0) return null;
             if (leaves.Length == 1) return leaves[0];
@@ -63,7 +63,7 @@ namespace Neo.Cryptography
                     parents[i].RightChild = leaves[i * 2 + 1];
                     leaves[i * 2 + 1].Parent = parents[i];
                 }
-                parents[i].Hash = Concat(buffer, parents[i].LeftChild!.Hash, parents[i].RightChild!.Hash);
+                parents[i].Hash = Concat(buffer, parents[i].LeftChild.Hash, parents[i].RightChild.Hash);
             }
             return Build(parents); //TailCall
         }
@@ -87,7 +87,7 @@ namespace Neo.Cryptography
             if (hashes.Length == 0) return UInt256.Zero;
             if (hashes.Length == 1) return hashes[0];
             MerkleTree tree = new(hashes);
-            return tree.root!.Hash;
+            return tree.root.Hash;
         }
 
         private static void DepthFirstSearch(MerkleTreeNode node, IList<UInt256> hashes)
@@ -100,7 +100,7 @@ namespace Neo.Cryptography
             else
             {
                 DepthFirstSearch(node.LeftChild, hashes);
-                DepthFirstSearch(node.RightChild!, hashes);
+                DepthFirstSearch(node.RightChild, hashes);
             }
         }
 
@@ -145,8 +145,8 @@ namespace Neo.Cryptography
             else
             {
                 Trim(node.LeftChild, index * 2, depth - 1, flags);
-                Trim(node.RightChild!, index * 2 + 1, depth - 1, flags);
-                if (node.LeftChild.LeftChild == null && node.RightChild!.RightChild == null)
+                Trim(node.RightChild, index * 2 + 1, depth - 1, flags);
+                if (node.LeftChild.LeftChild == null && node.RightChild.RightChild == null)
                 {
                     node.LeftChild = null;
                     node.RightChild = null;

@@ -80,8 +80,8 @@ namespace Neo.Cryptography
                 var curve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
                 var domain = new Org.BouncyCastle.Crypto.Parameters.ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H);
                 var point = curve.Curve.CreatePoint(
-                    new Org.BouncyCastle.Math.BigInteger(pubkey.X!.Value.ToString()),
-                    new Org.BouncyCastle.Math.BigInteger(pubkey.Y!.Value.ToString()));
+                    new Org.BouncyCastle.Math.BigInteger(pubkey.X.Value.ToString()),
+                    new Org.BouncyCastle.Math.BigInteger(pubkey.Y.Value.ToString()));
                 var pubKey = new Org.BouncyCastle.Crypto.Parameters.ECPublicKeyParameters("ECDSA", point, domain);
                 var signer = new Org.BouncyCastle.Crypto.Signers.ECDsaSigner();
                 signer.Init(false, pubKey);
