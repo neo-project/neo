@@ -381,8 +381,7 @@ namespace Neo.CLI
 
             CustomProtocolSettings(options, protocol);
             CustomApplicationSettings(options, Settings.Default);
-            var store = StoreFactory.GetStore(Settings.Default.Storage.Engine, string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
-            NeoSystem = new NeoSystem(protocol, store);
+            NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
             NeoSystem.AddService(this);
 
             LocalNode = NeoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;

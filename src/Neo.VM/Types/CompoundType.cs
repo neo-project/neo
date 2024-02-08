@@ -67,5 +67,10 @@ namespace Neo.VM.Types
         {
             throw new NotSupportedException();
         }
+
+        public override string ToString()
+        {
+            return Count.ToString();
+        }
     }
 }
