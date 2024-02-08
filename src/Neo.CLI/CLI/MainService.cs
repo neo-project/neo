@@ -17,7 +17,6 @@ using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
-using Neo.Persistence;
 using Neo.Plugins;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
@@ -98,6 +97,7 @@ namespace Neo.CLI
             Initialize_Logger();
         }
 
+        #region Wallet
         internal UInt160 StringToAddress(string input, byte version)
         {
             switch (input.ToLowerInvariant())
@@ -128,19 +128,6 @@ namespace Neo.CLI
             return CurrentWallet;
         }
 
-        public override void RunConsole()
-        {
-            Console.ForegroundColor = ConsoleColor.DarkGreen;
-
-            var cliV = Assembly.GetAssembly(typeof(Program))!.GetVersion();
-            var neoV = Assembly.GetAssembly(typeof(NeoSystem))!.GetVersion();
-            var vmV = Assembly.GetAssembly(typeof(ExecutionEngine))!.GetVersion();
-            Console.WriteLine($"{ServiceName} v{cliV}  -  NEO v{neoV}  -  NEO-VM v{vmV}");
-            Console.WriteLine();
-
-            base.RunConsole();
-        }
-
         public void CreateWallet(string path, string password, bool createDefaultAccount = true)
         {
             Wallet wallet = Wallet.Create(null, path, password, NeoSystem.Settings);
@@ -160,6 +147,25 @@ namespace Neo.CLI
             CurrentWallet = wallet;
         }
 
+        private bool NoWallet()
+        {
+            if (CurrentWallet != null) return false;
+            ConsoleHelper.Error("You have to open the wallet first.");
+            return true;
+        }
+
+        public void OpenWallet(string path, string password)
+        {
+            if (!File.Exists(path))
+            {
+                throw new FileNotFoundException();
+            }
+
+            CurrentWallet = Wallet.Open(path, password, NeoSystem.Settings) ?? throw new NotSupportedException();
+        }
+        #endregion
+
+        #region Block
         private IEnumerable<Block> GetBlocks(Stream stream, bool read_start = false)
         {
             using BinaryReader r = new BinaryReader(stream);
@@ -233,11 +239,64 @@ namespace Neo.CLI
             }
         }
 
-        private bool NoWallet()
+        private void WriteBlocks(uint start, uint count, string path, bool writeStart)
         {
-            if (CurrentWallet != null) return false;
-            ConsoleHelper.Error("You have to open the wallet first.");
-            return true;
+            uint end = start + count - 1;
+            using FileStream fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096, FileOptions.WriteThrough);
+            if (fs.Length > 0)
+            {
+                byte[] buffer = new byte[sizeof(uint)];
+                if (writeStart)
+                {
+                    fs.Seek(sizeof(uint), SeekOrigin.Begin);
+                    fs.Read(buffer, 0, buffer.Length);
+                    start += BitConverter.ToUInt32(buffer, 0);
+                    fs.Seek(sizeof(uint), SeekOrigin.Begin);
+                }
+                else
+                {
+                    fs.Read(buffer, 0, buffer.Length);
+                    start = BitConverter.ToUInt32(buffer, 0);
+                    fs.Seek(0, SeekOrigin.Begin);
+                }
+            }
+            else
+            {
+                if (writeStart)
+                {
+                    fs.Write(BitConverter.GetBytes(start), 0, sizeof(uint));
+                }
+            }
+            if (start <= end)
+                fs.Write(BitConverter.GetBytes(count), 0, sizeof(uint));
+            fs.Seek(0, SeekOrigin.End);
+            Console.WriteLine("Export block from " + start + " to " + end);
+
+            using (var percent = new ConsolePercent(start, end))
+            {
+                for (uint i = start; i <= end; i++)
+                {
+                    Block block = NativeContract.Ledger.GetBlock(NeoSystem.StoreView, i);
+                    byte[] array = block.ToArray();
+                    fs.Write(BitConverter.GetBytes(array.Length), 0, sizeof(int));
+                    fs.Write(array, 0, array.Length);
+                    percent.Value = i;
+                }
+            }
+        }
+        #endregion
+
+        public override void RunConsole()
+        {
+            Console.ForegroundColor = ConsoleColor.DarkGreen;
+
+            var cliV = Assembly.GetAssembly(typeof(Program))!.GetVersion();
+            var neoV = Assembly.GetAssembly(typeof(NeoSystem))!.GetVersion();
+            var vmV = Assembly.GetAssembly(typeof(ExecutionEngine))!.GetVersion();
+            Console.WriteLine($"{ServiceName} v{cliV}  -  NEO v{neoV}  -  NEO-VM v{vmV}");
+            Console.WriteLine();
+
+            base.RunConsole();
         }
 
         private byte[] LoadDeploymentScript(string nefFilePath, string? manifestFilePath, JObject? data, out NefFile nef, out ContractManifest manifest)
@@ -359,19 +418,9 @@ namespace Neo.CLI
             Stop();
         }
 
-        public void OpenWallet(string path, string password)
-        {
-            if (!File.Exists(path))
-            {
-                throw new FileNotFoundException();
-            }
-
-            CurrentWallet = Wallet.Open(path, password, NeoSystem.Settings) ?? throw new NotSupportedException();
-        }
-
         public async void Start(CommandLineOptions options)
         {
-            if (NeoSystem != null) return;
+            if (_neoSystem != null) return;
             bool verifyImport = !(options.NoVerify ?? false);
 
             ProtocolSettings protocol = ProtocolSettings.Load("config.json");
@@ -411,7 +460,7 @@ namespace Neo.CLI
                         Blocks = blocksToImport,
                         Verify = verifyImport
                     });
-                    if (NeoSystem is null) return;
+                    if (_neoSystem is null) return;
                 }
             }
             NeoSystem.StartNode(new ChannelsConfig
@@ -456,60 +505,6 @@ namespace Neo.CLI
         {
             Dispose_Logger();
             Interlocked.Exchange(ref _neoSystem, null)?.Dispose();
-        }
-
-        private void WriteBlocks(uint start, uint count, string path, bool writeStart)
-        {
-            uint end = start + count - 1;
-            using FileStream fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096, FileOptions.WriteThrough);
-            if (fs.Length > 0)
-            {
-                byte[] buffer = new byte[sizeof(uint)];
-                if (writeStart)
-                {
-                    fs.Seek(sizeof(uint), SeekOrigin.Begin);
-                    fs.Read(buffer, 0, buffer.Length);
-                    start += BitConverter.ToUInt32(buffer, 0);
-                    fs.Seek(sizeof(uint), SeekOrigin.Begin);
-                }
-                else
-                {
-                    fs.Read(buffer, 0, buffer.Length);
-                    start = BitConverter.ToUInt32(buffer, 0);
-                    fs.Seek(0, SeekOrigin.Begin);
-                }
-            }
-            else
-            {
-                if (writeStart)
-                {
-                    fs.Write(BitConverter.GetBytes(start), 0, sizeof(uint));
-                }
-            }
-            if (start <= end)
-                fs.Write(BitConverter.GetBytes(count), 0, sizeof(uint));
-            fs.Seek(0, SeekOrigin.End);
-            Console.WriteLine("Export block from " + start + " to " + end);
-
-            using (var percent = new ConsolePercent(start, end))
-            {
-                for (uint i = start; i <= end; i++)
-                {
-                    Block block = NativeContract.Ledger.GetBlock(NeoSystem.StoreView, i);
-                    byte[] array = block.ToArray();
-                    fs.Write(BitConverter.GetBytes(array.Length), 0, sizeof(int));
-                    fs.Write(array, 0, array.Length);
-                    percent.Value = i;
-                }
-            }
-        }
-
-        private static void WriteLineWithoutFlicker(string message = "", int maxWidth = 80)
-        {
-            if (message.Length > 0) Console.Write(message);
-            var spacesToErase = maxWidth - message.Length;
-            if (spacesToErase < 0) spacesToErase = 0;
-            Console.WriteLine(new string(' ', spacesToErase));
         }
 
         /// <summary>
@@ -620,6 +615,7 @@ namespace Neo.CLI
             return engine.State != VMState.FAULT;
         }
 
+        #region Console
         private void PrintExecutionOutput(ApplicationEngine engine, bool showStack = true)
         {
             ConsoleHelper.Info("VM State: ", engine.State.ToString());
@@ -632,7 +628,7 @@ namespace Neo.CLI
                 ConsoleHelper.Error(GetExceptionMessage(engine.FaultException));
         }
 
-        static string GetExceptionMessage(Exception exception)
+        static string GetExceptionMessage(Exception? exception)
         {
             if (exception == null) return "Engine faulted.";
 
@@ -643,6 +639,15 @@ namespace Neo.CLI
 
             return exception.Message;
         }
+
+        private static void WriteLineWithoutFlicker(string message = "", int maxWidth = 80)
+        {
+            if (message.Length > 0) Console.Write(message);
+            var spacesToErase = maxWidth - message.Length;
+            if (spacesToErase < 0) spacesToErase = 0;
+            Console.WriteLine(new string(' ', spacesToErase));
+        }
+        #endregion
 
         public UInt160 ResolveNeoNameServiceAddress(string domain)
         {
