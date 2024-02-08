@@ -22,6 +22,7 @@ using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 
@@ -107,6 +108,16 @@ namespace Neo
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
             Plugin.LoadPlugins();
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NeoSystem"/> class.
+        /// </summary>
+        /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
+        /// <param name="storageEngine">The storage engine used to create the <see cref="IStore"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
+        /// <param name="storagePath">The path of the storage. If <paramref name="storageEngine"/> is the default in-memory storage engine, this parameter is ignored.</param>
+        public NeoSystem(ProtocolSettings settings, string? storageEngine = null, string? storagePath = null) : this(settings, LoadStore(storageEngine ?? nameof(MemoryStore), storagePath))
+        {
         }
 
         /// <summary>
@@ -211,11 +222,12 @@ namespace Neo
         /// <summary>
         /// Loads an <see cref="IStore"/> at the specified path.
         /// </summary>
+        /// <param name="storageEngine">The storage engine used to create the <see cref="IStore"/> objects.</param>
         /// <param name="path">The path of the storage.</param>
         /// <returns>The loaded <see cref="IStore"/>.</returns>
-        public IStore LoadStore(string path)
+        public static IStore LoadStore([NotNull] string storageEngine, string path)
         {
-            return StoreFactory.GetStore(store.GetType().Name, path);
+            return StoreFactory.GetStore(storageEngine, path);
         }
 
         /// <summary>

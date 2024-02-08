@@ -29,9 +29,7 @@ public static class StoreFactory
         RegisterProvider(memProvider);
 
         // Default cases
-
         providers.Add("", memProvider);
-        providers.Add(null, memProvider);
     }
 
     public static void RegisterProvider(IStoreProvider provider)
