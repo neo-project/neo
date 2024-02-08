@@ -28,19 +28,20 @@ namespace Neo.SmartContract.Native
 
         internal override ContractTask Initialize(ApplicationEngine engine)
         {
-            UInt160 account = Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators);
-            return Mint(engine, account, engine.ProtocolSettings.InitialGasDistribution, false);
+            UInt160 account = Contract.GetBFTAddress(engine.ProtocolSettings!.StandbyValidators);
+            return Mint(engine, account, engine.ProtocolSettings!.InitialGasDistribution, false);
         }
 
         internal override async ContractTask OnPersist(ApplicationEngine engine)
         {
             long totalNetworkFee = 0;
-            foreach (Transaction tx in engine.PersistingBlock.Transactions)
+            foreach (Transaction? tx in engine.PersistingBlock!.Transactions)
             {
+                if (tx == null) continue;
                 await Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
                 totalNetworkFee += tx.NetworkFee;
             }
-            ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings.ValidatorsCount);
+            ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings!.ValidatorsCount);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
             await Mint(engine, primary, totalNetworkFee, false);
         }

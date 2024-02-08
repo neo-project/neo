@@ -63,7 +63,7 @@ namespace Neo.SmartContract
             throw new NotSupportedException();
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(ReferenceCounter? referenceCounter)
         {
             return new Array(referenceCounter)
             {

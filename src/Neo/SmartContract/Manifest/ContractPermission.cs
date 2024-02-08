@@ -34,14 +34,14 @@ namespace Neo.SmartContract.Manifest
         /// If it specifies a public key of a group, then any contract in this group
         /// may be invoked; If it specifies a wildcard *, then any contract may be invoked.
         /// </summary>
-        public ContractPermissionDescriptor Contract { get; set; }
+        public ContractPermissionDescriptor Contract { get; set; } = null!;
 
         /// <summary>
         /// Indicates which methods to be called.
         /// It can also be assigned with a wildcard *. If it is a wildcard *,
         /// then it means that any method can be called.
         /// </summary>
-        public WildcardContainer<string> Methods { get; set; }
+        public WildcardContainer<string> Methods { get; set; } = null!;
 
         /// <summary>
         /// A default permission that both <see cref="Contract"/> and <see cref="Methods"/> fields are set to wildcard *.
@@ -63,16 +63,16 @@ namespace Neo.SmartContract.Manifest
             Methods = @struct[1] switch
             {
                 Null => WildcardContainer<string>.CreateWildcard(),
-                Array array => WildcardContainer<string>.Create(array.Select(p => p.GetString()).ToArray()),
+                Array array => WildcardContainer<string>.Create(array.Select(p => p.GetString()!).ToArray()),
                 _ => throw new ArgumentException(null, nameof(stackItem))
             };
         }
 
-        public StackItem ToStackItem(ReferenceCounter referenceCounter)
+        public StackItem ToStackItem(ReferenceCounter? referenceCounter)
         {
             return new Struct(referenceCounter)
             {
-                Contract.IsWildcard ? StackItem.Null : Contract.IsHash ? Contract.Hash.ToArray() : Contract.Group.ToArray(),
+                Contract.IsWildcard ? StackItem.Null : Contract.IsHash ? Contract.Hash!.ToArray() : Contract.Group!.ToArray(),
                 Methods.IsWildcard ? StackItem.Null : new Array(referenceCounter, Methods.Select(p => (StackItem)p)),
             };
         }
@@ -86,10 +86,10 @@ namespace Neo.SmartContract.Manifest
         {
             ContractPermission permission = new()
             {
-                Contract = ContractPermissionDescriptor.FromJson((JString)json["contract"]),
-                Methods = WildcardContainer<string>.FromJson(json["methods"], u => u.GetString()),
+                Contract = ContractPermissionDescriptor.FromJson(json["contract"].NullExceptionOr<JString>()),
+                Methods = WildcardContainer<string>.FromJson(json["methods"]!, u => u.GetString()),
             };
-            if (permission.Methods.Any(p => string.IsNullOrEmpty(p)))
+            if (permission.Methods.Any(string.IsNullOrEmpty))
                 throw new FormatException();
             _ = permission.Methods.ToDictionary(p => p);
             return permission;
@@ -103,7 +103,7 @@ namespace Neo.SmartContract.Manifest
         {
             var json = new JObject();
             json["contract"] = Contract.ToJson();
-            json["methods"] = Methods.ToJson(p => p);
+            json["methods"] = Methods.ToJson(p => p!);
             return json;
         }
 
@@ -117,7 +117,7 @@ namespace Neo.SmartContract.Manifest
         {
             if (Contract.IsHash)
             {
-                if (!Contract.Hash.Equals(targetContract.Hash)) return false;
+                if (!Contract.Hash!.Equals(targetContract.Hash)) return false;
             }
             else if (Contract.IsGroup)
             {

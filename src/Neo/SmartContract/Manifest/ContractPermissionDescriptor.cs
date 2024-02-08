@@ -25,12 +25,12 @@ namespace Neo.SmartContract.Manifest
         /// <summary>
         /// The hash of the contract. It can't be set with <see cref="Group"/>.
         /// </summary>
-        public UInt160 Hash { get; }
+        public UInt160? Hash { get; }
 
         /// <summary>
         /// The group of the contracts. It can't be set with <see cref="Hash"/>.
         /// </summary>
-        public ECPoint Group { get; }
+        public ECPoint? Group { get; }
 
         /// <summary>
         /// Indicates whether <see cref="Hash"/> is set.
@@ -47,7 +47,7 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         public bool IsWildcard => Hash is null && Group is null;
 
-        private ContractPermissionDescriptor(UInt160 hash, ECPoint group)
+        private ContractPermissionDescriptor(UInt160? hash, ECPoint? group)
         {
             this.Hash = hash;
             this.Group = group;
@@ -102,19 +102,19 @@ namespace Neo.SmartContract.Manifest
             return new ContractPermissionDescriptor(null, null);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is not ContractPermissionDescriptor other) return false;
             return Equals(other);
         }
 
-        public bool Equals(ContractPermissionDescriptor other)
+        public bool Equals(ContractPermissionDescriptor? other)
         {
             if (other is null) return false;
-            if (this == other) return true;
+            if (this.Equals(other)) return true;
             if (IsWildcard == other.IsWildcard) return true;
-            if (IsHash) return Hash.Equals(other.Hash);
-            else return Group.Equals(other.Group);
+            if (IsHash) return Hash!.Equals(other.Hash);
+            return IsGroup && Group!.Equals(other.Group);
         }
 
         public override int GetHashCode()
@@ -145,16 +145,16 @@ namespace Neo.SmartContract.Manifest
         /// <returns>The permission descriptor represented by a JSON object.</returns>
         public JString ToJson()
         {
-            if (IsHash) return Hash.ToString();
-            if (IsGroup) return Group.ToString();
-            return "*";
+            if (IsHash) return Hash!.ToString()!;
+            if (IsGroup) return Group!.ToString()!;
+            return "*"!;
         }
 
         /// <summary>
         /// Converts the permission descriptor to byte array.
         /// </summary>
         /// <returns>The converted byte array. Or <see langword="null"/> if it is a wildcard.</returns>
-        public byte[] ToArray()
+        public byte[]? ToArray()
         {
             return Hash?.ToArray() ?? Group?.EncodePoint(true);
         }
