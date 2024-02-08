@@ -10,16 +10,58 @@
 // modifications are permitted.
 
 using Neo.ConsoleService;
+using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System;
+using System.Buffers.Binary;
+using System.IO;
 using System.Linq;
 
 namespace Neo.CLI
 {
     partial class MainService
     {
+        /// <summary>
+        /// Process "export storage" command
+        /// </summary>
+        /// <param name="contractHash">Contract hash</param>
+        /// <param name="path">Path to json file</param>
+        [ConsoleCommand("export storage", Category = "Export contract storage")]
+        private void OnExportBlocksStartCountCommand(UInt160 contractHash, string? path = null)
+        {
+            using var snapshot = NeoSystem.GetSnapshot();
+
+            var contract = NativeContract.GetContract(contractHash);
+            if (contract is null)
+            {
+                throw new Exception("Contract doesn't exists");
+            }
+
+            if (string.IsNullOrEmpty(path))
+            {
+                path = $"storage.{contractHash}.json";
+            }
+
+            var prefix = new byte[4];
+            BinaryPrimitives.WriteInt32LittleEndian(prefix, contract.Id);
+
+            // Get all entryies
+            var jsonData = new JObject();
+            foreach (var entry in snapshot.Find(prefix, Persistence.SeekDirection.Forward))
+            {
+                jsonData[Convert.ToBase64String(entry.Key.Key.ToArray())] = Convert.ToBase64String(entry.Value.Value.ToArray());
+            }
+
+            // avoid prefix repetition
+            var json = new JObject();
+            json[Convert.ToBase64String(prefix)] = json;
+
+            // dump to file
+            File.WriteAllText(path, json.ToString());
+        }
+
         /// <summary>
         /// Process "export blocks" command
         /// </summary>
