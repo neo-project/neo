@@ -76,9 +76,9 @@ namespace Neo.SmartContract
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
 
-            ContractState? contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
+            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
-            ContractMethodDescriptor? md = contract.Manifest.Abi.GetMethod(method, args.Count);
+            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method, args.Count);
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
             bool hasReturnValue = md.ReturnType != ContractParameterType.Void;
 
@@ -93,10 +93,10 @@ namespace Neo.SmartContract
         /// <param name="version">The version of the native contract to be called.</param>
         protected internal void CallNativeContract(byte version)
         {
-            NativeContract? contract = NativeContract.GetContract(CurrentScriptHash!);
+            NativeContract contract = NativeContract.GetContract(CurrentScriptHash);
             if (contract is null)
                 throw new InvalidOperationException("It is not allowed to use \"System.Contract.CallNative\" directly.");
-            if (!contract.IsActive(ProtocolSettings!, NativeContract.Ledger.CurrentIndex(Snapshot)))
+            if (!contract.IsActive(ProtocolSettings, NativeContract.Ledger.CurrentIndex(Snapshot)))
                 throw new InvalidOperationException($"The native contract {contract.Name} is not active.");
             contract.Invoke(this, version);
         }
@@ -108,7 +108,7 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="CallFlags"/> of the current context.</returns>
         protected internal CallFlags GetCallFlags()
         {
-            var state = CurrentContext!.GetState<ExecutionContextState>();
+            var state = CurrentContext.GetState<ExecutionContextState>();
             return state.CallFlags;
         }
 
@@ -155,7 +155,7 @@ namespace Neo.SmartContract
                     throw new InvalidOperationException();
                 foreach (NativeContract contract in NativeContract.Contracts)
                 {
-                    if (contract.IsActive(ProtocolSettings!, PersistingBlock!.Index))
+                    if (contract.IsActive(ProtocolSettings, PersistingBlock.Index))
                         await contract.OnPersist(this);
                 }
             }
@@ -177,7 +177,7 @@ namespace Neo.SmartContract
                     throw new InvalidOperationException();
                 foreach (NativeContract contract in NativeContract.Contracts)
                 {
-                    if (contract.IsActive(ProtocolSettings!, PersistingBlock!.Index))
+                    if (contract.IsActive(ProtocolSettings, PersistingBlock.Index))
                         await contract.PostPersist(this);
                 }
             }

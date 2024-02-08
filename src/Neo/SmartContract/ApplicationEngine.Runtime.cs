@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -35,7 +36,7 @@ namespace Neo.SmartContract
         /// </summary>
         public const int MaxNotificationSize = 1024;
 
-        private uint random_times;
+        private uint random_times = 0;
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.Platform.
@@ -168,7 +169,7 @@ namespace Neo.SmartContract
         /// <returns>The magic number of the current network.</returns>
         internal protected uint GetNetwork()
         {
-            return ProtocolSettings!.Network;
+            return ProtocolSettings.Network;
         }
 
         /// <summary>
@@ -178,7 +179,7 @@ namespace Neo.SmartContract
         /// <returns>The address version of the current network.</returns>
         internal protected byte GetAddressVersion()
         {
-            return ProtocolSettings!.AddressVersion;
+            return ProtocolSettings.AddressVersion;
         }
 
         /// <summary>
@@ -188,7 +189,7 @@ namespace Neo.SmartContract
         /// <returns>The timestamp of the current block.</returns>
         protected internal ulong GetTime()
         {
-            return PersistingBlock!.Timestamp;
+            return PersistingBlock.Timestamp;
         }
 
         /// <summary>
@@ -211,7 +212,7 @@ namespace Neo.SmartContract
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
 
-            ExecutionContextState state = CurrentContext!.GetState<ExecutionContextState>();
+            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             ExecutionContext context = LoadScript(new Script(script, true), configureState: p =>
             {
                 p.CallingContext = CurrentContext;
@@ -252,17 +253,17 @@ namespace Neo.SmartContract
             if (ScriptContainer is Transaction tx)
             {
                 Signer[] signers;
-                OracleResponse? response = tx.GetAttribute<OracleResponse>();
+                OracleResponse response = tx.GetAttribute<OracleResponse>();
                 if (response is null)
                 {
                     signers = tx.Signers;
                 }
                 else
                 {
-                    OracleRequest request = NativeContract.Oracle.GetRequest(Snapshot, response.Id).NotNull();
-                    signers = NativeContract.Ledger.GetTransaction(Snapshot, request.OriginalTxid)!.Signers;
+                    OracleRequest request = NativeContract.Oracle.GetRequest(Snapshot, response.Id);
+                    signers = NativeContract.Ledger.GetTransaction(Snapshot, request.OriginalTxid).Signers;
                 }
-                Signer? signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
+                Signer signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
                 if (signer is null) return false;
                 foreach (WitnessRule rule in signer.GetAllRules())
                 {
@@ -289,9 +290,9 @@ namespace Neo.SmartContract
         /// <returns>The number of times the current contract has been called during the execution.</returns>
         protected internal int GetInvocationCounter()
         {
-            if (!invocationCounter.TryGetValue(CurrentScriptHash!, out var counter))
+            if (!invocationCounter.TryGetValue(CurrentScriptHash, out var counter))
             {
-                invocationCounter[CurrentScriptHash!] = counter = 1;
+                invocationCounter[CurrentScriptHash] = counter = 1;
             }
             return counter;
         }
@@ -307,12 +308,12 @@ namespace Neo.SmartContract
             long price;
             if (IsHardforkEnabled(Hardfork.HF_Aspidochelone))
             {
-                buffer = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings!.Network + random_times++);
+                buffer = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network + random_times++);
                 price = 1 << 13;
             }
             else
             {
-                buffer = nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings!.Network);
+                buffer = nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
                 price = 1 << 4;
             }
             AddGas(price * ExecFeeFactor);
@@ -330,7 +331,7 @@ namespace Neo.SmartContract
             try
             {
                 string message = Utility.StrictUTF8.GetString(state);
-                Log?.Invoke(this, new LogEventArgs(ScriptContainer!, CurrentScriptHash!, message));
+                Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash, message));
             }
             catch
             {
@@ -353,7 +354,7 @@ namespace Neo.SmartContract
             }
             if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
             string name = Utility.StrictUTF8.GetString(eventName);
-            ContractState? contract = CurrentContext?.GetState<ExecutionContextState>().Contract;
+            ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
             if (contract is null)
                 throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
             var @event = contract.Manifest.Abi.Events.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.Ordinal));
@@ -370,21 +371,18 @@ namespace Neo.SmartContract
             using MemoryStream ms = new(MaxNotificationSize);
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             BinarySerializer.Serialize(writer, state, MaxNotificationSize, Limits.MaxStackSize);
-            if (CurrentScriptHash != null)
-            {
-                SendNotification(CurrentScriptHash, name, state);
-            }
+            SendNotification(CurrentScriptHash, name, state);
         }
 
         protected internal void RuntimeNotifyV1(byte[] eventName, Array state)
         {
             if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
-            if (CurrentContext?.GetState<ExecutionContextState>().Contract is null)
+            if (CurrentContext.GetState<ExecutionContextState>().Contract is null)
                 throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
             using MemoryStream ms = new(MaxNotificationSize);
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             BinarySerializer.Serialize(writer, state, MaxNotificationSize, Limits.MaxStackSize);
-            SendNotification(CurrentScriptHash!, Utility.StrictUTF8.GetString(eventName), state);
+            SendNotification(CurrentScriptHash, Utility.StrictUTF8.GetString(eventName), state);
         }
 
         /// <summary>
@@ -395,14 +393,11 @@ namespace Neo.SmartContract
         /// <param name="state">The arguments of the event.</param>
         protected internal void SendNotification(UInt160 hash, string eventName, Array state)
         {
-            NotifyEventArgs notification = new(ScriptContainer!, hash, eventName, (Array)state.DeepCopy(asImmutable: true));
-            Notify.Invoke(this, notification);
+            NotifyEventArgs notification = new(ScriptContainer, hash, eventName, (Array)state.DeepCopy(asImmutable: true));
+            Notify?.Invoke(this, notification);
             notifications ??= new List<NotifyEventArgs>();
             notifications.Add(notification);
-            if (CurrentContext != null)
-            {
-                CurrentContext.GetState<ExecutionContextState>().NotificationCount++;
-            }
+            CurrentContext.GetState<ExecutionContextState>().NotificationCount++;
         }
 
         /// <summary>
@@ -411,12 +406,12 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="hash">The hash of the specified contract. It can be set to <see langword="null"/> to get all notifications.</param>
         /// <returns>The notifications sent during the execution.</returns>
-        protected internal NotifyEventArgs[] GetNotifications(UInt160? hash)
+        protected internal NotifyEventArgs[] GetNotifications(UInt160 hash)
         {
-            IEnumerable<NotifyEventArgs> notifyEventArgsEnumerable = Notifications;
+            IEnumerable<NotifyEventArgs> notifications = Notifications;
             if (hash != null) // must filter by scriptHash
-                notifyEventArgsEnumerable = notifyEventArgsEnumerable.Where(p => p.ScriptHash == hash);
-            NotifyEventArgs[] array = notifyEventArgsEnumerable.ToArray();
+                notifications = notifications.Where(p => p.ScriptHash == hash);
+            NotifyEventArgs[] array = notifications.ToArray();
             if (array.Length > Limits.MaxStackSize) throw new InvalidOperationException();
             return array;
         }
@@ -437,7 +432,7 @@ namespace Neo.SmartContract
         /// Get the Signers of the current transaction.
         /// </summary>
         /// <returns>The signers of the current transaction, or null if is not related to a transaction execution.</returns>
-        protected internal Signer[]? GetCurrentSigners()
+        protected internal Signer[] GetCurrentSigners()
         {
             if (ScriptContainer is Transaction tx)
                 return tx.Signers;
@@ -468,10 +463,7 @@ namespace Neo.SmartContract
                                 _ = Utility.StrictUTF8.GetString(item.GetSpan()); // Prevent any non-UTF8 string
                                 return true;
                             }
-                            catch
-                            {
-                                // ignored
-                            }
+                            catch { }
                         }
                         return false;
                     }

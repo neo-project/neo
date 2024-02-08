@@ -38,17 +38,17 @@ namespace Neo.SmartContract
         /// <summary>
         /// The hash of the contract.
         /// </summary>
-        public UInt160 Hash = null!;
+        public UInt160 Hash;
 
         /// <summary>
         /// The nef of the contract.
         /// </summary>
-        public NefFile Nef = null!;
+        public NefFile Nef;
 
         /// <summary>
         /// The manifest of the contract.
         /// </summary>
-        public ContractManifest Manifest = null!;
+        public ContractManifest Manifest;
 
         /// <summary>
         /// The script of the contract.
@@ -114,9 +114,9 @@ namespace Neo.SmartContract
             };
         }
 
-        public StackItem ToStackItem(ReferenceCounter? referenceCounter)
+        public StackItem ToStackItem(ReferenceCounter referenceCounter)
         {
-            return new Array(referenceCounter, new[] { Id, (int)UpdateCounter, Hash.ToArray(), Nef.ToArray(), Manifest.ToStackItem(referenceCounter) });
+            return new Array(referenceCounter, new StackItem[] { Id, (int)UpdateCounter, Hash.ToArray(), Nef.ToArray(), Manifest.ToStackItem(referenceCounter) });
         }
     }
 }

@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
 using Neo.SmartContract.Native;
@@ -78,7 +77,7 @@ namespace Neo.SmartContract
         /// <returns>The storage context for the current contract.</returns>
         protected internal StorageContext GetStorageContext()
         {
-            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash!)!;
+            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
             return new StorageContext
             {
                 Id = contract.Id,
@@ -93,7 +92,7 @@ namespace Neo.SmartContract
         /// <returns>The storage context for the current contract.</returns>
         protected internal StorageContext GetReadOnlyContext()
         {
-            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash!)!;
+            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
             return new StorageContext
             {
                 Id = contract.Id,
@@ -178,7 +177,7 @@ namespace Neo.SmartContract
                 Id = context.Id,
                 Key = key
             };
-            StorageItem? item = Snapshot.GetAndChange(skey);
+            StorageItem item = Snapshot.GetAndChange(skey);
             if (item is null)
             {
                 newDataSize = key.Length + value.Length;
