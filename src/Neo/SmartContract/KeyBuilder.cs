@@ -30,8 +30,11 @@ namespace Neo.SmartContract
         /// <param name="prefix">The prefix of the key.</param>
         public KeyBuilder(int id, byte prefix)
         {
-            AddBigEndian(id);
-            this.stream.WriteByte(prefix);
+            var data = new byte[sizeof(int)];
+            BinaryPrimitives.WriteInt32LittleEndian(data, id);
+
+            stream.Write(data);
+            stream.WriteByte(prefix);
         }
 
         /// <summary>
