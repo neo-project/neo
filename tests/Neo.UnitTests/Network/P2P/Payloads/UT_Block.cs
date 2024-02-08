@@ -31,7 +31,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Transactions_Get()
         {
-            uut.Transactions.Should().BeNull();
+            uut.Transactions.Should().BeEmpty();
         }
 
         [TestMethod]
