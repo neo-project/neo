@@ -59,5 +59,10 @@ namespace Neo.VM.Types
         {
             return HashCode.Combine(Script, Position);
         }
+
+        public override string ToString()
+        {
+            return Position.ToString();
+        }
     }
 }

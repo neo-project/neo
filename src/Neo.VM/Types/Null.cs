@@ -56,5 +56,10 @@ namespace Neo.VM.Types
         {
             return null;
         }
+
+        public override string ToString()
+        {
+            return "NULL";
+        }
     }
 }
