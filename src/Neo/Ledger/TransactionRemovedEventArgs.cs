@@ -22,7 +22,7 @@ public sealed class TransactionRemovedEventArgs
     /// <summary>
     /// The <see cref="Transaction"/>s that is being removed.
     /// </summary>
-    public IReadOnlyCollection<Transaction> Transactions { get; init; }
+    public IReadOnlyCollection<Transaction> Transactions { get; init; } = null!;
 
     /// <summary>
     /// The reason a transaction was removed.
