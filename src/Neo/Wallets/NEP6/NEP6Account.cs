@@ -21,7 +21,7 @@ namespace Neo.Wallets.NEP6
         private string? nep2key;
         private string? nep2KeyNew;
         private KeyPair? key;
-        public JToken Extra = null!;
+        public JToken? Extra;
 
         public bool Decrypted => nep2key == null || key != null;
         public override bool HasKey => nep2key != null;
@@ -43,11 +43,11 @@ namespace Neo.Wallets.NEP6
         {
             return new NEP6Account(wallet, json["address"]!.GetString().ToScriptHash(wallet.ProtocolSettings.AddressVersion), json["key"]?.GetString())
             {
-                Label = json["label"]!.GetString(),
+                Label = json["label"]?.GetString(),
                 IsDefault = json["isDefault"]!.GetBoolean(),
                 Lock = json["lock"]!.GetBoolean(),
-                Contract = NEP6Contract.FromJson(json["contract"].NullExceptionOr<JObject>()),
-                Extra = json["extra"]!
+                Contract = NEP6Contract.FromJson((JObject?)json["contract"]),
+                Extra = json["extra"]
             };
         }
 
@@ -79,7 +79,7 @@ namespace Neo.Wallets.NEP6
             account["isDefault"] = IsDefault;
             account["lock"] = Lock;
             account["key"] = nep2key;
-            account["contract"] = Contract.NullExceptionOr<NEP6Contract>().ToJson();
+            account["contract"] = ((NEP6Contract?)Contract)?.ToJson();
             account["extra"] = Extra;
             return account;
         }

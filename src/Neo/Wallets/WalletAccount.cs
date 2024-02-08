@@ -31,7 +31,7 @@ namespace Neo.Wallets
         /// <summary>
         /// The label of the account.
         /// </summary>
-        public string Label = default!;
+        public string? Label;
 
         /// <summary>
         /// Indicates whether the account is the default account in the wallet.
