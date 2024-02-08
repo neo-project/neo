@@ -19,12 +19,13 @@ using System.Text;
 namespace Neo.UnitTests.Persistence
 {
     [TestClass]
-    public class UT_IStore
+    public class UT_ISnapshot
     {
         [TestMethod]
         public void LoadFromJsonTest()
         {
-            using IStore store = new MemoryStore();
+            using MemoryStore store = new();
+            using var snapshot = store.GetSnapshot();
 
             // empty
 
@@ -35,7 +36,8 @@ namespace Neo.UnitTests.Persistence
 
             var json = @"{""a2V5"":""dmFsdWU=""}";
 
-            store.LoadFromJson((JObject)JToken.Parse(json));
+            snapshot.LoadFromJson((JObject)JToken.Parse(json));
+            snapshot.Commit();
 
             entries = store.Seek(Array.Empty<byte>(), SeekDirection.Forward).ToArray();
             Assert.AreEqual(entries.Length, 1);
@@ -47,7 +49,8 @@ namespace Neo.UnitTests.Persistence
 
             json = @"{""bXkt"":{""a2V5"":""bXktdmFsdWU=""}}";
 
-            store.LoadFromJson((JObject)JToken.Parse(json));
+            snapshot.LoadFromJson((JObject)JToken.Parse(json));
+            snapshot.Commit();
 
             entries = store.Seek(Array.Empty<byte>(), SeekDirection.Forward).ToArray();
             Assert.AreEqual(entries.Length, 2);
