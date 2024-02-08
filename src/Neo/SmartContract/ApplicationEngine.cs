@@ -32,7 +32,7 @@ namespace Neo.SmartContract
     /// </summary>
     public partial class ApplicationEngine : ExecutionEngine
     {
-        private static readonly JumpTable JumpTable = ComposeJumpTable();
+        private static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
 
         /// <summary>
         /// The maximum cost that can be spent when a contract is executed in test mode.
@@ -157,7 +157,9 @@ namespace Neo.SmartContract
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
-        protected unsafe ApplicationEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic)
+        /// <param name="jumpTable">The jump table to be used by the <see cref="ApplicationEngine"/>.</param>
+        protected unsafe ApplicationEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable)
+            : base(jumpTable)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
@@ -181,7 +183,7 @@ namespace Neo.SmartContract
 
         #region JumpTable
 
-        private static JumpTable ComposeJumpTable()
+        private static JumpTable ComposeDefaultJumpTable()
         {
             var table = new JumpTable();
 
@@ -374,8 +376,11 @@ namespace Neo.SmartContract
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, IDiagnostic diagnostic = null)
         {
-            return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic)
-                  ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic);
+            // Adjust jump table according persistingBlock
+            var jumpTable = ApplicationEngine.DefaultJumpTable;
+
+            return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
+                  ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
         }
 
         public override void LoadContext(ExecutionContext context)
