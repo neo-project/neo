@@ -47,7 +47,7 @@ namespace Neo.CLI
             var prefix = new byte[4];
             BinaryPrimitives.WriteInt32LittleEndian(prefix, contract.Id);
 
-            // Get all entryies
+            // Get all entries
             var jsonData = new JObject();
             foreach (var entry in snapshot.Find(prefix, Persistence.SeekDirection.Forward))
             {
