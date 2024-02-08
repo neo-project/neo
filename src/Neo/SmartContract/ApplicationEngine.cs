@@ -326,9 +326,9 @@ namespace Neo.SmartContract
             return task;
         }
 
-        protected override void UnloadContext(ExecutionContext context)
+        public override void UnloadedContext(ExecutionContext context)
         {
-            base.UnloadContext(context);
+            base.UnloadedContext(context);
             if (context.Script != CurrentContext?.Script)
             {
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
@@ -383,7 +383,7 @@ namespace Neo.SmartContract
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
         }
 
-        protected override void LoadContext(ExecutionContext context)
+        public override void LoadContext(ExecutionContext context)
         {
             // Set default execution context state
             var state = context.GetState<ExecutionContextState>();

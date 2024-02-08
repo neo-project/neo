@@ -22,7 +22,7 @@ namespace Neo.VM
     public class ExecutionEngine : IDisposable
     {
         private VMState state = VMState.BREAK;
-        private bool isJumping = false;
+        internal bool isJumping = false;
 
         public JumpTable JumpTable { get; }
 
@@ -137,10 +137,7 @@ namespace Neo.VM
                     PreExecuteInstruction(instruction);
                     try
                     {
-                        if (JumpTable[instruction.OpCode](this, instruction))
-                        {
-                            isJumping = true;
-                        }
+                        JumpTable[instruction.OpCode](this, instruction);
                     }
                     catch (CatchableException ex) when (Limits.CatchEngineExceptions)
                     {
@@ -161,7 +158,7 @@ namespace Neo.VM
         /// Loads the specified context into the invocation stack.
         /// </summary>
         /// <param name="context">The context to load.</param>
-        protected virtual void LoadContext(ExecutionContext context)
+        public virtual void LoadContext(ExecutionContext context)
         {
             if (InvocationStack.Count >= Limits.MaxInvocationStackSize)
                 throw new InvalidOperationException($"MaxInvocationStackSize exceed: {InvocationStack.Count}");
@@ -174,7 +171,7 @@ namespace Neo.VM
         /// Called when a context is unloaded.
         /// </summary>
         /// <param name="context">The context being unloaded.</param>
-        protected virtual void UnloadContext(ExecutionContext context)
+        public virtual void UnloadedContext(ExecutionContext context)
         {
             if (InvocationStack.Count == 0)
             {
