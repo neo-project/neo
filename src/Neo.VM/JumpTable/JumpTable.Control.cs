@@ -277,7 +277,7 @@ namespace Neo.VM
             }
             if (engine.InvocationStack.Count == 0)
                 engine.State = VMState.HALT;
-            engine.UnloadedContext(context_pop);
+            engine.UnloadContext(context_pop);
             engine.isJumping = true;
         }
 
@@ -367,7 +367,7 @@ namespace Neo.VM
                         }
                         for (var i = 0; i < pop; i++)
                         {
-                            engine.UnloadedContext(engine.InvocationStack.Pop());
+                            engine.UnloadContext(engine.InvocationStack.Pop());
                         }
                         if (tryContext.State == ExceptionHandlingState.Try && tryContext.HasCatch)
                         {
