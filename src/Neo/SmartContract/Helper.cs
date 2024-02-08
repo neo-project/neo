@@ -20,6 +20,7 @@ using Neo.VM.Types;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Neo.SmartContract
@@ -110,7 +111,7 @@ namespace Neo.SmartContract
         /// <returns>The script hash of the context.</returns>
         public static UInt160 GetScriptHash(this ExecutionContext context)
         {
-            return context.GetState<ExecutionContextState>().ScriptHash;
+            return context.GetState<ExecutionContextState>().ScriptHash!;
         }
 
         /// <summary>
@@ -142,7 +143,7 @@ namespace Neo.SmartContract
         /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="points">The public keys in the account.</param>
         /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
-        public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out ECPoint[] points)
+        public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, [NotNullWhen(true)] out ECPoint[]? points)
         {
             List<ECPoint> list = new();
             if (IsMultiSigContract(script, out m, out _, list))
@@ -157,7 +158,7 @@ namespace Neo.SmartContract
             }
         }
 
-        private static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out int n, List<ECPoint> points)
+        private static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out int n, List<ECPoint>? points)
         {
             m = 0; n = 0;
             int i = 0;
@@ -316,13 +317,13 @@ namespace Neo.SmartContract
             {
                 return false;
             }
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CreateSnapshot(), null, settings, gas))
+            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot.CreateSnapshot(), null, settings, gas))
             {
                 if (witness.VerificationScript.Length == 0)
                 {
-                    ContractState cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
+                    ContractState? cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (cs is null) return false;
-                    ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify", -1);
+                    ContractMethodDescriptor? md = cs.Manifest.Abi.GetMethod("verify", -1);
                     if (md?.ReturnType != ContractParameterType.Boolean) return false;
                     engine.LoadContract(cs, md, CallFlags.ReadOnly);
                 }

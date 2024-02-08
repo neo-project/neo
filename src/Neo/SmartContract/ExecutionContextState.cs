@@ -22,29 +22,29 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the current context.
         /// </summary>
-        public UInt160 ScriptHash { get; set; }
+        public UInt160? ScriptHash { get; set; }
 
         /// <summary>
         /// The calling context.
         /// </summary>
-        public ExecutionContext CallingContext { get; set; }
+        public ExecutionContext CallingContext { get; set; } = null!;
 
         /// <summary>
         /// The script hash of the calling native contract. Used in native contracts only.
         /// </summary>
-        internal UInt160 NativeCallingScriptHash { get; set; }
+        internal UInt160? NativeCallingScriptHash { get; set; }
 
         /// <summary>
         /// The <see cref="ContractState"/> of the current context.
         /// </summary>
-        public ContractState Contract { get; set; }
+        public ContractState Contract { get; set; } = null!;
 
         /// <summary>
         /// The <see cref="SmartContract.CallFlags"/> of the current context.
         /// </summary>
         public CallFlags CallFlags { get; set; } = CallFlags.All;
 
-        public DataCache Snapshot { get; set; }
+        public DataCache Snapshot { get; set; } = null!;
 
         public int NotificationCount { get; set; }
 
