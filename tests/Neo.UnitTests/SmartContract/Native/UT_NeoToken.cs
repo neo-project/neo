@@ -558,7 +558,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Balance = 100,
                 VoteTo = TestProtocolSettings.Default.StandbyCommittee[0]
             }));
-            snapshot.Add(new KeyBuilder(NativeContract.NEO.Id, 23).Add(TestProtocolSettings.Default.StandbyCommittee[0]).Add(uint.MaxValue - 50), new StorageItem() { Value = new BigInteger(50 * 10000L).ToByteArray() });
+            snapshot.Add(new KeyBuilder(NativeContract.NEO.Id, 23).Add(TestProtocolSettings.Default.StandbyCommittee[0]).AddBigEndian(uint.MaxValue - 50), new StorageItem() { Value = new BigInteger(50 * 10000L).ToByteArray() });
             NativeContract.NEO.UnclaimedGas(snapshot, UInt160.Zero, 100).Should().Be(new BigInteger(50 * 100));
             snapshot.Delete(key);
         }
@@ -809,7 +809,7 @@ namespace Neo.UnitTests.SmartContract.Native
             StorageItem storageItem = snapshot.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(accountA));
             ((BigInteger)storageItem).Should().Be(30000000000);
 
-            snapshot.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(accountB).Add(uint.MaxValue - 1)).Should().BeNull();
+            snapshot.TryGet(new KeyBuilder(NativeContract.NEO.Id, 23).Add(accountB).AddBigEndian(uint.MaxValue - 1)).Should().BeNull();
 
             // Next block
 

@@ -85,7 +85,7 @@ namespace Neo.UnitTests
 
         public static StorageKey CreateStorageKey(this NativeContract contract, byte prefix, uint value)
         {
-            return new KeyBuilder(contract.Id, prefix).Add(value);
+            return new KeyBuilder(contract.Id, prefix).AddBigEndian(value);
         }
 
         public static byte[] GetByteArray(int length, byte firstByte)

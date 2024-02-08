@@ -225,7 +225,7 @@ namespace Neo.SmartContract.Native
             var cachedCommittee = new CachedCommittee(engine.ProtocolSettings.StandbyCommittee.Select(p => (p, BigInteger.Zero)));
             engine.Snapshot.Add(CreateStorageKey(Prefix_Committee), new StorageItem(cachedCommittee));
             engine.Snapshot.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(System.Array.Empty<byte>()));
-            engine.Snapshot.Add(CreateStorageKey(Prefix_GasPerBlock).Add(0u), new StorageItem(5 * GAS.Factor));
+            engine.Snapshot.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u), new StorageItem(5 * GAS.Factor));
             engine.Snapshot.Add(CreateStorageKey(Prefix_RegisterPrice), new StorageItem(1000 * GAS.Factor));
             return Mint(engine, Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators), TotalAmount, false);
         }
@@ -284,7 +284,7 @@ namespace Neo.SmartContract.Native
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
             uint index = engine.PersistingBlock.Index + 1;
-            StorageItem entry = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_GasPerBlock).Add(index), () => new StorageItem(gasPerBlock));
+            StorageItem entry = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(index), () => new StorageItem(gasPerBlock));
             entry.Set(gasPerBlock);
         }
 
@@ -321,7 +321,7 @@ namespace Neo.SmartContract.Native
 
         private IEnumerable<(uint Index, BigInteger GasPerBlock)> GetSortedGasRecords(DataCache snapshot, uint end)
         {
-            byte[] key = CreateStorageKey(Prefix_GasPerBlock).Add(end).ToArray();
+            byte[] key = CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(end).ToArray();
             byte[] boundary = CreateStorageKey(Prefix_GasPerBlock).ToArray();
             return snapshot.FindRange(key, boundary, SeekDirection.Backward)
                 .Select(u => (BinaryPrimitives.ReadUInt32BigEndian(u.Key.Key.Span[^sizeof(uint)..]), (BigInteger)u.Value));
