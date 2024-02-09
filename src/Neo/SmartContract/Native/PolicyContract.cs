@@ -196,12 +196,6 @@ namespace Neo.SmartContract.Native
         {
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
-/* Unmerged change from project 'Neo(net7.0)'
-Before:
-            if(engine.Snapshot == null) throw new NullReferenceException("Snapshot is null");
-After:
-            if (engine.Snapshot == null) throw new NullReferenceException("Snapshot is null");
-*/
             if (engine.Snapshot == null) throw new NullReferenceException("Snapshot is null");
             var key = CreateStorageKey(Prefix_BlockedAccount).Add(account);
             if (!engine.Snapshot.Contains(key)) return false;
