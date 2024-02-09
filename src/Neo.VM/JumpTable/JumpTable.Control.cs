@@ -19,7 +19,7 @@ namespace Neo.VM
     public partial class JumpTable
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void NOP(ExecutionEngine engine, Instruction instruction)
+        public virtual void Nop(ExecutionEngine engine, Instruction instruction)
         {
         }
 
