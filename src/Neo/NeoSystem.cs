@@ -113,6 +113,16 @@ namespace Neo
         /// Initializes a new instance of the <see cref="NeoSystem"/> class.
         /// </summary>
         /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
+        /// <param name="storageEngine">The storage engine used to create the <see cref="IStore"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
+        /// <param name="storagePath">The path of the storage. If <paramref name="storageEngine"/> is the default in-memory storage engine, this parameter is ignored.</param>
+        public NeoSystem(ProtocolSettings settings, string? storageEngine = null, string? storagePath = null) : this(settings, StoreFactory.GetStore(storageEngine ?? nameof(MemoryStore), storagePath))
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NeoSystem"/> class.
+        /// </summary>
+        /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
         /// <param name="storage">The <see cref="IStore"/> to use.</param>
         public NeoSystem(ProtocolSettings settings, IStore storage)
         {
@@ -206,16 +216,6 @@ namespace Neo
             inbox.Watch(actor);
             ActorSystem.Stop(actor);
             inbox.Receive(TimeSpan.FromMinutes(5));
-        }
-
-        /// <summary>
-        /// Loads an <see cref="IStore"/> at the specified path.
-        /// </summary>
-        /// <param name="path">The path of the storage.</param>
-        /// <returns>The loaded <see cref="IStore"/>.</returns>
-        public IStore LoadStore(string path)
-        {
-            return StoreFactory.GetStore(store.GetType().Name, path);
         }
 
         /// <summary>
