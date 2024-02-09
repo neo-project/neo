@@ -36,7 +36,7 @@ namespace Neo.VM
         /// <param name="builder">The <see cref="ScriptBuilder"/> to be used.</param>
         /// <param name="list">The elements of the array.</param>
         /// <returns>The same instance as <paramref name="builder"/>.</returns>
-        public static ScriptBuilder CreateArray<T>(this ScriptBuilder builder, IReadOnlyList<T> list = null)
+        public static ScriptBuilder CreateArray<T>(this ScriptBuilder builder, IReadOnlyList<T>? list = null)
         {
             if (list is null || list.Count == 0)
                 return builder.Emit(OpCode.NEWARRAY0);

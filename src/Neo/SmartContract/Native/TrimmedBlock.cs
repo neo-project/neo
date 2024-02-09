@@ -15,7 +15,6 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.IO;
-using System.Linq;
 
 namespace Neo.SmartContract.Native
 {
@@ -79,7 +78,7 @@ namespace Neo.SmartContract.Native
             throw new NotSupportedException();
         }
 
-        StackItem IInteroperable.ToStackItem(ReferenceCounter referenceCounter)
+        StackItem IInteroperable.ToStackItem(ReferenceCounter? referenceCounter)
         {
             return new VM.Types.Array(referenceCounter, new StackItem[]
             {

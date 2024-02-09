@@ -184,6 +184,7 @@ namespace Neo.SmartContract.Native
 
         internal override ContractTask Initialize(ApplicationEngine engine)
         {
+            if (engine.Snapshot == null) throw new NullReferenceException("engine.Snapshot is null");
             engine.Snapshot.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BigInteger.Zero));
             engine.Snapshot.Add(CreateStorageKey(Prefix_Price), new StorageItem(0_50000000));
             return ContractTask.CompletedTask;
@@ -253,6 +254,8 @@ namespace Neo.SmartContract.Native
             item_id.Add(1);
 
             //Put the request to storage
+            // CallingScriptHash can not be null, otherwise it throw exception anyway.
+            if (engine.CallingScriptHash == null) throw new NullReferenceException("engine.CallingScriptHash is null");
             if (ContractManagement.GetContract(engine.Snapshot, engine.CallingScriptHash) is null)
                 throw new InvalidOperationException("The calling contract is not deployed");
             engine.Snapshot.Add(CreateStorageKey(Prefix_Request).AddBigEndian(id), new StorageItem(new OracleRequest
@@ -292,7 +295,7 @@ namespace Neo.SmartContract.Native
                 return (ulong)item.GetInteger();
             }
 
-            protected override StackItem ElementToStackItem(ulong element, ReferenceCounter referenceCounter)
+            protected override StackItem ElementToStackItem(ulong element, ReferenceCounter? referenceCounter)
             {
                 return element;
             }

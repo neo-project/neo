@@ -320,7 +320,7 @@ namespace Neo
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static T NotNull<T>(this T? obj) where T : class
         {
-           return  obj.NotNull($"Object {nameof(obj)} is null.");
+            return obj.NotNull($"Object {nameof(obj)} is null.");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

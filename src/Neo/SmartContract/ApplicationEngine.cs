@@ -19,6 +19,7 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -71,9 +72,10 @@ namespace Neo.SmartContract
         public static IReadOnlyDictionary<uint, InteropDescriptor> Services => services;
 
         /// <summary>
-        /// The diagnostic used by the engine. This property can be <see langword="null"/>.
+        /// The diagnostic used by the engine.
+        /// This property can be <see langword="null"/>.
         /// </summary>
-        public IDiagnostic Diagnostic { get; }
+        public IDiagnostic? Diagnostic { get; }
 
         private List<IDisposable> Disposables => disposables ??= new List<IDisposable>();
 
@@ -83,7 +85,8 @@ namespace Neo.SmartContract
         public TriggerType Trigger { get; }
 
         /// <summary>
-        /// The container that containing the executed script. This field could be <see langword="null"/> if the contract is invoked by system.
+        /// The container that containing the executed script.
+        /// This field could be <see langword="null"/> if the contract is invoked by system.
         /// </summary>
         public IVerifiable? ScriptContainer { get; }
 
@@ -114,9 +117,10 @@ namespace Neo.SmartContract
         public long GasLeft => gas_amount - GasConsumed;
 
         /// <summary>
-        /// The exception that caused the execution to terminate abnormally. This field could be <see langword="null"/> if no exception is thrown.
+        /// The exception that caused the execution to terminate abnormally.
+        /// This field could be <see langword="null"/> if no exception is thrown.
         /// </summary>
-        public Exception FaultException { get; private set; }
+        public Exception? FaultException { get; private set; }
 
         /// <summary>
         /// The script hash of the current context. This field could be <see langword="null"/> if no context is loaded to the engine.
@@ -124,7 +128,8 @@ namespace Neo.SmartContract
         public UInt160? CurrentScriptHash => CurrentContext?.GetScriptHash();
 
         /// <summary>
-        /// The script hash of the calling contract. This field could be <see langword="null"/> if the current context is the entry context.
+        /// The script hash of the calling contract.
+        /// This field could be <see langword="null"/> if the current context is the entry context.
         /// </summary>
         public UInt160? CallingScriptHash
         {
@@ -137,7 +142,8 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// The script hash of the entry context. This field could be <see langword="null"/> if no context is loaded to the engine.
+        /// The script hash of the entry context.
+        /// This field could be <see langword="null"/> if no context is loaded to the engine.
         /// </summary>
         public UInt160? EntryScriptHash => EntryContext?.GetScriptHash();
 
@@ -156,7 +162,7 @@ namespace Neo.SmartContract
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
-        protected unsafe ApplicationEngine(TriggerType trigger, IVerifiable? container, DataCache? snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic)
+        protected unsafe ApplicationEngine(TriggerType trigger, IVerifiable? container, DataCache? snapshot, Block? persistingBlock, ProtocolSettings? settings, long gas, IDiagnostic? diagnostic)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
@@ -320,7 +326,7 @@ namespace Neo.SmartContract
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
-        public static ApplicationEngine Create(TriggerType trigger, IVerifiable? container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, IDiagnostic diagnostic = null)
+        public static ApplicationEngine Create(TriggerType trigger, IVerifiable? container, DataCache snapshot, Block? persistingBlock = null, ProtocolSettings? settings = null, long gas = TestModeGas, IDiagnostic? diagnostic = null)
         {
             return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic);
@@ -498,7 +504,7 @@ namespace Neo.SmartContract
         /// Determines whether the <see cref="CallFlags"/> of the current context meets the specified requirements.
         /// </summary>
         /// <param name="requiredCallFlags">The requirements to check.</param>
-        internal protected void ValidateCallFlags(CallFlags requiredCallFlags)
+        protected internal void ValidateCallFlags(CallFlags requiredCallFlags)
         {
             ExecutionContextState state = CurrentContext.NotNull().GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(requiredCallFlags))
@@ -507,7 +513,7 @@ namespace Neo.SmartContract
 
         protected override void OnSysCall(uint method)
         {
-            OnSysCall(services[method]);
+            OnSysCall(services![method]);
         }
 
         /// <summary>
@@ -523,7 +529,7 @@ namespace Neo.SmartContract
             for (int i = 0; i < parameters.Length; i++)
                 parameters[i] = Convert(Pop(), descriptor.Parameters[i]);
 
-            object returnValue = descriptor.Handler.Invoke(this, parameters);
+            object? returnValue = descriptor.Handler.Invoke(this, parameters);
             if (descriptor.Handler.ReturnType != typeof(void))
                 Push(Convert(returnValue));
         }
@@ -566,8 +572,9 @@ namespace Neo.SmartContract
 
         private static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags)
         {
+            // this should not be null, otherwise the engine will not work properly
             MethodInfo method = typeof(ApplicationEngine).GetMethod(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
-                ?? typeof(ApplicationEngine).GetProperty(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static).GetMethod;
+                ?? typeof(ApplicationEngine).GetProperty(handler, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)!.GetMethod!;
             InteropDescriptor descriptor = new()
             {
                 Name = name,
@@ -592,7 +599,7 @@ namespace Neo.SmartContract
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
-        public static ApplicationEngine Run(ReadOnlyMemory<byte> script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, ProtocolSettings settings = null, int offset = 0, long gas = TestModeGas, IDiagnostic diagnostic = null)
+        public static ApplicationEngine Run(ReadOnlyMemory<byte> script, DataCache snapshot, IVerifiable? container = null, Block? persistingBlock = null, ProtocolSettings? settings = null, int offset = 0, long gas = TestModeGas, IDiagnostic? diagnostic = null)
         {
             persistingBlock ??= CreateDummyBlock(snapshot, settings ?? ProtocolSettings.Default);
             ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, persistingBlock, settings, gas, diagnostic);
@@ -608,7 +615,7 @@ namespace Neo.SmartContract
             return (T)state;
         }
 
-        public void SetState<T>(T state)
+        public void SetState<T>([NotNull] T state)
         {
             states ??= new Dictionary<Type, object>();
             states[typeof(T)] = state;

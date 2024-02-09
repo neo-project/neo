@@ -93,10 +93,10 @@ namespace Neo.SmartContract
         /// <param name="version">The version of the native contract to be called.</param>
         protected internal void CallNativeContract(byte version)
         {
-            NativeContract contract = NativeContract.GetContract(CurrentScriptHash);
+            NativeContract? contract = NativeContract.GetContract(CurrentScriptHash.NotNull());
             if (contract is null)
                 throw new InvalidOperationException("It is not allowed to use \"System.Contract.CallNative\" directly.");
-            if (!contract.IsActive(ProtocolSettings, NativeContract.Ledger.CurrentIndex(Snapshot)))
+            if (!contract.IsActive(ProtocolSettings, NativeContract.Ledger.CurrentIndex(Snapshot.NotNull())))
                 throw new InvalidOperationException($"The native contract {contract.Name} is not active.");
             contract.Invoke(this, version);
         }
@@ -108,7 +108,7 @@ namespace Neo.SmartContract
         /// <returns>The <see cref="CallFlags"/> of the current context.</returns>
         protected internal CallFlags GetCallFlags()
         {
-            var state = CurrentContext.GetState<ExecutionContextState>();
+            var state = CurrentContext.NotNull().GetState<ExecutionContextState>();
             return state.CallFlags;
         }
 
@@ -118,7 +118,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="pubKey">The public key of the account.</param>
         /// <returns>The hash of the account.</returns>
-        internal protected UInt160 CreateStandardAccount(ECPoint pubKey)
+        protected internal UInt160 CreateStandardAccount(ECPoint pubKey)
         {
             long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                 ? CheckSigPrice
@@ -155,7 +155,7 @@ namespace Neo.SmartContract
                     throw new InvalidOperationException();
                 foreach (NativeContract contract in NativeContract.Contracts)
                 {
-                    if (contract.IsActive(ProtocolSettings, PersistingBlock.Index))
+                    if (contract.IsActive(ProtocolSettings, PersistingBlock.NotNull().Index))
                         await contract.OnPersist(this);
                 }
             }
@@ -177,7 +177,7 @@ namespace Neo.SmartContract
                     throw new InvalidOperationException();
                 foreach (NativeContract contract in NativeContract.Contracts)
                 {
-                    if (contract.IsActive(ProtocolSettings, PersistingBlock.Index))
+                    if (contract.IsActive(ProtocolSettings, PersistingBlock.NotNull().Index))
                         await contract.PostPersist(this);
                 }
             }
