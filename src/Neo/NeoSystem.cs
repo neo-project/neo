@@ -188,7 +188,7 @@ namespace Neo
         /// <typeparam name="T">The type of the service object.</typeparam>
         /// <param name="filter">An action used to filter the service objects. This parameter can be <see langword="null"/>.</param>
         /// <returns>The service object found.</returns>
-        public T GetService<T>(Func<T, bool> filter = null)
+        public T? GetService<T>(Func<T, bool>? filter = null)
         {
             IEnumerable<T> result = services.OfType<T>();
             if (filter is null)

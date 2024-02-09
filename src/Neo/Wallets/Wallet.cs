@@ -767,10 +767,10 @@ namespace Neo.Wallets
         /// <returns>The created new wallet.</returns>
         public static Wallet Migrate(string path, string oldPath, string password, ProtocolSettings settings)
         {
-            IWalletFactory factoryOld = GetFactory(oldPath);
+            IWalletFactory? factoryOld = GetFactory(oldPath);
             if (factoryOld is null)
                 throw new InvalidOperationException("The old wallet file format is not supported.");
-            IWalletFactory factoryNew = GetFactory(path);
+            IWalletFactory? factoryNew = GetFactory(path);
             if (factoryNew is null)
                 throw new InvalidOperationException("The new wallet file format is not supported.");
 
@@ -784,7 +784,7 @@ namespace Neo.Wallets
             return newWallet;
         }
 
-        private static IWalletFactory GetFactory(string path)
+        private static IWalletFactory? GetFactory(string path)
         {
             return factories.FirstOrDefault(p => p.Handle(path));
         }

@@ -32,7 +32,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The value of the parameter.
         /// </summary>
-        public object Value;
+        public object? Value;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ContractParameter"/> class.
@@ -139,7 +139,7 @@ namespace Neo.SmartContract
             return ToJson(this, null);
         }
 
-        private static JObject ToJson(ContractParameter parameter, HashSet<ContractParameter> context)
+        private static JObject ToJson(ContractParameter parameter, HashSet<ContractParameter>? context)
         {
             JObject json = new();
             json["type"] = parameter.Type;
@@ -191,7 +191,7 @@ namespace Neo.SmartContract
             return ToString(this, null);
         }
 
-        private static string ToString(ContractParameter parameter, HashSet<ContractParameter> context)
+        private static string ToString(ContractParameter parameter, HashSet<ContractParameter>? context)
         {
             switch (parameter.Value)
             {

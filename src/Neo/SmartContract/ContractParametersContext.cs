@@ -95,7 +95,7 @@ namespace Neo.SmartContract
             }
         }
 
-        private UInt160[] _ScriptHashes = null;
+        private UInt160[]? _ScriptHashes = null;
         /// <summary>
         /// Gets the script hashes to be verified for the <see cref="Verifiable"/>.
         /// </summary>
@@ -124,7 +124,7 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the parameter is added successfully; otherwise, <see langword="false"/>.</returns>
         public bool Add(Contract contract, int index, object parameter)
         {
-            ContextItem item = CreateItem(contract);
+            ContextItem? item = CreateItem(contract);
             if (item == null) return false;
             item.Parameters[index].Value = parameter;
             return true;
@@ -138,7 +138,7 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the parameters are added successfully; otherwise, <see langword="false"/>.</returns>
         public bool Add(Contract contract, params object[] parameters)
         {
-            ContextItem item = CreateItem(contract);
+            ContextItem? item = CreateItem(contract);
             if (item == null) return false;
             for (int index = 0; index < parameters.Length; index++)
             {
@@ -159,7 +159,7 @@ namespace Neo.SmartContract
             if (IsMultiSigContract(contract.Script, out _, out ECPoint[] points))
             {
                 if (!points.Contains(pubkey)) return false;
-                ContextItem item = CreateItem(contract);
+                ContextItem? item = CreateItem(contract);
                 if (item == null) return false;
                 if (item.Parameters.All(p => p.Value != null)) return false;
                 if (!item.Signatures.TryAdd(pubkey, signature))
@@ -198,7 +198,7 @@ namespace Neo.SmartContract
                     // return now to prevent array index out of bounds exception
                     return false;
                 }
-                ContextItem item = CreateItem(contract);
+                ContextItem? item = CreateItem(contract);
                 if (item == null) return false;
                 if (!item.Signatures.TryAdd(pubkey, signature))
                     return false;
@@ -207,9 +207,9 @@ namespace Neo.SmartContract
             }
         }
 
-        private ContextItem CreateItem(Contract contract)
+        private ContextItem? CreateItem(Contract contract)
         {
-            if (ContextItems.TryGetValue(contract.ScriptHash, out ContextItem item))
+            if (ContextItems.TryGetValue(contract.ScriptHash, out ContextItem? item))
                 return item;
             if (!ScriptHashes.Contains(contract.ScriptHash))
                 return null;
@@ -252,7 +252,7 @@ namespace Neo.SmartContract
         /// <param name="scriptHash">The hash of the witness script.</param>
         /// <param name="index">The specified index.</param>
         /// <returns>The parameter with the specified index.</returns>
-        public ContractParameter GetParameter(UInt160 scriptHash, int index)
+        public ContractParameter? GetParameter(UInt160 scriptHash, int index)
         {
             return GetParameters(scriptHash)?[index];
         }
@@ -262,9 +262,9 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="scriptHash">The hash of the witness script.</param>
         /// <returns>The parameters from the witness script.</returns>
-        public IReadOnlyList<ContractParameter> GetParameters(UInt160 scriptHash)
+        public IReadOnlyList<ContractParameter>? GetParameters(UInt160 scriptHash)
         {
-            if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
+            if (!ContextItems.TryGetValue(scriptHash, out ContextItem? item))
                 return null;
             return item.Parameters;
         }
@@ -274,9 +274,9 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="scriptHash">The hash of the witness script.</param>
         /// <returns>The signatures from the witness script.</returns>
-        public IReadOnlyDictionary<ECPoint, byte[]> GetSignatures(UInt160 scriptHash)
+        public IReadOnlyDictionary<ECPoint, byte[]>? GetSignatures(UInt160 scriptHash)
         {
-            if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
+            if (!ContextItems.TryGetValue(scriptHash, out ContextItem? item))
                 return null;
             return item.Signatures;
         }
@@ -286,9 +286,9 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="scriptHash">The hash of the witness script.</param>
         /// <returns>The witness script.</returns>
-        public byte[] GetScript(UInt160 scriptHash)
+        public byte[]? GetScript(UInt160 scriptHash)
         {
-            if (!ContextItems.TryGetValue(scriptHash, out ContextItem item))
+            if (!ContextItems.TryGetValue(scriptHash, out ContextItem? item))
                 return null;
             return item.Script;
         }

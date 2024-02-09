@@ -22,7 +22,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the current context.
         /// </summary>
-        public UInt160 ScriptHash { get; set; }
+        public UInt160? ScriptHash { get; set; }
 
         /// <summary>
         /// The calling context.
