@@ -107,16 +107,16 @@ namespace Neo.SmartContract.Native
         {
             foreach (NativeContract contract in Contracts)
             {
-                if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.PersistingBlock.Index))
+                if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.PersistingBlock.NotNull().Index))
                 {
-                    engine.Snapshot.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
+                    engine.Snapshot.NotNull().Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(new ContractState
                     {
                         Id = contract.Id,
                         Nef = contract.Nef,
                         Hash = contract.Hash,
                         Manifest = contract.Manifest
                     }));
-                    engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(contract.Hash.ToArray()));
+                    engine.Snapshot.NotNull().Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(contract.Hash.ToArray()));
                     await contract.Initialize(engine);
                 }
             }
@@ -227,7 +227,7 @@ namespace Neo.SmartContract.Native
 
             engine.AddGas(Math.Max(
                 engine.StoragePrice * (nefFile.Length + manifest.Length),
-                GetMinimumDeploymentFee(engine.Snapshot)
+                GetMinimumDeploymentFee(engine.Snapshot.NotNull())
                 ));
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
@@ -235,15 +235,15 @@ namespace Neo.SmartContract.Native
             Helper.Check(new VM.Script(nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), parsedManifest.Abi);
             UInt160 hash = Helper.GetContractHash(tx.Sender, nef.CheckSum, parsedManifest.Name);
 
-            if (Policy.IsBlocked(engine.Snapshot, hash))
+            if (Policy.IsBlocked(engine.Snapshot.NotNull(), hash))
                 throw new InvalidOperationException($"The contract {hash} has been blocked.");
 
             StorageKey key = CreateStorageKey(Prefix_Contract).Add(hash);
-            if (engine.Snapshot.Contains(key))
+            if (engine.Snapshot.NotNull().Contains(key))
                 throw new InvalidOperationException($"Contract Already Exists: {hash}");
             ContractState contract = new()
             {
-                Id = GetNextAvailableId(engine.Snapshot),
+                Id = GetNextAvailableId(engine.Snapshot.NotNull()),
                 UpdateCounter = 0,
                 Nef = nef,
                 Hash = hash,
@@ -252,8 +252,8 @@ namespace Neo.SmartContract.Native
 
             if (!contract.Manifest.IsValid(engine.Limits, hash)) throw new InvalidOperationException($"Invalid Manifest: {hash}");
 
-            engine.Snapshot.Add(key, new StorageItem(contract));
-            engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(hash.ToArray()));
+            engine.Snapshot.NotNull().Add(key, new StorageItem(contract));
+            engine.Snapshot.NotNull().Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(hash.ToArray()));
 
             await OnDeploy(engine, contract, data, false);
 
@@ -273,7 +273,7 @@ namespace Neo.SmartContract.Native
 
             engine.AddGas(engine.StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
 
-            var contract = engine.Snapshot?.GetAndChange(CreateStorageKey(Prefix_Contract).Add(engine.CallingScriptHash))?.GetInteroperable<ContractState>();
+            var contract = engine.Snapshot?.GetAndChange(CreateStorageKey(Prefix_Contract).Add(engine.CallingScriptHash.NotNull()))?.GetInteroperable<ContractState>();
             if (contract is null) throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
             if (contract.UpdateCounter == ushort.MaxValue) throw new InvalidOperationException($"The contract reached the maximum number of updates.");
 
@@ -304,7 +304,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private void Destroy(ApplicationEngine engine)
         {
-            if(engine.Snapshot is null) throw new InvalidOperationException("Invalid snapshot");
+            if (engine.Snapshot is null) throw new InvalidOperationException("Invalid snapshot");
             UInt160? hash = engine.CallingScriptHash;
             StorageKey ckey = CreateStorageKey(Prefix_Contract).Add(hash);
             ContractState? contract = engine.Snapshot.TryGet(ckey)?.GetInteroperable<ContractState>();

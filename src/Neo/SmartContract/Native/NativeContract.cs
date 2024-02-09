@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.IO;
 using Neo.SmartContract.Manifest;
 using Neo.VM;
 using System;
@@ -209,7 +208,7 @@ namespace Neo.SmartContract.Native
         /// <returns><see langword="true"/> if the committee has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
         protected static bool CheckCommittee(ApplicationEngine engine)
         {
-            UInt160 committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.Snapshot);
+            UInt160 committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.Snapshot.NotNull());
             return engine.CheckWitnessInternal(committeeMultiSigAddr);
         }
 
@@ -223,7 +222,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="hash">The hash of the native contract.</param>
         /// <returns>The native contract with the specified hash.</returns>
-        public static NativeContract GetContract(UInt160 hash)
+        public static NativeContract? GetContract(UInt160 hash)
         {
             contractsDictionary.TryGetValue(hash, out var contract);
             return contract;
@@ -235,7 +234,7 @@ namespace Neo.SmartContract.Native
             {
                 if (version != 0)
                     throw new InvalidOperationException($"The native contract of version {version} is not active.");
-                ExecutionContext context = engine.CurrentContext;
+                ExecutionContext context = engine.CurrentContext.NotNull();
                 ContractMethodMetadata method = methods[context.InstructionPointer];
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
                 if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
@@ -243,10 +242,10 @@ namespace Neo.SmartContract.Native
                 engine.AddGas(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
                 List<object> parameters = new();
                 if (method.NeedApplicationEngine) parameters.Add(engine);
-                if (method.NeedSnapshot) parameters.Add(engine.Snapshot);
+                if (method.NeedSnapshot) parameters.Add(engine.Snapshot.NotNull());
                 for (int i = 0; i < method.Parameters.Length; i++)
                     parameters.Add(engine.Convert(context.EvaluationStack.Peek(i), method.Parameters[i]));
-                object returnValue = method.Handler.Invoke(this, parameters.ToArray());
+                object? returnValue = method.Handler.Invoke(this, parameters.ToArray());
                 if (returnValue is ContractTask task)
                 {
                     await task;

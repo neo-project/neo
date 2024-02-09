@@ -559,7 +559,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
         private ECPoint[] GetNextBlockValidators(ApplicationEngine engine)
         {
-            return GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings.ValidatorsCount);
+            return GetNextBlockValidators(engine.Snapshot.NotNull(), engine.ProtocolSettings.ValidatorsCount);
         }
 
         /// <summary>
