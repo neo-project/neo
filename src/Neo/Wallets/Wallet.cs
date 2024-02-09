@@ -693,9 +693,12 @@ namespace Neo.Wallets
                     Contract? multiSigContract = account.Contract;
 
                     if (multiSigContract != null &&
-                        IsMultiSigContract(multiSigContract.Script, out int m, out ECPoint[] points))
+                        IsMultiSigContract(multiSigContract.Script, out int m, out ECPoint[]? points))
                     {
-                        foreach (var point in points)
+                        // though this can be null, not sure what the behavior should be
+                        // TODO: Check the original behavior,
+                        // TODO: if it should be null, then we should throw an exception
+                        foreach (var point in points ?? Array.Empty<ECPoint>())
                         {
                             account = GetAccount(point);
                             if (account == null || account.HasKey != true) continue;

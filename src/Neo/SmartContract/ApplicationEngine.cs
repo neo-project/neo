@@ -53,7 +53,7 @@ namespace Neo.SmartContract
         private readonly long gas_amount;
         private Dictionary<Type, object>? states;
         private readonly DataCache? originalSnapshot;
-        private List<NotifyEventArgs>? notifications;
+        private List<NotifyEventArgs>? _notifications;
         private List<IDisposable>? disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
         private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
@@ -150,7 +150,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The notifications sent during the execution.
         /// </summary>
-        public IReadOnlyList<NotifyEventArgs> Notifications => notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
+        public IReadOnlyList<NotifyEventArgs> Notifications => _notifications ?? (IReadOnlyList<NotifyEventArgs>)Array.Empty<NotifyEventArgs>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ApplicationEngine"/> class.
@@ -198,7 +198,7 @@ namespace Neo.SmartContract
         protected override void OnFault(Exception ex)
         {
             FaultException = ex;
-            notifications = null;
+            _notifications = null;
             base.OnFault(ex);
         }
 
@@ -302,8 +302,8 @@ namespace Neo.SmartContract
                 }
                 else
                 {
-                    if (notifications != null && state.NotificationCount > 0)
-                        notifications.RemoveRange(notifications.Count - state.NotificationCount, state.NotificationCount);
+                    if (_notifications != null && state.NotificationCount > 0)
+                        _notifications.RemoveRange(_notifications.Count - state.NotificationCount, state.NotificationCount);
                 }
             }
             Diagnostic?.ContextUnloaded(context);

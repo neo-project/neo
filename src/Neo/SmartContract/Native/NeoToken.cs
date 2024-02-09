@@ -239,8 +239,8 @@ namespace Neo.SmartContract.Native
             {
                 StorageItem? storageItem = engine.Snapshot?.GetAndChange(CreateStorageKey(Prefix_Committee));
                 var cachedCommittee = storageItem?.GetInteroperable<CachedCommittee>();
-                cachedCommittee.Clear();
-                cachedCommittee.AddRange(ComputeCommitteeMembers(engine.Snapshot, engine.ProtocolSettings));
+                cachedCommittee?.Clear();
+                cachedCommittee?.AddRange(ComputeCommitteeMembers(engine.Snapshot, engine.ProtocolSettings));
             }
             return ContractTask.CompletedTask;
         }

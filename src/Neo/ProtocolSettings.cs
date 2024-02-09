@@ -94,7 +94,7 @@ namespace Neo
         /// </summary>
         public ulong InitialGasDistribution { get; init; }
 
-        private IReadOnlyList<ECPoint> _standbyValidators;
+        private IReadOnlyList<ECPoint>? _standbyValidators;
         /// <summary>
         /// The public keys of the standby validators.
         /// </summary>
@@ -151,7 +151,7 @@ namespace Neo
                     : Default.StandbyCommittee,
                 ValidatorsCount = section.GetValue("ValidatorsCount", Default.ValidatorsCount),
                 SeedList = section.GetSection("SeedList").Exists()
-                    ? section.GetSection("SeedList").GetChildren().Select(p => p.Get<string>()).ToArray()
+                    ? section.GetSection("SeedList").GetChildren().Select(p => p.Get<string>()!).ToArray()
                     : Default.SeedList,
                 MillisecondsPerBlock = section.GetValue("MillisecondsPerBlock", Default.MillisecondsPerBlock),
                 MaxTransactionsPerBlock = section.GetValue("MaxTransactionsPerBlock", Default.MaxTransactionsPerBlock),

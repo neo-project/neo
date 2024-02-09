@@ -377,6 +377,7 @@ namespace Neo.SmartContract
         protected internal void RuntimeNotifyV1(byte[] eventName, Array state)
         {
             if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
+            if (CurrentContext == null) throw new NullReferenceException("CurrentContext is null.");
             if (CurrentContext.GetState<ExecutionContextState>().Contract is null)
                 throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
             using MemoryStream ms = new(MaxNotificationSize);
@@ -395,8 +396,8 @@ namespace Neo.SmartContract
         {
             NotifyEventArgs notification = new(ScriptContainer, hash, eventName, (Array)state.DeepCopy(asImmutable: true));
             Notify?.Invoke(this, notification);
-            notifications ??= new List<NotifyEventArgs>();
-            notifications.Add(notification);
+            _notifications ??= new List<NotifyEventArgs>();
+            _notifications.Add(notification);
             CurrentContext.GetState<ExecutionContextState>().NotificationCount++;
         }
 

@@ -38,8 +38,9 @@ namespace Neo.SmartContract.Native
 
         /// <summary>
         /// The filter for the response.
+        /// Can be null.
         /// </summary>
-        public string Filter;
+        public string? Filter;
 
         /// <summary>
         /// The hash of the callback contract.
@@ -61,10 +62,13 @@ namespace Neo.SmartContract.Native
             Array array = (Array)stackItem;
             OriginalTxid = new UInt256(array[0].GetSpan());
             GasForResponse = (long)array[1].GetInteger();
-            Url = array[2].GetString();
+            // must contain a valid Url
+            Url = array[2].NotNull().GetString().NotNull();
+            // Filter can be null based on ToStackItem
             Filter = array[3].GetString();
             CallbackContract = new UInt160(array[4].GetSpan());
-            CallbackMethod = array[5].GetString();
+            // must contain a valid callback method
+            CallbackMethod = array[5].NotNull().GetString().NotNull();
             UserData = array[6].GetSpan().ToArray();
         }
 
