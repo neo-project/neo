@@ -23,6 +23,8 @@ namespace Neo.CLI
 {
     partial class MainService
     {
+#if DEBUG
+
         /// <summary>
         /// Process "export storage" command
         /// </summary>
@@ -61,6 +63,8 @@ namespace Neo.CLI
             // dump to file
             File.WriteAllText(path, json.ToString());
         }
+
+#endif
 
         /// <summary>
         /// Process "export blocks" command
