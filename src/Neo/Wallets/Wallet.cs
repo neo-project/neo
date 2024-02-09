@@ -237,7 +237,7 @@ namespace Neo.Wallets
         /// </summary>
         /// <param name="pubkey">The public key of the account.</param>
         /// <returns>The account with the specified public key.</returns>
-        public WalletAccount GetAccount(ECPoint pubkey)
+        public WalletAccount? GetAccount(ECPoint pubkey)
         {
             return GetAccount(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash());
         }
@@ -696,7 +696,7 @@ namespace Neo.Wallets
                         foreach (var point in points)
                         {
                             account = GetAccount(point);
-                            if (account.HasKey != true) continue;
+                            if (account == null || account.HasKey != true) continue;
                             KeyPair key = account.GetKey();
                             byte[] signature = context.Verifiable.Sign(key, context.Network);
                             fSuccess |= context.AddSignature(multiSigContract, key.PublicKey, signature);
@@ -708,7 +708,7 @@ namespace Neo.Wallets
                     else if (account.HasKey)
                     {
                         // Try to sign with regular accounts
-                        KeyPair key = account.GetKey()!;
+                        KeyPair key = account.GetKey();
                         byte[] signature = context.Verifiable.Sign(key, context.Network);
                         fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
                         continue;
