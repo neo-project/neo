@@ -97,7 +97,7 @@ namespace Neo.SmartContract.Native
 
         private async ContractTask OnDeploy(ApplicationEngine engine, ContractState contract, StackItem data, bool update)
         {
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod("_deploy", 2);
+            ContractMethodDescriptor? md = contract.Manifest.Abi.GetMethod("_deploy", 2);
             if (md is not null)
                 await engine.CallFromNativeContract(Hash, contract.Hash, md.Name, data, update);
             engine.SendNotification(Hash, update ? "Update" : "Deploy", new VM.Types.Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
@@ -155,9 +155,9 @@ namespace Neo.SmartContract.Native
         /// <param name="id">Contract ID.</param>
         /// <returns>The deployed contract.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public ContractState GetContractById(DataCache snapshot, int id)
+        public ContractState? GetContractById(DataCache snapshot, int id)
         {
-            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_ContractHash).AddBigEndian(id));
+            StorageItem? item = snapshot.TryGet(CreateStorageKey(Prefix_ContractHash).AddBigEndian(id));
             if (item is null) return null;
             var hash = new UInt160(item.Value.Span);
             return GetContract(snapshot, hash);

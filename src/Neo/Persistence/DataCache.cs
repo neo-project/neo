@@ -35,7 +35,7 @@ namespace Neo.Persistence
             /// <summary>
             /// The data of the entry.
             /// </summary>
-            public StorageItem Item;
+            public StorageItem? Item;
 
             /// <summary>
             /// The state of the entry.
@@ -89,7 +89,7 @@ namespace Neo.Persistence
         {
             lock (dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (dictionary.TryGetValue(key, out Trackable? trackable))
                 {
                     trackable.Item = value;
                     trackable.State = trackable.State switch
@@ -117,7 +117,7 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <param name="value">The data of the entry.</param>
-        protected abstract void AddInternal(StorageKey key, StorageItem value);
+        protected abstract void AddInternal(StorageKey key, StorageItem? value);
 
         /// <summary>
         /// Commits all changes in the cache to the underlying storage.
@@ -165,7 +165,7 @@ namespace Neo.Persistence
         {
             lock (dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (dictionary.TryGetValue(key, out Trackable? trackable))
                 {
                     if (trackable.State == TrackState.Added)
                     {
@@ -180,7 +180,7 @@ namespace Neo.Persistence
                 }
                 else
                 {
-                    StorageItem item = TryGetInternal(key);
+                    StorageItem? item = TryGetInternal(key);
                     if (item == null) return;
                     dictionary.Add(key, new Trackable
                     {
@@ -283,7 +283,7 @@ namespace Neo.Persistence
         {
             lock (dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (dictionary.TryGetValue(key, out Trackable? trackable))
                     return trackable.State != TrackState.Deleted && trackable.State != TrackState.NotFound;
                 return ContainsInternal(key);
             }
@@ -309,11 +309,11 @@ namespace Neo.Persistence
         /// <param name="key">The key of the entry.</param>
         /// <param name="factory">A delegate used to create the entry if it doesn't exist. If the entry already exists, the factory will not be used.</param>
         /// <returns>The cached data. Or <see langword="null"/> if it doesn't exist and the <paramref name="factory"/> is not provided.</returns>
-        public StorageItem GetAndChange(StorageKey key, Func<StorageItem> factory = null)
+        public StorageItem? GetAndChange(StorageKey key, Func<StorageItem>? factory = null)
         {
             lock (dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (dictionary.TryGetValue(key, out Trackable? trackable))
                 {
                     if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
                     {
@@ -369,7 +369,7 @@ namespace Neo.Persistence
         {
             lock (dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (dictionary.TryGetValue(key, out Trackable? trackable))
                 {
                     if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
                     {
@@ -414,7 +414,7 @@ namespace Neo.Persistence
         /// <param name="keyOrPrefix">The key to be sought.</param>
         /// <param name="direction">The direction of seek.</param>
         /// <returns>An enumerator containing all the entries after seeking.</returns>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> Seek(byte[] keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Seek(byte[]? keyOrPrefix = null, SeekDirection direction = SeekDirection.Forward)
         {
             IEnumerable<(byte[], StorageKey, StorageItem)> cached;
             HashSet<StorageKey> cachedKeySet;
@@ -505,7 +505,7 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <returns>The data of the entry. Or <see langword="null"/> if it doesn't exist.</returns>
-        protected abstract StorageItem TryGetInternal(StorageKey key);
+        protected abstract StorageItem? TryGetInternal(StorageKey key);
 
         /// <summary>
         /// Updates an entry in the underlying storage.
