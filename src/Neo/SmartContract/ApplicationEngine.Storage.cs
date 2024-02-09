@@ -77,8 +77,8 @@ namespace Neo.SmartContract
         /// <returns>The storage context for the current contract.</returns>
         protected internal StorageContext GetStorageContext()
         {
-            if(Snapshot is null) throw new InvalidOperationException("No storage context available.");
-            if(CurrentScriptHash is null) throw new InvalidOperationException($"{nameof(CurrentScriptHash)} is null.");
+            if (Snapshot is null) throw new InvalidOperationException("No storage context available.");
+            if (CurrentScriptHash is null) throw new InvalidOperationException($"{nameof(CurrentScriptHash)} is null.");
             ContractState? contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
             if (contract is null) throw new InvalidOperationException($"Contract does not exist: {CurrentScriptHash}");
             return new StorageContext
@@ -95,8 +95,8 @@ namespace Neo.SmartContract
         /// <returns>The storage context for the current contract.</returns>
         protected internal StorageContext GetReadOnlyContext()
         {
-            if(Snapshot is null) throw new InvalidOperationException("No storage context available.");
-            if(CurrentScriptHash is null) throw new InvalidOperationException($"{nameof(CurrentScriptHash)} is null.");
+            if (Snapshot is null) throw new InvalidOperationException("No storage context available.");
+            if (CurrentScriptHash is null) throw new InvalidOperationException($"{nameof(CurrentScriptHash)} is null.");
             ContractState? contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
             if (contract is null) throw new InvalidOperationException($"Contract does not exist: {CurrentScriptHash}");
             return new StorageContext
