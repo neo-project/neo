@@ -48,9 +48,9 @@ namespace Neo.SmartContract
         public static event EventHandler<LogEventArgs> Log;
 
         private static readonly IList<Hardfork> AllHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToArray();
-        private static Dictionary<uint, InteropDescriptor> services;
+        private static Dictionary<uint, InteropDescriptor>? services;
         private readonly long gas_amount;
-        private Dictionary<Type, object> states;
+        private Dictionary<Type, object>? states;
         private readonly DataCache? originalSnapshot;
         private List<NotifyEventArgs>? notifications;
         private List<IDisposable>? disposables;
@@ -212,7 +212,7 @@ namespace Neo.SmartContract
 
         private ExecutionContext CallContractInternal(ContractState contract, ContractMethodDescriptor method, CallFlags flags, bool hasReturnValue, IReadOnlyList<StackItem> args)
         {
-            if (NativeContract.Policy.IsBlocked(Snapshot, contract.Hash))
+            if (NativeContract.Policy.IsBlocked(Snapshot.NotNull(), contract.Hash))
                 throw new InvalidOperationException($"The contract {contract.Hash} has been blocked.");
 
             if (method.Safe)
@@ -396,11 +396,11 @@ namespace Neo.SmartContract
         protected override ExecutionContext LoadToken(ushort tokenId)
         {
             ValidateCallFlags(CallFlags.ReadStates | CallFlags.AllowCall);
-            ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
+            ContractState contract = CurrentContext.NotNull().GetState<ExecutionContextState>().Contract;
             if (contract is null || tokenId >= contract.Nef.Tokens.Length)
                 throw new InvalidOperationException();
             MethodToken token = contract.Nef.Tokens[tokenId];
-            if (token.ParametersCount > CurrentContext.EvaluationStack.Count)
+            if (token.ParametersCount > CurrentContext.NotNull().EvaluationStack.Count)
                 throw new InvalidOperationException();
             StackItem[] args = new StackItem[token.ParametersCount];
             for (int i = 0; i < token.ParametersCount; i++)
@@ -500,7 +500,7 @@ namespace Neo.SmartContract
         /// <param name="requiredCallFlags">The requirements to check.</param>
         internal protected void ValidateCallFlags(CallFlags requiredCallFlags)
         {
-            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
+            ExecutionContextState state = CurrentContext.NotNull().GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(requiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
         }
@@ -601,10 +601,10 @@ namespace Neo.SmartContract
             return engine;
         }
 
-        public T GetState<T>()
+        public T? GetState<T>()
         {
             if (states is null) return default;
-            if (!states.TryGetValue(typeof(T), out object state)) return default;
+            if (!states.TryGetValue(typeof(T), out object? state)) return default;
             return (T)state;
         }
 

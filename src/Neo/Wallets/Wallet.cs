@@ -413,9 +413,9 @@ namespace Neo.Wallets
         public virtual WalletAccount Import(X509Certificate2 cert)
         {
             byte[] privateKey;
-            using (ECDsa ecdsa = cert.GetECDsaPrivateKey())
+            using (ECDsa? ecdsa = cert.GetECDsaPrivateKey())
             {
-                privateKey = ecdsa.ExportParameters(true).D;
+                privateKey = ecdsa.NotNull().ExportParameters(true).D.NotNull();
             }
             WalletAccount account = CreateAccount(privateKey);
             Array.Clear(privateKey, 0, privateKey.Length);
@@ -553,7 +553,7 @@ namespace Neo.Wallets
             return MakeTransaction(snapshot, script, cosigners ?? Array.Empty<Signer>(), attributes ?? Array.Empty<TransactionAttribute>(), balances_gas, maxGas, persistingBlock: persistingBlock);
         }
 
-        private Transaction MakeTransaction(DataCache snapshot, ReadOnlyMemory<byte> script, Signer[] cosigners, TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balances_gas, long maxGas = ApplicationEngine.TestModeGas, Block persistingBlock = null)
+        private Transaction MakeTransaction(DataCache snapshot, ReadOnlyMemory<byte> script, Signer[] cosigners, TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balances_gas, long maxGas = ApplicationEngine.TestModeGas, Block? persistingBlock = null)
         {
             Random rand = new();
             foreach (var (account, value) in balances_gas)
@@ -697,7 +697,7 @@ namespace Neo.Wallets
                         {
                             account = GetAccount(point);
                             if (account == null || account.HasKey != true) continue;
-                            KeyPair key = account.GetKey();
+                            KeyPair key = account.GetKey().NotNull();
                             byte[] signature = context.Verifiable.Sign(key, context.Network);
                             fSuccess |= context.AddSignature(multiSigContract, key.PublicKey, signature);
                             if (fSuccess) m--;
@@ -708,7 +708,7 @@ namespace Neo.Wallets
                     else if (account.HasKey)
                     {
                         // Try to sign with regular accounts
-                        KeyPair key = account.GetKey();
+                        KeyPair key = account.GetKey().NotNull($"Can not get the key pair from account {account}");
                         byte[] signature = context.Verifiable.Sign(key, context.Network);
                         fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
                         continue;

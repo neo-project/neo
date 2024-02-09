@@ -238,7 +238,7 @@ namespace Neo.SmartContract.Native
             if (ShouldRefreshCommittee(engine.PersistingBlock.NotNull().Index, engine.ProtocolSettings.CommitteeMembersCount))
             {
                 StorageItem? storageItem = engine.Snapshot?.GetAndChange(CreateStorageKey(Prefix_Committee));
-                var cachedCommittee = storageItem.GetInteroperable<CachedCommittee>();
+                var cachedCommittee = storageItem?.GetInteroperable<CachedCommittee>();
                 cachedCommittee.Clear();
                 cachedCommittee.AddRange(ComputeCommitteeMembers(engine.Snapshot, engine.ProtocolSettings));
             }
@@ -291,7 +291,8 @@ namespace Neo.SmartContract.Native
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
             uint index = engine.PersistingBlock.Index + 1;
-            StorageItem entry = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(index), () => new StorageItem(gasPerBlock));
+            StorageItem? entry = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(index), () => new StorageItem(gasPerBlock));
+            if (entry == null) throw new KeyNotFoundException("The storage entry of gas per block was not found.");
             entry.Set(gasPerBlock);
         }
 

@@ -98,7 +98,7 @@ namespace Neo
 
         private ImmutableList<object> services = ImmutableList<object>.Empty;
         private readonly IStore store;
-        private ChannelsConfig start_message = null;
+        private ChannelsConfig? start_message = null;
         private int suspend = 0;
 
         static NeoSystem()

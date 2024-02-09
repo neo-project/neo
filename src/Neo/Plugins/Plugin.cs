@@ -111,22 +111,22 @@ namespace Neo.Plugins
             }
         }
 
-        private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+        private static Assembly? CurrentDomain_AssemblyResolve(object? sender, ResolveEventArgs args)
         {
             if (args.Name.Contains(".resources"))
                 return null;
 
             AssemblyName an = new(args.Name);
 
-            Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name) ??
+            Assembly? assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name) ??
                                 AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == an.Name);
             if (assembly != null) return assembly;
 
             string filename = an.Name + ".dll";
             string path = filename;
-            if (!File.Exists(path)) path = Combine(GetDirectoryName(System.AppContext.BaseDirectory), filename);
+            if (!File.Exists(path)) path = Combine(GetDirectoryName(System.AppContext.BaseDirectory)!, filename);
             if (!File.Exists(path)) path = Combine(PluginsDirectory, filename);
-            if (!File.Exists(path)) path = Combine(PluginsDirectory, args.RequestingAssembly.GetName().Name, filename);
+            if (!File.Exists(path)) path = Combine(PluginsDirectory, args.RequestingAssembly!.GetName().Name!, filename);
             if (!File.Exists(path)) return null;
 
             try
@@ -160,7 +160,7 @@ namespace Neo.Plugins
                 if (!type.IsSubclassOf(typeof(Plugin))) continue;
                 if (type.IsAbstract) continue;
 
-                ConstructorInfo constructor = type.GetConstructor(Type.EmptyTypes);
+                ConstructorInfo? constructor = type.GetConstructor(Type.EmptyTypes);
                 try
                 {
                     constructor?.Invoke(null);

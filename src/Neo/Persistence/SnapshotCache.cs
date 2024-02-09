@@ -35,9 +35,9 @@ namespace Neo.Persistence
             this.snapshot = store as ISnapshot;
         }
 
-        protected override void AddInternal(StorageKey key, StorageItem value)
+        protected override void AddInternal(StorageKey key, StorageItem? value)
         {
-            snapshot?.Put(key.ToArray(), value.ToArray());
+            snapshot?.Put(key.ToArray(), value?.ToArray());
         }
 
         protected override void DeleteInternal(StorageKey key)

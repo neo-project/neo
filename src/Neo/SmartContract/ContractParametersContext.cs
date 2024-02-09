@@ -229,16 +229,16 @@ namespace Neo.SmartContract
             var type = typeof(ContractParametersContext).GetTypeInfo().Assembly.GetType(json["type"].AsString());
             if (!typeof(IVerifiable).IsAssignableFrom(type)) throw new FormatException();
 
-            var verifiable = (IVerifiable)Activator.CreateInstance(type);
-            byte[] data = Convert.FromBase64String(json["data"].AsString());
+            var verifiable = (IVerifiable?)Activator.CreateInstance(type);
+            byte[] data = Convert.FromBase64String(json["data"].NotNull().AsString());
             MemoryReader reader = new(data);
-            verifiable.DeserializeUnsigned(ref reader);
+            verifiable.NotNull().DeserializeUnsigned(ref reader);
             if (json.ContainsProperty("hash"))
             {
-                UInt256 hash = UInt256.Parse(json["hash"].GetString());
-                if (hash != verifiable.Hash) throw new FormatException();
+                UInt256? hash = UInt256.Parse(json["hash"].NotNull().GetString().NotNull());
+                if (hash == null || hash != verifiable!.Hash) throw new FormatException();
             }
-            ContractParametersContext context = new(snapshot, verifiable, (uint)json["network"].GetInt32());
+            ContractParametersContext context = new(snapshot, verifiable!, (uint)json["network"]!.GetInt32());
             foreach (var (key, value) in ((JObject)json["items"]).Properties)
             {
                 context.ContextItems.Add(UInt160.Parse(key), new ContextItem((JObject)value));

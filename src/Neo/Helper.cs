@@ -320,7 +320,13 @@ namespace Neo
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static T NotNull<T>(this T? obj) where T : class
         {
-            if (obj == null) throw new NullReferenceException($"Object {nameof(obj)} is null.");
+           return  obj.NotNull($"Object {nameof(obj)} is null.");
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static T NotNull<T>(this T? obj, string msg) where T : class
+        {
+            if (obj == null) throw new NullReferenceException(msg);
             return obj;
         }
     }
