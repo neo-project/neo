@@ -156,7 +156,7 @@ namespace Neo.SmartContract
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
-        protected unsafe ApplicationEngine(TriggerType trigger, IVerifiable? container, DataCache? snapshot, Block? persistingBlock, ProtocolSettings? settings, long gas, IDiagnostic? diagnostic)
+        protected unsafe ApplicationEngine(TriggerType trigger, IVerifiable? container, DataCache? snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
@@ -203,9 +203,9 @@ namespace Neo.SmartContract
 
         private ExecutionContext CallContractInternal(UInt160 contractHash, string method, CallFlags flags, bool hasReturnValue, StackItem[] args)
         {
-            var contract = NativeContract.ContractManagement.GetContract(Snapshot.NotNull(), contractHash);
+            ContractState? contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
-            var md = contract.Manifest.Abi.GetMethod(method, args.Length);
+            ContractMethodDescriptor? md = contract.Manifest.Abi.GetMethod(method, args.Length);
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Length} parameter(s) doesn't exist in the contract {contractHash}.");
             return CallContractInternal(contract, md, flags, hasReturnValue, args);
         }
@@ -320,7 +320,7 @@ namespace Neo.SmartContract
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
-        public static ApplicationEngine Create(TriggerType trigger, IVerifiable? container, DataCache snapshot, Block? persistingBlock = null, ProtocolSettings? settings = null, long gas = TestModeGas, IDiagnostic? diagnostic = null)
+        public static ApplicationEngine Create(TriggerType trigger, IVerifiable? container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, IDiagnostic diagnostic = null)
         {
             return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic)
                   ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic);
@@ -383,8 +383,8 @@ namespace Neo.SmartContract
         public ExecutionContext LoadScript(Script script, int rvcount = -1, int initialPosition = 0, Action<ExecutionContextState>? configureState = null)
         {
             // Create and configure context
-            var context = CreateContext(script, rvcount, initialPosition);
-            var state = context.GetState<ExecutionContextState>();
+            ExecutionContext context = CreateContext(script, rvcount, initialPosition);
+            ExecutionContextState state = context.GetState<ExecutionContextState>();
             state.Snapshot = Snapshot?.CreateSnapshot();
             configureState?.Invoke(state);
 
@@ -507,7 +507,7 @@ namespace Neo.SmartContract
 
         protected override void OnSysCall(uint method)
         {
-            OnSysCall(services.NotNull()[method]);
+            OnSysCall(services[method]);
         }
 
         /// <summary>
@@ -523,8 +523,8 @@ namespace Neo.SmartContract
             for (int i = 0; i < parameters.Length; i++)
                 parameters[i] = Convert(Pop(), descriptor.Parameters[i]);
 
-            object? returnValue = descriptor.Handler.Invoke(this, parameters);
-            if (returnValue != null && descriptor.Handler.ReturnType != typeof(void))
+            object returnValue = descriptor.Handler.Invoke(this, parameters);
+            if (descriptor.Handler.ReturnType != typeof(void))
                 Push(Convert(returnValue));
         }
 
@@ -592,7 +592,7 @@ namespace Neo.SmartContract
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <returns>The engine instance created.</returns>
-        public static ApplicationEngine Run(ReadOnlyMemory<byte> script, DataCache snapshot, IVerifiable? container = null, Block? persistingBlock = null, ProtocolSettings? settings = null, int offset = 0, long gas = TestModeGas, IDiagnostic? diagnostic = null)
+        public static ApplicationEngine Run(ReadOnlyMemory<byte> script, DataCache snapshot, IVerifiable container = null, Block persistingBlock = null, ProtocolSettings settings = null, int offset = 0, long gas = TestModeGas, IDiagnostic diagnostic = null)
         {
             persistingBlock ??= CreateDummyBlock(snapshot, settings ?? ProtocolSettings.Default);
             ApplicationEngine engine = Create(TriggerType.Application, container, snapshot, persistingBlock, settings, gas, diagnostic);
