@@ -38,6 +38,8 @@ namespace Neo.SmartContract.Native
 
         internal override ContractTask OnPersist(ApplicationEngine engine)
         {
+            if(engine.PersistingBlock == null) throw new InvalidOperationException("No persisting block");
+            if(engine.Snapshot == null) throw new InvalidOperationException("No snapshot");
             TransactionState[] transactions = engine.PersistingBlock.Transactions.Select(p => new TransactionState
             {
                 BlockIndex = engine.PersistingBlock.Index,
@@ -56,10 +58,10 @@ namespace Neo.SmartContract.Native
                 var conflictingSigners = tx.Transaction.Signers.Select(s => s.Account);
                 foreach (var attr in tx.Transaction.GetAttributes<Conflicts>())
                 {
-                    engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Transaction).Add(attr.Hash), () => new StorageItem(new TransactionState())).FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
+                    engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Transaction).Add(attr.Hash), () => new StorageItem(new TransactionState()))?.FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
                     foreach (var signer in conflictingSigners)
                     {
-                        engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Transaction).Add(attr.Hash).Add(signer), () => new StorageItem(new TransactionState())).FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
+                        engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Transaction).Add(attr.Hash).Add(signer), () => new StorageItem(new TransactionState()))?.FromReplica(new StorageItem(new TransactionState() { BlockIndex = engine.PersistingBlock.Index }));
                     }
                 }
             }
@@ -69,7 +71,8 @@ namespace Neo.SmartContract.Native
 
         internal override ContractTask PostPersist(ApplicationEngine engine)
         {
-            HashIndexState state = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_CurrentBlock), () => new StorageItem(new HashIndexState())).GetInteroperable<HashIndexState>();
+            HashIndexState? state = engine.Snapshot?.GetAndChange(CreateStorageKey(Prefix_CurrentBlock), () => new StorageItem(new HashIndexState()))?.GetInteroperable<HashIndexState>();
+            if(state == null || engine.PersistingBlock == null) throw new InvalidOperationException("No persisting block");
             state.Hash = engine.PersistingBlock.Hash;
             state.Index = engine.PersistingBlock.Index;
             return ContractTask.CompletedTask;

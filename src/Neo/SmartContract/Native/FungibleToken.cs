@@ -110,15 +110,15 @@ namespace Neo.SmartContract.Native
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
             StorageKey key = CreateStorageKey(Prefix_Account).Add(account);
-            StorageItem storage = engine.Snapshot.GetAndChange(key);
-            TState state = storage.GetInteroperable<TState>();
-            if (state.Balance < amount) throw new InvalidOperationException();
+            StorageItem? storage = engine.Snapshot?.GetAndChange(key);
+            TState? state = storage?.GetInteroperable<TState>();
+            if (state == null || state.Balance < amount) throw new InvalidOperationException("Insufficient funds.");
             OnBalanceChanging(engine, account, state, -amount);
             if (state.Balance == amount)
-                engine.Snapshot.Delete(key);
+                engine.Snapshot?.Delete(key);
             else
                 state.Balance -= amount;
-            storage = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
+            storage = engine.Snapshot?.GetAndChange(CreateStorageKey(Prefix_TotalSupply));
             storage.Add(-amount);
             await PostTransfer(engine, account, null, amount, StackItem.Null, false);
         }
@@ -145,7 +145,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public virtual BigInteger BalanceOf(DataCache snapshot, UInt160 account)
         {
-            StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account));
+            StorageItem? storage = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account));
             if (storage is null) return BigInteger.Zero;
             return storage.GetInteroperable<TState>().Balance;
         }
@@ -199,7 +199,7 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        private protected virtual async ContractTask PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data, bool callOnPayment)
+        private protected virtual async ContractTask PostTransfer(ApplicationEngine engine, UInt160? from, UInt160? to, BigInteger amount, StackItem data, bool callOnPayment)
         {
             // Send notification
 

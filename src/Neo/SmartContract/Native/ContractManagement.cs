@@ -133,7 +133,7 @@ namespace Neo.SmartContract.Native
         {
             if (value < 0) throw new ArgumentOutOfRangeException(nameof(value));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_MinimumDeploymentFee)).Set(value);
+            engine.Snapshot?.GetAndChange(CreateStorageKey(Prefix_MinimumDeploymentFee))?.Set(value);
         }
 
         /// <summary>
@@ -273,7 +273,7 @@ namespace Neo.SmartContract.Native
 
             engine.AddGas(engine.StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
 
-            var contract = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Contract).Add(engine.CallingScriptHash))?.GetInteroperable<ContractState>();
+            var contract = engine.Snapshot?.GetAndChange(CreateStorageKey(Prefix_Contract).Add(engine.CallingScriptHash))?.GetInteroperable<ContractState>();
             if (contract is null) throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
             if (contract.UpdateCounter == ushort.MaxValue) throw new InvalidOperationException($"The contract reached the maximum number of updates.");
 
@@ -304,6 +304,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
         private void Destroy(ApplicationEngine engine)
         {
+            if(engine.Snapshot is null) throw new InvalidOperationException("Invalid snapshot");
             UInt160? hash = engine.CallingScriptHash;
             StorageKey ckey = CreateStorageKey(Prefix_Contract).Add(hash);
             ContractState? contract = engine.Snapshot.TryGet(ckey)?.GetInteroperable<ContractState>();

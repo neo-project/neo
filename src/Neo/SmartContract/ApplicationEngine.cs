@@ -235,8 +235,9 @@ namespace Neo.SmartContract
                 invocationCounter[contract.Hash] = 1;
             }
 
-            ExecutionContext currentContext = CurrentContext;
-            ExecutionContextState state = currentContext.GetState<ExecutionContextState>();
+            ExecutionContext? currentContext = CurrentContext;
+            ExecutionContextState? state = currentContext?.GetState<ExecutionContextState>();
+            if (state is null) throw new InvalidOperationException("No context to call contract.");
             CallFlags callingFlags = state.CallFlags;
 
             if (args.Count != method.Parameters.Length) throw new InvalidOperationException($"Method {method} Expects {method.Parameters.Length} Arguments But Receives {args.Count} Arguments");
