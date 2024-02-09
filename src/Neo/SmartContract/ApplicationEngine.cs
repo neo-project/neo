@@ -51,9 +51,9 @@ namespace Neo.SmartContract
         private static Dictionary<uint, InteropDescriptor> services;
         private readonly long gas_amount;
         private Dictionary<Type, object> states;
-        private readonly DataCache originalSnapshot;
-        private List<NotifyEventArgs> notifications;
-        private List<IDisposable> disposables;
+        private readonly DataCache? originalSnapshot;
+        private List<NotifyEventArgs>? notifications;
+        private List<IDisposable>? disposables;
         private readonly Dictionary<UInt160, int> invocationCounter = new();
         private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
         internal readonly uint ExecFeeFactor;
@@ -63,7 +63,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// Gets or sets the provider used to create the <see cref="ApplicationEngine"/>.
         /// </summary>
-        public static IApplicationEngineProvider Provider { get; set; }
+        public static IApplicationEngineProvider? Provider { get; set; }
 
         /// <summary>
         /// Gets the descriptors of all interoperable services available in NEO.
@@ -120,12 +120,12 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the current context. This field could be <see langword="null"/> if no context is loaded to the engine.
         /// </summary>
-        public UInt160 CurrentScriptHash => CurrentContext?.GetScriptHash();
+        public UInt160? CurrentScriptHash => CurrentContext?.GetScriptHash();
 
         /// <summary>
         /// The script hash of the calling contract. This field could be <see langword="null"/> if the current context is the entry context.
         /// </summary>
-        public UInt160 CallingScriptHash
+        public UInt160? CallingScriptHash
         {
             get
             {
@@ -138,7 +138,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the entry context. This field could be <see langword="null"/> if no context is loaded to the engine.
         /// </summary>
-        public UInt160 EntryScriptHash => EntryContext?.GetScriptHash();
+        public UInt160? EntryScriptHash => EntryContext?.GetScriptHash();
 
         /// <summary>
         /// The notifications sent during the execution.
@@ -155,7 +155,7 @@ namespace Neo.SmartContract
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
-        protected unsafe ApplicationEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic)
+        protected unsafe ApplicationEngine(TriggerType trigger, IVerifiable container, DataCache? snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
@@ -202,7 +202,7 @@ namespace Neo.SmartContract
 
         private ExecutionContext CallContractInternal(UInt160 contractHash, string method, CallFlags flags, bool hasReturnValue, StackItem[] args)
         {
-            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
+            ContractState? contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method, args.Length);
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Length} parameter(s) doesn't exist in the contract {contractHash}.");
@@ -294,7 +294,7 @@ namespace Neo.SmartContract
                 }
                 else
                 {
-                    if (state.NotificationCount > 0)
+                    if (notifications != null && state.NotificationCount > 0)
                         notifications.RemoveRange(notifications.Count - state.NotificationCount, state.NotificationCount);
                 }
             }

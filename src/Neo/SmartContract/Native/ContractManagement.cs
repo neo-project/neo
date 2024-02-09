@@ -143,7 +143,7 @@ namespace Neo.SmartContract.Native
         /// <param name="hash">The hash of the deployed contract.</param>
         /// <returns>The deployed contract.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        public ContractState GetContract(DataCache snapshot, UInt160 hash)
+        public ContractState? GetContract(DataCache snapshot, UInt160 hash)
         {
             return snapshot.TryGet(CreateStorageKey(Prefix_Contract).Add(hash))?.GetInteroperable<ContractState>();
         }

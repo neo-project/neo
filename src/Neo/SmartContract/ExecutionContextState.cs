@@ -27,12 +27,12 @@ namespace Neo.SmartContract
         /// <summary>
         /// The calling context.
         /// </summary>
-        public ExecutionContext CallingContext { get; set; }
+        public ExecutionContext? CallingContext { get; set; }
 
         /// <summary>
         /// The script hash of the calling native contract. Used in native contracts only.
         /// </summary>
-        internal UInt160 NativeCallingScriptHash { get; set; }
+        internal UInt160? NativeCallingScriptHash { get; set; }
 
         /// <summary>
         /// The <see cref="ContractState"/> of the current context.

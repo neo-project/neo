@@ -478,17 +478,17 @@ namespace Neo.Persistence
         /// </summary>
         /// <param name="key">The key of the entry.</param>
         /// <returns>The cached data. Or <see langword="null"/> if it is neither in the cache nor in the underlying storage.</returns>
-        public StorageItem TryGet(StorageKey key)
+        public StorageItem? TryGet(StorageKey key)
         {
             lock (dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (dictionary.TryGetValue(key, out Trackable? trackable))
                 {
                     if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
                         return null;
                     return trackable.Item;
                 }
-                StorageItem value = TryGetInternal(key);
+                StorageItem? value = TryGetInternal(key);
                 if (value == null) return null;
                 dictionary.Add(key, new Trackable
                 {
