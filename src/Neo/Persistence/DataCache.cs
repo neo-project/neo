@@ -58,7 +58,7 @@ namespace Neo.Persistence
             {
                 lock (dictionary)
                 {
-                    if (dictionary.TryGetValue(key, out Trackable trackable))
+                    if (dictionary.TryGetValue(key, out Trackable? trackable))
                     {
                         if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
                             throw new KeyNotFoundException();
@@ -205,7 +205,7 @@ namespace Neo.Persistence
         /// <param name="key_prefix">The prefix of the key.</param>
         /// <param name="direction">The search direction.</param>
         /// <returns>The entries found with the desired prefix.</returns>
-        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[] key_prefix = null, SeekDirection direction = SeekDirection.Forward)
+        public IEnumerable<(StorageKey Key, StorageItem Value)> Find(byte[]? key_prefix = null, SeekDirection direction = SeekDirection.Forward)
         {
             var seek_prefix = key_prefix;
             if (direction == SeekDirection.Backward)
@@ -230,7 +230,7 @@ namespace Neo.Persistence
                     throw new ArgumentException();
                 }
             }
-            return FindInternal(key_prefix, seek_prefix, direction);
+            return FindInternal(key_prefix!, seek_prefix!, direction);
         }
 
         private IEnumerable<(StorageKey Key, StorageItem Value)> FindInternal(byte[] key_prefix, byte[] seek_prefix, SeekDirection direction)

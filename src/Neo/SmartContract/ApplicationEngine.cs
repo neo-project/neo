@@ -90,12 +90,13 @@ namespace Neo.SmartContract
         /// <summary>
         /// The snapshot used to read or write data.
         /// </summary>
-        public DataCache Snapshot => CurrentContext?.GetState<ExecutionContextState>().Snapshot ?? originalSnapshot;
+        public DataCache? Snapshot => CurrentContext?.GetState<ExecutionContextState>().Snapshot ?? originalSnapshot;
 
         /// <summary>
-        /// The block being persisted. This field could be <see langword="null"/> if the <see cref="Trigger"/> is <see cref="TriggerType.Verification"/>.
+        /// The block being persisted.
+        /// This field could be <see langword="null"/> if the <see cref="Trigger"/> is <see cref="TriggerType.Verification"/>.
         /// </summary>
-        public Block PersistingBlock { get; }
+        public Block? PersistingBlock { get; }
 
         /// <summary>
         /// The <see cref="Neo.ProtocolSettings"/> used by the engine.
@@ -378,7 +379,7 @@ namespace Neo.SmartContract
         /// <param name="initialPosition">The initial position of the instruction pointer.</param>
         /// <param name="configureState">The action used to configure the state of the loaded context.</param>
         /// <returns>The loaded context.</returns>
-        public ExecutionContext LoadScript(Script script, int rvcount = -1, int initialPosition = 0, Action<ExecutionContextState> configureState = null)
+        public ExecutionContext LoadScript(Script script, int rvcount = -1, int initialPosition = 0, Action<ExecutionContextState>? configureState = null)
         {
             // Create and configure context
             ExecutionContext context = CreateContext(script, rvcount, initialPosition);

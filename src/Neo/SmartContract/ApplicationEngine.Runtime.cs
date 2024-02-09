@@ -187,9 +187,9 @@ namespace Neo.SmartContract
         /// Gets the timestamp of the current block.
         /// </summary>
         /// <returns>The timestamp of the current block.</returns>
-        protected internal ulong GetTime()
+        protected internal ulong? GetTime()
         {
-            return PersistingBlock.Timestamp;
+            return PersistingBlock?.Timestamp;
         }
 
         /// <summary>
@@ -253,7 +253,7 @@ namespace Neo.SmartContract
             if (ScriptContainer is Transaction tx)
             {
                 Signer[] signers;
-                OracleResponse response = tx.GetAttribute<OracleResponse>();
+                OracleResponse? response = tx.GetAttribute<OracleResponse>();
                 if (response is null)
                 {
                     signers = tx.Signers;
@@ -263,7 +263,7 @@ namespace Neo.SmartContract
                     OracleRequest request = NativeContract.Oracle.GetRequest(Snapshot, response.Id);
                     signers = NativeContract.Ledger.GetTransaction(Snapshot, request.OriginalTxid).Signers;
                 }
-                Signer signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
+                Signer? signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
                 if (signer is null) return false;
                 foreach (WitnessRule rule in signer.GetAllRules())
                 {
@@ -406,7 +406,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="hash">The hash of the specified contract. It can be set to <see langword="null"/> to get all notifications.</param>
         /// <returns>The notifications sent during the execution.</returns>
-        protected internal NotifyEventArgs[] GetNotifications(UInt160 hash)
+        protected internal NotifyEventArgs[] GetNotifications(UInt160? hash)
         {
             IEnumerable<NotifyEventArgs> notifications = Notifications;
             if (hash != null) // must filter by scriptHash
@@ -432,7 +432,7 @@ namespace Neo.SmartContract
         /// Get the Signers of the current transaction.
         /// </summary>
         /// <returns>The signers of the current transaction, or null if is not related to a transaction execution.</returns>
-        protected internal Signer[] GetCurrentSigners()
+        protected internal Signer[]? GetCurrentSigners()
         {
             if (ScriptContainer is Transaction tx)
                 return tx.Signers;

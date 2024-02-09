@@ -121,7 +121,7 @@ namespace Neo.SmartContract.Native
             List<ContractMethodMetadata> descriptors = new();
             foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
             {
-                ContractMethodAttribute attribute = member.GetCustomAttribute<ContractMethodAttribute>();
+                ContractMethodAttribute? attribute = member.GetCustomAttribute<ContractMethodAttribute>();
                 if (attribute is null) continue;
                 descriptors.Add(new ContractMethodMetadata(member, attribute));
             }

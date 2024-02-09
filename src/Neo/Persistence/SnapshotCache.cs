@@ -63,7 +63,7 @@ namespace Neo.Persistence
 
         protected override StorageItem GetInternal(StorageKey key)
         {
-            byte[] value = store.TryGet(key.ToArray());
+            byte[]? value = store.TryGet(key.ToArray());
             if (value == null) throw new KeyNotFoundException();
             return new(value);
         }
@@ -73,9 +73,9 @@ namespace Neo.Persistence
             return store.Seek(keyOrPrefix, direction).Select(p => (new StorageKey(p.Key), new StorageItem(p.Value)));
         }
 
-        protected override StorageItem TryGetInternal(StorageKey key)
+        protected override StorageItem? TryGetInternal(StorageKey key)
         {
-            byte[] value = store.TryGet(key.ToArray());
+            byte[]? value = store.TryGet(key.ToArray());
             if (value == null) return null;
             return new(value);
         }

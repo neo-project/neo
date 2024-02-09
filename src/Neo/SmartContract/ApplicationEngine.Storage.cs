@@ -177,11 +177,11 @@ namespace Neo.SmartContract
                 Id = context.Id,
                 Key = key
             };
-            StorageItem item = Snapshot.GetAndChange(skey);
+            StorageItem? item = Snapshot?.GetAndChange(skey);
             if (item is null)
             {
                 newDataSize = key.Length + value.Length;
-                Snapshot.Add(skey, item = new StorageItem());
+                Snapshot?.Add(skey, item = new StorageItem());
             }
             else
             {
@@ -196,7 +196,7 @@ namespace Neo.SmartContract
             }
             AddGas(newDataSize * StoragePrice);
 
-            item.Value = value;
+            item!.Value = value;
         }
 
         /// <summary>

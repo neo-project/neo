@@ -72,17 +72,17 @@ namespace Neo.SmartContract
         {
             ContractParameter parameter = new()
             {
-                Type = Enum.Parse<ContractParameterType>(json["type"].GetString())
+                Type = Enum.Parse<ContractParameterType>(json["type"]!.GetString())
             };
             if (json["value"] != null)
                 parameter.Value = parameter.Type switch
                 {
-                    ContractParameterType.Signature or ContractParameterType.ByteArray => Convert.FromBase64String(json["value"].AsString()),
-                    ContractParameterType.Boolean => json["value"].AsBoolean(),
-                    ContractParameterType.Integer => BigInteger.Parse(json["value"].AsString()),
-                    ContractParameterType.Hash160 => UInt160.Parse(json["value"].AsString()),
-                    ContractParameterType.Hash256 => UInt256.Parse(json["value"].AsString()),
-                    ContractParameterType.PublicKey => ECPoint.Parse(json["value"].AsString(), ECCurve.Secp256r1),
+                    ContractParameterType.Signature or ContractParameterType.ByteArray => Convert.FromBase64String(json["value"]!.AsString()),
+                    ContractParameterType.Boolean => json["value"]?.AsBoolean(),
+                    ContractParameterType.Integer => BigInteger.Parse(json["value"]!.AsString()),
+                    ContractParameterType.Hash160 => UInt160.Parse(json["value"]!.AsString()),
+                    ContractParameterType.Hash256 => UInt256.Parse(json["value"]!.AsString()),
+                    ContractParameterType.PublicKey => ECPoint.Parse(json["value"]!.AsString(), ECCurve.Secp256r1),
                     ContractParameterType.String => json["value"].AsString(),
                     ContractParameterType.Array => ((JArray)json["value"]).Select(p => FromJson((JObject)p)).ToList(),
                     ContractParameterType.Map => ((JArray)json["value"]).Select(p => new KeyValuePair<ContractParameter, ContractParameter>(FromJson((JObject)p["key"]), FromJson((JObject)p["value"]))).ToList(),

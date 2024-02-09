@@ -21,13 +21,13 @@ namespace Neo.Persistence
     {
         private readonly ConcurrentDictionary<byte[], byte[]> innerData;
         private readonly ImmutableDictionary<byte[], byte[]> immutableData;
-        private readonly ConcurrentDictionary<byte[], byte[]> writeBatch;
+        private readonly ConcurrentDictionary<byte[], byte[]?> writeBatch;
 
         public MemorySnapshot(ConcurrentDictionary<byte[], byte[]> innerData)
         {
             this.innerData = innerData;
             this.immutableData = innerData.ToImmutableDictionary(ByteArrayEqualityComparer.Default);
-            this.writeBatch = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Default);
+            this.writeBatch = new ConcurrentDictionary<byte[], byte[]?>(ByteArrayEqualityComparer.Default);
         }
 
         public void Commit()
@@ -63,9 +63,9 @@ namespace Neo.Persistence
             return records.Select(p => (p.Key[..], p.Value[..]));
         }
 
-        public byte[] TryGet(byte[] key)
+        public byte[]? TryGet(byte[] key)
         {
-            immutableData.TryGetValue(key, out byte[] value);
+            immutableData.TryGetValue(key, out byte[]? value);
             return value?[..];
         }
 

@@ -30,7 +30,7 @@ namespace Neo.Wallets.NEP6
         private string _password;
         private string? name;
         private Version version = null!;
-        private readonly Dictionary<UInt160, NEP6Account> accounts;
+        private readonly Dictionary<UInt160, NEP6Account> _accounts;
         private readonly JToken? extra;
 
         /// <summary>
@@ -58,14 +58,14 @@ namespace Neo.Wallets.NEP6
             if (File.Exists(path))
             {
                 JObject wallet = JToken.Parse(File.ReadAllBytes(path)).NullExceptionOr<JObject>();
-                LoadFromJson(wallet, out Scrypt, out accounts, out extra);
+                LoadFromJson(wallet, out Scrypt, out _accounts, out extra);
             }
             else
             {
                 this.name = name;
                 this.version = Version.Parse("1.0");
                 this.Scrypt = ScryptParameters.Default;
-                this.accounts = new Dictionary<UInt160, NEP6Account>();
+                this._accounts = new Dictionary<UInt160, NEP6Account>();
                 this.extra = JToken.Null;
             }
         }
@@ -80,7 +80,7 @@ namespace Neo.Wallets.NEP6
         public NEP6Wallet(string path, string password, ProtocolSettings settings, JObject json) : base(path, settings)
         {
             this._password = password;
-            LoadFromJson(json, out Scrypt, out accounts, out extra);
+            LoadFromJson(json, out Scrypt, out _accounts, out extra);
         }
 
         private void LoadFromJson(JObject wallet, out ScryptParameters scrypt, out Dictionary<UInt160, NEP6Account> accounts, out JToken? extra)
@@ -96,9 +96,9 @@ namespace Neo.Wallets.NEP6
 
         private void AddAccount(NEP6Account account)
         {
-            lock (accounts)
+            lock (_accounts)
             {
-                if (accounts.TryGetValue(account.ScriptHash, out NEP6Account? account_old))
+                if (_accounts.TryGetValue(account.ScriptHash, out NEP6Account? account_old))
                 {
                     account.Label = account_old.Label;
                     account.IsDefault = account_old.IsDefault;
@@ -119,15 +119,15 @@ namespace Neo.Wallets.NEP6
                     }
                     account.Extra = account_old.Extra;
                 }
-                accounts[account.ScriptHash] = account;
+                _accounts[account.ScriptHash] = account;
             }
         }
 
         public override bool Contains(UInt160 scriptHash)
         {
-            lock (accounts)
+            lock (_accounts)
             {
-                return accounts.ContainsKey(scriptHash);
+                return _accounts.ContainsKey(scriptHash);
             }
         }
 
@@ -197,26 +197,26 @@ namespace Neo.Wallets.NEP6
 
         public override bool DeleteAccount(UInt160 scriptHash)
         {
-            lock (accounts)
+            lock (_accounts)
             {
-                return accounts.Remove(scriptHash);
+                return _accounts.Remove(scriptHash);
             }
         }
 
         public override WalletAccount? GetAccount(UInt160 scriptHash)
         {
-            lock (accounts)
+            lock (_accounts)
             {
-                accounts.TryGetValue(scriptHash, out NEP6Account? account);
+                _accounts.TryGetValue(scriptHash, out NEP6Account? account);
                 return account;
             }
         }
 
         public override IEnumerable<WalletAccount> GetAccounts()
         {
-            lock (accounts)
+            lock (_accounts)
             {
-                foreach (NEP6Account account in accounts.Values)
+                foreach (NEP6Account account in _accounts.Values)
                     yield return account;
             }
         }
@@ -286,14 +286,14 @@ namespace Neo.Wallets.NEP6
         /// </summary>
         public JObject ToJson()
         {
-            lock (accounts)
+            lock (_accounts)
             {
                 return new()
                 {
                     ["name"] = name,
                     ["version"] = version.ToString(),
                     ["scrypt"] = Scrypt.ToJson(),
-                    ["accounts"] = accounts.Values.Select(p => p.ToJson()).ToArray(),
+                    ["accounts"] = _accounts.Values.Select(p => p.ToJson()).ToArray(),
                     ["extra"] = extra
                 };
             }
@@ -311,12 +311,12 @@ namespace Neo.Wallets.NEP6
 
         private bool VerifyPasswordInternal(string password)
         {
-            lock (accounts)
+            lock (_accounts)
             {
-                NEP6Account? account = accounts.Values.FirstOrDefault(p => !p.Decrypted);
+                NEP6Account? account = _accounts.Values.FirstOrDefault(p => !p.Decrypted);
                 if (account == null)
                 {
-                    account = accounts.Values.FirstOrDefault(p => p.HasKey);
+                    account = _accounts.Values.FirstOrDefault(p => p.HasKey);
                 }
                 if (account == null) return true;
                 if (account.Decrypted)
@@ -341,9 +341,9 @@ namespace Neo.Wallets.NEP6
         public override bool ChangePassword(string oldPassword, string newPassword)
         {
             bool succeed = true;
-            lock (accounts)
+            lock (_accounts)
             {
-                Parallel.ForEach(accounts.Values, (account, state) =>
+                Parallel.ForEach(_accounts.Values, (account, state) =>
                 {
                     if (!account.ChangePasswordPrepare(oldPassword, newPassword))
                     {
@@ -354,9 +354,9 @@ namespace Neo.Wallets.NEP6
             }
             if (succeed)
             {
-                lock (accounts)
+                lock (_accounts)
                 {
-                    foreach (NEP6Account account in accounts.Values)
+                    foreach (NEP6Account account in _accounts.Values)
                         account.ChangePasswordCommit();
                 }
 
@@ -364,9 +364,9 @@ namespace Neo.Wallets.NEP6
             }
             else
             {
-                lock (accounts)
+                lock (_accounts)
                 {
-                    foreach (NEP6Account account in accounts.Values)
+                    foreach (NEP6Account account in _accounts.Values)
                         account.ChangePasswordRoolback();
                 }
             }

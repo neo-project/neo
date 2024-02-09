@@ -112,7 +112,7 @@ namespace Neo.Wallets
         /// </summary>
         /// <param name="scriptHash">The hash of the account.</param>
         /// <returns>The account with the specified hash.</returns>
-        public abstract WalletAccount GetAccount(UInt160 scriptHash);
+        public abstract WalletAccount? GetAccount(UInt160 scriptHash);
 
         /// <summary>
         /// Gets all the accounts from the wallet.
@@ -461,7 +461,7 @@ namespace Neo.Wallets
         /// <param name="cosigners">The cosigners to be added to the transaction.</param>
         /// <param name="persistingBlock">The block environment to execute the transaction. If null, <see cref="ApplicationEngine.CreateDummyBlock"></see> will be used.</param>
         /// <returns>The created transaction.</returns>
-        public Transaction MakeTransaction(DataCache snapshot, TransferOutput[] outputs, UInt160 from = null, Signer[] cosigners = null, Block persistingBlock = null)
+        public Transaction MakeTransaction(DataCache snapshot, TransferOutput[] outputs, UInt160? from = null, Signer[]? cosigners = null, Block? persistingBlock = null)
         {
             UInt160[] accounts;
             if (from is null)
@@ -474,7 +474,7 @@ namespace Neo.Wallets
             }
             Dictionary<UInt160, Signer> cosignerList = cosigners?.ToDictionary(p => p.Account) ?? new Dictionary<UInt160, Signer>();
             byte[] script;
-            List<(UInt160 Account, BigInteger Value)> balances_gas = null;
+            List<(UInt160 Account, BigInteger Value)>? balances_gas = null;
             using (ScriptBuilder sb = new())
             {
                 foreach (var (assetId, group, sum) in outputs.GroupBy(p => p.AssetId, (k, g) => (k, g, g.Select(p => p.Value.Value).Sum())))
@@ -499,7 +499,7 @@ namespace Neo.Wallets
                         var balances_used = FindPayingAccounts(balances, output.Value.Value);
                         foreach (var (account, value) in balances_used)
                         {
-                            if (cosignerList.TryGetValue(account, out Signer signer))
+                            if (cosignerList.TryGetValue(account, out Signer? signer))
                             {
                                 if (signer.Scopes != WitnessScope.Global)
                                     signer.Scopes |= WitnessScope.CalledByEntry;
@@ -538,7 +538,7 @@ namespace Neo.Wallets
         /// <param name="maxGas">The maximum gas that can be spent to execute the script.</param>
         /// <param name="persistingBlock">The block environment to execute the transaction. If null, <see cref="ApplicationEngine.CreateDummyBlock"></see> will be used.</param>
         /// <returns>The created transaction.</returns>
-        public Transaction MakeTransaction(DataCache snapshot, ReadOnlyMemory<byte> script, UInt160 sender = null, Signer[] cosigners = null, TransactionAttribute[] attributes = null, long maxGas = ApplicationEngine.TestModeGas, Block persistingBlock = null)
+        public Transaction MakeTransaction(DataCache snapshot, ReadOnlyMemory<byte> script, UInt160? sender = null, Signer[]? cosigners = null, TransactionAttribute[]? attributes = null, long maxGas = ApplicationEngine.TestModeGas, Block? persistingBlock = null)
         {
             UInt160[] accounts;
             if (sender is null)
@@ -603,8 +603,8 @@ namespace Neo.Wallets
             foreach (UInt160 hash in hashes)
             {
                 index++;
-                byte[] witness_script = GetAccount(hash)?.Contract?.Script;
-                byte[] invocationScript = null;
+                byte[]? witness_script = GetAccount(hash)?.Contract?.Script;
+                byte[]? invocationScript = null;
 
                 if (tx.Witnesses != null)
                 {
@@ -682,13 +682,13 @@ namespace Neo.Wallets
             bool fSuccess = false;
             foreach (UInt160 scriptHash in context.ScriptHashes)
             {
-                WalletAccount account = GetAccount(scriptHash);
+                WalletAccount? account = GetAccount(scriptHash);
 
                 if (account != null)
                 {
                     // Try to sign self-contained multiSig
 
-                    Contract multiSigContract = account.Contract;
+                    Contract? multiSigContract = account.Contract;
 
                     if (multiSigContract != null &&
                         IsMultiSigContract(multiSigContract.Script, out int m, out ECPoint[] points))
@@ -696,7 +696,7 @@ namespace Neo.Wallets
                         foreach (var point in points)
                         {
                             account = GetAccount(point);
-                            if (account?.HasKey != true) continue;
+                            if (account.HasKey != true) continue;
                             KeyPair key = account.GetKey();
                             byte[] signature = context.Verifiable.Sign(key, context.Network);
                             fSuccess |= context.AddSignature(multiSigContract, key.PublicKey, signature);
@@ -708,7 +708,7 @@ namespace Neo.Wallets
                     else if (account.HasKey)
                     {
                         // Try to sign with regular accounts
-                        KeyPair key = account.GetKey();
+                        KeyPair key = account.GetKey()!;
                         byte[] signature = context.Verifiable.Sign(key, context.Network);
                         fSuccess |= context.AddSignature(account.Contract, key.PublicKey, signature);
                         continue;
@@ -747,12 +747,12 @@ namespace Neo.Wallets
         /// </summary>
         public abstract void Save();
 
-        public static Wallet Create(string name, string path, string password, ProtocolSettings settings)
+        public static Wallet? Create(string name, string path, string password, ProtocolSettings settings)
         {
             return GetFactory(path)?.CreateWallet(name, path, password, settings);
         }
 
-        public static Wallet Open(string path, string password, ProtocolSettings settings)
+        public static Wallet? Open(string path, string password, ProtocolSettings settings)
         {
             return GetFactory(path)?.OpenWallet(path, password, settings);
         }

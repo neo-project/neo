@@ -54,7 +54,7 @@ namespace Neo.VM
         /// <param name="builder">The <see cref="ScriptBuilder"/> to be used.</param>
         /// <param name="map">The key/value pairs of the map.</param>
         /// <returns>The same instance as <paramref name="builder"/>.</returns>
-        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder builder, IEnumerable<KeyValuePair<TKey, TValue>> map = null)
+        public static ScriptBuilder CreateMap<TKey, TValue>(this ScriptBuilder builder, IEnumerable<KeyValuePair<TKey, TValue>>? map = null)
         {
             builder.Emit(OpCode.NEWMAP);
             if (map != null)
@@ -303,13 +303,13 @@ namespace Neo.VM
             return result;
         }
 
-        private static JObject ToJson(StackItem item, HashSet<StackItem> context, ref int maxSize)
+        private static JObject ToJson(StackItem item, HashSet<StackItem>? context, ref int maxSize)
         {
             JObject json = new()
             {
                 ["type"] = item.Type
             };
-            JToken value = null;
+            JToken? value = null;
             maxSize -= 11/*{"type":""}*/+ item.Type.ToString().Length;
             switch (item)
             {
@@ -391,10 +391,10 @@ namespace Neo.VM
             return ToParameter(item, null);
         }
 
-        private static ContractParameter ToParameter(StackItem item, List<(StackItem, ContractParameter)> context)
+        private static ContractParameter ToParameter(StackItem item, List<(StackItem, ContractParameter)>? context)
         {
             if (item is null) throw new ArgumentNullException(nameof(item));
-            ContractParameter parameter = null;
+            ContractParameter? parameter = null;
             switch (item)
             {
                 case Array array:
@@ -470,11 +470,11 @@ namespace Neo.VM
             return ToStackItem(parameter, null);
         }
 
-        private static StackItem ToStackItem(ContractParameter parameter, List<(StackItem, ContractParameter)> context)
+        private static StackItem ToStackItem(ContractParameter parameter, List<(StackItem, ContractParameter)>? context)
         {
             if (parameter is null) throw new ArgumentNullException(nameof(parameter));
             if (parameter.Value is null) return StackItem.Null;
-            StackItem stackItem = null;
+            StackItem? stackItem = null;
             switch (parameter.Type)
             {
                 case ContractParameterType.Array:
