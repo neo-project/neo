@@ -14,7 +14,6 @@ using Neo.Network.P2P.Payloads;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
-using System.Linq;
 
 namespace Neo.SmartContract.Native
 {
@@ -31,7 +30,7 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The transaction, if the transaction is trimmed this value will be null
         /// </summary>
-        public Transaction Transaction;
+        public Transaction? Transaction;
 
         /// <summary>
         /// The execution state

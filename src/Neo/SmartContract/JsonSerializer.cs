@@ -171,7 +171,7 @@ namespace Neo.SmartContract
             return Deserialize(engine, json, ref maxStackSize, referenceCounter);
         }
 
-        private static StackItem Deserialize(ApplicationEngine engine, JToken json, ref uint maxStackSize, ReferenceCounter referenceCounter)
+        private static StackItem Deserialize(ApplicationEngine engine, JToken? json, ref uint maxStackSize, ReferenceCounter referenceCounter)
         {
             if (maxStackSize-- == 0) throw new FormatException();
             switch (json)
@@ -183,7 +183,7 @@ namespace Neo.SmartContract
                 case JArray array:
                     {
                         List<StackItem> list = new(array.Count);
-                        foreach (JToken obj in array)
+                        foreach (JToken? obj in array)
                             list.Add(Deserialize(engine, obj, ref maxStackSize, referenceCounter));
                         return new Array(referenceCounter, list);
                     }
