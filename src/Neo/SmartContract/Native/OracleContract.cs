@@ -100,7 +100,7 @@ namespace Neo.SmartContract.Native
             if (price <= 0)
                 throw new ArgumentOutOfRangeException(nameof(price));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Price)).Set(price);
+            engine.Snapshot?.GetAndChange(CreateStorageKey(Prefix_Price))?.Set(price);
         }
 
         /// <summary>
@@ -117,12 +117,13 @@ namespace Neo.SmartContract.Native
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify)]
         private ContractTask Finish(ApplicationEngine engine)
         {
-            if (engine.InvocationStack.Count != 2) throw new InvalidOperationException();
-            if (engine.GetInvocationCounter() != 1) throw new InvalidOperationException();
-            Transaction tx = (Transaction)engine.ScriptContainer;
-            OracleResponse response = tx.GetAttribute<OracleResponse>();
+            if(engine.Snapshot == null) throw new InvalidOperationException($"{engine.Snapshot} is null");
+            if (engine.InvocationStack.Count != 2) throw new InvalidOperationException("The invocation stack is invalid");
+            if (engine.GetInvocationCounter() != 1) throw new InvalidOperationException("The invocation counter is invalid");
+            Transaction? tx = (Transaction?)engine.ScriptContainer;
+            OracleResponse? response = tx?.GetAttribute<OracleResponse>();
             if (response == null) throw new ArgumentException("Oracle response was not found");
-            OracleRequest request = GetRequest(engine.Snapshot, response.Id);
+            OracleRequest? request = GetRequest(engine.Snapshot, response.Id);
             if (request == null) throw new ArgumentException("Oracle request was not found");
             engine.SendNotification(Hash, "OracleResponse", new VM.Types.Array(engine.ReferenceCounter) { response.Id, request.OriginalTxid.ToArray() });
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.Limits, engine.ReferenceCounter);
@@ -131,10 +132,13 @@ namespace Neo.SmartContract.Native
 
         private UInt256 GetOriginalTxid(ApplicationEngine engine)
         {
+            if(engine.ScriptContainer == null) throw new InvalidOperationException($"{engine.ScriptContainer} is null");
+            if(engine.Snapshot == null) throw new InvalidOperationException($"{engine.Snapshot} is null");
             Transaction tx = (Transaction)engine.ScriptContainer;
-            OracleResponse response = tx.GetAttribute<OracleResponse>();
+            OracleResponse? response = tx.GetAttribute<OracleResponse>();
             if (response is null) return tx.Hash;
-            OracleRequest request = GetRequest(engine.Snapshot, response.Id);
+            OracleRequest? request = GetRequest(engine.Snapshot, response.Id);
+            if(request is null) throw new InvalidOperationException("Oracle request was not found");
             return request.OriginalTxid;
         }
 
@@ -144,7 +148,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="id">The id of the request.</param>
         /// <returns>The pending request. Or <see langword="null"/> if no request with the specified id is found.</returns>
-        public OracleRequest GetRequest(DataCache snapshot, ulong id)
+        public OracleRequest? GetRequest(DataCache snapshot, ulong id)
         {
             return snapshot.TryGet(CreateStorageKey(Prefix_Request).AddBigEndian(id))?.GetInteroperable<OracleRequest>();
         }
@@ -167,7 +171,7 @@ namespace Neo.SmartContract.Native
         /// <returns>All the requests with the specified url.</returns>
         public IEnumerable<(ulong, OracleRequest)> GetRequestsByUrl(DataCache snapshot, string url)
         {
-            IdList list = snapshot.TryGet(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)))?.GetInteroperable<IdList>();
+            IdList? list = snapshot.TryGet(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)))?.GetInteroperable<IdList>();
             if (list is null) yield break;
             foreach (ulong id in list)
                 yield return (id, snapshot[CreateStorageKey(Prefix_Request).AddBigEndian(id)].GetInteroperable<OracleRequest>());
@@ -187,23 +191,24 @@ namespace Neo.SmartContract.Native
 
         internal override async ContractTask PostPersist(ApplicationEngine engine)
         {
-            (UInt160 Account, BigInteger GAS)[] nodes = null;
+            if (engine.PersistingBlock == null || engine.Snapshot == null)  throw new InvalidOperationException($"{nameof(engine.PersistingBlock)} or {nameof(engine.Snapshot)}  is null");
+            (UInt160 Account, BigInteger GAS)[]? nodes = null;
             foreach (Transaction tx in engine.PersistingBlock.Transactions)
             {
                 //Filter the response transactions
-                OracleResponse response = tx.GetAttribute<OracleResponse>();
+                OracleResponse? response = tx.GetAttribute<OracleResponse>();
                 if (response is null) continue;
 
                 //Remove the request from storage
                 StorageKey key = CreateStorageKey(Prefix_Request).AddBigEndian(response.Id);
-                OracleRequest request = engine.Snapshot.TryGet(key)?.GetInteroperable<OracleRequest>();
+                OracleRequest? request = engine.Snapshot.TryGet(key)?.GetInteroperable<OracleRequest>();
                 if (request == null) continue;
                 engine.Snapshot.Delete(key);
 
                 //Remove the id from IdList
                 key = CreateStorageKey(Prefix_IdList).Add(GetUrlHash(request.Url));
-                IdList list = engine.Snapshot.GetAndChange(key).GetInteroperable<IdList>();
-                if (!list.Remove(response.Id)) throw new InvalidOperationException();
+                IdList? list = engine.Snapshot.GetAndChange(key)?.GetInteroperable<IdList>();
+                if (list == null || !list.Remove(response.Id)) throw new InvalidOperationException();
                 if (list.Count == 0) engine.Snapshot.Delete(key);
 
                 //Mint GAS for oracle nodes
@@ -225,7 +230,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private async ContractTask Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForResponse)
+        private async ContractTask Request(ApplicationEngine engine, string url, string? filter, string callback, StackItem userData, long gasForResponse)
         {
             //Check the arguments
             if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength
@@ -234,6 +239,8 @@ namespace Neo.SmartContract.Native
                 || gasForResponse < 0_10000000)
                 throw new ArgumentException();
 
+            if (engine.Snapshot == null) throw new InvalidOperationException($"{engine.Snapshot} is null");
+
             engine.AddGas(GetPrice(engine.Snapshot));
 
             //Mint gas for the response
@@ -241,13 +248,13 @@ namespace Neo.SmartContract.Native
             await GAS.Mint(engine, Hash, gasForResponse, false);
 
             //Increase the request id
-            StorageItem item_id = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_RequestId));
+            StorageItem item_id = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_RequestId))!;
             ulong id = (ulong)(BigInteger)item_id;
             item_id.Add(1);
 
             //Put the request to storage
             if (ContractManagement.GetContract(engine.Snapshot, engine.CallingScriptHash) is null)
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("The calling contract is not deployed");
             engine.Snapshot.Add(CreateStorageKey(Prefix_Request).AddBigEndian(id), new StorageItem(new OracleRequest
             {
                 OriginalTxid = GetOriginalTxid(engine),
@@ -260,7 +267,10 @@ namespace Neo.SmartContract.Native
             }));
 
             //Add the id to the IdList
-            var list = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)), () => new StorageItem(new IdList())).GetInteroperable<IdList>();
+            var list = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)), () => new StorageItem(new IdList()))?.GetInteroperable<IdList>();
+
+            if(list == null) throw new InvalidOperationException($"{nameof(list)} is null");
+
             if (list.Count >= 256)
                 throw new InvalidOperationException("There are too many pending responses for this url");
             list.Add(id);
@@ -271,7 +281,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15)]
         private bool Verify(ApplicationEngine engine)
         {
-            Transaction tx = (Transaction)engine.ScriptContainer;
+            Transaction? tx = (Transaction?)engine.ScriptContainer;
             return tx?.GetAttribute<OracleResponse>() != null;
         }
 

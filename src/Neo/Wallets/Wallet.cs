@@ -248,7 +248,7 @@ namespace Neo.Wallets
         /// <returns>The default account of the wallet.</returns>
         public virtual WalletAccount GetDefaultAccount()
         {
-            WalletAccount first = null;
+            WalletAccount? first = null;
             foreach (WalletAccount account in GetAccounts())
             {
                 if (account.IsDefault) return account;
