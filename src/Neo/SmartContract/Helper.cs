@@ -39,8 +39,8 @@ namespace Neo.SmartContract
         /// </summary>
         /// <returns>The calculated cost.</returns>
         public static long SignatureContractCost() =>
-            ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
-            ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
+            ApplicationEngine.OpCodePrices[(byte)OpCode.PUSHDATA1] * 2 +
+            ApplicationEngine.OpCodePrices[(byte)OpCode.SYSCALL] +
             ApplicationEngine.CheckSigPrice;
 
         /// <summary>
@@ -51,12 +51,12 @@ namespace Neo.SmartContract
         /// <returns>The calculated cost.</returns>
         public static long MultiSignatureContractCost(int m, int n)
         {
-            long fee = ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n);
+            long fee = ApplicationEngine.OpCodePrices[(byte)OpCode.PUSHDATA1] * (m + n);
             using (ScriptBuilder sb = new())
-                fee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
+                fee += ApplicationEngine.OpCodePrices[(byte)(OpCode)sb.EmitPush(m).ToArray()[0]];
             using (ScriptBuilder sb = new())
-                fee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
-            fee += ApplicationEngine.OpCodePrices[OpCode.SYSCALL];
+                fee += ApplicationEngine.OpCodePrices[(byte)(OpCode)sb.EmitPush(n).ToArray()[0]];
+            fee += ApplicationEngine.OpCodePrices[(byte)OpCode.SYSCALL];
             fee += ApplicationEngine.CheckSigPrice * n;
             return fee;
         }

@@ -23,7 +23,7 @@ namespace Neo.UnitTests.SmartContract
         public void AllOpcodePriceAreSet()
         {
             foreach (OpCode opcode in Enum.GetValues(typeof(OpCode)))
-                Assert.IsTrue(ApplicationEngine.OpCodePrices.ContainsKey(opcode), opcode.ToString());
+                Assert.AreNotEqual(0, ApplicationEngine.OpCodePrices[(byte)opcode]);
         }
     }
 }

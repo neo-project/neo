@@ -529,7 +529,7 @@ namespace Neo.SmartContract
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             Diagnostic?.PreExecuteInstruction(instruction);
-            AddGas(ExecFeeFactor * OpCodePrices[instruction.OpCode]);
+            AddGas(ExecFeeFactor * OpCodePrices[(byte)instruction.OpCode]);
         }
 
         protected override void PostExecuteInstruction(Instruction instruction)

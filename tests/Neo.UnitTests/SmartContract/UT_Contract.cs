@@ -164,7 +164,7 @@ namespace Neo.UnitTests.SmartContract
             byte[] verification = Contract.CreateSignatureRedeemScript(key.PublicKey);
             byte[] invocation = new ScriptBuilder().EmitPush(UInt160.Zero).ToArray();
 
-            var fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 + ApplicationEngine.OpCodePrices[OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice);
+            var fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePrices[(byte)OpCode.PUSHDATA1] * 2 + ApplicationEngine.OpCodePrices[(byte)OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice);
 
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, null, settings: TestBlockchain.TheNeoSystem.Settings))
             {
@@ -192,7 +192,7 @@ namespace Neo.UnitTests.SmartContract
             byte[] verification = Contract.CreateMultiSigRedeemScript(2, publicKeys);
             byte[] invocation = new ScriptBuilder().EmitPush(UInt160.Zero).EmitPush(UInt160.Zero).ToArray();
 
-            long fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (2 + 2) + ApplicationEngine.OpCodePrices[OpCode.PUSHINT8] * 2 + ApplicationEngine.OpCodePrices[OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice * 2);
+            long fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePrices[(byte)OpCode.PUSHDATA1] * (2 + 2) + ApplicationEngine.OpCodePrices[(byte)OpCode.PUSHINT8] * 2 + ApplicationEngine.OpCodePrices[(byte)OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice * 2);
 
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, null, settings: TestBlockchain.TheNeoSystem.Settings))
             {
