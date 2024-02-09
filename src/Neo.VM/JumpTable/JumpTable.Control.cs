@@ -24,47 +24,47 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void JMP(ExecutionEngine engine, Instruction instruction)
+        public virtual void Jmp(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteJumpOffset(engine, instruction.TokenI8);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void JMP_L(ExecutionEngine engine, Instruction instruction)
+        public virtual void Jmp_L(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteJumpOffset(engine, instruction.TokenI32);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void JMPIF(ExecutionEngine engine, Instruction instruction)
+        public virtual void JmpIf(ExecutionEngine engine, Instruction instruction)
         {
             if (engine.Pop().GetBoolean())
                 ExecuteJumpOffset(engine, instruction.TokenI8);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void JMPIF_L(ExecutionEngine engine, Instruction instruction)
+        public virtual void JmpIf_L(ExecutionEngine engine, Instruction instruction)
         {
             if (engine.Pop().GetBoolean())
                 ExecuteJumpOffset(engine, instruction.TokenI32);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void JMPIFNOT(ExecutionEngine engine, Instruction instruction)
+        public virtual void JmpIfNot(ExecutionEngine engine, Instruction instruction)
         {
             if (!engine.Pop().GetBoolean())
                 ExecuteJumpOffset(engine, instruction.TokenI8);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void JMPIFNOT_L(ExecutionEngine engine, Instruction instruction)
+        public virtual void JmpIfNot_L(ExecutionEngine engine, Instruction instruction)
         {
             if (!engine.Pop().GetBoolean())
                 ExecuteJumpOffset(engine, instruction.TokenI32);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void JMPEQ(ExecutionEngine engine, Instruction instruction)
+        public virtual void JmpEq(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -73,7 +73,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void JMPEQ_L(ExecutionEngine engine, Instruction instruction)
+        public virtual void JmpEq_L(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -82,7 +82,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void JMPNE(ExecutionEngine engine, Instruction instruction)
+        public virtual void JmpNe(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -91,7 +91,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void JMPNE_L(ExecutionEngine engine, Instruction instruction)
+        public virtual void JmpNe_L(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -100,7 +100,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void JMPGT(ExecutionEngine engine, Instruction instruction)
+        public virtual void JmpGt(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -109,7 +109,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void JMPGT_L(ExecutionEngine engine, Instruction instruction)
+        public virtual void JmpGt_L(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -118,7 +118,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void JMPGE(ExecutionEngine engine, Instruction instruction)
+        public virtual void JmpGe(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -127,7 +127,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void JMPGE_L(ExecutionEngine engine, Instruction instruction)
+        public virtual void JmpGe_L(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -136,7 +136,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void JMPLT(ExecutionEngine engine, Instruction instruction)
+        public virtual void JmpLt(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -145,7 +145,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void JMPLT_L(ExecutionEngine engine, Instruction instruction)
+        public virtual void JmpLt_L(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -154,7 +154,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void JMPLE(ExecutionEngine engine, Instruction instruction)
+        public virtual void JmpLe(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -172,19 +172,19 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void CALL(ExecutionEngine engine, Instruction instruction)
+        public virtual void Call(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteCall(engine, checked(engine.CurrentContext!.InstructionPointer + instruction.TokenI8));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void CALL_L(ExecutionEngine engine, Instruction instruction)
+        public virtual void Call_L(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteCall(engine, checked(engine.CurrentContext!.InstructionPointer + instruction.TokenI32));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void CALLA(ExecutionEngine engine, Instruction instruction)
+        public virtual void CallA(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop<Pointer>();
             if (x.Script != engine.CurrentContext!.Script)
@@ -193,19 +193,19 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void CALLT(ExecutionEngine engine, Instruction instruction)
+        public virtual void CallT(ExecutionEngine engine, Instruction instruction)
         {
             throw new InvalidOperationException($"Token not found: {instruction.TokenU16}");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void ABORT(ExecutionEngine engine, Instruction instruction)
+        public virtual void Abort(ExecutionEngine engine, Instruction instruction)
         {
             throw new Exception($"{OpCode.ABORT} is executed.");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void ASSERT(ExecutionEngine engine, Instruction instruction)
+        public virtual void Assert(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop().GetBoolean();
             if (!x)
@@ -213,13 +213,13 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void THROW(ExecutionEngine engine, Instruction instruction)
+        public virtual void Throw(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteThrow(engine, engine.Pop());
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void TRY(ExecutionEngine engine, Instruction instruction)
+        public virtual void Try(ExecutionEngine engine, Instruction instruction)
         {
             int catchOffset = instruction.TokenI8;
             int finallyOffset = instruction.TokenI8_1;
@@ -227,7 +227,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void TRY_L(ExecutionEngine engine, Instruction instruction)
+        public virtual void Try_L(ExecutionEngine engine, Instruction instruction)
         {
             var catchOffset = instruction.TokenI32;
             var finallyOffset = instruction.TokenI32_1;
@@ -235,21 +235,21 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void ENDTRY(ExecutionEngine engine, Instruction instruction)
+        public virtual void EndTry(ExecutionEngine engine, Instruction instruction)
         {
             var endOffset = instruction.TokenI8;
             ExecuteEndTry(engine, endOffset);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void ENDTRY_L(ExecutionEngine engine, Instruction instruction)
+        public virtual void EndTry_L(ExecutionEngine engine, Instruction instruction)
         {
             var endOffset = instruction.TokenI32;
             ExecuteEndTry(engine, endOffset);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void ENDFINALLY(ExecutionEngine engine, Instruction instruction)
+        public virtual void EndFinally(ExecutionEngine engine, Instruction instruction)
         {
             if (engine.CurrentContext!.TryStack is null)
                 throw new InvalidOperationException($"The corresponding TRY block cannot be found.");
@@ -265,7 +265,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void RET(ExecutionEngine engine, Instruction instruction)
+        public virtual void Ret(ExecutionEngine engine, Instruction instruction)
         {
             var context_pop = engine.InvocationStack.Pop();
             var stack_eval = engine.InvocationStack.Count == 0 ? engine.ResultStack : engine.InvocationStack.Peek().EvaluationStack;
@@ -282,7 +282,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void SYSCALL(ExecutionEngine engine, Instruction instruction)
+        public virtual void Syscall(ExecutionEngine engine, Instruction instruction)
         {
             throw new InvalidOperationException($"Syscall not found: {instruction.TokenU32}");
         }

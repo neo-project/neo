@@ -17,7 +17,7 @@ namespace Neo.VM
     public partial class JumpTable
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void NEWBUFFER(ExecutionEngine engine, Instruction instruction)
+        public virtual void NewBuffer(ExecutionEngine engine, Instruction instruction)
         {
             int length = (int)engine.Pop().GetInteger();
             engine.Limits.AssertMaxItemSize(length);
@@ -25,7 +25,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void MEMCPY(ExecutionEngine engine, Instruction instruction)
+        public virtual void Memcpy(ExecutionEngine engine, Instruction instruction)
         {
             int count = (int)engine.Pop().GetInteger();
             if (count < 0)
@@ -46,7 +46,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void CAT(ExecutionEngine engine, Instruction instruction)
+        public virtual void Cat(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetSpan();
             var x1 = engine.Pop().GetSpan();
@@ -59,7 +59,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void SUBSTR(ExecutionEngine engine, Instruction instruction)
+        public virtual void SubStr(ExecutionEngine engine, Instruction instruction)
         {
             int count = (int)engine.Pop().GetInteger();
             if (count < 0)
@@ -76,7 +76,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LEFT(ExecutionEngine engine, Instruction instruction)
+        public virtual void Left(ExecutionEngine engine, Instruction instruction)
         {
             int count = (int)engine.Pop().GetInteger();
             if (count < 0)
@@ -90,7 +90,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void RIGHT(ExecutionEngine engine, Instruction instruction)
+        public virtual void Right(ExecutionEngine engine, Instruction instruction)
         {
             int count = (int)engine.Pop().GetInteger();
             if (count < 0)

@@ -18,25 +18,25 @@ namespace Neo.VM
     public partial class JumpTable
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void DEPTH(ExecutionEngine engine, Instruction instruction)
+        public virtual void Depth(ExecutionEngine engine, Instruction instruction)
         {
             engine.Push(engine.CurrentContext!.EvaluationStack.Count);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void DROP(ExecutionEngine engine, Instruction instruction)
+        public virtual void Drop(ExecutionEngine engine, Instruction instruction)
         {
             engine.Pop();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void NIP(ExecutionEngine engine, Instruction instruction)
+        public virtual void Nip(ExecutionEngine engine, Instruction instruction)
         {
             engine.CurrentContext!.EvaluationStack.Remove<StackItem>(1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void XDROP(ExecutionEngine engine, Instruction instruction)
+        public virtual void XDrop(ExecutionEngine engine, Instruction instruction)
         {
             var n = (int)engine.Pop().GetInteger();
             if (n < 0)
@@ -45,25 +45,25 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void CLEAR(ExecutionEngine engine, Instruction instruction)
+        public virtual void Clear(ExecutionEngine engine, Instruction instruction)
         {
             engine.CurrentContext!.EvaluationStack.Clear();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void DUP(ExecutionEngine engine, Instruction instruction)
+        public virtual void Dup(ExecutionEngine engine, Instruction instruction)
         {
             engine.Push(engine.Peek());
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void OVER(ExecutionEngine engine, Instruction instruction)
+        public virtual void Over(ExecutionEngine engine, Instruction instruction)
         {
             engine.Push(engine.Peek(1));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void PICK(ExecutionEngine engine, Instruction instruction)
+        public virtual void Pick(ExecutionEngine engine, Instruction instruction)
         {
             var n = (int)engine.Pop().GetInteger();
             if (n < 0)
@@ -72,27 +72,27 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void TUCK(ExecutionEngine engine, Instruction instruction)
+        public virtual void Tuck(ExecutionEngine engine, Instruction instruction)
         {
             engine.CurrentContext!.EvaluationStack.Insert(2, engine.Peek());
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void SWAP(ExecutionEngine engine, Instruction instruction)
+        public virtual void Swap(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.CurrentContext!.EvaluationStack.Remove<StackItem>(1);
             engine.Push(x);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void ROT(ExecutionEngine engine, Instruction instruction)
+        public virtual void Rot(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.CurrentContext!.EvaluationStack.Remove<StackItem>(2);
             engine.Push(x);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void ROLL(ExecutionEngine engine, Instruction instruction)
+        public virtual void Roll(ExecutionEngine engine, Instruction instruction)
         {
             var n = (int)engine.Pop().GetInteger();
             if (n < 0)
@@ -103,19 +103,19 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void REVERSE3(ExecutionEngine engine, Instruction instruction)
+        public virtual void Reverse3(ExecutionEngine engine, Instruction instruction)
         {
             engine.CurrentContext!.EvaluationStack.Reverse(3);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void REVERSE4(ExecutionEngine engine, Instruction instruction)
+        public virtual void Reverse4(ExecutionEngine engine, Instruction instruction)
         {
             engine.CurrentContext!.EvaluationStack.Reverse(4);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void REVERSEN(ExecutionEngine engine, Instruction instruction)
+        public virtual void ReverseN(ExecutionEngine engine, Instruction instruction)
         {
             var n = (int)engine.Pop().GetInteger();
             engine.CurrentContext!.EvaluationStack.Reverse(n);

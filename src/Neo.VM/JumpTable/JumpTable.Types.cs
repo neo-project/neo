@@ -18,14 +18,14 @@ namespace Neo.VM
     public partial class JumpTable
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void ISNULL(ExecutionEngine engine, Instruction instruction)
+        public virtual void IsNull(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop();
             engine.Push(x.IsNull);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void ISTYPE(ExecutionEngine engine, Instruction instruction)
+        public virtual void IsType(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop();
             var type = (StackItemType)instruction.TokenU8;
@@ -35,21 +35,21 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void CONVERT(ExecutionEngine engine, Instruction instruction)
+        public virtual void Convert(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop();
             engine.Push(x.ConvertTo((StackItemType)instruction.TokenU8));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void ABORTMSG(ExecutionEngine engine, Instruction instruction)
+        public virtual void AbortMsg(ExecutionEngine engine, Instruction instruction)
         {
             var msg = engine.Pop().GetString();
             throw new Exception($"{OpCode.ABORTMSG} is executed. Reason: {msg}");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void ASSERTMSG(ExecutionEngine engine, Instruction instruction)
+        public virtual void AssertMsg(ExecutionEngine engine, Instruction instruction)
         {
             var msg = engine.Pop().GetString();
             var x = engine.Pop().GetBoolean();

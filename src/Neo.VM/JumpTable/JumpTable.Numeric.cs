@@ -17,42 +17,42 @@ namespace Neo.VM
     public partial class JumpTable
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void SIGN(ExecutionEngine engine, Instruction instruction)
+        public virtual void Sign(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop().GetInteger();
             engine.Push(x.Sign);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void ABS(ExecutionEngine engine, Instruction instruction)
+        public virtual void Abs(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop().GetInteger();
             engine.Push(BigInteger.Abs(x));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void NEGATE(ExecutionEngine engine, Instruction instruction)
+        public virtual void Negate(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop().GetInteger();
             engine.Push(-x);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void INC(ExecutionEngine engine, Instruction instruction)
+        public virtual void Inc(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop().GetInteger();
             engine.Push(x + 1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void DEC(ExecutionEngine engine, Instruction instruction)
+        public virtual void Dec(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop().GetInteger();
             engine.Push(x - 1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void ADD(ExecutionEngine engine, Instruction instruction)
+        public virtual void Add(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -60,7 +60,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void SUB(ExecutionEngine engine, Instruction instruction)
+        public virtual void Sub(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -68,7 +68,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void MUL(ExecutionEngine engine, Instruction instruction)
+        public virtual void Mul(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -76,7 +76,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void DIV(ExecutionEngine engine, Instruction instruction)
+        public virtual void Div(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -84,7 +84,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void MOD(ExecutionEngine engine, Instruction instruction)
+        public virtual void Mod(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -92,7 +92,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void POW(ExecutionEngine engine, Instruction instruction)
+        public virtual void Pow(ExecutionEngine engine, Instruction instruction)
         {
             var exponent = (int)engine.Pop().GetInteger();
             engine.Limits.AssertShift(exponent);
@@ -101,13 +101,13 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void SQRT(ExecutionEngine engine, Instruction instruction)
+        public virtual void Sqrt(ExecutionEngine engine, Instruction instruction)
         {
             engine.Push(engine.Pop().GetInteger().Sqrt());
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void MODMUL(ExecutionEngine engine, Instruction instruction)
+        public virtual void ModMul(ExecutionEngine engine, Instruction instruction)
         {
             var modulus = engine.Pop().GetInteger();
             var x2 = engine.Pop().GetInteger();
@@ -116,7 +116,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void MODPOW(ExecutionEngine engine, Instruction instruction)
+        public virtual void ModPow(ExecutionEngine engine, Instruction instruction)
         {
             var modulus = engine.Pop().GetInteger();
             var exponent = engine.Pop().GetInteger();
@@ -128,7 +128,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void SHL(ExecutionEngine engine, Instruction instruction)
+        public virtual void Shl(ExecutionEngine engine, Instruction instruction)
         {
             var shift = (int)engine.Pop().GetInteger();
             engine.Limits.AssertShift(shift);
@@ -138,7 +138,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void SHR(ExecutionEngine engine, Instruction instruction)
+        public virtual void Shr(ExecutionEngine engine, Instruction instruction)
         {
             var shift = (int)engine.Pop().GetInteger();
             engine.Limits.AssertShift(shift);
@@ -148,14 +148,14 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void NOT(ExecutionEngine engine, Instruction instruction)
+        public virtual void Not(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop().GetBoolean();
             engine.Push(!x);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void BOOLAND(ExecutionEngine engine, Instruction instruction)
+        public virtual void BoolAnd(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetBoolean();
             var x1 = engine.Pop().GetBoolean();
@@ -163,7 +163,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void BOOLOR(ExecutionEngine engine, Instruction instruction)
+        public virtual void BoolOr(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetBoolean();
             var x1 = engine.Pop().GetBoolean();
@@ -171,14 +171,14 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void NZ(ExecutionEngine engine, Instruction instruction)
+        public virtual void Nz(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop().GetInteger();
             engine.Push(!x.IsZero);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void NUMEQUAL(ExecutionEngine engine, Instruction instruction)
+        public virtual void NumEqual(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -186,7 +186,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void NUMNOTEQUAL(ExecutionEngine engine, Instruction instruction)
+        public virtual void NumNotEqual(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -194,7 +194,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LT(ExecutionEngine engine, Instruction instruction)
+        public virtual void Lt(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop();
             var x1 = engine.Pop();
@@ -205,7 +205,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LE(ExecutionEngine engine, Instruction instruction)
+        public virtual void Le(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop();
             var x1 = engine.Pop();
@@ -216,7 +216,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void GT(ExecutionEngine engine, Instruction instruction)
+        public virtual void Gt(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop();
             var x1 = engine.Pop();
@@ -227,7 +227,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void GE(ExecutionEngine engine, Instruction instruction)
+        public virtual void Ge(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop();
             var x1 = engine.Pop();
@@ -238,7 +238,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void MIN(ExecutionEngine engine, Instruction instruction)
+        public virtual void Min(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -246,7 +246,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void MAX(ExecutionEngine engine, Instruction instruction)
+        public virtual void Max(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -254,7 +254,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void WITHIN(ExecutionEngine engine, Instruction instruction)
+        public virtual void Within(ExecutionEngine engine, Instruction instruction)
         {
             var b = engine.Pop().GetInteger();
             var a = engine.Pop().GetInteger();

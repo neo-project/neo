@@ -27,6 +27,10 @@ namespace Neo.VM
             set { Table[(byte)opCode] = value; }
         }
 
+        /// <summary>
+        /// Jump table constructor
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Throw an exception if the opcode was already set</exception>
         public JumpTable()
         {
             // Fill defined

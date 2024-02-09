@@ -21,7 +21,7 @@ namespace Neo.VM
     public partial class JumpTable
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void PACKMAP(ExecutionEngine engine, Instruction instruction)
+        public virtual void PackMap(ExecutionEngine engine, Instruction instruction)
         {
             var size = (int)engine.Pop().GetInteger();
             if (size < 0 || size * 2 > engine.CurrentContext!.EvaluationStack.Count)
@@ -37,7 +37,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void PACKSTRUCT(ExecutionEngine engine, Instruction instruction)
+        public virtual void PackStruct(ExecutionEngine engine, Instruction instruction)
         {
             var size = (int)engine.Pop().GetInteger();
             if (size < 0 || size > engine.CurrentContext!.EvaluationStack.Count)
@@ -52,7 +52,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void PACK(ExecutionEngine engine, Instruction instruction)
+        public virtual void Pack(ExecutionEngine engine, Instruction instruction)
         {
             var size = (int)engine.Pop().GetInteger();
             if (size < 0 || size > engine.CurrentContext!.EvaluationStack.Count)
@@ -67,7 +67,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void UNPACK(ExecutionEngine engine, Instruction instruction)
+        public virtual void Unpack(ExecutionEngine engine, Instruction instruction)
         {
             var compound = engine.Pop<CompoundType>();
             switch (compound)
@@ -92,13 +92,13 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void NEWARRAY0(ExecutionEngine engine, Instruction instruction)
+        public virtual void NewArray0(ExecutionEngine engine, Instruction instruction)
         {
             engine.Push(new VMArray(engine.ReferenceCounter));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void NEWARRAY(ExecutionEngine engine, Instruction instruction)
+        public virtual void NewArray(ExecutionEngine engine, Instruction instruction)
         {
             var n = (int)engine.Pop().GetInteger();
             if (n < 0 || n > engine.Limits.MaxStackSize)
@@ -108,7 +108,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void NEWARRAY_T(ExecutionEngine engine, Instruction instruction)
+        public virtual void NewArray_T(ExecutionEngine engine, Instruction instruction)
         {
             var n = (int)engine.Pop().GetInteger();
             if (n < 0 || n > engine.Limits.MaxStackSize)
@@ -130,13 +130,13 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void NEWSTRUCT0(ExecutionEngine engine, Instruction instruction)
+        public virtual void NewStruct0(ExecutionEngine engine, Instruction instruction)
         {
             engine.Push(new Struct(engine.ReferenceCounter));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void NEWSTRUCT(ExecutionEngine engine, Instruction instruction)
+        public virtual void NewStruct(ExecutionEngine engine, Instruction instruction)
         {
             var n = (int)engine.Pop().GetInteger();
             if (n < 0 || n > engine.Limits.MaxStackSize)
@@ -148,13 +148,13 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void NEWMAP(ExecutionEngine engine, Instruction instruction)
+        public virtual void NewMap(ExecutionEngine engine, Instruction instruction)
         {
             engine.Push(new Map(engine.ReferenceCounter));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void SIZE(ExecutionEngine engine, Instruction instruction)
+        public virtual void Size(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop();
             switch (x)
@@ -174,7 +174,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void HASKEY(ExecutionEngine engine, Instruction instruction)
+        public virtual void HasKey(ExecutionEngine engine, Instruction instruction)
         {
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
@@ -215,14 +215,14 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void KEYS(ExecutionEngine engine, Instruction instruction)
+        public virtual void Keys(ExecutionEngine engine, Instruction instruction)
         {
             var map = engine.Pop<Map>();
             engine.Push(new VMArray(engine.ReferenceCounter, map.Keys));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void VALUES(ExecutionEngine engine, Instruction instruction)
+        public virtual void Values(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop();
             var values = x switch
@@ -241,7 +241,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void PICKITEM(ExecutionEngine engine, Instruction instruction)
+        public virtual void PickItem(ExecutionEngine engine, Instruction instruction)
         {
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
@@ -285,7 +285,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void APPEND(ExecutionEngine engine, Instruction instruction)
+        public virtual void Append(ExecutionEngine engine, Instruction instruction)
         {
             var newItem = engine.Pop();
             var array = engine.Pop<VMArray>();
@@ -294,7 +294,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void SETITEM(ExecutionEngine engine, Instruction instruction)
+        public virtual void SetItem(ExecutionEngine engine, Instruction instruction)
         {
             var value = engine.Pop();
             if (value is Struct s) value = s.Clone(engine.Limits);
@@ -334,7 +334,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void REVERSEITEMS(ExecutionEngine engine, Instruction instruction)
+        public virtual void ReverseItems(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop();
             switch (x)
@@ -351,7 +351,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void REMOVE(ExecutionEngine engine, Instruction instruction)
+        public virtual void Remove(ExecutionEngine engine, Instruction instruction)
         {
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
@@ -372,14 +372,14 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void CLEARITEMS(ExecutionEngine engine, Instruction instruction)
+        public virtual void ClearItems(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop<CompoundType>();
             x.Clear();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void POPITEM(ExecutionEngine engine, Instruction instruction)
+        public virtual void PopItem(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop<VMArray>();
             var index = x.Count - 1;

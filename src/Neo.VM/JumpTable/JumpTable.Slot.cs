@@ -19,7 +19,7 @@ namespace Neo.VM
     public partial class JumpTable
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void INITSSLOT(ExecutionEngine engine, Instruction instruction)
+        public virtual void InitSSlot(ExecutionEngine engine, Instruction instruction)
         {
             if (engine.CurrentContext!.StaticFields != null)
                 throw new InvalidOperationException($"{instruction.OpCode} cannot be executed twice.");
@@ -29,7 +29,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void INITSLOT(ExecutionEngine engine, Instruction instruction)
+        public virtual void InitSlot(ExecutionEngine engine, Instruction instruction)
         {
             if (engine.CurrentContext!.LocalVariables != null || engine.CurrentContext.Arguments != null)
                 throw new InvalidOperationException($"{instruction.OpCode} cannot be executed twice.");
@@ -51,289 +51,289 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDSFLD0(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdSFld0(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.StaticFields, 0);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDSFLD1(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdSFld1(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.StaticFields, 1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDSFLD2(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdSFld2(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.StaticFields, 2);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDSFLD3(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdSFld3(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.StaticFields, 3);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDSFLD4(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdSFld4(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.StaticFields, 4);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDSFLD5(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdSFld5(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.StaticFields, 5);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDSFLD6(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdSFld6(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.StaticFields, 6);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDSFLD(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdSFld(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.StaticFields, instruction.TokenU8);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STSFLD0(ExecutionEngine engine, Instruction instruction)
+        public virtual void StSFld0(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.StaticFields, 0);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STSFLD1(ExecutionEngine engine, Instruction instruction)
+        public virtual void StSFld1(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.StaticFields, 1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STSFLD2(ExecutionEngine engine, Instruction instruction)
+        public virtual void StSFld2(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.StaticFields, 2);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STSFLD3(ExecutionEngine engine, Instruction instruction)
+        public virtual void StSFld3(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.StaticFields, 3);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STSFLD4(ExecutionEngine engine, Instruction instruction)
+        public virtual void StSFld4(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.StaticFields, 4);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STSFLD5(ExecutionEngine engine, Instruction instruction)
+        public virtual void StSFld5(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.StaticFields, 5);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STSFLD6(ExecutionEngine engine, Instruction instruction)
+        public virtual void StSFld6(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.StaticFields, 6);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STSFLD(ExecutionEngine engine, Instruction instruction)
+        public virtual void StSFld(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.StaticFields, instruction.TokenU8);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDLOC0(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdLoc0(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.LocalVariables, 0);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDLOC1(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdLoc1(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.LocalVariables, 1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDLOC2(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdLoc2(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.LocalVariables, 2);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDLOC3(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdLoc3(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.LocalVariables, 3);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDLOC4(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdLoc4(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.LocalVariables, 4);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDLOC5(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdLoc5(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.LocalVariables, 5);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDLOC6(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdLoc6(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.LocalVariables, 6);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDLOC(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdLoc(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.LocalVariables, instruction.TokenU8);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STLOC0(ExecutionEngine engine, Instruction instruction)
+        public virtual void StLoc0(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.LocalVariables, 0);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STLOC1(ExecutionEngine engine, Instruction instruction)
+        public virtual void StLoc1(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.LocalVariables, 1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STLOC2(ExecutionEngine engine, Instruction instruction)
+        public virtual void StLoc2(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.LocalVariables, 2);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STLOC3(ExecutionEngine engine, Instruction instruction)
+        public virtual void StLoc3(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.LocalVariables, 3);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STLOC4(ExecutionEngine engine, Instruction instruction)
+        public virtual void StLoc4(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.LocalVariables, 4);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STLOC5(ExecutionEngine engine, Instruction instruction)
+        public virtual void StLoc5(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.LocalVariables, 5);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STLOC6(ExecutionEngine engine, Instruction instruction)
+        public virtual void StLoc6(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.LocalVariables, 6);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STLOC(ExecutionEngine engine, Instruction instruction)
+        public virtual void StLoc(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.LocalVariables, instruction.TokenU8);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDARG0(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdArg0(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.Arguments, 0);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDARG1(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdArg1(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.Arguments, 1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDARG2(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdArg2(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.Arguments, 2);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDARG3(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdArg3(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.Arguments, 3);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDARG4(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdArg4(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.Arguments, 4);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDARG5(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdArg5(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.Arguments, 5);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDARG6(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdArg6(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.Arguments, 6);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void LDARG(ExecutionEngine engine, Instruction instruction)
+        public virtual void LdArg(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteLoadFromSlot(engine, engine.CurrentContext!.Arguments, instruction.TokenU8);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STARG0(ExecutionEngine engine, Instruction instruction)
+        public virtual void StArg0(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.Arguments, 0);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STARG1(ExecutionEngine engine, Instruction instruction)
+        public virtual void StArg1(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.Arguments, 1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STARG2(ExecutionEngine engine, Instruction instruction)
+        public virtual void StArg2(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.Arguments, 2);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STARG3(ExecutionEngine engine, Instruction instruction)
+        public virtual void StArg3(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.Arguments, 3);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STARG4(ExecutionEngine engine, Instruction instruction)
+        public virtual void StArg4(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.Arguments, 4);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STARG5(ExecutionEngine engine, Instruction instruction)
+        public virtual void StArg5(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.Arguments, 5);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STARG6(ExecutionEngine engine, Instruction instruction)
+        public virtual void StArg6(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.Arguments, 6);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void STARG(ExecutionEngine engine, Instruction instruction)
+        public virtual void StArg(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteStoreToSlot(engine, engine.CurrentContext!.Arguments, instruction.TokenU8);
         }

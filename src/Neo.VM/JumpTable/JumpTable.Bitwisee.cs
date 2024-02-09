@@ -16,14 +16,14 @@ namespace Neo.VM
     public partial class JumpTable
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void INVERT(ExecutionEngine engine, Instruction instruction)
+        public virtual void Invert(ExecutionEngine engine, Instruction instruction)
         {
             var x = engine.Pop().GetInteger();
             engine.Push(~x);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void AND(ExecutionEngine engine, Instruction instruction)
+        public virtual void And(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -31,7 +31,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void OR(ExecutionEngine engine, Instruction instruction)
+        public virtual void Or(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -39,7 +39,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void XOR(ExecutionEngine engine, Instruction instruction)
+        public virtual void XOr(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -47,7 +47,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void EQUAL(ExecutionEngine engine, Instruction instruction)
+        public virtual void Equal(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop();
             var x1 = engine.Pop();
@@ -55,7 +55,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void NOTEQUAL(ExecutionEngine engine, Instruction instruction)
+        public virtual void NotEqual(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop();
             var x1 = engine.Pop();
