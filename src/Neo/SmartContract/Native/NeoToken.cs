@@ -122,25 +122,26 @@ namespace Neo.SmartContract.Native
 
         internal override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
         {
+            if (engine.Snapshot == null) throw new InvalidOperationException("");
             GasDistribution? distribution = DistributeGas(engine, account, state);
             if (distribution is not null)
             {
-                var list = engine.CurrentContext.GetState<List<GasDistribution>>();
-                list.Add(distribution);
+                var list = engine.CurrentContext?.GetState<List<GasDistribution>>();
+                list.NotNull().Add(distribution);
             }
             if (amount.IsZero) return;
             if (state.VoteTo is null) return;
-            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_VotersCount)).Add(amount);
+            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_VotersCount)).NotNull().Add(amount);
             StorageKey key = CreateStorageKey(Prefix_Candidate).Add(state.VoteTo);
-            CandidateState candidate = engine.Snapshot.GetAndChange(key).GetInteroperable<CandidateState>();
-            candidate.Votes += amount;
-            CheckCandidate(engine.Snapshot, state.VoteTo, candidate);
+            CandidateState? candidate = engine.Snapshot.GetAndChange(key)?.GetInteroperable<CandidateState>();
+            candidate.NotNull().Votes += amount;
+            CheckCandidate(engine.Snapshot, state.VoteTo, candidate!);
         }
 
-        private protected override async ContractTask PostTransfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data, bool callOnPayment)
+        private protected override async ContractTask PostTransfer(ApplicationEngine engine, UInt160? from, UInt160? to, BigInteger amount, StackItem data, bool callOnPayment)
         {
             await base.PostTransfer(engine, from, to, amount, data, callOnPayment);
-            var list = engine.CurrentContext.GetState<List<GasDistribution>>();
+            var list = engine.CurrentContext?.GetState<List<GasDistribution>>();
             foreach (var distribution in list)
                 await GAS.Mint(engine, distribution.Account, distribution.Amount, callOnPayment);
         }
@@ -149,7 +150,7 @@ namespace Neo.SmartContract.Native
         {
             // PersistingBlock is null when running under the debugger
             if (engine.PersistingBlock is null) return null;
-
+            if (engine.Snapshot == null) throw new InvalidOperationException($"{engine.Snapshot} is null");
             BigInteger gas = CalculateBonus(engine.Snapshot, state, engine.PersistingBlock.Index);
             state.BalanceHeight = engine.PersistingBlock.Index;
             if (state.VoteTo is not null)
@@ -222,6 +223,7 @@ namespace Neo.SmartContract.Native
 
         internal override ContractTask Initialize(ApplicationEngine engine)
         {
+            if(engine.Snapshot == null) throw new InvalidOperationException("The snapshot is null.");
             var cachedCommittee = new CachedCommittee(engine.ProtocolSettings.StandbyCommittee.Select(p => (p, BigInteger.Zero)));
             engine.Snapshot.Add(CreateStorageKey(Prefix_Committee), new StorageItem(cachedCommittee));
             engine.Snapshot.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(System.Array.Empty<byte>()));
@@ -233,9 +235,9 @@ namespace Neo.SmartContract.Native
         internal override ContractTask OnPersist(ApplicationEngine engine)
         {
             // Set next committee
-            if (ShouldRefreshCommittee(engine.PersistingBlock.Index, engine.ProtocolSettings.CommitteeMembersCount))
+            if (ShouldRefreshCommittee(engine.PersistingBlock.NotNull().Index, engine.ProtocolSettings.CommitteeMembersCount))
             {
-                StorageItem storageItem = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Committee));
+                StorageItem? storageItem = engine.Snapshot?.GetAndChange(CreateStorageKey(Prefix_Committee));
                 var cachedCommittee = storageItem.GetInteroperable<CachedCommittee>();
                 cachedCommittee.Clear();
                 cachedCommittee.AddRange(ComputeCommitteeMembers(engine.Snapshot, engine.ProtocolSettings));

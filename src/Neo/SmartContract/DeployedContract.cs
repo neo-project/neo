@@ -26,13 +26,13 @@ namespace Neo.SmartContract
         /// Initializes a new instance of the <see cref="DeployedContract"/> class with the specified <see cref="ContractState"/>.
         /// </summary>
         /// <param name="contract">The <see cref="ContractState"/> corresponding to the contract.</param>
-        public DeployedContract(ContractState contract)
+        public DeployedContract(ContractState? contract)
         {
             if (contract is null) throw new ArgumentNullException(nameof(contract));
 
             Script = null;
             ScriptHash = contract.Hash;
-            ContractMethodDescriptor descriptor = contract.Manifest.Abi.GetMethod("verify", -1);
+            ContractMethodDescriptor? descriptor = contract.Manifest.Abi.GetMethod("verify", -1);
             if (descriptor is null) throw new NotSupportedException("The smart contract haven't got verify method.");
 
             ParameterList = descriptor.Parameters.Select(u => u.Type).ToArray();
