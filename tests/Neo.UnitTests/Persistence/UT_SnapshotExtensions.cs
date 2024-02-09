@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// UT_ISnapshot.cs file belongs to the neo project and is free
+// UT_SnapshotExtensions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -19,7 +19,7 @@ using System.Text;
 namespace Neo.UnitTests.Persistence
 {
     [TestClass]
-    public class UT_ISnapshot
+    public class UT_SnapshotExtensions
     {
         [TestMethod]
         public void LoadFromJsonTest()
