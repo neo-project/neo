@@ -117,7 +117,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify)]
         private ContractTask Finish(ApplicationEngine engine)
         {
-            if(engine.Snapshot == null) throw new InvalidOperationException($"{engine.Snapshot} is null");
+            if (engine.Snapshot == null) throw new InvalidOperationException($"{engine.Snapshot} is null");
             if (engine.InvocationStack.Count != 2) throw new InvalidOperationException("The invocation stack is invalid");
             if (engine.GetInvocationCounter() != 1) throw new InvalidOperationException("The invocation counter is invalid");
             Transaction? tx = (Transaction?)engine.ScriptContainer;
@@ -132,13 +132,13 @@ namespace Neo.SmartContract.Native
 
         private UInt256 GetOriginalTxid(ApplicationEngine engine)
         {
-            if(engine.ScriptContainer == null) throw new InvalidOperationException($"{engine.ScriptContainer} is null");
-            if(engine.Snapshot == null) throw new InvalidOperationException($"{engine.Snapshot} is null");
+            if (engine.ScriptContainer == null) throw new InvalidOperationException($"{engine.ScriptContainer} is null");
+            if (engine.Snapshot == null) throw new InvalidOperationException($"{engine.Snapshot} is null");
             Transaction tx = (Transaction)engine.ScriptContainer;
             OracleResponse? response = tx.GetAttribute<OracleResponse>();
             if (response is null) return tx.Hash;
             OracleRequest? request = GetRequest(engine.Snapshot, response.Id);
-            if(request is null) throw new InvalidOperationException("Oracle request was not found");
+            if (request is null) throw new InvalidOperationException("Oracle request was not found");
             return request.OriginalTxid;
         }
 
@@ -191,7 +191,7 @@ namespace Neo.SmartContract.Native
 
         internal override async ContractTask PostPersist(ApplicationEngine engine)
         {
-            if (engine.PersistingBlock == null || engine.Snapshot == null)  throw new InvalidOperationException($"{nameof(engine.PersistingBlock)} or {nameof(engine.Snapshot)}  is null");
+            if (engine.PersistingBlock == null || engine.Snapshot == null) throw new InvalidOperationException($"{nameof(engine.PersistingBlock)} or {nameof(engine.Snapshot)}  is null");
             (UInt160 Account, BigInteger GAS)[]? nodes = null;
             foreach (Transaction tx in engine.PersistingBlock.Transactions)
             {
@@ -269,7 +269,7 @@ namespace Neo.SmartContract.Native
             //Add the id to the IdList
             var list = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_IdList).Add(GetUrlHash(url)), () => new StorageItem(new IdList()))?.GetInteroperable<IdList>();
 
-            if(list == null) throw new InvalidOperationException($"{nameof(list)} is null");
+            if (list == null) throw new InvalidOperationException($"{nameof(list)} is null");
 
             if (list.Count >= 256)
                 throw new InvalidOperationException("There are too many pending responses for this url");

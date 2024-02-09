@@ -77,7 +77,10 @@ namespace Neo.SmartContract
         /// <returns>The storage context for the current contract.</returns>
         protected internal StorageContext GetStorageContext()
         {
-            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
+            if(Snapshot is null) throw new InvalidOperationException("No storage context available.");
+            if(CurrentScriptHash is null) throw new InvalidOperationException($"{nameof(CurrentScriptHash)} is null.");
+            ContractState? contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
+            if (contract is null) throw new InvalidOperationException($"Contract does not exist: {CurrentScriptHash}");
             return new StorageContext
             {
                 Id = contract.Id,
@@ -92,7 +95,10 @@ namespace Neo.SmartContract
         /// <returns>The storage context for the current contract.</returns>
         protected internal StorageContext GetReadOnlyContext()
         {
-            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
+            if(Snapshot is null) throw new InvalidOperationException("No storage context available.");
+            if(CurrentScriptHash is null) throw new InvalidOperationException($"{nameof(CurrentScriptHash)} is null.");
+            ContractState? contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
+            if (contract is null) throw new InvalidOperationException($"Contract does not exist: {CurrentScriptHash}");
             return new StorageContext
             {
                 Id = contract.Id,
@@ -126,7 +132,7 @@ namespace Neo.SmartContract
         /// <returns>The value of the entry. Or <see langword="null"/> if the entry doesn't exist.</returns>
         protected internal ReadOnlyMemory<byte>? Get(StorageContext context, byte[] key)
         {
-            return Snapshot.TryGet(new StorageKey
+            return Snapshot?.TryGet(new StorageKey
             {
                 Id = context.Id,
                 Key = key
@@ -208,7 +214,7 @@ namespace Neo.SmartContract
         protected internal void Delete(StorageContext context, byte[] key)
         {
             if (context.IsReadOnly) throw new ArgumentException(null, nameof(context));
-            Snapshot.Delete(new StorageKey
+            Snapshot?.Delete(new StorageKey
             {
                 Id = context.Id,
                 Key = key

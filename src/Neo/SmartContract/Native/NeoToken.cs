@@ -246,7 +246,8 @@ namespace Neo.SmartContract.Native
         internal override async ContractTask PostPersist(ApplicationEngine engine)
         {
             // Distribute GAS for committee
-
+            if(engine.PersistingBlock == null) throw new InvalidOperationException("The persisting block is null.");
+            if (engine.Snapshot == null) throw new InvalidOperationException("The snapshot is null.");
             int m = engine.ProtocolSettings.CommitteeMembersCount;
             int n = engine.ProtocolSettings.ValidatorsCount;
             int index = (int)(engine.PersistingBlock.Index % (uint)m);
@@ -269,7 +270,8 @@ namespace Neo.SmartContract.Native
                     {
                         BigInteger voterSumRewardPerNEO = factor * voterRewardOfEachCommittee / Votes;
                         StorageKey voterRewardKey = CreateStorageKey(Prefix_VoterRewardPerCommittee).Add(PublicKey);
-                        StorageItem lastRewardPerNeo = engine.Snapshot.GetAndChange(voterRewardKey, () => new StorageItem(BigInteger.Zero));
+                        StorageItem? lastRewardPerNeo = engine.Snapshot.GetAndChange(voterRewardKey, () => new StorageItem(BigInteger.Zero));
+                        if(lastRewardPerNeo == null) throw new InvalidOperationException("The lastRewardPerNeo is null.");
                         lastRewardPerNeo.Add(voterSumRewardPerNEO);
                     }
                 }
@@ -279,6 +281,9 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetGasPerBlock(ApplicationEngine engine, BigInteger gasPerBlock)
         {
+            if(engine.PersistingBlock == null) throw new InvalidOperationException("The persisting block is null.");
+            if (engine.Snapshot == null) throw new InvalidOperationException("The snapshot is null.");
+
             if (gasPerBlock < 0 || gasPerBlock > 10 * GAS.Factor)
                 throw new ArgumentOutOfRangeException(nameof(gasPerBlock));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
@@ -305,7 +310,7 @@ namespace Neo.SmartContract.Native
             if (registerPrice <= 0)
                 throw new ArgumentOutOfRangeException(nameof(registerPrice));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
-            engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_RegisterPrice)).Set(registerPrice);
+            engine.Snapshot?.GetAndChange(CreateStorageKey(Prefix_RegisterPrice))?.Set(registerPrice);
         }
 
         /// <summary>
@@ -337,7 +342,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger UnclaimedGas(DataCache snapshot, UInt160 account, uint end)
         {
-            StorageItem storage = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account));
+            StorageItem? storage = snapshot.TryGet(CreateStorageKey(Prefix_Account).Add(account));
             if (storage is null) return BigInteger.Zero;
             NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
             return CalculateBonus(snapshot, state, end);
@@ -348,10 +353,12 @@ namespace Neo.SmartContract.Native
         {
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
+            if(engine.Snapshot == null) throw new InvalidOperationException("The snapshot is null.");
             engine.AddGas(GetRegisterPrice(engine.Snapshot));
             StorageKey key = CreateStorageKey(Prefix_Candidate).Add(pubkey);
-            StorageItem item = engine.Snapshot.GetAndChange(key, () => new StorageItem(new CandidateState()));
-            CandidateState state = item.GetInteroperable<CandidateState>();
+            StorageItem? item = engine.Snapshot.GetAndChange(key, () => new StorageItem(new CandidateState()));
+            CandidateState? state = item?.GetInteroperable<CandidateState>();
+            if(state == null) throw new InvalidOperationException("The candidate state is null.");
             if (state.Registered) return true;
             state.Registered = true;
             engine.SendNotification(Hash, "CandidateStateChanged",
@@ -362,12 +369,14 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
         private bool UnregisterCandidate(ApplicationEngine engine, ECPoint pubkey)
         {
+            if(engine.Snapshot == null) throw new InvalidOperationException("The snapshot is null.");
             if (!engine.CheckWitnessInternal(Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash()))
                 return false;
             StorageKey key = CreateStorageKey(Prefix_Candidate).Add(pubkey);
             if (engine.Snapshot.TryGet(key) is null) return true;
-            StorageItem item = engine.Snapshot.GetAndChange(key);
-            CandidateState state = item.GetInteroperable<CandidateState>();
+            StorageItem? item = engine.Snapshot.GetAndChange(key);
+            CandidateState? state = item?.GetInteroperable<CandidateState>();
+            if(state == null) throw new InvalidOperationException("The candidate state is null.");
             if (!state.Registered) return true;
             state.Registered = false;
             CheckCandidate(engine.Snapshot, pubkey, state);
@@ -379,6 +388,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
         private async ContractTask<bool> Vote(ApplicationEngine engine, UInt160 account, ECPoint? voteTo)
         {
+            if(engine.Snapshot == null) throw new InvalidOperationException("The snapshot is null.");
             if (!engine.CheckWitnessInternal(account)) return false;
             NeoAccountState? state_account = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Account).Add(account))?.GetInteroperable<NeoAccountState>();
             if (state_account is null) return false;
@@ -398,7 +408,7 @@ namespace Neo.SmartContract.Native
                 else
                     item.Add(-state_account.Balance);
             }
-            GasDistribution gasDistribution = DistributeGas(engine, account, state_account);
+            GasDistribution? gasDistribution = DistributeGas(engine, account, state_account);
             if (state_account.VoteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate).Add(state_account.VoteTo);
