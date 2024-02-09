@@ -33,7 +33,7 @@ namespace Neo.VM
 
             foreach (var mi in GetType().GetMethods())
             {
-                if (Enum.TryParse<OpCode>(mi.Name, false, out var opCode))
+                if (Enum.TryParse<OpCode>(mi.Name, true, out var opCode))
                 {
                     if (Table[(byte)opCode] is not null)
                     {
