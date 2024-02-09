@@ -86,7 +86,7 @@ namespace Neo.Wallets
         /// <param name="contract">The contract of the account.</param>
         /// <param name="key">The private key of the account.</param>
         /// <returns>The created account.</returns>
-        public abstract WalletAccount CreateAccount(Contract contract, KeyPair key = null);
+        public abstract WalletAccount CreateAccount(Contract contract, KeyPair? key = null);
 
         /// <summary>
         /// Creates a watch-only account for the wallet.
@@ -165,7 +165,7 @@ namespace Neo.Wallets
         /// <param name="contract">The contract of the account.</param>
         /// <param name="privateKey">The private key of the account.</param>
         /// <returns>The created account.</returns>
-        public WalletAccount CreateAccount(Contract contract, byte[] privateKey)
+        public WalletAccount CreateAccount(Contract contract, byte[]? privateKey)
         {
             if (privateKey == null) return CreateAccount(contract);
             return CreateAccount(contract, new KeyPair(privateKey));
@@ -245,8 +245,8 @@ namespace Neo.Wallets
         /// <summary>
         /// Gets the default account of the wallet.
         /// </summary>
-        /// <returns>The default account of the wallet.</returns>
-        public virtual WalletAccount GetDefaultAccount()
+        /// <returns>The default account of the wallet. Nullable.</returns>
+        public virtual WalletAccount? GetDefaultAccount()
         {
             WalletAccount? first = null;
             foreach (WalletAccount account in GetAccounts())
@@ -254,6 +254,8 @@ namespace Neo.Wallets
                 if (account.IsDefault) return account;
                 if (first == null) first = account;
             }
+            // it is possible that even if we searched the entire wallet,
+            // we could not find any account
             return first;
         }
 
