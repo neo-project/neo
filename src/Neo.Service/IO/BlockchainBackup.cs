@@ -22,7 +22,7 @@ namespace Neo.Service.IO
 {
     internal static class BlockchainBackup
     {
-        public static IEnumerable<Block> ReadBlocksFromBarFile(uint network, uint currentBlockHeight = 0, string directory = "", IProgress<double>? progress = null)
+        public static IEnumerable<Block> ReadBlocksFromBarcFile(uint network, uint currentBlockHeight = 0, string directory = "", IProgress<double>? progress = null)
         {
             var barcFileNames = GetImportFileNames(directory)
                 .Where(w => Path.GetExtension(w.FileName).Equals(".barc", StringComparison.InvariantCultureIgnoreCase))

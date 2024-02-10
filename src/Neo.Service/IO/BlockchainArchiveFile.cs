@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using System;
@@ -16,7 +17,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace Neo.Service.IO
@@ -72,8 +72,7 @@ namespace Neo.Service.IO
             using var stream = entry.Open();
             stream.Read(blockBuffer, 0, blockBuffer.Length);
 
-            var shaData = SHA256.HashData(blockBuffer);
-            var blockChecksum = BitConverter.ToUInt32(shaData);
+            var blockChecksum = blockBuffer.Murmur32(ArchiveManifestFile.MagicCode);
             if (blockChecksum != manifestBlockTableItem.Checksum) throw new BadImageFormatException(nameof(blockIndex));
 
             return blockBuffer.AsSerializable<Block>();
@@ -85,8 +84,7 @@ namespace Neo.Service.IO
 
             var entry = _zip.GetEntry($"{block.Index}") ?? _zip.CreateEntry($"{block.Index}");
             var blockBuffer = block.ToArray();
-            var shaData = SHA256.HashData(blockBuffer);
-            var checksum = BitConverter.ToUInt32(shaData);
+            var checksum = blockBuffer.Murmur32(ArchiveManifestFile.MagicCode);
             _manifest.AddOrUpdateBlockEntry(block.Index, checksum, blockBuffer.Length);
 
             using var stream = entry.Open();

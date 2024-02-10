@@ -14,6 +14,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Neo.Ledger;
 using Neo.Network.P2P;
+using Neo.Service.Engines;
 using Neo.Service.IO.Pipes;
 using Neo.SmartContract;
 using System;
@@ -42,6 +43,7 @@ namespace Neo.Service
             ILoggerFactory loggerFactory)
         {
             if (Instance is not null) throw new ApplicationException("Instance already running.");
+
             _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<NodeService>();
             _nodeProtocolSettings = ProtocolSettings.Load(config.GetRequiredSection("ProtocolConfiguration"));
@@ -50,10 +52,16 @@ namespace Neo.Service
             Instance = this;
             _importProgress = new();
             _importProgress.ProgressChanged += OnImportBlocksProgressChanged;
-            Utility.Logging += OnNeoUtilityLogging;
-            Blockchain.Committed += OnNeoBlockchainCommitted;
-            ApplicationEngine.Log += OnNeoApplicationEngineLog;
-            ApplicationEngine.Notify += OnNeoApplicationEngineNotify;
+
+            if (_appSettings.TraceMode)
+                ApplicationEngine.Provider = new NeoServiceApplicationEngineProvider(_loggerFactory);
+            else
+            {
+                Utility.Logging += OnNeoUtilityLogging;
+                Blockchain.Committed += OnNeoBlockchainCommitted;
+                ApplicationEngine.Log += OnNeoApplicationEngineLog;
+                ApplicationEngine.Notify += OnNeoApplicationEngineNotify;
+            }
         }
 
         public override void Dispose()
@@ -61,14 +69,16 @@ namespace Neo.Service
             _logger.LogInformation("Shutting down...");
 
             Instance = null;
-            _importBlocksTokenSource?.Cancel();
+            StopImportBlocksAsync().GetAwaiter().GetResult();
             _neoSystem?.Dispose();
-            _importBlocksTask?.Dispose();
 
-            Utility.Logging -= OnNeoUtilityLogging;
-            Blockchain.Committed -= OnNeoBlockchainCommitted;
-            ApplicationEngine.Log -= OnNeoApplicationEngineLog;
-            ApplicationEngine.Notify -= OnNeoApplicationEngineNotify;
+            if (_appSettings.TraceMode == false)
+            {
+                Utility.Logging -= OnNeoUtilityLogging;
+                Blockchain.Committed -= OnNeoBlockchainCommitted;
+                ApplicationEngine.Log -= OnNeoApplicationEngineLog;
+                ApplicationEngine.Notify -= OnNeoApplicationEngineNotify;
+            }
 
             _namedPipeService.Dispose();
             base.Dispose();
@@ -79,7 +89,7 @@ namespace Neo.Service
         {
             await CreateNeoSystemAsync(stoppingToken);
             _importBlocksTokenSource ??= CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-            _importBlocksTask = ImportThenStartNeoSystemAsync(_appSettings.Storage.Import.Verify, _importBlocksTokenSource.Token);
+            _importBlocksTask = ImportBackupThenStartNeoSystemAsync(_appSettings.Storage.Backup.Verify, _importBlocksTokenSource.Token);
 
             await _namedPipeService.StartAsync(_appSettings.NamedPipe.Instances, stoppingToken); // Block Thread and Listen
         }

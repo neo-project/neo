@@ -10,15 +10,17 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Logging;
+using Neo.Cryptography;
 using System;
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Text;
 
 namespace Neo.Service
 {
     public static class NodeUtilities
     {
-        private static readonly ConcurrentDictionary<string, ILogger> s_neoLoggerCache = new();
+        private static readonly ConcurrentDictionary<uint, ILogger> s_neoLoggerCache = new();
 
         public static UInt160? TryParseUInt160(string? value)
         {
@@ -33,16 +35,18 @@ namespace Neo.Service
 
         public static int GetApplicationVersionNumber()
         {
-            var version = Assembly.GetExecutingAssembly().GetName().Version!;
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            if (version is null) return 0;
             return version.Major * 1000 + version.Minor * 100 + version.Build * 10 + version.Revision;
         }
 
         public static ILogger CreateOrGetLogger(ILoggerFactory loggerFactory, string categoryName)
         {
-            if (s_neoLoggerCache.TryGetValue(categoryName, out var logger) == false)
+            var id = Encoding.UTF8.GetBytes(categoryName).Murmur32(0x48534148);
+            if (s_neoLoggerCache.TryGetValue(id, out var logger) == false)
             {
                 logger = loggerFactory.CreateLogger(categoryName);
-                s_neoLoggerCache.TryAdd(categoryName, logger);
+                s_neoLoggerCache.TryAdd(id, logger);
             }
             return logger;
         }

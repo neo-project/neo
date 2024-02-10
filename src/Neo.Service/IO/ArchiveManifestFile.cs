@@ -17,8 +17,9 @@ namespace Neo.Service.IO
 {
     internal sealed class ArchiveManifestFile : ISerializable
     {
-        public uint MagicCode { get; } = 0x48435241; // ARCH
-        public uint Version { get; } = 0x00000001;
+        public static uint MagicCode { get; } = 0x48435241; // ARCH
+        public static uint Version { get; } = 0x00000001;
+
         public uint Network { get; private set; }
         public IReadOnlyDictionary<uint, ArchiveBlockTableItem> BlockTable => _blockTable;
 
@@ -37,7 +38,7 @@ namespace Neo.Service.IO
                 Network = network,
             };
 
-        public void AddOrUpdateBlockEntry(uint blockIndex, ulong checksum, int size) =>
+        public void AddOrUpdateBlockEntry(uint blockIndex, uint checksum, int size) =>
             _blockTable[blockIndex] = ArchiveBlockTableItem.Create(checksum, size);
 
         public void AddOrUpdateBlockEntry(uint blockIndex, ArchiveBlockTableItem blockItem) =>
@@ -83,13 +84,13 @@ namespace Neo.Service.IO
         public static int Length { get; } = sizeof(ulong) + sizeof(int);
 
         public int FileSize { get; private set; }
-        public ulong Checksum { get; private set; }
+        public uint Checksum { get; private set; }
 
         public int Size =>
-            sizeof(ulong) + // Checksum
+            sizeof(uint) +  // Checksum
             sizeof(int);    // FileSize
 
-        public static ArchiveBlockTableItem Create(ulong checksum, int fileSize) =>
+        public static ArchiveBlockTableItem Create(uint checksum, int fileSize) =>
             new()
             {
                 Checksum = checksum,
@@ -98,7 +99,7 @@ namespace Neo.Service.IO
 
         public void Deserialize(ref MemoryReader reader)
         {
-            Checksum = reader.ReadUInt64();
+            Checksum = reader.ReadUInt32();
             FileSize = reader.ReadInt32();
         }
 

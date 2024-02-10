@@ -23,6 +23,7 @@ namespace Neo.Service
         public ContractsSettings Contracts { get; private init; } = ContractsSettings.Default;
         public NamedPipeSettings NamedPipe { get; private init; } = NamedPipeSettings.Default;
         public PluginSettings Plugin { get; private init; } = PluginSettings.Default;
+        public bool TraceMode { get; private init; } = false;
 
         public static ApplicationSettings Default => new();
 
@@ -33,42 +34,45 @@ namespace Neo.Service
             Contracts = ContractsSettings.Load(section.GetSection(nameof(Contracts))),
             NamedPipe = NamedPipeSettings.Load(section.GetSection(nameof(NamedPipe))),
             Plugin = PluginSettings.Load(section.GetSection(nameof(Plugin))),
+            TraceMode = section.GetValue(nameof(TraceMode), Default.TraceMode),
         };
     }
 
     internal sealed class StorageSettings
     {
-        public class ImportSettings
+        public class BackupSettings
         {
             public string? Path { get; init; }
             public bool Verify { get; init; }
 
-            internal static ImportSettings Default => new()
+            public static BackupSettings Default => new()
             {
                 Verify = true,
             };
 
-            internal static ImportSettings Load(IConfigurationSection section) => new()
+            public static BackupSettings Load(IConfigurationSection section) => new()
             {
+                Path = section.GetValue(nameof(Path), Default.Path),
                 Verify = section.GetValue(nameof(Verify), Default.Verify),
             };
         }
 
         public string? Engine { get; private init; }
         public string? Path { get; private init; }
-        public ImportSettings Import { get; private init; } = ImportSettings.Default;
+        public BackupSettings Backup { get; private init; } = BackupSettings.Default;
 
         public static StorageSettings Default => new()
         {
             Engine = nameof(MemoryStore),
-            Import = ImportSettings.Default,
+            Path = "Data_LevelDB_{0:X2}",
+            Backup = BackupSettings.Default,
         };
 
         public static StorageSettings Load(IConfigurationSection section) => new()
         {
             Engine = section.GetValue(nameof(Engine), Default.Engine),
             Path = section.GetValue(nameof(Path), Default.Path),
-            Import = ImportSettings.Load(section.GetSection(nameof(Import))),
+            Backup = BackupSettings.Load(section.GetSection(nameof(Backup))),
         };
     }
 
@@ -114,18 +118,15 @@ namespace Neo.Service
     internal sealed class NamedPipeSettings
     {
         public int Instances { get; private init; }
-        public bool DebugMode { get; private init; }
 
         public static NamedPipeSettings Default => new()
         {
-            Instances = 4,
-            DebugMode = false,
+            Instances = 10,
         };
 
         public static NamedPipeSettings Load(IConfigurationSection section) => new()
         {
             Instances = section.GetValue(nameof(Instances), Default.Instances),
-            DebugMode = section.GetValue(nameof(DebugMode), Default.DebugMode),
         };
     }
 

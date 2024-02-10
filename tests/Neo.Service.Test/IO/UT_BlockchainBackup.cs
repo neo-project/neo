@@ -15,8 +15,6 @@ namespace Neo.Service.Tests.IO
 {
     public class UT_BlockchainBackup
     {
-        private int i;
-
         [Fact]
         public void Test_Read_Blocks_From_Acc_File()
         {
@@ -35,7 +33,7 @@ namespace Neo.Service.Tests.IO
         public void Test_Read_Blocks_From_Barc_File()
         {
             var count = 0u;
-            var blocks = BlockchainBackup.ReadBlocksFromBarFile(ProtocolSettings.Default.Network);
+            var blocks = BlockchainBackup.ReadBlocksFromBarcFile(ProtocolSettings.Default.Network);
 
             foreach (var block in blocks)
             {
