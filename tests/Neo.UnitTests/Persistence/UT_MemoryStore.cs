@@ -20,6 +20,21 @@ namespace Neo.UnitTests.Persistence
     public class UT_MemoryStore
     {
         [TestMethod]
+        public void SnapshotTest()
+        {
+            using var store = new MemoryStore();
+
+            store.Put(new byte[] { 1 }, new byte[] { 1, 2, 3 });
+
+            var snapshot = store.GetSnapshot();
+
+            snapshot.Put(new byte[] { 1 }, new byte[] { 1, 2, 3, 4 });
+
+            CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, store.TryGet(new byte[] { 1 }));
+            CollectionAssert.AreEqual(new byte[] { 1, 2, 3, 4 }, snapshot.TryGet(new byte[] { 1 }));
+        }
+
+        [TestMethod]
         public void StoreTest()
         {
             using var store = new MemoryStore();
