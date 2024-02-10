@@ -30,8 +30,18 @@ namespace Neo.UnitTests.Persistence
 
             snapshot.Put(new byte[] { 1 }, new byte[] { 1, 2, 3, 4 });
 
+            // Test TryGet
+
             CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, store.TryGet(new byte[] { 1 }));
             CollectionAssert.AreEqual(new byte[] { 1, 2, 3, 4 }, snapshot.TryGet(new byte[] { 1 }));
+
+            // Test Contains
+
+            Assert.IsFalse(store.Contains(new byte[] { 2 }));
+            Assert.IsFalse(snapshot.Contains(new byte[] { 2 }));
+            snapshot.Put(new byte[] { 2 }, new byte[] { 1, 2, 3, 4 });
+            Assert.IsFalse(store.Contains(new byte[] { 2 }));
+            Assert.IsTrue(snapshot.Contains(new byte[] { 2 }));
         }
 
         [TestMethod]
