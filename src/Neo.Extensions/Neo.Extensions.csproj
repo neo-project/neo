@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.1;net7.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <PackageTags>NEO;Blockchain;Extensions</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Neo" />
+    <InternalsVisibleTo Include="Neo.IO" />
+  </ItemGroup>
+
+</Project>
