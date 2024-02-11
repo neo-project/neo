@@ -17,11 +17,6 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_KeyBuilder
     {
-        private struct TestKey
-        {
-            public int Value;
-        }
-
         [TestMethod]
         public void Test()
         {
@@ -39,11 +34,11 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual("010000000203040000000000000000000000000000000000000000", key.ToArray().ToHexString());
 
             key = new KeyBuilder(1, 2);
-            key = key.Add(new TestKey { Value = 123 });
-            Assert.AreEqual("01000000027b000000", key.ToArray().ToHexString());
+            key = key.AddBigEndian(123);
+            Assert.AreEqual("01000000020000007b", key.ToArray().ToHexString());
 
             key = new KeyBuilder(1, 0);
-            key = key.AddBigEndian(new TestKey { Value = 1 });
+            key = key.AddBigEndian(1);
             Assert.AreEqual("010000000000000001", key.ToArray().ToHexString());
         }
     }
