@@ -61,7 +61,7 @@ namespace Neo.VM
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void PUSHF(ExecutionEngine engine, Instruction instruction)
+        public virtual void PushF(ExecutionEngine engine, Instruction instruction)
         {
             engine.Push(StackItem.False);
         }
