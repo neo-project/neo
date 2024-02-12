@@ -171,7 +171,7 @@ namespace Neo.VM
         /// Called when a context is unloaded.
         /// </summary>
         /// <param name="context">The context being unloaded.</param>
-        public virtual void UnloadContext(ExecutionContext context)
+        internal virtual void UnloadContext(ExecutionContext context)
         {
             if (InvocationStack.Count == 0)
             {
