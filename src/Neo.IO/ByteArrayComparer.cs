@@ -11,7 +11,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Neo.IO
@@ -25,16 +24,19 @@ namespace Neo.IO
 
         private ByteArrayComparer(int direction)
         {
-            this._direction = direction;
+            _direction = direction;
         }
 
-        public int Compare([NotNullWhen(true)] byte[]? x, [NotNullWhen(true)] byte[]? y)
+        public int Compare(byte[]? x, byte[]? y)
         {
             if (ReferenceEquals(x, y)) return 0;
-
-            return _direction > 0 ?
-                CompareInternal(x!, y!) :
-                -CompareInternal(x!, y!);
+            if (x is null && y is not null) return -y.Length;
+            if (y is null && x is not null) return x.Length;
+            if (x is not null && y is not null)
+                return _direction > 0 ?
+                    CompareInternal(x, y) :
+                    -CompareInternal(x, y);
+            return 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
