@@ -326,7 +326,7 @@ namespace Neo.SmartContract
             return task;
         }
 
-        public override void UnloadContext(ExecutionContext context)
+        internal override void UnloadContext(ExecutionContext context)
         {
             base.UnloadContext(context);
             if (context.Script != CurrentContext?.Script)
