@@ -13,6 +13,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Neo" />
     <InternalsVisibleTo Include="Neo.IO" />
+    <InternalsVisibleTo Include="$(AssemblyName).Tests" />
   </ItemGroup>
 
 </Project>
