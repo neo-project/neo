@@ -1,4 +1,16 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UT_JBoolean.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Newtonsoft.Json;
+
 namespace Neo.Json.UnitTests
 {
     [TestClass]
@@ -20,6 +32,7 @@ namespace Neo.Json.UnitTests
             jFalse.AsNumber().Should().Be(0);
             jTrue.AsNumber().Should().Be(1);
         }
+
         [TestMethod]
         public void TestDefaultConstructor()
         {
@@ -76,5 +89,14 @@ namespace Neo.Json.UnitTests
         //     var result = jTrue && new JBoolean(false);
         //     Assert.IsFalse(result.Value);
         // }
+
+        [TestMethod]
+        public void TestEqual()
+        {
+            Assert.IsTrue(jTrue.Equals(new JBoolean(true)));
+            Assert.IsTrue(jTrue == new JBoolean(true));
+            Assert.IsTrue(jFalse.Equals(new JBoolean()));
+            Assert.IsTrue(jFalse == new JBoolean());
+        }
     }
 }

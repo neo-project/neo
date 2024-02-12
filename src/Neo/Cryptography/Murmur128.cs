@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// Murmur128.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -62,19 +63,19 @@ namespace Neo.Cryptography
             {
                 ulong k1 = BinaryPrimitives.ReadUInt64LittleEndian(source[i..]);
                 k1 *= c1;
-                k1 = BitOperations.RotateLeft(k1, r1);
+                k1 = Helper.RotateLeft(k1, r1);
                 k1 *= c2;
                 H1 ^= k1;
-                H1 = BitOperations.RotateLeft(H1, 27);
+                H1 = Helper.RotateLeft(H1, 27);
                 H1 += H2;
                 H1 = H1 * m + n1;
 
                 ulong k2 = BinaryPrimitives.ReadUInt64LittleEndian(source[(i + 8)..]);
                 k2 *= c2;
-                k2 = BitOperations.RotateLeft(k2, r2);
+                k2 = Helper.RotateLeft(k2, r2);
                 k2 *= c1;
                 H2 ^= k2;
-                H2 = BitOperations.RotateLeft(H2, 31);
+                H2 = Helper.RotateLeft(H2, 31);
                 H2 += H1;
                 H2 = H2 * m + n2;
             }
@@ -101,14 +102,14 @@ namespace Neo.Cryptography
                     case 1: remainingBytesL ^= (ulong)source[alignedLength] << 0; break;
                 }
 
-                H2 ^= BitOperations.RotateLeft(remainingBytesH * c2, r2) * c1;
-                H1 ^= BitOperations.RotateLeft(remainingBytesL * c1, r1) * c2;
+                H2 ^= Helper.RotateLeft(remainingBytesH * c2, r2) * c1;
+                H1 ^= Helper.RotateLeft(remainingBytesL * c1, r1) * c2;
             }
         }
 
         protected override byte[] HashFinal()
         {
-            byte[] buffer = GC.AllocateUninitializedArray<byte>(sizeof(ulong) * 2);
+            byte[] buffer = new byte[sizeof(ulong) * 2];
             TryHashFinal(buffer, out _);
             return buffer;
         }

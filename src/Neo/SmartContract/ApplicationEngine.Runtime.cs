@@ -1,24 +1,25 @@
-// Copyright (C) 2015-2023 The Neo Project.
+// Copyright (C) 2015-2024 The Neo Project.
 //
-// The neo is free software distributed under the MIT software license,
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php
+// ApplicationEngine.Runtime.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
 //
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Numerics;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.VM.Types;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -326,9 +327,16 @@ namespace Neo.SmartContract
         /// <param name="state">The message of the log.</param>
         protected internal void RuntimeLog(byte[] state)
         {
-            if (state.Length > MaxNotificationSize) throw new ArgumentException(null, nameof(state));
-            string message = Utility.StrictUTF8.GetString(state);
-            Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash, message));
+            if (state.Length > MaxNotificationSize) throw new ArgumentException("Message is too long.", nameof(state));
+            try
+            {
+                string message = Utility.StrictUTF8.GetString(state);
+                Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash, message));
+            }
+            catch
+            {
+                throw new ArgumentException("Failed to convert byte array to string: Invalid or non-printable UTF-8 sequence detected.", nameof(state));
+            }
         }
 
         /// <summary>

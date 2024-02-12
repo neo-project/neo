@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The Neo.Json is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// OrderedDictionary.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -89,6 +90,8 @@ namespace Neo.Json
             return collection.Remove(key);
         }
 
+#pragma warning disable CS8767
+
         public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)
         {
             if (collection.TryGetValue(key, out var entry))
@@ -99,6 +102,8 @@ namespace Neo.Json
             value = default;
             return false;
         }
+
+#pragma warning restore CS8767
 
         void ICollection<KeyValuePair<TKey, TValue>>.Add(KeyValuePair<TKey, TValue> item)
         {

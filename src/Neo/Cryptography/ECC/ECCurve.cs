@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// ECCurve.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -36,7 +37,7 @@ namespace Neo.Cryptography.ECC
         private ECCurve(BigInteger Q, BigInteger A, BigInteger B, BigInteger N, byte[] G)
         {
             this.Q = Q;
-            this.ExpectedECPointLength = ((int)Q.GetBitLength() + 7) / 8;
+            this.ExpectedECPointLength = ((int)VM.Utility.GetBitLength(Q) + 7) / 8;
             this.A = new ECFieldElement(A, this);
             this.B = new ECFieldElement(B, this);
             this.N = N;

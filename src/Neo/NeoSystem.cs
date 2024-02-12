@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// NeoSystem.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -96,7 +97,6 @@ namespace Neo
         internal RelayCache RelayCache { get; } = new(100);
 
         private ImmutableList<object> services = ImmutableList<object>.Empty;
-        private readonly string storage_engine;
         private readonly IStore store;
         private ChannelsConfig start_message = null;
         private int suspend = 0;
@@ -115,12 +115,20 @@ namespace Neo
         /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
         /// <param name="storageEngine">The storage engine used to create the <see cref="IStore"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
         /// <param name="storagePath">The path of the storage. If <paramref name="storageEngine"/> is the default in-memory storage engine, this parameter is ignored.</param>
-        public NeoSystem(ProtocolSettings settings, string storageEngine = null, string storagePath = null)
+        public NeoSystem(ProtocolSettings settings, string? storageEngine = null, string? storagePath = null) : this(settings, StoreFactory.GetStore(storageEngine ?? nameof(MemoryStore), storagePath))
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NeoSystem"/> class.
+        /// </summary>
+        /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
+        /// <param name="storage">The <see cref="IStore"/> to use.</param>
+        public NeoSystem(ProtocolSettings settings, IStore storage)
         {
             this.Settings = settings;
             this.GenesisBlock = CreateGenesisBlock(settings);
-            this.storage_engine = storageEngine ?? nameof(MemoryStore);
-            this.store = LoadStore(storagePath);
+            this.store = storage;
             this.MemPool = new MemoryPool(this);
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
@@ -211,16 +219,6 @@ namespace Neo
         }
 
         /// <summary>
-        /// Loads an <see cref="IStore"/> at the specified path.
-        /// </summary>
-        /// <param name="path">The path of the storage.</param>
-        /// <returns>The loaded <see cref="IStore"/>.</returns>
-        public IStore LoadStore(string path)
-        {
-            return StoreFactory.GetStore(storage_engine, path);
-        }
-
-        /// <summary>
         /// Resumes the startup process of <see cref="LocalNode"/>.
         /// </summary>
         /// <returns><see langword="true"/> if the startup process is resumed; otherwise, <see langword="false"/>.</returns>
@@ -273,10 +271,11 @@ namespace Neo
         /// </summary>
         /// <param name="hash">The hash of the transaction</param>
         /// <returns><see langword="true"/> if the transaction exists; otherwise, <see langword="false"/>.</returns>
-        public bool ContainsTransaction(UInt256 hash)
+        public ContainsTransactionType ContainsTransaction(UInt256 hash)
         {
-            if (MemPool.ContainsKey(hash)) return true;
-            return NativeContract.Ledger.ContainsTransaction(StoreView, hash);
+            if (MemPool.ContainsKey(hash)) return ContainsTransactionType.ExistsInPool;
+            return NativeContract.Ledger.ContainsTransaction(StoreView, hash) ?
+                ContainsTransactionType.ExistsInLedger : ContainsTransactionType.NotExist;
         }
 
         /// <summary>

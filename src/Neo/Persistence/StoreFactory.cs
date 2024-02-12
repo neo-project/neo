@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// StoreFactory.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -24,7 +25,11 @@ public static class StoreFactory
 
     static StoreFactory()
     {
-        RegisterProvider(new MemoryStoreProvider());
+        var memProvider = new MemoryStoreProvider();
+        RegisterProvider(memProvider);
+
+        // Default cases
+        providers.Add("", memProvider);
     }
 
     public static void RegisterProvider(IStoreProvider provider)
@@ -32,6 +37,12 @@ public static class StoreFactory
         providers.Add(provider.Name, provider);
     }
 
+    /// <summary>
+    /// Get store from name
+    /// </summary>
+    /// <param name="storageEngine">The storage engine used to create the <see cref="IStore"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
+    /// <param name="path">The path of the storage. If <paramref name="storageEngine"/> is the default in-memory storage engine, this parameter is ignored.</param>
+    /// <returns>The storage engine.</returns>
     public static IStore GetStore(string storageEngine, string path)
     {
         return providers[storageEngine].GetStore(path);

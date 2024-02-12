@@ -1,32 +1,38 @@
-// Copyright (C) 2016-2023 The Neo Project.
-// 
-// The neo-cli is free software distributed under the MIT software 
-// license, see the accompanying file LICENSE in the main directory of
-// the project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// Settings.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
 using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
+using Neo.Persistence;
+using System;
+using System.Reflection;
 using System.Threading;
 
 namespace Neo
 {
     public class Settings
     {
-        public LoggerSettings Logger { get; }
-        public StorageSettings Storage { get; }
-        public P2PSettings P2P { get; }
-        public UnlockWalletSettings UnlockWallet { get; }
+        public LoggerSettings Logger { get; init; }
+        public StorageSettings Storage { get; init; }
+        public P2PSettings P2P { get; init; }
+        public UnlockWalletSettings UnlockWallet { get; init; }
+        public ContractsSettings Contracts { get; init; }
+        public PluginsSettings Plugins { get; init; }
 
-        static Settings _default;
+        static Settings? s_default;
 
         static bool UpdateDefault(IConfiguration configuration)
         {
             var settings = new Settings(configuration.GetSection("ApplicationConfiguration"));
-            return null == Interlocked.CompareExchange(ref _default, settings, null);
+            return null == Interlocked.CompareExchange(ref s_default, settings, null);
         }
 
         public static bool Initialize(IConfiguration configuration)
@@ -38,83 +44,143 @@ namespace Neo
         {
             get
             {
-                if (_default == null)
+                if (s_default == null)
                 {
-                    IConfigurationRoot config = new ConfigurationBuilder().AddJsonFile("config.json", optional: true).Build();
+                    var config = new ConfigurationBuilder().AddJsonFile("config.json", optional: true).Build();
                     Initialize(config);
                 }
-
-                return _default;
+                return Custom ?? s_default!;
             }
         }
 
+        public static Settings? Custom { get; set; }
+
         public Settings(IConfigurationSection section)
         {
-            this.Logger = new LoggerSettings(section.GetSection("Logger"));
-            this.Storage = new StorageSettings(section.GetSection("Storage"));
-            this.P2P = new P2PSettings(section.GetSection("P2P"));
-            this.UnlockWallet = new UnlockWalletSettings(section.GetSection("UnlockWallet"));
+            Contracts = new(section.GetSection(nameof(Contracts)));
+            Logger = new(section.GetSection(nameof(Logger)));
+            Storage = new(section.GetSection(nameof(Storage)));
+            P2P = new(section.GetSection(nameof(P2P)));
+            UnlockWallet = new(section.GetSection(nameof(UnlockWallet)));
+            Plugins = new(section.GetSection(nameof(Plugins)));
+        }
+
+        public Settings()
+        {
+            Logger = new LoggerSettings();
+            Storage = new StorageSettings();
+            P2P = new P2PSettings();
+            UnlockWallet = new UnlockWalletSettings();
+            Contracts = new ContractsSettings();
+            Plugins = new PluginsSettings();
         }
     }
 
     public class LoggerSettings
     {
-        public string Path { get; }
-        public bool ConsoleOutput { get; }
-        public bool Active { get; }
+        public string Path { get; init; } = string.Empty;
+        public bool ConsoleOutput { get; init; }
+        public bool Active { get; init; }
 
         public LoggerSettings(IConfigurationSection section)
         {
-            this.Path = section.GetValue("Path", "Logs");
-            this.ConsoleOutput = section.GetValue("ConsoleOutput", false);
-            this.Active = section.GetValue("Active", false);
+            Path = section.GetValue(nameof(Path), "Logs")!;
+            ConsoleOutput = section.GetValue(nameof(ConsoleOutput), false);
+            Active = section.GetValue(nameof(Active), false);
         }
+
+        public LoggerSettings() { }
     }
 
     public class StorageSettings
     {
-        public string Engine { get; }
-        public string Path { get; }
+        public string Engine { get; init; } = nameof(MemoryStore);
+        public string Path { get; init; } = string.Empty;
 
         public StorageSettings(IConfigurationSection section)
         {
-            this.Engine = section.GetValue("Engine", "LevelDBStore");
-            this.Path = section.GetValue("Path", "Data_LevelDB_{0}");
+            Engine = section.GetValue(nameof(Engine), nameof(MemoryStore))!;
+            Path = section.GetValue(nameof(Path), string.Empty)!;
         }
+
+        public StorageSettings() { }
     }
 
     public class P2PSettings
     {
         public ushort Port { get; }
-        public ushort WsPort { get; }
         public int MinDesiredConnections { get; }
         public int MaxConnections { get; }
         public int MaxConnectionsPerAddress { get; }
 
         public P2PSettings(IConfigurationSection section)
         {
-            this.Port = ushort.Parse(section.GetValue("Port", "10333"));
-            this.WsPort = ushort.Parse(section.GetValue("WsPort", "10334"));
-            this.MinDesiredConnections = section.GetValue("MinDesiredConnections", Peer.DefaultMinDesiredConnections);
-            this.MaxConnections = section.GetValue("MaxConnections", Peer.DefaultMaxConnections);
-            this.MaxConnectionsPerAddress = section.GetValue("MaxConnectionsPerAddress", 3);
+            Port = section.GetValue<ushort>(nameof(Port), 10333);
+            MinDesiredConnections = section.GetValue(nameof(MinDesiredConnections), Peer.DefaultMinDesiredConnections);
+            MaxConnections = section.GetValue(nameof(MaxConnections), Peer.DefaultMaxConnections);
+            MaxConnectionsPerAddress = section.GetValue(nameof(MaxConnectionsPerAddress), 3);
         }
+
+        public P2PSettings() { }
     }
 
     public class UnlockWalletSettings
     {
-        public string Path { get; }
-        public string Password { get; }
-        public bool IsActive { get; }
+        public string? Path { get; init; } = string.Empty;
+        public string? Password { get; init; } = string.Empty;
+        public bool IsActive { get; init; } = false;
 
         public UnlockWalletSettings(IConfigurationSection section)
         {
             if (section.Exists())
             {
-                this.Path = section.GetValue("Path", "");
-                this.Password = section.GetValue("Password", "");
-                this.IsActive = bool.Parse(section.GetValue("IsActive", "false"));
+                Path = section.GetValue(nameof(Path), string.Empty)!;
+                Password = section.GetValue(nameof(Password), string.Empty)!;
+                IsActive = section.GetValue(nameof(IsActive), false);
             }
         }
+
+        public UnlockWalletSettings() { }
+    }
+
+    public class ContractsSettings
+    {
+        public UInt160 NeoNameService { get; init; } = UInt160.Zero;
+
+        public ContractsSettings(IConfigurationSection section)
+        {
+            if (section.Exists())
+            {
+                if (UInt160.TryParse(section.GetValue(nameof(NeoNameService), string.Empty), out var hash))
+                {
+                    NeoNameService = hash;
+                }
+                else
+                    throw new ArgumentException("Neo Name Service (NNS): NeoNameService hash is invalid. Check your config.json.", nameof(NeoNameService));
+            }
+        }
+
+        public ContractsSettings() { }
+    }
+
+    public class PluginsSettings
+    {
+        public Uri DownloadUrl { get; init; } = new("https://api.github.com/repos/neo-project/neo-modules/releases");
+        public bool Prerelease { get; init; } = false;
+        public Version Version { get; init; } = Assembly.GetExecutingAssembly().GetName().Version!;
+
+        public PluginsSettings(IConfigurationSection section)
+        {
+            if (section.Exists())
+            {
+                DownloadUrl = section.GetValue(nameof(DownloadUrl), DownloadUrl)!;
+#if DEBUG
+                Prerelease = section.GetValue(nameof(Prerelease), Prerelease);
+                Version = section.GetValue(nameof(Version), Version)!;
+#endif
+            }
+        }
+
+        public PluginsSettings() { }
     }
 }

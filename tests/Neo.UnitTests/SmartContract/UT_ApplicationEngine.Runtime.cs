@@ -1,3 +1,14 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UT_ApplicationEngine.Runtime.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
@@ -163,6 +174,18 @@ namespace Neo.UnitTests.SmartContract
             rand_3.Should().NotBe(rand_8);
             rand_4.Should().NotBe(rand_9);
             rand_5.Should().NotBe(rand_10);
+        }
+
+        [TestMethod]
+        public void TestInvalidUtf8LogMessage()
+        {
+            var tx_1 = TestUtils.GetTransaction(UInt160.Zero);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx_1, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);
+            var msg = new byte[]
+            {
+                68, 216, 160, 6, 89, 102, 86, 72, 37, 15, 132, 45, 76, 221, 170, 21, 128, 51, 34, 168, 205, 56, 10, 228, 51, 114, 4, 218, 245, 155, 172, 132
+            };
+            Assert.ThrowsException<ArgumentException>(() => engine.RuntimeLog(msg));
         }
     }
 }

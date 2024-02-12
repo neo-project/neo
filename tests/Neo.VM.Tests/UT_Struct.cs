@@ -1,3 +1,14 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UT_Struct.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.VM;
 using Neo.VM.Types;
@@ -6,11 +17,11 @@ using System;
 namespace Neo.Test
 {
     [TestClass]
-    public class UtStruct
+    public class UT_Struct
     {
         private readonly Struct @struct;
 
-        public UtStruct()
+        public UT_Struct()
         {
             @struct = new Struct { 1 };
             for (int i = 0; i < 20000; i++)
@@ -18,7 +29,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        public void Clone()
+        public void TestClone()
         {
             Struct s1 = new() { 1, new Struct { 2 } };
             Struct s2 = s1.Clone(ExecutionEngineLimits.Default);
@@ -30,7 +41,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        public void Equals()
+        public void TestEquals()
         {
             Struct s1 = new() { 1, new Struct { 2 } };
             Struct s2 = new() { 1, new Struct { 2 } };
@@ -41,7 +52,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        public void EqualsDos()
+        public void TestEqualsDos()
         {
             string payloadStr = new string('h', 65535);
             Struct s1 = new();

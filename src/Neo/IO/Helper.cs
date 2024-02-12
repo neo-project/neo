@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// Helper.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -101,7 +102,7 @@ namespace Neo.IO
         public static ReadOnlyMemory<byte> CompressLz4(this ReadOnlySpan<byte> data)
         {
             int maxLength = LZ4Codec.MaximumOutputSize(data.Length);
-            byte[] buffer = GC.AllocateUninitializedArray<byte>(sizeof(uint) + maxLength);
+            byte[] buffer = new byte[sizeof(uint) + maxLength];
             BinaryPrimitives.WriteInt32LittleEndian(buffer, data.Length);
             int length = LZ4Codec.Encode(data, buffer.AsSpan(sizeof(uint)));
             return buffer.AsMemory(0, sizeof(uint) + length);
@@ -117,7 +118,7 @@ namespace Neo.IO
         {
             int length = BinaryPrimitives.ReadInt32LittleEndian(data);
             if (length < 0 || length > maxOutput) throw new FormatException();
-            byte[] result = GC.AllocateUninitializedArray<byte>(length);
+            byte[] result = new byte[length];
             if (LZ4Codec.Decode(data[4..], result) != length)
                 throw new FormatException();
             return result;

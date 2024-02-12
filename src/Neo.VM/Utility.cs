@@ -1,8 +1,9 @@
-// Copyright (C) 2016-2023 The Neo Project.
+// Copyright (C) 2015-2024 The Neo Project.
 //
-// The neo-vm is free software distributed under the MIT software license,
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php
+// Utility.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
 //
 // Redistribution and use in source and binary forms with or without
@@ -15,7 +16,7 @@ using System.Text;
 
 namespace Neo.VM
 {
-    internal static class Utility
+    public static class Utility
     {
         public static Encoding StrictUTF8 { get; }
 
@@ -26,6 +27,20 @@ namespace Neo.VM
             StrictUTF8.EncoderFallback = EncoderFallback.ExceptionFallback;
         }
 
+        public static bool TryGetString(this ReadOnlySpan<byte> bytes, out string? value)
+        {
+            try
+            {
+                value = StrictUTF8.GetString(bytes);
+                return true;
+            }
+            catch
+            {
+                value = default;
+                return false;
+            }
+        }
+
         public static BigInteger ModInverse(this BigInteger value, BigInteger modulus)
         {
             if (value <= 0) throw new ArgumentOutOfRangeException(nameof(value));
@@ -33,11 +48,11 @@ namespace Neo.VM
             BigInteger r = value, old_r = modulus, s = 1, old_s = 0;
             while (r > 0)
             {
-                BigInteger q = old_r / r;
+                var q = old_r / r;
                 (old_r, r) = (r, old_r % r);
                 (old_s, s) = (s, old_s - q * s);
             }
-            BigInteger result = old_s % modulus;
+            var result = old_s % modulus;
             if (result < 0) result += modulus;
             if (!(value * result % modulus).IsOne) throw new InvalidOperationException();
             return result;
@@ -60,17 +75,33 @@ namespace Neo.VM
             return z;
         }
 
-#if !NET5_0_OR_GREATER
-        static int GetBitLength(this BigInteger i)
+        /// <summary>
+        /// Gets the number of bits required for shortest two's complement representation of the current instance without the sign bit.
+        /// </summary>
+        /// <returns>The minimum non-negative number of bits in two's complement notation without the sign bit.</returns>
+        /// <remarks>This method returns 0 if the value of current object is equal to <see cref="BigInteger.Zero"/> or <see cref="BigInteger.MinusOne"/>. For positive integers the return value is equal to the ordinary binary representation string length.</remarks>
+        public static long GetBitLength(this BigInteger value)
         {
-            byte[] b = i.ToByteArray();
-            return (b.Length - 1) * 8 + BitLen(i.Sign > 0 ? b[b.Length - 1] : 255 - b[b.Length - 1]);
+#if NET5_0_OR_GREATER
+            return value.GetBitLength();
+#else
+            if (value == 0 || value == BigInteger.MinusOne) return 0;
+
+            // Note: This method is imprecise and might not work as expected with integers larger than 256 bits.
+            var b = value.ToByteArray();
+            if (b.Length == 1 || (b.Length == 2 && b[1] == 0))
+            {
+                return BitCount(value.Sign > 0 ? b[0] : (byte)(255 - b[0]));
+            }
+            return (b.Length - 1) * 8 + BitCount(value.Sign > 0 ? b[^1] : 255 - b[^1]);
+#endif
         }
 
+#if !NET5_0_OR_GREATER
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static int BitLen(int w)
+        private static int BitCount(int w)
         {
-            return (w < 1 << 15 ? (w < 1 << 7
+            return w < 1 << 15 ? (w < 1 << 7
                 ? (w < 1 << 3 ? (w < 1 << 1
                 ? (w < 1 << 0 ? (w < 0 ? 32 : 0) : 1)
                 : (w < 1 << 2 ? 2 : 3)) : (w < 1 << 5
@@ -82,7 +113,7 @@ namespace Neo.VM
                 ? (w < 1 << 17 ? (w < 1 << 16 ? 16 : 17) : (w < 1 << 18 ? 18 : 19))
                 : (w < 1 << 21 ? (w < 1 << 20 ? 20 : 21) : (w < 1 << 22 ? 22 : 23))) : (w < 1 << 27
                 ? (w < 1 << 25 ? (w < 1 << 24 ? 24 : 25) : (w < 1 << 26 ? 26 : 27))
-                : (w < 1 << 29 ? (w < 1 << 28 ? 28 : 29) : (w < 1 << 30 ? 30 : 31)))));
+                : (w < 1 << 29 ? (w < 1 << 28 ? 28 : 29) : (w < 1 << 30 ? 30 : 31))));
         }
 #endif
     }

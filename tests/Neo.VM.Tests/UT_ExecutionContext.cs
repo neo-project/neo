@@ -1,3 +1,14 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UT_ExecutionContext.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.VM;
 using System;
@@ -6,7 +17,7 @@ using System.Collections.Generic;
 namespace Neo.Test
 {
     [TestClass]
-    public class UtExecutionContext
+    public class UT_ExecutionContext
     {
         class TestState
         {
@@ -14,7 +25,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        public void StateTest()
+        public void TestStateTest()
         {
             var context = new ExecutionContext(Array.Empty<byte>(), -1, new ReferenceCounter());
 

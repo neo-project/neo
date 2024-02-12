@@ -1,3 +1,14 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UT_KeyPair.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
@@ -69,7 +80,7 @@ namespace Neo.UnitTests.Wallets
             for (int i = 0; i < privateKey.Length; i++)
                 privateKey[i] = (byte)random.Next(256);
             KeyPair keyPair = new KeyPair(privateKey);
-            Object keyPair2 = keyPair as Object;
+            Object keyPair2 = keyPair;
             keyPair.Equals(keyPair2).Should().BeTrue();
         }
 

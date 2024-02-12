@@ -1,3 +1,14 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UT_ReferenceCounter.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.VM;
 using Neo.VM.Types;
@@ -5,7 +16,7 @@ using Neo.VM.Types;
 namespace Neo.Test
 {
     [TestClass]
-    public class UtReferenceCounter
+    public class UT_ReferenceCounter
     {
         [TestMethod]
         public void TestCircularReferences()
@@ -100,11 +111,11 @@ namespace Neo.Test
             Assert.AreEqual(VMState.BREAK, debugger.StepInto());
             Assert.AreEqual(9, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.BREAK, debugger.StepInto());
-            Assert.AreEqual(3, engine.ReferenceCounter.Count);
+            Assert.AreEqual(6, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.BREAK, debugger.StepInto());
-            Assert.AreEqual(2, engine.ReferenceCounter.Count);
+            Assert.AreEqual(5, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.HALT, debugger.Execute());
-            Assert.AreEqual(0, engine.ReferenceCounter.Count);
+            Assert.AreEqual(4, engine.ReferenceCounter.Count);
         }
 
         [TestMethod]
@@ -145,9 +156,75 @@ namespace Neo.Test
             Assert.AreEqual(VMState.BREAK, debugger.StepInto());
             Assert.AreEqual(3, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.BREAK, debugger.StepInto());
-            Assert.AreEqual(1, engine.ReferenceCounter.Count);
+            Assert.AreEqual(2, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.HALT, debugger.Execute());
-            Assert.AreEqual(0, engine.ReferenceCounter.Count);
+            Assert.AreEqual(1, engine.ReferenceCounter.Count);
+        }
+
+        [TestMethod]
+        public void TestCheckZeroReferredWithArray()
+        {
+            using ScriptBuilder sb = new();
+
+            sb.EmitPush(ExecutionEngineLimits.Default.MaxStackSize - 1);
+            sb.Emit(OpCode.NEWARRAY);
+
+            // Good with MaxStackSize
+
+            using (ExecutionEngine engine = new())
+            {
+                engine.LoadScript(sb.ToArray());
+                Assert.AreEqual(0, engine.ReferenceCounter.Count);
+
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.AreEqual((int)ExecutionEngineLimits.Default.MaxStackSize, engine.ReferenceCounter.Count);
+            }
+
+            // Fault with MaxStackSize+1
+
+            sb.Emit(OpCode.PUSH1);
+
+            using (ExecutionEngine engine = new())
+            {
+                engine.LoadScript(sb.ToArray());
+                Assert.AreEqual(0, engine.ReferenceCounter.Count);
+
+                Assert.AreEqual(VMState.FAULT, engine.Execute());
+                Assert.AreEqual((int)ExecutionEngineLimits.Default.MaxStackSize + 1, engine.ReferenceCounter.Count);
+            }
+        }
+
+        [TestMethod]
+        public void TestCheckZeroReferred()
+        {
+            using ScriptBuilder sb = new();
+
+            for (int x = 0; x < ExecutionEngineLimits.Default.MaxStackSize; x++)
+                sb.Emit(OpCode.PUSH1);
+
+            // Good with MaxStackSize
+
+            using (ExecutionEngine engine = new())
+            {
+                engine.LoadScript(sb.ToArray());
+                Assert.AreEqual(0, engine.ReferenceCounter.Count);
+
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                Assert.AreEqual((int)ExecutionEngineLimits.Default.MaxStackSize, engine.ReferenceCounter.Count);
+            }
+
+            // Fault with MaxStackSize+1
+
+            sb.Emit(OpCode.PUSH1);
+
+            using (ExecutionEngine engine = new())
+            {
+                engine.LoadScript(sb.ToArray());
+                Assert.AreEqual(0, engine.ReferenceCounter.Count);
+
+                Assert.AreEqual(VMState.FAULT, engine.Execute());
+                Assert.AreEqual((int)ExecutionEngineLimits.Default.MaxStackSize + 1, engine.ReferenceCounter.Count);
+            }
         }
 
         [TestMethod]
@@ -161,7 +238,7 @@ namespace Neo.Test
             Array array = new(engine.ReferenceCounter, new StackItem[] { 1, 2, 3, 4 });
             Assert.AreEqual(array.Count, engine.ReferenceCounter.Count);
             Assert.AreEqual(VMState.HALT, engine.Execute());
-            Assert.AreEqual(0, engine.ReferenceCounter.Count);
+            Assert.AreEqual(array.Count, engine.ReferenceCounter.Count);
         }
     }
 }
