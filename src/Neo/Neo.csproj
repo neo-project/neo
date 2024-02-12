@@ -24,4 +24,8 @@
     <ProjectReference Include="..\Neo.VM\Neo.VM.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Neo.SmartContract.Testing" />
+  </ItemGroup>
+
 </Project>
