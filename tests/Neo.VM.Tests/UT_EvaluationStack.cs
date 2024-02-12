@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// UtEvaluationStack.cs file belongs to the neo project and is free
+// UT_EvaluationStack.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -10,6 +10,8 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Test.Extensions;
+using Neo.Test.Helpers;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -19,7 +21,7 @@ using System.Linq;
 namespace Neo.Test
 {
     [TestClass]
-    public class UtEvaluationStack
+    public class UT_EvaluationStack
     {
         private static EvaluationStack CreateOrderedStack(int count)
         {
@@ -200,7 +202,7 @@ namespace Neo.Test
         }
 
         [TestMethod]
-        public void TestToString()
+        public void TestEvaluationStackPrint()
         {
             var stack = new EvaluationStack(new ReferenceCounter());
 
@@ -210,6 +212,14 @@ namespace Neo.Test
             stack.Insert(3, true);
 
             Assert.AreEqual("[Boolean(True), ByteString(\"test\"), Integer(1), Integer(3)]", stack.ToString());
+        }
+
+        [TestMethod]
+        public void TestPrintInvalidUTF8()
+        {
+            var stack = new EvaluationStack(new ReferenceCounter());
+            stack.Insert(0, "4CC95219999D421243C8161E3FC0F4290C067845".FromHexString());
+            Assert.AreEqual("[ByteString(\"Base64: TMlSGZmdQhJDyBYeP8D0KQwGeEU=\")]", stack.ToString());
         }
     }
 }

@@ -67,5 +67,10 @@ namespace Neo.VM.Types
         {
             return value ? True : False;
         }
+
+        public override string ToString()
+        {
+            return value.ToString();
+        }
     }
 }
