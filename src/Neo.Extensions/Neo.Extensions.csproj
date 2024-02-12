@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Akka" Version="1.5.14" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Neo" />
     <InternalsVisibleTo Include="Neo.IO" />
   </ItemGroup>

@@ -11,4 +11,8 @@
     <InternalsVisibleTo Include="Neo" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" />
+  </ItemGroup>
+
 </Project>
