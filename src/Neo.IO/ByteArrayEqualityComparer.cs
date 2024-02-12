@@ -10,7 +10,6 @@
 // modifications are permitted.
 
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.IO
 {
@@ -18,7 +17,7 @@ namespace Neo.IO
     {
         public static readonly ByteArrayEqualityComparer Default = new();
 
-        public unsafe bool Equals([NotNullWhen(true)] byte[]? x, [NotNullWhen(true)] byte[]? y)
+        public unsafe bool Equals(byte[]? x, byte[]? y)
         {
             if (ReferenceEquals(x, y)) return true;
             if (x is null || y is null) return false;
