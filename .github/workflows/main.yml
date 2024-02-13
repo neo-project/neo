@@ -56,7 +56,7 @@ jobs:
     - name : Pack (Neo)
       run: |
         dotnet pack \
-        --configuration Debug \
+        --configuration Release \
         --output ./out \
         --version-suffix ${{ env.VERSION_SUFFIX }}
 
