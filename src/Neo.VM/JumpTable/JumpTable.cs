@@ -19,7 +19,7 @@ namespace Neo.VM
         /// <summary>
         /// Default JumpTable
         /// </summary>
-        public static JumpTable Default = new();
+        public static readonly JumpTable Default = new();
 
         public delegate void DelAction(ExecutionEngine engine, Instruction instruction);
         protected readonly DelAction[] Table = new DelAction[byte.MaxValue];
