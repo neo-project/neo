@@ -29,7 +29,6 @@ namespace Neo.IO
 
         public int Compare(byte[]? x, byte[]? y)
         {
-            if (ReferenceEquals(x, y)) return 0;
             if (x is null && y is not null)
                 return _direction > 0 ? -y.Length : y.Length;
             if (y is null && x is not null)
