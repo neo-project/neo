@@ -42,7 +42,7 @@ jobs:
     needs: Test
     runs-on: ubuntu-latest
     steps:
-    - name: Chectout
+    - name: Checkout
       uses: actions/checkout@v4
 
     - name: Setup .NET Core
