@@ -158,8 +158,10 @@ namespace Neo.SmartContract
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
         /// <param name="jumpTable">The jump table to be used by the <see cref="ApplicationEngine"/>.</param>
-        protected unsafe ApplicationEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable)
-            : base(jumpTable)
+        protected unsafe ApplicationEngine(
+            TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock,
+            ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable = null)
+            : base(jumpTable ?? DefaultJumpTable)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
