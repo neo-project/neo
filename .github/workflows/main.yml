@@ -9,19 +9,7 @@ env:
   DOTNET_VERSION: 7.0.x
 
 jobs:
-  Review:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
 
-      - name: AI Code Reviewer
-        uses: neo-project/ai-codereviewer@main
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_API_MODEL: "gpt-4" # Optional: defaults to "gpt-4"
-          exclude: "**/*.json, **/*.md" # Optional: exclude patterns separated by commas
   Test:
     timeout-minutes: 15
     strategy:
@@ -49,6 +37,21 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         path-to-lcov: ./coverage/lcov.net7.0.info
+
+  Review:
+    runs-on: ubuntu-latest
+    needs: Test
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: AI Code Reviewer
+        uses: neo-project/ai-codereviewer@main
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_API_MODEL: "gpt-4" # Optional: defaults to "gpt-4"
+          exclude: "**/*.json, **/*.md" # Optional: exclude patterns separated by commas
 
   PublishGithub:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
