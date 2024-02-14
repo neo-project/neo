@@ -20,7 +20,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The prices of all the opcodes.
         /// </summary>
-        [Obsolete]
+        [Obsolete("You should use OpCodePriceTable")]
         public static readonly IReadOnlyDictionary<OpCode, long> OpCodePrices = new Dictionary<OpCode, long>
         {
             [OpCode.PUSHINT8] = 1 << 0,
@@ -228,9 +228,9 @@ namespace Neo.SmartContract
         /// </summary>
         static ApplicationEngine()
         {
-#pragma warning disable CS0612 // Type or member is obsolete
+#pragma warning disable CS0618 // Type or member is obsolete
             foreach (var entry in OpCodePrices)
-#pragma warning restore CS0612 // Type or member is obsolete
+#pragma warning restore CS0618 // Type or member is obsolete
             {
                 OpCodePriceTable[(byte)entry.Key] = entry.Value;
             }

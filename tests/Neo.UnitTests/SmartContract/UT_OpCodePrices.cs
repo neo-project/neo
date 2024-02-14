@@ -24,9 +24,9 @@ namespace Neo.UnitTests.SmartContract
         {
             foreach (OpCode opcode in Enum.GetValues(typeof(OpCode)))
             {
-#pragma warning disable CS0612 // Type or member is obsolete
+#pragma warning disable CS0618 // Type or member is obsolete
                 Assert.IsTrue(ApplicationEngine.OpCodePrices.ContainsKey(opcode), opcode.ToString(), $"{opcode} without price");
-#pragma warning restore CS0612 // Type or member is obsolete
+#pragma warning restore CS0618 // Type or member is obsolete
 
                 if (opcode == OpCode.RET ||
                     opcode == OpCode.SYSCALL ||
