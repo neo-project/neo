@@ -36,6 +36,7 @@ jobs:
       uses: coverallsapp/github-action@master
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
+        path-to-lcov: ./coverage/lcov.net7.0.info
 
   PublishGithub:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
@@ -71,7 +72,7 @@ jobs:
       run: |
         dotnet nuget push * \
             --source https://nuget.pkg.github.com/neo-project/index.json \
-            --api-key "${{ secrets.PKGS_TOKEN }}" \
+            --api-key "${{ secrets.GITHUB_TOKEN }}" \
             --disable-buffering \
             --no-service-endpoint;
 
