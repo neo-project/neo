@@ -35,6 +35,7 @@ namespace Neo.UnitTests.SmartContract
                     continue;
 
                 Assert.AreNotEqual(0, ApplicationEngine.OpCodePriceTable[(byte)opcode], $"{opcode} without price");
+                Assert.AreEqual(ApplicationEngine.OpCodePrices[opcode], ApplicationEngine.OpCodePriceTable[(byte)opcode], $"{opcode} price mismatch");
             }
         }
     }
