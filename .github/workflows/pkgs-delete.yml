@@ -16,7 +16,7 @@ jobs:
         package-name: Neo
         package-type: nuget
         min-versions-to-keep: 3
-        token: "${{ secrets.PKGS_TOKEN }}"
+        token: "${{ secrets.GITHUB_TOKEN }}"
 
     - name: Delete Neo.ConsoleService Package
       uses: actions/delete-package-versions@v4
@@ -24,7 +24,7 @@ jobs:
         package-name: Neo.ConsoleService
         package-type: nuget
         min-versions-to-keep: 3
-        token: "${{ secrets.PKGS_TOKEN }}"
+        token: "${{ secrets.GITHUB_TOKEN }}"
 
     - name: Delete Neo.ConsoleService Package
       uses: actions/delete-package-versions@v4
@@ -32,7 +32,7 @@ jobs:
         package-name: Neo.ConsoleService
         package-type: nuget
         min-versions-to-keep: 3
-        token: "${{ secrets.PKGS_TOKEN }}"
+        token: "${{ secrets.GITHUB_TOKEN }}"
 
     - name: Delete Neo.Json Package
       uses: actions/delete-package-versions@v4
@@ -40,7 +40,7 @@ jobs:
         package-name: Neo.Json
         package-type: nuget
         min-versions-to-keep: 3
-        token: "${{ secrets.PKGS_TOKEN }}"
+        token: "${{ secrets.GITHUB_TOKEN }}"
 
     - name: Delete Neo.VM Package
       uses: actions/delete-package-versions@v4
@@ -48,4 +48,4 @@ jobs:
         package-name: Neo.VM
         package-type: nuget
         min-versions-to-keep: 3
-        token: "${{ secrets.PKGS_TOKEN }}"
+        token: "${{ secrets.GITHUB_TOKEN }}"
