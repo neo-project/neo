@@ -31,6 +31,13 @@ jobs:
       run: |
         find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
         dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/lcov
+    - name: Run .NET Code Analysis
+      uses: dotnet/code-analysis@v1
+      id: code-analysis
+      with:
+        projects: src\neo.sln
+        build-breaking: true
+        all-categories: all
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
       uses: coverallsapp/github-action@master
@@ -75,45 +82,6 @@ jobs:
             --api-key "${{ secrets.GITHUB_TOKEN }}" \
             --disable-buffering \
             --no-service-endpoint;
-
-  # MyGet isn't working
-  # PublishMyGet:
-  #   if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
-  #   needs: Test
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@v4
-  #     with:
-  #       fetch-depth: 0
-  #   - name: Setup .NET
-  #     uses: actions/setup-dotnet@v4
-  #     with:
-  #       dotnet-version: ${{ env.DOTNET_VERSION }}
-  #   - name: Set Version
-  #     run: git rev-list --count HEAD | xargs printf 'CI%05d' | xargs -I{} echo 'VERSION_SUFFIX={}' >> $GITHUB_ENV
-  #   - name : Pack (Neo)
-  #     run: |
-  #       dotnet pack \
-  #       --configuration Debug \
-  #       --output ./out \
-  #       --version-suffix ${{ env.VERSION_SUFFIX }}
-  #   - name: Remove Unwanted Files
-  #     working-directory: ./out
-  #     run: |
-  #       rm -v Neo.CLI*
-  #       rm -v Neo.GUI*
-  #   - name: Publish to MyGet
-  #     working-directory: ./out
-  #     run: |
-  #       for filename in *.nupkg; do
-  #           dotnet nuget push "${filename}" \
-  #           --source https://www.myget.org/F/neo/api/v3/index.json \
-  #           --api-key "${{ secrets.MYGET_TOKEN }}" \
-  #           --disable-buffering \
-  #           --no-service-endpoint;
-  #       done;
-  #     shell: bash
 
   Release:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
