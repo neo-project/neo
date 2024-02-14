@@ -23,7 +23,19 @@ namespace Neo.UnitTests.SmartContract
         public void AllOpcodePriceAreSet()
         {
             foreach (OpCode opcode in Enum.GetValues(typeof(OpCode)))
-                Assert.AreNotEqual(0, ApplicationEngine.OpCodePrices[(byte)opcode]);
+            {
+#pragma warning disable CS0612 // Type or member is obsolete
+                Assert.IsTrue(ApplicationEngine.OpCodePrices.ContainsKey(opcode), opcode.ToString(), $"{opcode} without price");
+#pragma warning restore CS0612 // Type or member is obsolete
+
+                if (opcode == OpCode.RET ||
+                    opcode == OpCode.SYSCALL ||
+                    opcode == OpCode.ABORT ||
+                    opcode == OpCode.ABORTMSG)
+                    continue;
+
+                Assert.AreNotEqual(0, ApplicationEngine.OpCodePriceTable[(byte)opcode], $"{opcode} without price");
+            }
         }
     }
 }
