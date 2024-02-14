@@ -46,7 +46,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: AI Code Reviewer
-        uses: neo-project/ai-codereviewer@main
+        uses: freeedcom/ai-codereviewer@a9a064dfa1db8c83f40ef63f6e247fa09c935ed6
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
