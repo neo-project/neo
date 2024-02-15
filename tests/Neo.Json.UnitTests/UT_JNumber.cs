@@ -50,7 +50,7 @@ namespace Neo.Json.UnitTests
             ((JNumber)BigInteger.Zero).AsNumber().Should().Be(0);
             ((JNumber)BigInteger.MinusOne).AsNumber().Should().Be(-1);
         }
-        
+
         [TestMethod]
         public void TestNullEqual()
         {
