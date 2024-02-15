@@ -24,17 +24,21 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.VM", "src\Neo.VM\Neo.VM
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.VM.Tests", "tests\Neo.VM.Tests\Neo.VM.Tests.csproj", "{005F84EB-EA2E-449F-930A-7B4173DDC7EC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.ConsoleService", "src\Neo.ConsoleService\Neo.ConsoleService.csproj", "{9E886812-7243-48D8-BEAF-47AADC11C054}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.ConsoleService", "src\Neo.ConsoleService\Neo.ConsoleService.csproj", "{9E886812-7243-48D8-BEAF-47AADC11C054}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.GUI", "src\Neo.GUI\Neo.GUI.csproj", "{02ABDE42-9880-43B4-B6F7-8D618602A277}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.GUI", "src\Neo.GUI\Neo.GUI.csproj", "{02ABDE42-9880-43B4-B6F7-8D618602A277}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.CLI", "src\Neo.CLI\Neo.CLI.csproj", "{BDFBE455-4C1F-4FC4-B5FC-1387B93A8687}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.CLI", "src\Neo.CLI\Neo.CLI.csproj", "{BDFBE455-4C1F-4FC4-B5FC-1387B93A8687}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.ConsoleService.Tests", "tests\Neo.ConsoleService.Tests\Neo.ConsoleService.Tests.csproj", "{B40F8584-5AFB-452C-AEFA-009C80CC23A9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.ConsoleService.Tests", "tests\Neo.ConsoleService.Tests\Neo.ConsoleService.Tests.csproj", "{B40F8584-5AFB-452C-AEFA-009C80CC23A9}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.Cryptography.BLS12_381", "src\Neo.Cryptography.BLS12_381\Neo.Cryptography.BLS12_381.csproj", "{D48C1FAB-3471-4CA0-8688-25E6F43F2C25}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.Cryptography.BLS12_381.Tests", "tests\Neo.Cryptography.BLS12_381.Tests\Neo.Cryptography.BLS12_381.Tests.csproj", "{387CCF6C-9A26-43F6-A639-0A82E91E10D8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.IO", "src\Neo.IO\Neo.IO.csproj", "{4CDAC1AA-45C6-4157-8D8E-199050433048}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Extensions", "src\Neo.Extensions\Neo.Extensions.csproj", "{9C5213D6-3833-4570-8AE2-47E9F9017A8F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -98,6 +102,14 @@ Global
 		{387CCF6C-9A26-43F6-A639-0A82E91E10D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{387CCF6C-9A26-43F6-A639-0A82E91E10D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{387CCF6C-9A26-43F6-A639-0A82E91E10D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4CDAC1AA-45C6-4157-8D8E-199050433048}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CDAC1AA-45C6-4157-8D8E-199050433048}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4CDAC1AA-45C6-4157-8D8E-199050433048}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4CDAC1AA-45C6-4157-8D8E-199050433048}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C5213D6-3833-4570-8AE2-47E9F9017A8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C5213D6-3833-4570-8AE2-47E9F9017A8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C5213D6-3833-4570-8AE2-47E9F9017A8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C5213D6-3833-4570-8AE2-47E9F9017A8F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -117,6 +129,8 @@ Global
 		{B40F8584-5AFB-452C-AEFA-009C80CC23A9} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
 		{D48C1FAB-3471-4CA0-8688-25E6F43F2C25} = {B5339DF7-5D1D-43BA-B332-74B825E1770E}
 		{387CCF6C-9A26-43F6-A639-0A82E91E10D8} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
+		{4CDAC1AA-45C6-4157-8D8E-199050433048} = {B5339DF7-5D1D-43BA-B332-74B825E1770E}
+		{9C5213D6-3833-4570-8AE2-47E9F9017A8F} = {B5339DF7-5D1D-43BA-B332-74B825E1770E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCBA19D9-F868-4C6D-8061-A2B91E06E3EC}

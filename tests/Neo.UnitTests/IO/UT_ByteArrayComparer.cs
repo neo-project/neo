@@ -12,6 +12,7 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
+using System;
 
 namespace Neo.UnitTests.IO
 {
@@ -22,10 +23,23 @@ namespace Neo.UnitTests.IO
         public void TestCompare()
         {
             ByteArrayComparer comparer = ByteArrayComparer.Default;
-            byte[] x = new byte[0], y = new byte[0];
+            byte[] x = null, y = null;
             comparer.Compare(x, y).Should().Be(0);
 
+            x = new byte[] { 1, 2, 3, 4, 5 };
+            y = x;
+            comparer.Compare(x, y).Should().Be(0);
+            comparer.Compare(x, x).Should().Be(0);
+
+            y = null;
+            comparer.Compare(x, y).Should().Be(5);
+
+            y = x;
+            x = null;
+            comparer.Compare(x, y).Should().Be(-5);
+
             x = new byte[] { 1 };
+            y = Array.Empty<byte>();
             comparer.Compare(x, y).Should().Be(1);
             y = x;
             comparer.Compare(x, y).Should().Be(0);

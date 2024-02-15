@@ -20,27 +20,32 @@ namespace Neo.IO
         public static readonly ByteArrayComparer Default = new(1);
         public static readonly ByteArrayComparer Reverse = new(-1);
 
-        private readonly int direction;
+        private readonly int _direction;
 
         private ByteArrayComparer(int direction)
         {
-            this.direction = direction;
+            _direction = direction;
         }
 
-        public int Compare(byte[] x, byte[] y)
+        public int Compare(byte[]? x, byte[]? y)
         {
-            return direction > 0
-                ? CompareInternal(x, y)
-                : -CompareInternal(x, y);
+            if (x == y) return 0;
+            if (x is null && y is not null)
+                return _direction > 0 ? -y.Length : y.Length;
+            if (y is null && x is not null)
+                return _direction > 0 ? x.Length : -x.Length;
+            return _direction > 0 ?
+                    CompareInternal(x!, y!) :
+                    -CompareInternal(x!, y!);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int CompareInternal(byte[] x, byte[] y)
         {
-            int length = Math.Min(x.Length, y.Length);
-            for (int i = 0; i < length; i++)
+            var length = Math.Min(x.Length, y.Length);
+            for (var i = 0; i < length; i++)
             {
-                int r = x[i].CompareTo(y[i]);
+                var r = x[i].CompareTo(y[i]);
                 if (r != 0) return r;
             }
             return x.Length.CompareTo(y.Length);
