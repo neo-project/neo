@@ -119,6 +119,18 @@ jobs:
         dotnet pack ./src/Neo \
         --configuration Release \
         --output ./out
+    - name : Pack (Neo.IO)
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack ./src/Neo.IO \
+        --configuration Release \
+        --output ./out
+    - name : Pack (Neo.Extensions)
+      if: steps.check_tag.outputs.statusCode == '404'
+      run: |
+        dotnet pack ./src/Neo.Extensions \
+        --configuration Release \
+        --output ./out
     - name : Pack (Neo.Json)
       if: steps.check_tag.outputs.statusCode == '404'
       run: |
