@@ -50,6 +50,22 @@ namespace Neo.Json.UnitTests
             ((JNumber)BigInteger.Zero).AsNumber().Should().Be(0);
             ((JNumber)BigInteger.MinusOne).AsNumber().Should().Be(-1);
         }
+        
+        [TestMethod]
+        public void TestNullEqual()
+        {
+            JNumber nullJNumber = null;
+
+            Assert.IsFalse(maxInt.Equals(null));
+            Assert.IsFalse(maxInt == null);
+            Assert.IsFalse(minInt.Equals(null));
+            Assert.IsFalse(minInt == null);
+            Assert.IsFalse(zero == null);
+
+            Assert.ThrowsException<NullReferenceException>(() => nullJNumber == maxInt);
+            Assert.ThrowsException<NullReferenceException>(() => nullJNumber == minInt);
+            Assert.ThrowsException<NullReferenceException>(() => nullJNumber == zero);
+        }
 
         [TestMethod]
         public void TestAsString()
