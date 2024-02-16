@@ -56,7 +56,7 @@ namespace Neo.VM.Types
             throw new InvalidCastException($"The item can't be casted to type {typeof(T)}");
         }
 
-        public object GetInterface()
+        internal object GetInterface()
         {
             return _object;
         }
