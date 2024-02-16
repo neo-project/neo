@@ -39,9 +39,12 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.Service", "src\Neo.Service\Neo.Service.csproj", "{A680BEF0-6895-4DA6-A355-304EEC9B4861}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.Service.Tests", "tests\Neo.Service.Test\Neo.Service.Tests.csproj", "{6400F5B3-CFD6-4F95-A733-94A326B14B2C}"
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.IO", "src\Neo.IO\Neo.IO.csproj", "{4CDAC1AA-45C6-4157-8D8E-199050433048}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Extensions", "src\Neo.Extensions\Neo.Extensions.csproj", "{9C5213D6-3833-4570-8AE2-47E9F9017A8F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.IO", "src\Neo.IO\Neo.IO.csproj", "{4CDAC1AA-45C6-4157-8D8E-199050433048}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.Extensions", "src\Neo.Extensions\Neo.Extensions.csproj", "{9C5213D6-3833-4570-8AE2-47E9F9017A8F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.IO.Tests", "tests\Neo.IO.Tests\Neo.IO.Tests.csproj", "{25D79A08-52D9-4808-A53F-E0C9626DDCBB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -121,6 +124,10 @@ Global
 		{9C5213D6-3833-4570-8AE2-47E9F9017A8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9C5213D6-3833-4570-8AE2-47E9F9017A8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9C5213D6-3833-4570-8AE2-47E9F9017A8F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{25D79A08-52D9-4808-A53F-E0C9626DDCBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25D79A08-52D9-4808-A53F-E0C9626DDCBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25D79A08-52D9-4808-A53F-E0C9626DDCBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25D79A08-52D9-4808-A53F-E0C9626DDCBB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -144,6 +151,7 @@ Global
 		{6400F5B3-CFD6-4F95-A733-94A326B14B2C} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
 		{4CDAC1AA-45C6-4157-8D8E-199050433048} = {B5339DF7-5D1D-43BA-B332-74B825E1770E}
 		{9C5213D6-3833-4570-8AE2-47E9F9017A8F} = {B5339DF7-5D1D-43BA-B332-74B825E1770E}
+		{25D79A08-52D9-4808-A53F-E0C9626DDCBB} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCBA19D9-F868-4C6D-8061-A2B91E06E3EC}
