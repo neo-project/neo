@@ -227,7 +227,7 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.Add(CreateStorageKey(Prefix_Committee), new StorageItem(cachedCommittee));
             engine.Snapshot.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(System.Array.Empty<byte>()));
             engine.Snapshot.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u), new StorageItem(5 * GAS.Factor));
-            engine.Snapshot.Add(CreateStorageKey(Prefix_GasPerBlockCurrent), new StorageItem(new GasPerBlock() { Gas = 5 * GAS.Factor, PreviousGas = 0, Index = 0 }));
+            engine.Snapshot.Add(CreateStorageKey(Prefix_GasPerBlockCurrent), new StorageItem(new GasPerBlock() { Gas = 5 * GAS.Factor, PreviousGas = 5 * GAS.Factor, Index = 0 }));
             engine.Snapshot.Add(CreateStorageKey(Prefix_RegisterPrice), new StorageItem(1000 * GAS.Factor));
             return Mint(engine, Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators), TotalAmount, false);
         }
