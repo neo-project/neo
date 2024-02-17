@@ -79,7 +79,7 @@ namespace Neo.IO.Pipes
         public override void Write(char value) =>
             InternalWrite($"{value}");
 
-        public override void Write(char[] buffer) =>
+        public override void Write(char[]? buffer) =>
             InternalWrite($"{buffer}");
 
         public override void Write(char[] buffer, int index, int count) =>
@@ -97,7 +97,7 @@ namespace Neo.IO.Pipes
         public override void Write(long value) =>
             InternalWrite($"{value}");
 
-        public override void Write(object value) =>
+        public override void Write(object? value) =>
             InternalWrite($"{value}");
 
         public override void Write(ReadOnlySpan<char> buffer) =>
@@ -106,19 +106,19 @@ namespace Neo.IO.Pipes
         public override void Write(float value) =>
             InternalWrite($"{value}");
 
-        public override void Write(string value) =>
+        public override void Write(string? value) =>
             InternalWrite($"{value}");
 
-        public override void Write(string format, object arg0) =>
+        public override void Write(string format, object? arg0) =>
             InternalWrite(string.Format(FormatProvider, $"{format}", arg0));
 
-        public override void Write(string format, object arg0, object arg1) =>
+        public override void Write(string format, object? arg0, object? arg1) =>
             InternalWrite(string.Format(FormatProvider, $"{format}", arg0, arg1));
 
-        public override void Write(string format, object arg0, object arg1, object arg2) =>
+        public override void Write(string format, object? arg0, object? arg1, object? arg2) =>
             InternalWrite(string.Format(FormatProvider, $"{format}", arg0, arg1, arg2));
 
-        public override void Write(string format, params object[] args) =>
+        public override void Write(string format, params object?[] args) =>
             InternalWrite(string.Format(FormatProvider, $"{format}", args));
 
         public override void Write(uint value) =>
@@ -136,7 +136,7 @@ namespace Neo.IO.Pipes
         public override Task WriteAsync(ReadOnlyMemory<char> buffer, CancellationToken cancellationToken = default) =>
             InternalWriteAsync($"{buffer}", cancellationToken);
 
-        public override Task WriteAsync(string value) =>
+        public override Task WriteAsync(string? value) =>
             InternalWriteAsync(value);
 
         public override void WriteLine() =>
@@ -148,7 +148,7 @@ namespace Neo.IO.Pipes
         public override void WriteLine(char value) =>
             InternalWrite($"{value}{NewLine}");
 
-        public override void WriteLine(char[] buffer) =>
+        public override void WriteLine(char[]? buffer) =>
             InternalWrite($"{buffer}{NewLine}");
 
         public override void WriteLine(char[] buffer, int index, int count) =>
@@ -166,7 +166,7 @@ namespace Neo.IO.Pipes
         public override void WriteLine(long value) =>
             InternalWrite($"{value}{NewLine}");
 
-        public override void WriteLine(object value) =>
+        public override void WriteLine(object? value) =>
             InternalWrite($"{value}{NewLine}");
 
         public override void WriteLine(ReadOnlySpan<char> buffer) =>
@@ -175,19 +175,19 @@ namespace Neo.IO.Pipes
         public override void WriteLine(float value) =>
             InternalWrite($"{value}{NewLine}");
 
-        public override void WriteLine(string value) =>
+        public override void WriteLine(string? value) =>
             InternalWrite($"{value}{NewLine}");
 
-        public override void WriteLine(string format, object arg0) =>
+        public override void WriteLine(string format, object? arg0) =>
             InternalWrite(string.Format(FormatProvider, $"{format}{NewLine}", arg0));
 
-        public override void WriteLine(string format, object arg0, object arg1) =>
+        public override void WriteLine(string format, object? arg0, object? arg1) =>
             InternalWrite(string.Format(FormatProvider, $"{format}{NewLine}", arg0, arg1));
 
-        public override void WriteLine(string format, object arg0, object arg1, object arg2) =>
+        public override void WriteLine(string format, object? arg0, object? arg1, object? arg2) =>
             InternalWrite(string.Format(FormatProvider, $"{format}{NewLine}", arg0, arg1, arg2));
 
-        public override void WriteLine(string format, params object[] args) =>
+        public override void WriteLine(string format, params object?[] args) =>
             InternalWrite(string.Format(FormatProvider, $"{format}{NewLine}", args));
 
         public override void WriteLine(uint value) =>
@@ -208,18 +208,21 @@ namespace Neo.IO.Pipes
         public override Task WriteLineAsync(ReadOnlyMemory<char> buffer, CancellationToken cancellationToken = default) =>
             InternalWriteAsync($"{buffer}{NewLine}", cancellationToken);
 
-        public override Task WriteLineAsync(string value) =>
+        public override Task WriteLineAsync(string? value) =>
             InternalWriteAsync($"{value}{NewLine}");
 
-        private Task InternalWriteAsync(string value, CancellationToken cancellationToken = default) =>
-            _textWriterPipeStream?.IsConnected == true ?
+        private Task InternalWriteAsync(string? value, CancellationToken cancellationToken = default) =>
+            string.IsNullOrEmpty(value) == false && _textWriterPipeStream?.IsConnected == true ?
             _textWriterPipeStream.WriteAsync(Encoding.GetBytes(value), cancellationToken).AsTask() :
             Task.CompletedTask;
 
-        private void InternalWrite(string value)
+        private void InternalWrite(string? value)
         {
+            if (string.IsNullOrEmpty(value)) return;
             if (_textWriterPipeStream?.IsConnected == true)
+            {
                 _textWriterPipeStream.Write(Encoding.GetBytes(value));
+            }
         }
 
         private async Task InternalListenAsync()

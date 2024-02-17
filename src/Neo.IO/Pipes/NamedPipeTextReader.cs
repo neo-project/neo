@@ -141,7 +141,7 @@ namespace Neo.IO.Pipes
             return string.Empty;
         }
 
-        public override async Task<string> ReadLineAsync()
+        public override async Task<string?> ReadLineAsync()
         {
             if (_textReaderPipeStream?.IsConnected == true)
             {

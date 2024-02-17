@@ -44,7 +44,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.IO", "src\Neo.IO\Neo.IO
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.Extensions", "src\Neo.Extensions\Neo.Extensions.csproj", "{9C5213D6-3833-4570-8AE2-47E9F9017A8F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.IO.Tests", "tests\Neo.IO.Tests\Neo.IO.Tests.csproj", "{25D79A08-52D9-4808-A53F-E0C9626DDCBB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.IO.Tests", "tests\Neo.IO.Tests\Neo.IO.Tests.csproj", "{25D79A08-52D9-4808-A53F-E0C9626DDCBB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.CommandLine", "src\Neo.Console\Neo.CommandLine.csproj", "{C0324F89-C4A3-4E0D-A704-27D4E6E32403}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -128,6 +130,10 @@ Global
 		{25D79A08-52D9-4808-A53F-E0C9626DDCBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{25D79A08-52D9-4808-A53F-E0C9626DDCBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{25D79A08-52D9-4808-A53F-E0C9626DDCBB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C0324F89-C4A3-4E0D-A704-27D4E6E32403}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C0324F89-C4A3-4E0D-A704-27D4E6E32403}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C0324F89-C4A3-4E0D-A704-27D4E6E32403}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C0324F89-C4A3-4E0D-A704-27D4E6E32403}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -152,6 +158,7 @@ Global
 		{4CDAC1AA-45C6-4157-8D8E-199050433048} = {B5339DF7-5D1D-43BA-B332-74B825E1770E}
 		{9C5213D6-3833-4570-8AE2-47E9F9017A8F} = {B5339DF7-5D1D-43BA-B332-74B825E1770E}
 		{25D79A08-52D9-4808-A53F-E0C9626DDCBB} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
+		{C0324F89-C4A3-4E0D-A704-27D4E6E32403} = {B5339DF7-5D1D-43BA-B332-74B825E1770E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCBA19D9-F868-4C6D-8061-A2B91E06E3EC}
