@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System.Runtime.Versioning;
-
 namespace Neo.CommandLine.Rendering
 {
     internal enum AnsiColors : int
@@ -69,8 +67,7 @@ namespace Neo.CommandLine.Rendering
 
         SlowBlink = 5,
 
-        [SupportedOSPlatform("windows")]
-        FastBlink = 6,
+        FastBlink = 6, // Only on Windows
 
         Invert = 7,
 

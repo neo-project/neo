@@ -156,6 +156,9 @@ namespace Neo.CommandLine.Rendering
         public override string ToString() =>
             $"\x1b[{_defaultTextStyle.Style};{_defaultTextStyle.Color};{_defaultTextStyle.Background}m{_inputText}\x1b[0m";
 
+        public override int GetHashCode() =>
+            _inputText.GetHashCode();
+
         public static bool operator ==(AnsiString a, AnsiString? b) =>
             a.Equals(b);
 
