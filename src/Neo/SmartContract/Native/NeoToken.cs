@@ -48,6 +48,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_Candidate = 33;
         private const byte Prefix_Committee = 14;
         private const byte Prefix_GasPerBlock = 29;
+        private const byte Prefix_GasPerBlockCurrent = 30;
         private const byte Prefix_RegisterPrice = 13;
         private const byte Prefix_VoterRewardPerCommittee = 23;
 
@@ -226,6 +227,7 @@ namespace Neo.SmartContract.Native
             engine.Snapshot.Add(CreateStorageKey(Prefix_Committee), new StorageItem(cachedCommittee));
             engine.Snapshot.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(System.Array.Empty<byte>()));
             engine.Snapshot.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u), new StorageItem(5 * GAS.Factor));
+            engine.Snapshot.Add(CreateStorageKey(Prefix_GasPerBlockCurrent), new StorageItem(new GasPerBlock() { Gas = 5 * GAS.Factor, PreviousGas = 0, Index = 0 }));
             engine.Snapshot.Add(CreateStorageKey(Prefix_RegisterPrice), new StorageItem(1000 * GAS.Factor));
             return Mint(engine, Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators), TotalAmount, false);
         }
@@ -283,9 +285,18 @@ namespace Neo.SmartContract.Native
                 throw new ArgumentOutOfRangeException(nameof(gasPerBlock));
             if (!CheckCommittee(engine)) throw new InvalidOperationException();
 
-            uint index = engine.PersistingBlock.Index + 1;
-            StorageItem entry = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(index), () => new StorageItem(gasPerBlock));
+            var gp = new GasPerBlock() { Gas = gasPerBlock, Index = engine.PersistingBlock.Index + 1 };
+
+            var entry = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(gp.Index), () => new StorageItem(gasPerBlock));
             entry.Set(gasPerBlock);
+
+            // Set current entry
+
+            entry = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_GasPerBlockCurrent), () => new StorageItem(gp));
+            var gpCurrent = entry.GetInteroperable<GasPerBlock>();
+            gpCurrent.PreviousGas = gpCurrent.Gas;
+            gpCurrent.Gas = gasPerBlock;
+            gpCurrent.Index = gp.Index;
         }
 
         /// <summary>
@@ -296,7 +307,18 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger GetGasPerBlock(DataCache snapshot)
         {
-            return GetSortedGasRecords(snapshot, Ledger.CurrentIndex(snapshot) + 1).First().GasPerBlock;
+            var gp = snapshot.TryGet(CreateStorageKey(Prefix_GasPerBlockCurrent)).GetInteroperable<GasPerBlock>();
+
+            if (gp.Index <= Ledger.CurrentIndex(snapshot))
+            {
+                return gp.Gas;
+            }
+            else
+            {
+                return gp.PreviousGas;
+            }
+
+            //return GetSortedGasRecords(snapshot, Ledger.CurrentIndex(snapshot) + 1).First().GasPerBlock;
         }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
@@ -633,6 +655,26 @@ namespace Neo.SmartContract.Native
             protected override StackItem ElementToStackItem((ECPoint PublicKey, BigInteger Votes) element, ReferenceCounter referenceCounter)
             {
                 return new Struct(referenceCounter) { element.PublicKey.ToArray(), element.Votes };
+            }
+        }
+
+        private record GasPerBlock : IInteroperable
+        {
+            public uint Index;
+            public BigInteger Gas;
+            public BigInteger PreviousGas;
+
+            public void FromStackItem(StackItem stackItem)
+            {
+                Struct @struct = (Struct)stackItem;
+                Index = (uint)@struct[0].GetInteger();
+                Gas = @struct[1].GetInteger();
+                Gas = @struct[2].GetInteger();
+            }
+
+            public StackItem ToStackItem(ReferenceCounter referenceCounter)
+            {
+                return new Struct(referenceCounter) { Index, Gas, PreviousGas };
             }
         }
 
