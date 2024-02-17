@@ -15,13 +15,12 @@ namespace Neo.CommandLine.Rendering
     {
         public AnsiStringStyle()
         {
-            Color = AnsiColors.Default;
-            Background = AnsiBackgroundColors.Default;
-            Style = AnsiStyles.Default;
+            Color = AnsiColor.Default;
+            Background = AnsiBackgroundColor.Default;
         }
 
-        public AnsiColors Color { get; set; }
-        public AnsiBackgroundColors Background { get; set; }
-        public AnsiStyles Style { get; set; }
+        public AnsiColor Color { get; set; }
+        public AnsiBackgroundColor Background { get; set; }
+        public AnsiStyle? Style { get; set; }
     }
 }

@@ -17,10 +17,13 @@ namespace Neo.CommandLine.Rendering
 {
     internal sealed class AnsiString : IEnumerable<char>, IEnumerable, ICloneable, IComparable, IComparable<string>, IConvertible, IEquatable<string>
     {
+        public static string Reset = $"\x1b[{AnsiStyle.Default}m";
+
         public int Length => _inputText.Length;
+        public int TrueLength => ToString().Length;
 
         private readonly AnsiStringStyle _defaultTextStyle;
-        private readonly string _inputText;
+        private string _inputText;
 
         public AnsiString(
             string value,
@@ -65,6 +68,25 @@ namespace Neo.CommandLine.Rendering
         public char this[int index]
         {
             get => _inputText[index];
+            set
+            {
+                var tmp = _inputText.ToCharArray();
+                Array.Copy(new[] { value }, 0, tmp, index, 1);
+                _inputText = new string(tmp);
+            }
+        }
+
+        public char[] this[Range range]
+        {
+            get => _inputText.AsMemory()
+                .Slice(range.Start.Value, range.Start.Value - range.End.Value)
+                .ToArray();
+            set
+            {
+                var tmp = _inputText.ToCharArray();
+                Array.Copy(value, 0, tmp, range.Start.Value, value.Length);
+                _inputText = new string(tmp);
+            }
         }
 
         public static string Format(string format, params AnsiString?[] args) =>
@@ -76,25 +98,22 @@ namespace Neo.CommandLine.Rendering
         public static string Format(IFormatProvider provider, AnsiStringStyle formatStyle, string format, params AnsiString?[] args) =>
             new AnsiString(string.Format(provider, format, args), formatStyle);
 
-        public CharEnumerator GetEnumerator() =>
+        public IEnumerator<char> GetEnumerator() =>
             _inputText.GetEnumerator();
-
-        IEnumerator<char> IEnumerable<char>.GetEnumerator() =>
-            GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() =>
             GetEnumerator();
 
-        object ICloneable.Clone() =>
+        public object Clone() =>
             _inputText.Clone();
 
-        int IComparable.CompareTo(object? obj) =>
+        public int CompareTo(object? obj) =>
             _inputText.CompareTo(obj);
 
-        int IComparable<string>.CompareTo(string? other) =>
+        public int CompareTo(string? other) =>
             _inputText.CompareTo(other);
 
-        TypeCode IConvertible.GetTypeCode() =>
+        public TypeCode GetTypeCode() =>
             _inputText.GetTypeCode();
 
         bool IConvertible.ToBoolean(IFormatProvider? provider) =>
@@ -145,25 +164,19 @@ namespace Neo.CommandLine.Rendering
         ulong IConvertible.ToUInt64(IFormatProvider? provider) =>
             Convert.ToUInt64(_inputText, provider);
 
-        bool IEquatable<string>.Equals(string? other) =>
-            Equals(other);
+        public bool Equals(string? other) =>
+            ReferenceEquals(_inputText, other) ?
+            true :
+            _inputText.Equals(other);
 
         public override bool Equals(object? obj) =>
-            ReferenceEquals(_inputText, obj) ?
-            true :
-            _inputText.Equals(obj);
+            Equals(obj as string);
 
         public override string ToString() =>
-            $"\x1b[{_defaultTextStyle.Style};{_defaultTextStyle.Color};{_defaultTextStyle.Background}m{_inputText}\x1b[0m";
+            $"\x1b[{_defaultTextStyle.Style:d};{_defaultTextStyle.Color:d};{_defaultTextStyle.Background:d}m{_inputText}";
 
         public override int GetHashCode() =>
             _inputText.GetHashCode();
-
-        public static bool operator ==(AnsiString a, AnsiString? b) =>
-            a.Equals(b);
-
-        public static bool operator !=(AnsiString a, AnsiString? b) =>
-            !a.Equals(b);
 
         public static bool operator ==(AnsiString a, string? b) =>
             a.Equals(b);

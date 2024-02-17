@@ -13,13 +13,14 @@
     <PackageReference Remove="FluentAssertions" Version="6.12.0" />
     <PackageReference Remove="MSTest.TestAdapter" Version="3.1.1" />
     <PackageReference Remove="MSTest.TestFramework" Version="3.1.1" />
-    
+
     <PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.9.0" />
     <PackageReference Include="xunit" Version="2.7.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.7">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <ProjectReference Include="..\..\src\Neo.CommandLine\Neo.CommandLine.csproj" />
     <PackageReference Update="coverlet.collector" Version="6.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

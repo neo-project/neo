@@ -18,7 +18,8 @@ using System.Threading.Tasks;
 
 namespace Neo.IO.Pipes
 {
-    internal class NamedPipeTextReader : TextReader
+    // This isn't finished.
+    internal class NamedPipeTextReader : TextReader, IDisposable
     {
         public string NewLine { get; } = Environment.NewLine;
 

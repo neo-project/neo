@@ -11,7 +11,7 @@
 
 namespace Neo.CommandLine.Rendering
 {
-    internal enum AnsiColors : int
+    internal enum AnsiColor : int
     {
         Black = 30,
         Red = 31,
@@ -32,7 +32,7 @@ namespace Neo.CommandLine.Rendering
         BrightWhite = White + 60,
     }
 
-    internal enum AnsiBackgroundColors : int
+    internal enum AnsiBackgroundColor : int
     {
         Black = 40,
         Red = 41,
@@ -53,7 +53,7 @@ namespace Neo.CommandLine.Rendering
         BrightWhite = White + 60,
     }
 
-    internal enum AnsiStyles : int
+    internal enum AnsiStyle : int
     {
         Default = 0,
 
@@ -67,7 +67,7 @@ namespace Neo.CommandLine.Rendering
 
         SlowBlink = 5,
 
-        FastBlink = 6, // Only on Windows
+        FastBlink = 6, // Only on Windows MS-DOS 'ANSI.SYS'
 
         Invert = 7,
 
