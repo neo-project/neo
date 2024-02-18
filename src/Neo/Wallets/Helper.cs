@@ -81,17 +81,17 @@ namespace Neo.Wallets
         /// <summary>
         /// Calculates the network fee for the specified transaction.
         /// </summary>
-        /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="tx">The transaction to calculate.</param>
+        /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="settings">Thr protocol settings to use.</param>
         /// <param name="accountScript">Function to retrive the script's account from a hash.</param>
+        /// <param name="maxExecutionCost">The maximum cost that can be spent when a contract is executed.</param>
         /// <returns>The network fee of the transaction.</returns>
-        public static long CalculateNetworkFee(DataCache snapshot, Transaction tx, ProtocolSettings settings, Func<UInt160, byte[]> accountScript)
+        public static long CalculateNetworkFee(this Transaction tx, DataCache snapshot, ProtocolSettings settings, Func<UInt160, byte[]> accountScript, long maxExecutionCost = ApplicationEngine.TestModeGas)
         {
             UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
 
             // base size for transaction: includes const_header + signers + attributes + script + hashes
-            long maxExecutionCost = ApplicationEngine.TestModeGas;
             int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + tx.Script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
             uint exec_fee_factor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             long networkFee = 0;

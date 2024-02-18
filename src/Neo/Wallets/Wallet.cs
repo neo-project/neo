@@ -578,7 +578,7 @@ namespace Neo.Wallets
                     tx.SystemFee = engine.GasConsumed;
                 }
 
-                tx.NetworkFee = CalculateNetworkFee(snapshot, tx, maxGas, ProtocolSettings, (a) => GetAccount(a)?.Contract?.Script);
+                tx.NetworkFee = tx.CalculateNetworkFee(snapshot, ProtocolSettings, (a) => GetAccount(a)?.Contract?.Script, maxGas);
                 if (value >= tx.SystemFee + tx.NetworkFee) return tx;
             }
             throw new InvalidOperationException("Insufficient GAS");
