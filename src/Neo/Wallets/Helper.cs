@@ -102,19 +102,16 @@ namespace Neo.Wallets
                 byte[] witnessScript = accountScript(hash);
                 byte[] invocationScript = null;
 
-                if (tx.Witnesses != null)
+                if (tx.Witnesses != null && witnessScript is null)
                 {
-                    if (witnessScript is null)
-                    {
-                        // Try to find the script in the witnesses
-                        Witness witness = tx.Witnesses[index];
-                        witnessScript = witness?.VerificationScript.ToArray();
+                    // Try to find the script in the witnesses
+                    Witness witness = tx.Witnesses[index];
+                    witnessScript = witness?.VerificationScript.ToArray();
 
-                        if (witnessScript is null || witnessScript.Length == 0)
-                        {
-                            // Then it's a contract-based witness, so try to get the corresponding invocation script for it
-                            invocationScript = witness?.InvocationScript.ToArray();
-                        }
+                    if (witnessScript is null || witnessScript.Length == 0)
+                    {
+                        // Then it's a contract-based witness, so try to get the corresponding invocation script for it
+                        invocationScript = witness?.InvocationScript.ToArray();
                     }
                 }
 
