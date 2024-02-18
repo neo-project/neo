@@ -92,10 +92,9 @@ namespace Neo.Wallets
             UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
 
             // base size for transaction: includes const_header + signers + attributes + script + hashes
-            int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + tx.Script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length);
+            int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + tx.Script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length), index = -1;
             uint exec_fee_factor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             long networkFee = 0;
-            int index = -1;
             foreach (UInt160 hash in hashes)
             {
                 index++;
