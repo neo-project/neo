@@ -17,11 +17,11 @@ namespace Neo.IO
     {
         public static readonly ByteArrayEqualityComparer Default = new();
 
-        public unsafe bool Equals(byte[] x, byte[] y)
+        public unsafe bool Equals(byte[]? x, byte[]? y)
         {
             if (ReferenceEquals(x, y)) return true;
             if (x is null || y is null) return false;
-            int len = x.Length;
+            var len = x.Length;
             if (len != y.Length) return false;
             if (len == 0) return true;
             fixed (byte* xp = x, yp = y)
@@ -48,8 +48,8 @@ namespace Neo.IO
         {
             unchecked
             {
-                int hash = 17;
-                foreach (byte element in obj)
+                var hash = 17;
+                foreach (var element in obj)
                     hash = hash * 31 + element;
                 return hash;
             }
