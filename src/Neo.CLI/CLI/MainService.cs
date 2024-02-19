@@ -349,8 +349,7 @@ namespace Neo.CLI
         public override bool OnStart(string[] args)
         {
             base.OnStart(args);
-            var ret = OnStartWithCommandLine(args);
-            return ret != 1;
+            return OnStartWithCommandLine(args) != 1;
         }
 
         public override void OnStop()
