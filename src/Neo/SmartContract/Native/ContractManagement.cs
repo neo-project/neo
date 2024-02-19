@@ -86,7 +86,7 @@ namespace Neo.SmartContract.Native
                         // Increase the update counter
                         contractState.UpdateCounter = (ushort)(state.GetInteroperable<ContractState>().UpdateCounter + 1);
                         // Update the contract state
-                        state.Set(contractState);
+                        engine.Snapshot.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(contractState));
                     }
 
                     await contract.Initialize(engine, hf);
