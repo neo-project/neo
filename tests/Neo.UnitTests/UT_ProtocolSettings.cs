@@ -124,7 +124,7 @@ namespace Neo.UnitTests
             File.Delete(file);
         }
 
-        private static string CreateHKSettings(string hf)
+        internal static string CreateHKSettings(string hf)
         {
             return @"
 {
