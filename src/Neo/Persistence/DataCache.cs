@@ -96,7 +96,7 @@ namespace Neo.Persistence
                     {
                         TrackState.Deleted => TrackState.Changed,
                         TrackState.NotFound => TrackState.Added,
-                        _ => throw new ArgumentException()
+                        _ => throw new ArgumentException($"The element currently has state {trackable.State}")
                     };
                 }
                 else

@@ -73,7 +73,7 @@ namespace Neo.SmartContract.Native
                 if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.PersistingBlock.Index, out Hardfork? hf))
                 {
                     ContractState contractState = contract.GetContractState(engine.ProtocolSettings, engine.PersistingBlock.Index);
-                    StorageItem state = engine.Snapshot.TryGet(CreateStorageKey(Prefix_Contract).Add(contract.Hash));
+                    StorageItem state = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Contract).Add(contract.Hash));
 
                     if (state is null)
                     {
@@ -83,10 +83,13 @@ namespace Neo.SmartContract.Native
                     }
                     else
                     {
+                        // Parse old contract
+                        var oldContract = state.GetInteroperable<ContractState>();
                         // Increase the update counter
-                        contractState.UpdateCounter = (ushort)(state.GetInteroperable<ContractState>().UpdateCounter + 1);
-                        // Update the contract state
-                        engine.Snapshot.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(contractState));
+                        oldContract.UpdateCounter++;
+                        // Modify nef and manifest
+                        oldContract.Nef = contractState.Nef;
+                        oldContract.Manifest = contractState.Manifest;
                     }
 
                     await contract.Initialize(engine, hf);
