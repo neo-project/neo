@@ -283,12 +283,13 @@ namespace Neo.ConsoleService
 
         #endregion
 
-        public virtual void OnStart(string[] args)
+        public virtual bool OnStart(string[] args)
         {
             // Register sigterm event handler
             AssemblyLoadContext.Default.Unloading += SigTermEventHandler;
             // Register sigint event handler
             Console.CancelKeyPress += CancelHandler;
+            return true;
         }
 
         public virtual void OnStop()
@@ -428,7 +429,7 @@ namespace Neo.ConsoleService
         {
             if (Environment.UserInteractive)
             {
-                if (args.Length > 0 && args[0] == "/install")
+                if (args.Length == 1 && args[0] == "/install")
                 {
                     if (Environment.OSVersion.Platform != PlatformID.Win32NT)
                     {
@@ -457,7 +458,7 @@ namespace Neo.ConsoleService
                         Console.Write(process.StandardOutput.ReadToEnd());
                     }
                 }
-                else if (args.Length > 0 && args[0] == "/uninstall")
+                else if (args.Length == 1 && args[0] == "/uninstall")
                 {
                     if (Environment.OSVersion.Platform != PlatformID.Win32NT)
                     {
@@ -483,8 +484,7 @@ namespace Neo.ConsoleService
                 }
                 else
                 {
-                    OnStart(args);
-                    RunConsole();
+                    if (OnStart(args)) RunConsole();
                     OnStop();
                 }
             }
