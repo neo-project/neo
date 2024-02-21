@@ -20,6 +20,12 @@ namespace Neo.UnitTests.Persistence
     public class UT_MemoryStore
     {
         [TestMethod]
+        public void LoadStoreTest()
+        {
+            Assert.IsInstanceOfType<MemoryStore>(TestBlockchain.TheNeoSystem.LoadStore("abc"));
+        }
+
+        [TestMethod]
         public void StoreTest()
         {
             using var store = new MemoryStore();

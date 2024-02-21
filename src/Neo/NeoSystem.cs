@@ -98,6 +98,7 @@ namespace Neo
 
         private ImmutableList<object> services = ImmutableList<object>.Empty;
         private readonly IStore store;
+        private readonly IStoreProvider storageProvider;
         private ChannelsConfig start_message = null;
         private int suspend = 0;
 
@@ -113,9 +114,10 @@ namespace Neo
         /// Initializes a new instance of the <see cref="NeoSystem"/> class.
         /// </summary>
         /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
-        /// <param name="storageEngine">The storage engine used to create the <see cref="IStore"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
-        /// <param name="storagePath">The path of the storage. If <paramref name="storageEngine"/> is the default in-memory storage engine, this parameter is ignored.</param>
-        public NeoSystem(ProtocolSettings settings, string? storageEngine = null, string? storagePath = null) : this(settings, StoreFactory.GetStore(storageEngine ?? nameof(MemoryStore), storagePath))
+        /// <param name="storageProvider">The storage engine used to create the <see cref="IStoreProvider"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
+        /// <param name="storagePath">The path of the storage. If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.</param>
+        public NeoSystem(ProtocolSettings settings, string? storageProvider = null, string? storagePath = null) :
+            this(settings, StoreFactory.GetStoreProvider(storageProvider ?? nameof(MemoryStore)), storagePath)
         {
         }
 
@@ -123,12 +125,14 @@ namespace Neo
         /// Initializes a new instance of the <see cref="NeoSystem"/> class.
         /// </summary>
         /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
-        /// <param name="storage">The <see cref="IStore"/> to use.</param>
-        public NeoSystem(ProtocolSettings settings, IStore storage)
+        /// <param name="storageProvider">The <see cref="IStoreProvider"/> to use.</param>
+        /// <param name="storagePath">The path of the storage. If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.</param>
+        public NeoSystem(ProtocolSettings settings, IStoreProvider storageProvider, string? storagePath = null)
         {
             this.Settings = settings;
             this.GenesisBlock = CreateGenesisBlock(settings);
-            this.store = storage;
+            this.storageProvider = storageProvider;
+            this.store = storageProvider.GetStore(storagePath);
             this.MemPool = new MemoryPool(this);
             this.Blockchain = ActorSystem.ActorOf(Ledger.Blockchain.Props(this));
             this.LocalNode = ActorSystem.ActorOf(Network.P2P.LocalNode.Props(this));
@@ -225,7 +229,7 @@ namespace Neo
         /// <returns>The loaded <see cref="IStore"/>.</returns>
         public IStore LoadStore(string path)
         {
-            return StoreFactory.GetStore(store.GetType().Name, path);
+            return storageProvider.GetStore(path);
         }
 
         /// <summary>
