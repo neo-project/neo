@@ -45,6 +45,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v4
@@ -54,9 +56,15 @@ jobs:
     - name: Set Version
       run: git rev-list --count HEAD | xargs printf 'CI%05d' | xargs -I{} echo 'VERSION_SUFFIX={}' >> $GITHUB_ENV
 
+    - name : Build (Neo)
+      run: |
+        dotnet build -f net7.0
+        dotnet build -f netstandard2.1
+
     - name : Pack (Neo)
       run: |
         dotnet pack \
+        --no-build \
         --configuration Release \
         --output ./out \
         --version-suffix ${{ env.VERSION_SUFFIX }}
