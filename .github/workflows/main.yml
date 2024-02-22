@@ -30,13 +30,13 @@ jobs:
     - name: Test
       run: |
         find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
-        dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/lcov
+        dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/opencover.xml
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
       uses: coverallsapp/github-action@release/v2
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        file: ./coverage/lcov.info
+        file: ./coverage/opencover.xml
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
