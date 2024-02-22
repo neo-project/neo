@@ -36,7 +36,7 @@ jobs:
       uses: coverallsapp/github-action@release/v2
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        file: ./coverage/lcov.net7.0.info
+        file: ./coverage/lcov.info
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
