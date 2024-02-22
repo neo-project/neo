@@ -27,9 +27,12 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
          dotnet format --verify-no-changes --verbosity diagnostic
-    - name: Test
+    - name: Prepare coverage
+      if: matrix.os == 'ubuntu-latest'
       run: |
         find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
+    - name: Test
+      run: |
         dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/lcov /p:MergeWith=${GITHUB_WORKSPACE}/coverage/lcov.net7.0.info
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
