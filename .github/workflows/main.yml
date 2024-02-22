@@ -33,7 +33,7 @@ jobs:
         dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/lcov
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
-      uses: coverallsapp/github-action@master
+      uses: coverallsapp/github-action@release/v2
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         path-to-lcov: ./coverage/lcov.net7.0.info
