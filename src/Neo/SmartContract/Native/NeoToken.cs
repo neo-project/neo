@@ -464,6 +464,7 @@ namespace Neo.SmartContract.Native
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>The address of the committee.</returns>
+        [ContractMethod(Hardfork.HF_Cockatrice, CpuFee = 1 << 17, RequiredCallFlags = CallFlags.ReadStates)]
         public UInt160 GetCommitteeAddress(DataCache snapshot)
         {
             ECPoint[] committees = GetCommittee(snapshot);
