@@ -34,7 +34,7 @@ jobs:
     - name: Test for Coveralls Only
       if: matrix.os == 'ubuntu-latest'    
       run: |
-        mkdir -p ${GITHUB_WORKSPACE}/coverage
+        mkdir -p ${GITHUB_WORKSPACE}/CoverageResults
         find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
         dotnet test ./tests/Neo.ConsoleService.Tests         /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/CoverageResults
         dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/CoverageResults /p:MergeWith=${GITHUB_WORKSPACE}/CoverageResults/coverage.json
