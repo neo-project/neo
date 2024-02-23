@@ -63,6 +63,9 @@ namespace Neo.SmartContract.Native
            "from", ContractParameterType.PublicKey,
            "to", ContractParameterType.PublicKey,
            "amount", ContractParameterType.Integer)]
+        [ContractEvent(Hardfork.HF_Cockatrice, 3, name: "CommitteeChanged",
+           "previous", ContractParameterType.Array,
+           "new", ContractParameterType.Array)]
         internal NeoToken() : base()
         {
             this.TotalAmount = 100000000 * Factor;
@@ -192,10 +195,23 @@ namespace Neo.SmartContract.Native
             // Set next committee
             if (ShouldRefreshCommittee(engine.PersistingBlock.Index, engine.ProtocolSettings.CommitteeMembersCount))
             {
-                StorageItem storageItem = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Committee));
+                var storageItem = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Committee));
                 var cachedCommittee = storageItem.GetInteroperable<CachedCommittee>();
+
+                var prevCommittee = cachedCommittee.Select(u => u.PublicKey).ToArray();
+
                 cachedCommittee.Clear();
                 cachedCommittee.AddRange(ComputeCommitteeMembers(engine.Snapshot, engine.ProtocolSettings));
+
+                var newCommittee = cachedCommittee.Select(u => u.PublicKey).ToArray();
+
+                if (!newCommittee.SequenceEqual(prevCommittee))
+                {
+                    engine.SendNotification(Hash, "CommitteeChanged", new VM.Types.Array(engine.ReferenceCounter) {
+                        new VM.Types.Array(engine.ReferenceCounter, prevCommittee.Select(u => (ByteString)u.ToArray())) ,
+                        new VM.Types.Array(engine.ReferenceCounter, newCommittee.Select(u => (ByteString)u.ToArray()))
+                    });
+                }
             }
             return ContractTask.CompletedTask;
         }
