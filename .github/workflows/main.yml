@@ -45,7 +45,6 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         format: lcov
-        debug: true
         file: ${GITHUB_WORKSPACE}/coverage/lcov.net7.0.info
 
   PublishPackage:
