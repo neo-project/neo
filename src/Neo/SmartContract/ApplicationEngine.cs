@@ -32,6 +32,8 @@ namespace Neo.SmartContract
     /// </summary>
     public partial class ApplicationEngine : ExecutionEngine
     {
+        private static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
+
         /// <summary>
         /// The maximum cost that can be spent when a contract is executed in test mode.
         /// </summary>
@@ -155,7 +157,11 @@ namespace Neo.SmartContract
         /// <param name="settings">The <see cref="Neo.ProtocolSettings"/> used by the engine.</param>
         /// <param name="gas">The maximum gas used in this execution. The execution will fail when the gas is exhausted.</param>
         /// <param name="diagnostic">The diagnostic to be used by the <see cref="ApplicationEngine"/>.</param>
-        protected unsafe ApplicationEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic)
+        /// <param name="jumpTable">The jump table to be used by the <see cref="ApplicationEngine"/>.</param>
+        protected unsafe ApplicationEngine(
+            TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock,
+            ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable = null)
+            : base(jumpTable ?? DefaultJumpTable)
         {
             this.Trigger = trigger;
             this.ScriptContainer = container;
@@ -176,6 +182,58 @@ namespace Neo.SmartContract
             }
             diagnostic?.Initialized(this);
         }
+
+        #region JumpTable
+
+        private static JumpTable ComposeDefaultJumpTable()
+        {
+            var table = new JumpTable();
+
+            table[OpCode.SYSCALL] = OnSysCall;
+            table[OpCode.CALLT] = OnCallT;
+
+            return table;
+        }
+
+        private static void OnCallT(ExecutionEngine engine, Instruction instruction)
+        {
+            if (engine is ApplicationEngine app)
+            {
+                uint tokenId = instruction.TokenU16;
+
+                app.ValidateCallFlags(CallFlags.ReadStates | CallFlags.AllowCall);
+                ContractState contract = app.CurrentContext.GetState<ExecutionContextState>().Contract;
+                if (contract is null || tokenId >= contract.Nef.Tokens.Length)
+                    throw new InvalidOperationException();
+                MethodToken token = contract.Nef.Tokens[tokenId];
+                if (token.ParametersCount > app.CurrentContext.EvaluationStack.Count)
+                    throw new InvalidOperationException();
+                StackItem[] args = new StackItem[token.ParametersCount];
+                for (int i = 0; i < token.ParametersCount; i++)
+                    args[i] = app.Pop();
+                app.CallContractInternal(token.Hash, token.Method, token.CallFlags, token.HasReturnValue, args);
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+        }
+
+        private static void OnSysCall(ExecutionEngine engine, Instruction instruction)
+        {
+            if (engine is ApplicationEngine app)
+            {
+                uint method = instruction.TokenU32;
+
+                app.OnSysCall(services[method]);
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+        }
+
+        #endregion
 
         /// <summary>
         /// Adds GAS to <see cref="GasConsumed"/> and checks if it has exceeded the maximum limit.
@@ -270,9 +328,9 @@ namespace Neo.SmartContract
             return task;
         }
 
-        protected override void ContextUnloaded(ExecutionContext context)
+        internal override void UnloadContext(ExecutionContext context)
         {
-            base.ContextUnloaded(context);
+            base.UnloadContext(context);
             if (context.Script != CurrentContext?.Script)
             {
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
@@ -320,11 +378,14 @@ namespace Neo.SmartContract
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock = null, ProtocolSettings settings = null, long gas = TestModeGas, IDiagnostic diagnostic = null)
         {
-            return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic)
-                  ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic);
+            // Adjust jump table according persistingBlock
+            var jumpTable = ApplicationEngine.DefaultJumpTable;
+
+            return Provider?.Create(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
+                  ?? new ApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
         }
 
-        protected override void LoadContext(ExecutionContext context)
+        internal override void LoadContext(ExecutionContext context)
         {
             // Set default execution context state
             var state = context.GetState<ExecutionContextState>();
@@ -389,21 +450,6 @@ namespace Neo.SmartContract
             // Load context
             LoadContext(context);
             return context;
-        }
-
-        protected override ExecutionContext LoadToken(ushort tokenId)
-        {
-            ValidateCallFlags(CallFlags.ReadStates | CallFlags.AllowCall);
-            ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
-            if (contract is null || tokenId >= contract.Nef.Tokens.Length)
-                throw new InvalidOperationException();
-            MethodToken token = contract.Nef.Tokens[tokenId];
-            if (token.ParametersCount > CurrentContext.EvaluationStack.Count)
-                throw new InvalidOperationException();
-            StackItem[] args = new StackItem[token.ParametersCount];
-            for (int i = 0; i < token.ParametersCount; i++)
-                args[i] = Pop();
-            return CallContractInternal(token.Hash, token.Method, token.CallFlags, token.HasReturnValue, args);
         }
 
         /// <summary>
@@ -501,11 +547,6 @@ namespace Neo.SmartContract
             ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
             if (!state.CallFlags.HasFlag(requiredCallFlags))
                 throw new InvalidOperationException($"Cannot call this SYSCALL with the flag {state.CallFlags}.");
-        }
-
-        protected override void OnSysCall(uint method)
-        {
-            OnSysCall(services[method]);
         }
 
         /// <summary>
