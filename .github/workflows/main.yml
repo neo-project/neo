@@ -27,12 +27,14 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
          dotnet format --verify-no-changes --verbosity diagnostic
-    - name: Prepare coverage
+    - name: test
+      if: matrix.os == 'windows-latest' || matrix.os = macos-latest
+      run: |
+        dotnet test
+    - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
       run: |
         find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
-    - name: Test
-      run: |
         dotnet test ./tests/Neo.ConsoleService.Tests         /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage-join/
         dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage-join/ /p:MergeWith=${GITHUB_WORKSPACE}/coverage-join/coverage.net7.0.json
         mv ${GITHUB_WORKSPACE}/coverage-join/coverage.json ${GITHUB_WORKSPACE}/coverage-join/coverage.net7.0.json
