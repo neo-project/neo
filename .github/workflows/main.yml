@@ -35,6 +35,7 @@ jobs:
       run: |
         dotnet test ./tests/Neo.ConsoleService.Tests         /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage-join/
         dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage-join/ /p:MergeWith=${GITHUB_WORKSPACE}/coverage-join/coverage.net7.0.json
+        mv ${GITHUB_WORKSPACE}/coverage-join/coverage.json ${GITHUB_WORKSPACE}/coverage-join/coverage.net7.0.json
         dotnet test ./tests/Neo.UnitTests                    /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage-join/ /p:MergeWith=${GITHUB_WORKSPACE}/coverage-join/coverage.net7.0.json
         dotnet test ./tests/Neo.VM.Tests                     /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage-join/ /p:MergeWith=${GITHUB_WORKSPACE}/coverage-join/coverage.net7.0.json
         dotnet test ./tests/Neo.Json.UnitTests               /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/lcov  /p:MergeWith=${GITHUB_WORKSPACE}/coverage-join/coverage.net7.0.json /p:CoverletOutputFormat=lcov
