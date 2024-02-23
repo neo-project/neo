@@ -10,9 +10,11 @@
 // modifications are permitted.
 
 using System;
+using System.Diagnostics;
 
 namespace Neo.SmartContract.Native
 {
+    [DebuggerDisplay("{Name}")]
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property, AllowMultiple = false)]
     internal class ContractMethodAttribute : Attribute
     {
@@ -20,5 +22,13 @@ namespace Neo.SmartContract.Native
         public CallFlags RequiredCallFlags { get; init; }
         public long CpuFee { get; init; }
         public long StorageFee { get; init; }
+        public Hardfork? ActiveIn { get; init; } = null;
+
+        public ContractMethodAttribute() { }
+
+        public ContractMethodAttribute(Hardfork activeIn)
+        {
+            ActiveIn = activeIn;
+        }
     }
 }

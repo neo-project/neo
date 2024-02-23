@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract.Native;
+using System.IO;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -21,6 +22,26 @@ namespace Neo.UnitTests.SmartContract.Native
         public void TestGetContract()
         {
             Assert.IsTrue(NativeContract.NEO == NativeContract.GetContract(NativeContract.NEO.Hash));
+        }
+
+        [TestMethod]
+        public void TestIsInitializeBlock()
+        {
+            string json = UT_ProtocolSettings.CreateHKSettings("\"HF_Cockatrice\": 20");
+
+            var file = Path.GetTempFileName();
+            File.WriteAllText(file, json);
+            ProtocolSettings settings = ProtocolSettings.Load(file, false);
+            File.Delete(file);
+
+            Assert.IsTrue(NativeContract.CryptoLib.IsInitializeBlock(settings, 0, out var hf));
+            Assert.IsNull(hf);
+
+            Assert.IsFalse(NativeContract.CryptoLib.IsInitializeBlock(settings, 1, out hf));
+            Assert.IsNull(hf);
+
+            Assert.IsTrue(NativeContract.CryptoLib.IsInitializeBlock(settings, 20, out hf));
+            Assert.AreEqual(Hardfork.HF_Cockatrice, hf);
         }
     }
 }

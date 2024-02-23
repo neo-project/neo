@@ -15,7 +15,6 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
@@ -41,58 +40,15 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_Request = 7;
         private const byte Prefix_IdList = 6;
 
-        internal OracleContract()
-        {
-            var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
-            {
-                new ContractEventDescriptor
-                {
-                    Name = "OracleRequest",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                            Name = "Id",
-                            Type = ContractParameterType.Integer
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "RequestContract",
-                            Type = ContractParameterType.Hash160
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "Url",
-                            Type = ContractParameterType.String
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "Filter",
-                            Type = ContractParameterType.String
-                        }
-                    }
-                },
-                new ContractEventDescriptor
-                {
-                    Name = "OracleResponse",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                            Name = "Id",
-                            Type = ContractParameterType.Integer
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "OriginalTx",
-                            Type = ContractParameterType.Hash256
-                        }
-                    }
-                }
-            };
-
-            Manifest.Abi.Events = events.ToArray();
-        }
+        [ContractEvent(0, name: "OracleRequest",
+            "Id", ContractParameterType.Integer,
+            "RequestContract", ContractParameterType.Hash160,
+            "Url", ContractParameterType.String,
+            "Filter", ContractParameterType.String)]
+        [ContractEvent(1, name: "OracleResponse",
+            "Id", ContractParameterType.Integer,
+            "OriginalTx", ContractParameterType.Hash256)]
+        internal OracleContract() : base() { }
 
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
         private void SetPrice(ApplicationEngine engine, long price)
@@ -178,10 +134,13 @@ namespace Neo.SmartContract.Native
             return Crypto.Hash160(Utility.StrictUTF8.GetBytes(url));
         }
 
-        internal override ContractTask Initialize(ApplicationEngine engine)
+        internal override ContractTask Initialize(ApplicationEngine engine, Hardfork? hardfork)
         {
-            engine.Snapshot.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BigInteger.Zero));
-            engine.Snapshot.Add(CreateStorageKey(Prefix_Price), new StorageItem(0_50000000));
+            if (hardfork == ActiveIn)
+            {
+                engine.Snapshot.Add(CreateStorageKey(Prefix_RequestId), new StorageItem(BigInteger.Zero));
+                engine.Snapshot.Add(CreateStorageKey(Prefix_Price), new StorageItem(0_50000000));
+            }
             return ContractTask.CompletedTask;
         }
 

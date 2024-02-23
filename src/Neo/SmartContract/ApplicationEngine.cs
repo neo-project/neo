@@ -49,7 +49,6 @@ namespace Neo.SmartContract
         /// </summary>
         public static event EventHandler<LogEventArgs> Log;
 
-        private static readonly IList<Hardfork> AllHardforks = Enum.GetValues(typeof(Hardfork)).Cast<Hardfork>().ToArray();
         private static Dictionary<uint, InteropDescriptor> services;
         private readonly long gas_amount;
         private Dictionary<Type, object> states;
@@ -647,6 +646,25 @@ namespace Neo.SmartContract
             return (T)state;
         }
 
+        public T GetState<T>(Func<T> factory)
+        {
+            if (states is null)
+            {
+                T state = factory();
+                SetState(state);
+                return state;
+            }
+            else
+            {
+                if (!states.TryGetValue(typeof(T), out object state))
+                {
+                    state = factory();
+                    SetState(state);
+                }
+                return (T)state;
+            }
+        }
+
         public void SetState<T>(T state)
         {
             states ??= new Dictionary<Type, object>();
@@ -655,28 +673,11 @@ namespace Neo.SmartContract
 
         public bool IsHardforkEnabled(Hardfork hardfork)
         {
-            // Return true if there's no specific configuration or PersistingBlock is null
-            if (PersistingBlock is null || ProtocolSettings.Hardforks.Count == 0)
-                return true;
+            // Return true if PersistingBlock is null and Hardfork is enabled
+            if (PersistingBlock is null)
+                return ProtocolSettings.Hardforks.ContainsKey(hardfork);
 
-            // If the hardfork isn't specified in the configuration, check if it's a new one.
-            if (!ProtocolSettings.Hardforks.ContainsKey(hardfork))
-            {
-                int currentHardforkIndex = AllHardforks.IndexOf(hardfork);
-                int lastConfiguredHardforkIndex = AllHardforks.IndexOf(ProtocolSettings.Hardforks.Keys.Last());
-
-                // If it's a newer hardfork compared to the ones in the configuration, disable it.
-                if (currentHardforkIndex > lastConfiguredHardforkIndex)
-                    return false;
-            }
-
-            if (ProtocolSettings.Hardforks.TryGetValue(hardfork, out uint height))
-            {
-                // If the hardfork has a specific height in the configuration, check the block height.
-                return PersistingBlock.Index >= height;
-            }
-            // If no specific conditions are met, return true.
-            return true;
+            return ProtocolSettings.IsHardforkEnabled(hardfork, PersistingBlock.Index);
         }
     }
 }
