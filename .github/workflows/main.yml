@@ -36,7 +36,7 @@ jobs:
       run: |
         mkdir -p ${GITHUB_WORKSPACE}/coverage
         find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
-        dotnet test /p:CollectCoverage=true
+        dotnet test /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/lcov /p:MergeWith=${GITHUB_WORKSPACE}/coverage/lcov.info
         ls ./coverage/
         cat ./coverage/lcov.info
     - name: Coveralls
