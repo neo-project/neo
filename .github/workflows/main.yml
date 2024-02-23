@@ -33,7 +33,11 @@ jobs:
         find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
     - name: Test
       run: |
-        dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/lcov /p:MergeWith=${GITHUB_WORKSPACE}/coverage/lcov.net7.0.info
+        dotnet test ./tests/Neo.ConsoleService.Tests            /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/cobertura
+        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests    /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/cobertura /p:MergeWith=${GITHUB_WORKSPACE}/coverage/coverage.json
+        dotnet test ./tests/Neo.UnitTests                       /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/cobertura /p:MergeWith=${GITHUB_WORKSPACE}/coverage/coverage.json
+        dotnet test ./tests/Neo.VM.Tests                        /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/cobertura /p:MergeWith=${GITHUB_WORKSPACE}/coverage/coverage.json
+        dotnet test ./tests/Neo.Json.UnitTests                  /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/cobertura /p:MergeWith=${GITHUB_WORKSPACE}/coverage/coverage.json /p:CoverletOutputFormat="lcov"
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
       uses: coverallsapp/github-action@v2.2.3
