@@ -37,6 +37,8 @@ jobs:
         mkdir -p ${GITHUB_WORKSPACE}/coverage
         find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
         dotnet test /p:CollectCoverage=true
+        ls ./coverage/
+        cat ./coverage/lcov.info
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
       uses: coverallsapp/github-action@v2.2.3
