@@ -36,15 +36,16 @@ jobs:
       run: |
         mkdir -p ${GITHUB_WORKSPACE}/coverage
         find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
-        dotnet test /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/lcov /p:MergeWith=${GITHUB_WORKSPACE}/coverage/lcov.info
+        dotnet test /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/lcov /p:MergeWith=${GITHUB_WORKSPACE}/coverage/lcov.json
         ls ./coverage/
-        cat ./coverage/lcov.info
+        cat ./coverage/lcov.json
+        cat ./coverage/lcov.net7.0.json
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
       uses: coverallsapp/github-action@v2.2.3
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        file: ${GITHUB_WORKSPACE}/coverage/lcov.info
+        file: ${GITHUB_WORKSPACE}/coverage/lcov.json
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
