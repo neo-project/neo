@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// Hardfork.cs file belongs to the neo project and is free
+// MemoryStoreProvider.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,12 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo
+namespace Neo.Persistence
 {
-    public enum Hardfork : byte
+    public class MemoryStoreProvider : IStoreProvider
     {
-        HF_Aspidochelone,
-        HF_Basilisk,
-        HF_Cockatrice
+        public string Name => nameof(MemoryStore);
+        public IStore GetStore(string path) => new MemoryStore();
     }
 }
