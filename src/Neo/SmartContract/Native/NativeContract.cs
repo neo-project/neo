@@ -199,7 +199,7 @@ namespace Neo.SmartContract.Native
         /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
         /// <param name="index">Block index</param>
         /// <returns>The <see cref="ContractState"/>.</returns>
-        internal ContractState GetContractState(ProtocolSettings settings, uint index)
+        public ContractState GetContractState(ProtocolSettings settings, uint index)
         {
             // Get allowed methods and nef script
             NativeContractsCache.CacheEntry allowedMethods = GetAllowedMethods(settings, index);
