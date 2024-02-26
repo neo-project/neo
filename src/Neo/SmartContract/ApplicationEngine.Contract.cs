@@ -77,7 +77,7 @@ namespace Neo.SmartContract
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
 
             ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
-            if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
+            if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}.{method}");
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method, args.Count);
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
             bool hasReturnValue = md.ReturnType != ContractParameterType.Void;

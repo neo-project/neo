@@ -126,7 +126,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the calling contract. This field could be <see langword="null"/> if the current context is the entry context.
         /// </summary>
-        public UInt160 CallingScriptHash
+        public virtual UInt160 CallingScriptHash
         {
             get
             {
@@ -139,7 +139,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the entry context. This field could be <see langword="null"/> if no context is loaded to the engine.
         /// </summary>
-        public UInt160 EntryScriptHash => EntryContext?.GetScriptHash();
+        public virtual UInt160 EntryScriptHash => EntryContext?.GetScriptHash();
 
         /// <summary>
         /// The notifications sent during the execution.
