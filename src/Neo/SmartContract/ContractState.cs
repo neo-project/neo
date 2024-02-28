@@ -83,7 +83,7 @@ namespace Neo.SmartContract
             Id = (int)array[0].GetInteger();
             UpdateCounter = (ushort)array[1].GetInteger();
             Hash = new UInt160(array[2].GetSpan());
-            Nef = ((ByteString)array[3]).Memory.AsSerializable<NefFile>();
+            Nef = NefFile.Parse(((ByteString)array[3]).Memory, false);
             Manifest = array[4].ToInteroperable<ContractManifest>();
         }
 
