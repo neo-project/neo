@@ -41,12 +41,13 @@ namespace Neo.SmartContract.Native
                 if (NativeContracts.TryGetValue(native.Id, out var value)) return value;
 
                 uint index = engine.PersistingBlock is null ? Ledger.CurrentIndex(engine.Snapshot) : engine.PersistingBlock.Index;
-                CacheEntry methods = native.GetAllowedMethods(engine.ProtocolSettings, index);
+                CacheEntry methods = native.GetAllowedMethods(engine.ProtocolSettings.IsHardforkEnabled, index);
                 NativeContracts[native.Id] = methods;
                 return methods;
             }
         }
 
+        public delegate bool IsHardforkEnabledDelegate(Hardfork hf, uint index);
         private static readonly List<NativeContract> contractsList = new();
         private static readonly Dictionary<UInt160, NativeContract> contractsDictionary = new();
         private readonly ImmutableHashSet<Hardfork> usedHardforks;
@@ -168,10 +169,10 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// The allowed methods and his offsets.
         /// </summary>
-        /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
+        /// <param name="hfChecker">Hardfork checker</param>
         /// <param name="index">Block index</param>
         /// <returns>The <see cref="NativeContractsCache"/>.</returns>
-        private NativeContractsCache.CacheEntry GetAllowedMethods(ProtocolSettings settings, uint index)
+        private NativeContractsCache.CacheEntry GetAllowedMethods(IsHardforkEnabledDelegate hfChecker, uint index)
         {
             Dictionary<int, ContractMethodMetadata> methods = new();
 
@@ -179,7 +180,7 @@ namespace Neo.SmartContract.Native
             byte[] script;
             using (ScriptBuilder sb = new())
             {
-                foreach (ContractMethodMetadata method in methodDescriptors.Where(u => u.ActiveIn is null || settings.IsHardforkEnabled(u.ActiveIn.Value, index)))
+                foreach (ContractMethodMetadata method in methodDescriptors.Where(u => u.ActiveIn is null || hfChecker(u.ActiveIn.Value, index)))
                 {
                     method.Descriptor.Offset = sb.Length;
                     sb.EmitPush(0); //version
@@ -199,13 +200,21 @@ namespace Neo.SmartContract.Native
         /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
         /// <param name="index">Block index</param>
         /// <returns>The <see cref="ContractState"/>.</returns>
-        public ContractState GetContractState(ProtocolSettings settings, uint index)
+        public ContractState GetContractState(ProtocolSettings settings, uint index) => GetContractState(settings.IsHardforkEnabled, index);
+
+        /// <summary>
+        /// The <see cref="ContractState"/> of the native contract.
+        /// </summary>
+        /// <param name="hfChecker">Hardfork checker</param>
+        /// <param name="index">Block index</param>
+        /// <returns>The <see cref="ContractState"/>.</returns>
+        public ContractState GetContractState(IsHardforkEnabledDelegate hfChecker, uint index)
         {
             // Get allowed methods and nef script
-            NativeContractsCache.CacheEntry allowedMethods = GetAllowedMethods(settings, index);
+            var allowedMethods = GetAllowedMethods(hfChecker, index);
 
             // Compose nef file
-            NefFile nef = new()
+            var nef = new NefFile()
             {
                 Compiler = "neo-core-v3.0",
                 Source = string.Empty,
@@ -215,7 +224,7 @@ namespace Neo.SmartContract.Native
             nef.CheckSum = NefFile.ComputeChecksum(nef);
 
             // Compose manifest
-            ContractManifest manifest = new()
+            var manifest = new ContractManifest()
             {
                 Name = Name,
                 Groups = Array.Empty<ContractGroup>(),
@@ -223,7 +232,7 @@ namespace Neo.SmartContract.Native
                 Abi = new ContractAbi()
                 {
                     Events = eventsDescriptors
-                        .Where(u => u.ActiveIn is null || settings.IsHardforkEnabled(u.ActiveIn.Value, index))
+                        .Where(u => u.ActiveIn is null || hfChecker(u.ActiveIn.Value, index))
                         .Select(p => p.Descriptor).ToArray(),
                     Methods = allowedMethods.Methods.Values
                         .Select(p => p.Descriptor).ToArray()
