@@ -18,6 +18,7 @@ using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Neo.SmartContract.Native
 {
@@ -200,6 +201,7 @@ namespace Neo.SmartContract.Native
         /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
         /// <param name="index">Block index</param>
         /// <returns>The <see cref="ContractState"/>.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ContractState GetContractState(ProtocolSettings settings, uint index) => GetContractState(settings.IsHardforkEnabled, index);
 
         /// <summary>
