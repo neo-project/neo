@@ -18,6 +18,7 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
+using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -84,6 +85,61 @@ namespace Neo.UnitTests.SmartContract.Native
                 snapshot2,
                 "getDesignatedByRole",
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.StateValidator) },
+                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(0) }
+            );
+            ret.Should().BeOfType<VM.Types.Array>();
+            (ret as VM.Types.Array).Count.Should().Be(0);
+        }
+
+        [TestMethod]
+        public void TestDesignateP2PNotary()
+        {
+            byte[] privateKey1 = new byte[32];
+            var rng1 = System.Security.Cryptography.RandomNumberGenerator.Create();
+            rng1.GetBytes(privateKey1);
+            KeyPair key1 = new KeyPair(privateKey1);
+            byte[] privateKey2 = new byte[32];
+            var rng2 = System.Security.Cryptography.RandomNumberGenerator.Create();
+            rng2.GetBytes(privateKey2);
+            KeyPair key2 = new KeyPair(privateKey2);
+            ECPoint[] publicKeys = new ECPoint[2];
+            publicKeys[0] = key1.PublicKey;
+            publicKeys[1] = key2.PublicKey;
+            publicKeys = publicKeys.OrderBy(p => p).ToArray();
+
+            var snapshot1 = _snapshot.CreateSnapshot();
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
+            List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
+            EventHandler<NotifyEventArgs> ev = (o, e) => notifications.Add(e);
+            ApplicationEngine.Notify += ev;
+            var ret = NativeContract.RoleManagement.Call(
+                snapshot1,
+                new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                new Block { Header = new Header() },
+                "designateAsRole",
+                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.P2PNotary) },
+                new ContractParameter(ContractParameterType.Array) { Value = publicKeys.Select(p => new ContractParameter(ContractParameterType.ByteArray) { Value = p.ToArray() }).ToList() }
+            );
+            snapshot1.Commit();
+            ApplicationEngine.Notify -= ev;
+            notifications.Count.Should().Be(1);
+            notifications[0].EventName.Should().Be("Designation");
+            var snapshot2 = _snapshot.CreateSnapshot();
+            ret = NativeContract.RoleManagement.Call(
+                snapshot2,
+                "getDesignatedByRole",
+                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.P2PNotary) },
+                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(1u) }
+            );
+            ret.Should().BeOfType<VM.Types.Array>();
+            (ret as VM.Types.Array).Count.Should().Be(2);
+            (ret as VM.Types.Array)[0].GetSpan().ToHexString().Should().Be(publicKeys[0].ToArray().ToHexString());
+            (ret as VM.Types.Array)[1].GetSpan().ToHexString().Should().Be(publicKeys[1].ToArray().ToHexString());
+
+            ret = NativeContract.RoleManagement.Call(
+                snapshot2,
+                "getDesignatedByRole",
+                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.P2PNotary) },
                 new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger(0) }
             );
             ret.Should().BeOfType<VM.Types.Array>();
