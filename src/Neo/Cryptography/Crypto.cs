@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.IO.Caching;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -100,7 +101,8 @@ namespace Neo.Cryptography
             }
         }
 
-        private static readonly Dictionary<ECC.ECPoint, ECDsa> CacheECDsa = new();
+        //private static readonly Dictionary<ECC.ECPoint, ECDsa> CacheECDsa = new();
+        private static readonly ECDsaCache CacheECDsa = new ECDsaCache();
 
         /// <summary>
         /// Create and cache ECDsa objects
@@ -110,9 +112,9 @@ namespace Neo.Cryptography
         /// <exception cref="NotSupportedException"></exception>
         public static ECDsa CreateECDsa(ECC.ECPoint pubkey)
         {
-            if (CacheECDsa.TryGetValue(pubkey, out var cache))
+            if (CacheECDsa.TryGet(pubkey, out var cache))
             {
-                return cache;
+                return cache.value;
             }
             ECCurve curve =
                 pubkey.Curve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
@@ -128,7 +130,7 @@ namespace Neo.Cryptography
                     Y = buffer[33..]
                 }
             });
-            CacheECDsa[pubkey] = ecdsa;
+            CacheECDsa.Add(new ECDsaCacheItem(pubkey, ecdsa));
             return ecdsa;
         }
 
