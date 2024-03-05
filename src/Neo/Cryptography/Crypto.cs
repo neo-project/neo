@@ -100,7 +100,7 @@ namespace Neo.Cryptography
             }
         }
 
-        private static Dictionary<ECC.ECPoint, ECDsa> CacheECDsa = new();
+        private static readonly Dictionary<ECC.ECPoint, ECDsa> CacheECDsa = new();
 
         /// <summary>
         /// Create and cache ECDsa objects
