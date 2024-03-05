@@ -14,6 +14,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.VM;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -50,16 +51,16 @@ namespace Neo.UnitTests.SmartContract
 
         class TestProvider : IApplicationEngineProvider
         {
-            public ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic)
+            public ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable)
             {
-                return new TestEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic);
+                return new TestEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable);
             }
         }
 
         class TestEngine : ApplicationEngine
         {
-            public TestEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic)
-                : base(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic)
+            public TestEngine(TriggerType trigger, IVerifiable container, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas, IDiagnostic diagnostic, JumpTable jumpTable)
+                : base(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable)
             {
             }
         }

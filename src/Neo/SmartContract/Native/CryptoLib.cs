@@ -11,6 +11,7 @@
 
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
+using Org.BouncyCastle.Crypto.Digests;
 using System;
 using System.Collections.Generic;
 
@@ -27,7 +28,7 @@ namespace Neo.SmartContract.Native
             [NamedCurve.secp256r1] = ECCurve.Secp256r1
         };
 
-        internal CryptoLib() { }
+        internal CryptoLib() : base() { }
 
         /// <summary>
         /// Computes the hash value for the specified byte array using the ripemd160 algorithm.
@@ -62,6 +63,21 @@ namespace Neo.SmartContract.Native
         {
             using Murmur32 murmur = new(seed);
             return murmur.ComputeHash(data);
+        }
+
+        /// <summary>
+        /// Computes the hash value for the specified byte array using the keccak256 algorithm.
+        /// </summary>
+        /// <param name="data">The input to compute the hash code for.</param>
+        /// <returns>Computed hash</returns>
+        [ContractMethod(Hardfork.HF_Cockatrice, CpuFee = 1 << 15)]
+        public static byte[] Keccak256(byte[] data)
+        {
+            KeccakDigest keccak = new(256);
+            keccak.BlockUpdate(data, 0, data.Length);
+            byte[] result = new byte[keccak.GetDigestSize()];
+            keccak.DoFinal(result, 0);
+            return result;
         }
 
         /// <summary>

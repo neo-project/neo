@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// UtDebugger.cs file belongs to the neo project and is free
+// UT_Debugger.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -15,7 +15,7 @@ using Neo.VM;
 namespace Neo.Test
 {
     [TestClass]
-    public class UtDebugger
+    public class UT_Debugger
     {
         [TestMethod]
         public void TestBreakPoint()
@@ -97,10 +97,10 @@ namespace Neo.Test
         {
             using ExecutionEngine engine = new();
             using ScriptBuilder script = new();
-            /* ┌     CALL 
+            /* ┌     CALL
                │  ┌> NOT
                │  │  RET
-               └> │  PUSH0  
+               └> │  PUSH0
                 └─┘  RET */
             script.EmitCall(4);
             script.Emit(OpCode.NOT);
@@ -135,7 +135,7 @@ namespace Neo.Test
             using ExecutionEngine engine = new();
             using ScriptBuilder script = new();
             /* ┌     CALL
-               │  ┌> NOT 
+               │  ┌> NOT
                │  │  RET
                └> │  PUSH0
                 └─┘  RET */
@@ -185,7 +185,7 @@ namespace Neo.Test
         {
             using ExecutionEngine engine = new();
             using ScriptBuilder script = new();
-            /* ┌     CALL 
+            /* ┌     CALL
                │  ┌> NOT
                │  │  RET
                └>X│  PUSH0

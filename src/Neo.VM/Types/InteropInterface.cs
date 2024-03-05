@@ -55,5 +55,15 @@ namespace Neo.VM.Types
             if (_object is T t) return t;
             throw new InvalidCastException($"The item can't be casted to type {typeof(T)}");
         }
+
+        internal object GetInterface()
+        {
+            return _object;
+        }
+
+        public override string ToString()
+        {
+            return _object.ToString() ?? "NULL";
+        }
     }
 }

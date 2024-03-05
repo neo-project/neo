@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.1;net7.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageTags>NEO;AntShares;Blockchain;Smart Contract</PackageTags>
   </PropertyGroup>
@@ -18,8 +18,15 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Neo.Cryptography.BLS12_381\Neo.Cryptography.BLS12_381.csproj" />
+    <ProjectReference Include="..\Neo.Extensions\Neo.Extensions.csproj" />
+    <ProjectReference Include="..\Neo.IO\Neo.IO.csproj" />
     <ProjectReference Include="..\Neo.Json\Neo.Json.csproj" />
     <ProjectReference Include="..\Neo.VM\Neo.VM.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Neo.SmartContract.Testing" />
+    <InternalsVisibleTo Include="Neo.SmartContract.TestEngine" />
   </ItemGroup>
 
 </Project>

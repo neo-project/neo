@@ -76,7 +76,7 @@ namespace Neo.UnitTests.SmartContract
 
             // Wrong length
 
-            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot))
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default))
             using (var script = new ScriptBuilder())
             {
                 // Retrive
@@ -93,7 +93,7 @@ namespace Neo.UnitTests.SmartContract
 
             // All test
 
-            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot))
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default))
             using (var script = new ScriptBuilder())
             {
                 // Notification
@@ -162,7 +162,7 @@ namespace Neo.UnitTests.SmartContract
 
             // Script notifications
 
-            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot))
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default))
             using (var script = new ScriptBuilder())
             {
                 // Notification
