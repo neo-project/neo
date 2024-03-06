@@ -55,6 +55,16 @@ namespace Neo.Network.P2P.Payloads
             return tx.Signers.Any(p => p.Account.Equals(notaryH));
         }
 
+        /// <summary>
+        /// Calculates the network fee needed to pay for NotaryAssisted attribute. According to the
+        /// https://github.com/neo-project/neo/issues/1573#issuecomment-704874472, network fee consists of
+        /// the base Notary service fee per key multiplied by the expected number of transactions that should
+        /// be collected by the service to complete Notary request increased by one (for Notary node witness
+        /// itself).
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="tx">The transaction to calculate.</param>
+        /// <returns>The network fee of the NotaryAssisted attribute.</returns>
         public override long CalculateNetworkFee(DataCache snapshot, Transaction tx)
         {
             return (NKeys + 1) * base.CalculateNetworkFee(snapshot, tx);
