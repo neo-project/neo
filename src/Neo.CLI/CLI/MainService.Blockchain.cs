@@ -212,6 +212,10 @@ namespace Neo.CLI
                                 ConsoleHelper.Info("", "    Type: ", $"{n.Type}");
                                 ConsoleHelper.Info("", "  Height: ", $"{n.Height}");
                                 break;
+                            case NotaryAssisted n:
+                                ConsoleHelper.Info("", "    Type: ", $"{n.Type}");
+                                ConsoleHelper.Info("", "   NKeys: ", $"{n.NKeys}");
+                                break;
                             default:
                                 ConsoleHelper.Info("", "  Type: ", $"{attribute.Type}");
                                 ConsoleHelper.Info("", "  Size: ", $"{attribute.Size} Byte(s)");

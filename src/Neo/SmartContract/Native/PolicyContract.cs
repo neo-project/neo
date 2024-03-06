@@ -44,6 +44,11 @@ namespace Neo.SmartContract.Native
         public const uint DefaultAttributeFee = 0;
 
         /// <summary>
+        /// The default fee for NotaryAssisted attribute.
+        /// </summary>
+        public const uint DefaultNotaryAssistedAttributeFee = 1000_0000;
+
+        /// <summary>
         /// The maximum execution fee factor that the committee can set.
         /// </summary>
         public const uint MaxExecFeeFactor = 100;
@@ -73,6 +78,7 @@ namespace Neo.SmartContract.Native
                 engine.Snapshot.Add(CreateStorageKey(Prefix_FeePerByte), new StorageItem(DefaultFeePerByte));
                 engine.Snapshot.Add(CreateStorageKey(Prefix_ExecFeeFactor), new StorageItem(DefaultExecFeeFactor));
                 engine.Snapshot.Add(CreateStorageKey(Prefix_StoragePrice), new StorageItem(DefaultStoragePrice));
+                engine.Snapshot.Add(CreateStorageKey(Prefix_AttributeFee).Add((byte)TransactionAttributeType.NotaryAssisted), new StorageItem(DefaultNotaryAssistedAttributeFee));
             }
             return ContractTask.CompletedTask;
         }
