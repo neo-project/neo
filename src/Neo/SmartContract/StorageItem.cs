@@ -148,15 +148,15 @@ namespace Neo.SmartContract
         /// <summary>
         /// Gets an <see cref="IInteroperable"/> from the storage.
         /// </summary>
-        /// <param name="validate">Validate deserialization</param>
+        /// <param name="verify">Verify deserialization</param>
         /// <typeparam name="T">The type of the <see cref="IInteroperable"/>.</typeparam>
         /// <returns>The <see cref="IInteroperable"/> in the storage.</returns>
-        public T GetInteroperable<T>(bool validate) where T : IInteroperableValidation, new()
+        public T GetInteroperable<T>(bool verify = true) where T : IInteroperableVerifiable, new()
         {
             if (cache is null)
             {
                 var interoperable = new T();
-                interoperable.FromStackItem(BinarySerializer.Deserialize(value, ExecutionEngineLimits.Default), validate);
+                interoperable.FromStackItem(BinarySerializer.Deserialize(value, ExecutionEngineLimits.Default), verify);
                 cache = interoperable;
             }
             value = null;

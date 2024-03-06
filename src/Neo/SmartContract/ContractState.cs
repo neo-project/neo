@@ -23,7 +23,7 @@ namespace Neo.SmartContract
     /// <summary>
     /// Represents a deployed contract.
     /// </summary>
-    public class ContractState : IInteroperableValidation
+    public class ContractState : IInteroperableVerifiable
     {
         /// <summary>
         /// The id of the contract.
@@ -79,16 +79,16 @@ namespace Neo.SmartContract
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
-            ((IInteroperableValidation)this).FromStackItem(stackItem, true);
+            ((IInteroperableVerifiable)this).FromStackItem(stackItem, true);
         }
 
-        void IInteroperableValidation.FromStackItem(StackItem stackItem, bool validate)
+        void IInteroperableVerifiable.FromStackItem(StackItem stackItem, bool verify)
         {
             var array = (Array)stackItem;
             Id = (int)array[0].GetInteger();
             UpdateCounter = (ushort)array[1].GetInteger();
             Hash = new UInt160(array[2].GetSpan());
-            Nef = NefFile.Parse(((ByteString)array[3]).Memory, validate);
+            Nef = NefFile.Parse(((ByteString)array[3]).Memory, verify);
             Manifest = array[4].ToInteroperable<ContractManifest>();
         }
 
