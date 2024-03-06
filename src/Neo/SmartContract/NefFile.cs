@@ -90,13 +90,13 @@ namespace Neo.SmartContract
         /// Parse NefFile from memory
         /// </summary>
         /// <param name="memory">Memory</param>
-        /// <param name="ensureValid">Do checksum and MaxItemSize checks</param>
+        /// <param name="verify">Do checksum and MaxItemSize checks</param>
         /// <returns>NefFile</returns>
-        public static NefFile Parse(ReadOnlyMemory<byte> memory, bool ensureValid = true)
+        public static NefFile Parse(ReadOnlyMemory<byte> memory, bool verify = true)
         {
             var reader = new MemoryReader(memory);
             var nef = new NefFile();
-            nef.Deserialize(ref reader, ensureValid);
+            nef.Deserialize(ref reader, verify);
             return nef;
         }
 
@@ -119,7 +119,7 @@ namespace Neo.SmartContract
 
         public void Deserialize(ref MemoryReader reader) => Deserialize(ref reader, true);
 
-        public void Deserialize(ref MemoryReader reader, bool ensureValid)
+        public void Deserialize(ref MemoryReader reader, bool verify = true)
         {
             long startPosition = reader.Position;
             if (reader.ReadUInt32() != Magic) throw new FormatException("Wrong magic");
@@ -131,7 +131,7 @@ namespace Neo.SmartContract
             Script = reader.ReadVarMemory((int)ExecutionEngineLimits.Default.MaxItemSize);
             if (Script.Length == 0) throw new ArgumentException($"Script can't be empty");
             CheckSum = reader.ReadUInt32();
-            if (ensureValid)
+            if (verify)
             {
                 if (CheckSum != ComputeChecksum(this)) throw new FormatException("CRC verification fail");
                 if (reader.Position - startPosition > ExecutionEngineLimits.Default.MaxItemSize) throw new FormatException("Max vm item size exceed");
