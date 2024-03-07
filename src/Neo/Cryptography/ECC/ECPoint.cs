@@ -202,6 +202,7 @@ namespace Neo.Cryptography.ECC
         {
             if (ReferenceEquals(this, other)) return true;
             if (other is null) return false;
+            if (!Curve.Equals(other.Curve)) return false;
             if (IsInfinity && other.IsInfinity) return true;
             if (IsInfinity || other.IsInfinity) return false;
             return X.Equals(other.X) && Y.Equals(other.Y);
