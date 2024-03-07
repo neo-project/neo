@@ -175,7 +175,7 @@ namespace Neo.UnitTests.Cryptography.ECC
             point.Equals(null).Should().BeFalse();
 
             point = new ECPoint(null, null, ECCurve.Secp256k1);
-            point.Equals(new ECPoint(null, null, ECCurve.Secp256r1)).Should().BeTrue();
+            point.Equals(new ECPoint(null, null, ECCurve.Secp256r1)).Should().BeFalse();
             point.Equals(ECCurve.Secp256r1.G).Should().BeFalse();
             ECCurve.Secp256r1.G.Equals(point).Should().BeFalse();
 
@@ -199,7 +199,7 @@ namespace Neo.UnitTests.Cryptography.ECC
             point.Equals(1u).Should().BeFalse();
 
             point = new ECPoint(null, null, ECCurve.Secp256k1);
-            point.Equals(new ECPoint(null, null, ECCurve.Secp256r1)).Should().BeTrue();
+            point.Equals(new ECPoint(null, null, ECCurve.Secp256r1)).Should().BeFalse();
             point.Equals(ECCurve.Secp256r1.G).Should().BeFalse();
             ECCurve.Secp256r1.G.Equals(point).Should().BeFalse();
 
