@@ -23,6 +23,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     [TestClass]
     public class UT_NotaryAssisted
     {
+        private static readonly UInt160 notaryHash = UInt160.Parse("0xc1e14f19c3e60d0b9244d06dd7ba9b113135ec3b");
+
         [TestMethod]
         public void Size_Get()
         {
@@ -67,7 +69,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var attr = new NotaryAssisted() { NKeys = 4 };
 
             // Temporary use Notary contract hash stub for valid transaction.
-            var txGood = new Transaction { Signers = new Signer[] { new Signer() { Account = UInt160.Zero } } };
+            var txGood = new Transaction { Signers = new Signer[] { new Signer() { Account = notaryHash } } };
             var txBad = new Transaction { Signers = new Signer[] { new Signer() { Account = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01") } } };
             var snapshot = TestBlockchain.GetTestSnapshot();
 
@@ -80,7 +82,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
             var attr = new NotaryAssisted() { NKeys = 4 };
-            var tx = new Transaction { Signers = new Signer[] { new Signer() { Account = UInt160.Zero } } };
+            var tx = new Transaction { Signers = new Signer[] { new Signer() { Account = notaryHash } } };
 
             Assert.AreEqual((4 + 1) * 1000_0000, attr.CalculateNetworkFee(snapshot, tx));
         }
