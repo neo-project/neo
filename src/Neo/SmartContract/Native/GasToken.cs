@@ -43,6 +43,14 @@ namespace Neo.SmartContract.Native
             {
                 await Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
                 totalNetworkFee += tx.NetworkFee;
+
+                // Reward for NotaryAssisted attribute will be minted to designated notary nodes
+                // by Notary contract.
+                var notaryAssisted = tx.GetAttribute<NotaryAssisted>();
+                if (notaryAssisted is not null)
+                {
+                    totalNetworkFee -= (notaryAssisted.NKeys + 1) * Policy.GetAttributeFee(engine.Snapshot, (byte)notaryAssisted.Type);
+                }
             }
             ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings.ValidatorsCount);
             UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
