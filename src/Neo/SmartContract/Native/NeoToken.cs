@@ -393,6 +393,10 @@ namespace Neo.SmartContract.Native
             {
                 validator_new.Votes += state_account.Balance;
             }
+            else
+            {
+                state_account.LastGasPerVote = 0;
+            }
             engine.SendNotification(Hash, "Vote",
                 new VM.Types.Array(engine.ReferenceCounter) { account.ToArray(), from?.ToArray() ?? StackItem.Null, voteTo?.ToArray() ?? StackItem.Null, state_account.Balance });
             if (gasDistribution is not null)
