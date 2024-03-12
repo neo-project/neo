@@ -23,6 +23,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     [TestClass]
     public class UT_NotaryAssisted
     {
+        // Use the hard-coded Notary hash value from NeoGo to ensure hashes are compatible.
         private static readonly UInt160 notaryHash = UInt160.Parse("0xc1e14f19c3e60d0b9244d06dd7ba9b113135ec3b");
 
         [TestMethod]

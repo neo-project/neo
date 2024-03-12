@@ -23,7 +23,7 @@ namespace Neo.Network.P2P.Payloads
         /// <summary>
         /// Native Notary contract hash stub used until native Notary contract is properly implemented.
         /// </summary>
-        private static readonly UInt160 notaryHash = UInt160.Parse("0xc1e14f19c3e60d0b9244d06dd7ba9b113135ec3b");
+        private static readonly UInt160 notaryHash = Neo.SmartContract.Helper.GetContractHash(UInt160.Zero, 0, "Notary");
 
         /// <summary>
         /// Indicates the number of keys participating in the transaction (main or fallback) signing process.
