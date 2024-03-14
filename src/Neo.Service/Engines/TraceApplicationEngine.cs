@@ -24,10 +24,11 @@ namespace Neo.Service.Engines
             TriggerType trigger,
             IVerifiable container,
             DataCache snapshot,
-            Block? persistingBlock = null,
-            ProtocolSettings? protocolSettings = null,
-            long gas = 20_00000000,
-            IDiagnostic? diagnostic = null,
+            Block? persistingBlock,
+            ProtocolSettings? protocolSettings,
+            long gas,
+            IDiagnostic? diagnostic,
+            JumpTable jumpTable,
             ILoggerFactory? loggerFactory = null) : base(trigger, container, snapshot, persistingBlock, protocolSettings, gas, diagnostic)
         {
             if (loggerFactory is not null)

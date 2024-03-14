@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.VM;
 
 namespace Neo.Service.Engines
 {
@@ -27,8 +28,8 @@ namespace Neo.Service.Engines
         }
 
         public ApplicationEngine Create(TriggerType trigger, IVerifiable container, DataCache snapshot,
-            Block? persistingBlock = null, ProtocolSettings? settings = null, long gas = 20_00000000,
-            IDiagnostic? diagnostic = null) =>
-            new TraceApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, _loggerFactory);
+            Block? persistingBlock, ProtocolSettings? settings, long gas,
+            IDiagnostic? diagnostic, JumpTable jumpTable) =>
+            new TraceApplicationEngine(trigger, container, snapshot, persistingBlock, settings, gas, diagnostic, jumpTable, _loggerFactory);
     }
 }

@@ -27,13 +27,12 @@ namespace Neo.CommandLine
             ConsoleUtilities.EnableAnsi();
             Console.Clear();
             Console.TreatControlCAsInput = true;
-            Console.SetBufferSize(WindowWidth, WindowHeight);
         }
 
-        public static void Write(string format, params object?[] args) =>
+        public static void Write(string format, params object?[]? args) =>
             Console.Write(format, args);
 
-        public static void WriteLine(string format, params object?[] args) =>
+        public static void WriteLine(string format, params object?[]? args) =>
             Console.WriteLine(format, args);
 
         public static string? ReadLine() =>

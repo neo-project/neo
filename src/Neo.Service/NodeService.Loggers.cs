@@ -14,7 +14,6 @@ using Neo.Ledger;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
-using System.Linq;
 
 namespace Neo.Service
 {
@@ -23,7 +22,7 @@ namespace Neo.Service
         private void OnNeoApplicationEngineNotify(object? sender, NotifyEventArgs e)
         {
             var logger = NodeUtilities.CreateOrGetLogger(_loggerFactory, $"{nameof(Blockchain)}.Contracts.{e.ScriptHash}.Events.{e.EventName}");
-            var contract = NativeContract.Contracts.SingleOrDefault(s => s.Hash == e.ScriptHash);
+            var contract = NativeContract.ContractManagement.GetContract(_neoSystem?.StoreView, e.ScriptHash);
 
             logger.LogDebug("name=\"{Name}\", hash={ScriptHash}, event=\"{EventName}\", state={State}, tx={TxHash}",
                 contract?.Manifest.Name, e.ScriptHash, e.EventName, e.State.ToJson(), e.ScriptContainer?.Hash);
@@ -32,7 +31,7 @@ namespace Neo.Service
         private void OnNeoApplicationEngineLog(object? sender, LogEventArgs e)
         {
             var logger = NodeUtilities.CreateOrGetLogger(_loggerFactory, $"{nameof(Blockchain)}.Contracts.{e.ScriptHash}.Logs");
-            var contract = NativeContract.Contracts.SingleOrDefault(s => s.Hash == e.ScriptHash);
+            var contract = NativeContract.ContractManagement.GetContract(_neoSystem?.StoreView, e.ScriptHash);
 
             logger.LogDebug("name=\"{Name}\", hash={ScriptHash}, text=\"{Message}\", tx={TxHash}",
                 contract?.Manifest.Name, e.ScriptHash, e.Message, e.ScriptContainer?.Hash);
