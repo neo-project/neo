@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.IO.Caching;
 using System;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -20,6 +21,7 @@ namespace Neo.Cryptography
     /// </summary>
     public static class Crypto
     {
+        private static readonly ECDsaCache CacheECDsa = new();
         private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
 
         /// <summary>
@@ -94,22 +96,39 @@ namespace Neo.Cryptography
             }
             else
             {
-                ECCurve curve =
-                    pubkey.Curve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
-                    pubkey.Curve == ECC.ECCurve.Secp256k1 ? ECCurve.CreateFromFriendlyName("secP256k1") :
-                    throw new NotSupportedException();
-                byte[] buffer = pubkey.EncodePoint(false);
-                using var ecdsa = ECDsa.Create(new ECParameters
-                {
-                    Curve = curve,
-                    Q = new ECPoint
-                    {
-                        X = buffer[1..33],
-                        Y = buffer[33..]
-                    }
-                });
+                var ecdsa = CreateECDsa(pubkey);
                 return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
             }
+        }
+
+        /// <summary>
+        /// Create and cache ECDsa objects
+        /// </summary>
+        /// <param name="pubkey"></param>
+        /// <returns>Cached ECDsa</returns>
+        /// <exception cref="NotSupportedException"></exception>
+        public static ECDsa CreateECDsa(ECC.ECPoint pubkey)
+        {
+            if (CacheECDsa.TryGet(pubkey, out var cache))
+            {
+                return cache.value;
+            }
+            var curve =
+                pubkey.Curve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
+                pubkey.Curve == ECC.ECCurve.Secp256k1 ? ECCurve.CreateFromFriendlyName("secP256k1") :
+                throw new NotSupportedException();
+            var buffer = pubkey.EncodePoint(false);
+            var ecdsa = ECDsa.Create(new ECParameters
+            {
+                Curve = curve,
+                Q = new ECPoint
+                {
+                    X = buffer[1..33],
+                    Y = buffer[33..]
+                }
+            });
+            CacheECDsa.Add(new ECDsaCacheItem(pubkey, ecdsa));
+            return ecdsa;
         }
 
         /// <summary>

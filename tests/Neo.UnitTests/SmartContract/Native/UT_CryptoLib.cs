@@ -15,6 +15,7 @@ using Neo.Cryptography.BLS12_381;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Org.BouncyCastle.Utilities.Encoders;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -333,6 +334,98 @@ namespace Neo.UnitTests.SmartContract.Native
                 "c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
                 BLS12381PointType.G2Proj
             );
+        }
+
+        /// <summary>
+        /// Keccak256 cases are verified in https://emn178.github.io/online-tools/keccak_256.html
+        /// </summary>
+        [TestMethod]
+        public void TestKeccak256_HelloWorld()
+        {
+            // Arrange
+            byte[] inputData = "Hello, World!"u8.ToArray();
+            string expectedHashHex = "acaf3289d7b601cbd114fb36c4d29c85bbfd5e133f14cb355c3fd8d99367964f";
+
+            // Act
+            byte[] outputData = CryptoLib.Keccak256(inputData);
+            string outputHashHex = Hex.ToHexString(outputData);
+
+            // Assert
+            Assert.AreEqual(expectedHashHex, outputHashHex, "Keccak256 hash did not match expected value for 'Hello, World!'.");
+        }
+        [TestMethod]
+        public void TestKeccak256_Keccak()
+        {
+            // Arrange
+            byte[] inputData = "Keccak"u8.ToArray();
+            string expectedHashHex = "868c016b666c7d3698636ee1bd023f3f065621514ab61bf26f062c175fdbe7f2";
+
+            // Act
+            byte[] outputData = CryptoLib.Keccak256(inputData);
+            string outputHashHex = Hex.ToHexString(outputData);
+
+            // Assert
+            Assert.AreEqual(expectedHashHex, outputHashHex, "Keccak256 hash did not match expected value for 'Keccak'.");
+        }
+
+        [TestMethod]
+        public void TestKeccak256_Cryptography()
+        {
+            // Arrange
+            byte[] inputData = "Cryptography"u8.ToArray();
+            string expectedHashHex = "53d49d225dd2cfe77d8c5e2112bcc9efe77bea1c7aa5e5ede5798a36e99e2d29";
+
+            // Act
+            byte[] outputData = CryptoLib.Keccak256(inputData);
+            string outputHashHex = Hex.ToHexString(outputData);
+
+            // Assert
+            Assert.AreEqual(expectedHashHex, outputHashHex, "Keccak256 hash did not match expected value for 'Cryptography'.");
+        }
+
+        [TestMethod]
+        public void TestKeccak256_Testing123()
+        {
+            // Arrange
+            byte[] inputData = "Testing123"u8.ToArray();
+            string expectedHashHex = "3f82db7b16b0818a1c6b2c6152e265f682d5ebcf497c9aad776ad38bc39cb6ca";
+
+            // Act
+            byte[] outputData = CryptoLib.Keccak256(inputData);
+            string outputHashHex = Hex.ToHexString(outputData);
+
+            // Assert
+            Assert.AreEqual(expectedHashHex, outputHashHex, "Keccak256 hash did not match expected value for 'Testing123'.");
+        }
+
+        [TestMethod]
+        public void TestKeccak256_LongString()
+        {
+            // Arrange
+            byte[] inputData = "This is a longer string for Keccak256 testing purposes."u8.ToArray();
+            string expectedHashHex = "24115e5c2359f85f6840b42acd2f7ea47bc239583e576d766fa173bf711bdd2f";
+
+            // Act
+            byte[] outputData = CryptoLib.Keccak256(inputData);
+            string outputHashHex = Hex.ToHexString(outputData);
+
+            // Assert
+            Assert.AreEqual(expectedHashHex, outputHashHex, "Keccak256 hash did not match expected value for the longer string.");
+        }
+
+        [TestMethod]
+        public void TestKeccak256_BlankString()
+        {
+            // Arrange
+            byte[] inputData = ""u8.ToArray();
+            string expectedHashHex = "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470";
+
+            // Act
+            byte[] outputData = CryptoLib.Keccak256(inputData);
+            string outputHashHex = Hex.ToHexString(outputData);
+
+            // Assert
+            Assert.AreEqual(expectedHashHex, outputHashHex, "Keccak256 hash did not match expected value for blank string.");
         }
     }
 }

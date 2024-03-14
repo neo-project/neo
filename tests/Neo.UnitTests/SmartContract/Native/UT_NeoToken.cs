@@ -192,11 +192,13 @@ namespace Neo.UnitTests.SmartContract.Native
             var accountState = snapshot.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
             accountState.Balance = 100;
             snapshot.Add(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new CandidateState() { Registered = true }));
+            snapshot.Add(CreateStorageKey(23, ECCurve.Secp256r1.G.ToArray()), new StorageItem(new BigInteger(100500)));
             var ret = Check_Vote(snapshot, from_Account, ECCurve.Secp256r1.G.ToArray(), true, persistingBlock);
             ret.Result.Should().BeTrue();
             ret.State.Should().BeTrue();
             accountState = snapshot.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
             accountState.VoteTo.Should().Be(ECCurve.Secp256r1.G);
+            accountState.LastGasPerVote.Should().Be(100500);
 
             //from vote to null account G votes becomes 0
             var G_stateValidator = snapshot.GetAndChange(CreateStorageKey(33, ECCurve.Secp256r1.G.ToArray())).GetInteroperable<CandidateState>();
@@ -211,6 +213,7 @@ namespace Neo.UnitTests.SmartContract.Native
             G_stateValidator.Votes.Should().Be(0);
             accountState = snapshot.TryGet(CreateStorageKey(20, from_Account)).GetInteroperable<NeoAccountState>();
             accountState.VoteTo.Should().Be(null);
+            accountState.LastGasPerVote.Should().Be(0);
         }
 
         [TestMethod]

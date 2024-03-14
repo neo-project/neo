@@ -145,6 +145,24 @@ namespace Neo.SmartContract
             return (T)cache;
         }
 
+        /// <summary>
+        /// Gets an <see cref="IInteroperable"/> from the storage.
+        /// </summary>
+        /// <param name="verify">Verify deserialization</param>
+        /// <typeparam name="T">The type of the <see cref="IInteroperable"/>.</typeparam>
+        /// <returns>The <see cref="IInteroperable"/> in the storage.</returns>
+        public T GetInteroperable<T>(bool verify = true) where T : IInteroperableVerifiable, new()
+        {
+            if (cache is null)
+            {
+                var interoperable = new T();
+                interoperable.FromStackItem(BinarySerializer.Deserialize(value, ExecutionEngineLimits.Default), verify);
+                cache = interoperable;
+            }
+            value = null;
+            return (T)cache;
+        }
+
         public void Serialize(BinaryWriter writer)
         {
             writer.Write(Value.Span);
@@ -157,6 +175,16 @@ namespace Neo.SmartContract
         public void Set(BigInteger integer)
         {
             cache = integer;
+            value = null;
+        }
+
+        /// <summary>
+        /// Sets the interoperable value of the storage.
+        /// </summary>
+        /// <param name="interoperable">The <see cref="IInteroperable"/> value of the <see cref="StorageItem"/>.</param>
+        public void Set(IInteroperable interoperable)
+        {
+            cache = interoperable;
             value = null;
         }
 

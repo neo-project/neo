@@ -19,21 +19,32 @@ namespace Neo.Test.Types
     {
         public Exception FaultException { get; private set; }
 
-        protected override void OnSysCall(uint method)
+        public TestEngine() : base(ComposeJumpTable()) { }
+
+        private static JumpTable ComposeJumpTable()
         {
+            JumpTable jumpTable = new JumpTable();
+            jumpTable[OpCode.SYSCALL] = OnSysCall;
+            return jumpTable;
+        }
+
+        private static void OnSysCall(ExecutionEngine engine, Instruction instruction)
+        {
+            uint method = instruction.TokenU32;
+
             if (method == 0x77777777)
             {
-                CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new object()));
+                engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new object()));
                 return;
             }
 
             if (method == 0xaddeadde)
             {
-                ExecuteThrow("error");
+                engine.JumpTable.ExecuteThrow(engine, "error");
                 return;
             }
 
-            throw new System.Exception();
+            throw new Exception();
         }
 
         protected override void OnFault(Exception ex)
