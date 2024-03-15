@@ -30,7 +30,7 @@ namespace Neo.IO.Pipes
         private readonly CancellationTokenSource _streamReadTokenSource;
         private readonly CancellationTokenSource _listenForConnectionsTokenSource = new();
 
-        private NamedPipeServerStream? _textReaderPipeStream;
+        private NamedPipeClientStream? _textReaderPipeStream;
 
         public NamedPipeTextReader(
             string pipeName)
@@ -197,11 +197,10 @@ namespace Neo.IO.Pipes
         private async Task InternalListenAsync()
         {
             _textReaderPipeStream ??= new(
-                _pipeName, PipeDirection.In,
-                NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte,
+                ".", _pipeName, PipeDirection.Out,
                 PipeOptions.CurrentUserOnly | PipeOptions.WriteThrough | PipeOptions.Asynchronous);
 
-            await _textReaderPipeStream.WaitForConnectionAsync(_listenForConnectionsTokenSource.Token);
+            await _textReaderPipeStream.ConnectAsync(_listenForConnectionsTokenSource.Token);
 
             while (_listenForConnectionsTokenSource.IsCancellationRequested == false && _textReaderPipeStream?.IsConnected == true)
                 await Task.Delay(100);

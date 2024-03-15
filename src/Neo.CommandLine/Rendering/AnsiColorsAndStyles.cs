@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.CommandLine.Rendering
+namespace Neo.CommandLine
 {
     internal enum AnsiColor : int
     {

@@ -46,7 +46,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.Extensions", "src\Neo.E
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.IO.Tests", "tests\Neo.IO.Tests\Neo.IO.Tests.csproj", "{25D79A08-52D9-4808-A53F-E0C9626DDCBB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.CommandLine.Tests", "tests\Neo.CommandLine.Tests\Neo.CommandLine.Tests.csproj", "{2C7FBE23-F64A-44F4-B4CA-DEB2F6BEA635}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.CommandLine.Tests", "tests\Neo.CommandLine.Tests\Neo.CommandLine.Tests.csproj", "{2C7FBE23-F64A-44F4-B4CA-DEB2F6BEA635}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.CommandLine", "src\Neo.CommandLine\Neo.CommandLine.csproj", "{B7DE76CB-9E65-48A5-B0DF-31C6FB2353B4}"
 EndProject

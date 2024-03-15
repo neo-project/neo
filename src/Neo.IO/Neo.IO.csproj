@@ -10,6 +10,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Neo" />
     <InternalsVisibleTo Include="Neo.UnitTests" />
+    <InternalsVisibleTo Include="neo-cmd" />
     <InternalsVisibleTo Include="$(AssemblyName).Tests" />
   </ItemGroup>
 

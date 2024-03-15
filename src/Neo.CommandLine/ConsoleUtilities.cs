@@ -9,25 +9,26 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
 using System.Runtime.InteropServices;
 
 namespace Neo.CommandLine
 {
-    internal static class ConsoleUtilities
+    internal static partial class ConsoleUtilities
     {
         private const int STD_OUTPUT_HANDLE = -11;
         private const uint ENABLE_VIRTUAL_TERMINAL_PROCESSING = 4;
         private const uint DISABLE_NEWLINE_AUTO_RETURN = 8;
 
-        [DllImport("kernel32.dll")]
-        private static extern bool GetConsoleMode(nint hConsoleHandle, out uint lpMode);
+        [LibraryImport("kernel32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static partial bool GetConsoleMode(nint hConsoleHandle, out uint lpMode);
 
-        [DllImport("kernel32.dll")]
-        private static extern bool SetConsoleMode(nint hConsoleHandle, uint dwMode);
+        [LibraryImport("kernel32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static partial bool SetConsoleMode(nint hConsoleHandle, uint dwMode);
 
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern IntPtr GetStdHandle(int nStdHandle);
+        [LibraryImport("kernel32.dll", SetLastError = true)]
+        private static partial IntPtr GetStdHandle(int nStdHandle);
 
         public static void EnableAnsi()
         {

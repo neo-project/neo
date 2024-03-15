@@ -28,7 +28,7 @@ namespace Neo.IO.Pipes
         private readonly Task _listenForConnectionsTask;
         private readonly CancellationTokenSource _cancellationTokenSource = new();
 
-        private NamedPipeServerStream? _textWriterPipeStream;
+        private NamedPipeClientStream? _textWriterPipeStream;
 
         public NamedPipeTextWriter(
             string pipeName)
@@ -228,11 +228,10 @@ namespace Neo.IO.Pipes
         private async Task InternalListenAsync()
         {
             _textWriterPipeStream ??= new(
-                _pipeName, PipeDirection.Out,
-                NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte,
+                ".", _pipeName, PipeDirection.In,
                 PipeOptions.CurrentUserOnly | PipeOptions.WriteThrough | PipeOptions.Asynchronous);
 
-            await _textWriterPipeStream.WaitForConnectionAsync(_cancellationTokenSource.Token);
+            await _textWriterPipeStream.ConnectAsync(_cancellationTokenSource.Token);
 
             while (_cancellationTokenSource.IsCancellationRequested == false && _textWriterPipeStream?.IsConnected == true)
                 await Task.Delay(100);
