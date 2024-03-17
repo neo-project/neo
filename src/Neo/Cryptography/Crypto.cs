@@ -79,8 +79,7 @@ namespace Neo.Cryptography
             }
 
             var curve =
-                // Default curve is SECP256R1
-                ecCurve == null ? ECCurve.NamedCurves.nistP256 :
+                 ecCurve == null || ecCurve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
                 ecCurve == ECC.ECCurve.Secp256k1 ? ECCurve.CreateFromFriendlyName("secP256k1") :
                 throw new NotSupportedException();
 
@@ -88,11 +87,6 @@ namespace Neo.Cryptography
             {
                 Curve = curve,
                 D = priKey,
-                Q = new ECPoint
-                {
-                    X = pubKey.Take(32).ToArray(),
-                    Y = pubKey.Skip(32).Take(32).ToArray()
-                }
             });
             return ecdsa.SignData(message, HashAlgorithmName.SHA256);
         }
@@ -125,11 +119,9 @@ namespace Neo.Cryptography
 
                 return signer.VerifySignature(message.Sha256(), r, s);
             }
-            else
-            {
-                var ecdsa = CreateECDsa(pubkey);
-                return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
-            }
+
+            var ecdsa = CreateECDsa(pubkey);
+            return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
         }
 
         /// <summary>
