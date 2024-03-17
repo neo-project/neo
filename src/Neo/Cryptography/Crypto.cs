@@ -25,6 +25,7 @@ namespace Neo.Cryptography
     {
         private static readonly ECDsaCache CacheECDsa = new();
         private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+        private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
 
         /// <summary>
         /// Calculates the 160-bit hash value of the specified message.
@@ -56,7 +57,7 @@ namespace Neo.Cryptography
         /// <returns>The ECDSA signature for the specified message.</returns>
         public static byte[] Sign(byte[] message, byte[] priKey, byte[] pubKey, ECC.ECCurve ecCurve = null)
         {
-            if (IsOSX && ecCurve == ECC.ECCurve.Secp256k1)
+            if ((IsOSX || IsLinux) && ecCurve == ECC.ECCurve.Secp256k1)
             {
                 var curveParameters = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
                 var domain = new ECDomainParameters(curveParameters.Curve, curveParameters.G, curveParameters.N, curveParameters.H);
