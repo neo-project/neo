@@ -13,6 +13,7 @@ using Neo.IO.Caching;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Math;
 using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
@@ -89,8 +90,8 @@ namespace Neo.Cryptography
                 D = priKey,
                 Q = new ECPoint
                 {
-                    X = pubKey[..32],
-                    Y = pubKey[32..]
+                    X = pubKey.Take(32).ToArray(),
+                    Y = pubKey.Skip(32).Take(32).ToArray()
                 }
             });
             return ecdsa.SignData(message, HashAlgorithmName.SHA256);
