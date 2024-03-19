@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
 using System.Runtime.InteropServices;
 
 namespace Neo.CommandLine
@@ -28,7 +29,7 @@ namespace Neo.CommandLine
         private static partial bool SetConsoleMode(nint hConsoleHandle, uint dwMode);
 
         [LibraryImport("kernel32.dll", SetLastError = true)]
-        private static partial IntPtr GetStdHandle(int nStdHandle);
+        private static partial nint GetStdHandle(int nStdHandle);
 
         public static void EnableAnsi()
         {

@@ -5,7 +5,6 @@
     <TargetFrameworks>net7.0</TargetFrameworks>
     <AssemblyTitle>Neo.CommandLine</AssemblyTitle>
     <AssemblyName>neo-cmd</AssemblyName>
-    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>

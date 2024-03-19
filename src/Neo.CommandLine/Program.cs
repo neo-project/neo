@@ -9,7 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using System;
 using System.CommandLine;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace Neo.CommandLine
 {
