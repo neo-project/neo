@@ -10,8 +10,10 @@
 // modifications are permitted.
 
 using System;
+using System.Collections.Generic;
 using System.CommandLine;
 using System.IO;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Neo.CommandLine
@@ -26,6 +28,7 @@ namespace Neo.CommandLine
             var rootCommand = new RootCommand("NEO command-lime tool.");
             var showCommand = new Command("show", "Display data from the blockchain.");
             var contractCommand = new Command("contract", "Smart contract management.");
+            var networkBroadcastCommand = new Command("broadcast", "Network broadcast.");
 
             #region Show Commands
 
@@ -92,7 +95,7 @@ namespace Neo.CommandLine
             #region Update
 
             var contractUpdateCommand = new Command("update", "Update smart contract on chain.");
-            var contractUpdateScriptHashArgument = new Argument<string>("scriptHash", "Neo smart contract hash.");
+            var contractUpdateScriptHashArgument = new Argument<string>("scripthash", "Neo smart contract hash.");
             var contractUpdateNefFileOption = new Option<FileInfo>("--nef", "Neo smart contract binary file.");
             var contractUpdateSenderOption = new Option<string>("--sender", "Payer of the network fee.");
             var contractUpdateSignerOption = new Option<string>("--signer", "Signer of the transaction.");
@@ -113,9 +116,73 @@ namespace Neo.CommandLine
 
             #endregion
 
+            #region Invoke
+
+            var contractInvokeCommand = new Command("invoke", "Invoke smart contract method on chain.");
+            var contractInvokeScriptHashArgument = new Argument<string>("scripthash", "Neo smart contract hash.");
+            var contractInvokeMethodNameOption = new Option<string>("--method", "Neo smart contract method name.");
+            var contractInvokeMethodParametersOptions = new Option<IEnumerable<string>>("--params", "Neo smart contract method params.")
+            {
+                AllowMultipleArgumentsPerToken = true
+            };
+            var contractInvokeSenderOption = new Option<string>("--sender", "Payer of the network fee.");
+            var contractInvokeSignerOption = new Option<string>("--signer", "Signer of the transaction.");
+
+            contractInvokeCommand.Add(contractInvokeScriptHashArgument);
+            contractInvokeCommand.Add(contractInvokeMethodNameOption);
+            contractInvokeCommand.Add(contractInvokeMethodParametersOptions);
+            contractInvokeCommand.Add(contractInvokeSenderOption);
+            contractInvokeCommand.Add(contractInvokeSignerOption);
+            contractInvokeCommand.SetHandler(
+                (scriptHash, methodName, methodParams, txSender, txSigner) => ConsoleOut.WriteLine($"Hello Contract Invoke {scriptHash} {methodName} \"{methodParams}\" {txSender} {txSigner}!"),
+                contractInvokeScriptHashArgument,
+                contractInvokeMethodNameOption,
+                contractInvokeMethodParametersOptions,
+                contractInvokeSenderOption,
+                contractInvokeSignerOption);
+
+            #endregion
+
             rootCommand.Add(contractCommand);
             contractCommand.Add(contractDeployCommand);
             contractCommand.Add(contractUpdateCommand);
+            contractCommand.Add(contractInvokeCommand);
+
+            #endregion
+
+            #region Broadcast Commands
+
+            #region Address
+
+            var networkBroadcastAddressCommand = new Command("address", "Broadcast address capabilities.");
+            var networkBroadcastAddressIpAddressArgument = new Argument<IPAddress>("ip", "Ip Address.");
+            var networkBroadcastAddressPortArgument = new Argument<ushort>("port", "listening port.");
+
+            networkBroadcastAddressCommand.Add(networkBroadcastAddressIpAddressArgument);
+            networkBroadcastAddressCommand.Add(networkBroadcastAddressPortArgument);
+            networkBroadcastAddressCommand.SetHandler(
+                (ipAddress, port) => ConsoleOut.WriteLine($"Hello broadcast address {ipAddress} {port}!"),
+                networkBroadcastAddressIpAddressArgument,
+                networkBroadcastAddressPortArgument);
+
+            #endregion
+
+            #region Block
+
+            var networkBroadcastBlockCommand = new Command("block", "Broadcast a block.");
+            var networkBroadcastBlockHashArgument = new Argument<string>("hash", "UInt256 hash.");
+
+            networkBroadcastBlockCommand.Add(networkBroadcastBlockHashArgument);
+            networkBroadcastBlockCommand.SetHandler(
+                (blockHash) => ConsoleOut.WriteLine($"Hello broadcast block {blockHash}!"),
+                networkBroadcastBlockHashArgument);
+
+
+            #endregion
+
+            rootCommand.Add(networkBroadcastCommand);
+            networkBroadcastCommand.Add(networkBroadcastAddressCommand);
+            networkBroadcastCommand.Add(networkBroadcastBlockCommand);
 
             #endregion
 
