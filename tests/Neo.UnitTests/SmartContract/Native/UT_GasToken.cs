@@ -31,6 +31,7 @@ using Neo.Wallets;
 using System;
 using System;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq;
 using System.Numerics;
@@ -206,6 +207,23 @@ namespace Neo.UnitTests.SmartContract.Native
                 Transactions = new Transaction[] { tx1, tx2 }
             };
             var snapshot = _snapshot.CreateSnapshot();
+
+            // Designate single Notary node.
+            byte[] privateKey1 = new byte[32];
+            var rng1 = System.Security.Cryptography.RandomNumberGenerator.Create();
+            rng1.GetBytes(privateKey1);
+            KeyPair key1 = new KeyPair(privateKey1);
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var ret = NativeContract.RoleManagement.Call(
+                snapshot,
+                new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                new Block { Header = new Header() },
+                "designateAsRole",
+                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.P2PNotary) },
+                new ContractParameter(ContractParameterType.Array) { Value = new List<ContractParameter>() { new ContractParameter(ContractParameterType.ByteArray) { Value = key1.PublicKey.ToArray() } } }
+            );
+            snapshot.Commit();
+
             var script = new ScriptBuilder();
             script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
             var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
@@ -220,10 +238,12 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(engine.Execute() == VMState.HALT);
 
             // Check that proper amount of GAS was minted to block's Primary and the rest
-            // will be minted to Notary nodes as a reward once Notary contract is implemented.
-            Assert.AreEqual(2 + 1, engine.Notifications.Count()); // burn tx1 and tx2 network fee + mint primary reward
+            // is minted to Notary nodes as a reward.
+            Assert.AreEqual(2 + 1 + 1, engine.Notifications.Count()); // burn tx1 and tx2 network fee + mint primary reward + transfer Notary node reward
             Assert.AreEqual(netFee1 + netFee2 - expectedNotaryReward, engine.Notifications[2].State[2]);
             NativeContract.GAS.BalanceOf(engine.Snapshot, primary).Should().Be(netFee1 + netFee2 - expectedNotaryReward);
+            Assert.AreEqual(expectedNotaryReward, engine.Notifications[3].State[2]);
+            NativeContract.GAS.BalanceOf(engine.Snapshot, key1.PublicKey.EncodePoint(true).ToScriptHash()).Should().Be(expectedNotaryReward);
         }
     }
 }

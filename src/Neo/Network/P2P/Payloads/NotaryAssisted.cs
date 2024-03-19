@@ -21,11 +21,6 @@ namespace Neo.Network.P2P.Payloads
     public class NotaryAssisted : TransactionAttribute
     {
         /// <summary>
-        /// Native Notary contract hash stub used until native Notary contract is properly implemented.
-        /// </summary>
-        private static readonly UInt160 notaryHash = Neo.SmartContract.Helper.GetContractHash(UInt160.Zero, 0, "Notary");
-
-        /// <summary>
         /// Indicates the number of keys participating in the transaction (main or fallback) signing process.
         /// </summary>
         public byte NKeys;
@@ -55,7 +50,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override bool Verify(DataCache snapshot, Transaction tx)
         {
-            return tx.Signers.Any(p => p.Account.Equals(notaryHash));
+            return tx.Signers.Any(p => p.Account.Equals(NativeContract.Notary.Hash));
         }
 
         /// <summary>
