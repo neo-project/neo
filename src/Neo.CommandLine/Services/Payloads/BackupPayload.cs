@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// BooleanPayload.cs file belongs to the neo project and is free
+// BackupPayload.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -14,35 +14,34 @@ using System.IO;
 
 namespace Neo.CommandLine.Services.Payloads
 {
-    internal sealed class BooleanPayload : ISerializable
+    internal sealed class BackupPayload : ISerializable
     {
-        public static readonly BooleanPayload True = Create(true);
-        public static readonly BooleanPayload False = Create(false);
+        public uint StartBlockIndex { get; private set; } = 0u;
+        public uint EndBlockIndex { get; private set; } = uint.MaxValue;
 
-        public bool Value => _value == 0xff;
-
-        private byte _value = 0;
-
-        public static BooleanPayload Create(bool value) =>
+        public static BackupPayload Create(uint start, uint end = uint.MaxValue) =>
             new()
             {
-                _value = (byte)(value ? 0xff : 0x00),
+                StartBlockIndex = start,
+                EndBlockIndex = end,
             };
-
 
         #region ISerializable
 
         int ISerializable.Size =>
-            sizeof(byte);
+            sizeof(uint) +  // StartBlockIndex
+            sizeof(uint);   // EndBlockIndex
 
         void ISerializable.Deserialize(ref MemoryReader reader)
         {
-            _value = reader.ReadByte();
+            StartBlockIndex = reader.ReadUInt32();
+            EndBlockIndex = reader.ReadUInt32();
         }
 
         void ISerializable.Serialize(BinaryWriter writer)
         {
-            writer.Write(_value);
+            writer.Write(StartBlockIndex);
+            writer.Write(EndBlockIndex);
         }
 
         #endregion

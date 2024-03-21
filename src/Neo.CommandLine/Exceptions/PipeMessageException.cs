@@ -14,7 +14,7 @@ using System.Runtime.Serialization;
 
 namespace Neo.CommandLine.Exceptions
 {
-    internal class PipeMessageException : Exception
+    internal sealed class PipeMessageException : Exception
     {
         public PipeMessageException()
         {

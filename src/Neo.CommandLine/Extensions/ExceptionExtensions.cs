@@ -60,7 +60,7 @@ namespace Neo.CommandLine.Extensions
             }
         }
 
-        public static async Task<TResult?> TryCatchHandle<TSource, TResult>(this TSource sourceObject, Func<Task<TResult?>> func, CancellationToken cancellationToken = default)
+        public static async Task<TResult> TryCatchHandle<TSource, TResult>(this TSource sourceObject, Func<Task<TResult>> func, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -68,16 +68,16 @@ namespace Neo.CommandLine.Extensions
                 if (waitTaskResult.IsCanceled == false)
                     return waitTaskResult.Result;
                 else
-                    return await Task.FromException<TResult?>(new RequestTaskTimeoutException());
+                    return await Task.FromException<TResult>(new RequestTaskTimeoutException());
             }
             catch (EndOfStreamException)
             {
-                return await Task.FromException<TResult?>(new HostServiceDisconnectException());
+                return await Task.FromException<TResult>(new HostServiceDisconnectException());
             }
             catch (Exception ex)
             {
                 ex = ex.InnerException ?? ex;
-                return await Task.FromException<TResult?>(ex);
+                return await Task.FromException<TResult>(ex);
             }
         }
     }

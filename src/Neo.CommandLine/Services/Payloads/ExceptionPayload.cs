@@ -15,7 +15,7 @@ using System.IO;
 
 namespace Neo.CommandLine.Services.Payloads
 {
-    public class ExceptionPayload : ISerializable
+    internal sealed class ExceptionPayload : ISerializable
     {
         public int Code { get; private set; }
         public string? Message { get; private set; }
@@ -33,11 +33,11 @@ namespace Neo.CommandLine.Services.Payloads
 #endif
             };
 
-        public int Size =>
+        #region ISerializable
+
+        int ISerializable.Size =>
             sizeof(int) +           // Code
             Message.GetVarSize();   // Message
-
-        #region ISerializable
 
         void ISerializable.Deserialize(ref MemoryReader reader)
         {

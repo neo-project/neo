@@ -14,7 +14,7 @@ using System.Runtime.Serialization;
 
 namespace Neo.CommandLine.Exceptions
 {
-    internal class RequestTaskTimeoutException : Exception
+    internal sealed class RequestTaskTimeoutException : Exception
     {
         public RequestTaskTimeoutException() : base("A task was canceled.")
         {

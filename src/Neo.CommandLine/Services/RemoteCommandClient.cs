@@ -15,7 +15,6 @@ using Neo.CommandLine.Services.Messages;
 using Neo.CommandLine.Services.Payloads;
 using Neo.CommandLine.Utilities;
 using System;
-using System.Diagnostics;
 using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,23 +41,39 @@ namespace Neo.CommandLine.Services
 
         }
 
-        public async Task<PipeVersionPayload?> GetVersionAsync(CancellationToken cancellationToken = default)
-        {
-            var timeoutLinkedTokenSource = TaskUtilities.CreateTimeoutToken(Timeout, cancellationToken);
-            return await _hostStream.TryCatchHandle(async () =>
+        public Task<PipeVersionPayload?> GetVersionAsync(CancellationToken cancellationToken = default) =>
+            _hostStream.TryCatchHandle(async () =>
             {
-                await _hostStream.ConnectAsync(timeoutLinkedTokenSource.Token);
-
-                Debug.Assert(_hostStream.IsConnected);
+                await WaitForConnectionAsync(cancellationToken);
 
                 _hostStream.Write(PipeMessage.Create(PipeCommand.Version));
                 return _hostStream.ReadMessage() switch
                 {
-                    { Command: PipeCommand.Version, Payload: PipeVersionPayload version } => version,
+                    { Command: PipeCommand.Response, Payload: PipeVersionPayload version } => version,
                     { Command: PipeCommand.Error, Payload: ExceptionPayload error } => throw new HostServiceException(error),
                     _ => null
                 };
             }, cancellationToken);
+
+        public Task<bool> CreateBackupAsync(uint startBlockIndex = uint.MinValue, uint endBlockIndex = uint.MaxValue, CancellationToken cancellationToken = default) =>
+            _hostStream.TryCatchHandle(async () =>
+            {
+                await WaitForConnectionAsync(cancellationToken);
+
+                _hostStream.Write(PipeMessage.Create(PipeCommand.Backup, BackupPayload.Create(startBlockIndex, endBlockIndex)));
+                return _hostStream.ReadMessage() switch
+                {
+                    { Command: PipeCommand.Response, Payload: BooleanPayload started } => started.Value,
+                    { Command: PipeCommand.Error, Payload: ExceptionPayload error } => throw new HostServiceException(error),
+                    _ => false
+                };
+            }, cancellationToken);
+
+        private async Task WaitForConnectionAsync(CancellationToken cancellationToken = default)
+        {
+            var timeoutLinkedTokenSource = TaskUtilities.CreateTimeoutToken(Timeout, cancellationToken);
+            await _hostStream.ConnectAsync(timeoutLinkedTokenSource.Token);
+            if (_hostStream.IsConnected == false) throw new HostServiceDisconnectException();
         }
     }
 }

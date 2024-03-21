@@ -13,8 +13,10 @@ namespace Neo.CommandLine.Services
 {
     internal enum PipeCommand : byte
     {
+        Response = 0x20,
         Start = 0xa1,
         Stop = 0xa2,
+        Backup = 0xb0,
         Version = 0xe0,
         Error = 0xef,
         Test = 0xff,

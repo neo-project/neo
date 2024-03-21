@@ -15,7 +15,7 @@ using System.Runtime.Serialization;
 
 namespace Neo.CommandLine.Exceptions
 {
-    internal class HostServiceException : Exception
+    internal sealed class HostServiceException : Exception
     {
         public HostServiceException()
         {

@@ -20,14 +20,8 @@ namespace Neo.CommandLine.Services.Payloads
     {
         public uint Network { get; private set; }
         public int Version { get; private set; }
-        public uint Nonce { get; private set; }     // future use (handshake)
-        public long Timestamp { get; private set; } // future use (handshake)
-
-        public int Size =>
-            sizeof(int) +   // Version
-            sizeof(long) +  // Timestamp
-            sizeof(uint) +  // Network
-            sizeof(uint);   // Nonce
+        public uint Nonce { get; private set; }
+        public long Timestamp { get; private set; }
 
         public static PipeVersionPayload Create(int version, uint network) =>
             new()
@@ -39,6 +33,12 @@ namespace Neo.CommandLine.Services.Payloads
             };
 
         #region ISerializable
+
+        int ISerializable.Size =>
+            sizeof(int) +   // Version
+            sizeof(long) +  // Timestamp
+            sizeof(uint) +  // Network
+            sizeof(uint);   // Nonce
 
         void ISerializable.Deserialize(ref MemoryReader reader)
         {

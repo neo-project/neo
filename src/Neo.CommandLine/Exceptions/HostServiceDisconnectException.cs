@@ -14,7 +14,7 @@ using System.Runtime.Serialization;
 
 namespace Neo.CommandLine.Exceptions
 {
-    internal class HostServiceDisconnectException : Exception
+    internal sealed class HostServiceDisconnectException : Exception
     {
         public HostServiceDisconnectException() : base("Connection closed.")
         {
