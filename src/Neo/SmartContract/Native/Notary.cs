@@ -67,7 +67,7 @@ namespace Neo.SmartContract.Native
                 var attr = tx.GetAttribute<NotaryAssisted>();
                 if (attr is not null)
                 {
-                    if (notaries is null) notaries = GetNotaryNodes(engine.Snapshot);
+                    notaries ??= GetNotaryNodes(engine.Snapshot);
                     var nKeys = attr.NKeys;
                     nFees += (long)nKeys + 1;
                     if (tx.Sender == Hash)
@@ -114,15 +114,7 @@ namespace Neo.SmartContract.Native
             ECPoint[] notaries = GetNotaryNodes(engine.Snapshot);
             var hash = tx.GetSignData(engine.GetNetwork());
             var verified = false;
-            foreach (var n in notaries)
-            {
-                if (Crypto.VerifySignature(hash, sig, n))
-                {
-                    verified = true;
-                    break;
-                }
-            }
-            return verified;
+            return notaries.Any(n => Crypto.VerifySignature(hash, sig, n));
         }
 
         /// <summary>
