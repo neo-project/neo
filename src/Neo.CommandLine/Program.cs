@@ -9,9 +9,15 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
+using Neo.CommandLine.Extensions;
+using Neo.CommandLine.Handlers;
+using Neo.CommandLine.Utilities;
+using Neo.Extensions;
 using System.Collections.Generic;
 using System.CommandLine;
+using System.CommandLine.Builder;
+using System.CommandLine.IO;
+using System.CommandLine.Parsing;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
@@ -20,15 +26,29 @@ namespace Neo.CommandLine
 {
     public sealed partial class Program
     {
-        internal static readonly TextWriter ConsoleOut = Console.Out;
-        internal static readonly TextReader ConsoleIn = Console.In;
+        internal readonly static int ApplicationVersion = AssemblyUtilities.GetVersionNumber();
 
-        static async Task Main(string[] args)
+        static async Task<int> Main(string[] args)
         {
+            ConsoleUtilities.EnableAnsi();
+
             var rootCommand = new RootCommand("NEO command-lime tool.");
-            var showCommand = new Command("show", "Display data from the blockchain.");
+            var showCommand = new Command("show", "Print on chain data.");
             var contractCommand = new Command("contract", "Smart contract management.");
             var networkBroadcastCommand = new Command("broadcast", "Network broadcast.");
+
+            #region Global Options
+
+            var requestTimeoutOption = new Option<uint>("--timeout", () => 30u, "Task timeout in seconds.");
+            var remoteVersionServerNameOption = new Option<string>("--server", () => ".")
+            {
+                IsHidden = true,
+            };
+
+            rootCommand.AddGlobalOption(requestTimeoutOption);
+            rootCommand.AddGlobalOption(remoteVersionServerNameOption);
+
+            #endregion
 
             #region Show Commands
 
@@ -39,7 +59,7 @@ namespace Neo.CommandLine
 
             showBlockCommand.Add(blockIndexOrHashArgument);
             showBlockCommand.SetHandler(
-                (indexOrHash) => ConsoleOut.WriteLine($"Hello Block {indexOrHash}!"),
+                ShowCommandHandler.OnBlock,
                 blockIndexOrHashArgument);
 
             #endregion
@@ -51,7 +71,7 @@ namespace Neo.CommandLine
 
             showTransactionCommand.Add(transactionHashArgument);
             showTransactionCommand.SetHandler(
-                (txHash) => ConsoleOut.WriteLine($"Hello Transaction {txHash}!"),
+                ShowCommandHandler.OnTransaction,
                 transactionHashArgument);
 
             #endregion
@@ -63,8 +83,20 @@ namespace Neo.CommandLine
 
             showContractCommand.Add(contractIdOrHashArgument);
             showContractCommand.SetHandler(
-                (idOrHash) => ConsoleOut.WriteLine($"Hello Contract {idOrHash}!"),
+                ShowCommandHandler.OnContract,
                 contractIdOrHashArgument);
+
+            #endregion
+
+            #region Remote Version
+
+            var showRemoteVersionCommand = new Command("info", "Display node information.");
+
+
+            showRemoteVersionCommand.SetHandler(
+                ShowCommandHandler.OnRemoteVersion,
+                remoteVersionServerNameOption,
+                requestTimeoutOption);
 
             #endregion
 
@@ -72,6 +104,7 @@ namespace Neo.CommandLine
             showCommand.Add(showBlockCommand);
             showCommand.Add(showTransactionCommand);
             showCommand.Add(showContractCommand);
+            showCommand.Add(showRemoteVersionCommand);
 
             #endregion
 
@@ -81,12 +114,12 @@ namespace Neo.CommandLine
 
             var contractDeployCommand = new Command("deploy", "Deploy smart contract to blockchain.");
             var contractDeployNefFileArgument = new Argument<FileInfo>("nef", "Neo smart contract binary file.");
-            var contractDeployDataParameterOption = new Option<string>("--data", "Set data parameter.");
+            var contractDeployDataParameterOption = new Option<string?>("--data", "Set data parameter.");
 
             contractDeployCommand.Add(contractDeployNefFileArgument);
             contractDeployCommand.Add(contractDeployDataParameterOption);
             contractDeployCommand.SetHandler(
-                (nefFileInfo, dataParameter) => ConsoleOut.WriteLine($"Hello Contract Deploy \"{nefFileInfo}\" {dataParameter}!"),
+                ContractCommandHandler.OnDeploy,
                 contractDeployNefFileArgument,
                 contractDeployDataParameterOption);
 
@@ -96,20 +129,20 @@ namespace Neo.CommandLine
 
             var contractUpdateCommand = new Command("update", "Update smart contract on chain.");
             var contractUpdateScriptHashArgument = new Argument<string>("scripthash", "Neo smart contract hash.");
-            var contractUpdateNefFileOption = new Option<FileInfo>("--nef", "Neo smart contract binary file.");
-            var contractUpdateSenderOption = new Option<string>("--sender", "Payer of the network fee.");
-            var contractUpdateSignerOption = new Option<string>("--signer", "Signer of the transaction.");
-            var contractUpdateDataParameterOption = new Option<string>("--data", "Set data parameter.");
+            var contractUpdateNefFileArgument = new Argument<FileInfo>("nef", "Neo smart contract binary file.");
+            var contractUpdateSenderOption = new Option<string?>("--sender", "Payer of the network fee.");
+            var contractUpdateSignerOption = new Option<string?>("--signer", "Signer of the transaction.");
+            var contractUpdateDataParameterOption = new Option<string?>("--data", "Set data parameter.");
 
             contractUpdateCommand.Add(contractUpdateScriptHashArgument);
-            contractUpdateCommand.Add(contractUpdateNefFileOption);
+            contractUpdateCommand.Add(contractUpdateNefFileArgument);
             contractUpdateCommand.Add(contractUpdateSenderOption);
             contractUpdateCommand.Add(contractUpdateSignerOption);
             contractUpdateCommand.Add(contractUpdateDataParameterOption);
             contractUpdateCommand.SetHandler(
-                (scriptHash, nefFileInfo, txSender, txSigner, dataParameter) => ConsoleOut.WriteLine($"Hello Contract Update {scriptHash} \"{nefFileInfo}\" {txSender} {txSigner} {dataParameter}!"),
+                ContractCommandHandler.OnUpdate,
                 contractUpdateScriptHashArgument,
-                contractUpdateNefFileOption,
+                contractUpdateNefFileArgument,
                 contractUpdateSenderOption,
                 contractUpdateSignerOption,
                 contractUpdateDataParameterOption);
@@ -120,8 +153,8 @@ namespace Neo.CommandLine
 
             var contractInvokeCommand = new Command("invoke", "Invoke smart contract method on chain.");
             var contractInvokeScriptHashArgument = new Argument<string>("scripthash", "Neo smart contract hash.");
-            var contractInvokeMethodNameOption = new Option<string>("--method", "Neo smart contract method name.");
-            var contractInvokeMethodParametersOptions = new Option<IEnumerable<string>>("--params", "Neo smart contract method params.")
+            var contractInvokeMethodNameArgument = new Argument<string>("--method", "Neo smart contract method name.");
+            var contractInvokeMethodParametersOptions = new Option<IEnumerable<string>?>("--params", "Neo smart contract method params.")
             {
                 AllowMultipleArgumentsPerToken = true
             };
@@ -129,14 +162,14 @@ namespace Neo.CommandLine
             var contractInvokeSignerOption = new Option<string>("--signer", "Signer of the transaction.");
 
             contractInvokeCommand.Add(contractInvokeScriptHashArgument);
-            contractInvokeCommand.Add(contractInvokeMethodNameOption);
+            contractInvokeCommand.Add(contractInvokeMethodNameArgument);
             contractInvokeCommand.Add(contractInvokeMethodParametersOptions);
             contractInvokeCommand.Add(contractInvokeSenderOption);
             contractInvokeCommand.Add(contractInvokeSignerOption);
             contractInvokeCommand.SetHandler(
-                (scriptHash, methodName, methodParams, txSender, txSigner) => ConsoleOut.WriteLine($"Hello Contract Invoke {scriptHash} {methodName} \"{methodParams}\" {txSender} {txSigner}!"),
+                ContractCommandHandler.OnInvoke,
                 contractInvokeScriptHashArgument,
-                contractInvokeMethodNameOption,
+                contractInvokeMethodNameArgument,
                 contractInvokeMethodParametersOptions,
                 contractInvokeSenderOption,
                 contractInvokeSignerOption);
@@ -161,7 +194,7 @@ namespace Neo.CommandLine
             networkBroadcastAddressCommand.Add(networkBroadcastAddressIpAddressArgument);
             networkBroadcastAddressCommand.Add(networkBroadcastAddressPortArgument);
             networkBroadcastAddressCommand.SetHandler(
-                (ipAddress, port) => ConsoleOut.WriteLine($"Hello broadcast address {ipAddress} {port}!"),
+                NetworkCommandHandler.OnBroadcastAddress,
                 networkBroadcastAddressIpAddressArgument,
                 networkBroadcastAddressPortArgument);
 
@@ -170,15 +203,31 @@ namespace Neo.CommandLine
             #region Block
 
             var networkBroadcastBlockCommand = new Command("block", "Broadcast a block.");
-            var networkBroadcastBlockHashArgument = new Argument<string>("hash", "UInt256 hash.");
+            var networkBroadcastBlockIndexOrHashArgument = new Argument<string>("index|hash", "Block index or UInt256 hash.");
 
-            networkBroadcastBlockCommand.Add(networkBroadcastBlockHashArgument);
+            networkBroadcastBlockCommand.Add(networkBroadcastBlockIndexOrHashArgument);
             networkBroadcastBlockCommand.SetHandler(
-                (blockHash) => ConsoleOut.WriteLine($"Hello broadcast block {blockHash}!"),
-                networkBroadcastBlockHashArgument);
-
+                NetworkCommandHandler.OnBroadcastBlock,
+                networkBroadcastBlockIndexOrHashArgument);
 
             #endregion
+
+            #region Get Commands
+
+            var networkBroadcastGetCommand = new Command("get", "Send request network packets.");
+
+            networkBroadcastCommand.Add(networkBroadcastGetCommand);
+
+            #region Headers
+
+            var networkBroadcastGetHeadersCommand = new Command("header", "Send request header network packet.");
+            var networkBroadcastGetHeadersIndexArgument = new Argument<uint>("index", "Header Index.");
+
+            networkBroadcastGetCommand.Add(networkBroadcastGetHeadersCommand);
+            networkBroadcastGetHeadersCommand.Add(networkBroadcastGetHeadersIndexArgument);
+            networkBroadcastGetHeadersCommand.SetHandler(
+                NetworkCommandHandler.OnBroadcastGetHeader,
+                networkBroadcastGetHeadersIndexArgument);
 
             rootCommand.Add(networkBroadcastCommand);
             networkBroadcastCommand.Add(networkBroadcastAddressCommand);
@@ -186,7 +235,29 @@ namespace Neo.CommandLine
 
             #endregion
 
-            await rootCommand.InvokeAsync(args);
+            #endregion
+
+            #endregion
+
+            #region CommandLine Defaults
+
+            var cb = new CommandLineBuilder(rootCommand)
+                .UseDefaults()
+                .UseExceptionHandler((e, c) =>
+                {
+                    c.Console.Error.WriteLine($"{e.GetType().Name}: \"{e.Message}\"",
+                        textColor: AnsiColor.Red);
+#if DEBUG
+                    c.Console.Error.WriteLine($"{e.StackTrace}",
+                        textColor: AnsiColor.Red);
+#endif
+                    c.ExitCode = 1;
+                })
+                .Build();
+
+            #endregion
+
+            return await cb.InvokeAsync(args);
         }
     }
 }

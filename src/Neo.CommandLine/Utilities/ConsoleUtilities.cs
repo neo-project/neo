@@ -12,7 +12,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Neo.CommandLine
+namespace Neo.CommandLine.Utilities
 {
     internal static partial class ConsoleUtilities
     {
