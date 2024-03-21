@@ -148,12 +148,12 @@ namespace Neo.SmartContract.Native
             var currentHeight = Ledger.CurrentIndex(engine.Snapshot);
 
             Deposit deposit = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Deposit).Add(to.ToArray()))?.GetInteroperable<Deposit>();
-            if (till < currentHeight + 2) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less then the chain's height {0} + 1", currentHeight + 2));
-            if (deposit != null && till < deposit.Till) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less then the previous value {0}", deposit.Till));
+            if (till < currentHeight + 2) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the chain's height {0} + 1", currentHeight + 2));
+            if (deposit != null && till < deposit.Till) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the previous value {0}", deposit.Till));
             if (deposit is null)
             {
                 var feePerKey = Policy.GetAttributeFee(engine.Snapshot, (byte)TransactionAttributeType.NotaryAssisted);
-                if ((long)amount < 2 * feePerKey) throw new ArgumentOutOfRangeException(string.Format("first deposit can not be less then {0}, got {1}", 2 * feePerKey, amount));
+                if ((long)amount < 2 * feePerKey) throw new ArgumentOutOfRangeException(string.Format("first deposit can not be less than {0}, got {1}", 2 * feePerKey, amount));
                 deposit = new Deposit() { Amount = 0, Till = 0 };
                 if (!allowedChangeTill) till = currentHeight + DefaultDepositDeltaTill;
             }
