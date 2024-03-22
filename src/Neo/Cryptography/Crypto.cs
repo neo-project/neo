@@ -51,7 +51,7 @@ namespace Neo.Cryptography
         /// </summary>
         /// <param name="message">The message to be signed.</param>
         /// <param name="priKey">The private key to be used.</param>
-        /// <param name="ecCurve">The <see cref="ECC.ECCurve"/> curve of the signature, default is <see cref="ECC.ECCurve.Secp256k1"/>.</param>
+        /// <param name="ecCurve">The <see cref="ECC.ECCurve"/> curve of the signature, default is <see cref="ECC.ECCurve.Secp256r1"/>.</param>
         /// <returns>The ECDSA signature for the specified message.</returns>
         public static byte[] Sign(byte[] message, byte[] priKey, ECC.ECCurve ecCurve = null)
         {
