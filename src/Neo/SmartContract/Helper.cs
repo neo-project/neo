@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// Helper.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -38,8 +39,8 @@ namespace Neo.SmartContract
         /// </summary>
         /// <returns>The calculated cost.</returns>
         public static long SignatureContractCost() =>
-            ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * 2 +
-            ApplicationEngine.OpCodePrices[OpCode.SYSCALL] +
+            ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * 2 +
+            ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] +
             ApplicationEngine.CheckSigPrice;
 
         /// <summary>
@@ -50,12 +51,12 @@ namespace Neo.SmartContract
         /// <returns>The calculated cost.</returns>
         public static long MultiSignatureContractCost(int m, int n)
         {
-            long fee = ApplicationEngine.OpCodePrices[OpCode.PUSHDATA1] * (m + n);
+            long fee = ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * (m + n);
             using (ScriptBuilder sb = new())
-                fee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(m).ToArray()[0]];
+                fee += ApplicationEngine.OpCodePriceTable[(byte)(OpCode)sb.EmitPush(m).ToArray()[0]];
             using (ScriptBuilder sb = new())
-                fee += ApplicationEngine.OpCodePrices[(OpCode)sb.EmitPush(n).ToArray()[0]];
-            fee += ApplicationEngine.OpCodePrices[OpCode.SYSCALL];
+                fee += ApplicationEngine.OpCodePriceTable[(byte)(OpCode)sb.EmitPush(n).ToArray()[0]];
+            fee += ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL];
             fee += ApplicationEngine.CheckSigPrice * n;
             return fee;
         }

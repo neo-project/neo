@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// ApplicationEngine.Contract.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -76,7 +77,7 @@ namespace Neo.SmartContract
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
 
             ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
-            if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
+            if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}.{method}");
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method, args.Count);
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
             bool hasReturnValue = md.ReturnType != ContractParameterType.Void;

@@ -1,0 +1,206 @@
+{
+  "category": "Slot",
+  "name": "INITSLOT",
+  "tests": [
+    {
+      "name": "Without enough items",
+      "script": [
+        "INITSLOT",
+        "0x0101"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Without 0 items",
+      "script": [
+        "INITSLOT",
+        "0x0000"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test [LocalVariables]",
+      "script": [
+        "INITSLOT",
+        "0x0100"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 3,
+                "nextInstruction": "RET",
+                "localVariables": [
+                  {
+                    "type": "Null"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test [Arguments]",
+      "script": [
+        "PUSH1",
+        "INITSLOT",
+        "0x0001"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 4,
+                "nextInstruction": "RET",
+                "arguments": [
+                  {
+                    "type": "Integer",
+                    "value": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test [LocalVariables + Arguments]",
+      "script": [
+        "PUSH1",
+        "INITSLOT",
+        "0x0101"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 4,
+                "nextInstruction": "RET",
+                "localVariables": [
+                  {
+                    "type": "Null"
+                  }
+                ],
+                "arguments": [
+                  {
+                    "type": "Integer",
+                    "value": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Initialize twice",
+      "script": [
+        "PUSH0",
+        "INITSLOT",
+        "0x0101",
+        "PUSH0",
+        "INITSLOT",
+        "0x0101"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 4,
+                "nextInstruction": "PUSH0",
+                "localVariables": [
+                  {
+                    "type": "Null"
+                  }
+                ],
+                "arguments": [
+                  {
+                    "type": "Integer",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,3 +1,14 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// Benchmarks.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.VM;
@@ -7,8 +18,8 @@ namespace Neo;
 
 static class Benchmarks
 {
-    private static readonly ProtocolSettings protocol = ProtocolSettings.Default;
-    private static readonly NeoSystem system = new(protocol);
+    private static readonly ProtocolSettings protocol = ProtocolSettings.Load("config.json");
+    private static readonly NeoSystem system = new(protocol, (string)null);
 
     public static void NeoIssue2725()
     {

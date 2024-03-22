@@ -1,0 +1,36 @@
+{
+  "category": "Limits",
+  "name": "OtherCases",
+  "tests": [
+    {
+      "name": "Wrong script",
+      "script": [
+        "0xff"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Without script",
+      "script": [],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT"
+          }
+        }
+      ]
+    }
+  ]
+}

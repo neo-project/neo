@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UPnP.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -182,8 +183,8 @@ namespace Neo.Network
             request.Headers.Add("Content-Type", "text/xml; charset=\"utf-8\"");
             request.Content = new StringContent(req);
             using HttpClient http = new();
-            using HttpResponseMessage response = http.Send(request);
-            using Stream stream = response.EnsureSuccessStatusCode().Content.ReadAsStream();
+            using HttpResponseMessage response = http.SendAsync(request).GetAwaiter().GetResult();
+            using Stream stream = response.EnsureSuccessStatusCode().Content.ReadAsStreamAsync().GetAwaiter().GetResult();
             XmlDocument resp = new() { XmlResolver = null };
             resp.Load(stream);
             return resp;

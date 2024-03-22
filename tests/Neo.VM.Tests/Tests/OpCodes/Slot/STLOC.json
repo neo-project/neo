@@ -1,0 +1,92 @@
+{
+  "category": "Slot",
+  "name": "STLOC",
+  "tests": [
+    {
+      "name": "Without slot",
+      "script": [
+        "STLOC",
+        "0x00"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Without enough items",
+      "script": [
+        "INITSLOT",
+        "0x0100",
+        "PUSH2",
+        "STLOC"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test",
+      "script": [
+        "INITSLOT",
+        "0x0100",
+        "PUSH1",
+        "STLOC",
+        "0x00",
+        "LDLOC",
+        "0x00"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 6,
+                "nextInstruction": "LDLOC",
+                "localVariables": [
+                  {
+                    "type": "Integer",
+                    "value": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

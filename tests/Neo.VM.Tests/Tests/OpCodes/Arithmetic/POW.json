@@ -1,0 +1,195 @@
+{
+  "category": "Numeric",
+  "name": "POW",
+  "tests": [
+    {
+      "name": "Exception - Without items",
+      "script": [
+        "POW"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT",
+            "invocationStack": [
+              {
+                "instructionPointer": 1,
+                "nextInstruction": "POW",
+                "evaluationStack": []
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Exception - With only one item",
+      "script": [
+        "PUSH1",
+        "POW"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT",
+            "invocationStack": [
+              {
+                "instructionPointer": 2,
+                "nextInstruction": "POW",
+                "evaluationStack": []
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test 1",
+      "script": [
+        "PUSH1",
+        "PUSH1",
+        "POW"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 3,
+                "nextInstruction": "RET",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT",
+            "invocationStack": [],
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test 1",
+      "script": [
+        "PUSH9",
+        "PUSH2",
+        "POW"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 3,
+                "nextInstruction": "RET",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": 81
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT",
+            "invocationStack": [],
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": 81
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test 1",
+      "script": [
+        "PUSH2",
+        "PUSH9",
+        "POW"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 3,
+                "nextInstruction": "RET",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": 512
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT",
+            "invocationStack": [],
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": 512
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

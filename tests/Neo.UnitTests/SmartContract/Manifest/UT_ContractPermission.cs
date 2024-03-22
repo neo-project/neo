@@ -1,7 +1,19 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UT_ContractPermission.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.VM.Types;
 using System;
 
 namespace Neo.UnitTests.SmartContract.Manifest
@@ -9,6 +21,32 @@ namespace Neo.UnitTests.SmartContract.Manifest
     [TestClass]
     public class UT_ContractPermission
     {
+        [TestMethod]
+        public void TestDeserialize()
+        {
+            // null
+            ContractPermission contractPermission = ContractPermission.DefaultPermission;
+            Struct s = (Struct)contractPermission.ToStackItem(new VM.ReferenceCounter());
+
+            contractPermission = s.ToInteroperable<ContractPermission>();
+            Assert.IsTrue(contractPermission.Contract.IsWildcard);
+            Assert.IsTrue(contractPermission.Methods.IsWildcard);
+
+            // not null
+            contractPermission = new ContractPermission()
+            {
+                Contract = ContractPermissionDescriptor.Create(UInt160.Zero),
+                Methods = WildcardContainer<string>.Create("test")
+            };
+            s = (Struct)contractPermission.ToStackItem(new VM.ReferenceCounter());
+
+            contractPermission = s.ToInteroperable<ContractPermission>();
+            Assert.IsFalse(contractPermission.Contract.IsWildcard);
+            Assert.IsFalse(contractPermission.Methods.IsWildcard);
+            Assert.AreEqual(UInt160.Zero, contractPermission.Contract.Hash);
+            Assert.AreEqual("test", contractPermission.Methods[0]);
+        }
+
         [TestMethod]
         public void TestIsAllowed()
         {

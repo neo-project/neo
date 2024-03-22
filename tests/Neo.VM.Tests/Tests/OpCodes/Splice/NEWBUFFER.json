@@ -1,0 +1,159 @@
+{
+  "category": "Splice",
+  "name": "NEWBUFFER",
+  "tests": [
+    {
+      "name": "Max Item Length",
+      "script": [
+        "PUSHINT256",
+        "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+        "NEWBUFFER"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 33,
+                "nextInstruction": "NEWBUFFER",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": "57896044618658097711785492504343953926634992332820282019728792003956564819967"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "-1 Length",
+      "script": [
+        "PUSHM1",
+        "NEWBUFFER"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 1,
+                "nextInstruction": "NEWBUFFER",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": -1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wrong type [Array]",
+      "script": [
+        "PUSH0",
+        "NEWARRAY",
+        "NEWBUFFER"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 2,
+                "nextInstruction": "NEWBUFFER",
+                "evaluationStack": [
+                  {
+                    "type": "Array",
+                    "value": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "No push",
+      "script": [
+        "NEWBUFFER"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test [Integer]",
+      "script": [
+        "PUSH10",
+        "NEWBUFFER"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Buffer",
+                "value": "0x00000000000000000000"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

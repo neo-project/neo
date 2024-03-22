@@ -1,3 +1,14 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UT_InteropService.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Akka.TestKit.Xunit2;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -45,7 +56,7 @@ namespace Neo.UnitTests.SmartContract
                 scriptHash2 = script.ToArray().ToScriptHash();
 
                 snapshot.DeleteContract(scriptHash2);
-                ContractState contract = TestUtils.GetContract(script.ToArray(), TestUtils.CreateManifest("test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer));
+                var contract = TestUtils.GetContract(script.ToArray(), TestUtils.CreateManifest("test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer));
                 contract.Manifest.Abi.Events = new[]
                 {
                     new ContractEventDescriptor
@@ -65,7 +76,7 @@ namespace Neo.UnitTests.SmartContract
 
             // Wrong length
 
-            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot))
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default))
             using (var script = new ScriptBuilder())
             {
                 // Retrive
@@ -82,7 +93,7 @@ namespace Neo.UnitTests.SmartContract
 
             // All test
 
-            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot))
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default))
             using (var script = new ScriptBuilder())
             {
                 // Notification
@@ -151,7 +162,7 @@ namespace Neo.UnitTests.SmartContract
 
             // Script notifications
 
-            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot))
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default))
             using (var script = new ScriptBuilder())
             {
                 // Notification
@@ -283,8 +294,8 @@ namespace Neo.UnitTests.SmartContract
         {
             byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
-            KeyPair keyPair = new(privateKey);
-            ECPoint pubkey = keyPair.PublicKey;
+            var keyPair = new KeyPair(privateKey);
+            var pubkey = keyPair.PublicKey;
 
             var engine = GetEngine(true);
             ((Transaction)engine.ScriptContainer).Signers[0].Account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
@@ -301,10 +312,23 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void TestRuntime_CheckWitness_Null_ScriptContainer()
+        {
+            byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
+            var keyPair = new KeyPair(privateKey);
+            var pubkey = keyPair.PublicKey;
+
+            var engine = GetEngine();
+
+            engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeFalse();
+        }
+
+        [TestMethod]
         public void TestRuntime_Log()
         {
             var engine = GetEngine(true);
-            string message = "hello";
+            var message = "hello";
             ApplicationEngine.Log += LogEvent;
             engine.RuntimeLog(Encoding.UTF8.GetBytes(message));
             ((Transaction)engine.ScriptContainer).Script.Span.ToHexString().Should().Be(new byte[] { 0x01, 0x02, 0x03 }.ToHexString());
@@ -372,16 +396,16 @@ namespace Neo.UnitTests.SmartContract
         public void TestCrypto_Verify()
         {
             var engine = GetEngine(true);
-            IVerifiable iv = engine.ScriptContainer;
-            byte[] message = iv.GetSignData(ProtocolSettings.Default.Network);
+            var iv = engine.ScriptContainer;
+            var message = iv.GetSignData(TestProtocolSettings.Default.Network);
             byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair keyPair = new(privateKey);
-            ECPoint pubkey = keyPair.PublicKey;
-            byte[] signature = Crypto.Sign(message, privateKey, pubkey.EncodePoint(false).Skip(1).ToArray());
+            var pubkey = keyPair.PublicKey;
+            var signature = Crypto.Sign(message, privateKey, pubkey.EncodePoint(false).Skip(1).ToArray());
             engine.CheckSig(pubkey.EncodePoint(false), signature).Should().BeTrue();
 
-            byte[] wrongkey = pubkey.EncodePoint(false);
+            var wrongkey = pubkey.EncodePoint(false);
             wrongkey[0] = 5;
             Assert.ThrowsException<FormatException>(() => engine.CheckSig(wrongkey, signature));
         }
@@ -400,7 +424,7 @@ namespace Neo.UnitTests.SmartContract
 
             NativeContract.Ledger.GetBlock(engine.Snapshot, UInt256.Zero).Should().BeNull();
 
-            byte[] data1 = new byte[] { 0x01, 0x01, 0x01 ,0x01, 0x01, 0x01, 0x01, 0x01,
+            var data1 = new byte[] { 0x01, 0x01, 0x01 ,0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
@@ -412,7 +436,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestBlockchain_GetTransaction()
         {
             var engine = GetEngine(true, true);
-            byte[] data1 = new byte[] { 0x01, 0x01, 0x01 ,0x01, 0x01, 0x01, 0x01, 0x01,
+            var data1 = new byte[] { 0x01, 0x01, 0x01 ,0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
@@ -445,7 +469,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestBlockchain_GetContract()
         {
             var engine = GetEngine(true, true);
-            byte[] data1 = new byte[] { 0x01, 0x01, 0x01 ,0x01, 0x01,
+            var data1 = new byte[] { 0x01, 0x01, 0x01 ,0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01,
                                         0x01, 0x01, 0x01, 0x01, 0x01 };
@@ -614,7 +638,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestContract_Call()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
-            string method = "method";
+            var method = "method";
             var args = new VM.Types.Array { 0, 1 };
             var state = TestUtils.GetContract(method, args.Count);
 
@@ -672,13 +696,13 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestContract_CreateStandardAccount()
         {
-            ECPoint pubkey = ECPoint.Parse("024b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e", ECCurve.Secp256r1);
+            var pubkey = ECPoint.Parse("024b817ef37f2fc3d4a33fe36687e592d9f30fe24b3e28187dc8f12b3b3b2b839e", ECCurve.Secp256r1);
             GetEngine().CreateStandardAccount(pubkey).ToArray().ToHexString().Should().Be("c44ea575c5f79638f0e73f39d7bd4b3337c81691");
         }
 
         public static void LogEvent(object sender, LogEventArgs args)
         {
-            Transaction tx = (Transaction)args.ScriptContainer;
+            var tx = (Transaction)args.ScriptContainer;
             tx.Script = new byte[] { 0x01, 0x02, 0x03 };
         }
 
@@ -687,7 +711,7 @@ namespace Neo.UnitTests.SmartContract
             var tx = hasContainer ? TestUtils.GetTransaction(UInt160.Zero) : null;
             var snapshot = hasSnapshot ? TestBlockchain.GetTestSnapshot() : null;
             var block = hasBlock ? new Block { Header = new Header() } : null;
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, TestBlockchain.TheNeoSystem.Settings, gas: gas);
+            var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, block, TestBlockchain.TheNeoSystem.Settings, gas: gas);
             if (addScript) engine.LoadScript(new byte[] { 0x01 });
             return engine;
         }

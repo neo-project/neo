@@ -1,0 +1,128 @@
+name: Package Cleanup
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Run every day at 24:00
+
+jobs:
+
+  delete-myget-pkgs:
+    name: Delete Old MyGet Packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install Requests
+        run: pip install requests
+      - name: Install Packaging
+        run: pip install packaging
+      - name: Delete versions below 3.6.1
+        env:
+          MYGET_FEED: 'neo'
+          PACKAGE_NAMES: 'Neo.VM,Neo.Json,Neo.IO,Neo,Neo.ConsoleService,Neo.Extensions' # Neo.Cryptography.BLS12_381 version is 0.x
+          MYGET_API_KEY: ${{ secrets.MYGET_TOKEN }}
+        run: |
+          import requests
+          from packaging import version
+          import os
+
+          def get_versions(feed, package_name, api_key):
+              url = f"https://www.myget.org/F/{feed}/api/v2/Packages?$select=Version&$filter=Id eq '{package_name}'&$format=json"
+              headers = {'Accept': 'application/json'}
+              response = requests.get(url, headers=headers)
+              if response.status_code == 200:
+                  versions = response.json()['d']['results']
+                  return [ver['Version'] for ver in versions]
+              else:
+                  return []
+
+          def delete_version(feed, package_name, ver, api_key):
+              url = f"https://www.myget.org/F/{feed}/api/v2/package/{package_name}/{ver}?hardDelete=true"
+              headers = {"X-NuGet-ApiKey": api_key}
+              response = requests.delete(url, headers=headers)
+              return response.status_code == 200  # Success
+
+          feed = os.environ['MYGET_FEED']
+          package_names = os.environ['PACKAGE_NAMES'].split(',')
+          api_key = os.environ['MYGET_API_KEY']
+
+          for package_name in package_names:
+              versions_to_delete = get_versions(feed, package_name, api_key)
+              for ver in versions_to_delete:
+                  if version.parse(ver.split("-", 1)[0]) >= version.Version("3.6.1"):
+                      print(f"Omited {ver} of package {package_name}.")
+                      continue
+                  if delete_version(feed, package_name, ver, api_key):
+                      print(f"Deleted version {ver} of package {package_name}.")
+                  else:
+                      print(f"Failed to delete version {ver} of package {package_name}.")
+
+        shell: python
+
+  delete-git-pkgs:
+    name: Delete Old Nuget Packages
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Delete Neo.Cryptography.BLS12_381 Package
+      uses: actions/delete-package-versions@v4
+      with:
+        package-name: Neo.Cryptography.BLS12_381
+        package-type: nuget
+        min-versions-to-keep: 3
+        delete-only-pre-release-versions: "true"
+        token: "${{ secrets.GITHUB_TOKEN }}"
+
+    - name: Delete Neo.VM Package
+      uses: actions/delete-package-versions@v4
+      with:
+        package-name: Neo.VM
+        package-type: nuget
+        min-versions-to-keep: 3
+        delete-only-pre-release-versions: "true"
+        token: "${{ secrets.GITHUB_TOKEN }}"
+
+    - name: Delete Neo.Json Package
+      uses: actions/delete-package-versions@v4
+      with:
+        package-name: Neo.Json
+        package-type: nuget
+        min-versions-to-keep: 3
+        delete-only-pre-release-versions: "true"
+        token: "${{ secrets.GITHUB_TOKEN }}"
+
+    - name: Delete Neo.IO Package
+      uses: actions/delete-package-versions@v4
+      with:
+        package-name: Neo.IO
+        package-type: nuget
+        min-versions-to-keep: 3
+        delete-only-pre-release-versions: "true"
+        token: "${{ secrets.GITHUB_TOKEN }}"
+
+    - name: Delete Neo Package
+      uses: actions/delete-package-versions@v4
+      with:
+        package-name: Neo
+        package-type: nuget
+        min-versions-to-keep: 3
+        delete-only-pre-release-versions: "true"
+        token: "${{ secrets.GITHUB_TOKEN }}"
+    - name: Delete Neo.ConsoleService Package
+      uses: actions/delete-package-versions@v4
+      with:
+        package-name: Neo.ConsoleService
+        package-type: nuget
+        min-versions-to-keep: 3
+        delete-only-pre-release-versions: "true"
+        token: "${{ secrets.GITHUB_TOKEN }}"
+    - name: Delete Neo.Extensions Package
+      uses: actions/delete-package-versions@v4
+      with:
+        package-name: Neo.Extensions
+        package-type: nuget
+        min-versions-to-keep: 3
+        delete-only-pre-release-versions: "true"
+        token: "${{ secrets.GITHUB_TOKEN }}"

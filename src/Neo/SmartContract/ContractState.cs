@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// ContractState.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -22,7 +23,7 @@ namespace Neo.SmartContract
     /// <summary>
     /// Represents a deployed contract.
     /// </summary>
-    public class ContractState : IInteroperable
+    public class ContractState : IInteroperableVerifiable
     {
         /// <summary>
         /// The id of the contract.
@@ -68,7 +69,7 @@ namespace Neo.SmartContract
 
         void IInteroperable.FromReplica(IInteroperable replica)
         {
-            ContractState from = (ContractState)replica;
+            var from = (ContractState)replica;
             Id = from.Id;
             UpdateCounter = from.UpdateCounter;
             Hash = from.Hash;
@@ -78,11 +79,16 @@ namespace Neo.SmartContract
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
-            Array array = (Array)stackItem;
+            ((IInteroperableVerifiable)this).FromStackItem(stackItem, true);
+        }
+
+        void IInteroperableVerifiable.FromStackItem(StackItem stackItem, bool verify)
+        {
+            var array = (Array)stackItem;
             Id = (int)array[0].GetInteger();
             UpdateCounter = (ushort)array[1].GetInteger();
             Hash = new UInt160(array[2].GetSpan());
-            Nef = ((ByteString)array[3]).Memory.AsSerializable<NefFile>();
+            Nef = NefFile.Parse(((ByteString)array[3]).Memory, verify);
             Manifest = array[4].ToInteroperable<ContractManifest>();
         }
 

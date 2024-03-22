@@ -1,3 +1,14 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UT_Witness.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
@@ -66,7 +77,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                 ValidUntilBlock = 0,
                 Version = 0,
                 Witnesses = Array.Empty<Witness>()
-            }, ProtocolSettings.Default.Network);
+            }, TestProtocolSettings.Default.Network);
 
             for (int x = 0; x < m; x++)
             {

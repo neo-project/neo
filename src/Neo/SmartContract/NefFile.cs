@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// NefFile.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -85,6 +86,20 @@ namespace Neo.SmartContract
             Script.GetVarSize() +   // Script
             sizeof(uint);           // Checksum
 
+        /// <summary>
+        /// Parse NefFile from memory
+        /// </summary>
+        /// <param name="memory">Memory</param>
+        /// <param name="verify">Do checksum and MaxItemSize checks</param>
+        /// <returns>NefFile</returns>
+        public static NefFile Parse(ReadOnlyMemory<byte> memory, bool verify = true)
+        {
+            var reader = new MemoryReader(memory);
+            var nef = new NefFile();
+            nef.Deserialize(ref reader, verify);
+            return nef;
+        }
+
         public void Serialize(BinaryWriter writer)
         {
             SerializeHeader(writer);
@@ -102,7 +117,9 @@ namespace Neo.SmartContract
             writer.WriteFixedString(Compiler, 64);
         }
 
-        public void Deserialize(ref MemoryReader reader)
+        public void Deserialize(ref MemoryReader reader) => Deserialize(ref reader, true);
+
+        public void Deserialize(ref MemoryReader reader, bool verify = true)
         {
             long startPosition = reader.Position;
             if (reader.ReadUInt32() != Magic) throw new FormatException("Wrong magic");
@@ -114,8 +131,11 @@ namespace Neo.SmartContract
             Script = reader.ReadVarMemory((int)ExecutionEngineLimits.Default.MaxItemSize);
             if (Script.Length == 0) throw new ArgumentException($"Script can't be empty");
             CheckSum = reader.ReadUInt32();
-            if (CheckSum != ComputeChecksum(this)) throw new FormatException("CRC verification fail");
-            if (reader.Position - startPosition > ExecutionEngineLimits.Default.MaxItemSize) throw new FormatException("Max vm item size exceed");
+            if (verify)
+            {
+                if (CheckSum != ComputeChecksum(this)) throw new FormatException("CRC verification fail");
+                if (reader.Position - startPosition > ExecutionEngineLimits.Default.MaxItemSize) throw new FormatException("Max vm item size exceed");
+            }
         }
 
         /// <summary>

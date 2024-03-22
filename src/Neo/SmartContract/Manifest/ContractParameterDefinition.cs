@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// ContractParameterDefinition.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -56,7 +57,7 @@ namespace Neo.SmartContract.Manifest
             };
             if (string.IsNullOrEmpty(parameter.Name))
                 throw new FormatException();
-            if (!Enum.IsDefined(parameter.Type) || parameter.Type == ContractParameterType.Void)
+            if (!Enum.IsDefined(typeof(ContractParameterType), parameter.Type) || parameter.Type == ContractParameterType.Void)
                 throw new FormatException();
             return parameter;
         }

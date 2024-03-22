@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// FungibleToken.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -13,7 +14,6 @@ using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
@@ -56,39 +56,18 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Initializes a new instance of the <see cref="FungibleToken{TState}"/> class.
         /// </summary>
-        protected FungibleToken()
+        [ContractEvent(0, name: "Transfer",
+           "from", ContractParameterType.Hash160,
+           "to", ContractParameterType.Hash160,
+           "amount", ContractParameterType.Integer)]
+        protected FungibleToken() : base()
         {
             this.Factor = BigInteger.Pow(10, Decimals);
+        }
 
-            Manifest.SupportedStandards = new[] { "NEP-17" };
-
-            var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
-            {
-                new ContractEventDescriptor
-                {
-                    Name = "Transfer",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                            Name = "from",
-                            Type = ContractParameterType.Hash160
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "to",
-                            Type = ContractParameterType.Hash160
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "amount",
-                            Type = ContractParameterType.Integer
-                        }
-                    }
-                }
-            };
-
-            Manifest.Abi.Events = events.ToArray();
+        protected override void OnManifestCompose(ContractManifest manifest)
+        {
+            manifest.SupportedStandards = new[] { "NEP-17" };
         }
 
         internal async ContractTask Mint(ApplicationEngine engine, UInt160 account, BigInteger amount, bool callOnPayment)

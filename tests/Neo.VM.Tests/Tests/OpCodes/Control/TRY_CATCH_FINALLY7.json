@@ -1,0 +1,55 @@
+{
+  "category": "Control",
+  "name": "TRY_CATCH_FINALLY",
+  "tests": [
+    {
+      "name": "try{ throw }catch{ abort }finally{ push3 }",
+      "script": [
+        "TRY",
+        "0x070a",
+        "PUSH0",
+        "THROW",
+        "ENDTRY",
+        "0x01",
+        "ABORT",
+        "ENDTRY",
+        "0x01",
+        "PUSH3",
+        "ENDFINALLY",
+        "RET"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer":7,
+                "nextInstruction": "ABORT",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    }
+  ]
+}

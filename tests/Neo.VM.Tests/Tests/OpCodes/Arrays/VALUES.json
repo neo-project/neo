@@ -1,0 +1,194 @@
+{
+  "category": "Arrays",
+  "name": "VALUES",
+  "tests": [
+    {
+      "name": "No StackItem",
+      "script": [
+        "KEYS"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invalid StackItem [Integer != (Map|Array|Struct)]",
+      "script": [
+        "PUSH0",
+        "KEYS"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Values in map",
+      "script": [
+        "NEWMAP",
+        "DUP",
+        "DUP",
+        "PUSH0",
+        "PUSH2",
+        "SETITEM",
+        "PUSH1",
+        "PUSH4",
+        "SETITEM",
+        "VALUES"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "array",
+                "value": [
+                  {
+                    "type": "Integer",
+                    "value": 2
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 4
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Simple values in array",
+      "script": [
+        "PUSH2",
+        "NEWARRAY_T",
+        "0x00",
+        "VALUES"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "array",
+                "value": [
+                  {
+                    "type": "Null"
+                  },
+                  {
+                    "type": "Null"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Compound value in array [inner struct]",
+      "script": [
+        "PUSH1",
+        "NEWARRAY",
+        "DUP",
+        "PUSH0",
+        "PUSH2",
+        "NEWSTRUCT",
+        "SETITEM",
+        "VALUES"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "array",
+                "value": [
+                  {
+                    "type": "struct",
+                    "value": [
+                      {
+                        "type": "Null"
+                      },
+                      {
+                        "type": "Null"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Compound value in array [inner map]",
+      "script": [
+        "PUSH1",
+        "NEWARRAY",
+        "DUP",
+        "PUSH0",
+        "NEWMAP",
+        "DUP",
+        "PUSH0",
+        "PUSH1",
+        "SETITEM",
+        "SETITEM",
+        "VALUES"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "array",
+                "value": [
+                  {
+                    "type": "map",
+                    "value": {
+                      "": {
+                        "type": "Integer",
+                        "value": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

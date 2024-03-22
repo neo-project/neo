@@ -1,0 +1,22 @@
+{
+  "category": "Control",
+  "name": "RET",
+  "tests": [
+    {
+      "name": "Real test",
+      "script": [
+        "RET"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT"
+          }
+        }
+      ]
+    }
+  ]
+}

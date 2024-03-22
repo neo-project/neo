@@ -1,0 +1,138 @@
+{
+  "category": "Arrays",
+  "name": "REVERSEITEMS",
+  "tests": [
+    {
+      "name": "Without push",
+      "script": [
+        "REVERSEITEMS"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Without Array",
+      "script": [
+        "PUSH9",
+        "REVERSEITEMS"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test [Array]",
+      "script": [
+        "PUSH9",
+        "PUSH8",
+        "PUSH2",
+        "PACK",
+        "DUP",
+        "REVERSEITEMS"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 6,
+                "nextInstruction": "RET",
+                "evaluationStack": [
+                  {
+                    "type": "array",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 9
+                      },
+                      {
+                        "type": "Integer",
+                        "value": 8
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "array",
+                "value": [
+                  {
+                    "type": "Integer",
+                    "value": 9
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 8
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test [Buffer]",
+      "script": [
+        "PUSHDATA1",
+        "0x03",
+        "0x010203",
+        "CONVERT",
+        "0x30",
+        "DUP",
+        "REVERSEITEMS"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Buffer",
+                "value": "0x030201"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

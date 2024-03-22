@@ -1,0 +1,247 @@
+{
+  "category": "Numeric",
+  "name": "SHR",
+  "tests": [
+    {
+      "name": "Exception - Above the limit 0 >> 257",
+      "script": [
+        "PUSH0",
+        "PUSHDATA1",
+        "0x02",
+        "0x0101",
+        "SHR"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 5,
+                "nextInstruction": "SHR",
+                "evaluationStack": [
+                  {
+                    "type": "ByteString",
+                    "value": "0x0101"
+                  },
+                  {
+                    "type": "integer",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Exception - Below the limit 0 >> -257",
+      "script": [
+        "PUSH0",
+        "PUSHDATA1",
+        "0x02",
+        "0xfffe",
+        "SHR"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 5,
+                "nextInstruction": "SHR",
+                "evaluationStack": [
+                  {
+                    "type": "ByteString",
+                    "value": "0xFFFE"
+                  },
+                  {
+                    "type": "integer",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test 0 >> 256",
+      "script": [
+        "PUSH0",
+        "PUSHDATA1",
+        "0x02",
+        "0x0001",
+        "SHR"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 5,
+                "nextInstruction": "SHR",
+                "evaluationStack": [
+                  {
+                    "type": "ByteString",
+                    "value": "0x0001"
+                  },
+                  {
+                    "type": "integer",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "integer",
+                "value": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test 256 >> 0",
+      "script": [
+        "PUSHDATA1",
+        "0x02",
+        "0x0001",
+        "PUSH0",
+        "SHR"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 5,
+                "nextInstruction": "SHR",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 0
+                  },
+                  {
+                    "type": "ByteString",
+                    "value": "0x0001"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "ByteString",
+                "value": "0x0001"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test 4 >> 16",
+      "script": [
+        "PUSH4",
+        "PUSH16",
+        "SHR"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 2,
+                "nextInstruction": "SHR",
+                "evaluationStack": [
+                  {
+                    "type": "integer",
+                    "value": 16
+                  },
+                  {
+                    "type": "integer",
+                    "value": 4
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "integer",
+                "value": 0
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

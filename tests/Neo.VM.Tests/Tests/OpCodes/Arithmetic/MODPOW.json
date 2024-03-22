@@ -1,0 +1,145 @@
+{
+  "category": "Numeric",
+  "name": "MODPOW",
+  "tests": [
+    {
+      "name": "Exception - Without items",
+      "script": [
+        "MODPOW"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT",
+            "invocationStack": [
+              {
+                "instructionPointer": 1,
+                "nextInstruction": "MODPOW",
+                "evaluationStack": []
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test (19 ModInverse 141 = 52)",
+      "script": [
+        "PUSHINT8",
+        "0x13",
+        "PUSHM1",
+        "PUSHINT16",
+        "0x8d00",
+        "MODPOW"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 6,
+                "nextInstruction": "MODPOW",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": 141
+                  },
+                  {
+                    "type": "Integer",
+                    "value": -1
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 19
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "invocationStack": [],
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": 52
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test (ModPow 19, 2, 141 = 79)",
+      "script": [
+        "PUSHINT8",
+        "0x13",
+        "PUSH2",
+        "PUSHINT16",
+        "0x8d00",
+        "MODPOW"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 6,
+                "nextInstruction": "MODPOW",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": 141
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 2
+                  },
+                  {
+                    "type": "Integer",
+                    "value": 19
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "invocationStack": [],
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": 79
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

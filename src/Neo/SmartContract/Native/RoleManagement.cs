@@ -1,21 +1,20 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// RoleManagement.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.Persistence;
-using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Neo.SmartContract.Native
@@ -25,31 +24,10 @@ namespace Neo.SmartContract.Native
     /// </summary>
     public sealed class RoleManagement : NativeContract
     {
-        internal RoleManagement()
-        {
-            var events = new List<ContractEventDescriptor>(Manifest.Abi.Events)
-            {
-                new ContractEventDescriptor
-                {
-                    Name = "Designation",
-                    Parameters = new ContractParameterDefinition[]
-                    {
-                        new ContractParameterDefinition()
-                        {
-                            Name = "Role",
-                            Type = ContractParameterType.Integer
-                        },
-                        new ContractParameterDefinition()
-                        {
-                            Name = "BlockIndex",
-                            Type = ContractParameterType.Integer
-                        }
-                    }
-                }
-            };
-
-            Manifest.Abi.Events = events.ToArray();
-        }
+        [ContractEvent(0, name: "Designation",
+            "Role", ContractParameterType.Integer,
+            "BlockIndex", ContractParameterType.Integer)]
+        internal RoleManagement() : base() { }
 
         /// <summary>
         /// Gets the list of nodes for the specified role.

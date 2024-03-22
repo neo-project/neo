@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// Plugin.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -32,7 +33,7 @@ namespace Neo.Plugins
         /// <summary>
         /// The directory containing the plugin folders. Files can be contained in any subdirectory.
         /// </summary>
-        public static readonly string PluginsDirectory = Combine(GetDirectoryName(Assembly.GetEntryAssembly().Location), "Plugins");
+        public static readonly string PluginsDirectory = Combine(GetDirectoryName(System.AppContext.BaseDirectory), "Plugins");
 
         private static readonly FileSystemWatcher configWatcher;
 
@@ -123,7 +124,7 @@ namespace Neo.Plugins
 
             string filename = an.Name + ".dll";
             string path = filename;
-            if (!File.Exists(path)) path = Combine(GetDirectoryName(Assembly.GetEntryAssembly().Location), filename);
+            if (!File.Exists(path)) path = Combine(GetDirectoryName(System.AppContext.BaseDirectory), filename);
             if (!File.Exists(path)) path = Combine(PluginsDirectory, filename);
             if (!File.Exists(path)) path = Combine(PluginsDirectory, args.RequestingAssembly.GetName().Name, filename);
             if (!File.Exists(path)) return null;

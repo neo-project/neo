@@ -1,0 +1,216 @@
+{
+  "category": "Numeric",
+  "name": "SQRT",
+  "tests": [
+    {
+      "name": "Exception - Without items",
+      "script": [
+        "SQRT"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "FAULT",
+            "invocationStack": [
+              {
+                "instructionPointer": 1,
+                "nextInstruction": "SQRT",
+                "evaluationStack": []
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test 1",
+      "script": [
+        "PUSH1",
+        "SQRT"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 2,
+                "nextInstruction": "RET",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT",
+            "invocationStack": [],
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test with 81",
+      "script": [
+        "PUSHINT8",
+        "0x51",
+        "SQRT"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 3,
+                "nextInstruction": "RET",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": 9
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT",
+            "invocationStack": [],
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": 9
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test with 15625",
+      "script": [
+        "PUSHINT16",
+        "0x093d",
+        "SQRT"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "stepInto",
+            "stepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 4,
+                "nextInstruction": "RET",
+                "evaluationStack": [
+                  {
+                    "type": "Integer",
+                    "value": 125
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "stepInto"
+          ],
+          "result": {
+            "state": "HALT",
+            "invocationStack": [],
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": 125
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test with 4",
+      "script": [
+        "PUSHINT8",
+        "0x04",
+        "SQRT"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "invocationStack": [],
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test with 2",
+      "script": [
+        "PUSHINT8",
+        "0x02",
+        "SQRT"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "invocationStack": [],
+            "resultStack": [
+              {
+                "type": "Integer",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

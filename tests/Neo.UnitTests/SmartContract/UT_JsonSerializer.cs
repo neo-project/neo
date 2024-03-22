@@ -1,3 +1,14 @@
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// UT_JsonSerializer.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Json;
 using Neo.SmartContract;
@@ -261,7 +272,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Deserialize_Map_Test()
         {
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, null, null, ProtocolSettings.Default);
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("{\"test1\":123,\"test2\":321}"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(Map));
@@ -291,7 +302,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Deserialize_Array_Bool_Str_Num()
         {
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, null, null, ProtocolSettings.Default);
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("[true,\"test\",123,9.05E+28]"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(VM.Types.Array));
@@ -322,7 +333,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void Deserialize_Array_OfArray()
         {
-            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, null);
+            ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, null, null, ProtocolSettings.Default);
             var items = JsonSerializer.Deserialize(engine, JObject.Parse("[[true,\"test1\",123],[true,\"test2\",321]]"), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(VM.Types.Array));

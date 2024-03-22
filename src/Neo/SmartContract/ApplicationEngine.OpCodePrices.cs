@@ -1,14 +1,16 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// ApplicationEngine.OpCodePrices.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
 using Neo.VM;
+using System;
 using System.Collections.Generic;
 
 namespace Neo.SmartContract
@@ -18,6 +20,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The prices of all the opcodes.
         /// </summary>
+        [Obsolete("You should use OpCodePriceTable")]
         public static readonly IReadOnlyDictionary<OpCode, long> OpCodePrices = new Dictionary<OpCode, long>
         {
             [OpCode.PUSHINT8] = 1 << 0,
@@ -217,5 +220,20 @@ namespace Neo.SmartContract
             [OpCode.ISTYPE] = 1 << 1,
             [OpCode.CONVERT] = 1 << 13,
         };
+
+        public static readonly long[] OpCodePriceTable = new long[byte.MaxValue];
+
+        /// <summary>
+        /// Init OpCodePrices
+        /// </summary>
+        static ApplicationEngine()
+        {
+#pragma warning disable CS0618 // Type or member is obsolete
+            foreach (var entry in OpCodePrices)
+#pragma warning restore CS0618 // Type or member is obsolete
+            {
+                OpCodePriceTable[(byte)entry.Key] = entry.Value;
+            }
+        }
     }
 }

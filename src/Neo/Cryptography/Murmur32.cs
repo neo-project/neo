@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// Murmur32.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -55,10 +56,10 @@ namespace Neo.Cryptography
             {
                 uint k = BinaryPrimitives.ReadUInt32LittleEndian(source);
                 k *= c1;
-                k = BitOperations.RotateLeft(k, r1);
+                k = Helper.RotateLeft(k, r1);
                 k *= c2;
                 hash ^= k;
-                hash = BitOperations.RotateLeft(hash, r2);
+                hash = Helper.RotateLeft(hash, r2);
                 hash = hash * m + n;
             }
             if (source.Length > 0)
@@ -71,7 +72,7 @@ namespace Neo.Cryptography
                     case 1: remainingBytes ^= source[0]; break;
                 }
                 remainingBytes *= c1;
-                remainingBytes = BitOperations.RotateLeft(remainingBytes, r1);
+                remainingBytes = Helper.RotateLeft(remainingBytes, r1);
                 remainingBytes *= c2;
                 hash ^= remainingBytes;
             }
@@ -79,7 +80,7 @@ namespace Neo.Cryptography
 
         protected override byte[] HashFinal()
         {
-            byte[] buffer = GC.AllocateUninitializedArray<byte>(sizeof(uint));
+            byte[] buffer = new byte[sizeof(uint)];
             TryHashFinal(buffer, out _);
             return buffer;
         }

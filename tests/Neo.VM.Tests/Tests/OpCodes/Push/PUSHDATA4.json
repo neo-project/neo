@@ -1,0 +1,99 @@
+{
+  "category": "Push",
+  "name": "PUSHDATA4",
+  "tests": [
+    {
+      "name": "More length than script",
+      "script": [
+        "PUSHDATA4",
+        "0x00080000"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Negative length",
+      "script": [
+        "PUSHDATA4",
+        "0xffffffff"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Good definition",
+      "script": [
+        "PUSHDATA4",
+        "0x04000000",
+        "0x01020304"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "ByteString",
+                "value": "0x01020304"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Without enough length",
+      "script": [
+        "PUSHDATA4",
+        "0x0500000001020304"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Max length (Parse Instruction Error)",
+      "script": [
+        "PUSHDATA4",
+        "0x01001000",
+        "0xFF"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    }
+  ]
+}

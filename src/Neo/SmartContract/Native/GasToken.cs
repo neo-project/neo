@@ -1,10 +1,11 @@
-// Copyright (C) 2015-2022 The Neo Project.
-// 
-// The neo is free software distributed under the MIT software license, 
-// see the accompanying file LICENSE in the main directory of the
-// project or http://www.opensource.org/licenses/mit-license.php 
+// Copyright (C) 2015-2024 The Neo Project.
+//
+// GasToken.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -25,10 +26,14 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        internal override ContractTask Initialize(ApplicationEngine engine)
+        internal override ContractTask Initialize(ApplicationEngine engine, Hardfork? hardfork)
         {
-            UInt160 account = Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators);
-            return Mint(engine, account, engine.ProtocolSettings.InitialGasDistribution, false);
+            if (hardfork == ActiveIn)
+            {
+                UInt160 account = Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators);
+                return Mint(engine, account, engine.ProtocolSettings.InitialGasDistribution, false);
+            }
+            return ContractTask.CompletedTask;
         }
 
         internal override async ContractTask OnPersist(ApplicationEngine engine)

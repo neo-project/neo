@@ -1,0 +1,126 @@
+{
+  "category": "Arrays",
+  "name": "CLEARITEMS",
+  "tests": [
+    {
+      "name": "Without push",
+      "script": [
+        "CLEARITEMS"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wrong type",
+      "script": [
+        "PUSH2",
+        "CLEARITEMS"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test [Array]",
+      "script": [
+        "PUSH0",
+        "PUSH1",
+        "PUSH2",
+        "PACK",
+        "DUP",
+        "CLEARITEMS"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "StepInto",
+            "StepInto",
+            "StepInto",
+            "StepInto"
+          ],
+          "result": {
+            "state": "BREAK",
+            "invocationStack": [
+              {
+                "instructionPointer": 4,
+                "nextInstruction": "DUP",
+                "evaluationStack": [
+                  {
+                    "type": "Array",
+                    "value": [
+                      {
+                        "type": "Integer",
+                        "value": 1
+                      },
+                      {
+                        "type": "Integer",
+                        "value": 0
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Array",
+                "value": []
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test [Map]",
+      "script": [
+        "NEWMAP",
+        "DUP",
+        "PUSH0",
+        "PUSH0",
+        "SETITEM",
+        "DUP",
+        "CLEARITEMS"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "resultStack": [
+              {
+                "type": "Map",
+                "value": {}
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

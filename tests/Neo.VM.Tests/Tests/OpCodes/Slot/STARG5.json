@@ -1,0 +1,94 @@
+{
+  "category": "Slot",
+  "name": "STARG5",
+  "tests": [
+    {
+      "name": "Without slot",
+      "script": [
+        "PUSH1",
+        "STARG5"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Index out of range",
+      "script": [
+        "PUSH0",
+        "INITSLOT",
+        "0x0001",
+        "PUSH1",
+        "STARG5"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "FAULT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real test",
+      "script": [
+        "PUSH1",
+        "PUSH2",
+        "PUSH3",
+        "PUSH4",
+        "PUSH5",
+        "PUSH6",
+        "INITSLOT",
+        "0x0006",
+        "PUSH0",
+        "STARG5"
+      ],
+      "steps": [
+        {
+          "actions": [
+            "Execute"
+          ],
+          "result": {
+            "state": "HALT",
+            "arguments": [
+              {
+                "type": "Integer",
+                "value": 1
+              },
+              {
+                "type": "Integer",
+                "value": 2
+              },
+              {
+                "type": "Integer",
+                "value": 3
+              },
+              {
+                "type": "Integer",
+                "value": 4
+              },
+              {
+                "type": "Integer",
+                "value": 5
+              },
+              {
+                "type": "Integer",
+                "value": 0
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
