@@ -9,14 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.CommandLine.Extensions;
 using Neo.CommandLine.Handlers;
-using Neo.CommandLine.Utilities;
 using Neo.Extensions;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Builder;
-using System.CommandLine.IO;
 using System.CommandLine.Parsing;
 using System.IO;
 using System.Net;
@@ -30,8 +27,6 @@ namespace Neo.CommandLine
 
         static async Task<int> Main(string[] args)
         {
-            ConsoleUtilities.EnableAnsi();
-
             var rootCommand = new RootCommand("NEO command-lime tool.");
             var showCommand = new Command("show", "Print on chain data.");
             var contractCommand = new Command("contract", "Smart contract management.");
@@ -94,7 +89,7 @@ namespace Neo.CommandLine
 
 
             showRemoteVersionCommand.SetHandler(
-                ShowCommandHandler.OnRemoteVersion,
+                ShowCommandHandler.OnVersion,
                 remoteVersionServerNameOption,
                 requestTimeoutOption);
 
@@ -243,16 +238,6 @@ namespace Neo.CommandLine
 
             var cb = new CommandLineBuilder(rootCommand)
                 .UseDefaults()
-                .UseExceptionHandler((e, c) =>
-                {
-                    c.Console.Error.WriteLine($"{e.GetType().Name}: \"{e.Message}\"",
-                        textColor: AnsiColor.Red);
-#if DEBUG
-                    c.Console.Error.WriteLine($"{e.StackTrace}",
-                        textColor: AnsiColor.Red);
-#endif
-                    c.ExitCode = 1;
-                })
                 .Build();
 
             #endregion

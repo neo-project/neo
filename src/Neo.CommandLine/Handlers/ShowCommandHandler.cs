@@ -9,9 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.CommandLine.Services;
 using System;
-using System.Threading.Tasks;
 
 namespace Neo.CommandLine.Handlers
 {
@@ -32,11 +30,9 @@ namespace Neo.CommandLine.Handlers
             Console.WriteLine("Exec OnShowContract");
         }
 
-        public static async Task OnRemoteVersion(string serverName, uint taskTimeout)
+        public static void OnVersion(string serverName, uint taskTimeout)
         {
-            RemoteCommandClient.Timeout = TimeSpan.FromSeconds(taskTimeout);
-            Console.WriteLine("{0}",
-                await new RemoteCommandClient(serverName).GetVersionAsync());
+            Console.WriteLine("Exec OnShowVersion");
         }
     }
 }
