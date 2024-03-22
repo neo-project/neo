@@ -33,20 +33,24 @@ namespace Neo.Service.App
 
         static async Task<int> Main(string[] args)
         {
-            var rootCommand = new RootCommand { Handler = new HostServiceCommandHandler() };
+            var rootCommand = new DefaultRootCommand();
             var parser = new CommandLineBuilder(rootCommand)
+                .UseHost(_ => new HostBuilder(), builder =>
+                {
+                    builder.ConfigureDefaults(args);
+                    builder.UseSystemd();
+                    builder.UseWindowsService();
+                    builder.ConfigureServices((_, services) =>
+                    {
+                        services.AddHostedService<NeoSystemService>();
+                    });
+                    builder.UseCommandHandler<DefaultRootCommand, DefaultRootCommand.Handler>();
+                    builder.UseCommandHandler<ArchiveCommand, ArchiveCommand.Handler>();
+                })
                 .UseDefaults()
-                .UseExceptionHandler(ExceptionFilter.Handler)
-                .UseHost(CreateHostBuilder)
                 .Build();
 
             return await parser.InvokeAsync(args);
         }
-
-        static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureServices(services => services.AddHostedService<NeoSystemService>())
-                .UseSystemd()
-                .UseWindowsService();
     }
 }

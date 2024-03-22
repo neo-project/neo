@@ -25,6 +25,8 @@ namespace Neo.Service.App
 {
     internal sealed class NeoSystemService : BackgroundService
     {
+        public static NeoSystem? Instance { get; private set; }
+
         private readonly ILogger<NeoSystemService> _logger;
         private readonly ProtocolSettings _protocolSettings;
         private readonly ApplicationSettings _appSettings;
@@ -36,6 +38,8 @@ namespace Neo.Service.App
             IConfiguration config,
             ILogger<NeoSystemService> logger)
         {
+            if (Instance is not null) throw new ApplicationException("NeoSystem instance already running.");
+
             _logger = logger;
             _protocolSettings = ProtocolSettings.Load(config.GetRequiredSection("ProtocolConfiguration"));
             _appSettings = ApplicationSettings.Load(config.GetRequiredSection("ApplicationConfiguration"));
@@ -46,6 +50,7 @@ namespace Neo.Service.App
             _logger.LogInformation("NeoSystem is shutting down...");
 
             _neoSystem?.Dispose();
+            Instance = null;
             base.Dispose();
         }
 
@@ -78,6 +83,8 @@ namespace Neo.Service.App
                 MaxConnectionsPerAddress = _appSettings.P2P.MaxConnectionsPerAddress,
             });
             _logger.LogInformation("NeoSystem Started.");
+
+            Instance = _neoSystem;
 
             await Task.Delay(-1, stoppingToken);
         }

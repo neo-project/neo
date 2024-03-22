@@ -40,17 +40,21 @@ namespace Neo.Service.App
     {
         public class BackupSettings
         {
-            public string? Path { get; init; }
-            public bool Verify { get; init; }
+            public string? Path { get; private init; }
+            public string? FileName { get; private init; }
+            public bool Verify { get; private init; }
 
             public static BackupSettings Default => new()
             {
+                Path = AppContext.BaseDirectory,
+                FileName = "chain.0.acc.zip",
                 Verify = true,
             };
 
             public static BackupSettings Load(IConfigurationSection section) => new()
             {
                 Path = section.GetValue(nameof(Path), Default.Path),
+                FileName = section.GetValue(nameof(FileName), Default.FileName),
                 Verify = section.GetValue(nameof(Verify), Default.Verify),
             };
         }
