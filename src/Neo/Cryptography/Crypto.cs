@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.IO.Caching;
+using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Math;
 using System;
@@ -25,6 +26,8 @@ namespace Neo.Cryptography
     {
         private static readonly ECDsaCache CacheECDsa = new();
         private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+        private static readonly ECCurve secP256k1 = ECCurve.CreateFromFriendlyName("secP256k1");
+        private static readonly X9ECParameters bouncySecp256k1 = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
 
         /// <summary>
         /// Calculates the 160-bit hash value of the specified message.
@@ -57,8 +60,7 @@ namespace Neo.Cryptography
         {
             if (IsOSX && ecCurve == ECC.ECCurve.Secp256k1)
             {
-                var curveParameters = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
-                var domain = new ECDomainParameters(curveParameters.Curve, curveParameters.G, curveParameters.N, curveParameters.H);
+                var domain = new ECDomainParameters(bouncySecp256k1.Curve, bouncySecp256k1.G, bouncySecp256k1.N, bouncySecp256k1.H);
                 var signer = new Org.BouncyCastle.Crypto.Signers.ECDsaSigner();
                 var privateKey = new BigInteger(1, priKey);
                 var priKeyParameters = new ECPrivateKeyParameters(privateKey, domain);
@@ -77,7 +79,7 @@ namespace Neo.Cryptography
 
             var curve =
                 ecCurve == null || ecCurve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
-                ecCurve == ECC.ECCurve.Secp256k1 ? ECCurve.CreateFromFriendlyName("secP256k1") :
+                ecCurve == ECC.ECCurve.Secp256k1 ? secP256k1 :
                 throw new NotSupportedException();
 
             using var ecdsa = ECDsa.Create(new ECParameters
@@ -101,9 +103,8 @@ namespace Neo.Cryptography
 
             if (IsOSX && pubkey.Curve == ECC.ECCurve.Secp256k1)
             {
-                var curve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
-                var domain = new ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H);
-                var point = curve.Curve.CreatePoint(
+                var domain = new ECDomainParameters(bouncySecp256k1.Curve, bouncySecp256k1.G, bouncySecp256k1.N, bouncySecp256k1.H);
+                var point = bouncySecp256k1.Curve.CreatePoint(
                     new BigInteger(pubkey.X.Value.ToString()),
                     new BigInteger(pubkey.Y.Value.ToString()));
                 var pubKey = new ECPublicKeyParameters("ECDSA", point, domain);
@@ -135,7 +136,7 @@ namespace Neo.Cryptography
             }
             var curve =
                 pubkey.Curve == ECC.ECCurve.Secp256r1 ? ECCurve.NamedCurves.nistP256 :
-                pubkey.Curve == ECC.ECCurve.Secp256k1 ? ECCurve.CreateFromFriendlyName("secP256k1") :
+                pubkey.Curve == ECC.ECCurve.Secp256k1 ? secP256k1 :
                 throw new NotSupportedException();
             var buffer = pubkey.EncodePoint(false);
             var ecdsa = ECDsa.Create(new ECParameters
