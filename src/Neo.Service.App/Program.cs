@@ -54,7 +54,8 @@ namespace Neo.Service.App
                         services.AddHostedService<NeoSystemService>();
                     });
                     builder.UseCommandHandler<DefaultRootCommand, DefaultRootCommand.Handler>();
-                    builder.UseCommandHandler<ArchiveCommand, ArchiveCommand.Handler>();
+                    builder.UseCommandHandler<ExportCommand, ExportCommand.Handler>();
+                    builder.UseCommandHandler<ExportCommand.BlocksCommand, ExportCommand.BlocksCommand.Handler>();
                 })
                 .UseDefaults()
                 .Build();

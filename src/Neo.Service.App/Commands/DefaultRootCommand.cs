@@ -22,7 +22,7 @@ namespace Neo.Service.App.Commands
     {
         public DefaultRootCommand() : base("NEO Blockchain CommandLine Tool")
         {
-            var archiveCommand = new ArchiveCommand();
+            var archiveCommand = new ExportCommand();
             AddCommand(archiveCommand);
 
             AddOption(new Option<bool>("--as-service", "Run as systemd or windows service"));
