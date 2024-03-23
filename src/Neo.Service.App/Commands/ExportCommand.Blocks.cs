@@ -131,14 +131,17 @@ namespace Neo.Service.App.Commands
                     _logger?.LogInformation("Backup Started.");
                     for (var i = start; i <= end; i++, ((IProgress<uint>)_progress).Report((uint)(100.0d * i / end)))
                     {
-                        if (cancellationToken.IsCancellationRequested) break;
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            _logger?.LogInformation("Backup is shutting down...");
+                            break;
+                        }
 
                         var block = NativeContract.Ledger.GetBlock(neoSystem.StoreView, i);
                         var array = block.ToArray();
                         fs.Write(BitConverter.GetBytes(array.Length), 0, sizeof(int));
                         fs.Write(array, 0, array.Length);
                     }
-                    _logger?.LogInformation("Backup is shutting down...");
                 }
 
                 private void WriteBlocksToAccFileProgressChanged(object? sender, uint e)

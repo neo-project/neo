@@ -20,12 +20,15 @@ using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
 using System.CommandLine.Parsing;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Service.App
 {
     public sealed partial class Program
     {
+        private readonly static string s_mutexName = @"Global\NeoCommandLineApp";
+
         internal readonly static int ApplicationVersionNumber = AssemblyUtilities.GetVersionNumber();
         internal readonly static Version ApplicationVersion;
 
@@ -34,33 +37,47 @@ namespace Neo.Service.App
 
         static async Task<int> Main(string[] args)
         {
-            var rootCommand = new DefaultRootCommand();
-            var parser = new CommandLineBuilder(rootCommand)
-                .UseHost(_ => new HostBuilder(), builder =>
-                {
-                    builder.ConfigureDefaults(args);
-                    builder.UseSystemd();
-                    builder.UseWindowsService();
-                    builder.ConfigureHostConfiguration(config =>
-                    {
-                        config.SetBasePath(AppContext.BaseDirectory);
-                    })
-                    .ConfigureAppConfiguration(config =>
-                    {
-                        config.SetBasePath(AppContext.BaseDirectory);
-                    });
-                    builder.ConfigureServices((_, services) =>
-                    {
-                        services.AddHostedService<NeoSystemService>();
-                    });
-                    builder.UseCommandHandler<DefaultRootCommand, DefaultRootCommand.Handler>();
-                    builder.UseCommandHandler<ExportCommand, ExportCommand.Handler>();
-                    builder.UseCommandHandler<ExportCommand.BlocksCommand, ExportCommand.BlocksCommand.Handler>();
-                })
-                .UseDefaults()
-                .Build();
+            if (Mutex.TryOpenExisting(s_mutexName, out var _))
+            {
+                Console.ResetColor();
+                Console.ForegroundColor = ConsoleColor.Red;
 
-            return await parser.InvokeAsync(args);
+                Console.Error.WriteLine("Error: An instance of the application is already running.");
+
+                Console.ResetColor();
+                return 1;
+            }
+            else
+            {
+                using var mutex = new Mutex(true, s_mutexName);
+                var rootCommand = new DefaultRootCommand();
+                var parser = new CommandLineBuilder(rootCommand)
+                    .UseHost(_ => new HostBuilder(), builder =>
+                    {
+                        builder.ConfigureDefaults(args);
+                        builder.UseSystemd();
+                        builder.UseWindowsService();
+                        builder.ConfigureHostConfiguration(config =>
+                        {
+                            config.SetBasePath(AppContext.BaseDirectory);
+                        })
+                        .ConfigureAppConfiguration(config =>
+                        {
+                            config.SetBasePath(AppContext.BaseDirectory);
+                        });
+                        builder.ConfigureServices((_, services) =>
+                        {
+                            services.AddHostedService<NeoSystemService>();
+                        });
+                        builder.UseCommandHandler<DefaultRootCommand, DefaultRootCommand.Handler>();
+                        builder.UseCommandHandler<ExportCommand, ExportCommand.Handler>();
+                        builder.UseCommandHandler<ExportCommand.BlocksCommand, ExportCommand.BlocksCommand.Handler>();
+                    })
+                    .UseDefaults()
+                    .Build();
+
+                return await parser.InvokeAsync(args);
+            }
         }
     }
 }
