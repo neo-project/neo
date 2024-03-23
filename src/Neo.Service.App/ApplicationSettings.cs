@@ -38,20 +38,20 @@ namespace Neo.Service.App
 
     internal sealed class StorageSettings
     {
-        public class BackupSettings
+        public class ArchiveSettings
         {
             public string? Path { get; private init; }
             public string? FileName { get; private init; }
             public bool Verify { get; private init; }
 
-            public static BackupSettings Default => new()
+            public static ArchiveSettings Default => new()
             {
                 Path = AppContext.BaseDirectory,
                 FileName = "chain.0.acc.zip",
                 Verify = true,
             };
 
-            public static BackupSettings Load(IConfigurationSection section) => new()
+            public static ArchiveSettings Load(IConfigurationSection section) => new()
             {
                 Path = section.GetValue(nameof(Path), Default.Path),
                 FileName = section.GetValue(nameof(FileName), Default.FileName),
@@ -61,20 +61,20 @@ namespace Neo.Service.App
 
         public string? Engine { get; private init; }
         public string? Path { get; private init; }
-        public BackupSettings Backup { get; private init; } = BackupSettings.Default;
+        public ArchiveSettings Archive { get; private init; } = ArchiveSettings.Default;
 
         public static StorageSettings Default => new()
         {
             Engine = nameof(MemoryStore),
             Path = "Data_LevelDB_{0:X2}",
-            Backup = BackupSettings.Default,
+            Archive = ArchiveSettings.Default,
         };
 
         public static StorageSettings Load(IConfigurationSection section) => new()
         {
             Engine = section.GetValue(nameof(Engine), Default.Engine),
             Path = section.GetValue(nameof(Path), Default.Path),
-            Backup = BackupSettings.Load(section.GetSection(nameof(Backup))),
+            Archive = ArchiveSettings.Load(section.GetSection(nameof(Archive))),
         };
     }
 

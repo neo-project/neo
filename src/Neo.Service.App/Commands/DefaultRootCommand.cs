@@ -22,8 +22,10 @@ namespace Neo.Service.App.Commands
     {
         public DefaultRootCommand() : base("NEO Blockchain CommandLine Tool")
         {
+            var archiveCommand = new ArchiveCommand();
+            AddCommand(archiveCommand);
+
             AddOption(new Option<bool>("--as-service", "Run as systemd or windows service"));
-            AddCommand(new ArchiveCommand());
         }
 
         public new sealed class Handler : ICommandHandler
@@ -33,9 +35,10 @@ namespace Neo.Service.App.Commands
             public async Task<int> InvokeAsync(InvocationContext context)
             {
                 var host = context.GetHost();
+                var stoppingToken = context.GetCancellationToken();
 
                 if (AsService)
-                    await host.WaitForShutdownAsync(context.GetCancellationToken());
+                    await host.WaitForShutdownAsync(stoppingToken);
 
                 return 0;
             }

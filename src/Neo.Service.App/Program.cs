@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Neo.Extensions;
@@ -40,6 +41,14 @@ namespace Neo.Service.App
                     builder.ConfigureDefaults(args);
                     builder.UseSystemd();
                     builder.UseWindowsService();
+                    builder.ConfigureHostConfiguration(config =>
+                    {
+                        config.SetBasePath(AppContext.BaseDirectory);
+                    })
+                    .ConfigureAppConfiguration(config =>
+                    {
+                        config.SetBasePath(AppContext.BaseDirectory);
+                    });
                     builder.ConfigureServices((_, services) =>
                     {
                         services.AddHostedService<NeoSystemService>();

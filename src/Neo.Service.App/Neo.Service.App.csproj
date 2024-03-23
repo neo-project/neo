@@ -4,38 +4,30 @@
     <OutputType>Exe</OutputType>
     <TargetFrameworks>net7.0</TargetFrameworks>
     <AssemblyTitle>Neo.Service.App</AssemblyTitle>
-    <AssemblyName>neo-core</AssemblyName>
+    <AssemblyName>neo-cmd</AssemblyName>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="appsettings.development.json" />
-    <None Remove="appsettings.json" />
-    <None Remove="appsettings.production.json" />
-    <None Remove="appsettings.test.json" />
+    <Content Include="appsettings.development.json" />
+    <Content Include="appsettings.json" />
+    <Content Include="appsettings.production.json" />
+    <Content Include="appsettings.test.json" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="appsettings.development.json">
+    <Content Update="appsettings.production.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
-    <Content Include="appsettings.json">
+    <Content Update="appsettings.test.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
-    <Content Include="appsettings.production.json">
+    <Content Update="appsettings.development.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
-    <Content Include="appsettings.test.json">
+    <Content Update="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
 

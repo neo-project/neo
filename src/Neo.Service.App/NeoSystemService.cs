@@ -15,6 +15,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Neo.Network.P2P;
 using Neo.Persistence;
+using Neo.Plugins;
 using System;
 using System.IO;
 using System.Net;
@@ -43,6 +44,8 @@ namespace Neo.Service.App
             _logger = logger;
             _protocolSettings = ProtocolSettings.Load(config.GetRequiredSection("ProtocolConfiguration"));
             _appSettings = ApplicationSettings.Load(config.GetRequiredSection("ApplicationConfiguration"));
+
+            Plugin.LoadPlugins();
         }
 
         public override void Dispose()
@@ -74,6 +77,15 @@ namespace Neo.Service.App
             _logger.LogInformation("NeoSystem Initialized.");
 
             _localNode ??= await _neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance(), stoppingToken);
+            Instance = _neoSystem;
+
+            await Task.Delay(-1, stoppingToken);
+        }
+
+        public void StartNode()
+        {
+            if (_neoSystem is null)
+                throw new NullReferenceException("NeoSystem");
 
             _neoSystem.StartNode(new()
             {
@@ -83,10 +95,6 @@ namespace Neo.Service.App
                 MaxConnectionsPerAddress = _appSettings.P2P.MaxConnectionsPerAddress,
             });
             _logger.LogInformation("NeoSystem Started.");
-
-            Instance = _neoSystem;
-
-            await Task.Delay(-1, stoppingToken);
         }
     }
 }
