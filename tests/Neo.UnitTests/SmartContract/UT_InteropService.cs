@@ -402,7 +402,7 @@ namespace Neo.UnitTests.SmartContract
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
             KeyPair keyPair = new(privateKey);
             var pubkey = keyPair.PublicKey;
-            var signature = Crypto.Sign(message, privateKey, pubkey.EncodePoint(false).Skip(1).ToArray());
+            var signature = Crypto.Sign(message, privateKey);
             engine.CheckSig(pubkey.EncodePoint(false), signature).Should().BeTrue();
 
             var wrongkey = pubkey.EncodePoint(false);
