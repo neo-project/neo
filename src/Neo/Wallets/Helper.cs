@@ -36,7 +36,7 @@ namespace Neo.Wallets
         /// <returns>The signature for the <see cref="IVerifiable"/>.</returns>
         public static byte[] Sign(this IVerifiable verifiable, KeyPair key, uint network)
         {
-            return Crypto.Sign(verifiable.GetSignData(network), key.PrivateKey, key.PublicKey.EncodePoint(false)[1..]);
+            return Crypto.Sign(verifiable.GetSignData(network), key.PrivateKey);
         }
 
         /// <summary>
