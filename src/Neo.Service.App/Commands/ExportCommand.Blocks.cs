@@ -72,18 +72,23 @@ namespace Neo.Service.App.Commands
                 public Task<int> InvokeAsync(InvocationContext context)
                 {
                     var host = context.GetHost();
-                    var loggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
-                    _logger = loggerFactory.CreateLogger<ExportCommand>();
 
-                    var neoSystem = NeoSystemService.Instance ?? throw new NullReferenceException("NeoSystem");
-                    var currentBlockHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
-                    Count = Math.Min(Count, currentBlockHeight - Start);
+                    using (var scope = host.Services.CreateScope())
+                    {
+                        var loggerFactory = scope.ServiceProvider.GetRequiredService<ILoggerFactory>();
+                        _logger = loggerFactory.CreateLogger<ExportCommand>();
 
-                    var writeBlocksToAccFileTask = Task.Factory.StartNew(
-                        () => WriteBlocksToAccFile(neoSystem, Start, Count, File.FullName, true, context.GetCancellationToken()),
-                        context.GetCancellationToken());
+                        var neoSystemService = scope.ServiceProvider.GetRequiredService<NeoSystemService>();
+                        var neoSystem = neoSystemService.NeoSystem ?? throw new NullReferenceException("NeoSystem");
+                        var currentBlockHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+                        Count = Math.Min(Count, currentBlockHeight - Start);
 
-                    writeBlocksToAccFileTask.Wait();
+                        var writeBlocksToAccFileTask = Task.Factory.StartNew(
+                            () => WriteBlocksToAccFile(neoSystem, Start, Count, File.FullName, true, context.GetCancellationToken()),
+                            context.GetCancellationToken());
+
+                        writeBlocksToAccFileTask.Wait();
+                    }
 
                     return Task.FromResult(0);
                 }

@@ -98,7 +98,7 @@ namespace Neo.Service.App
         public static P2PSettings Load(IConfigurationSection section) => new()
         {
             Listen = section.GetValue(nameof(Listen), Default.Listen),
-            Port = section.GetValue(nameof(Port), Default.Port),
+            Port = section.GetValue(nameof(Port), Default.Port) == 0 ? (ushort)Random.Shared.Next(1, ushort.MaxValue) : Default.Port,
             MinDesiredConnections = section.GetValue(nameof(MinDesiredConnections), Default.MinDesiredConnections),
             MaxConnections = section.GetValue(nameof(MaxConnections), Default.MaxConnections),
             MaxConnectionsPerAddress = section.GetValue(nameof(MaxConnectionsPerAddress), Default.MaxConnectionsPerAddress),

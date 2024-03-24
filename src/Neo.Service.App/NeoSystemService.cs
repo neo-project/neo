@@ -26,7 +26,8 @@ namespace Neo.Service.App
 {
     internal sealed class NeoSystemService : BackgroundService
     {
-        public static NeoSystem? Instance { get; private set; }
+        public bool IsRunning { get; private set; }
+        public NeoSystem? NeoSystem => _neoSystem;
 
         private readonly ILogger<NeoSystemService> _logger;
         private readonly ProtocolSettings _protocolSettings;
@@ -39,8 +40,6 @@ namespace Neo.Service.App
             IConfiguration config,
             ILogger<NeoSystemService> logger)
         {
-            if (Instance is not null) throw new ApplicationException("NeoSystem instance already running.");
-
             _logger = logger;
             _protocolSettings = ProtocolSettings.Load(config.GetRequiredSection("ProtocolConfiguration"));
             _appSettings = ApplicationSettings.Load(config.GetRequiredSection("ApplicationConfiguration"));
@@ -53,7 +52,7 @@ namespace Neo.Service.App
             _logger.LogInformation("NeoSystem is shutting down...");
 
             _neoSystem?.Dispose();
-            Instance = null;
+            IsRunning = false;
             base.Dispose();
         }
 
@@ -74,10 +73,9 @@ namespace Neo.Service.App
                 throw new DllNotFoundException($"Plugin '{_appSettings.Storage.Engine}.dll' can't be found.");
 
             _neoSystem ??= new(_protocolSettings, _appSettings.Storage.Engine, storagePath);
-            _logger.LogInformation("NeoSystem Initialized.");
-
             _localNode ??= await _neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance(), stoppingToken);
-            Instance = _neoSystem;
+            IsRunning = true;
+            _logger.LogInformation("NeoSystem started.");
 
             await Task.Delay(-1, stoppingToken);
         }
@@ -94,7 +92,8 @@ namespace Neo.Service.App
                 MaxConnections = _appSettings.P2P.MaxConnections,
                 MaxConnectionsPerAddress = _appSettings.P2P.MaxConnectionsPerAddress,
             });
-            _logger.LogInformation("NeoSystem Started.");
+
+            _logger.LogInformation("Waiting for connections: {ListenIpAddress}:{ListenPort}", _appSettings.P2P.Listen!, _appSettings.P2P.Port);
         }
     }
 }

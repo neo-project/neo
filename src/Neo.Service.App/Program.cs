@@ -18,66 +18,50 @@ using System;
 using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
+using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Service.App
 {
     public sealed partial class Program
     {
-        private readonly static string s_mutexName = @"Global\NeoCommandLineApp";
-
-        internal readonly static int ApplicationVersionNumber = AssemblyUtilities.GetVersionNumber();
-        internal readonly static Version ApplicationVersion;
-
-        static Program() =>
-            ApplicationVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version("0.0.0");
+        internal static int ApplicationVersionNumber { get; } = AssemblyUtilities.GetVersionNumber();
+        internal static Version ApplicationVersion { get; } = Assembly.GetExecutingAssembly().GetName().Version ?? new Version("0.0.0");
 
         static async Task<int> Main(string[] args)
         {
-            if (Mutex.TryOpenExisting(s_mutexName, out var _))
-            {
-                Console.ResetColor();
-                Console.ForegroundColor = ConsoleColor.Red;
-
-                Console.Error.WriteLine("Error: An instance of the application is already running.");
-
-                Console.ResetColor();
-                return 1;
-            }
-            else
-            {
-                using var mutex = new Mutex(true, s_mutexName);
-                var rootCommand = new DefaultRootCommand();
-                var parser = new CommandLineBuilder(rootCommand)
-                    .UseHost(_ => new HostBuilder(), builder =>
+            var rootCommand = new DefaultRootCommand();
+            var parser = new CommandLineBuilder(rootCommand)
+                .UseHost(_ => new HostBuilder(), builder =>
+                {
+                    builder.ConfigureDefaults(args);
+                    builder.UseSystemd();
+                    builder.UseWindowsService();
+                    builder.ConfigureHostConfiguration(config =>
                     {
-                        builder.ConfigureDefaults(args);
-                        builder.UseSystemd();
-                        builder.UseWindowsService();
-                        builder.ConfigureHostConfiguration(config =>
-                        {
-                            config.SetBasePath(AppContext.BaseDirectory);
-                        })
-                        .ConfigureAppConfiguration(config =>
-                        {
-                            config.SetBasePath(AppContext.BaseDirectory);
-                        });
-                        builder.ConfigureServices((_, services) =>
-                        {
-                            services.AddHostedService<NeoSystemService>();
-                        });
-                        builder.UseCommandHandler<DefaultRootCommand, DefaultRootCommand.Handler>();
-                        builder.UseCommandHandler<ExportCommand, ExportCommand.Handler>();
-                        builder.UseCommandHandler<ExportCommand.BlocksCommand, ExportCommand.BlocksCommand.Handler>();
+                        config.SetBasePath(AppContext.BaseDirectory);
                     })
-                    .UseDefaults()
-                    .Build();
+                    .ConfigureAppConfiguration(config =>
+                    {
+                        config.SetBasePath(AppContext.BaseDirectory);
+                    });
+                    builder.ConfigureServices((_, services) =>
+                    {
+                        services.AddSingleton<NeoSystemService>();
+                        services.AddHostedService(sp => sp.GetRequiredService<NeoSystemService>());
+                    });
+                    builder.UseCommandHandler<DefaultRootCommand, ICommandHandler>();
+                    builder.UseCommandHandler<ExportCommand, ExportCommand.Handler>();
+                    builder.UseCommandHandler<ExportCommand.BlocksCommand, ExportCommand.BlocksCommand.Handler>();
+                    builder.UseCommandHandler<RunCommand, RunCommand.Handler>();
+                })
+                .UseDefaults()
+                .UseExceptionHandler(NullExceptionFilter.Handler)
+                .Build();
 
-                return await parser.InvokeAsync(args);
-            }
+            return await parser.InvokeAsync(args);
         }
     }
 }

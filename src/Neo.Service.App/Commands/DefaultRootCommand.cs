@@ -9,44 +9,29 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.Extensions.Hosting;
 using System;
 using System.CommandLine;
-using System.CommandLine.Hosting;
-using System.CommandLine.Invocation;
-using System.Threading.Tasks;
+using System.IO;
 
 namespace Neo.Service.App.Commands
 {
-    internal sealed class DefaultRootCommand : RootCommand
+    internal class DefaultRootCommand : Command
     {
-        public DefaultRootCommand() : base("NEO Blockchain CommandLine Tool")
-        {
-            var archiveCommand = new ExportCommand();
-            AddCommand(archiveCommand);
+        private static string? s_executablePath;
+        private static string? s_executableName;
 
-            AddOption(new Option<bool>("--as-service", "Run as systemd or windows service"));
+        public DefaultRootCommand() : base(ExecutableName, "NEO Blockchain CommandLine Tool")
+        {
+            var exportCommand = new ExportCommand();
+            var runCommand = new RunCommand();
+            AddCommand(exportCommand);
+            AddCommand(runCommand);
         }
 
-        public new sealed class Handler : ICommandHandler
-        {
-            public bool AsService { get; set; }
+        public static string ExecutableName =>
+            s_executableName ??= Path.GetFileNameWithoutExtension(ExecutablePath).Replace(" ", "");
 
-            public async Task<int> InvokeAsync(InvocationContext context)
-            {
-                var host = context.GetHost();
-                var stoppingToken = context.GetCancellationToken();
-
-                if (AsService)
-                    await host.WaitForShutdownAsync(stoppingToken);
-
-                return 0;
-            }
-
-            public int Invoke(InvocationContext context)
-            {
-                throw new NotImplementedException();
-            }
-        }
+        public static string ExecutablePath =>
+            s_executablePath ??= Environment.GetCommandLineArgs()[0];
     }
 }
