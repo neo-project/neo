@@ -4,7 +4,7 @@
     <Copyright>2016-2023 The Neo Project</Copyright>
     <AssemblyTitle>Neo.GUI</AssemblyTitle>
     <OutputType>WinExe</OutputType>
-    <TargetFrameworks>net7.0-windows</TargetFrameworks>
+    <TargetFrameworks>net7.0-windows;net8.0-windows</TargetFrameworks>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <RootNamespace>Neo</RootNamespace>
     <UseWindowsForms>true</UseWindowsForms>
