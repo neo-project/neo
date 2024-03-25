@@ -35,11 +35,11 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
-        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage-join/
-        dotnet test ./tests/Neo.ConsoleService.Tests         /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage-join/ /p:MergeWith=${GITHUB_WORKSPACE}/coverage-join/coverage.json
-        dotnet test ./tests/Neo.UnitTests                    /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage-join/ /p:MergeWith=${GITHUB_WORKSPACE}/coverage-join/coverage.net7.0.json
-        dotnet test ./tests/Neo.VM.Tests                     /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage-join/ /p:MergeWith=${GITHUB_WORKSPACE}/coverage-join/coverage.net7.0.json
-        dotnet test ./tests/Neo.Json.UnitTests               /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/lcov  /p:MergeWith=${GITHUB_WORKSPACE}/coverage-join/coverage.net7.0.json /p:CoverletOutputFormat=lcov
+        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage-join/ --blame-hang --blame-hang-timeout 180000
+        dotnet test ./tests/Neo.ConsoleService.Tests         /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage-join/ /p:MergeWith=${GITHUB_WORKSPACE}/coverage-join/coverage.json -blame-hang --blame-hang-timeout 180000
+        dotnet test ./tests/Neo.UnitTests                    /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage-join/ /p:MergeWith=${GITHUB_WORKSPACE}/coverage-join/coverage.net7.0.json --blame-hang --blame-hang-timeout 180000
+        dotnet test ./tests/Neo.VM.Tests                     /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage-join/ /p:MergeWith=${GITHUB_WORKSPACE}/coverage-join/coverage.net7.0.json --blame-hang --blame-hang-timeout 180000
+        dotnet test ./tests/Neo.Json.UnitTests               /p:CollectCoverage=true /p:CoverletOutput=${GITHUB_WORKSPACE}/coverage/lcov  /p:MergeWith=${GITHUB_WORKSPACE}/coverage-join/coverage.net7.0.json /p:CoverletOutputFormat=lcov --blame-hang --blame-hang-timeout 180000
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
       uses: coverallsapp/github-action@v2.2.3
