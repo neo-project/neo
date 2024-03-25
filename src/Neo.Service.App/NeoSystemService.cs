@@ -12,7 +12,6 @@
 using Akka.Actor;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Neo.Network.P2P;
 using Neo.Persistence;
 using Neo.Plugins;
@@ -29,7 +28,6 @@ namespace Neo.Service.App
         public bool IsRunning { get; private set; }
         public NeoSystem? NeoSystem => _neoSystem;
 
-        private readonly ILogger<NeoSystemService> _logger;
         private readonly ProtocolSettings _protocolSettings;
         private readonly ApplicationSettings _appSettings;
 
@@ -37,10 +35,8 @@ namespace Neo.Service.App
         private LocalNode? _localNode;
 
         public NeoSystemService(
-            IConfiguration config,
-            ILogger<NeoSystemService> logger)
+            IConfiguration config)
         {
-            _logger = logger;
             _protocolSettings = ProtocolSettings.Load(config.GetRequiredSection("ProtocolConfiguration"));
             _appSettings = ApplicationSettings.Load(config.GetRequiredSection("ApplicationConfiguration"));
 
@@ -49,8 +45,6 @@ namespace Neo.Service.App
 
         public override void Dispose()
         {
-            _logger.LogInformation("NeoSystem is shutting down...");
-
             _neoSystem?.Dispose();
             IsRunning = false;
             base.Dispose();
@@ -75,7 +69,6 @@ namespace Neo.Service.App
             _neoSystem ??= new(_protocolSettings, _appSettings.Storage.Engine, storagePath);
             _localNode ??= await _neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance(), stoppingToken);
             IsRunning = true;
-            _logger.LogInformation("NeoSystem started.");
 
             await Task.Delay(-1, stoppingToken);
         }
@@ -92,8 +85,6 @@ namespace Neo.Service.App
                 MaxConnections = _appSettings.P2P.MaxConnections,
                 MaxConnectionsPerAddress = _appSettings.P2P.MaxConnectionsPerAddress,
             });
-
-            _logger.LogInformation("Waiting for connections: {ListenIpAddress}:{ListenPort}", _appSettings.P2P.Listen!, _appSettings.P2P.Port);
         }
     }
 }

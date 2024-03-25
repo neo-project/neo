@@ -1,21 +1,10 @@
 {
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.Hosting.Lifetime": "Information"
-    }
-  },
   "ApplicationConfiguration": {
-    "TraceMode": false,
     "Storage": {
-      "Engine": "LevelDBStore",
-      "Archive": {
-        "Verify": false
-      }
+      "Engine": "LevelDBStore"
     },
-    "P2P": {
-      "Listen": "127.0.0.1",
-      "Port": 0
+    "Contracts": {
+      "NeoNameService": "0x50ac1c37690cc2cfc594472833cf57505d5f46de"
     }
   },
   "ProtocolConfiguration": {

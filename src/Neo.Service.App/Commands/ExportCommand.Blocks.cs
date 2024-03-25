@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Neo.IO;
 using Neo.SmartContract.Native;
@@ -60,11 +59,16 @@ namespace Neo.Service.App.Commands
                 public uint Count { get; set; }
                 public required FileInfo File { get; set; }
 
-                private ILogger<ExportCommand>? _logger;
                 private readonly Progress<uint> _progress;
+                private readonly NeoSystemService _neoSystemService;
+                private readonly ILogger<ExportCommand> _logger;
 
-                public Handler()
+                public Handler(
+                    NeoSystemService neoSystemService,
+                    ILoggerFactory loggerFactory)
                 {
+                    _neoSystemService = neoSystemService;
+                    _logger = loggerFactory.CreateLogger<ExportCommand>();
                     _progress = new Progress<uint>();
                     _progress.ProgressChanged += WriteBlocksToAccFileProgressChanged;
                 }
@@ -73,22 +77,15 @@ namespace Neo.Service.App.Commands
                 {
                     var host = context.GetHost();
 
-                    using (var scope = host.Services.CreateScope())
-                    {
-                        var loggerFactory = scope.ServiceProvider.GetRequiredService<ILoggerFactory>();
-                        _logger = loggerFactory.CreateLogger<ExportCommand>();
+                    var neoSystem = _neoSystemService.NeoSystem ?? throw new NullReferenceException("NeoSystem");
+                    var currentBlockHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+                    Count = Math.Min(Count, currentBlockHeight - Start);
 
-                        var neoSystemService = scope.ServiceProvider.GetRequiredService<NeoSystemService>();
-                        var neoSystem = neoSystemService.NeoSystem ?? throw new NullReferenceException("NeoSystem");
-                        var currentBlockHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
-                        Count = Math.Min(Count, currentBlockHeight - Start);
+                    var writeBlocksToAccFileTask = Task.Factory.StartNew(
+                        () => WriteBlocksToAccFile(neoSystem, Start, Count, File.FullName, true, context.GetCancellationToken()),
+                        context.GetCancellationToken());
 
-                        var writeBlocksToAccFileTask = Task.Factory.StartNew(
-                            () => WriteBlocksToAccFile(neoSystem, Start, Count, File.FullName, true, context.GetCancellationToken()),
-                            context.GetCancellationToken());
-
-                        writeBlocksToAccFileTask.Wait();
-                    }
+                    writeBlocksToAccFileTask.Wait();
 
                     return Task.FromResult(0);
                 }

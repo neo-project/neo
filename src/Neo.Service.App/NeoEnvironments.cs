@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// ExportCommand.cs file belongs to the neo project and is free
+// NeoEnvironments.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,16 +9,17 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System.CommandLine;
-
-namespace Neo.Service.App.Commands
+namespace Neo.Service.App
 {
-    internal sealed partial class ExportCommand : Command
+    internal static class NeoEnvironments
     {
-        public ExportCommand() : base("export", "Export data for offline use")
-        {
-            var blocksCommand = new BlocksCommand();
-            AddCommand(blocksCommand);
-        }
+        public static readonly string DevNet = "DevNet";
+
+        public static readonly string TestNet = "TestNet";
+
+        public static readonly string MainNet = "MainNet";
+
+        public static readonly string PrivateNet = "PrivateNet";
+
     }
 }

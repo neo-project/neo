@@ -9,8 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.Systemd;
+using Microsoft.Extensions.Hosting.WindowsServices;
+using Neo.Service.App.Extensions;
 using System;
 using System.CommandLine;
 using System.CommandLine.Hosting;
@@ -27,22 +29,40 @@ namespace Neo.Service.App.Commands
 
         public new sealed class Handler : ICommandHandler
         {
+            private readonly NeoSystemService _neoSystemService;
+
+            public Handler(
+                NeoSystemService neoSystemService)
+            {
+                _neoSystemService = neoSystemService;
+            }
+
             public async Task<int> InvokeAsync(InvocationContext context)
             {
-                var host = context.GetHost();
-                var stoppingToken = context.GetCancellationToken();
-
-                using (var scope = host.Services.CreateScope())
+                if (SystemdHelpers.IsSystemdService() ||
+                    WindowsServiceHelpers.IsWindowsService())
                 {
-                    var neoSystemService = scope.ServiceProvider.GetRequiredService<NeoSystemService>();
+                    var host = context.GetHost();
+                    var stoppingToken = context.GetCancellationToken();
 
-                    if (neoSystemService.IsRunning)
-                        neoSystemService.StartNode();
+                    if (_neoSystemService.IsRunning)
+                        _neoSystemService.StartNode();
+
+                    await host.WaitForShutdownAsync(stoppingToken);
+
+                    return 0;
                 }
+                else
+                {
+                    context.Console.ResetTerminalForegroundColor();
+                    context.Console.SetTerminalForegroundRed();
 
-                await host.WaitForShutdownAsync(stoppingToken);
+                    context.Console.WriteLine($"Error: Process must be hosted as service.");
 
-                return 0;
+                    context.Console.ResetTerminalForegroundColor();
+
+                    return 1;
+                }
             }
 
             public int Invoke(InvocationContext context)

@@ -24,8 +24,11 @@ namespace Neo.Service.App.Commands
         {
             var exportCommand = new ExportCommand();
             var runCommand = new RunCommand();
+            var walletCommand = new WalletCommand();
+
             AddCommand(exportCommand);
             AddCommand(runCommand);
+            AddCommand(walletCommand);
         }
 
         public static string ExecutableName =>

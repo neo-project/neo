@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// ExportCommand.cs file belongs to the neo project and is free
+// WalletCommand.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -13,12 +13,12 @@ using System.CommandLine;
 
 namespace Neo.Service.App.Commands
 {
-    internal sealed partial class ExportCommand : Command
+    internal sealed partial class WalletCommand : Command
     {
-        public ExportCommand() : base("export", "Export data for offline use")
+        public WalletCommand() : base("wallet", "Use or manage wallet(s)")
         {
-            var blocksCommand = new BlocksCommand();
-            AddCommand(blocksCommand);
+            var openWalletCommand = new OpenWalletCommand();
+            AddCommand(openWalletCommand);
         }
     }
 }

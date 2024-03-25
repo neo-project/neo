@@ -10,23 +10,19 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="appsettings.development.json" />
-    <Content Include="appsettings.json" />
-    <Content Include="appsettings.production.json" />
-    <Content Include="appsettings.test.json" />
+    <Content Include="config.devnet.json" />
+    <Content Include="config.mainnet.json" />
+    <Content Include="config.testnet.json" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Update="appsettings.production.json">
+    <Content Update="config.mainnet.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="appsettings.test.json">
+    <Content Update="config.testnet.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="appsettings.development.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Update="appsettings.json">
+    <Content Update="config.devnet.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
