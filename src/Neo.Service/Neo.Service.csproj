@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <AssemblyTitle>Neo.Service</AssemblyTitle>
     <AssemblyName>neo-host</AssemblyName>
     <Nullable>enable</Nullable>
