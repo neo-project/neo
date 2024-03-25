@@ -22,7 +22,6 @@ namespace Neo.Service.App
         public P2PSettings P2P { get; private init; } = P2PSettings.Default;
         public ContractsSettings Contracts { get; private init; } = ContractsSettings.Default;
         public PluginSettings Plugin { get; private init; } = PluginSettings.Default;
-        public bool TraceMode { get; private init; } = false;
 
         public static ApplicationSettings Default => new();
 
@@ -32,7 +31,6 @@ namespace Neo.Service.App
             P2P = P2PSettings.Load(section.GetSection(nameof(P2P))),
             Contracts = ContractsSettings.Load(section.GetSection(nameof(Contracts))),
             Plugin = PluginSettings.Load(section.GetSection(nameof(Plugin))),
-            TraceMode = section.GetValue(nameof(TraceMode), Default.TraceMode),
         };
     }
 

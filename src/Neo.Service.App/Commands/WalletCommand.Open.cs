@@ -9,10 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Service.App.Extensions;
 using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
+using System.Security;
 using System.Threading.Tasks;
 
 namespace Neo.Service.App.Commands
@@ -24,10 +26,25 @@ namespace Neo.Service.App.Commands
             public OpenWalletCommand() : base("open", "Open a wallet to manage or use.")
             {
                 var walletPathArgument = new Argument<FileInfo>("file", "Path to the json file");
-                var walletPasswordOption = new Option<string>(new[] { "--password", "-p" }, "Wallet file password")
-                {
-                    IsRequired = true
-                };
+
+                var walletPasswordOption = new Option<SecureString>(
+                    new[] { "--password", "-p" },
+                    parseArgument: result =>
+                    {
+                        var passwordOptionValue = result.Tokens[0].Value;
+
+                        unsafe
+                        {
+                            fixed (char* passwordChars = passwordOptionValue)
+                            {
+                                var securePasswordString = new SecureString(passwordChars, passwordOptionValue.Length);
+                                securePasswordString.IsReadOnly();
+                                return securePasswordString;
+                            }
+                        }
+                    },
+                    description: "Wallet file password");
+
                 AddArgument(walletPathArgument);
                 AddOption(walletPasswordOption);
             }
@@ -35,10 +52,21 @@ namespace Neo.Service.App.Commands
             public new sealed class Handler : ICommandHandler
             {
                 public required FileInfo File { get; set; }
-                public required string Password { get; set; }
+                public SecureString? Password { get; set; }
 
                 public Task<int> InvokeAsync(InvocationContext context)
                 {
+                    if (File.Exists == false)
+                    {
+                        context.Console.ErrorWriteLine($"File {File.Name} was not found.");
+                        return Task.FromResult(1);
+                    }
+
+                    if (Password is null)
+                    {
+                        Password = context.Console.PromptPassword();
+                    }
+
                     return Task.FromResult(0);
                 }
 

@@ -11,11 +11,13 @@
 
 using System;
 using System.CommandLine;
+using System.Security;
 
 namespace Neo.Service.App.Extensions
 {
     internal static class IConsoleExtensions
     {
+        private static readonly string s_validateInputCharacters = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
         private static readonly bool ColorsAreSupported = GetColorsAreSupported();
 
         public static void SetTerminalForegroundRed(this IConsole _)
@@ -32,6 +34,43 @@ namespace Neo.Service.App.Extensions
             {
                 Console.ResetColor();
             }
+        }
+
+        public static void ErrorWriteLine(this IConsole _, string message)
+        {
+            ResetTerminalForegroundColor(_);
+            SetTerminalForegroundRed(_);
+
+            Console.Error.WriteLine($"Error: {message}");
+
+            ResetTerminalForegroundColor(_);
+        }
+
+        public static SecureString PromptPassword(this IConsole _)
+        {
+            ConsoleKeyInfo userInputKeyInfo;
+            var userPassword = new SecureString();
+
+            Console.Write("Password: ");
+
+            while ((userInputKeyInfo = Console.ReadKey(true)).Key != ConsoleKey.Enter)
+            {
+                if (s_validateInputCharacters.IndexOf(userInputKeyInfo.KeyChar) != -1)
+                {
+                    userPassword.AppendChar(userInputKeyInfo.KeyChar);
+                    Console.Write('*');
+                }
+                else if (userInputKeyInfo.Key == ConsoleKey.Backspace &&
+                    userPassword.Length > 0)
+                {
+                    userPassword.RemoveAt(userPassword.Length - 1);
+                    Console.Write("\b \b");
+                }
+            }
+
+            userPassword.MakeReadOnly();
+            Console.WriteLine();
+            return userPassword;
         }
 
         private static bool GetColorsAreSupported()

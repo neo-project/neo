@@ -54,13 +54,7 @@ namespace Neo.Service.App.Commands
                 }
                 else
                 {
-                    context.Console.ResetTerminalForegroundColor();
-                    context.Console.SetTerminalForegroundRed();
-
-                    context.Console.WriteLine($"Error: Process must be hosted as service.");
-
-                    context.Console.ResetTerminalForegroundColor();
-
+                    context.Console.ErrorWriteLine("Process must be hosted as service.");
                     return 1;
                 }
             }

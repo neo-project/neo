@@ -20,7 +20,7 @@ namespace Neo.Service.App
 {
     public partial class Program
     {
-        static IHostBuilder DefaultHostBuilderFactory(string[] args) =>
+        static IHostBuilder DefaultNeoHostBuilderFactory(string[] args) =>
             new HostBuilder()
                 .ConfigureHostConfiguration(config =>
                 {
@@ -44,9 +44,9 @@ namespace Neo.Service.App
                     config.AddCommandLine(args);
 
                 })
-                .UseServiceProviderFactory((context) => new DefaultServiceProviderFactory(CreateDefaultServiceProviderOptions(context)));
+                .UseServiceProviderFactory((context) => new DefaultServiceProviderFactory(CreateDefaultNeoServiceProviderOptions(context)));
 
-        static ServiceProviderOptions CreateDefaultServiceProviderOptions(HostBuilderContext context)
+        static ServiceProviderOptions CreateDefaultNeoServiceProviderOptions(HostBuilderContext context)
         {
             var flag = context.HostingEnvironment.IsNeoDevNet();
             return new ServiceProviderOptions

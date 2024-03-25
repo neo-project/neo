@@ -39,7 +39,7 @@ namespace Neo.Service.App
         {
             var rootCommand = new DefaultRootCommand();
             var parser = new CommandLineBuilder(rootCommand)
-                .UseHost(DefaultHostBuilderFactory, builder =>
+                .UseHost(DefaultNeoHostBuilderFactory, builder =>
                 {
                     builder.ConfigureServices((_, services) =>
                     {
