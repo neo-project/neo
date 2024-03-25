@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <TargetFrameworks>net8.0</TargetFrameworks>
     <AssemblyTitle>Neo.Service</AssemblyTitle>
     <AssemblyName>neo-host</AssemblyName>
