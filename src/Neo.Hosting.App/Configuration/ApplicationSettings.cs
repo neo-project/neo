@@ -10,9 +10,9 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Configuration;
+using Neo.Hosting.App.Helpers;
 using Neo.Network.P2P;
 using Neo.Persistence;
-using Neo.Hosting.App.Helpers;
 using System;
 
 namespace Neo.Hosting.App.Configuration

@@ -10,8 +10,8 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Logging;
-using Neo.IO;
 using Neo.Hosting.App.Hosting;
+using Neo.IO;
 using Neo.SmartContract.Native;
 using System;
 using System.CommandLine;

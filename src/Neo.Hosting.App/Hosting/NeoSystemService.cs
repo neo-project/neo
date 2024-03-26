@@ -12,10 +12,10 @@
 using Akka.Actor;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Neo.Hosting.App.Configuration;
 using Neo.Network.P2P;
 using Neo.Persistence;
 using Neo.Plugins;
-using Neo.Hosting.App.Configuration;
 using System;
 using System.IO;
 using System.Net;
