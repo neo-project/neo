@@ -22,7 +22,7 @@ using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Service.App.Factory
+namespace Neo.Service.App.Factories
 {
     internal sealed class NamedPipeTransportFactory
     {

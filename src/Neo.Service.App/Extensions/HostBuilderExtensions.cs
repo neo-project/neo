@@ -13,7 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.ObjectPool;
-using Neo.Service.App.Factory;
+using Neo.Service.App.Factories;
 using Neo.Service.App.NamedPipes;
 using Neo.Wallets;
 using System;
