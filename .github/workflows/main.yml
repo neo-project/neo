@@ -35,11 +35,11 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
-        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --blame-hang --blame-hang-timeout 180000 /p:CollectCoverage=true /p:CoverletOutput='./TestResults/coverage/' /p:MergeWith='./TestResults/coverage/neo-core.net8.0.json' /p:ExcludeByAttribute="Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute"
-        dotnet test ./tests/Neo.ConsoleService.Tests --blame-hang --blame-hang-timeout 180000         /p:CollectCoverage=true /p:CoverletOutput='./TestResults/coverage/' /p:MergeWith='./TestResults/coverage/neo-core.net8.0.json' /p:ExcludeByAttribute="Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute"
-        dotnet test ./tests/Neo.UnitTests --blame-hang --blame-hang-timeout 180000                    /p:CollectCoverage=true /p:CoverletOutput='./TestResults/coverage/' /p:MergeWith='./TestResults/coverage/neo-core.net8.0.json' /p:ExcludeByAttribute="Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute"
-        dotnet test ./tests/Neo.VM.Tests --blame-hang --blame-hang-timeout 180000                     /p:CollectCoverage=true /p:CoverletOutput='./TestResults/coverage/' /p:MergeWith='./TestResults/coverage/neo-core.net8.0.json' /p:ExcludeByAttribute="Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute"
-        dotnet test ./tests/Neo.Json.UnitTests --blame-hang --blame-hang-timeout 180000               /p:CollectCoverage=true /p:CoverletOutput='./TestResults/coverage/'  /p:MergeWith='./TestResults/coverage/neo-core.net8.0.json' /p:CoverletOutputFormat='lcov' /p:ExcludeByAttribute="Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute" -m:1
+        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --blame-hang --blame-hang-timeout 180000 /p:CollectCoverage=true /p:CoverletOutput='./TestResults/coverage/' /p:MergeWith='./TestResults/coverage/neo-core.net8.0.json'
+        dotnet test ./tests/Neo.ConsoleService.Tests --blame-hang --blame-hang-timeout 180000         /p:CollectCoverage=true /p:CoverletOutput='./TestResults/coverage/' /p:MergeWith='./TestResults/coverage/neo-core.net8.0.json'
+        dotnet test ./tests/Neo.UnitTests --blame-hang --blame-hang-timeout 180000                    /p:CollectCoverage=true /p:CoverletOutput='./TestResults/coverage/' /p:MergeWith='./TestResults/coverage/neo-core.net8.0.json'
+        dotnet test ./tests/Neo.VM.Tests --blame-hang --blame-hang-timeout 180000                     /p:CollectCoverage=true /p:CoverletOutput='./TestResults/coverage/' /p:MergeWith='./TestResults/coverage/neo-core.net8.0.json'
+        dotnet test ./tests/Neo.Json.UnitTests --blame-hang --blame-hang-timeout 180000               /p:CollectCoverage=true /p:CoverletOutput='./TestResults/coverage/'  /p:MergeWith='./TestResults/coverage/neo-core.net8.0.json' /p:CoverletOutputFormat='lcov' -m:1
         ls -l ./TestResults/coverage/
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
