@@ -23,6 +23,7 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+        annotations: false
     - name: Check format
       if: matrix.os == 'ubuntu-latest'
       run: |
