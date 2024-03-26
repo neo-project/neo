@@ -2,8 +2,8 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/dotnet
 {
 	"name": "C# (.NET)",
-	"image": "mcr.microsoft.com/devcontainers/dotnet:1-7.0-jammy",
-	"postCreateCommand": "dotnet restore && dotnet build",
+	"image": "mcr.microsoft.com/devcontainers/dotnet:1-8.0-jammy",
+	"postCreateCommand": "dotnet build",
 	"customizations": {
 		"vscode": {
 			"extensions": [
