@@ -46,8 +46,6 @@ jobs:
       uses: coverallsapp/github-action@v2.2.3
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        compare-ref: ${{ github.head_ref }}
-        compare-sha: ${{ github.sha }}
         format: lcov
         file: ${{ github.workspace }}/TestResults/coverage/coverage.net8.0.info
 
