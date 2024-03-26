@@ -40,4 +40,8 @@
     <ProjectReference Include="..\Neo\Neo.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Exceptions\" />
+  </ItemGroup>
+
 </Project>

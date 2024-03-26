@@ -16,10 +16,10 @@ using NamedPipeOptions = System.IO.Pipes.PipeOptions;
 namespace Neo.Service.App.NamedPipes
 {
     internal sealed class NamedPipeServerStreamPoolPolicy(
-        string pipeName,
+        NamedPipeEndPoint endPoint,
         NamedPipeTransportOptions options) : IPooledObjectPolicy<NamedPipeServerStream>
     {
-        private readonly string _pipeName = pipeName;
+        private readonly NamedPipeEndPoint _endPoint = endPoint;
         private readonly NamedPipeTransportOptions _options = options;
         private bool _hasFirstPipeStarted;
 
@@ -35,7 +35,7 @@ namespace Neo.Service.App.NamedPipes
                 pipeOptions |= NamedPipeOptions.FirstPipeInstance;
             if (_options.CurrentUserOnly)
                 pipeOptions |= NamedPipeOptions.CurrentUserOnly;
-            return new(_pipeName, PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances,
+            return new(_endPoint.PipeName, PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances,
                     PipeTransmissionMode.Byte, pipeOptions, inBufferSize: 0, outBufferSize: 0);
         }
 

@@ -32,11 +32,11 @@ namespace Neo.Service.App.NamedPipes
         public PipeWriter Input => Application?.Output ?? throw new NullReferenceException(nameof(Application));
         public PipeReader Output => Application?.Input ?? throw new NullReferenceException(nameof(Application));
         public NamedPipeServerStream NamedPipe => _stream;
-        public string PipeName => _pipeName;
+        public NamedPipeEndPoint LocalEndPoint => _localEndPoint;
 
         private readonly NamedPipeConnectionListener _listener;
         private readonly NamedPipeServerStream _stream;
-        private readonly string _pipeName;
+        private readonly NamedPipeEndPoint _localEndPoint;
         private readonly IDuplexPipe _originalTransport;
         private readonly CancellationTokenSource _connectionClosedTokenSource = new();
         private readonly object _shutdownLock = new();
@@ -52,7 +52,7 @@ namespace Neo.Service.App.NamedPipes
         public NamedPipeConnection(
             NamedPipeConnectionListener listener,
             NamedPipeServerStream stream,
-            string pipeName,
+            NamedPipeEndPoint endPoint,
             ILogger logger,
             MemoryPool<byte> memoryPool,
             PipeOptions inputOptions,
@@ -60,7 +60,7 @@ namespace Neo.Service.App.NamedPipes
         {
             _listener = listener;
             _stream = stream;
-            _pipeName = pipeName;
+            _localEndPoint = endPoint;
             _logger = logger;
             MemoryPool = memoryPool;
 

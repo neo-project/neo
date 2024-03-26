@@ -13,9 +13,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 using System;
 using System.Buffers;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Pipelines;
 using System.IO.Pipes;
+using System.Net;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -25,13 +27,15 @@ namespace Neo.Service.App.NamedPipes
 {
     internal sealed class NamedPipeConnectionListener : IAsyncDisposable
     {
+        public EndPoint EndPoint => _endPoint;
+
         private readonly ILogger _logger;
-        private readonly string _pipeName;
+        private readonly NamedPipeEndPoint _endPoint;
         private readonly NamedPipeTransportOptions _options;
         private readonly ObjectPool<NamedPipeServerStream> _namedPipeServerStreamPool;
         private readonly CancellationTokenSource _listeningTokenSource = new();
         private readonly CancellationToken _listeningToken;
-        private readonly Channel<ConnectionContext> _acceptedQueue;
+        private readonly Channel<NamedPipeConnection> _acceptedQueue;
         private readonly MemoryPool<byte> _memoryPool;
         private readonly PipeOptions _inputOptions;
         private readonly PipeOptions _outputOptions;
@@ -40,19 +44,19 @@ namespace Neo.Service.App.NamedPipes
         private int _disposed;
 
         public NamedPipeConnectionListener(
-            string pipeName,
+            NamedPipeEndPoint endPoint,
             NamedPipeTransportOptions options,
             ILoggerFactory loggerFactory,
             ObjectPoolProvider objectPoolProvider)
         {
             _logger = loggerFactory.CreateLogger("NamedPipes");
-            _pipeName = pipeName;
+            _endPoint = endPoint;
             _options = options;
             _memoryPool = options.MemoryPoolFactory();
             _listeningToken = _listeningTokenSource.Token;
-            _poolPolicy = new NamedPipeServerStreamPoolPolicy(pipeName, options);
+            _poolPolicy = new NamedPipeServerStreamPoolPolicy(endPoint, options);
             _namedPipeServerStreamPool = objectPoolProvider.Create(_poolPolicy);
-            _acceptedQueue = Channel.CreateBounded<ConnectionContext>(new BoundedChannelOptions(capacity: 1));
+            _acceptedQueue = Channel.CreateBounded<NamedPipeConnection>(new BoundedChannelOptions(capacity: 1));
 
             var maxReadBufferSize = _options.MaxReadBufferSize ?? 0;
             var maxWriteBufferSize = _options.MaxWriteBufferSize ?? 0;
@@ -71,8 +75,7 @@ namespace Neo.Service.App.NamedPipes
 
         public void Start()
         {
-            if (_completeListeningTask is null)
-                throw new Exception("Already started.");
+            Debug.Assert(_completeListeningTask == null, "Already started");
 
             var listeningTasks = new Task[_options.ListenerQueueCount];
 
@@ -108,7 +111,7 @@ namespace Neo.Service.App.NamedPipes
 
                     await stream.WaitForConnectionAsync(_listeningToken);
 
-                    var connection = new NamedPipeConnection(this, stream, _pipeName, _logger, _memoryPool, _inputOptions, _outputOptions);
+                    var connection = new NamedPipeConnection(this, stream, _endPoint, _logger, _memoryPool, _inputOptions, _outputOptions);
                     connection.Start();
 
                     nextStream = _namedPipeServerStreamPool.Get();
@@ -133,7 +136,7 @@ namespace Neo.Service.App.NamedPipes
             nextStream.Dispose();
         }
 
-        public async ValueTask<ConnectionContext?> AcceptAsync(CancellationToken cancellationToken = default)
+        public async ValueTask<NamedPipeConnection?> AcceptAsync(CancellationToken cancellationToken = default)
         {
             while (await _acceptedQueue.Reader.WaitToReadAsync(cancellationToken))
             {

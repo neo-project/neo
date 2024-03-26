@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Hosting;
+using Neo.Service.App.Hosting;
 using System;
 
 namespace Neo.Service.App.Extensions

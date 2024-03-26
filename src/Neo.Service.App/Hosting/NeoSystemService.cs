@@ -15,13 +15,14 @@ using Microsoft.Extensions.Hosting;
 using Neo.Network.P2P;
 using Neo.Persistence;
 using Neo.Plugins;
+using Neo.Service.App.Configuration;
 using System;
 using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Service.App
+namespace Neo.Service.App.Hosting
 {
     internal sealed class NeoSystemService : BackgroundService
     {

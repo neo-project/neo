@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// WalletHostBuilderExtensions.cs file belongs to the neo project and is free
+// HostBuilderExtensions.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -10,6 +10,11 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.ObjectPool;
+using Neo.Service.App.Factory;
+using Neo.Service.App.NamedPipes;
 using Neo.Wallets;
 using System;
 using System.IO;
@@ -17,8 +22,18 @@ using System.Security;
 
 namespace Neo.Service.App.Extensions
 {
-    internal static class WalletHostBuilderExtensions
+    internal static class HostBuilderExtensions
     {
+        public static IHostBuilder UseNamedPipes(this IHostBuilder hostBuilder) =>
+            hostBuilder.ConfigureServices(services =>
+            {
+                services.TryAddSingleton<ObjectPoolProvider, DefaultObjectPoolProvider>();
+                services.AddSingleton<NamedPipeTransportFactory>();
+            });
+
+        public static IHostBuilder UseNamedPipes(this IHostBuilder hostBuilder, Action<NamedPipeTransportOptions> configureOptions) =>
+            hostBuilder.UseNamedPipes().ConfigureServices(services => services.Configure(configureOptions));
+
         public static void AddWalletJsonFile(this IServiceCollection services, string path, SecureString password, ProtocolSettings? protocolSettings = null)
         {
             ArgumentNullException.ThrowIfNull(services, nameof(services));

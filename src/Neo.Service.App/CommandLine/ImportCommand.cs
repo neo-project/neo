@@ -19,6 +19,7 @@ namespace Neo.Service.App.CommandLine
         {
             public BlocksCommand() : base("blocks", "Import blocks from an offline archive file")
             {
+
             }
         }
     }

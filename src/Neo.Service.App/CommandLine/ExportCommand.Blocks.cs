@@ -11,6 +11,7 @@
 
 using Microsoft.Extensions.Logging;
 using Neo.IO;
+using Neo.Service.App.Hosting;
 using Neo.SmartContract.Native;
 using System;
 using System.CommandLine;

@@ -13,6 +13,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Neo.Extensions;
 using Neo.Service.App.CommandLine;
+using Neo.Service.App.Extensions;
+using Neo.Service.App.Hosting;
 using System;
 using System.CommandLine;
 using System.CommandLine.Builder;
@@ -55,9 +57,10 @@ namespace Neo.Service.App
                     builder.UseCommandHandler<WalletCommand.OpenWalletCommand, WalletCommand.OpenWalletCommand.Handler>();
                     builder.UseSystemd();
                     builder.UseWindowsService();
+                    builder.UseNamedPipes();
                 })
                 .UseDefaults()
-                .UseExceptionHandler(NullExceptionFilter.Handler)
+                //.UseExceptionHandler(NullExceptionFilter.Handler)
                 .Build();
 
             return await parser.InvokeAsync(args);

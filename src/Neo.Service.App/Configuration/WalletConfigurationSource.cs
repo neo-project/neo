@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.Configuration;
-using Neo.Service.App.Providers;
+using Neo.Service.App.Provider;
 using System.Diagnostics.CodeAnalysis;
 using System.Security;
 

@@ -12,7 +12,7 @@
 using System;
 using System.CommandLine.Invocation;
 
-namespace Neo.Service.App
+namespace Neo.Service.App.Handlers
 {
     internal static class NullExceptionFilter
     {

@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Neo.Service.App.Extensions;
+using Neo.Service.App.Hosting;
 using System;
 
 namespace Neo.Service.App

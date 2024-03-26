@@ -13,7 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Neo.Service.App.Configuration;
 using System;
 
-namespace Neo.Service.App.Providers
+namespace Neo.Service.App.Provider
 {
     internal sealed class WalletConfigurationProvider : ConfigurationProvider
     {

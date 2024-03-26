@@ -12,9 +12,10 @@
 using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
 using Neo.Persistence;
+using Neo.Service.App.Helpers;
 using System;
 
-namespace Neo.Service.App
+namespace Neo.Service.App.Configuration
 {
     internal sealed class ApplicationSettings
     {
