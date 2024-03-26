@@ -14,7 +14,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Neo.Service.App.Extensions;
 using System;
-using System.Collections.Generic;
 
 namespace Neo.Service.App
 {
@@ -24,11 +23,11 @@ namespace Neo.Service.App
             new HostBuilder()
                 .ConfigureHostConfiguration(config =>
                 {
-                    config.AddInMemoryCollection(new KeyValuePair<string, string?>[]
-                    {
+                    config.AddInMemoryCollection(
+                    [
                         new(HostDefaults.EnvironmentKey, NeoEnvironments.MainNet),
                         new(HostDefaults.ContentRootKey, Environment.CurrentDirectory),
-                    });
+                    ]);
 
                     config.AddEnvironmentVariables("NEO_");
                     config.AddCommandLine(args);

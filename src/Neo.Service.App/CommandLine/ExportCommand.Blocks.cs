@@ -20,7 +20,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Service.App.Commands
+namespace Neo.Service.App.CommandLine
 {
     internal partial class ExportCommand
     {

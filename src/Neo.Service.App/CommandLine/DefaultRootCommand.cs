@@ -13,7 +13,7 @@ using System;
 using System.CommandLine;
 using System.IO;
 
-namespace Neo.Service.App.Commands
+namespace Neo.Service.App.CommandLine
 {
     internal class DefaultRootCommand : Command
     {

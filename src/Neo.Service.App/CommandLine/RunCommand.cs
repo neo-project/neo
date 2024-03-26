@@ -19,7 +19,7 @@ using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
 using System.Threading.Tasks;
 
-namespace Neo.Service.App.Commands
+namespace Neo.Service.App.CommandLine
 {
     internal sealed class RunCommand : Command
     {

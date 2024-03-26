@@ -11,7 +11,7 @@
 
 using System.CommandLine;
 
-namespace Neo.Service.App.Commands
+namespace Neo.Service.App.CommandLine
 {
     internal sealed partial class ExportCommand : Command
     {

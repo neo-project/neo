@@ -12,7 +12,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Neo.Extensions;
-using Neo.Service.App.Commands;
+using Neo.Service.App.CommandLine;
 using System;
 using System.CommandLine;
 using System.CommandLine.Builder;

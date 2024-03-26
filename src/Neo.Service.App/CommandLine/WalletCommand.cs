@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// ImportCommand.cs file belongs to the neo project and is free
+// WalletCommand.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -11,15 +11,14 @@
 
 using System.CommandLine;
 
-namespace Neo.Service.App.Commands
+namespace Neo.Service.App.CommandLine
 {
-    internal sealed class ImportCommand
+    internal sealed partial class WalletCommand : Command
     {
-        private class BlocksCommand : Command
+        public WalletCommand() : base("wallet", "Use or manage wallet(s)")
         {
-            public BlocksCommand() : base("blocks", "Import blocks from an offline archive file")
-            {
-            }
+            var openWalletCommand = new OpenWalletCommand();
+            AddCommand(openWalletCommand);
         }
     }
 }

@@ -39,4 +39,8 @@
     <ProjectReference Include="..\Neo\Neo.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="NamedPipes\" />
+  </ItemGroup>
+
 </Project>
