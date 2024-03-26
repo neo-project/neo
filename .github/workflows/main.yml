@@ -35,11 +35,11 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
-        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/neo-core.net8.0.json'
-        dotnet test ./tests/Neo.ConsoleService.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/neo-core.net8.0.json'
-        dotnet test ./tests/Neo.UnitTests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/neo-core.net8.0.json'
-        dotnet test ./tests/Neo.VM.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/neo-core.net8.0.json'
-        dotnet test ./tests/Neo.Json.UnitTests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/'  /p:MergeWith='${{ github.workspace }}/TestResults/coverage/neo-core.net8.0.json' /p:CoverletOutputFormat='lcov' -m:1
+        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/'
+        dotnet test ./tests/Neo.ConsoleService.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.net8.0.json'
+        dotnet test ./tests/Neo.UnitTests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.net8.0.json'
+        dotnet test ./tests/Neo.VM.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.net8.0.json'
+        dotnet test ./tests/Neo.Json.UnitTests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/'  /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.net8.0.json' /p:CoverletOutputFormat='lcov' -m:1
         ls -l ${{ github.workspace }}/TestResults/coverage
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
@@ -48,7 +48,8 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         compare-ref: ${{ github.head_ref }}
         compare-sha: ${{ github.sha }}
-        base-path: ${{ github.workspace }}/TestResults/coverage
+        format: lcov
+        file: ${{ github.workspace }}/TestResults/coverage/coverage.net8.0.info
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
