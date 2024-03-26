@@ -30,19 +30,17 @@ jobs:
     - name: Test
       if: matrix.os != 'ubuntu-latest'
       run: |
-        dotnet restore
-        dotnet build --no-restore
-        dotnet test --no-build --no-restore --blame-hang --blame-hang-timeout 180000
+        dotnet test
     - name: Test for coverall
       if: matrix.os == 'ubuntu-latest'
       run: |
         find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
-        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests --blame-hang --blame-hang-timeout 180000 /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/neo-core.net8.0.json'
-        dotnet test ./tests/Neo.ConsoleService.Tests --blame-hang --blame-hang-timeout 180000         /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/neo-core.net8.0.json'
-        dotnet test ./tests/Neo.UnitTests --blame-hang --blame-hang-timeout 180000                    /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/neo-core.net8.0.json'
-        dotnet test ./tests/Neo.VM.Tests --blame-hang --blame-hang-timeout 180000                     /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/neo-core.net8.0.json'
-        dotnet test ./tests/Neo.Json.UnitTests --blame-hang --blame-hang-timeout 180000               /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/'  /p:MergeWith='${{ github.workspace }}/TestResults/coverage/neo-core.net8.0.json' /p:CoverletOutputFormat='lcov' -m:1
-        ls -l ./TestResults/coverage/
+        dotnet test ./tests/Neo.Cryptography.BLS12_381.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/neo-core.net8.0.json'
+        dotnet test ./tests/Neo.ConsoleService.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/neo-core.net8.0.json'
+        dotnet test ./tests/Neo.UnitTests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/neo-core.net8.0.json'
+        dotnet test ./tests/Neo.VM.Tests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/neo-core.net8.0.json'
+        dotnet test ./tests/Neo.Json.UnitTests /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/'  /p:MergeWith='${{ github.workspace }}/TestResults/coverage/neo-core.net8.0.json' /p:CoverletOutputFormat='lcov' -m:1
+        ls -l ${{ github.workspace }}/TestResults/coverage
     - name: Coveralls
       if: matrix.os == 'ubuntu-latest'
       uses: coverallsapp/github-action@v2.2.3
@@ -50,7 +48,7 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         compare-ref: ${{ github.head_ref }}
         compare-sha: ${{ github.sha }}
-        base-path: ./TestResults/coverage
+        base-path: ${{ github.workspace }}/TestResults/coverage
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
