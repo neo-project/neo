@@ -48,6 +48,7 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         format: lcov
         file: ${GITHUB_WORKSPACE}/coverage/lcov.net8.0.info
+        annotations: false
 
   PublishPackage:
     if: github.ref == 'refs/heads/master' && startsWith(github.repository, 'neo-project/')
