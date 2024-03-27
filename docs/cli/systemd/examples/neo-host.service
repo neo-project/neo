@@ -1,0 +1,11 @@
+[Unit]
+Description=NEO N3 blockchain node service
+
+[Service]
+Type=notify
+Restart=always
+TimeoutSec=5
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
