@@ -16,6 +16,7 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Types;
 using System.IO;
 using System.Numerics;
 
@@ -49,11 +50,16 @@ namespace Neo.UnitTests.Extensions
 
         public static bool Transfer(this NativeContract contract, DataCache snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom, Block persistingBlock)
         {
+            return Transfer(contract, snapshot, from, to, amount, signFrom, persistingBlock, null);
+        }
+
+        public static bool Transfer(this NativeContract contract, DataCache snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom, Block persistingBlock, params object[] data)
+        {
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new ManualWitness(signFrom ? new UInt160(from) : null), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
-            script.EmitDynamicCall(contract.Hash, "transfer", from, to, amount, null);
+            script.EmitDynamicCall(contract.Hash, "transfer", from, to, amount, data);
             engine.LoadScript(script.ToArray());
 
             if (engine.Execute() == VMState.FAULT)
