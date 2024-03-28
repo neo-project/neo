@@ -9,7 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.IO;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -26,6 +28,26 @@ namespace Neo.Cryptography
         /// Represents the alphabet of the base-58 encoder.
         /// </summary>
         public const string Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+        private static readonly char s_zeroChar = Alphabet[0];
+        private static readonly int[] s_mapBase58 = new int[]{
+            -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+            -1, 0, 1, 2, 3, 4, 5, 6,  7, 8,-1,-1,-1,-1,-1,-1,
+            -1, 9,10,11,12,13,14,15, 16,-1,17,18,19,20,21,-1,
+            22,23,24,25,26,27,28,29, 30,31,32,-1,-1,-1,-1,-1,
+            -1,33,34,35,36,37,38,39, 40,41,42,43,-1,44,45,46,
+            47,48,49,50,51,52,53,54, 55,56,57,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+            -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+        };
 
         /// <summary>
         /// Converts the specified <see cref="string"/>, which encodes binary data as base-58 digits, to an equivalent byte array. The encoded <see cref="string"/> contains the checksum of the binary data.
@@ -74,19 +96,28 @@ namespace Neo.Cryptography
             var bi = BigInteger.Zero;
             for (int i = 0; i < input.Length; i++)
             {
-                int digit = Alphabet.IndexOf(input[i]);
-                if (digit < 0)
+                var digit = s_mapBase58[(byte)input[i]];
+                if (digit == -1)
                     throw new FormatException($"Invalid Base58 character '{input[i]}' at position {i}");
                 bi = bi * Alphabet.Length + digit;
             }
 
             // Encode BigInteger to byte[]
             // Leading zero bytes get encoded as leading `1` characters
-            int leadingZeroCount = input.TakeWhile(c => c == Alphabet[0]).Count();
-            var leadingZeros = new byte[leadingZeroCount];
-            if (bi.IsZero) return leadingZeros;
-            var bytesWithoutLeadingZeros = bi.ToByteArray(isUnsigned: true, isBigEndian: true);
-            return Concat(leadingZeros, bytesWithoutLeadingZeros);
+            int leadingZeroCount = LeadingBase58Zeros(input);
+            if (bi.IsZero)
+            {
+                return new byte[leadingZeroCount];
+            }
+
+            int decodedSize = bi.GetByteCount(true) + leadingZeroCount;
+
+            Span<byte> result = decodedSize <= 128
+                ? stackalloc byte[decodedSize]
+                : new byte[decodedSize];
+
+            _ = bi.TryWriteBytes(result[leadingZeroCount..], out _, true, true);
+            return result.ToArray();
         }
 
         /// <summary>
@@ -111,9 +142,17 @@ namespace Neo.Cryptography
             // Append `1` for each leading 0 byte
             for (int i = 0; i < input.Length && input[i] == 0; i++)
             {
-                sb.Insert(0, Alphabet[0]);
+                sb.Insert(0, s_zeroChar);
             }
             return sb.ToString();
+        }
+
+        private static int LeadingBase58Zeros(string collection)
+        {
+            int i = 0;
+            for (; i < collection.Length && collection[i] == s_zeroChar; i++) { }
+
+            return i;
         }
     }
 }
