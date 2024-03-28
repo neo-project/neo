@@ -9,13 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.IO;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using System.Text;
-using static Neo.Helper;
 
 namespace Neo.Cryptography
 {
