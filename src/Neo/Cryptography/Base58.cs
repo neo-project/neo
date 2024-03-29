@@ -10,7 +10,10 @@
 // modifications are permitted.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Neo.Cryptography
@@ -26,16 +29,7 @@ namespace Neo.Cryptography
         public const string Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
         private static readonly char s_zeroChar = Alphabet[0];
-        private static readonly int[] s_mapBase58 = new int[]{
-            -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
-            -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
-            -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
-            -1, 0, 1, 2, 3, 4, 5, 6,  7, 8,-1,-1,-1,-1,-1,-1,
-            -1, 9,10,11,12,13,14,15, 16,-1,17,18,19,20,21,-1,
-            22,23,24,25,26,27,28,29, 30,31,32,-1,-1,-1,-1,-1,
-            -1,33,34,35,36,37,38,39, 40,41,42,43,-1,44,45,46,
-            47,48,49,50,51,52,53,54, 55,56,57,-1,-1,-1,-1,-1,
-        };
+        private static readonly Lazy<IReadOnlyDictionary<char, int>> s_alphabetDic = new(() => Enumerable.Range(0, Alphabet.Length).ToDictionary(t => Alphabet[t], t => t));
 
         /// <summary>
         /// Converts the specified <see cref="string"/>, which encodes binary data as base-58 digits, to an equivalent byte array. The encoded <see cref="string"/> contains the checksum of the binary data.
@@ -84,8 +78,7 @@ namespace Neo.Cryptography
             var bi = BigInteger.Zero;
             for (int i = 0; i < input.Length; i++)
             {
-                var digit = s_mapBase58[(byte)input[i]];
-                if (digit == -1)
+                if (!s_alphabetDic.Value.TryGetValue(input[i], out var digit))
                     throw new FormatException($"Invalid Base58 character '{input[i]}' at position {i}");
                 bi = bi * Alphabet.Length + digit;
             }
@@ -135,10 +128,13 @@ namespace Neo.Cryptography
             return sb.ToString();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int LeadingBase58Zeros(string collection)
         {
             int i = 0;
-            for (; i < collection.Length && collection[i] == s_zeroChar; i++) { }
+
+            var len = collection.Length;
+            for (; i < len && collection[i] == s_zeroChar; i++) { }
 
             return i;
         }
