@@ -131,8 +131,7 @@ namespace Neo.Cryptography
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int LeadingBase58Zeros(string collection)
         {
-            int i = 0;
-
+            var i = 0;
             var len = collection.Length;
             for (; i < len && collection[i] == s_zeroChar; i++) { }
 
