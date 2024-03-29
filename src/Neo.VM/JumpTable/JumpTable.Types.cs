@@ -22,10 +22,10 @@ namespace Neo.VM
     {
         /// <summary>
         /// Determines whether the item on top of the evaluation stack is null.
+        /// <see cref="OpCode.ISNULL"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.ISNULL"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void IsNull(ExecutionEngine engine, Instruction instruction)
         {
@@ -35,10 +35,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Determines whether the item on top of the evaluation stack has a specified type.
+        /// <see cref="OpCode.ISTYPE"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.ISTYPE"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void IsType(ExecutionEngine engine, Instruction instruction)
         {
@@ -51,10 +51,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Converts the item on top of the evaluation stack to a specified type.
+        /// <see cref="OpCode.CONVERT"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.CONVERT"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Convert(ExecutionEngine engine, Instruction instruction)
         {
@@ -64,10 +64,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Aborts execution with a specified message.
+        /// <see cref="OpCode.ABORTMSG"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.ABORTMSG"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void AbortMsg(ExecutionEngine engine, Instruction instruction)
         {
@@ -77,10 +77,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Asserts a condition with a specified message, throwing an exception if the condition is false.
+        /// <see cref="OpCode.ASSERTMSG"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.ASSERTMSG"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void AssertMsg(ExecutionEngine engine, Instruction instruction)
         {

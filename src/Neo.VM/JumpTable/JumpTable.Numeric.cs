@@ -26,10 +26,10 @@ namespace Neo.VM
         /// <summary>
         /// Computes the sign of the specified integer.
         /// If the value is negative, puts -1; if positive, puts 1; if zero, puts 0.
+        /// <see cref="OpCode.SIGN"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.SIGN"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Sign(ExecutionEngine engine, Instruction instruction)
         {
@@ -39,10 +39,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Computes the absolute value of the specified integer.
+        /// <see cref="OpCode.ABS"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.ABS"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Abs(ExecutionEngine engine, Instruction instruction)
         {
@@ -52,10 +52,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Computes the negation of the specified integer.
+        /// <see cref="OpCode.NEGATE"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.NEGATE"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Negate(ExecutionEngine engine, Instruction instruction)
         {
@@ -65,10 +65,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Increments the specified integer by one.
+        /// <see cref="OpCode.INC"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.INC"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Inc(ExecutionEngine engine, Instruction instruction)
         {
@@ -78,10 +78,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Decrements the specified integer by one.
+        /// <see cref="OpCode.DEC"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.DEC"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Dec(ExecutionEngine engine, Instruction instruction)
         {
@@ -91,10 +91,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Computes the sum of two integers.
+        /// <see cref="OpCode.ADD"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.ADD"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Add(ExecutionEngine engine, Instruction instruction)
         {
@@ -105,10 +105,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Computes the difference between two integers.
+        /// <see cref="OpCode.SUB"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.SUB"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Sub(ExecutionEngine engine, Instruction instruction)
         {
@@ -119,10 +119,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Computes the product of two integers.
+        /// <see cref="OpCode.MUL"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.MUL"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Mul(ExecutionEngine engine, Instruction instruction)
         {
@@ -133,10 +133,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Computes the quotient of two integers.
+        /// <see cref="OpCode.DIV"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.DIV"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Div(ExecutionEngine engine, Instruction instruction)
         {
@@ -147,10 +147,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Computes the result of raising a number to the specified power.
+        /// <see cref="OpCode.MOD"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.MOD"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Mod(ExecutionEngine engine, Instruction instruction)
         {
@@ -161,10 +161,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Computes the square root of the specified integer.
+        /// <see cref="OpCode.POW"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.POW"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Pow(ExecutionEngine engine, Instruction instruction)
         {
@@ -176,10 +176,10 @@ namespace Neo.VM
 
         /// <summary>
         /// 
+        /// <see cref="OpCode.SQRT"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.SQRT"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Sqrt(ExecutionEngine engine, Instruction instruction)
         {
@@ -188,10 +188,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Computes the modular multiplication of two integers.
+        /// <see cref="OpCode.MODMUL"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.MODMUL"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void ModMul(ExecutionEngine engine, Instruction instruction)
         {
@@ -203,10 +203,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Computes the modular exponentiation of an integer.
+        /// <see cref="OpCode.MODPOW"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.MODPOW"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void ModPow(ExecutionEngine engine, Instruction instruction)
         {
@@ -221,10 +221,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Computes the left shift of an integer.
+        /// <see cref="OpCode.SHL"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.SHL"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Shl(ExecutionEngine engine, Instruction instruction)
         {
@@ -237,10 +237,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Computes the right shift of an integer.
+        /// <see cref="OpCode.SHR"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.SHR"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Shr(ExecutionEngine engine, Instruction instruction)
         {
@@ -253,10 +253,10 @@ namespace Neo.VM
 
         /// <summary>
         /// If the input is 0 or 1, it is flipped. Otherwise the output will be 0.
+        /// <see cref="OpCode.NOT"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.NOT"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Not(ExecutionEngine engine, Instruction instruction)
         {
@@ -266,10 +266,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Computes the logical AND of the top two stack items and pushes the result onto the stack.
+        /// <see cref="OpCode.BOOLAND"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.BOOLAND"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void BoolAnd(ExecutionEngine engine, Instruction instruction)
         {
@@ -280,10 +280,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Computes the logical OR of the top two stack items and pushes the result onto the stack.
+        /// <see cref="OpCode.BOOLOR"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.BOOLOR"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void BoolOr(ExecutionEngine engine, Instruction instruction)
         {
@@ -294,10 +294,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Determines whether the top stack item is not zero and pushes the result onto the stack.
+        /// <see cref="OpCode.NZ"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.NZ"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Nz(ExecutionEngine engine, Instruction instruction)
         {
@@ -307,10 +307,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Determines whether the top two stack items are equal and pushes the result onto the stack.
+        /// <see cref="OpCode.NUMEQUAL"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.NUMEQUAL"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NumEqual(ExecutionEngine engine, Instruction instruction)
         {
@@ -321,10 +321,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Determines whether the top two stack items are not equal and pushes the result onto the stack.
+        /// <see cref="OpCode.NUMNOTEQUAL"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.NUMNOTEQUAL"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NumNotEqual(ExecutionEngine engine, Instruction instruction)
         {
@@ -335,10 +335,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Determines whether the two integer at the top of the stack, x1 are less than x2, and pushes the result onto the stack.
+        /// <see cref="OpCode.LT"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.LT"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Lt(ExecutionEngine engine, Instruction instruction)
         {
@@ -352,10 +352,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Determines whether the two integer at the top of the stack, x1 are less than or equal to x2, and pushes the result onto the stack.
+        /// <see cref="OpCode.LE"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.LE"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Le(ExecutionEngine engine, Instruction instruction)
         {
@@ -369,10 +369,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Determines whether the two integer at the top of the stack, x1 are greater than x2, and pushes the result onto the stack.
+        /// <see cref="OpCode.GT"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.GT"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Gt(ExecutionEngine engine, Instruction instruction)
         {
@@ -386,10 +386,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Determines whether the two integer at the top of the stack, x1 are greater than or equal to x2, and pushes the result onto the stack.
+        /// <see cref="OpCode.GE"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.GE"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Ge(ExecutionEngine engine, Instruction instruction)
         {
@@ -403,10 +403,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Computes the minimum of the top two stack items and pushes the result onto the stack.
+        /// <see cref="OpCode.MIN"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.MIN"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Min(ExecutionEngine engine, Instruction instruction)
         {
@@ -417,10 +417,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Computes the maximum of the top two stack items and pushes the result onto the stack.
+        /// <see cref="OpCode.MAX"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.MAX"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Max(ExecutionEngine engine, Instruction instruction)
         {
@@ -432,10 +432,10 @@ namespace Neo.VM
         /// <summary>
         /// Determines whether the top stack item is within the range specified by the next two top stack items
         /// and pushes the result onto the stack.
+        /// <see cref="OpCode.WITHIN"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.WITHIN"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Within(ExecutionEngine engine, Instruction instruction)
         {

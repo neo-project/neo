@@ -20,10 +20,10 @@ namespace Neo.VM
     {
         /// <summary>
         /// Flips all of the bits of an integer.
+        /// <see cref="OpCode.INVERT"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.INVERT"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Invert(ExecutionEngine engine, Instruction instruction)
         {
@@ -33,10 +33,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Computes the bitwise AND of two integers.
+        /// <see cref="OpCode.AND"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.AND"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void And(ExecutionEngine engine, Instruction instruction)
         {
@@ -47,10 +47,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Computes the bitwise OR of two integers.
+        /// <see cref="OpCode.OR"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.OR"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Or(ExecutionEngine engine, Instruction instruction)
         {
@@ -61,10 +61,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Computes the bitwise XOR (exclusive OR) of two integers.
+        /// <see cref="OpCode.XOR"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.XOR"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void XOr(ExecutionEngine engine, Instruction instruction)
         {
@@ -75,10 +75,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Determines whether two objects are equal according to the execution engine's comparison rules.
+        /// <see cref="OpCode.EQUAL"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.EQUAL"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Equal(ExecutionEngine engine, Instruction instruction)
         {
@@ -89,10 +89,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Determines whether two objects are not equal according to the execution engine's comparison rules.
+        /// <see cref="OpCode.NOTEQUAL"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.NOTEQUAL"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NotEqual(ExecutionEngine engine, Instruction instruction)
         {

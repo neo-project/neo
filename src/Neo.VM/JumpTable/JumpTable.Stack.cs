@@ -22,10 +22,10 @@ namespace Neo.VM
     {
         /// <summary>
         /// Pushes the number of stack items in the evaluation stack onto the stack.
+        /// <see cref="OpCode.DEPTH"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.DEPTH"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Depth(ExecutionEngine engine, Instruction instruction)
         {
@@ -34,10 +34,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Removes the top item from the evaluation stack.
+        /// <see cref="OpCode.DROP"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.DROP"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Drop(ExecutionEngine engine, Instruction instruction)
         {
@@ -46,10 +46,10 @@ namespace Neo.VM
 
         /// <summary>
         /// 
+        /// <see cref="OpCode.NIP"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.NIP"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Nip(ExecutionEngine engine, Instruction instruction)
         {
@@ -58,10 +58,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Removes the nth item from the top of the evaluation stack.
+        /// <see cref="OpCode.XDROP"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.XDROP"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void XDrop(ExecutionEngine engine, Instruction instruction)
         {
@@ -73,10 +73,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Clears all items from the evaluation stack.
+        /// <see cref="OpCode.CLEAR"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.CLEAR"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Clear(ExecutionEngine engine, Instruction instruction)
         {
@@ -85,10 +85,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Duplicates the item on the top of the evaluation stack.
+        /// <see cref="OpCode.DUP"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.DUP"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Dup(ExecutionEngine engine, Instruction instruction)
         {
@@ -97,10 +97,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Copies the second item from the top of the evaluation stack and pushes the copy onto the stack.
+        /// <see cref="OpCode.OVER"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.OVER"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Over(ExecutionEngine engine, Instruction instruction)
         {
@@ -109,10 +109,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Copies the nth item from the top of the evaluation stack and pushes the copy onto the stack.
+        /// <see cref="OpCode.PICK"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.PICK"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Pick(ExecutionEngine engine, Instruction instruction)
         {
@@ -124,10 +124,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Copies the top item on the evaluation stack and inserts the copy between the first and second items.
+        /// <see cref="OpCode.TUCK"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.TUCK"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Tuck(ExecutionEngine engine, Instruction instruction)
         {
@@ -136,10 +136,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Swaps the top two items on the evaluation stack.
+        /// <see cref="OpCode.SWAP"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.SWAP"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Swap(ExecutionEngine engine, Instruction instruction)
         {
@@ -149,10 +149,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Left rotates the top three items on the evaluation stack.
+        /// <see cref="OpCode.ROT"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.ROT"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Rot(ExecutionEngine engine, Instruction instruction)
         {
@@ -162,10 +162,10 @@ namespace Neo.VM
 
         /// <summary>
         /// The item n back in the stack is moved to the top.
+        /// <see cref="OpCode.ROLL"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.ROLL"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Roll(ExecutionEngine engine, Instruction instruction)
         {
@@ -179,10 +179,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Reverses the order of the top 3 items on the evaluation stack.
+        /// <see cref="OpCode.REVERSE3"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.REVERSE3"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Reverse3(ExecutionEngine engine, Instruction instruction)
         {
@@ -191,10 +191,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Reverses the order of the top 4 items on the evaluation stack.
+        /// <see cref="OpCode.REVERSE4"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.REVERSE4"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Reverse4(ExecutionEngine engine, Instruction instruction)
         {
@@ -203,10 +203,10 @@ namespace Neo.VM
 
         /// <summary>
         /// Reverses the order of the top n items on the evaluation stack.
+        /// <see cref="OpCode.REVERSEN"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.REVERSEN"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void ReverseN(ExecutionEngine engine, Instruction instruction)
         {

@@ -23,10 +23,10 @@ namespace Neo.VM
     {
         /// <summary>
         /// Pushes an 8-bit signed integer onto the evaluation stack.
+        /// <see cref="OpCode.PUSHINT8"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
-        /// <see cref="OpCode.PUSHINT8"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void PushInt8(ExecutionEngine engine, Instruction instruction)
         {
