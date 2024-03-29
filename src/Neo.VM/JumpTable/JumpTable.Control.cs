@@ -16,25 +16,60 @@ using System.Runtime.CompilerServices;
 
 namespace Neo.VM
 {
+    /// <summary>
+    /// Partial class for performing bitwise and logical operations on integers within a jump table.
+    /// </summary>
+    /// <remarks>
+    /// For binary operations x1 and x2, x1 is the first pushed onto the evaluation stack (the second popped from the stack),
+    /// x2 is the second pushed onto the evaluation stack (the first popped from the stack)
+    /// </remarks>
     public partial class JumpTable
     {
+        /// <summary>
+        /// No operation. Does nothing.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <see cref="OpCode.NOP"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Nop(ExecutionEngine engine, Instruction instruction)
         {
         }
 
+        /// <summary>
+        /// Jumps to the specified offset from the current instruction pointer,
+        /// where the offset is obtained from the first operand of the instruction and interpreted as a signed byte.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.JMP"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Jmp(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteJumpOffset(engine, instruction.TokenI8);
         }
 
+        /// <summary>
+        /// Jumps to the specified offset from the current instruction pointer,
+        /// where the offset is obtained from the first operand of the instruction and interpreted as a 32-bit signed integer.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.JMP_L"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Jmp_L(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteJumpOffset(engine, instruction.TokenI32);
         }
 
+        /// <summary>
+        /// Jumps to the specified offset from the current instruction pointer
+        /// if the boolean result of popping the evaluation stack is true.
+        /// The offset is obtained from the instruction's first operand interpreted as a signed byte.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.JMPIF"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpIf(ExecutionEngine engine, Instruction instruction)
         {
@@ -42,6 +77,14 @@ namespace Neo.VM
                 ExecuteJumpOffset(engine, instruction.TokenI8);
         }
 
+        /// <summary>
+        /// Jumps to the specified offset from the current instruction pointer
+        /// if the boolean result of popping the evaluation stack is true.
+        /// The offset is obtained from the instruction's first operand interpreted as a 32-bit signed integer.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.JMPIF_L"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpIf_L(ExecutionEngine engine, Instruction instruction)
         {
@@ -49,6 +92,14 @@ namespace Neo.VM
                 ExecuteJumpOffset(engine, instruction.TokenI32);
         }
 
+        /// <summary>
+        /// Jumps to the specified offset from the current instruction pointer
+        /// if the boolean result of popping the evaluation stack is false.
+        /// The offset is obtained from the instruction's first operand interpreted as a signed byte.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.JMPIFNOT"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpIfNot(ExecutionEngine engine, Instruction instruction)
         {
@@ -56,6 +107,14 @@ namespace Neo.VM
                 ExecuteJumpOffset(engine, instruction.TokenI8);
         }
 
+        /// <summary>
+        /// Jumps to the specified offset from the current instruction pointer
+        /// if the boolean result of popping the evaluation stack is false.
+        /// The offset is obtained from the instruction's first operand interpreted as a 32-bit signed integer.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.JMPIFNOT_L"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpIfNot_L(ExecutionEngine engine, Instruction instruction)
         {
@@ -63,6 +122,14 @@ namespace Neo.VM
                 ExecuteJumpOffset(engine, instruction.TokenI32);
         }
 
+        /// <summary>
+        /// Jumps to the specified offset from the current instruction pointer
+        /// if the two integers popped from the evaluation stack are equal.
+        /// The offset is obtained from the instruction's first operand interpreted as a signed byte.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.JMPEQ"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpEq(ExecutionEngine engine, Instruction instruction)
         {
@@ -72,6 +139,14 @@ namespace Neo.VM
                 ExecuteJumpOffset(engine, instruction.TokenI8);
         }
 
+        /// <summary>
+        /// Jumps to the specified offset from the current instruction pointer
+        /// if the two integers popped from the evaluation stack are equal.
+        /// The offset is obtained from the instruction's first operand interpreted as a 32-bit signed integer.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.JMPEQ_L"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpEq_L(ExecutionEngine engine, Instruction instruction)
         {
@@ -81,6 +156,14 @@ namespace Neo.VM
                 ExecuteJumpOffset(engine, instruction.TokenI32);
         }
 
+        /// <summary>
+        /// Jumps to the specified offset from the current instruction pointer
+        /// if the two integers popped from the evaluation stack are not equal.
+        /// The offset is obtained from the instruction's first operand interpreted as a signed byte.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.JMPNE"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpNe(ExecutionEngine engine, Instruction instruction)
         {
@@ -90,6 +173,14 @@ namespace Neo.VM
                 ExecuteJumpOffset(engine, instruction.TokenI8);
         }
 
+        /// <summary>
+        /// Jumps to the specified offset from the current instruction pointer
+        /// if the two integers popped from the evaluation stack are not equal.
+        /// The offset is obtained from the instruction's first operand interpreted as a 32-bit signed integer.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.JMPNE_L"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpNe_L(ExecutionEngine engine, Instruction instruction)
         {
@@ -99,6 +190,14 @@ namespace Neo.VM
                 ExecuteJumpOffset(engine, instruction.TokenI32);
         }
 
+        /// <summary>
+        /// Jumps to the specified offset from the current instruction pointer
+        /// if the first integer pushed onto the evaluation stack is greater than the second integer.
+        /// The offset is obtained from the instruction's first operand interpreted as a signed byte.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.JMPGT"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpGt(ExecutionEngine engine, Instruction instruction)
         {
@@ -108,6 +207,14 @@ namespace Neo.VM
                 ExecuteJumpOffset(engine, instruction.TokenI8);
         }
 
+        /// <summary>
+        /// Jumps to the specified offset from the current instruction pointer
+        /// if the first integer pushed onto the evaluation stack is greater than the second integer.
+        /// The offset is obtained from the instruction's first operand interpreted as a 32-bit signed integer.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.JMPGT_L"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpGt_L(ExecutionEngine engine, Instruction instruction)
         {
@@ -117,6 +224,14 @@ namespace Neo.VM
                 ExecuteJumpOffset(engine, instruction.TokenI32);
         }
 
+        /// <summary>
+        /// Jumps to the specified offset from the current instruction pointer
+        /// if the first integer pushed onto the evaluation stack is greater than or equal to the second integer.
+        /// The offset is obtained from the instruction's first operand interpreted as a signed byte.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.JMPGE"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpGe(ExecutionEngine engine, Instruction instruction)
         {
@@ -126,6 +241,14 @@ namespace Neo.VM
                 ExecuteJumpOffset(engine, instruction.TokenI8);
         }
 
+        /// <summary>
+        /// Jumps to the specified offset from the current instruction pointer
+        /// if the first integer pushed onto the evaluation stack is greater than or equal to the second integer.
+        /// The offset is obtained from the instruction's first operand interpreted as a 32-bit signed integer.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.JMPGE_L"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpGe_L(ExecutionEngine engine, Instruction instruction)
         {
@@ -135,6 +258,14 @@ namespace Neo.VM
                 ExecuteJumpOffset(engine, instruction.TokenI32);
         }
 
+        /// <summary>
+        /// Jumps to the specified offset from the current instruction pointer
+        /// if the first integer pushed onto the evaluation stack is less than the second integer.
+        /// The offset is obtained from the instruction's first operand interpreted as a signed byte.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.JMPLT"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpLt(ExecutionEngine engine, Instruction instruction)
         {
@@ -144,6 +275,14 @@ namespace Neo.VM
                 ExecuteJumpOffset(engine, instruction.TokenI8);
         }
 
+        /// <summary>
+        /// Jumps to the specified offset from the current instruction pointer
+        /// if the first integer pushed onto the evaluation stack is less than the second integer.
+        /// The offset is obtained from the instruction's first operand interpreted as a 32-bit signed integer.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.JMPLT_L"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpLt_L(ExecutionEngine engine, Instruction instruction)
         {
@@ -153,6 +292,14 @@ namespace Neo.VM
                 ExecuteJumpOffset(engine, instruction.TokenI32);
         }
 
+        /// <summary>
+        /// Jumps to the specified offset from the current instruction pointer
+        /// if the first integer pushed onto the evaluation stack is less than or equal to the second integer.
+        /// The offset is obtained from the instruction's first operand interpreted as a signed byte.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.JMPLE"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpLe(ExecutionEngine engine, Instruction instruction)
         {
@@ -162,8 +309,16 @@ namespace Neo.VM
                 ExecuteJumpOffset(engine, instruction.TokenI8);
         }
 
+        /// <summary>
+        /// Jumps to the specified offset from the current instruction pointer
+        /// if the first integer pushed onto the evaluation stack is less than or equal to the second integer.
+        /// The offset is obtained from the instruction's first operand interpreted as a 32-bit signed integer.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.JMPLE_L"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void JMPLE_L(ExecutionEngine engine, Instruction instruction)
+        public virtual void JmpLe_L(ExecutionEngine engine, Instruction instruction)
         {
             var x2 = engine.Pop().GetInteger();
             var x1 = engine.Pop().GetInteger();
@@ -171,18 +326,39 @@ namespace Neo.VM
                 ExecuteJumpOffset(engine, instruction.TokenI32);
         }
 
+        /// <summary>
+        /// Calls a method specified by the offset from the current instruction pointer.
+        /// The offset is obtained from the instruction's first operand interpreted as a signed byte.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.CALL"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Call(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteCall(engine, checked(engine.CurrentContext!.InstructionPointer + instruction.TokenI8));
         }
 
+        /// <summary>
+        /// Calls a method specified by the offset from the current instruction pointer.
+        /// The offset is obtained from the instruction's first operand interpreted as a 32-bit signed integer.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <see cref="OpCode.CALL_L"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Call_L(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteCall(engine, checked(engine.CurrentContext!.InstructionPointer + instruction.TokenI32));
         }
 
+        /// <summary>
+        /// Calls a method specified by the pointer pushed onto the evaluation stack.
+        /// It verifies if the pointer belongs to the current script.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The current instruction.</param>
+        /// <see cref="OpCode.CALLA"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void CallA(ExecutionEngine engine, Instruction instruction)
         {
@@ -192,18 +368,36 @@ namespace Neo.VM
             ExecuteCall(engine, x.Position);
         }
 
+        /// <summary>
+        /// Calls the function described by the token.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The current instruction.</param>
+        /// <see cref="OpCode.CALLT"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void CallT(ExecutionEngine engine, Instruction instruction)
         {
             throw new InvalidOperationException($"Token not found: {instruction.TokenU16}");
         }
 
+        /// <summary>
+        /// Aborts the execution by turning the virtual machine state to FAULT immediately, and the exception cannot be caught.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The current instruction.</param>
+        /// <see cref="OpCode.ABORT"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Abort(ExecutionEngine engine, Instruction instruction)
         {
             throw new Exception($"{OpCode.ABORT} is executed.");
         }
 
+        /// <summary>
+        /// Pop the top value of the stack. If it's false, exit vm execution and set vm state to FAULT.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The current instruction.</param>
+        /// <see cref="OpCode.ASSERT"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Assert(ExecutionEngine engine, Instruction instruction)
         {
@@ -212,12 +406,27 @@ namespace Neo.VM
                 throw new Exception($"{OpCode.ASSERT} is executed with false result.");
         }
 
+        /// <summary>
+        /// Pop the top value of the stack, and throw it.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The current instruction.</param>
+        /// <see cref="OpCode.THROW"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Throw(ExecutionEngine engine, Instruction instruction)
         {
             ExecuteThrow(engine, engine.Pop());
         }
 
+        /// <summary>
+        /// Initiates a try block with the specified catch and finally offsets.
+        /// If there's no catch block, set CatchOffset to 0. If there's no finally block, set FinallyOffset to 0.
+        /// where the catch offset is obtained from the first operand of the instruction and interpreted as a signed byte，
+        /// the catch offset is obtained from the second operand of the instruction and interpreted as a signed byte.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The current instruction.</param>
+        /// <see cref="OpCode.TRY"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Try(ExecutionEngine engine, Instruction instruction)
         {
@@ -226,6 +435,15 @@ namespace Neo.VM
             ExecuteTry(engine, catchOffset, finallyOffset);
         }
 
+        /// <summary>
+        /// Initiates a try block with the specified catch and finally offsets.
+        /// If there's no catch block, set CatchOffset to 0. If there's no finally block, set FinallyOffset to 0.
+        /// where the catch offset is obtained from the first operand of the instruction and interpreted as a 32-bit signed integer，
+        /// the catch offset is obtained from the second operand of the instruction and interpreted as a 32-bit signed integer.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The current instruction.</param>
+        /// <see cref="OpCode.TRY_L"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Try_L(ExecutionEngine engine, Instruction instruction)
         {
@@ -234,6 +452,14 @@ namespace Neo.VM
             ExecuteTry(engine, catchOffset, finallyOffset);
         }
 
+        /// <summary>
+        /// Ensures that the appropriate surrounding finally blocks are executed,
+        /// then unconditionally transfers control to the specific target instruction represented as a 1-byte signed offset
+        /// from the beginning of the current instruction.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The current instruction.</param>
+        /// <see cref="OpCode.ENDTRY"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void EndTry(ExecutionEngine engine, Instruction instruction)
         {
@@ -241,6 +467,14 @@ namespace Neo.VM
             ExecuteEndTry(engine, endOffset);
         }
 
+        /// <summary>
+        /// Ensures that the appropriate surrounding finally blocks are executed,
+        /// then unconditionally transfers control to the specific target instruction represented as a 4-byte signed offset
+        /// from the beginning of the current instruction.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The current instruction.</param>
+        /// <see cref="OpCode.ENDTRY_L"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void EndTry_L(ExecutionEngine engine, Instruction instruction)
         {
@@ -248,6 +482,14 @@ namespace Neo.VM
             ExecuteEndTry(engine, endOffset);
         }
 
+        /// <summary>
+        /// Ends the finally block. If no exception occurs or is caught,
+        /// the VM jumps to the target instruction specified by ENDTRY/ENDTRY_L.
+        /// Otherwise, the VM rethrows the exception to the upper layer.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The current instruction.</param>
+        /// <see cref="OpCode.ENDFINALLY"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void EndFinally(ExecutionEngine engine, Instruction instruction)
         {
@@ -264,6 +506,12 @@ namespace Neo.VM
             engine.isJumping = true;
         }
 
+        /// <summary>
+        /// Returns from the current method.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The current instruction.</param>
+        /// <see cref="OpCode.RET"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Ret(ExecutionEngine engine, Instruction instruction)
         {
@@ -281,6 +529,12 @@ namespace Neo.VM
             engine.isJumping = true;
         }
 
+        /// <summary>
+        /// Calls to an interop service.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The current instruction.</param>
+        /// <see cref="OpCode.SYSCALL"/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Syscall(ExecutionEngine engine, Instruction instruction)
         {
@@ -289,12 +543,22 @@ namespace Neo.VM
 
         #region Execute methods
 
+        /// <summary>
+        /// Executes a call operation by loading a new execution context at the specified position.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="position">The position to load the new execution context.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void ExecuteCall(ExecutionEngine engine, int position)
         {
             engine.LoadContext(engine.CurrentContext!.Clone(position));
         }
 
+        /// <summary>
+        /// Executes the end of a try block, either popping it from the try stack or transitioning to the finally block.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="endOffset">The offset to the end of the try block.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void ExecuteEndTry(ExecutionEngine engine, int endOffset)
         {
@@ -320,6 +584,11 @@ namespace Neo.VM
             engine.isJumping = true;
         }
 
+        /// <summary>
+        /// Executes a jump operation to the specified position.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="position">The position to jump to.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void ExecuteJump(ExecutionEngine engine, int position)
         {
@@ -329,12 +598,23 @@ namespace Neo.VM
             engine.isJumping = true;
         }
 
+        /// <summary>
+        /// Executes a jump operation with the specified offset from the current instruction pointer.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="offset">The offset from the current instruction pointer.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void ExecuteJumpOffset(ExecutionEngine engine, int offset)
         {
             ExecuteJump(engine, checked(engine.CurrentContext!.InstructionPointer + offset));
         }
 
+        /// <summary>
+        /// Executes a try block operation with the specified catch and finally offsets.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="catchOffset">The catch block offset.</param>
+        /// <param name="finallyOffset">The finally block offset.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void ExecuteTry(ExecutionEngine engine, int catchOffset, int finallyOffset)
         {
@@ -349,6 +629,11 @@ namespace Neo.VM
             engine.CurrentContext.TryStack.Push(new ExceptionHandlingContext(catchPointer, finallyPointer));
         }
 
+        /// <summary>
+        /// Executes a throw operation, handling any surrounding try-catch-finally blocks.
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="ex">The exception to throw.</param>
         public virtual void ExecuteThrow(ExecutionEngine engine, StackItem? ex)
         {
             engine.UncaughtException = ex;
