@@ -44,7 +44,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
         public void TestIsValid()
         {
             Random random = new();
-            byte[] privateKey = new byte[32];
+            var privateKey = new byte[32];
             random.NextBytes(privateKey);
             KeyPair keyPair = new(privateKey);
             ContractGroup contractGroup = new()
@@ -55,11 +55,11 @@ namespace Neo.UnitTests.SmartContract.Manifest
             Assert.AreEqual(false, contractGroup.IsValid(UInt160.Zero));
 
 
-            byte[] message = new byte[] {  0x01,0x01,0x01,0x01,0x01,
+            var message = new byte[] {  0x01,0x01,0x01,0x01,0x01,
                                            0x01,0x01,0x01,0x01,0x01,
                                            0x01,0x01,0x01,0x01,0x01,
                                            0x01,0x01,0x01,0x01,0x01 };
-            byte[] signature = Crypto.Sign(message, keyPair.PrivateKey, keyPair.PublicKey.EncodePoint(false).Skip(1).ToArray());
+            var signature = Crypto.Sign(message, keyPair.PrivateKey);
             contractGroup = new ContractGroup
             {
                 PubKey = keyPair.PublicKey,
