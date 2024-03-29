@@ -40,6 +40,7 @@ namespace Neo.VM
         /// <param name="instruction">The instruction being executed.</param>
         /// <summary>
         /// <see cref="OpCode.PUSHINT16"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void PushInt16(ExecutionEngine engine, Instruction instruction)
         {
             engine.Push(new BigInteger(instruction.Operand.Span));
