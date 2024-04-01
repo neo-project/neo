@@ -124,6 +124,9 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>
+        /// TODO: Change to NewNullArray method or add it?
+        /// </remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NewArray0(ExecutionEngine engine, Instruction instruction)
         {
@@ -259,6 +262,7 @@ namespace Neo.VM
                 // For arrays, check if the index is within bounds and push the result onto the stack.
                 case VMArray array:
                     {
+                        // TODO: Overflow and underflow checking needs to be done.
                         var index = (int)key.GetInteger();
                         if (index < 0)
                             throw new InvalidOperationException($"The negative value {index} is invalid for OpCode.{instruction.OpCode}.");
@@ -274,6 +278,7 @@ namespace Neo.VM
                 // For buffers, check if the index is within bounds and push the result onto the stack.
                 case Types.Buffer buffer:
                     {
+                        // TODO: Overflow and underflow checking needs to be done.
                         var index = (int)key.GetInteger();
                         if (index < 0)
                             throw new InvalidOperationException($"The negative value {index} is invalid for OpCode.{instruction.OpCode}.");
@@ -283,6 +288,7 @@ namespace Neo.VM
                 // For byte strings, check if the index is within bounds and push the result onto the stack.
                 case ByteString array:
                     {
+                        // TODO: Overflow and underflow checking needs to be done.
                         var index = (int)key.GetInteger();
                         if (index < 0)
                             throw new InvalidOperationException($"The negative value {index} is invalid for OpCode.{instruction.OpCode}.");
