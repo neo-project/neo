@@ -52,6 +52,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop n+1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void PackStruct(ExecutionEngine engine, Instruction instruction)
         {
@@ -73,6 +74,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop n+1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Pack(ExecutionEngine engine, Instruction instruction)
         {
@@ -94,6 +96,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 2n+1 or n+1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Unpack(ExecutionEngine engine, Instruction instruction)
         {
@@ -126,6 +129,7 @@ namespace Neo.VM
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
         /// <remarks>
+        /// Pop 0, Push 1
         /// TODO: Change to NewNullArray method or add it?
         /// </remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -140,6 +144,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NewArray(ExecutionEngine engine, Instruction instruction)
         {
@@ -156,6 +161,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NewArray_T(ExecutionEngine engine, Instruction instruction)
         {
@@ -184,6 +190,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 0, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NewStruct0(ExecutionEngine engine, Instruction instruction)
         {
@@ -196,6 +203,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NewStruct(ExecutionEngine engine, Instruction instruction)
         {
@@ -214,6 +222,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 0, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NewMap(ExecutionEngine engine, Instruction instruction)
         {
@@ -226,6 +235,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Size(ExecutionEngine engine, Instruction instruction)
         {
@@ -252,6 +262,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void HasKey(ExecutionEngine engine, Instruction instruction)
         {
@@ -307,6 +318,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Keys(ExecutionEngine engine, Instruction instruction)
         {
@@ -320,6 +332,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Values(ExecutionEngine engine, Instruction instruction)
         {
@@ -346,6 +359,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void PickItem(ExecutionEngine engine, Instruction instruction)
         {
@@ -396,6 +410,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Append(ExecutionEngine engine, Instruction instruction)
         {
@@ -406,11 +421,12 @@ namespace Neo.VM
         }
 
         /// <summary>
-        /// Sets the item at the specified index in the array, map, or buffer to the specified value.
+        /// A value v, index n (or key) and an array (or map) are taken from main stack. Attribution array[n]=v (or map[n]=v) is performed.
         /// <see cref="OpCode.SETITEM"/>
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 3, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void SetItem(ExecutionEngine engine, Instruction instruction)
         {
@@ -457,6 +473,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void ReverseItems(ExecutionEngine engine, Instruction instruction)
         {
@@ -480,6 +497,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Remove(ExecutionEngine engine, Instruction instruction)
         {
@@ -507,6 +525,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void ClearItems(ExecutionEngine engine, Instruction instruction)
         {
@@ -520,6 +539,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void PopItem(ExecutionEngine engine, Instruction instruction)
         {
