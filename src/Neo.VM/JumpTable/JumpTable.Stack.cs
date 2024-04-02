@@ -26,6 +26,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 0, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Depth(ExecutionEngine engine, Instruction instruction)
         {
@@ -38,6 +39,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Drop(ExecutionEngine engine, Instruction instruction)
         {
@@ -62,6 +64,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void XDrop(ExecutionEngine engine, Instruction instruction)
         {
@@ -89,6 +92,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 0, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Dup(ExecutionEngine engine, Instruction instruction)
         {
@@ -101,6 +105,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 0, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Over(ExecutionEngine engine, Instruction instruction)
         {
@@ -113,6 +118,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Pick(ExecutionEngine engine, Instruction instruction)
         {
@@ -140,6 +146,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 0, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Swap(ExecutionEngine engine, Instruction instruction)
         {
@@ -153,6 +160,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 0, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Rot(ExecutionEngine engine, Instruction instruction)
         {
@@ -166,6 +174,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Roll(ExecutionEngine engine, Instruction instruction)
         {
@@ -207,6 +216,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void ReverseN(ExecutionEngine engine, Instruction instruction)
         {

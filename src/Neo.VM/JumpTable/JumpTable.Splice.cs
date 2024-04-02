@@ -25,6 +25,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NewBuffer(ExecutionEngine engine, Instruction instruction)
         {
@@ -39,6 +40,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 5, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Memcpy(ExecutionEngine engine, Instruction instruction)
         {
@@ -66,6 +68,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Cat(ExecutionEngine engine, Instruction instruction)
         {
@@ -85,6 +88,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 3, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void SubStr(ExecutionEngine engine, Instruction instruction)
         {
@@ -108,6 +112,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Left(ExecutionEngine engine, Instruction instruction)
         {
@@ -128,6 +133,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Right(ExecutionEngine engine, Instruction instruction)
         {

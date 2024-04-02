@@ -70,6 +70,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <remarks>Pop 1, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpIf(ExecutionEngine engine, Instruction instruction)
         {
@@ -85,6 +86,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <remarks>Pop 1, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpIf_L(ExecutionEngine engine, Instruction instruction)
         {
@@ -100,6 +102,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <remarks>Pop 1, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpIfNot(ExecutionEngine engine, Instruction instruction)
         {
@@ -115,6 +118,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <remarks>Pop 1, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpIfNot_L(ExecutionEngine engine, Instruction instruction)
         {
@@ -130,6 +134,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <remarks>Pop 2, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpEq(ExecutionEngine engine, Instruction instruction)
         {
@@ -147,6 +152,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <remarks>Pop 2, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpEq_L(ExecutionEngine engine, Instruction instruction)
         {
@@ -164,6 +170,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <remarks>Pop 2, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpNe(ExecutionEngine engine, Instruction instruction)
         {
@@ -181,6 +188,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <remarks>Pop 2, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpNe_L(ExecutionEngine engine, Instruction instruction)
         {
@@ -198,6 +206,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <remarks>Pop 2, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpGt(ExecutionEngine engine, Instruction instruction)
         {
@@ -215,6 +224,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <remarks>Pop 2, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpGt_L(ExecutionEngine engine, Instruction instruction)
         {
@@ -232,6 +242,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <remarks>Pop 2, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpGe(ExecutionEngine engine, Instruction instruction)
         {
@@ -249,6 +260,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <remarks>Pop 2, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpGe_L(ExecutionEngine engine, Instruction instruction)
         {
@@ -266,6 +278,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <remarks>Pop 2, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpLt(ExecutionEngine engine, Instruction instruction)
         {
@@ -283,6 +296,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <remarks>Pop 2, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpLt_L(ExecutionEngine engine, Instruction instruction)
         {
@@ -300,6 +314,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <remarks>Pop 2, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpLe(ExecutionEngine engine, Instruction instruction)
         {
@@ -317,6 +332,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction containing the offset as the first operand.</param>
+        /// <remarks>Pop 2, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void JmpLe_L(ExecutionEngine engine, Instruction instruction)
         {
@@ -359,6 +375,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The current instruction.</param>
+        /// <remarks>Pop 1, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void CallA(ExecutionEngine engine, Instruction instruction)
         {
@@ -398,6 +415,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The current instruction.</param>
+        /// <remarks>Pop 1, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Assert(ExecutionEngine engine, Instruction instruction)
         {
@@ -412,6 +430,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The current instruction.</param>
+        /// <remarks>Pop 1, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Throw(ExecutionEngine engine, Instruction instruction)
         {
