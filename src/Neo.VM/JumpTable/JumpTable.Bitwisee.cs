@@ -38,6 +38,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void And(ExecutionEngine engine, Instruction instruction)
         {
@@ -52,6 +53,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Or(ExecutionEngine engine, Instruction instruction)
         {
@@ -66,6 +68,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void XOr(ExecutionEngine engine, Instruction instruction)
         {
@@ -80,6 +83,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Equal(ExecutionEngine engine, Instruction instruction)
         {
@@ -94,6 +98,7 @@ namespace Neo.VM
         /// </summary>
         /// <param name="engine">The execution engine.</param>
         /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NotEqual(ExecutionEngine engine, Instruction instruction)
         {
