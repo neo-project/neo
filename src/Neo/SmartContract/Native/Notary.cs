@@ -134,11 +134,9 @@ namespace Neo.SmartContract.Native
             if (additionalParams.Count() != 2) throw new FormatException("`data` parameter should be an array of 2 elements");
             if (!additionalParams[0].Equals(StackItem.Null)) to = additionalParams[0].GetSpan().ToArray().AsSerializable<UInt160>();
             var till = (uint)additionalParams[1].GetInteger();
-
             var tx = (Transaction)engine.ScriptContainer;
             var allowedChangeTill = tx.Sender == to;
             var currentHeight = Ledger.CurrentIndex(engine.Snapshot);
-
             Deposit deposit = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Deposit).Add(to.ToArray()))?.GetInteroperable<Deposit>();
             if (till < currentHeight + 2) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the chain's height {0} + 1", currentHeight + 2));
             if (deposit != null && till < deposit.Till) throw new ArgumentOutOfRangeException(string.Format("`till` shouldn't be less than the previous value {0}", deposit.Till));
@@ -214,7 +212,7 @@ namespace Neo.SmartContract.Native
         /// <param name="to">To Account</param>
         /// <returns>Whether withdrawal was successfull.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private async ContractTask<bool> Withdraw(ApplicationEngine engine, UInt160 from, UInt160 to)
+        private ContractTask<bool> Withdraw(ApplicationEngine engine, UInt160 from, UInt160 to)
         {
             if (!engine.CheckWitnessInternal(from)) throw new InvalidOperationException(string.Format("Failed to check witness for {0}", from.ToString()));
             var receive = to is null ? from : to;
@@ -223,8 +221,12 @@ namespace Neo.SmartContract.Native
             if (Ledger.CurrentIndex(engine.Snapshot) < deposit.Till) throw new InvalidOperationException(string.Format("Can't withdraw before {0}", deposit.Till));
             RemoveDepositFor(engine.Snapshot, from);
 
-            await engine.CallFromNativeContract(Hash, GAS.Hash, "transfer", Hash.ToArray(), receive.ToArray(), deposit.Amount, null);
-            return true;
+            // TODO: this code is invalid and doesn't work as expected. We need to throw an exception if 'transfer' call returns 'false'.
+            return engine.CallFromNativeContract<bool>(Hash, GAS.Hash, "transfer", Hash.ToArray(), receive.ToArray(), deposit.Amount, null);
+            // if (!transferOK) {
+            //     throw new InvalidOperationException(string.Format("Transfer to {0} has failed", receive.ToString()));
+            // }
+            //return true;
         }
 
         /// <summary>

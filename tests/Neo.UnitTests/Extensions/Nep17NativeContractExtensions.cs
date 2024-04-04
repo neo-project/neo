@@ -53,10 +53,31 @@ namespace Neo.UnitTests.Extensions
             return Transfer(contract, snapshot, from, to, amount, signFrom, persistingBlock, null);
         }
 
-        public static bool Transfer(this NativeContract contract, DataCache snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom, Block persistingBlock, params object[] data)
+        public static bool Transfer(this NativeContract contract, DataCache snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom, Block persistingBlock, object data)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new ManualWitness(signFrom ? new UInt160(from) : null), snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(contract.Hash, "transfer", from, to, amount, data);
+            engine.LoadScript(script.ToArray());
+
+            if (engine.Execute() == VMState.FAULT)
+            {
+                throw engine.FaultException;
+            }
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+
+            return result.GetBoolean();
+        }
+
+        public static bool TransferWithTransaction(this NativeContract contract, DataCache snapshot, byte[] from, byte[] to, BigInteger amount, bool signFrom, Block persistingBlock, object data)
+        {
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Transaction() { Signers = new Signer[] { new Signer() { Account = signFrom ? new UInt160(from) : null, Scopes = WitnessScope.Global } }, Attributes = System.Array.Empty<TransactionAttribute>() },
+                snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(contract.Hash, "transfer", from, to, amount, data);
