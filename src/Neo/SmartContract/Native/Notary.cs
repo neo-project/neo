@@ -212,21 +212,19 @@ namespace Neo.SmartContract.Native
         /// <param name="to">To Account</param>
         /// <returns>Whether withdrawal was successfull.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States)]
-        private ContractTask<bool> Withdraw(ApplicationEngine engine, UInt160 from, UInt160 to)
+        private async ContractTask<bool> Withdraw(ApplicationEngine engine, UInt160 from, UInt160 to)
         {
             if (!engine.CheckWitnessInternal(from)) throw new InvalidOperationException(string.Format("Failed to check witness for {0}", from.ToString()));
             var receive = to is null ? from : to;
-            Deposit deposit = GetDepositFor(engine.Snapshot, from);
-            if (deposit is null) throw new InvalidOperationException(string.Format("Deposit of {0} is null", from.ToString()));
+            var deposit = GetDepositFor(engine.Snapshot, from) ?? throw new InvalidOperationException(string.Format("Deposit of {0} is null", from.ToString()));
             if (Ledger.CurrentIndex(engine.Snapshot) < deposit.Till) throw new InvalidOperationException(string.Format("Can't withdraw before {0}", deposit.Till));
             RemoveDepositFor(engine.Snapshot, from);
-
-            // TODO: this code is invalid and doesn't work as expected. We need to throw an exception if 'transfer' call returns 'false'.
-            return engine.CallFromNativeContract<bool>(Hash, GAS.Hash, "transfer", Hash.ToArray(), receive.ToArray(), deposit.Amount, null);
-            // if (!transferOK) {
-            //     throw new InvalidOperationException(string.Format("Transfer to {0} has failed", receive.ToString()));
-            // }
-            //return true;
+            await engine.CallFromNativeContract<bool>(Hash, GAS.Hash, "transfer", Hash.ToArray(), receive.ToArray(), deposit.Amount, null);
+            if (!engine.Pop().GetBoolean())
+            {
+                throw new InvalidOperationException(string.Format("Transfer to {0} has failed", receive.ToString()));
+            }
+            return true;
         }
 
         /// <summary>
