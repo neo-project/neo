@@ -41,7 +41,6 @@ using System.Numerics;
 using System.Threading.Tasks;
 using VMTypes = Neo.VM.Types;
 
-
 namespace Neo.UnitTests.SmartContract.Native
 {
     [TestClass]
