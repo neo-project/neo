@@ -133,6 +133,38 @@ namespace Neo.UnitTests
             };
         }
 
+        public static Transaction GetTransaction(UInt160 sender, UInt160 signer)
+        {
+            var tx = GetTransaction(sender);
+            tx.Signers = new[]{ new Signer()
+                {
+                    Account = sender,
+                    Scopes = WitnessScope.CalledByEntry,
+                    AllowedContracts = Array.Empty<UInt160>(),
+                    AllowedGroups = Array.Empty<ECPoint>(),
+                    Rules = Array.Empty<WitnessRule>(),
+                },
+                new Signer()
+                {
+                    Account = signer,
+                    Scopes = WitnessScope.CalledByEntry,
+                    AllowedContracts = Array.Empty<UInt160>(),
+                    AllowedGroups = Array.Empty<ECPoint>(),
+                    Rules = Array.Empty<WitnessRule>(),
+                } };
+            tx.Witnesses = new Witness[]{ new Witness
+            {
+                InvocationScript = Array.Empty<byte>(),
+                VerificationScript = Array.Empty<byte>()
+            },
+            new Witness
+            {
+                InvocationScript = Array.Empty<byte>(),
+                VerificationScript = Array.Empty<byte>()
+            } };
+            return tx;
+        }
+
         internal static ContractState GetContract(string method = "test", int parametersCount = 0)
         {
             NefFile nef = new()

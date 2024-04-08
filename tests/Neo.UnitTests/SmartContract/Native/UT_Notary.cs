@@ -10,33 +10,19 @@
 // modifications are permitted.
 
 using FluentAssertions;
-using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.IO;
-using Neo.IO;
-using Neo.Network.P2P.Payloads;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
-using Neo.Persistence;
-using Neo.SmartContract;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
-using Neo.UnitTests.Extensions;
-using Neo.VM;
 using Neo.VM;
 using Neo.Wallets;
 using System;
-using System;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq;
-using System.Numerics;
-using System.Numerics;
 using System.Numerics;
 using System.Threading.Tasks;
 using VMTypes = Neo.VM.Types;
@@ -65,7 +51,6 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
-            var defaultNotaryServiceFeePerKey = 1000_0000;
 
             // Set proper current index for deposit's Till parameter check.
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
@@ -100,7 +85,6 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
             byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
-            var defaultNotaryServiceFeePerKey = 1000_0000;
 
             // Set proper current index for deposit's Till parameter check.
             var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
@@ -131,8 +115,8 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(NativeContract.GAS.TransferWithTransaction(snapshot, from, NativeContract.Notary.Hash.ToArray(), 2 * 1000_0000 + 1, true, persistingBlock, data));
 
             // Default 'till' value should be set for to's deposit.
-            var defaultTill = 5760;
-            Call_ExpirationOf(snapshot, to.ToArray(), persistingBlock).Should().Be(persistingBlock.Index - 1 + defaultTill);
+            var defaultDeltaTill = 5760;
+            Call_ExpirationOf(snapshot, to.ToArray(), persistingBlock).Should().Be(persistingBlock.Index - 1 + defaultDeltaTill);
 
             // Withdraw own deposit.
             persistingBlock.Header.Index = till + 1;
@@ -142,7 +126,162 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Check that 'till' value is properly updated.
             Call_ExpirationOf(snapshot, from, persistingBlock).Should().Be(0);
+        }
 
+        [TestMethod]
+        public void Check_LockDepositUntil()
+        {
+            var snapshot = _snapshot.CreateSnapshot();
+            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
+            byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
+
+            // Set proper current index for deposit's Till parameter check.
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+            snapshot.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
+
+            // Check that 'till' of an empty deposit is 0 by default.
+            Call_ExpirationOf(snapshot, from, persistingBlock).Should().Be(0);
+
+            // Update `till` value of an empty deposit should fail.
+            Call_LockDepositUntil(snapshot, from, 123, persistingBlock).Should().Be(false);
+            Call_ExpirationOf(snapshot, from, persistingBlock).Should().Be(0);
+
+            // Make initial deposit.
+            var till = persistingBlock.Index + 123;
+            var data = new ContractParameter { Type = ContractParameterType.Array, Value = new List<ContractParameter>() { new ContractParameter { Type = ContractParameterType.Any }, new ContractParameter { Type = ContractParameterType.Integer, Value = till } } };
+            Assert.IsTrue(NativeContract.GAS.TransferWithTransaction(snapshot, from, NativeContract.Notary.Hash.ToArray(), 2 * 1000_0000 + 1, true, persistingBlock, data));
+
+            // Ensure deposit's 'till' value is properly set.
+            Call_ExpirationOf(snapshot, from, persistingBlock).Should().Be(till);
+
+            // Update deposit's `till` value for side account should fail.
+            UInt160 other = UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4");
+            Call_LockDepositUntil(snapshot, other.ToArray(), till + 10, persistingBlock).Should().Be(false);
+            Call_ExpirationOf(snapshot, from, persistingBlock).Should().Be(till);
+
+            // Decrease deposit's `till` value should fail.
+            Call_LockDepositUntil(snapshot, from, till - 1, persistingBlock).Should().Be(false);
+            Call_ExpirationOf(snapshot, from, persistingBlock).Should().Be(till);
+
+            // Good.
+            till += 10;
+            Call_LockDepositUntil(snapshot, from, till, persistingBlock).Should().Be(true);
+            Call_ExpirationOf(snapshot, from, persistingBlock).Should().Be(till);
+        }
+
+        [TestMethod]
+        public void Check_BalanceOf()
+        {
+            var snapshot = _snapshot.CreateSnapshot();
+            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
+            UInt160 fromAddr = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators);
+            byte[] from = fromAddr.ToArray();
+
+            // Set proper current index for deposit expiration.
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+            snapshot.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
+
+            // Ensure that default deposit is 0.
+            Call_BalanceOf(snapshot, from, persistingBlock).Should().Be(0);
+
+            // Make initial deposit.
+            var till = persistingBlock.Index + 123;
+            var deposit1 = 2 * 1_0000_0000;
+            var data = new ContractParameter { Type = ContractParameterType.Array, Value = new List<ContractParameter>() { new ContractParameter { Type = ContractParameterType.Any }, new ContractParameter { Type = ContractParameterType.Integer, Value = till } } };
+            Assert.IsTrue(NativeContract.GAS.TransferWithTransaction(snapshot, from, NativeContract.Notary.Hash.ToArray(), deposit1, true, persistingBlock, data));
+
+            // Ensure value is deposited.
+            Call_BalanceOf(snapshot, from, persistingBlock).Should().Be(deposit1);
+
+            // Make one more deposit with updated 'till' parameter.
+            var deposit2 = 5;
+            data = new ContractParameter { Type = ContractParameterType.Array, Value = new List<ContractParameter>() { new ContractParameter { Type = ContractParameterType.Any }, new ContractParameter { Type = ContractParameterType.Integer, Value = till } } };
+            Assert.IsTrue(NativeContract.GAS.TransferWithTransaction(snapshot, from, NativeContract.Notary.Hash.ToArray(), deposit2, true, persistingBlock, data));
+
+            // Ensure deposit's 'till' value is properly updated.
+            Call_BalanceOf(snapshot, from, persistingBlock).Should().Be(deposit1 + deposit2);
+
+            // Make deposit to some side account.
+            UInt160 to = UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4");
+            data = new ContractParameter { Type = ContractParameterType.Array, Value = new List<ContractParameter>() { new ContractParameter { Type = ContractParameterType.Hash160, Value = to }, new ContractParameter { Type = ContractParameterType.Integer, Value = till } } };
+            Assert.IsTrue(NativeContract.GAS.TransferWithTransaction(snapshot, from, NativeContract.Notary.Hash.ToArray(), deposit1, true, persistingBlock, data));
+
+            Call_BalanceOf(snapshot, to.ToArray(), persistingBlock).Should().Be(deposit1);
+
+            // Process some Notary transaction and check that some deposited funds have been withdrawn.
+            var tx1 = TestUtils.GetTransaction(NativeContract.Notary.Hash, fromAddr);
+            tx1.Attributes = new TransactionAttribute[] { new NotaryAssisted() { NKeys = 4 } };
+            tx1.NetworkFee = 1_0000_0000;
+
+            // Build block to check transaction fee distribution during Gas OnPersist.
+            persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    Index = (uint)TestProtocolSettings.Default.CommitteeMembersCount,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    PrevHash = UInt256.Zero,
+                    Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
+                },
+                Transactions = new Transaction[] { tx1 }
+            };
+            // Designate Notary node.
+            byte[] privateKey1 = new byte[32];
+            var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+            rng.GetBytes(privateKey1);
+            KeyPair key1 = new KeyPair(privateKey1);
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var ret = NativeContract.RoleManagement.Call(
+                snapshot,
+                new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                new Block { Header = new Header() },
+                "designateAsRole",
+                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.P2PNotary) },
+                new ContractParameter(ContractParameterType.Array)
+                {
+                    Value = new List<ContractParameter>(){
+                    new ContractParameter(ContractParameterType.ByteArray){Value = key1.PublicKey.ToArray()},
+                }
+                }
+            );
+            snapshot.Commit();
+
+            // Execute OnPersist script.
+            var script = new ScriptBuilder();
+            script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
+            var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine.LoadScript(script.ToArray());
+            Assert.IsTrue(engine.Execute() == VMState.HALT);
+            snapshot.Commit();
+
+            // Check that transaction's fees were paid by from's deposit.
+            Call_BalanceOf(snapshot, from, persistingBlock).Should().Be(deposit1 + deposit2 - tx1.NetworkFee - tx1.SystemFee);
+
+            // Withdraw own deposit.
+            persistingBlock.Header.Index = till + 1;
+            var currentBlock = snapshot.GetAndChange(storageKey, () => new StorageItem(new HashIndexState()));
+            currentBlock.GetInteroperable<HashIndexState>().Index = till + 1;
+            Call_Withdraw(snapshot, from, from, persistingBlock);
+
+            // Check that no deposit is left.
+            Call_BalanceOf(snapshot, from, persistingBlock).Should().Be(0);
+        }
+
+        internal static BigInteger Call_BalanceOf(DataCache snapshot, byte[] address, Block persistingBlock)
+        {
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.Notary.Hash, "balanceOf", address);
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute().Should().Be(VMState.HALT);
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Integer));
+
+            return result.GetInteger();
         }
 
         internal static BigInteger Call_ExpirationOf(DataCache snapshot, byte[] address, Block persistingBlock)
@@ -159,6 +298,22 @@ namespace Neo.UnitTests.SmartContract.Native
             result.Should().BeOfType(typeof(VM.Types.Integer));
 
             return result.GetInteger();
+        }
+
+        internal static bool Call_LockDepositUntil(DataCache snapshot, byte[] address, uint till, Block persistingBlock)
+        {
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Transaction() { Signers = new Signer[] { new Signer() { Account = new UInt160(address), Scopes = WitnessScope.Global } }, Attributes = System.Array.Empty<TransactionAttribute>() }, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.Notary.Hash, "lockDepositUntil", address, till);
+            engine.LoadScript(script.ToArray());
+
+            engine.Execute().Should().Be(VMState.HALT);
+
+            var result = engine.ResultStack.Pop();
+            result.Should().BeOfType(typeof(VM.Types.Boolean));
+
+            return result.GetBoolean();
         }
 
         internal static bool Call_Withdraw(DataCache snapshot, byte[] from, byte[] to, Block persistingBlock)
