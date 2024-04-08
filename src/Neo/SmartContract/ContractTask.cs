@@ -16,7 +16,7 @@ namespace Neo.SmartContract
     [AsyncMethodBuilder(typeof(ContractTaskMethodBuilder))]
     class ContractTask
     {
-        protected ContractTaskAwaiter _awaiter;
+        protected readonly ContractTaskAwaiter _awaiter;
 
         public static ContractTask CompletedTask { get; }
 
