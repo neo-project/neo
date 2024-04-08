@@ -14,8 +14,18 @@ using System.Runtime.CompilerServices;
 
 namespace Neo.VM
 {
+    /// <summary>
+    /// Partial class representing a jump table for executing specific operations related to string manipulation.
+    /// </summary>
     public partial class JumpTable
     {
+        /// <summary>
+        /// Creates a new buffer with the specified length and pushes it onto the evaluation stack.
+        /// <see cref="OpCode.NEWBUFFER"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NewBuffer(ExecutionEngine engine, Instruction instruction)
         {
@@ -24,6 +34,13 @@ namespace Neo.VM
             engine.Push(new Types.Buffer(length));
         }
 
+        /// <summary>
+        /// Copies a specified number of bytes from one buffer to another buffer.
+        /// <see cref="OpCode.MEMCPY"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 5, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Memcpy(ExecutionEngine engine, Instruction instruction)
         {
@@ -45,6 +62,13 @@ namespace Neo.VM
             src.Slice(si, count).CopyTo(dst.InnerBuffer.Span[di..]);
         }
 
+        /// <summary>
+        /// Concatenates two buffers and pushes the result onto the evaluation stack.
+        /// <see cref="OpCode.CAT"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Cat(ExecutionEngine engine, Instruction instruction)
         {
@@ -58,6 +82,13 @@ namespace Neo.VM
             engine.Push(result);
         }
 
+        /// <summary>
+        /// Extracts a substring from the specified buffer and pushes it onto the evaluation stack.
+        /// <see cref="OpCode.CAT"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 3, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void SubStr(ExecutionEngine engine, Instruction instruction)
         {
@@ -75,6 +106,13 @@ namespace Neo.VM
             engine.Push(result);
         }
 
+        /// <summary>
+        /// Extracts a specified number of characters from the left side of the buffer and pushes them onto the evaluation stack.
+        /// <see cref="OpCode.LEFT"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Left(ExecutionEngine engine, Instruction instruction)
         {
@@ -89,6 +127,13 @@ namespace Neo.VM
             engine.Push(result);
         }
 
+        /// <summary>
+        /// Extracts a specified number of characters from the right side of the buffer and pushes them onto the evaluation stack.
+        /// <see cref="OpCode.RIGHT"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Right(ExecutionEngine engine, Instruction instruction)
         {
