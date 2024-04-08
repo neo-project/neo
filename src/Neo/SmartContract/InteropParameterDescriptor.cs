@@ -89,6 +89,7 @@ namespace Neo.SmartContract
         internal InteropParameterDescriptor(Type type)
         {
             this.Type = type;
+            this.validators = System.Array.Empty<ValidatorAttribute>();
             if (IsEnum)
             {
                 Converter = converters[type.GetEnumUnderlyingType()];
@@ -109,7 +110,7 @@ namespace Neo.SmartContract
 
         public void Validate(StackItem item)
         {
-            foreach (ValidatorAttribute validator in validators)
+            foreach (var validator in validators)
                 validator.Validate(item);
         }
     }
