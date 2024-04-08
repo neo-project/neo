@@ -219,7 +219,7 @@ namespace Neo.SmartContract.Native
             var deposit = GetDepositFor(engine.Snapshot, from) ?? throw new InvalidOperationException(string.Format("Deposit of {0} is null", from.ToString()));
             if (Ledger.CurrentIndex(engine.Snapshot) < deposit.Till) throw new InvalidOperationException(string.Format("Can't withdraw before {0}", deposit.Till));
             RemoveDepositFor(engine.Snapshot, from);
-            await engine.CallFromNativeContract<bool>(Hash, GAS.Hash, "transfer", Hash.ToArray(), receive.ToArray(), deposit.Amount, null);
+            await engine.CallFromNativeContract(Hash, GAS.Hash, "transfer", Hash.ToArray(), receive.ToArray(), deposit.Amount, null);
             if (!engine.Pop().GetBoolean())
             {
                 throw new InvalidOperationException(string.Format("Transfer to {0} has failed", receive.ToString()));
