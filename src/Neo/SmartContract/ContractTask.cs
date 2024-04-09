@@ -16,7 +16,7 @@ namespace Neo.SmartContract
     [AsyncMethodBuilder(typeof(ContractTaskMethodBuilder))]
     class ContractTask
     {
-        private readonly ContractTaskAwaiter awaiter;
+        protected readonly ContractTaskAwaiter _awaiter;
 
         public static ContractTask CompletedTask { get; }
 
@@ -28,19 +28,29 @@ namespace Neo.SmartContract
 
         public ContractTask()
         {
-            awaiter = CreateAwaiter();
+            _awaiter = CreateAwaiter();
         }
 
         protected virtual ContractTaskAwaiter CreateAwaiter() => new();
-        public virtual ContractTaskAwaiter GetAwaiter() => awaiter;
+        public ContractTaskAwaiter GetAwaiter() => _awaiter;
         public virtual object GetResult() => null;
     }
 
     [AsyncMethodBuilder(typeof(ContractTaskMethodBuilder<>))]
     class ContractTask<T> : ContractTask
     {
+        public new static ContractTask<T> CompletedTask { get; }
+
+        static ContractTask()
+        {
+            CompletedTask = new ContractTask<T>();
+            CompletedTask.GetAwaiter().SetResult();
+        }
+
         protected override ContractTaskAwaiter CreateAwaiter() => new ContractTaskAwaiter<T>();
-        public override ContractTaskAwaiter GetAwaiter() => (ContractTaskAwaiter<T>)base.GetAwaiter();
-        public override object GetResult() => ((ContractTaskAwaiter<T>)GetAwaiter()).GetResult();
+#pragma warning disable CS0108 // Member hides inherited member; missing new keyword
+        public ContractTaskAwaiter<T> GetAwaiter() => (ContractTaskAwaiter<T>)_awaiter;
+#pragma warning restore CS0108 // Member hides inherited member; missing new keyword
+        public override object GetResult() => GetAwaiter().GetResult();
     }
 }
