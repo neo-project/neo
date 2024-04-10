@@ -268,6 +268,50 @@ namespace Neo.UnitTests.SmartContract.Native
             Call_BalanceOf(snapshot, from, persistingBlock).Should().Be(0);
         }
 
+        [TestMethod]
+        public void Check_Withdraw()
+        {
+            var snapshot = _snapshot.CreateSnapshot();
+            var persistingBlock = new Block { Header = new Header { Index = 1000 } };
+            UInt160 fromAddr = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators);
+            byte[] from = fromAddr.ToArray();
+
+            // Set proper current index to get proper deposit expiration height.
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+            snapshot.Add(storageKey, new StorageItem(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
+
+            // Ensure that default deposit is 0.
+            Call_BalanceOf(snapshot, from, persistingBlock).Should().Be(0);
+
+            // Make initial deposit.
+            var till = persistingBlock.Index + 123;
+            var deposit1 = 2 * 1_0000_0000;
+            var data = new ContractParameter { Type = ContractParameterType.Array, Value = new List<ContractParameter>() { new ContractParameter { Type = ContractParameterType.Any }, new ContractParameter { Type = ContractParameterType.Integer, Value = till } } };
+            Assert.IsTrue(NativeContract.GAS.TransferWithTransaction(snapshot, from, NativeContract.Notary.Hash.ToArray(), deposit1, true, persistingBlock, data));
+
+            // Ensure value is deposited.
+            Call_BalanceOf(snapshot, from, persistingBlock).Should().Be(deposit1);
+
+            // Unwitnessed withdraw should fail.
+            UInt160 sideAccount = UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4");
+            Assert.ThrowsException<InvalidOperationException>(() => Call_Withdraw(snapshot, from, sideAccount.ToArray(), persistingBlock, false));
+
+            // Withdraw missing (zero) deposit should fail.
+            Assert.ThrowsException<InvalidOperationException>(() => Call_Withdraw(snapshot, sideAccount.ToArray(), sideAccount.ToArray(), persistingBlock));
+
+            // Withdraw before deposit expiration should fail.
+            Assert.ThrowsException<InvalidOperationException>(() => Call_Withdraw(snapshot, from, from, persistingBlock));
+
+            // Good.
+            persistingBlock.Header.Index = till + 1;
+            var currentBlock = snapshot.GetAndChange(storageKey, () => new StorageItem(new HashIndexState()));
+            currentBlock.GetInteroperable<HashIndexState>().Index = till + 1;
+            Call_Withdraw(snapshot, from, from, persistingBlock);
+
+            // Check that no deposit is left.
+            Call_BalanceOf(snapshot, from, persistingBlock).Should().Be(0);
+        }
+
         internal static BigInteger Call_BalanceOf(DataCache snapshot, byte[] address, Block persistingBlock)
         {
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
@@ -316,9 +360,14 @@ namespace Neo.UnitTests.SmartContract.Native
             return result.GetBoolean();
         }
 
-        internal static bool Call_Withdraw(DataCache snapshot, byte[] from, byte[] to, Block persistingBlock)
+        internal static bool Call_Withdraw(DataCache snapshot, byte[] from, byte[] to, Block persistingBlock, bool witnessedByFrom = true)
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, new Transaction() { Signers = new Signer[] { new Signer() { Account = new UInt160(from), Scopes = WitnessScope.Global } }, Attributes = System.Array.Empty<TransactionAttribute>() }, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+            var accFrom = UInt160.Zero;
+            if (witnessedByFrom)
+            {
+                accFrom = new UInt160(from);
+            }
+            using var engine = ApplicationEngine.Create(TriggerType.Application, new Transaction() { Signers = new Signer[] { new Signer() { Account = accFrom, Scopes = WitnessScope.Global } }, Attributes = System.Array.Empty<TransactionAttribute>() }, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
 
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.Notary.Hash, "withdraw", from, to);
