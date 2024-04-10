@@ -359,6 +359,90 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void Check_OnPersist_FeePerKeyUpdate()
+        {
+            // Hardcode test values.
+            const uint defaultNotaryAssistedFeePerKey = 1000_0000;
+            const uint newNotaryAssistedFeePerKey = 5000_0000;
+            const byte NKeys = 4;
+
+            // Generate one transaction with NotaryAssisted attribute with hardcoded NKeys values.
+            var from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators);
+            var tx2 = TestUtils.GetTransaction(from);
+            tx2.Attributes = new TransactionAttribute[] { new NotaryAssisted() { NKeys = NKeys } };
+            var netFee = 1_0000_0000; // enough to cover defaultNotaryAssistedFeePerKey, but not enough to cover newNotaryAssistedFeePerKey.
+            tx2.NetworkFee = netFee;
+            tx2.SystemFee = 1000_0000;
+
+            // Calculate overall expected Notary nodes reward.
+            var expectedNotaryReward = (NKeys + 1) * defaultNotaryAssistedFeePerKey;
+
+            // Build block to check transaction fee distribution during Gas OnPersist.
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    Index = (uint)TestProtocolSettings.Default.CommitteeMembersCount,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    PrevHash = UInt256.Zero,
+                    Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
+                },
+                Transactions = new Transaction[] { tx2 }
+            };
+            var snapshot = _snapshot.CreateSnapshot();
+
+            // Designate Notary node.
+            byte[] privateKey1 = new byte[32];
+            var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+            rng.GetBytes(privateKey1);
+            KeyPair key1 = new KeyPair(privateKey1);
+            UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var ret = NativeContract.RoleManagement.Call(
+                snapshot,
+                new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                new Block { Header = new Header() },
+                "designateAsRole",
+                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.P2PNotary) },
+                new ContractParameter(ContractParameterType.Array)
+                {
+                    Value = new List<ContractParameter>(){
+                    new ContractParameter(ContractParameterType.ByteArray){Value = key1.PublicKey.ToArray()}
+                }
+                }
+            );
+            snapshot.Commit();
+
+            // Imitate Blockchain's Persist behaviour: OnPersist + transactions processing.
+            // Execute OnPersist firstly:
+            var script = new ScriptBuilder();
+            script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
+            var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings);
+            engine.LoadScript(script.ToArray());
+            Assert.IsTrue(engine.Execute() == VMState.HALT);
+            snapshot.Commit();
+
+            // Process transaction that changes NotaryServiceFeePerKey after OnPersist.
+            ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), persistingBlock,
+                "setAttributeFee", new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)(byte)TransactionAttributeType.NotaryAssisted }, new ContractParameter(ContractParameterType.Integer) { Value = newNotaryAssistedFeePerKey });
+            ret.IsNull.Should().BeTrue();
+            snapshot.Commit();
+
+            // Process tx2 with NotaryAssisted attribute.
+            engine = ApplicationEngine.Create(TriggerType.Application, tx2, snapshot, persistingBlock, settings: TestBlockchain.TheNeoSystem.Settings, tx2.SystemFee);
+            engine.LoadScript(tx2.Script);
+            Assert.IsTrue(engine.Execute() == VMState.HALT);
+            snapshot.Commit();
+
+            // Ensure that Notary reward is distributed based on the old value of NotaryAssisted price
+            // and no underflow happens during GAS distribution.
+            ECPoint[] validators = NativeContract.NEO.GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings.ValidatorsCount);
+            var primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
+            NativeContract.GAS.BalanceOf(snapshot, primary).Should().Be(netFee - expectedNotaryReward);
+            NativeContract.GAS.BalanceOf(engine.Snapshot, key1.PublicKey.EncodePoint(true).ToScriptHash()).Should().Be(expectedNotaryReward);
+        }
+
+        [TestMethod]
         public void Check_OnPersist_NotaryRewards()
         {
             // Hardcode test values.
