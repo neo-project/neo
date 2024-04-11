@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Runtime.CompilerServices;
