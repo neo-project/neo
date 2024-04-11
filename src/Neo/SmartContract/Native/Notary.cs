@@ -109,7 +109,6 @@ namespace Neo.SmartContract.Native
             }
             ECPoint[] notaries = GetNotaryNodes(engine.Snapshot);
             var hash = tx.GetSignData(engine.GetNetwork());
-            var verified = false;
             return notaries.Any(n => Crypto.VerifySignature(hash, sig, n));
         }
 
