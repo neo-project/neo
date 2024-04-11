@@ -15,8 +15,18 @@ using System.Runtime.CompilerServices;
 
 namespace Neo.VM
 {
+    /// <summary>
+    /// Partial class for type operations in the execution engine within a jump table.
+    /// </summary>
     public partial class JumpTable
     {
+        /// <summary>
+        /// Determines whether the item on top of the evaluation stack is null.
+        /// <see cref="OpCode.ISNULL"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void IsNull(ExecutionEngine engine, Instruction instruction)
         {
@@ -24,6 +34,13 @@ namespace Neo.VM
             engine.Push(x.IsNull);
         }
 
+        /// <summary>
+        /// Determines whether the item on top of the evaluation stack has a specified type.
+        /// <see cref="OpCode.ISTYPE"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void IsType(ExecutionEngine engine, Instruction instruction)
         {
@@ -34,6 +51,13 @@ namespace Neo.VM
             engine.Push(x.Type == type);
         }
 
+        /// <summary>
+        /// Converts the item on top of the evaluation stack to a specified type.
+        /// <see cref="OpCode.CONVERT"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Convert(ExecutionEngine engine, Instruction instruction)
         {
@@ -41,6 +65,13 @@ namespace Neo.VM
             engine.Push(x.ConvertTo((StackItemType)instruction.TokenU8));
         }
 
+        /// <summary>
+        /// Aborts execution with a specified message.
+        /// <see cref="OpCode.ABORTMSG"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void AbortMsg(ExecutionEngine engine, Instruction instruction)
         {
@@ -48,6 +79,13 @@ namespace Neo.VM
             throw new Exception($"{OpCode.ABORTMSG} is executed. Reason: {msg}");
         }
 
+        /// <summary>
+        /// Asserts a condition with a specified message, throwing an exception if the condition is false.
+        /// <see cref="OpCode.ASSERTMSG"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void AssertMsg(ExecutionEngine engine, Instruction instruction)
         {

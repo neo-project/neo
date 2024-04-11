@@ -18,8 +18,18 @@ using VMArray = Neo.VM.Types.Array;
 
 namespace Neo.VM
 {
+    /// <summary>
+    /// Partial class for manipulating compound types like maps, arrays, and structs within a jump table.
+    /// </summary>
     public partial class JumpTable
     {
+        /// <summary>
+        /// Packs a map from the evaluation stack.
+        /// <see cref="OpCode.PACKMAP"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2n+1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void PackMap(ExecutionEngine engine, Instruction instruction)
         {
@@ -36,6 +46,13 @@ namespace Neo.VM
             engine.Push(map);
         }
 
+        /// <summary>
+        /// Packs a struct from the evaluation stack.
+        /// <see cref="OpCode.PACKSTRUCT"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop n+1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void PackStruct(ExecutionEngine engine, Instruction instruction)
         {
@@ -51,6 +68,13 @@ namespace Neo.VM
             engine.Push(@struct);
         }
 
+        /// <summary>
+        /// Packs an array from the evaluation stack.
+        /// <see cref="OpCode.PACK"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop n+1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Pack(ExecutionEngine engine, Instruction instruction)
         {
@@ -66,6 +90,13 @@ namespace Neo.VM
             engine.Push(array);
         }
 
+        /// <summary>
+        /// Unpacks a compound type from the evaluation stack.
+        /// <see cref="OpCode.UNPACK"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 2n+1 or n+1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Unpack(ExecutionEngine engine, Instruction instruction)
         {
@@ -91,12 +122,29 @@ namespace Neo.VM
             engine.Push(compound.Count);
         }
 
+        /// <summary>
+        /// Creates a new empty array with zero elements on the evaluation stack.
+        /// <see cref="OpCode.NEWARRAY0"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>
+        /// Pop 0, Push 1
+        /// TODO: Change to NewNullArray method or add it?
+        /// </remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NewArray0(ExecutionEngine engine, Instruction instruction)
         {
             engine.Push(new VMArray(engine.ReferenceCounter));
         }
 
+        /// <summary>
+        /// Creates a new array with a specified number of elements on the evaluation stack.
+        /// <see cref="OpCode.NEWARRAY"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NewArray(ExecutionEngine engine, Instruction instruction)
         {
@@ -107,6 +155,13 @@ namespace Neo.VM
             engine.Push(new VMArray(engine.ReferenceCounter, Enumerable.Repeat(StackItem.Null, n)));
         }
 
+        /// <summary>
+        /// Creates a new array with a specified number of elements and a specified type on the evaluation stack.
+        /// <see cref="OpCode.NEWARRAY_T"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NewArray_T(ExecutionEngine engine, Instruction instruction)
         {
@@ -129,12 +184,26 @@ namespace Neo.VM
             engine.Push(new VMArray(engine.ReferenceCounter, Enumerable.Repeat(item, n)));
         }
 
+        /// <summary>
+        /// Creates a new empty struct with zero elements on the evaluation stack.
+        /// <see cref="OpCode.NEWSTRUCT0"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 0, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NewStruct0(ExecutionEngine engine, Instruction instruction)
         {
             engine.Push(new Struct(engine.ReferenceCounter));
         }
 
+        /// <summary>
+        /// Creates a new struct with a specified number of elements on the evaluation stack.
+        /// <see cref="OpCode.NEWSTRUCT"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NewStruct(ExecutionEngine engine, Instruction instruction)
         {
@@ -147,12 +216,26 @@ namespace Neo.VM
             engine.Push(result);
         }
 
+        /// <summary>
+        /// Creates a new empty map on the evaluation stack.
+        /// <see cref="OpCode.NEWMAP"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 0, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void NewMap(ExecutionEngine engine, Instruction instruction)
         {
             engine.Push(new Map(engine.ReferenceCounter));
         }
 
+        /// <summary>
+        /// Gets the size of the top item on the evaluation stack and pushes it onto the stack.
+        /// <see cref="OpCode.SIZE"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Size(ExecutionEngine engine, Instruction instruction)
         {
@@ -173,36 +256,51 @@ namespace Neo.VM
             }
         }
 
+        /// <summary>
+        /// Checks whether the top item on the evaluation stack has the specified key.
+        /// <see cref="OpCode.HASKEY"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void HasKey(ExecutionEngine engine, Instruction instruction)
         {
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
+            // Check the type of the top item and perform the corresponding action.
             switch (x)
             {
+                // For arrays, check if the index is within bounds and push the result onto the stack.
                 case VMArray array:
                     {
+                        // TODO: Overflow and underflow checking needs to be done.
                         var index = (int)key.GetInteger();
                         if (index < 0)
                             throw new InvalidOperationException($"The negative value {index} is invalid for OpCode.{instruction.OpCode}.");
                         engine.Push(index < array.Count);
                         break;
                     }
+                // For maps, check if the key exists and push the result onto the stack.
                 case Map map:
                     {
                         engine.Push(map.ContainsKey(key));
                         break;
                     }
+                // For buffers, check if the index is within bounds and push the result onto the stack.
                 case Types.Buffer buffer:
                     {
+                        // TODO: Overflow and underflow checking needs to be done.
                         var index = (int)key.GetInteger();
                         if (index < 0)
                             throw new InvalidOperationException($"The negative value {index} is invalid for OpCode.{instruction.OpCode}.");
                         engine.Push(index < buffer.Size);
                         break;
                     }
+                // For byte strings, check if the index is within bounds and push the result onto the stack.
                 case ByteString array:
                     {
+                        // TODO: Overflow and underflow checking needs to be done.
                         var index = (int)key.GetInteger();
                         if (index < 0)
                             throw new InvalidOperationException($"The negative value {index} is invalid for OpCode.{instruction.OpCode}.");
@@ -214,6 +312,13 @@ namespace Neo.VM
             }
         }
 
+        /// <summary>
+        /// Retrieves the keys of a map and pushes them onto the evaluation stack as an array.
+        /// <see cref="OpCode.KEYS"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Keys(ExecutionEngine engine, Instruction instruction)
         {
@@ -221,6 +326,13 @@ namespace Neo.VM
             engine.Push(new VMArray(engine.ReferenceCounter, map.Keys));
         }
 
+        /// <summary>
+        /// Retrieves the values of a compound type and pushes them onto the evaluation stack as an array.
+        /// <see cref="OpCode.VALUES"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Values(ExecutionEngine engine, Instruction instruction)
         {
@@ -240,6 +352,14 @@ namespace Neo.VM
             engine.Push(newArray);
         }
 
+        /// <summary>
+        /// Retrieves the item from an array, map, buffer, or byte string based on the specified key,
+        /// and pushes it onto the evaluation stack.
+        /// <see cref="OpCode.PICKITEM"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void PickItem(ExecutionEngine engine, Instruction instruction)
         {
@@ -284,6 +404,13 @@ namespace Neo.VM
             }
         }
 
+        /// <summary>
+        /// Appends an item to the end of the specified array.
+        /// <see cref="OpCode.APPEND"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 1</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Append(ExecutionEngine engine, Instruction instruction)
         {
@@ -293,6 +420,13 @@ namespace Neo.VM
             array.Add(newItem);
         }
 
+        /// <summary>
+        /// A value v, index n (or key) and an array (or map) are taken from main stack. Attribution array[n]=v (or map[n]=v) is performed.
+        /// <see cref="OpCode.SETITEM"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 3, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void SetItem(ExecutionEngine engine, Instruction instruction)
         {
@@ -333,6 +467,13 @@ namespace Neo.VM
             }
         }
 
+        /// <summary>
+        /// Reverses the order of items in the specified array or buffer.
+        /// <see cref="OpCode.REVERSEITEMS"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void ReverseItems(ExecutionEngine engine, Instruction instruction)
         {
@@ -350,6 +491,13 @@ namespace Neo.VM
             }
         }
 
+        /// <summary>
+        /// Removes the item at the specified index from the array or map.
+        /// <see cref="OpCode.REMOVE"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 2, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void Remove(ExecutionEngine engine, Instruction instruction)
         {
@@ -371,6 +519,13 @@ namespace Neo.VM
             }
         }
 
+        /// <summary>
+        /// Clears all items from the compound type.
+        /// <see cref="OpCode.CLEARITEMS"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void ClearItems(ExecutionEngine engine, Instruction instruction)
         {
@@ -378,6 +533,13 @@ namespace Neo.VM
             x.Clear();
         }
 
+        /// <summary>
+        /// Removes and returns the item at the top of the specified array.
+        /// <see cref="OpCode.POPITEM"/>
+        /// </summary>
+        /// <param name="engine">The execution engine.</param>
+        /// <param name="instruction">The instruction being executed.</param>
+        /// <remarks>Pop 1, Push 0</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void PopItem(ExecutionEngine engine, Instruction instruction)
         {

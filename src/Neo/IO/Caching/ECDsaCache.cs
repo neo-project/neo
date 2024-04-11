@@ -9,11 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Cryptography.ECC;
-using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace Neo.IO.Caching
 {
