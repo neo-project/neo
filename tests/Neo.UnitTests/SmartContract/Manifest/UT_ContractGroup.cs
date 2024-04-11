@@ -15,7 +15,6 @@ using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.Wallets;
 using System;
-using System.Linq;
 
 namespace Neo.UnitTests.SmartContract.Manifest
 {
