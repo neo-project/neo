@@ -135,7 +135,7 @@ namespace Neo.VM
                     ExecutionContext context = CurrentContext!;
                     Instruction instruction = context.CurrentInstruction ?? Instruction.RET;
                     PreExecuteInstruction(instruction);
-#if VMPERF
+#if DEBUG
                     Console.WriteLine("op:["
                                       + this.CurrentContext.InstructionPointer.ToString("X04")
                                       + "]"
