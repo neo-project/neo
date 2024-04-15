@@ -27,7 +27,6 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_NativeContract
     {
-
         private DataCache _snapshot;
         /// <summary>
         /// _nativeStates contains a mapping from native contract name to expected native contract state
