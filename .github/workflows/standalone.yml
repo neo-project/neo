@@ -101,7 +101,7 @@ jobs:
       working-directory: ./neo
       run: |
         dotnet publish ./src/Neo.CLI \
-        --framework net7.0 \
+        --framework net8.0 \
         --configuration ${{ env.CONFIGURATION }} \
         --runtime ${{ matrix.runtime }} \
         --self-contained true \
