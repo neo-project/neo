@@ -152,6 +152,9 @@ namespace Neo.SmartContract.Native
             eventsDescriptors =
                 GetType().GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)?.
                 GetCustomAttributes<ContractEventAttribute>().
+                // Take into account not only the contract constructor, but also the base type constructor for proper FungibleToken events handling.
+                Concat(GetType().BaseType?.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)?.
+                GetCustomAttributes<ContractEventAttribute>()).
                 OrderBy(p => p.Order).ToList().AsReadOnly();
 
             // Calculate the initializations forks
