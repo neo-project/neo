@@ -9,7 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.Extensions.Hosting;
 using Neo.Hosting.App.Hosting;
 using System;
 using System.CommandLine;
@@ -40,10 +39,12 @@ namespace Neo.Hosting.App.CommandLine
                 var host = context.GetHost();
                 var stoppingToken = context.GetCancellationToken();
 
+                await _neoSystemService.StartAsync(stoppingToken);
+
                 if (_neoSystemService.IsRunning)
                     _neoSystemService.StartNode();
 
-                await host.WaitForShutdownAsync(stoppingToken);
+                await Task.Delay(-1, stoppingToken);
 
                 return 0;
             }

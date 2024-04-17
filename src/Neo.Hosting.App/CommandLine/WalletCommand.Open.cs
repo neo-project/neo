@@ -62,10 +62,7 @@ namespace Neo.Hosting.App.CommandLine
                         return Task.FromResult(1);
                     }
 
-                    if (Password is null)
-                    {
-                        Password = context.Console.PromptPassword();
-                    }
+                    Password ??= context.Console.PromptPassword();
 
                     return Task.FromResult(0);
                 }

@@ -18,11 +18,11 @@ namespace Neo.Hosting.App.Extensions
     internal static class IConsoleExtensions
     {
         private static readonly string s_validateInputCharacters = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
-        private static readonly bool ColorsAreSupported = GetColorsAreSupported();
+        private static readonly bool s_colorsAreSupported = GetColorsAreSupported();
 
         public static void SetTerminalForegroundRed(this IConsole _)
         {
-            if (ColorsAreSupported)
+            if (s_colorsAreSupported)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
             }
@@ -30,7 +30,7 @@ namespace Neo.Hosting.App.Extensions
 
         public static void ResetTerminalForegroundColor(this IConsole _)
         {
-            if (ColorsAreSupported)
+            if (s_colorsAreSupported)
             {
                 Console.ResetColor();
             }

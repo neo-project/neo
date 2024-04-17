@@ -38,7 +38,11 @@ namespace Neo.Hosting.App
                     var hostingEnvironment = context.HostingEnvironment;
                     config.SetBasePath(AppContext.BaseDirectory);
 
-                    config.AddJsonFile("config." + hostingEnvironment.EnvironmentName + ".json", optional: false);
+                    var manager = new ConfigurationManager();
+                    manager.AddJsonFile("config." + hostingEnvironment.EnvironmentName + ".json", optional: false);
+                    manager.AddSystemConfiguration();
+
+                    config.AddConfiguration(manager);
 
                     config.AddEnvironmentVariables();
                     config.AddCommandLine(args);

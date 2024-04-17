@@ -56,7 +56,7 @@ namespace Neo.Cryptography
 
         protected override byte[] HashFinal()
         {
-            var hashBuffer = UInt32ToBigEndianBytes(~_hash);
+            var hashBuffer = Crc32.UInt32ToBigEndianBytes(~_hash);
             HashValue = hashBuffer;
             return hashBuffer;
         }
@@ -103,7 +103,7 @@ namespace Neo.Cryptography
             return hash;
         }
 
-        private byte[] UInt32ToBigEndianBytes(uint value)
+        private static byte[] UInt32ToBigEndianBytes(uint value)
         {
             var result = BitConverter.GetBytes(value);
 

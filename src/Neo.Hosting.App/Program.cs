@@ -9,17 +9,19 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Neo.Extensions;
 using Neo.Hosting.App.CommandLine;
+using Neo.Hosting.App.Configuration;
 using Neo.Hosting.App.Extensions;
+using Neo.Hosting.App.Handlers;
 using Neo.Hosting.App.Hosting;
 using System;
 using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
-using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -43,15 +45,16 @@ namespace Neo.Hosting.App
             var parser = new CommandLineBuilder(rootCommand)
                 .UseHost(DefaultNeoHostBuilderFactory, builder =>
                 {
-                    builder.ConfigureServices((_, services) =>
+                    builder.ConfigureServices((builder, services) =>
                     {
                         services.AddSingleton<NeoSystemService>();
-                        services.AddHostedService(sp => sp.GetRequiredService<NeoSystemService>());
+                        //services.AddHostedService(sp => sp.GetRequiredService<NeoSystemService>());
                         //services.Configure<InvocationLifetimeOptions>(config => config.SuppressStatusMessages = true);
+                        services.Configure<SystemOptions>(builder.Configuration.GetRequiredSection("SystemOptions"));
                     });
-                    builder.UseCommandHandler<DefaultRootCommand, ICommandHandler>();
-                    builder.UseCommandHandler<ExportCommand, ICommandHandler>();
-                    builder.UseCommandHandler<WalletCommand, ICommandHandler>();
+                    builder.UseCommandHandler<DefaultRootCommand, EmptyHandler>();
+                    builder.UseCommandHandler<ExportCommand, EmptyHandler>();
+                    builder.UseCommandHandler<WalletCommand, EmptyHandler>();
                     builder.UseCommandHandler<RunCommand, RunCommand.Handler>();
                     builder.UseCommandHandler<ExportCommand.BlocksCommand, ExportCommand.BlocksCommand.Handler>();
                     builder.UseCommandHandler<WalletCommand.OpenWalletCommand, WalletCommand.OpenWalletCommand.Handler>();
