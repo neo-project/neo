@@ -9,7 +9,7 @@ on:
         required: true
 
 env:
-  DOTNET_VERSION: 7.0.x
+  DOTNET_VERSION: 8.0.202
   CONFIGURATION: Release
   DIST_PATH: /tmp/dist
   OUTPUT_PATH: /tmp/out
