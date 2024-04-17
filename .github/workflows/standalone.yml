@@ -121,7 +121,7 @@ jobs:
       working-directory: ./neo-modules
       run: |
         dotnet build ./src/LevelDBStore/LevelDBStore.csproj \
-        --framework net7.0 \
+        --framework net8.0 \
         --configuration ${{ env.CONFIGURATION }} \
         --output ${{ env.OUTPUT_PATH }}/${{ matrix.runtime }}/Plugins/LevelDBStore \
         --verbosity normal
