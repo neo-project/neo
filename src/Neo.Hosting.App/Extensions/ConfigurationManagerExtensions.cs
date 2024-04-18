@@ -16,7 +16,7 @@ namespace Neo.Hosting.App.Extensions
 {
     internal static class ConfigurationManagerExtensions
     {
-        public static ConfigurationManager AddSystemConfiguration(this ConfigurationManager manager)
+        public static ConfigurationManager AddNeoConfiguration(this ConfigurationManager manager)
         {
             IConfigurationBuilder configBuilder = manager;
             configBuilder.Add(new SystemConfigurationSource(manager.GetSection("SystemOptions")));

@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// NeoSystemService.cs file belongs to the neo project and is free
+// NeoSystemHostedService.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -10,8 +10,8 @@
 // modifications are permitted.
 
 using Akka.Actor;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Neo.Hosting.App.Configuration;
 using Neo.Network.P2P;
@@ -25,22 +25,26 @@ using System.Threading.Tasks;
 
 namespace Neo.Hosting.App.Hosting
 {
-    internal sealed class NeoSystemService : IHostedService, IDisposable
+    internal sealed class NeoSystemHostedService : IHostedService, IDisposable
     {
-        public bool IsRunning { get; private set; }
+        public bool IsInitialized { get; private set; }
         public NeoSystem? NeoSystem => _neoSystem;
 
         private readonly ProtocolSettings _protocolSettings;
+        private readonly ILogger<NeoSystem> _logger;
         private readonly SystemOptions _systemOptions;
 
         private NeoSystem? _neoSystem;
         private LocalNode? _localNode;
 
-        public NeoSystemService(
-            IConfiguration config,
+        public NeoSystemHostedService(
+            ILoggerFactory loggerFactory,
+            ProtocolSettings protocolSettings,
             IOptions<SystemOptions> systemOptions)
         {
-            _protocolSettings = ProtocolSettings.Load(config.GetRequiredSection("ProtocolConfiguration"));
+            _logger = loggerFactory.CreateLogger<NeoSystem>();
+
+            _protocolSettings = protocolSettings;
             _systemOptions = systemOptions.Value;
 
             Plugin.LoadPlugins();
@@ -68,8 +72,12 @@ namespace Neo.Hosting.App.Hosting
                 throw new DllNotFoundException($"Plugin '{_systemOptions.Storage.Engine}.dll' can't be found.");
 
             _neoSystem ??= new(_protocolSettings, _systemOptions.Storage.Engine, storagePath);
+            _logger.LogInformation("NeoSystem Initialized.");
+
             _localNode ??= await _neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance(), cancellationToken);
-            IsRunning = true;
+            _logger.LogInformation("LocalNode Initialized.");
+
+            IsInitialized = true;
         }
 
         public void StartNode()
@@ -84,12 +92,15 @@ namespace Neo.Hosting.App.Hosting
                 MaxConnections = _systemOptions.P2P.MaxConnections,
                 MaxConnectionsPerAddress = _systemOptions.P2P.MaxConnectionsPerAddress,
             });
+            _logger.LogInformation("NeoSystem started.");
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _neoSystem?.Dispose();
-            IsRunning = false;
+            IsInitialized = false;
+
+            _logger.LogInformation("NeoSystem stopped.");
 
             return Task.CompletedTask;
         }

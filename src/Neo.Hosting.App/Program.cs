@@ -47,10 +47,11 @@ namespace Neo.Hosting.App
                 {
                     builder.ConfigureServices((builder, services) =>
                     {
-                        services.AddSingleton<NeoSystemService>();
+                        services.AddSingleton<NeoSystemHostedService>();
                         //services.AddHostedService(sp => sp.GetRequiredService<NeoSystemService>());
                         //services.Configure<InvocationLifetimeOptions>(config => config.SuppressStatusMessages = true);
                         services.Configure<SystemOptions>(builder.Configuration.GetRequiredSection("SystemOptions"));
+                        services.AddSingleton(ProtocolSettings.Load(builder.Configuration.GetRequiredSection("ProtocolConfiguration")));
                     });
                     builder.UseCommandHandler<DefaultRootCommand, EmptyHandler>();
                     builder.UseCommandHandler<ExportCommand, EmptyHandler>();
@@ -63,7 +64,7 @@ namespace Neo.Hosting.App
                     builder.UseNamedPipes();
                 })
                 .UseDefaults()
-                //.UseExceptionHandler(NullExceptionFilter.Handler)
+                .UseExceptionHandler(NullExceptionFilter.Handler)
                 .Build();
 
             return await parser.InvokeAsync(args);

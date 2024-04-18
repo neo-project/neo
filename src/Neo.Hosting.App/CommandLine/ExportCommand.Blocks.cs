@@ -29,22 +29,22 @@ namespace Neo.Hosting.App.CommandLine
         {
             public BlocksCommand() : base("blocks", "Export blocks to an offline archive file")
             {
-                var startOption = new Option<uint>(new[] { "--start", "-s" }, () => 1, "The block height where to begin");
+                var startOption = new Option<uint>(new[] { "--start", "-s" }, () => 0, "The block height where to begin");
                 var countOption = new Option<uint>(new[] { "--count", "-c" }, () => uint.MaxValue, "The total blocks to be written");
-                var fileOption = new Option<FileInfo>(new[] { "--file", "-f" }, () => new FileInfo("chain.1.acc"), "The output filename");
+                var fileOption = new Option<FileInfo>(new[] { "--file", "-f" }, () => new FileInfo("chain.0.acc"), "The output filename");
 
                 startOption.AddValidator(result =>
                 {
                     var startOptionValue = result.GetValueForOption(startOption);
-                    if (startOptionValue == 0)
+                    if (startOptionValue < 0)
                         result.ErrorMessage = "Must be greater than 0";
                 });
 
                 countOption.AddValidator(result =>
                 {
                     var countOptionValue = result.GetValueForOption(countOption);
-                    if (countOptionValue == 0)
-                        result.ErrorMessage = "Must be greater than 0";
+                    if (countOptionValue < 1)
+                        result.ErrorMessage = "Must be greater than 1";
                 });
 
                 AddOption(startOption);
@@ -61,34 +61,40 @@ namespace Neo.Hosting.App.CommandLine
                 public required FileInfo File { get; set; }
 
                 private readonly Progress<uint> _progress;
-                private readonly NeoSystemService _neoSystemService;
+                private readonly NeoSystemHostedService _neoSystemHostedService;
                 private readonly ILogger<ExportCommand> _logger;
 
                 public Handler(
-                    NeoSystemService neoSystemService,
+                    NeoSystemHostedService neoSystemService,
                     ILoggerFactory loggerFactory)
                 {
-                    _neoSystemService = neoSystemService;
+                    _neoSystemHostedService = neoSystemService;
                     _logger = loggerFactory.CreateLogger<ExportCommand>();
                     _progress = new Progress<uint>();
                     _progress.ProgressChanged += WriteBlocksToAccFileProgressChanged;
                 }
 
-                public Task<int> InvokeAsync(InvocationContext context)
+                public async Task<int> InvokeAsync(InvocationContext context)
                 {
                     var host = context.GetHost();
+                    var stoppingToken = context.GetCancellationToken();
 
-                    var neoSystem = _neoSystemService.NeoSystem ?? throw new NullReferenceException("NeoSystem");
+                    await _neoSystemHostedService.StartAsync(stoppingToken);
+
+                    if (_neoSystemHostedService.IsInitialized)
+                        _neoSystemHostedService.StartNode();
+
+                    var neoSystem = _neoSystemHostedService.NeoSystem ?? throw new NullReferenceException("NeoSystem");
                     var currentBlockHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
                     Count = Math.Min(Count, currentBlockHeight - Start);
 
                     var writeBlocksToAccFileTask = Task.Factory.StartNew(
-                        () => WriteBlocksToAccFile(neoSystem, Start, Count, File.FullName, true, context.GetCancellationToken()),
-                        context.GetCancellationToken());
+                        () => WriteBlocksToAccFile(neoSystem, Start, Count, File.FullName, true, stoppingToken),
+                        stoppingToken);
 
-                    writeBlocksToAccFileTask.Wait();
+                    await writeBlocksToAccFileTask;
 
-                    return Task.FromResult(0);
+                    return 0;
                 }
 
                 public int Invoke(InvocationContext context)
@@ -97,8 +103,8 @@ namespace Neo.Hosting.App.CommandLine
                 }
 
                 private void WriteBlocksToAccFile(
-                    NeoSystem neoSystem, uint start = 1, uint count = uint.MaxValue,
-                    string path = $"chain.1.acc", bool writeStart = true, CancellationToken cancellationToken = default)
+                    NeoSystem neoSystem, uint start = 0, uint count = uint.MaxValue,
+                    string path = $"chain.0.acc", bool writeStart = true, CancellationToken cancellationToken = default)
                 {
                     var end = start + count - 1;
                     using var fs = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.None, 4096, FileOptions.WriteThrough);

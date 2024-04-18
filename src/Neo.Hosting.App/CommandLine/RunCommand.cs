@@ -27,11 +27,11 @@ namespace Neo.Hosting.App.CommandLine
 
         public new sealed class Handler : ICommandHandler
         {
-            private readonly NeoSystemService _neoSystemService;
+            private readonly NeoSystemHostedService _neoSystemHostedService;
 
-            public Handler(NeoSystemService neoSystemService)
+            public Handler(NeoSystemHostedService neoSystemHostedService)
             {
-                _neoSystemService = neoSystemService;
+                _neoSystemHostedService = neoSystemHostedService;
             }
 
             public async Task<int> InvokeAsync(InvocationContext context)
@@ -39,10 +39,10 @@ namespace Neo.Hosting.App.CommandLine
                 var host = context.GetHost();
                 var stoppingToken = context.GetCancellationToken();
 
-                await _neoSystemService.StartAsync(stoppingToken);
+                await _neoSystemHostedService.StartAsync(stoppingToken);
 
-                if (_neoSystemService.IsRunning)
-                    _neoSystemService.StartNode();
+                if (_neoSystemHostedService.IsInitialized)
+                    _neoSystemHostedService.StartNode();
 
                 await Task.Delay(-1, stoppingToken);
 

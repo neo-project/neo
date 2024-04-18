@@ -15,7 +15,7 @@ using Neo.Hosting.App.Providers;
 namespace Neo.Hosting.App.Configuration
 {
     internal sealed class SystemConfigurationSource(
-        IConfigurationSection? systemConfigurationSection) : IConfigurationSource
+        IConfigurationSection systemConfigurationSection) : IConfigurationSource
     {
         IConfigurationProvider IConfigurationSource.Build(IConfigurationBuilder builder)
         {

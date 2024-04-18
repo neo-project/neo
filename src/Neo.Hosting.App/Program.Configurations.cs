@@ -11,7 +11,10 @@
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.Metrics;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.EventLog;
 using Neo.Hosting.App.Extensions;
 using Neo.Hosting.App.Hosting;
 using System;
@@ -22,33 +25,34 @@ namespace Neo.Hosting.App
     {
         static IHostBuilder DefaultNeoHostBuilderFactory(string[] args) =>
             new HostBuilder()
-                .ConfigureHostConfiguration(config =>
-                {
-                    config.AddInMemoryCollection(
-                    [
-                        new(HostDefaults.EnvironmentKey, NeoEnvironments.MainNet),
-                        new(HostDefaults.ContentRootKey, Environment.CurrentDirectory),
-                    ]);
+            .ConfigureHostConfiguration(config =>
+            {
+                config.AddInMemoryCollection(
+                [
+                    new(HostDefaults.EnvironmentKey, NeoEnvironments.MainNet),
+                    new(HostDefaults.ContentRootKey, Environment.CurrentDirectory),
+                ]);
 
-                    config.AddEnvironmentVariables("NEO_");
-                    config.AddCommandLine(args);
-                })
-                .ConfigureAppConfiguration((context, config) =>
-                {
-                    var hostingEnvironment = context.HostingEnvironment;
-                    config.SetBasePath(AppContext.BaseDirectory);
+                config.AddEnvironmentVariables("NEO_");
+                config.AddCommandLine(args);
+            })
+            .ConfigureAppConfiguration((context, config) =>
+            {
+                var hostingEnvironment = context.HostingEnvironment;
+                config.SetBasePath(AppContext.BaseDirectory);
 
-                    var manager = new ConfigurationManager();
-                    manager.AddJsonFile("config." + hostingEnvironment.EnvironmentName + ".json", optional: false);
-                    manager.AddSystemConfiguration();
+                var manager = new ConfigurationManager();
+                manager.AddJsonFile("config." + hostingEnvironment.EnvironmentName + ".json", optional: false);
+                manager.AddNeoConfiguration();
 
-                    config.AddConfiguration(manager);
+                config.AddConfiguration(manager);
 
-                    config.AddEnvironmentVariables();
-                    config.AddCommandLine(args);
+                config.AddEnvironmentVariables();
+                config.AddCommandLine(args);
 
-                })
-                .UseServiceProviderFactory((context) => new DefaultServiceProviderFactory(CreateDefaultNeoServiceProviderOptions(context)));
+            })
+            .ConfigureServices(AddDefaultServices)
+            .UseServiceProviderFactory((context) => new DefaultServiceProviderFactory(CreateDefaultNeoServiceProviderOptions(context)));
 
         static ServiceProviderOptions CreateDefaultNeoServiceProviderOptions(HostBuilderContext context)
         {
@@ -58,6 +62,35 @@ namespace Neo.Hosting.App
                 ValidateScopes = flag,
                 ValidateOnBuild = flag
             };
+        }
+
+        static void AddDefaultServices(HostBuilderContext hostingContext, IServiceCollection services)
+        {
+            services.AddLogging(logging =>
+            {
+                var isWindows = OperatingSystem.IsWindows();
+                if (isWindows)
+                    logging.AddFilter<EventLogLoggerProvider>(level => level >= Microsoft.Extensions.Logging.LogLevel.Warning);
+
+                logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
+                logging.AddConsole();
+
+                if (hostingContext.HostingEnvironment.IsNeoMainNet() == false)
+                    logging.AddDebug();
+
+                logging.AddEventSourceLogger();
+
+                if (isWindows)
+                    logging.AddEventLog();
+
+                logging.Configure(options =>
+                {
+                    options.ActivityTrackingOptions =
+                        ActivityTrackingOptions.SpanId |
+                        ActivityTrackingOptions.TraceId |
+                        ActivityTrackingOptions.ParentId;
+                });
+            });
         }
     }
 }
