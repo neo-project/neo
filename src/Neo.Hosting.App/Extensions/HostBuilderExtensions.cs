@@ -10,11 +10,6 @@
 // modifications are permitted.
 
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.ObjectPool;
-using Neo.Hosting.App.Factories;
-using Neo.Hosting.App.NamedPipes;
 using Neo.Wallets;
 using System;
 using System.IO;
@@ -24,15 +19,15 @@ namespace Neo.Hosting.App.Extensions
 {
     internal static class HostBuilderExtensions
     {
-        public static IHostBuilder UseNamedPipes(this IHostBuilder hostBuilder) =>
-            hostBuilder.ConfigureServices(services =>
-            {
-                services.TryAddSingleton<ObjectPoolProvider, DefaultObjectPoolProvider>();
-                services.AddSingleton<NamedPipeTransportFactory>();
-            });
+        //public static IHostBuilder UseNamedPipes(this IHostBuilder hostBuilder) =>
+        //    hostBuilder.ConfigureServices(services =>
+        //    {
+        //        services.AddSingleton<ObjectPoolProvider, DefaultObjectPoolProvider>();
+        //        services.AddSingleton<NamedPipeTransportFactory>();
+        //    });
 
-        public static IHostBuilder UseNamedPipes(this IHostBuilder hostBuilder, Action<NamedPipeTransportOptions> configureOptions) =>
-            hostBuilder.UseNamedPipes().ConfigureServices(services => services.Configure(configureOptions));
+        //public static IHostBuilder UseNamedPipes(this IHostBuilder hostBuilder, Action<NamedPipeTransportOptions> configureOptions) =>
+        //    hostBuilder.UseNamedPipes().ConfigureServices(services => services.Configure(configureOptions));
 
         public static void AddWalletJsonFile(this IServiceCollection services, string path, SecureString password, ProtocolSettings? protocolSettings = null)
         {

@@ -53,7 +53,16 @@ namespace Neo.Hosting.App.Factories
             if (namedPipeEndPoint.ServerName != LocalComputerServerName)
                 throw new NotSupportedException($"Server name '{namedPipeEndPoint.ServerName}' is invalid. The Server name must be \"{LocalComputerServerName}\".");
 
-            var listener = new NamedPipeConnectionListener(namedPipeEndPoint, _options, _loggerFactory, _objectPoolProvider);
+            var mutexName = $"Neo-NamedPipe-{namedPipeEndPoint.PipeName}";
+            var mutex = new Mutex(false, mutexName, out var createdNew);
+
+            if (!createdNew)
+            {
+                mutex.Dispose();
+                throw new ApplicationException($"Named pipe '{namedPipeEndPoint.PipeName}' is already in use.");
+            }
+
+            var listener = new NamedPipeConnectionListener(namedPipeEndPoint, _options, _loggerFactory, _objectPoolProvider, mutex);
 
             try
             {
@@ -81,7 +90,7 @@ namespace Neo.Hosting.App.Factories
             NamedPipeTransportOptions? options = null,
             ObjectPoolProvider? objectPoolProvider = null)
         {
-            options ??= new NamedPipeTransportOptions();
+            options ??= new();
             return new(loggerFactory ?? NullLoggerFactory.Instance, Options.Create(options), objectPoolProvider ?? new DefaultObjectPoolProvider());
         }
 

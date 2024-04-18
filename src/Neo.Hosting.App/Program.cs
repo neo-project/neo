@@ -15,7 +15,6 @@ using Microsoft.Extensions.Hosting;
 using Neo.Extensions;
 using Neo.Hosting.App.CommandLine;
 using Neo.Hosting.App.Configuration;
-using Neo.Hosting.App.Extensions;
 using Neo.Hosting.App.Handlers;
 using Neo.Hosting.App.Hosting;
 using System;
@@ -43,16 +42,14 @@ namespace Neo.Hosting.App
         {
             var rootCommand = new DefaultRootCommand();
             var parser = new CommandLineBuilder(rootCommand)
-                .UseDefaults()
                 .UseHost(DefaultNeoHostBuilderFactory, builder =>
                 {
                     builder.ConfigureServices((builder, services) =>
                     {
-                        services.AddSingleton<NeoSystemHostedService>();
-                        //services.AddHostedService(sp => sp.GetRequiredService<NeoSystemService>());
-                        //services.Configure<InvocationLifetimeOptions>(config => config.SuppressStatusMessages = true);
                         services.Configure<SystemOptions>(builder.Configuration.GetRequiredSection("SystemOptions"));
                         services.AddSingleton(ProtocolSettings.Load(builder.Configuration.GetRequiredSection("ProtocolConfiguration")));
+                        services.AddSingleton<NeoSystemHostedService>();
+                        //services.AddHostedService(sp => sp.GetRequiredService<NeoSystemHostedService>());
                     });
                     builder.UseCommandHandler<DefaultRootCommand, EmptyHandler>();
                     builder.UseCommandHandler<ExportCommand, EmptyHandler>();
@@ -62,9 +59,9 @@ namespace Neo.Hosting.App
                     builder.UseCommandHandler<WalletCommand.OpenWalletCommand, WalletCommand.OpenWalletCommand.Handler>();
                     builder.UseSystemd();
                     builder.UseWindowsService();
-                    builder.UseNamedPipes();
                 })
-                .UseExceptionHandler(NullExceptionFilter.Handler)
+                .UseDefaults()
+                //.UseExceptionHandler(NullExceptionFilter.Handler)
                 .Build();
 
             return await parser.InvokeAsync(args);

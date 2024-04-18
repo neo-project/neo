@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Hosting.App.Extensions;
+using Neo.Hosting.App.Factories;
 using Neo.Hosting.App.Hosting;
 using System;
 using System.CommandLine;
@@ -20,6 +22,7 @@ namespace Neo.Hosting.App.CommandLine
 {
     internal sealed class RunCommand : Command
     {
+        private static readonly string s_pipeName = $"neo.service\\{Program.ApplicationVersion:3}";
         public RunCommand() : base("run")
         {
             IsHidden = true;
@@ -39,12 +42,22 @@ namespace Neo.Hosting.App.CommandLine
                 var host = context.GetHost();
                 var stoppingToken = context.GetCancellationToken();
 
+                await using var connectionListener = await NamedPipeTransportFactory.CreateConnectionListener(pipeName: s_pipeName);
+
+                var acceptTask = connectionListener.AcceptAsync(stoppingToken);
+
                 await _neoSystemHostedService.StartAsync(stoppingToken);
 
                 if (_neoSystemHostedService.IsInitialized)
                     _neoSystemHostedService.StartNode();
 
                 await Task.Delay(-1, stoppingToken);
+                await connectionListener
+                    .DisposeAsync()
+                    .DefaultTimeoutAsync();
+                await acceptTask
+                    .AsTask()
+                    .DefaultTimeoutAsync();
 
                 return 0;
             }
