@@ -19,7 +19,7 @@ namespace Neo.Hosting.App.CommandLine
     {
         public ExportCommand() : base("export", "Export data for offline use")
         {
-            var blocksCommand = new BlocksCommand();
+            var blocksCommand = new BlocksExportCommand();
             AddCommand(blocksCommand);
         }
     }

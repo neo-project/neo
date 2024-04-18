@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Neo.Hosting.App.Hosting;
 using Neo.IO;
@@ -25,9 +26,9 @@ namespace Neo.Hosting.App.CommandLine
 {
     internal partial class ExportCommand
     {
-        public class BlocksCommand : Command
+        public class BlocksExportCommand : Command
         {
-            public BlocksCommand() : base("blocks", "Export blocks to an offline archive file")
+            public BlocksExportCommand() : base("blocks", "Export blocks to an offline archive file")
             {
                 var startOption = new Option<uint>(new[] { "--start", "-s" }, () => 0, "The block height where to begin");
                 var countOption = new Option<uint>(new[] { "--count", "-c" }, () => uint.MaxValue, "The total blocks to be written");
@@ -62,14 +63,12 @@ namespace Neo.Hosting.App.CommandLine
 
                 private readonly Progress<uint> _progress;
                 private readonly NeoSystemHostedService _neoSystemHostedService;
-                private readonly ILogger<ExportCommand> _logger;
+                private ILogger? _logger;
 
                 public Handler(
-                    NeoSystemHostedService neoSystemService,
-                    ILoggerFactory loggerFactory)
+                    NeoSystemHostedService neoSystemService)
                 {
                     _neoSystemHostedService = neoSystemService;
-                    _logger = loggerFactory.CreateLogger<ExportCommand>();
                     _progress = new Progress<uint>();
                     _progress.ProgressChanged += WriteBlocksToAccFileProgressChanged;
                 }
@@ -78,6 +77,9 @@ namespace Neo.Hosting.App.CommandLine
                 {
                     var host = context.GetHost();
                     var stoppingToken = context.GetCancellationToken();
+
+                    var loggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
+                    _logger = loggerFactory.CreateLogger(File.FullName);
 
                     await _neoSystemHostedService.StartAsync(stoppingToken);
 
