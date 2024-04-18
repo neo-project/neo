@@ -37,14 +37,14 @@ namespace Neo.Hosting.App.CommandLine
                 {
                     var startOptionValue = result.GetValueForOption(startOption);
                     if (startOptionValue < 0)
-                        result.ErrorMessage = "Must be greater than 0";
+                        result.ErrorMessage = "Must be greater than -1";
                 });
 
                 countOption.AddValidator(result =>
                 {
                     var countOptionValue = result.GetValueForOption(countOption);
                     if (countOptionValue < 1)
-                        result.ErrorMessage = "Must be greater than 1";
+                        result.ErrorMessage = "Must be greater than 0";
                 });
 
                 AddOption(startOption);
@@ -80,9 +80,6 @@ namespace Neo.Hosting.App.CommandLine
                     var stoppingToken = context.GetCancellationToken();
 
                     await _neoSystemHostedService.StartAsync(stoppingToken);
-
-                    if (_neoSystemHostedService.IsInitialized)
-                        _neoSystemHostedService.StartNode();
 
                     var neoSystem = _neoSystemHostedService.NeoSystem ?? throw new NullReferenceException("NeoSystem");
                     var currentBlockHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
