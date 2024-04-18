@@ -114,7 +114,7 @@ namespace Neo
         /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
         /// <param name="storageProvider">The storage engine used to create the <see cref="IStoreProvider"/> objects. If this parameter is <see langword="null"/>, a default in-memory storage engine will be used.</param>
         /// <param name="storagePath">The path of the storage. If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.</param>
-        public NeoSystem(ProtocolSettings settings, string? storageProvider = null, string? storagePath = null) :
+        public NeoSystem(ProtocolSettings settings, string storageProvider = null, string storagePath = null) :
             this(settings, StoreFactory.GetStoreProvider(storageProvider ?? nameof(MemoryStore))
                 ?? throw new ArgumentException($"Can't find the storage provider {storageProvider}", nameof(storageProvider)), storagePath)
         {
@@ -126,7 +126,7 @@ namespace Neo
         /// <param name="settings">The protocol settings of the <see cref="NeoSystem"/>.</param>
         /// <param name="storageProvider">The <see cref="IStoreProvider"/> to use.</param>
         /// <param name="storagePath">The path of the storage. If <paramref name="storageProvider"/> is the default in-memory storage engine, this parameter is ignored.</param>
-        public NeoSystem(ProtocolSettings settings, IStoreProvider storageProvider, string? storagePath = null)
+        public NeoSystem(ProtocolSettings settings, IStoreProvider storageProvider, string storagePath = null)
         {
             this.Settings = settings;
             this.GenesisBlock = CreateGenesisBlock(settings);

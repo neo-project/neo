@@ -160,7 +160,9 @@ namespace Neo.Cryptography
             var cipherBytes = new byte[plainData.Length];
             if (!IsOSX)
             {
+#pragma warning disable SYSLIB0053 // Type or member is obsolete
                 using var cipher = new AesGcm(key);
+#pragma warning restore SYSLIB0053 // Type or member is obsolete
                 cipher.Encrypt(nonce, plainData, cipherBytes, tag, associatedData);
             }
             else
@@ -188,7 +190,9 @@ namespace Neo.Cryptography
             var decryptedData = new byte[cipherBytes.Length];
             if (!IsOSX)
             {
+#pragma warning disable SYSLIB0053 // Type or member is obsolete
                 using var cipher = new AesGcm(key);
+#pragma warning restore SYSLIB0053 // Type or member is obsolete
                 cipher.Decrypt(nonce, cipherBytes, tag, decryptedData, associatedData);
             }
             else

@@ -36,7 +36,7 @@ public static class StoreFactory
     /// </summary>
     /// <param name="name">Name</param>
     /// <returns>Store provider</returns>
-    public static IStoreProvider? GetStoreProvider(string name)
+    public static IStoreProvider GetStoreProvider(string name)
     {
         if (providers.TryGetValue(name, out var provider))
         {
