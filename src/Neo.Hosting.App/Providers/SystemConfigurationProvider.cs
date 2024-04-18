@@ -11,7 +11,6 @@
 
 using Microsoft.Extensions.Configuration;
 using Neo.Network.P2P;
-using Neo.Persistence;
 using System;
 using System.Collections.Generic;
 
@@ -22,58 +21,30 @@ namespace Neo.Hosting.App.Providers
     {
         public override void Load()
         {
-            if (systemConfigurationSection is null)
-                Data = CreateAndSaveDefaultValues();
-            else
-                Data = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
-                {
-                    // Storage
-                    ["SystemOptions:Storage:Path"] = systemConfigurationSection["Storage:Path"],
-                    ["SystemOptions:Storage:Engine"] = systemConfigurationSection["Storage:Engine"],
-                    ["SystemOptions:Storage:Archive:Path"] = systemConfigurationSection["Storage:Archive:Path"],
-                    ["SystemOptions:Storage:Archive:FileName"] = systemConfigurationSection["Storage:Archive:FileName"],
-                    ["SystemOptions:Storage:Archive:Verify"] = systemConfigurationSection["Storage:Archive:Verify"],
-
-                    // P2P
-                    ["SystemOptions:P2P:Listen"] = systemConfigurationSection["P2P:Listen"],
-                    ["SystemOptions:P2P:Port"] = systemConfigurationSection["P2P:Port"],
-                    ["SystemOptions:P2P:MinDesiredConnections"] = systemConfigurationSection["P2P:MinDesiredConnections"],
-                    ["SystemOptions:P2P:MaxConnections"] = systemConfigurationSection["P2P:MaxConnections"],
-                    ["SystemOptions:P2P:MaxConnectionsPerAddress"] = systemConfigurationSection["P2P:MaxConnectionsPerAddress"],
-
-                    // Contracts
-                    ["SystemOptions:Contracts:NeoNameService"] = systemConfigurationSection["Contracts:NeoNameService"],
-
-                    // Plugin
-                    ["SystemOptions:Plugin:DownloadUrl"] = systemConfigurationSection["Plugin:DownloadUrl"],
-                    ["SystemOptions:Plugin:Prerelease"] = systemConfigurationSection["Plugin:Prerelease"],
-                    ["SystemOptions:Plugin:Version"] = systemConfigurationSection["Plugin:Version"],
-                };
-        }
-
-        static Dictionary<string, string?> CreateAndSaveDefaultValues() =>
-            new(StringComparer.OrdinalIgnoreCase)
+            Data = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
             {
-                ["SystemOptions:Storage:Path"] = "Data_LevelDB_{0:X2}",
-                ["SystemOptions:Storage:Engine"] = nameof(MemoryStore),
-                ["SystemOptions:Storage:Archive:Path"] = AppContext.BaseDirectory,
-                ["SystemOptions:Storage:Archive:FileName"] = "chain.0.acc.zip",
-                ["SystemOptions:Storage:Archive:Verify"] = bool.TrueString,
+                // Storage
+                ["SystemOptions:Storage:Path"] = systemConfigurationSection?["Storage:Path"] ?? "Data_LevelDB_{0:X2}",
+                ["SystemOptions:Storage:Engine"] = systemConfigurationSection?["Storage:Engine"] ?? "LevelDBStore",
+                ["SystemOptions:Storage:Archive:Path"] = systemConfigurationSection?["Storage:Archive:Path"] ?? AppContext.BaseDirectory,
+                ["SystemOptions:Storage:Archive:FileName"] = systemConfigurationSection?["Storage:Archive:FileName"] ?? "chain.0.acc.zip",
+                ["SystemOptions:Storage:Archive:Verify"] = systemConfigurationSection?["Storage:Archive:Verify"] ?? bool.TrueString,
 
                 // P2P
-                ["SystemOptions:P2P:Listen"] = "0.0.0.0",
-                ["SystemOptions:P2P:Port"] = "10333",
-                ["SystemOptions:P2P:MinDesiredConnections"] = $"{Peer.DefaultMinDesiredConnections}",
-                ["SystemOptions:P2P:MaxConnections"] = $"{Peer.DefaultMaxConnections}",
-                ["SystemOptions:P2P:MaxConnectionsPerAddress"] = "3",
+                ["SystemOptions:P2P:Listen"] = systemConfigurationSection?["P2P:Listen"] ?? "0.0.0.0",
+                ["SystemOptions:P2P:Port"] = systemConfigurationSection?["P2P:Port"] ?? "10333",
+                ["SystemOptions:P2P:MinDesiredConnections"] = systemConfigurationSection?["P2P:MinDesiredConnections"] ?? $"{Peer.DefaultMinDesiredConnections}",
+                ["SystemOptions:P2P:MaxConnections"] = systemConfigurationSection?["P2P:MaxConnections"] ?? $"{Peer.DefaultMaxConnections}",
+                ["SystemOptions:P2P:MaxConnectionsPerAddress"] = systemConfigurationSection?["P2P:MaxConnectionsPerAddress"] ?? "3",
 
                 // Contracts
-                ["SystemOptions:Contracts:NeoNameService"] = "0x50ac1c37690cc2cfc594472833cf57505d5f46de",
+                ["SystemOptions:Contracts:NeoNameService"] = systemConfigurationSection?["Contracts:NeoNameService"] ?? "0x50ac1c37690cc2cfc594472833cf57505d5f46de",
 
                 // Plugin
-                ["SystemOptions:Plugin:DownloadUrl"] = "https://api.github.com/repos/neo-project/neo-modules/releases",
-                ["SystemOptions:Plugin:Prerelease"] = bool.FalseString,
-                ["SystemOptions:Plugin:Version"] = $"{Program.ApplicationVersion}",
+                ["SystemOptions:Plugin:DownloadUrl"] = systemConfigurationSection?["Plugin:DownloadUrl"] ?? "https://api.github.com/repos/neo-project/neo-modules/releases",
+                ["SystemOptions:Plugin:Prerelease"] = systemConfigurationSection?["Plugin:Prerelease"] ?? bool.FalseString,
+                ["SystemOptions:Plugin:Version"] = systemConfigurationSection?["Plugin:Version"] ?? $"{Program.ApplicationVersion}",
             };
+        }
     }
 }
