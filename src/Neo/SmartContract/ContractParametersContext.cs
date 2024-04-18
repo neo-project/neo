@@ -44,7 +44,7 @@ namespace Neo.SmartContract
 
             public ContextItem(JObject json)
             {
-                this.Script = Convert.FromBase64String(json["script"].AsString());
+                this.Script = json["script"] is JToken.Null ? null : Convert.FromBase64String(json["script"].AsString());
                 this.Parameters = ((JArray)json["parameters"]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray();
                 this.Signatures = ((JObject)json["signatures"]).Properties.Select(p => new
                 {
@@ -56,7 +56,7 @@ namespace Neo.SmartContract
             public JObject ToJson()
             {
                 JObject json = new();
-                json["script"] = Convert.ToBase64String(Script);
+                json["script"] = Script == null ? null : Convert.ToBase64String(Script);
                 json["parameters"] = new JArray(Parameters.Select(p => p.ToJson()));
                 json["signatures"] = new JObject();
                 foreach (var signature in Signatures)
