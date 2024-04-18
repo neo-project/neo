@@ -43,6 +43,7 @@ namespace Neo.Hosting.App
         {
             var rootCommand = new DefaultRootCommand();
             var parser = new CommandLineBuilder(rootCommand)
+                .UseDefaults()
                 .UseHost(DefaultNeoHostBuilderFactory, builder =>
                 {
                     builder.ConfigureServices((builder, services) =>
@@ -63,7 +64,6 @@ namespace Neo.Hosting.App
                     builder.UseWindowsService();
                     builder.UseNamedPipes();
                 })
-                .UseDefaults()
                 .UseExceptionHandler(NullExceptionFilter.Handler)
                 .Build();
 

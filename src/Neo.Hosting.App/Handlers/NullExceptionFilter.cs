@@ -9,7 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Hosting.App.Extensions;
 using System;
+using System.CommandLine;
 using System.CommandLine.Invocation;
 
 namespace Neo.Hosting.App.Handlers
@@ -18,7 +20,26 @@ namespace Neo.Hosting.App.Handlers
     {
         internal static void Handler(Exception exception, InvocationContext context)
         {
-            context.ExitCode = 1;
+#if DEBUG
+            if (exception is not OperationCanceledException)
+            {
+                context.Console.WriteLine(string.Empty);
+
+                context.Console.ResetTerminalForegroundColor();
+                context.Console.SetTerminalForegroundRed();
+
+                var stackTrace = exception.InnerException?.StackTrace ?? exception.StackTrace;
+
+                Console.Error.WriteLine("Exception: ");
+                Console.Error.WriteLine("   {0}", exception.InnerException?.Message ?? exception.Message);
+                Console.Error.WriteLine("Stack Trace: ");
+                Console.Error.WriteLine("   {0}", stackTrace!.Trim());
+
+                context.Console.ResetTerminalForegroundColor();
+            }
+#endif
+
+            context.ExitCode = exception.HResult;
         }
     }
 }
