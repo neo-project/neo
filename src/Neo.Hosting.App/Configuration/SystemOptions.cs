@@ -11,6 +11,8 @@
 
 using Neo.Hosting.App.Helpers;
 using System;
+using System.Collections.Generic;
+using System.Security;
 
 namespace Neo.Hosting.App.Configuration
 {
@@ -20,6 +22,7 @@ namespace Neo.Hosting.App.Configuration
         public required P2POptions P2P { get; set; }
         public required ContractsOptions Contracts { get; set; }
         public required PluginOptions Plugin { get; set; }
+        public required List<WalletOptions> Wallets { get; set; }
     }
 
     internal sealed class StorageOptions
@@ -64,5 +67,33 @@ namespace Neo.Hosting.App.Configuration
         public required string DownloadUrl { get; set; }
         public required bool Prerelease { get; set; }
         public required Version Version { get; set; }
+    }
+
+    internal sealed class WalletOptions
+        (string name, string path, string password)
+    {
+        private SecureString _encryptedPassword = new();
+
+        public required string Name { get; set; } = name;
+        public required string Path { get; set; } = path;
+
+        public required SecureString Password
+        {
+            get => _encryptedPassword;
+            set
+            {
+                var passwordOptionValue = password;
+
+                unsafe
+                {
+                    fixed (char* passwordChars = passwordOptionValue)
+                    {
+                        var securePasswordString = new SecureString(passwordChars, passwordOptionValue.Length);
+                        securePasswordString.MakeReadOnly();
+                        _encryptedPassword = value = securePasswordString;
+                    }
+                }
+            }
+        }
     }
 }

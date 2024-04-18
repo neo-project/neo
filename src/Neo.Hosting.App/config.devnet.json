@@ -18,7 +18,14 @@
     },
     "Contracts": {
       "NeoNameService": "0x50ac1c37690cc2cfc594472833cf57505d5f46de"
-    }
+    },
+    "Wallets": [
+      {
+        "Name": "MyHelloWallet",
+        "Path": "./wallets/hello.json",
+        "Password": "hello"
+      }
+    ]
   },
   "ProtocolConfiguration": {
     "Network": 860833102,

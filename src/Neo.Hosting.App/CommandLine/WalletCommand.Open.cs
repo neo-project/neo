@@ -9,9 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Neo.Hosting.App.Extensions;
 using System;
 using System.CommandLine;
+using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
 using System.IO;
 using System.Security;
@@ -38,7 +41,7 @@ namespace Neo.Hosting.App.CommandLine
                             fixed (char* passwordChars = passwordOptionValue)
                             {
                                 var securePasswordString = new SecureString(passwordChars, passwordOptionValue.Length);
-                                securePasswordString.IsReadOnly();
+                                securePasswordString.MakeReadOnly();
                                 return securePasswordString;
                             }
                         }
@@ -56,12 +59,18 @@ namespace Neo.Hosting.App.CommandLine
 
                 public Task<int> InvokeAsync(InvocationContext context)
                 {
+                    var host = context.GetHost();
+
+                    var loggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
+                    var logger = loggerFactory.CreateLogger(File.FullName);
+
                     if (File.Exists == false)
                     {
-                        context.Console.ErrorWriteLine($"File {File.Name} was not found.");
+                        logger.LogError("File {WalletJsonFile} was not found.", File.Name);
                         return Task.FromResult(1);
                     }
 
+                    logger.LogInformation(string.Empty);
                     Password ??= context.Console.PromptPassword();
 
                     return Task.FromResult(0);

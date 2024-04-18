@@ -51,7 +51,7 @@ namespace Neo.Hosting.App.Extensions
             ConsoleKeyInfo userInputKeyInfo;
             var userPassword = new SecureString();
 
-            Console.Write("Password: ");
+            Console.Write("Enter password: ");
 
             while ((userInputKeyInfo = Console.ReadKey(true)).Key != ConsoleKey.Enter)
             {
@@ -68,8 +68,8 @@ namespace Neo.Hosting.App.Extensions
                 }
             }
 
-            userPassword.MakeReadOnly();
             Console.WriteLine();
+            userPassword.MakeReadOnly();
             return userPassword;
         }
 

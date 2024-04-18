@@ -72,10 +72,10 @@ namespace Neo.Hosting.App.Hosting
                 throw new DllNotFoundException($"Plugin '{_systemOptions.Storage.Engine}.dll' can't be found.");
 
             _neoSystem ??= new(_protocolSettings, _systemOptions.Storage.Engine, storagePath);
-            _logger.LogInformation("NeoSystem Initialized.");
+            _logger.LogInformation("NeoSystem initialized.");
 
             _localNode ??= await _neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance(), cancellationToken);
-            _logger.LogInformation("LocalNode Initialized.");
+            _logger.LogInformation("LocalNode initialized.");
 
             IsInitialized = true;
         }

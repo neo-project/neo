@@ -44,6 +44,9 @@ namespace Neo.Hosting.App.Providers
                 ["SystemOptions:Plugin:DownloadUrl"] = systemConfigurationSection["Plugin:DownloadUrl"] ?? "https://api.github.com/repos/neo-project/neo-modules/releases",
                 ["SystemOptions:Plugin:Prerelease"] = systemConfigurationSection["Plugin:Prerelease"] ?? bool.FalseString,
                 ["SystemOptions:Plugin:Version"] = systemConfigurationSection["Plugin:Version"] ?? $"{Program.ApplicationVersion}",
+
+                // Wallets
+                ["SystemOptions:Wallets"] = systemConfigurationSection["Wallets"],
             };
         }
     }
