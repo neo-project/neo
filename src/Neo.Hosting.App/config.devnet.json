@@ -1,8 +1,7 @@
 {
   "Logging": {
     "LogLevel": {
-      "Default": "Information",
-      "Microsoft.Hosting.Lifetime": "Information"
+      "Default": "Information"
     }
   },
   "SystemOptions": {

@@ -49,16 +49,17 @@ namespace Neo.Hosting.App.Configuration
     }
 
     internal sealed class ContractsOptions
+        (string neoNameService)
     {
         private static readonly string s_defualtNameServiceString = "0x50ac1c37690cc2cfc594472833cf57505d5f46de";
-        private static readonly UInt160 s_defaultNeoNameServiceScriptHash = UInt160.Parse(s_defualtNameServiceString);
+        private static readonly UInt160 s_defaultNameServiceScriptHash = UInt160.Parse(s_defualtNameServiceString);
 
-        public UInt160 NeoNameServiceContract { get; set; } = s_defaultNeoNameServiceScriptHash;
+        private UInt160 _neoNameService = s_defaultNameServiceScriptHash;
 
-        public required string NeoNameService
+        public required UInt160 NeoNameService
         {
-            get => "0x50ac1c37690cc2cfc594472833cf57505d5f46de";
-            set => ParseUtilities.TryParseUInt160(value);
+            get => _neoNameService;
+            set => _neoNameService = ParseUtilities.TryParseUInt160(neoNameService) ?? s_defaultNameServiceScriptHash;
         }
     }
 
