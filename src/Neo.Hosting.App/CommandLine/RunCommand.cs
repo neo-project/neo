@@ -9,8 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Hosting.App.Extensions;
-using Neo.Hosting.App.Factories;
 using Neo.Hosting.App.Hosting;
 using System;
 using System.CommandLine;
@@ -31,10 +29,14 @@ namespace Neo.Hosting.App.CommandLine
         public new sealed class Handler : ICommandHandler
         {
             private readonly NeoSystemHostedService _neoSystemHostedService;
+            private readonly PromptSystemHostedService _promptSystemHostedService;
 
-            public Handler(NeoSystemHostedService neoSystemHostedService)
+            public Handler(
+                NeoSystemHostedService neoSystemHostedService,
+                PromptSystemHostedService promptSystemHostedService)
             {
                 _neoSystemHostedService = neoSystemHostedService;
+                _promptSystemHostedService = promptSystemHostedService;
             }
 
             public async Task<int> InvokeAsync(InvocationContext context)
@@ -42,22 +44,14 @@ namespace Neo.Hosting.App.CommandLine
                 var host = context.GetHost();
                 var stoppingToken = context.GetCancellationToken();
 
-                await using var connectionListener = await NamedPipeTransportFactory.CreateConnectionListener(pipeName: s_pipeName);
-
-                var acceptTask = connectionListener.AcceptAsync(stoppingToken);
-
+                await _promptSystemHostedService.StartAsync(stoppingToken);
                 await _neoSystemHostedService.StartAsync(stoppingToken);
 
                 if (_neoSystemHostedService.IsInitialized)
                     _neoSystemHostedService.StartNode();
 
                 await Task.Delay(-1, stoppingToken);
-                await connectionListener
-                    .DisposeAsync()
-                    .DefaultTimeoutAsync();
-                await acceptTask
-                    .AsTask()
-                    .DefaultTimeoutAsync();
+                await _promptSystemHostedService.StopAsync(stoppingToken);
 
                 return 0;
             }

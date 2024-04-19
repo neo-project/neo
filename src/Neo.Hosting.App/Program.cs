@@ -49,6 +49,7 @@ namespace Neo.Hosting.App
                         services.Configure<SystemOptions>(builder.Configuration.GetRequiredSection("SystemOptions"));
                         services.AddSingleton(ProtocolSettings.Load(builder.Configuration.GetRequiredSection("ProtocolConfiguration")));
                         services.AddSingleton<NeoSystemHostedService>();
+                        services.AddSingleton<PromptSystemHostedService>();
                         //services.AddHostedService(sp => sp.GetRequiredService<NeoSystemHostedService>());
                     });
                     builder.UseCommandHandler<DefaultRootCommand, EmptyHandler>();

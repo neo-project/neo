@@ -29,9 +29,9 @@ namespace Neo.Hosting.App.NamedPipes
     {
         public EndPoint EndPoint => _endPoint;
 
-        private readonly ILogger _logger;
         private readonly NamedPipeEndPoint _endPoint;
         private readonly NamedPipeTransportOptions _options;
+        private readonly ILogger _logger;
         private readonly Mutex _mutex;
         private readonly ObjectPool<NamedPipeServerStream> _namedPipeServerStreamPool;
         private readonly CancellationTokenSource _listeningTokenSource = new();
@@ -45,17 +45,17 @@ namespace Neo.Hosting.App.NamedPipes
         private int _disposed;
 
         public NamedPipeConnectionListener(
+            ILoggerFactory loggerFactory,
             NamedPipeEndPoint endPoint,
             NamedPipeTransportOptions options,
-            ILoggerFactory loggerFactory,
             ObjectPoolProvider objectPoolProvider,
             Mutex mutex)
         {
             _logger = loggerFactory.CreateLogger("NamedPipes");
             _endPoint = endPoint;
             _options = options;
-            _mutex = mutex;
             _memoryPool = options.MemoryPoolFactory();
+            _mutex = mutex;
             _listeningToken = _listeningTokenSource.Token;
             _poolPolicy = new NamedPipeServerStreamPoolPolicy(endPoint, options);
             _namedPipeServerStreamPool = objectPoolProvider.Create(_poolPolicy);

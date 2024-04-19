@@ -15,7 +15,6 @@ using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
 using Neo.Hosting.App.NamedPipes;
 using System;
-using System.IO;
 using System.IO.Pipes;
 using System.Net;
 using System.Security.Principal;
@@ -27,7 +26,6 @@ namespace Neo.Hosting.App.Factories
     internal sealed class NamedPipeTransportFactory
     {
         private const string LocalComputerServerName = ".";
-
         private readonly ILoggerFactory _loggerFactory;
         private readonly ObjectPoolProvider _objectPoolProvider;
         private readonly NamedPipeTransportOptions _options;
@@ -37,8 +35,6 @@ namespace Neo.Hosting.App.Factories
             IOptions<NamedPipeTransportOptions> options,
             ObjectPoolProvider objectPoolProvider)
         {
-            ArgumentNullException.ThrowIfNull(loggerFactory);
-
             _loggerFactory = loggerFactory;
             _objectPoolProvider = objectPoolProvider;
             _options = options.Value;
@@ -62,7 +58,7 @@ namespace Neo.Hosting.App.Factories
                 throw new ApplicationException($"Named pipe '{namedPipeEndPoint.PipeName}' is already in use.");
             }
 
-            var listener = new NamedPipeConnectionListener(namedPipeEndPoint, _options, _loggerFactory, _objectPoolProvider, mutex);
+            var listener = new NamedPipeConnectionListener(_loggerFactory, namedPipeEndPoint, _options, _objectPoolProvider, mutex);
 
             try
             {
@@ -83,7 +79,7 @@ namespace Neo.Hosting.App.Factories
             return endPoint is NamedPipeEndPoint;
         }
 
-        public static string GetUniquePipeName() => Path.GetRandomFileName();
+        public static string GetUniquePipeName() => $"{Guid.NewGuid():n}";
 
         public static NamedPipeTransportFactory Create(
             ILoggerFactory? loggerFactory = null,
