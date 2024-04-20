@@ -115,7 +115,6 @@ namespace Neo.Hosting.App.Hosting
                     throw new InvalidOperationException($"{nameof(PromptSystemHostedService)} has already been stopped.");
 
                 _connectionListener = await _transportFactory.BindAsync(new NamedPipeEndPoint(Path.GetRandomFileName()), cancellationToken);
-
             }
             finally
             {

@@ -15,6 +15,7 @@ using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
 using Neo.Hosting.App.NamedPipes;
 using System;
+using System.IO;
 using System.IO.Pipes;
 using System.Net;
 using System.Security.Principal;
@@ -79,7 +80,7 @@ namespace Neo.Hosting.App.Factories
             return endPoint is NamedPipeEndPoint;
         }
 
-        public static string GetUniquePipeName() => $"{Guid.NewGuid():n}";
+        public static string GetUniquePipeName() => Path.GetRandomFileName();
 
         public static NamedPipeTransportFactory Create(
             ILoggerFactory? loggerFactory = null,

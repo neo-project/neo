@@ -44,4 +44,8 @@
     <Folder Include="Exceptions\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="$(AssemblyTitle).Tests" />
+  </ItemGroup>
+
 </Project>

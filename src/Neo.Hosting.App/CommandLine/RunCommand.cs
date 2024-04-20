@@ -51,6 +51,7 @@ namespace Neo.Hosting.App.CommandLine
                     _neoSystemHostedService.StartNode();
 
                 await Task.Delay(-1, stoppingToken);
+                await _neoSystemHostedService.StopAsync(stoppingToken);
                 await _promptSystemHostedService.StopAsync(stoppingToken);
 
                 return 0;

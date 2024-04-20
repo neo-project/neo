@@ -44,6 +44,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.IO.Tests", "tests\Neo.I
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neo.Hosting.App", "src\Neo.Hosting.App\Neo.Hosting.App.csproj", "{DF99D759-46D5-4CDB-89CB-EF56DC9728DA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Hosting.App.Tests", "tests\Neo.Hosting.App.Tests\Neo.Hosting.App.Tests.csproj", "{FB1FA9F6-B6B4-48B7-A522-1FAF55DFB228}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -122,6 +124,10 @@ Global
 		{DF99D759-46D5-4CDB-89CB-EF56DC9728DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF99D759-46D5-4CDB-89CB-EF56DC9728DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DF99D759-46D5-4CDB-89CB-EF56DC9728DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB1FA9F6-B6B4-48B7-A522-1FAF55DFB228}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB1FA9F6-B6B4-48B7-A522-1FAF55DFB228}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB1FA9F6-B6B4-48B7-A522-1FAF55DFB228}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB1FA9F6-B6B4-48B7-A522-1FAF55DFB228}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -145,6 +151,7 @@ Global
 		{9C5213D6-3833-4570-8AE2-47E9F9017A8F} = {B5339DF7-5D1D-43BA-B332-74B825E1770E}
 		{25D79A08-52D9-4808-A53F-E0C9626DDCBB} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
 		{DF99D759-46D5-4CDB-89CB-EF56DC9728DA} = {B5339DF7-5D1D-43BA-B332-74B825E1770E}
+		{FB1FA9F6-B6B4-48B7-A522-1FAF55DFB228} = {EDE05FA8-8E73-4924-BC63-DD117127EEE1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCBA19D9-F868-4C6D-8061-A2B91E06E3EC}

@@ -16,28 +16,28 @@ namespace Neo.Hosting.App.Extensions
 {
     internal static class TaskExtensions
     {
-        public static ValueTask<TResult> DefaultTimeoutAsync<TResult>(this ValueTask<TResult> valueTask) =>
-            TimeoutAfterAsync(valueTask, TimeSpan.FromSeconds(5));
+        public static ValueTask<TResult> DefaultTimeout<TResult>(this ValueTask<TResult> valueTask) =>
+            TimeoutAfter(valueTask, TimeSpan.FromSeconds(5));
 
-        public static ValueTask DefaultTimeoutAsync(this ValueTask valueTask) =>
-            TimeoutAfterAsync(valueTask, TimeSpan.FromSeconds(5));
+        public static ValueTask DefaultTimeout(this ValueTask valueTask) =>
+            TimeoutAfter(valueTask, TimeSpan.FromSeconds(5));
 
-        public static Task<TResult> DefaultTimeoutAsync<TResult>(this Task<TResult> task) =>
-            TimeoutAfterAsync(task, TimeSpan.FromSeconds(5));
+        public static Task<TResult> DefaultTimeout<TResult>(this Task<TResult> task) =>
+            TimeoutAfter(task, TimeSpan.FromSeconds(5));
 
-        public static Task DefaultTimeoutAsync(this Task task) =>
-            TimeoutAfterAsync(task, TimeSpan.FromSeconds(5));
+        public static Task DefaultTimeout(this Task task)
+            => TimeoutAfter(task, TimeSpan.FromSeconds(5));
 
-        public static async ValueTask<TResult> TimeoutAfterAsync<TResult>(this ValueTask<TResult> valueTask, TimeSpan timeout) =>
+        public static async ValueTask<TResult> TimeoutAfter<TResult>(this ValueTask<TResult> valueTask, TimeSpan timeout) =>
             await valueTask.AsTask().WaitAsync(timeout).ConfigureAwait(false);
 
-        public static async ValueTask TimeoutAfterAsync(this ValueTask valueTask, TimeSpan timeout) =>
+        public static async ValueTask TimeoutAfter(this ValueTask valueTask, TimeSpan timeout) =>
             await valueTask.AsTask().WaitAsync(timeout).ConfigureAwait(false);
 
-        public static async Task<TResult> TimeoutAfterAsync<TResult>(this Task<TResult> task, TimeSpan timeout) =>
+        public static async Task<TResult> TimeoutAfter<TResult>(this Task<TResult> task, TimeSpan timeout) =>
             await task.WaitAsync(timeout).ConfigureAwait(false);
 
-        public static async Task TimeoutAfterAsync(this Task task, TimeSpan timeout) =>
+        public static async Task TimeoutAfter(this Task task, TimeSpan timeout) =>
             await task.WaitAsync(timeout).ConfigureAwait(false);
     }
 }
