@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// WalletCommand.cs file belongs to the neo project and is free
+// HelpCommand.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -11,14 +11,14 @@
 
 using System.CommandLine;
 
-namespace Neo.Hosting.App.CommandLine
+namespace Neo.Hosting.App.CommandLine.Prompt
 {
-    internal sealed partial class WalletCommand : Command
+    internal class HelpCommand : Command
     {
-        public WalletCommand() : base("wallet", "Use or manage wallet(s)")
+        public HelpCommand() : base("help", "Show help and usage information")
         {
-            var openWalletCommand = new OpenWalletCommand();
-            AddCommand(openWalletCommand);
+            var walletCommand = new WalletCommand();
+            AddCommand(walletCommand);
         }
     }
 }

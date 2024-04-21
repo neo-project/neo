@@ -17,7 +17,6 @@ namespace Neo.Hosting.App.Extensions
 {
     internal static class IConsoleExtensions
     {
-        private static readonly string s_validateInputCharacters = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
         private static readonly bool s_colorsAreSupported = GetColorsAreSupported();
 
         public static void SetTerminalForegroundRed(this IConsole _)
@@ -36,7 +35,22 @@ namespace Neo.Hosting.App.Extensions
             }
         }
 
-        public static void ErrorWriteLine(this IConsole _, string message)
+        public static void ErrorMessage(this IConsole _, Exception exception)
+        {
+            ResetTerminalForegroundColor(_);
+            SetTerminalForegroundRed(_);
+
+            var stackTrace = exception.InnerException?.StackTrace ?? exception.StackTrace;
+
+            Console.Error.WriteLine("Exception: ");
+            Console.Error.WriteLine("   {0}", exception.InnerException?.Message ?? exception.Message);
+            Console.Error.WriteLine("Stack Trace: ");
+            Console.Error.WriteLine("   {0}", stackTrace!.Trim());
+
+            ResetTerminalForegroundColor(_);
+        }
+
+        public static void ErrorMessage(this IConsole _, string message)
         {
             ResetTerminalForegroundColor(_);
             SetTerminalForegroundRed(_);
@@ -52,24 +66,30 @@ namespace Neo.Hosting.App.Extensions
             var userPassword = new SecureString();
 
             Console.Write("Enter password: ");
+            Console.ForegroundColor = ConsoleColor.DarkBlue;
+            Console.CursorVisible = false;
 
             while ((userInputKeyInfo = Console.ReadKey(true)).Key != ConsoleKey.Enter)
             {
-                if (s_validateInputCharacters.IndexOf(userInputKeyInfo.KeyChar) != -1)
-                {
-                    userPassword.AppendChar(userInputKeyInfo.KeyChar);
-                    Console.Write('*');
-                }
-                else if (userInputKeyInfo.Key == ConsoleKey.Backspace &&
+                if (userInputKeyInfo.Key == ConsoleKey.Backspace &&
                     userPassword.Length > 0)
                 {
                     userPassword.RemoveAt(userPassword.Length - 1);
                     Console.Write("\b \b");
                 }
+                else if (char.IsControl(userInputKeyInfo.KeyChar) == false)
+                {
+                    userPassword.AppendChar(userInputKeyInfo.KeyChar);
+                    Console.Write("*");
+                }
             }
 
-            Console.WriteLine();
             userPassword.MakeReadOnly();
+
+            Console.ResetColor();
+            Console.CursorVisible = true;
+            Console.WriteLine();
+
             return userPassword;
         }
 

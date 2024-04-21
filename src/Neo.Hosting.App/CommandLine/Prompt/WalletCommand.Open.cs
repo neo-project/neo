@@ -24,15 +24,13 @@ namespace Neo.Hosting.App.CommandLine
 {
     internal partial class WalletCommand
     {
-        internal sealed class OpenWalletCommand : Command
+        internal sealed class WalletOpenCommand : Command
         {
-            public OpenWalletCommand() : base("open", "Open a wallet to manage or use.")
+            public WalletOpenCommand() : base("open", "Open a wallet to manage or use")
             {
                 var walletPathArgument = new Argument<FileInfo>("file", "Path to the json file");
-
-                var walletPasswordOption = new Option<SecureString>(
-                    new[] { "--password", "-p" },
-                    parseArgument: result =>
+                var walletPasswordOption = new Argument<SecureString>("password",
+                    parse: result =>
                     {
                         var passwordOptionValue = result.Tokens[0].Value;
 
@@ -49,7 +47,7 @@ namespace Neo.Hosting.App.CommandLine
                     description: "Wallet file password");
 
                 AddArgument(walletPathArgument);
-                AddOption(walletPasswordOption);
+                AddArgument(walletPasswordOption);
             }
 
             public new sealed class Handler : ICommandHandler

@@ -20,7 +20,6 @@ namespace Neo.Hosting.App.CommandLine
 {
     internal sealed class RunCommand : Command
     {
-        private static readonly string s_pipeName = $"neo.service\\{Program.ApplicationVersion:3}";
         public RunCommand() : base("run")
         {
             IsHidden = true;
@@ -47,8 +46,7 @@ namespace Neo.Hosting.App.CommandLine
                 await _promptSystemHostedService.StartAsync(stoppingToken);
                 await _neoSystemHostedService.StartAsync(stoppingToken);
 
-                if (_neoSystemHostedService.IsInitialized)
-                    _neoSystemHostedService.StartNode();
+                _ = _neoSystemHostedService.TryStartNode();
 
                 await Task.Delay(-1, stoppingToken);
                 await _neoSystemHostedService.StopAsync(stoppingToken);

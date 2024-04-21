@@ -37,7 +37,7 @@ namespace Neo.Hosting.App.Extensions
             if (File.Exists(path) == false)
                 throw new FileNotFoundException(fileName);
 
-            var wallet = Wallet.Open(path, password.GetValue(), protocolSettings ?? ProtocolSettings.Default) ??
+            var wallet = Wallet.Open(path, password.GetClearText(), protocolSettings ?? ProtocolSettings.Default) ??
                 throw new FileLoadException("Wallet information is correct.", fileName);
 
             services.AddSingleton(wallet);

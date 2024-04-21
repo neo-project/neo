@@ -56,8 +56,9 @@ namespace Neo.Hosting.App
                     builder.UseCommandHandler<ExportCommand, EmptyHandler>();
                     builder.UseCommandHandler<WalletCommand, EmptyHandler>();
                     builder.UseCommandHandler<RunCommand, RunCommand.Handler>();
+                    builder.UseCommandHandler<ConnectCommand, ConnectCommand.Handler>();
                     builder.UseCommandHandler<ExportCommand.BlocksExportCommand, ExportCommand.BlocksExportCommand.Handler>();
-                    builder.UseCommandHandler<WalletCommand.OpenWalletCommand, WalletCommand.OpenWalletCommand.Handler>();
+                    builder.UseCommandHandler<WalletCommand.WalletOpenCommand, WalletCommand.WalletOpenCommand.Handler>();
                     builder.UseSystemd();
                     builder.UseWindowsService();
                 })

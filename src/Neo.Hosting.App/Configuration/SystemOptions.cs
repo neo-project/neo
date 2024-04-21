@@ -12,6 +12,7 @@
 using Neo.Hosting.App.Helpers;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Security;
 
 namespace Neo.Hosting.App.Configuration
@@ -71,12 +72,13 @@ namespace Neo.Hosting.App.Configuration
     }
 
     internal sealed class WalletOptions
-        (string name, string path, string password)
+        (string name, string path, string password, bool isActive)
     {
         private SecureString _encryptedPassword = new();
 
         public required string Name { get; set; } = name;
-        public required string Path { get; set; } = path;
+        public required FileInfo Path { get; set; } = new(path);
+        public required bool IsActive { get; set; } = isActive;
 
         public required SecureString Password
         {

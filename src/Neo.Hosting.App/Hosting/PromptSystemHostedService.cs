@@ -25,15 +25,22 @@ namespace Neo.Hosting.App.Hosting
 {
     internal sealed class PromptSystemHostedService : IHostedService, IDisposable
     {
+        public NamedPipeEndPoint EndPoint { get; } = new NamedPipeEndPoint(Path.GetRandomFileName());
+
         private readonly SemaphoreSlim _bindSemaphore = new(1);
+        private readonly ObjectPoolProvider _objectPoolProvider;
+
         private readonly CancellationTokenSource _stopCts = new();
         private readonly TaskCompletionSource _stoppedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        private readonly ILoggerFactory _loggerFactory;
-        private readonly ObjectPoolProvider _objectPoolProvider;
+
         private readonly NamedPipeTransportOptions _transportOptions;
         private readonly NamedPipeTransportFactory _transportFactory;
 
+        private readonly ILoggerFactory _loggerFactory;
+        private readonly ILogger _logger;
+
         private NamedPipeConnectionListener? _connectionListener;
+
         private bool _hasStarted;
         private int _stopping;
 
@@ -47,6 +54,7 @@ namespace Neo.Hosting.App.Hosting
             _objectPoolProvider = objectPoolProvider ?? new DefaultObjectPoolProvider();
 
             _transportFactory = new(_loggerFactory, Options.Create(_transportOptions), _objectPoolProvider);
+            _logger = _loggerFactory.CreateLogger("Remote.Management");
         }
 
         public void Dispose()
@@ -62,6 +70,7 @@ namespace Neo.Hosting.App.Hosting
                     throw new InvalidOperationException($"{nameof(PromptSystemHostedService)} has already been started.");
 
                 _hasStarted = true;
+                _logger.LogInformation("PromptSystem started.");
 
                 await BindAsync(cancellationToken).ConfigureAwait(false);
             }
@@ -74,6 +83,8 @@ namespace Neo.Hosting.App.Hosting
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
+            _logger.LogInformation("PromptSystem is shutting down...");
+
             if (Interlocked.Exchange(ref _stopping, 1) == 1)
             {
                 await _stoppedTcs.Task.ConfigureAwait(false);
@@ -114,7 +125,8 @@ namespace Neo.Hosting.App.Hosting
                 if (_stopping == 1)
                     throw new InvalidOperationException($"{nameof(PromptSystemHostedService)} has already been stopped.");
 
-                _connectionListener = await _transportFactory.BindAsync(new NamedPipeEndPoint(Path.GetRandomFileName()), cancellationToken);
+                _connectionListener = await _transportFactory.BindAsync(EndPoint, cancellationToken);
+                _logger.LogInformation("neo-cmd connect {EndPoint}", EndPoint);
             }
             finally
             {

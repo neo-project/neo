@@ -9,15 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.Actor;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Neo.Hosting.App.Configuration;
-using Neo.Network.P2P;
 using Neo.Persistence;
 using Neo.Plugins;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net;
 using System.Threading;
@@ -25,84 +24,129 @@ using System.Threading.Tasks;
 
 namespace Neo.Hosting.App.Hosting
 {
-    internal sealed class NeoSystemHostedService : IHostedService, IDisposable
+    internal sealed class NeoSystemHostedService(
+        ILoggerFactory loggerFactory,
+        ProtocolSettings protocolSettings,
+        IOptions<SystemOptions> systemOptions) : IHostedService, IDisposable
     {
-        public bool IsInitialized { get; private set; }
-        public NeoSystem? NeoSystem => _neoSystem;
+        public IPEndPoint? EndPoint
+        {
+            get; [param: DisallowNull]
+            private set;
+        }
 
-        private readonly ProtocolSettings _protocolSettings;
-        private readonly ILogger<NeoSystem> _logger;
-        private readonly SystemOptions _systemOptions;
+        public NeoSystem NeoSystem => _neoSystem ??
+            throw new InvalidOperationException($"{nameof(PromptSystemHostedService)} needs to be started.");
+
+        private readonly ProtocolSettings _protocolSettings = protocolSettings;
+        private readonly SystemOptions _systemOptions = systemOptions.Value;
+
+        private readonly CancellationTokenSource _stopCts = new();
+        private readonly TaskCompletionSource _stoppedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        private readonly SemaphoreSlim _neoSystemStoppedSemaphore = new(1);
+
+        private readonly ILogger<NeoSystem> _logger = loggerFactory.CreateLogger<NeoSystem>();
 
         private NeoSystem? _neoSystem;
-        private LocalNode? _localNode;
 
-        public NeoSystemHostedService(
-            ILoggerFactory loggerFactory,
-            ProtocolSettings protocolSettings,
-            IOptions<SystemOptions> systemOptions)
-        {
-            _logger = loggerFactory.CreateLogger<NeoSystem>();
-
-            _protocolSettings = protocolSettings;
-            _systemOptions = systemOptions.Value;
-
-            Plugin.LoadPlugins();
-        }
+        private bool _hasStarted;
+        private int _stopping;
 
         public void Dispose()
         {
-            StopAsync(CancellationToken.None).Wait();
+            StopAsync(new CancellationToken(true)).GetAwaiter().GetResult();
         }
 
-        public async Task StartAsync(CancellationToken cancellationToken)
+        [MemberNotNullWhen(true, nameof(_neoSystem), nameof(NeoSystem))]
+        public Task StartAsync(CancellationToken cancellationToken)
         {
-            string? storagePath = null;
-            if (string.IsNullOrEmpty(_systemOptions.Storage.Path) == false)
+            try
             {
-                storagePath = string.Format(_systemOptions.Storage.Path, _protocolSettings.Network);
-                if (Directory.Exists(storagePath) == false)
+                if (_hasStarted)
+                    throw new InvalidOperationException($"{nameof(PromptSystemHostedService)} has already been started.");
+
+                _hasStarted = true;
+
+                // Force Neo plugins to load
+                Plugin.LoadPlugins();
+                _logger.LogInformation("Plugin root path: {PluginsDirectory}", Plugin.PluginsDirectory);
+
+                string? storagePath = null;
+                if (string.IsNullOrEmpty(_systemOptions.Storage.Path) == false)
                 {
-                    if (Path.IsPathFullyQualified(storagePath) == false)
-                        storagePath = Path.Combine(AppContext.BaseDirectory, storagePath);
+                    storagePath = string.Format(_systemOptions.Storage.Path, _protocolSettings.Network);
+                    if (Directory.Exists(storagePath) == false)
+                    {
+                        if (Path.IsPathFullyQualified(storagePath) == false)
+                            storagePath = Path.Combine(AppContext.BaseDirectory, storagePath);
+                    }
                 }
+
+                if (StoreFactory.GetStoreProvider(_systemOptions.Storage.Engine) is null)
+                    throw new DllNotFoundException($"Plugin '{Path.Combine(Plugin.PluginsDirectory, $"{_systemOptions.Storage.Engine}.dll")}' can't be found.");
+
+                _neoSystem = new(_protocolSettings, _systemOptions.Storage.Engine, storagePath);
+                _logger.LogInformation("NeoSystem started.");
+
+                return Task.CompletedTask;
             }
-
-            if (StoreFactory.GetStoreProvider(_systemOptions.Storage.Engine) is null)
-                throw new DllNotFoundException($"Plugin '{_systemOptions.Storage.Engine}.dll' can't be found.");
-
-            _neoSystem ??= new(_protocolSettings, _systemOptions.Storage.Engine, storagePath);
-            _logger.LogInformation("NeoSystem initialized.");
-
-            _localNode ??= await _neoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance(), cancellationToken);
-            _logger.LogInformation("LocalNode initialized.");
-
-            IsInitialized = true;
+            catch
+            {
+                Dispose();
+                throw;
+            }
         }
 
-        public void StartNode()
+        public bool TryStartNode()
         {
-            if (_neoSystem is null)
-                throw new NullReferenceException("NeoSystem");
+            if (_hasStarted == false) return false;
+            if (_neoSystem is null) return false;
 
             _neoSystem.StartNode(new()
             {
-                Tcp = new(IPAddress.Parse(_systemOptions.P2P.Listen), _systemOptions.P2P.Port),
+                Tcp = EndPoint = new(IPAddress.Parse(_systemOptions.P2P.Listen), _systemOptions.P2P.Port),
                 MinDesiredConnections = _systemOptions.P2P.MinDesiredConnections,
                 MaxConnections = _systemOptions.P2P.MaxConnections,
                 MaxConnectionsPerAddress = _systemOptions.P2P.MaxConnectionsPerAddress,
             });
-            _logger.LogInformation("NeoSystem started.");
+            _logger.LogInformation("Listening on remote endpoint: neo://{EndPoint}/#{Network}", EndPoint, _protocolSettings.Network);
+
+            return true;
         }
 
-        public Task StopAsync(CancellationToken cancellationToken)
+        public async Task StopAsync(CancellationToken cancellationToken)
         {
-            _neoSystem?.Dispose();
-            IsInitialized = false;
+            _logger.LogInformation("NeoSystem is shutting down...");
 
-            _logger.LogInformation("NeoSystem stopped.");
+            if (Interlocked.Exchange(ref _stopping, 1) == 1)
+            {
+                await _stoppedTcs.Task.ConfigureAwait(false);
+                return;
+            }
 
-            return Task.CompletedTask;
+            _stopCts.Cancel();
+
+#pragma warning disable CA2016 // Don't use cancellationToken when acquiring the semaphore. Dispose calls this with a pre-canceled token.
+            await _neoSystemStoppedSemaphore.WaitAsync().ConfigureAwait(false);
+#pragma warning restore CA2016
+
+            try
+            {
+                _neoSystem?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _stoppedTcs.TrySetException(ex);
+                throw;
+            }
+            finally
+            {
+                _stopCts.Dispose();
+                _neoSystemStoppedSemaphore.Release();
+            }
+
+            _stoppedTcs.TrySetResult();
         }
     }
 }

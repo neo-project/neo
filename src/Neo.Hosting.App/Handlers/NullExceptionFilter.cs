@@ -24,18 +24,7 @@ namespace Neo.Hosting.App.Handlers
             if (exception is not OperationCanceledException)
             {
                 context.Console.WriteLine(string.Empty);
-
-                context.Console.ResetTerminalForegroundColor();
-                context.Console.SetTerminalForegroundRed();
-
-                var stackTrace = exception.InnerException?.StackTrace ?? exception.StackTrace;
-
-                Console.Error.WriteLine("Exception: ");
-                Console.Error.WriteLine("   {0}", exception.InnerException?.Message ?? exception.Message);
-                Console.Error.WriteLine("Stack Trace: ");
-                Console.Error.WriteLine("   {0}", stackTrace!.Trim());
-
-                context.Console.ResetTerminalForegroundColor();
+                context.Console.ErrorMessage(exception);
             }
 #endif
 

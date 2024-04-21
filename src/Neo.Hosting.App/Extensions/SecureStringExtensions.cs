@@ -17,7 +17,7 @@ namespace Neo.Hosting.App.Extensions
 {
     internal static class SecureStringExtensions
     {
-        public static string? GetValue(this SecureString secureString)
+        public static string? GetClearText(this SecureString secureString)
         {
             ArgumentNullException.ThrowIfNull(secureString, nameof(secureString));
 
