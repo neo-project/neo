@@ -9,18 +9,14 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Neo.Hosting.App.Extensions;
 using System;
 using System.CommandLine;
-using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
 using System.IO;
-using System.Security;
 using System.Threading.Tasks;
 
-namespace Neo.Hosting.App.CommandLine
+namespace Neo.Hosting.App.CommandLine.Prompt
 {
     internal partial class WalletCommand
     {
@@ -28,48 +24,26 @@ namespace Neo.Hosting.App.CommandLine
         {
             public WalletOpenCommand() : base("open", "Open a wallet to manage or use")
             {
-                var walletPathArgument = new Argument<FileInfo>("file", "Path to the json file");
-                var walletPasswordOption = new Argument<SecureString>("password",
-                    parse: result =>
-                    {
-                        var passwordOptionValue = result.Tokens[0].Value;
-
-                        unsafe
-                        {
-                            fixed (char* passwordChars = passwordOptionValue)
-                            {
-                                var securePasswordString = new SecureString(passwordChars, passwordOptionValue.Length);
-                                securePasswordString.MakeReadOnly();
-                                return securePasswordString;
-                            }
-                        }
-                    },
-                    description: "Wallet file password");
+                var walletPathArgument = new Argument<FileInfo>("JSON_FILE", "Path to the json file");
 
                 AddArgument(walletPathArgument);
-                AddArgument(walletPasswordOption);
+                this.SetHandler(async context => await new Handler(walletPathArgument).InvokeAsync(context));
             }
 
-            public new sealed class Handler : ICommandHandler
+            public new sealed class Handler
+                (Argument<FileInfo> jsonFileInfoArgument) : ICommandHandler
             {
-                public required FileInfo File { get; set; }
-                public SecureString? Password { get; set; }
-
                 public Task<int> InvokeAsync(InvocationContext context)
                 {
-                    var host = context.GetHost();
+                    var jsonFileInfo = context.ParseResult.GetValueForArgument(jsonFileInfoArgument);
 
-                    var loggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
-                    var logger = loggerFactory.CreateLogger(File.FullName);
-
-                    if (File.Exists == false)
+                    if (jsonFileInfo.Exists == false)
                     {
-                        logger.LogError("File {WalletJsonFile} was not found.", File.Name);
+                        context.Console.ErrorMessage($"File '{jsonFileInfo.FullName}' was not found.");
                         return Task.FromResult(1);
                     }
 
-                    logger.LogInformation(string.Empty);
-                    Password ??= context.Console.PromptPassword();
+                    var password = context.Console.PromptPassword();
 
                     return Task.FromResult(0);
                 }

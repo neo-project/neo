@@ -81,6 +81,7 @@ namespace Neo.Hosting.App.CommandLine
                     var loggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
                     _logger = loggerFactory.CreateLogger(File.FullName);
 
+                    await host.StartAsync(stoppingToken);
                     await _neoSystemHostedService.StartAsync(stoppingToken);
 
                     var neoSystem = _neoSystemHostedService.NeoSystem ?? throw new NullReferenceException("NeoSystem");
@@ -92,6 +93,7 @@ namespace Neo.Hosting.App.CommandLine
                         stoppingToken);
 
                     await writeBlocksToAccFileTask;
+                    await host.StopAsync(stoppingToken);
 
                     return 0;
                 }

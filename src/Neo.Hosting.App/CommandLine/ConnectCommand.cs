@@ -9,10 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Neo.Hosting.App.CommandLine.Prompt;
 using Neo.Hosting.App.Extensions;
 using System;
 using System.CommandLine;
+using System.CommandLine.Builder;
 using System.CommandLine.Invocation;
+using System.CommandLine.Parsing;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -36,7 +39,7 @@ namespace Neo.Hosting.App.CommandLine
             {
                 var stopping = context.GetCancellationToken();
 
-                return await RunConsolePrompt(ref context, stopping);
+                return await RunConsolePrompt(context, stopping);
             }
 
             public int Invoke(InvocationContext context)
@@ -44,32 +47,37 @@ namespace Neo.Hosting.App.CommandLine
                 throw new NotImplementedException();
             }
 
-            public static Task<int> RunConsolePrompt(ref InvocationContext context, CancellationToken cancellationToken)
+            public static async Task<int> RunConsolePrompt(InvocationContext context, CancellationToken cancellationToken)
             {
                 context.Console.Clear();
 
+                var rootCommand = new DefaultRemoteCommand();
+                var parser = new CommandLineBuilder(rootCommand)
+                    .UseParseErrorReporting()
+                    .UseExceptionHandler()
+                    .Build();
+
                 while (cancellationToken.IsCancellationRequested == false)
                 {
-                    lock (context.Console.Out)
-                    {
-                        context.Console.SetTerminalForegroundColor(ConsoleColor.DarkBlue);
-                        context.Console.Write($"{s_userName}@{s_computerName}");
-                        context.Console.SetTerminalForegroundColor(ConsoleColor.White);
-                        context.Console.Write(":~$ ");
-                        context.Console.SetTerminalForegroundColor(ConsoleColor.DarkCyan);
-                        context.Console.ResetTerminalForegroundColor();
+                    context.Console.SetTerminalForegroundColor(ConsoleColor.DarkBlue);
+                    context.Console.Write($"{s_userName}@{s_computerName}");
+                    context.Console.SetTerminalForegroundColor(ConsoleColor.White);
+                    context.Console.Write(":~$ ");
+                    context.Console.SetTerminalForegroundColor(ConsoleColor.DarkCyan);
+                    context.Console.ResetTerminalForegroundColor();
 
-                        var line = context.Console.ReadLine();
+                    var line = context.Console.ReadLine()?.Trim() ?? string.Empty;
 
-                        if (line == "exit")
-                            break;
+                    if (string.IsNullOrEmpty(line) || string.IsNullOrWhiteSpace(line))
+                        continue;
 
-                        if (line == "hello")
-                            context.Console.WriteLine("Hello, World!");
-                    }
+                    if (line.Equals("exit", StringComparison.OrdinalIgnoreCase) || line.Equals("quit", StringComparison.OrdinalIgnoreCase))
+                        break;
+
+                    _ = await parser.InvokeAsync(line, context.Console);
                 }
 
-                return Task.FromResult(0);
+                return 0;
             }
         }
     }

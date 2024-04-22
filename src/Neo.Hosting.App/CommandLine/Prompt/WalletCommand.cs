@@ -11,7 +11,7 @@
 
 using System.CommandLine;
 
-namespace Neo.Hosting.App.CommandLine
+namespace Neo.Hosting.App.CommandLine.Prompt
 {
     internal sealed partial class WalletCommand : Command
     {

@@ -32,7 +32,7 @@ namespace Neo.Hosting.App.Providers
                 Load(configurationSection);
         }
 
-        internal void Load(IDictionary envVariables, bool createDefaults = true)
+        internal void Load(IDictionary envVariables)
         {
             var e = envVariables.GetEnumerator();
 

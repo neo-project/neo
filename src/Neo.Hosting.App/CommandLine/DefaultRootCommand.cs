@@ -24,12 +24,10 @@ namespace Neo.Hosting.App.CommandLine
         {
             var exportCommand = new ExportCommand();
             var runCommand = new RunCommand();
-            var walletCommand = new WalletCommand();
             var connectCommand = new ConnectCommand();
 
             AddCommand(exportCommand);
             AddCommand(runCommand);
-            AddCommand(walletCommand);
             AddCommand(connectCommand);
         }
 
