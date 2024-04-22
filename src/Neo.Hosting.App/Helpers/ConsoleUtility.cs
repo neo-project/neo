@@ -14,7 +14,7 @@ using System.Runtime.InteropServices;
 
 namespace Neo.Hosting.App
 {
-    internal static partial class ConsoleUtilities
+    internal static partial class ConsoleUtility
     {
         private const int STD_OUTPUT_HANDLE = -11;
         private const uint ENABLE_VIRTUAL_TERMINAL_PROCESSING = 4;

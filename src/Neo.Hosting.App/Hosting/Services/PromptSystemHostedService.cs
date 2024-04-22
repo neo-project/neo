@@ -14,18 +14,18 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
+using Neo.Hosting.App.Configuration;
 using Neo.Hosting.App.Factories;
 using Neo.Hosting.App.NamedPipes;
 using System;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Hosting.App.Hosting
+namespace Neo.Hosting.App.Hosting.Services
 {
     internal sealed class PromptSystemHostedService : IHostedService, IDisposable
     {
-        public NamedPipeEndPoint EndPoint { get; } = new NamedPipeEndPoint(Path.GetRandomFileName());
+        public NamedPipeEndPoint EndPoint => new(_neoOptions.Remote.PipeName);
 
         private readonly SemaphoreSlim _bindSemaphore = new(1);
         private readonly ObjectPoolProvider _objectPoolProvider;
@@ -36,6 +36,8 @@ namespace Neo.Hosting.App.Hosting
         private readonly NamedPipeTransportOptions _transportOptions;
         private readonly NamedPipeTransportFactory _transportFactory;
 
+        private readonly NeoOptions _neoOptions;
+
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger _logger;
 
@@ -45,16 +47,19 @@ namespace Neo.Hosting.App.Hosting
         private int _stopping;
 
         public PromptSystemHostedService(
+            IOptions<NeoOptions> neoOptions,
             ILoggerFactory? loggerFactory = null,
             IOptions<NamedPipeTransportOptions>? options = null,
             ObjectPoolProvider? objectPoolProvider = null)
         {
+            _neoOptions = neoOptions.Value;
+
             _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
             _transportOptions = options?.Value ?? new NamedPipeTransportOptions();
             _objectPoolProvider = objectPoolProvider ?? new DefaultObjectPoolProvider();
 
             _transportFactory = new(_loggerFactory, Options.Create(_transportOptions), _objectPoolProvider);
-            _logger = _loggerFactory.CreateLogger("Remote.Management");
+            _logger = _loggerFactory.CreateLogger(LoggerCategoryDefaults.RemoteManagement);
         }
 
         public void Dispose()
@@ -100,7 +105,9 @@ namespace Neo.Hosting.App.Hosting
             try
             {
                 if (_connectionListener is not null)
+                {
                     await _connectionListener.UnbindAsync(cancellationToken).ConfigureAwait(false);
+                }
             }
             catch (Exception ex)
             {
@@ -126,7 +133,7 @@ namespace Neo.Hosting.App.Hosting
                     throw new InvalidOperationException($"{nameof(PromptSystemHostedService)} has already been stopped.");
 
                 _connectionListener = await _transportFactory.BindAsync(EndPoint, cancellationToken);
-                _logger.LogInformation("neo-cmd connect {EndPoint}", EndPoint);
+                _logger.LogInformation("Now listening on: {EndPoint}", EndPoint);
             }
             finally
             {

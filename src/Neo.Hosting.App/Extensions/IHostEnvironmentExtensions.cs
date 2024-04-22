@@ -20,25 +20,25 @@ namespace Neo.Hosting.App.Extensions
         public static bool IsNeoDevNet(this IHostEnvironment hostEnvironment)
         {
             ArgumentNullException.ThrowIfNull(hostEnvironment, nameof(hostEnvironment));
-            return hostEnvironment.IsEnvironment(NeoEnvironments.DevNet);
+            return hostEnvironment.IsEnvironment(NeoHostingEnvironments.DevNet);
         }
 
         public static bool IsNeoTestNet(this IHostEnvironment hostEnvironment)
         {
             ArgumentNullException.ThrowIfNull(hostEnvironment, nameof(hostEnvironment));
-            return hostEnvironment.IsEnvironment(NeoEnvironments.TestNet);
+            return hostEnvironment.IsEnvironment(NeoHostingEnvironments.TestNet);
         }
 
         public static bool IsNeoMainNet(this IHostEnvironment hostEnvironment)
         {
             ArgumentNullException.ThrowIfNull(hostEnvironment, nameof(hostEnvironment));
-            return hostEnvironment.IsEnvironment(NeoEnvironments.MainNet);
+            return hostEnvironment.IsEnvironment(NeoHostingEnvironments.MainNet);
         }
 
         public static bool IsNeoPrivateNet(this IHostEnvironment hostEnvironment)
         {
             ArgumentNullException.ThrowIfNull(hostEnvironment, nameof(hostEnvironment));
-            return hostEnvironment.IsEnvironment(NeoEnvironments.PrivateNet);
+            return hostEnvironment.IsEnvironment(NeoHostingEnvironments.PrivateNet);
         }
     }
 }

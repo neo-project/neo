@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// SystemConfigurationSource.cs file belongs to the neo project and is free
+// NeoConfigurationSource.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -14,12 +14,10 @@ using Neo.Hosting.App.Providers;
 
 namespace Neo.Hosting.App.Configuration
 {
-    internal sealed class SystemConfigurationSource(
-        IConfigurationSection systemConfigurationSection) : IConfigurationSource
+    internal class NeoConfigurationSource
+        (IConfigurationSection? configurationSection = null) : IConfigurationSource
     {
-        IConfigurationProvider IConfigurationSource.Build(IConfigurationBuilder builder)
-        {
-            return new SystemConfigurationProvider(systemConfigurationSection);
-        }
+        public IConfigurationProvider Build(IConfigurationBuilder builder) =>
+            new NeoConfigurationProvider(configurationSection);
     }
 }

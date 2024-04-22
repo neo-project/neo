@@ -9,11 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Hosting.App.Hosting;
+using Neo.Hosting.App.Hosting.Services;
 using System;
 using System.CommandLine;
 using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Hosting.App.CommandLine
@@ -43,14 +44,16 @@ namespace Neo.Hosting.App.CommandLine
                 var host = context.GetHost();
                 var stoppingToken = context.GetCancellationToken();
 
+                await host.StartAsync(stoppingToken);
                 await _promptSystemHostedService.StartAsync(stoppingToken);
                 await _neoSystemHostedService.StartAsync(stoppingToken);
 
                 _ = _neoSystemHostedService.TryStartNode();
 
-                await Task.Delay(-1, stoppingToken);
+                await Task.Delay(Timeout.Infinite, stoppingToken);
                 await _neoSystemHostedService.StopAsync(stoppingToken);
                 await _promptSystemHostedService.StopAsync(stoppingToken);
+                await host.StopAsync(stoppingToken);
 
                 return 0;
             }

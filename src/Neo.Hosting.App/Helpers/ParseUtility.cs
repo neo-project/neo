@@ -11,7 +11,7 @@
 
 namespace Neo.Hosting.App.Helpers
 {
-    internal static class ParseUtilities
+    internal static class ParseUtility
     {
         public static UInt160? TryParseUInt160(string? value)
         {

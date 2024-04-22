@@ -11,7 +11,7 @@
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Neo.Hosting.App.Hosting;
+using Neo.Hosting.App.Hosting.Services;
 using Neo.IO;
 using Neo.SmartContract.Native;
 using System;

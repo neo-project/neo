@@ -13,6 +13,7 @@ using Neo.Hosting.App.Extensions;
 using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Neo.Hosting.App.CommandLine
@@ -28,16 +29,47 @@ namespace Neo.Hosting.App.CommandLine
 
         public new class Handler : ICommandHandler
         {
-            public Task<int> InvokeAsync(InvocationContext context)
-            {
-                context.Console.PromptPassword();
+            private static readonly string s_computerName = Environment.MachineName;
+            private static readonly string s_userName = Environment.UserName;
 
-                return Task.FromResult(0);
+            public async Task<int> InvokeAsync(InvocationContext context)
+            {
+                var stopping = context.GetCancellationToken();
+
+                return await RunConsolePrompt(ref context, stopping);
             }
 
             public int Invoke(InvocationContext context)
             {
                 throw new NotImplementedException();
+            }
+
+            public static Task<int> RunConsolePrompt(ref InvocationContext context, CancellationToken cancellationToken)
+            {
+                context.Console.Clear();
+
+                while (cancellationToken.IsCancellationRequested == false)
+                {
+                    lock (context.Console.Out)
+                    {
+                        context.Console.SetTerminalForegroundColor(ConsoleColor.DarkBlue);
+                        context.Console.Write($"{s_userName}@{s_computerName}");
+                        context.Console.SetTerminalForegroundColor(ConsoleColor.White);
+                        context.Console.Write(":~$ ");
+                        context.Console.SetTerminalForegroundColor(ConsoleColor.DarkCyan);
+                        context.Console.ResetTerminalForegroundColor();
+
+                        var line = context.Console.ReadLine();
+
+                        if (line == "exit")
+                            break;
+
+                        if (line == "hello")
+                            context.Console.WriteLine("Hello, World!");
+                    }
+                }
+
+                return Task.FromResult(0);
             }
         }
     }

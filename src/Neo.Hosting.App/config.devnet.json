@@ -4,7 +4,7 @@
       "Default": "Information"
     }
   },
-  "SystemOptions": {
+  "ApplicationConfiguration": {
     "Storage": {
       "Engine": "MemoryStore",
       "Archive": {
@@ -15,12 +15,12 @@
       "Listen": "127.0.0.1",
       "Port": 226
     },
-    "Contracts": {
+    "Contract": {
       "NeoNameService": "0x50ac1c37690cc2cfc594472833cf57505d5f46de"
     },
     "Wallets": [
       {
-        "Name": "MyHelloWallet",
+        "Name": "MyTestWallet",
         "Path": "./wallets/hello.json",
         "Password": "hello",
         "IsActive": true

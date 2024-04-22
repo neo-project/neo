@@ -23,7 +23,23 @@ namespace Neo.Hosting.App.Extensions
         {
             if (s_colorsAreSupported)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
+                SetTerminalForegroundColor(_, ConsoleColor.Red);
+            }
+        }
+
+        public static void SetTerminalForegroundColor(this IConsole _, ConsoleColor consoleColor)
+        {
+            if (s_colorsAreSupported)
+            {
+                Console.ForegroundColor = consoleColor;
+            }
+        }
+
+        public static void SetTerminalBackgroundColor(this IConsole _, ConsoleColor consoleColor)
+        {
+            if (s_colorsAreSupported)
+            {
+                Console.BackgroundColor = consoleColor;
             }
         }
 
@@ -34,6 +50,9 @@ namespace Neo.Hosting.App.Extensions
                 Console.ResetColor();
             }
         }
+
+        public static void Clear(this IConsole _) =>
+            Console.Clear();
 
         public static void ErrorMessage(this IConsole _, Exception exception)
         {
@@ -93,7 +112,10 @@ namespace Neo.Hosting.App.Extensions
             return userPassword;
         }
 
-        private static bool GetColorsAreSupported()
+        public static string? ReadLine(this IConsole _) =>
+            Console.ReadLine();
+
+        internal static bool GetColorsAreSupported()
 #if NET7_0_OR_GREATER
             => !(OperatingSystem.IsBrowser() || OperatingSystem.IsAndroid() || OperatingSystem.IsIOS() || OperatingSystem.IsTvOS())
 #else

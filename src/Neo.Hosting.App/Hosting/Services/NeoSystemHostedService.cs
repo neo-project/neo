@@ -22,12 +22,12 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Hosting.App.Hosting
+namespace Neo.Hosting.App.Hosting.Services
 {
     internal sealed class NeoSystemHostedService(
         ILoggerFactory loggerFactory,
         ProtocolSettings protocolSettings,
-        IOptions<SystemOptions> systemOptions) : IHostedService, IDisposable
+        IOptions<NeoOptions> neoOptions) : IHostedService, IDisposable
     {
         public IPEndPoint? EndPoint
         {
@@ -39,14 +39,14 @@ namespace Neo.Hosting.App.Hosting
             throw new InvalidOperationException($"{nameof(PromptSystemHostedService)} needs to be started.");
 
         private readonly ProtocolSettings _protocolSettings = protocolSettings;
-        private readonly SystemOptions _systemOptions = systemOptions.Value;
+        private readonly NeoOptions _neoOptions = neoOptions.Value;
 
         private readonly CancellationTokenSource _stopCts = new();
         private readonly TaskCompletionSource _stoppedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         private readonly SemaphoreSlim _neoSystemStoppedSemaphore = new(1);
 
-        private readonly ILogger<NeoSystem> _logger = loggerFactory.CreateLogger<NeoSystem>();
+        private readonly ILogger _logger = loggerFactory.CreateLogger(LoggerCategoryDefaults.NeoSystem);
 
         private NeoSystem? _neoSystem;
 
@@ -73,9 +73,9 @@ namespace Neo.Hosting.App.Hosting
                 _logger.LogInformation("Plugin root path: {PluginsDirectory}", Plugin.PluginsDirectory);
 
                 string? storagePath = null;
-                if (string.IsNullOrEmpty(_systemOptions.Storage.Path) == false)
+                if (string.IsNullOrEmpty(_neoOptions.Storage.Path) == false)
                 {
-                    storagePath = string.Format(_systemOptions.Storage.Path, _protocolSettings.Network);
+                    storagePath = string.Format(_neoOptions.Storage.Path, _protocolSettings.Network);
                     if (Directory.Exists(storagePath) == false)
                     {
                         if (Path.IsPathFullyQualified(storagePath) == false)
@@ -83,10 +83,10 @@ namespace Neo.Hosting.App.Hosting
                     }
                 }
 
-                if (StoreFactory.GetStoreProvider(_systemOptions.Storage.Engine) is null)
-                    throw new DllNotFoundException($"Plugin '{Path.Combine(Plugin.PluginsDirectory, $"{_systemOptions.Storage.Engine}.dll")}' can't be found.");
+                if (StoreFactory.GetStoreProvider(_neoOptions.Storage.Engine) is null)
+                    throw new DllNotFoundException($"Plugin '{Path.Combine(Plugin.PluginsDirectory, $"{_neoOptions.Storage.Engine}.dll")}' can't be found.");
 
-                _neoSystem = new(_protocolSettings, _systemOptions.Storage.Engine, storagePath);
+                _neoSystem = new(_protocolSettings, _neoOptions.Storage.Engine, storagePath);
                 _logger.LogInformation("NeoSystem started.");
 
                 return Task.CompletedTask;
@@ -105,12 +105,12 @@ namespace Neo.Hosting.App.Hosting
 
             _neoSystem.StartNode(new()
             {
-                Tcp = EndPoint = new(IPAddress.Parse(_systemOptions.P2P.Listen), _systemOptions.P2P.Port),
-                MinDesiredConnections = _systemOptions.P2P.MinDesiredConnections,
-                MaxConnections = _systemOptions.P2P.MaxConnections,
-                MaxConnectionsPerAddress = _systemOptions.P2P.MaxConnectionsPerAddress,
+                Tcp = EndPoint = new(IPAddress.Parse(_neoOptions.P2P.Listen), _neoOptions.P2P.Port),
+                MinDesiredConnections = _neoOptions.P2P.MinDesiredConnections,
+                MaxConnections = _neoOptions.P2P.MaxConnections,
+                MaxConnectionsPerAddress = _neoOptions.P2P.MaxConnectionsPerAddress,
             });
-            _logger.LogInformation("Listening on remote endpoint: neo://{EndPoint}/#{Network}", EndPoint, _protocolSettings.Network);
+            _logger.LogInformation("Now listening on: neo://{EndPoint}/#{Network}", EndPoint, _protocolSettings.Network);
 
             return true;
         }

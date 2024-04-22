@@ -9,14 +9,13 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.Systemd;
+using Microsoft.Extensions.Hosting.WindowsServices;
 using Neo.Extensions;
 using Neo.Hosting.App.CommandLine;
-using Neo.Hosting.App.Configuration;
+using Neo.Hosting.App.Extensions;
 using Neo.Hosting.App.Handlers;
-using Neo.Hosting.App.Hosting;
 using System;
 using System.CommandLine;
 using System.CommandLine.Builder;
@@ -31,27 +30,22 @@ namespace Neo.Hosting.App
     {
         internal static int ApplicationVersionNumber { get; }
         internal static Version ApplicationVersion { get; }
+        internal static bool IsRunningAsService =>
+            SystemdHelpers.IsSystemdService() == false && WindowsServiceHelpers.IsWindowsService() == false && Environment.UserInteractive == false;
 
         static Program()
         {
-            ApplicationVersionNumber = AssemblyUtilities.GetVersionNumber();
-            ApplicationVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version("0.0.0");
+            ApplicationVersionNumber = AssemblyUtility.GetVersionNumber();
+            ApplicationVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version("0.0.0.0");
         }
 
         static async Task<int> Main(string[] args)
         {
             var rootCommand = new DefaultRootCommand();
             var parser = new CommandLineBuilder(rootCommand)
-                .UseHost(DefaultNeoHostBuilderFactory, builder =>
+                .UseInternalHost(DefaultNeoHostBuilderFactory, builder =>
                 {
-                    builder.ConfigureServices((builder, services) =>
-                    {
-                        services.Configure<SystemOptions>(builder.Configuration.GetRequiredSection("SystemOptions"));
-                        services.AddSingleton(ProtocolSettings.Load(builder.Configuration.GetRequiredSection("ProtocolConfiguration")));
-                        services.AddSingleton<NeoSystemHostedService>();
-                        services.AddSingleton<PromptSystemHostedService>();
-                        //services.AddHostedService(sp => sp.GetRequiredService<NeoSystemHostedService>());
-                    });
+                    builder.UseNeoServiceConfiguration();
                     builder.UseCommandHandler<DefaultRootCommand, EmptyHandler>();
                     builder.UseCommandHandler<ExportCommand, EmptyHandler>();
                     builder.UseCommandHandler<WalletCommand, EmptyHandler>();
@@ -63,7 +57,7 @@ namespace Neo.Hosting.App
                     builder.UseWindowsService();
                 })
                 .UseDefaults()
-                //.UseExceptionHandler(NullExceptionFilter.Handler)
+                .UseExceptionHandler(NullExceptionFilter.Handler)
                 .Build();
 
             return await parser.InvokeAsync(args);

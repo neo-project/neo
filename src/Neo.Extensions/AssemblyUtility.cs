@@ -13,7 +13,7 @@ using System.Reflection;
 
 namespace Neo.Extensions
 {
-    public static class AssemblyUtilities
+    public static class AssemblyUtility
     {
         public static int GetVersionNumber()
         {

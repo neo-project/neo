@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// NeoEnvironments.cs file belongs to the neo project and is free
+// LoggerCategoryNames.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -11,15 +11,9 @@
 
 namespace Neo.Hosting.App.Hosting
 {
-    internal static class NeoEnvironments
+    internal static class LoggerCategoryDefaults
     {
-        public static readonly string DevNet = "DevNet";
-
-        public static readonly string TestNet = "TestNet";
-
-        public static readonly string MainNet = "MainNet";
-
-        public static readonly string PrivateNet = "PrivateNet";
-
+        public static readonly string RemoteManagement = "Remote.Management";
+        public static readonly string NeoSystem = typeof(NeoSystem).Name;
     }
 }

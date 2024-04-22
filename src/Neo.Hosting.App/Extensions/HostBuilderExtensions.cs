@@ -9,38 +9,64 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Neo.Wallets;
+using Microsoft.Extensions.Hosting;
+using Neo.Hosting.App.Configuration;
+using Neo.Hosting.App.Hosting.Services;
 using System;
-using System.IO;
-using System.Security;
 
 namespace Neo.Hosting.App.Extensions
 {
     internal static class HostBuilderExtensions
     {
-        //public static IHostBuilder UseNamedPipes(this IHostBuilder hostBuilder) =>
-        //    hostBuilder.ConfigureServices(services =>
-        //    {
-        //        services.AddSingleton<ObjectPoolProvider, DefaultObjectPoolProvider>();
-        //        services.AddSingleton<NamedPipeTransportFactory>();
-        //    });
-
-        //public static IHostBuilder UseNamedPipes(this IHostBuilder hostBuilder, Action<NamedPipeTransportOptions> configureOptions) =>
-        //    hostBuilder.UseNamedPipes().ConfigureServices(services => services.Configure(configureOptions));
-
-        public static void AddWalletJsonFile(this IServiceCollection services, string path, SecureString password, ProtocolSettings? protocolSettings = null)
+        public static IHostBuilder UseNeoServiceConfiguration(this IHostBuilder hostBuilder, Action<HostBuilderContext, IServiceCollection>? configure = null)
         {
-            ArgumentNullException.ThrowIfNull(services, nameof(services));
-            var fileName = Path.GetFileName(path);
+            hostBuilder.ConfigureServices((context, services) =>
+            {
+                //services.Configure<InvocationLifetimeOptions>(config => config.SuppressStatusMessages = true);
+                services.Configure<NeoOptions>(context.Configuration);
+                services.AddSingleton(ProtocolSettings.Load(context.Configuration.GetRequiredSection("ProtocolConfiguration")));
+                services.AddSingleton<NeoSystemHostedService>();
+                services.AddSingleton<PromptSystemHostedService>();
 
-            if (File.Exists(path) == false)
-                throw new FileNotFoundException(fileName);
+                configure?.Invoke(context, services);
+            });
 
-            var wallet = Wallet.Open(path, password.GetClearText(), protocolSettings ?? ProtocolSettings.Default) ??
-                throw new FileLoadException("Wallet information is correct.", fileName);
+            return hostBuilder;
+        }
 
-            services.AddSingleton(wallet);
+        public static IHostBuilder UseNeoHostConfiguration(this IHostBuilder hostBuilder, Action<IConfigurationBuilder>? configure = null)
+        {
+            hostBuilder.ConfigureHostConfiguration(config =>
+            {
+                config.AddNeoHostConfiguration();
+
+                configure?.Invoke(config);
+            });
+
+            return hostBuilder;
+        }
+
+        public static IHostBuilder UseNeoAppConfiguration(this IHostBuilder hostBuilder, Action<HostBuilderContext, IConfigurationBuilder>? configure = null)
+        {
+            hostBuilder.ConfigureAppConfiguration((context, config) =>
+            {
+                config.AddNeoAppConfiguration();
+
+                var environmentName = context.HostingEnvironment.EnvironmentName;
+                var manager = new ConfigurationManager();
+                manager.AddJsonFile($"config.{environmentName}.json", optional: false);
+
+                IConfigurationBuilder builder = manager;
+                builder.Add(new NeoConfigurationSource(manager.GetRequiredSection(NeoOptions.ConfigurationSectionName)));
+
+                config.AddConfiguration(manager);
+
+                configure?.Invoke(context, config);
+            });
+
+            return hostBuilder;
         }
     }
 }

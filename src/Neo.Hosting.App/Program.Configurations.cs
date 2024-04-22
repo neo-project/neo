@@ -14,9 +14,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.Metrics;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Logging.EventLog;
 using Neo.Hosting.App.Extensions;
-using Neo.Hosting.App.Hosting;
 using System;
 
 namespace Neo.Hosting.App
@@ -25,32 +25,8 @@ namespace Neo.Hosting.App
     {
         static IHostBuilder DefaultNeoHostBuilderFactory(string[] args) =>
             new HostBuilder()
-            .ConfigureHostConfiguration(config =>
-            {
-                config.AddInMemoryCollection(
-                [
-                    new(HostDefaults.EnvironmentKey, NeoEnvironments.MainNet),
-                    new(HostDefaults.ContentRootKey, Environment.CurrentDirectory),
-                ]);
-
-                config.AddEnvironmentVariables("NEO_");
-                config.AddCommandLine(args);
-            })
-            .ConfigureAppConfiguration((context, config) =>
-            {
-                var hostingEnvironment = context.HostingEnvironment;
-                config.SetBasePath(AppContext.BaseDirectory);
-
-                var manager = new ConfigurationManager();
-                manager.AddJsonFile("config." + hostingEnvironment.EnvironmentName + ".json", optional: false);
-                manager.AddNeoConfiguration();
-
-                config.AddConfiguration(manager);
-
-                config.AddEnvironmentVariables();
-                config.AddCommandLine(args);
-
-            })
+            .UseNeoHostConfiguration()
+            .UseNeoAppConfiguration()
             .ConfigureServices(AddDefaultServices)
             .UseServiceProviderFactory((context) => new DefaultServiceProviderFactory(CreateDefaultNeoServiceProviderOptions(context)));
 
@@ -69,16 +45,27 @@ namespace Neo.Hosting.App
             services.AddLogging(logging =>
             {
                 var isWindows = OperatingSystem.IsWindows();
-                if (isWindows)
+                if (isWindows && hostingContext.HostingEnvironment.IsNeoDevNet() == false)
                     logging.AddFilter<EventLogLoggerProvider>(level => level >= Microsoft.Extensions.Logging.LogLevel.Warning);
 
+#if DEBUG
+                logging.AddFilter<ConsoleLoggerProvider>(level => level >= Microsoft.Extensions.Logging.LogLevel.Trace);
+#endif
+
                 logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
-                logging.AddConsole();
-
-                if (hostingContext.HostingEnvironment.IsNeoMainNet() == false)
-                    logging.AddDebug();
-
+                logging.AddDebug();
                 logging.AddEventSourceLogger();
+
+                if (IsRunningAsService == false)
+                {
+                    logging.AddSimpleConsole(config =>
+                    {
+                        config.ColorBehavior = LoggerColorBehavior.Enabled;
+                        config.SingleLine = true;
+                        config.TimestampFormat = "[yyyy-MM-dd HH:mm:ss.fff] ";
+                        config.UseUtcTimestamp = true;
+                    });
+                }
 
                 if (isWindows)
                     logging.AddEventLog();
