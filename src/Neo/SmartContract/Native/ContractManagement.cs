@@ -70,7 +70,7 @@ namespace Neo.SmartContract.Native
         {
             foreach (NativeContract contract in Contracts)
             {
-                if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.PersistingBlock.Index, out Hardfork? hf))
+                if (contract.IsInitializeBlock(engine.ProtocolSettings, engine.PersistingBlock.Index, out var hfs))
                 {
                     ContractState contractState = contract.GetContractState(engine.ProtocolSettings, engine.PersistingBlock.Index);
                     StorageItem state = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Contract).Add(contract.Hash));
@@ -92,7 +92,11 @@ namespace Neo.SmartContract.Native
                         oldContract.Manifest = contractState.Manifest;
                     }
 
-                    await contract.Initialize(engine, hf);
+                    // Initialize native contract for all hardforks
+                    foreach (var hf in hfs)
+                    {
+                        await contract.Initialize(engine, hf);
+                    }
                     // Emit native contract notification
                     engine.SendNotification(Hash, state is null ? "Deploy" : "Update", new VM.Types.Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
                 }

@@ -81,7 +81,8 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsNull(hf);
 
             Assert.IsTrue(NativeContract.CryptoLib.IsInitializeBlock(settings, 20, out hf));
-            Assert.AreEqual(Hardfork.HF_Cockatrice, hf);
+            Assert.AreEqual(1, hf.Length);
+            Assert.AreEqual(Hardfork.HF_Cockatrice, hf[0]);
         }
 
         [TestMethod]
