@@ -11,6 +11,9 @@
 
 using Neo.Hosting.App.CommandLine.Prompt;
 using Neo.Hosting.App.Extensions;
+using Neo.Hosting.App.Factories;
+using Neo.Hosting.App.Helpers;
+using Neo.Hosting.App.NamedPipes;
 using System;
 using System.CommandLine;
 using System.CommandLine.Builder;
@@ -35,16 +38,55 @@ namespace Neo.Hosting.App.CommandLine
             private static readonly string s_computerName = Environment.MachineName;
             private static readonly string s_userName = Environment.UserName;
 
+            private NamedPipeEndPoint? _pipeEndPoint;
+
             public async Task<int> InvokeAsync(InvocationContext context)
             {
                 var stopping = context.GetCancellationToken();
 
-                return await RunConsolePrompt(context, stopping);
+                if (EnvironmentUtility.TryGetServicePipeName(out var pipeName))
+                {
+                    _pipeEndPoint = new NamedPipeEndPoint(pipeName);
+                    var pipeStream = NamedPipeTransportFactory.CreateClientStream(_pipeEndPoint);
+
+                    context.Console.SetTerminalForegroundColor(ConsoleColor.DarkMagenta);
+                    context.Console.WriteLine($"Connecting to {_pipeEndPoint}...");
+                    context.Console.ResetTerminalForegroundColor();
+
+                    try
+                    {
+                        await pipeStream.ConnectAsync(stopping).TimeoutAfter(TimeSpan.FromSeconds(10));
+                        await RunConsolePrompt(context, stopping);
+                    }
+                    catch (TimeoutException)
+                    {
+                        context.Console.WriteLine(string.Empty);
+                        context.Console.ErrorMessage($"Failed to connect! Try again Later!");
+
+                        context.Console.SetTerminalForegroundColor(ConsoleColor.DarkCyan);
+                        context.Console.WriteLine("Note: Make sure service is running.");
+                        context.Console.ResetTerminalForegroundColor();
+                    }
+
+                    return 0;
+                }
+
+                return -1;
             }
 
             public int Invoke(InvocationContext context)
             {
                 throw new NotImplementedException();
+            }
+
+            private static void PrintPrompt(IConsole console)
+            {
+                console.SetTerminalForegroundColor(ConsoleColor.DarkBlue);
+                console.Write($"{s_userName}@{s_computerName}");
+                console.SetTerminalForegroundColor(ConsoleColor.White);
+                console.Write(":~$ ");
+                console.SetTerminalForegroundColor(ConsoleColor.DarkCyan);
+                console.ResetTerminalForegroundColor();
             }
 
             public static async Task<int> RunConsolePrompt(InvocationContext context, CancellationToken cancellationToken)
@@ -54,17 +96,11 @@ namespace Neo.Hosting.App.CommandLine
                 var rootCommand = new DefaultRemoteCommand();
                 var parser = new CommandLineBuilder(rootCommand)
                     .UseParseErrorReporting()
-                    .UseExceptionHandler()
                     .Build();
 
                 while (cancellationToken.IsCancellationRequested == false)
                 {
-                    context.Console.SetTerminalForegroundColor(ConsoleColor.DarkBlue);
-                    context.Console.Write($"{s_userName}@{s_computerName}");
-                    context.Console.SetTerminalForegroundColor(ConsoleColor.White);
-                    context.Console.Write(":~$ ");
-                    context.Console.SetTerminalForegroundColor(ConsoleColor.DarkCyan);
-                    context.Console.ResetTerminalForegroundColor();
+                    PrintPrompt(context.Console);
 
                     var line = context.Console.ReadLine()?.Trim() ?? string.Empty;
 

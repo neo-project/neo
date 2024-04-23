@@ -41,6 +41,9 @@ namespace Neo.Hosting.App
 
         static async Task<int> Main(string[] args)
         {
+            Console.BackgroundColor = ConsoleColor.Black;
+            Console.Clear();
+
             var rootCommand = new DefaultRootCommand();
             var parser = new CommandLineBuilder(rootCommand)
                 .UseInternalHost(DefaultNeoHostBuilderFactory, builder =>
