@@ -14,8 +14,16 @@ using Neo.IO;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Numerics;
+using System.Text.RegularExpressions;
+using System.Text;
+using Org.BouncyCastle.Utilities.Encoders;
+using Neo.SmartContract;
+using Neo.Cryptography.ECC;
+using System.Reflection;
+using Neo.VM;
 
 namespace Neo.CLI
 {
@@ -27,18 +35,28 @@ namespace Neo.CLI
         [ConsoleCommand("parse", Category = "Base Commands", Description = "Parse a value to its possible conversions.")]
         private void OnParseCommand(string value)
         {
+            value = Base64Fixed(value);
             var parseFunctions = new Dictionary<string, Func<string, string?>>()
             {
-                { "Address to ScriptHash", AddressToScripthash },
+                { "Address to ScriptHash (big-endian)", AddressToScripthash },
+                { "Address to ScriptHash (little-endian)", AddressToScripthashLE },
                 { "Address to Base64", AddressToBase64 },
+                { "Public Key to Address", PublicKeyToAddress },
+                { "Private Key to Public Key", PrivateKeyToPublicKey },
+                { "Private Key to Address", PrivateKeyToAddress },
                 { "ScriptHash to Address", ScripthashToAddress },
                 { "Base64 to Address", Base64ToAddress },
                 { "Base64 to String", Base64ToString },
                 { "Base64 to Big Integer", Base64ToNumber },
+                { "Base64 to Hex String", Base64ToHexString },
                 { "Big Integer to Hex String", NumberToHex },
                 { "Big Integer to Base64", NumberToBase64 },
                 { "Hex String to String", HexToString },
                 { "Hex String to Big Integer", HexToNumber },
+                { "Little-endian to Big-endian", LittleEndianToBigEndian },
+                { "Big-endian to Little-endian", BigEndianToLittleEndian },
+                { "Base64 Smart Contract Script Analysis", ScriptsToOpCode },
+                { "Hex String Smart Contract Script Analysis", HexScriptsToOpCode },
                 { "String to Hex String", StringToHex },
                 { "String to Base64", StringToBase64 }
             };
@@ -64,7 +82,7 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Converts an hexadecimal value to an UTF-8 string
+        /// Converts a hexadecimal value to an UTF-8 string
         /// </summary>
         /// <param name="hexString">
         /// Hexadecimal value to be converted
@@ -90,7 +108,39 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Converts an hex value to a big integer
+        /// Converts a little-endian hex string to big-endian hex string
+        /// input:  ce616f7f74617e0fc4b805583af2602a238df63f
+        /// output: 0x3ff68d232a60f23a5805b8c40f7e61747f6f61ce
+        /// </summary>
+        /// <param name="hex">Hexadecimal value to be converted</param>
+        /// <returns>Returns null when inputs is not little-endian hex string;
+        /// otherwise, returns the string that represents the converted big-endian hex string.
+        /// </returns>
+        public string? LittleEndianToBigEndian(string hex)
+        {
+            hex = hex.ToLower();
+            if (!new Regex("^([0-9a-f]{2})+$").IsMatch(hex)) return null;
+            return "0x" + hex.HexToBytes().Reverse().ToArray().ToHexString(); ;
+        }
+
+        /// <summary>
+        /// Converts a big-endian hex string to little-endian hex string
+        /// input:  0x3ff68d232a60f23a5805b8c40f7e61747f6f61ce
+        /// output: ce616f7f74617e0fc4b805583af2602a238df63f
+        /// </summary>
+        /// <param name="hex">Hexadecimal value to be converted</param>
+        /// <returns>Returns null when inputs is not big-endian hex string;
+        /// otherwise, returns the string that represents the converted little-endian hex string.
+        /// </returns>
+        public string? BigEndianToLittleEndian(string hex)
+        {
+            hex = hex.ToLower();
+            if (!new Regex("^0x([0-9a-f]{2})+$").IsMatch(hex)) return null;
+            return hex[2..].HexToBytes().Reverse().ToArray().ToHexString();
+        }
+
+        /// <summary>
+        /// Converts a hex value to a big integer
         /// </summary>
         /// <param name="hexString">
         /// Hexadecimal value to be converted
@@ -268,7 +318,27 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Converts an address to its corresponding scripthash
+        /// Fix for Base64 strings containing unicode
+        /// Input  DCECbzTesnBofh/Xng1SofChKkBC7jhVmLxCN1vk\u002B49xa2pBVuezJw==
+        /// Output DCECbzTesnBofh/Xng1SofChKkBC7jhVmLxCN1vk+49xa2pBVuezJw==
+        /// </summary>
+        /// <param name="str">Base64 strings containing unicode</param>
+        /// <returns>Correct Base64 string</returns>
+        public static string Base64Fixed(string str)
+        {
+            MatchCollection mc = Regex.Matches(str, @"\\u([\w]{2})([\w]{2})", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            byte[] bts = new byte[2];
+            foreach (Match m in mc)
+            {
+                bts[0] = (byte)int.Parse(m.Groups[2].Value, NumberStyles.HexNumber);
+                bts[1] = (byte)int.Parse(m.Groups[1].Value, NumberStyles.HexNumber);
+                str = str.Replace(m.ToString(), Encoding.Unicode.GetString(bts));
+            }
+            return str;
+        }
+
+        /// <summary>
+        /// Converts an address to its corresponding scripthash (big-endian)
         /// </summary>
         /// <param name="address">
         /// String that represents the address to be converted
@@ -285,6 +355,31 @@ namespace Neo.CLI
                 var bigEndScript = address.ToScriptHash(NeoSystem.Settings.AddressVersion);
 
                 return bigEndScript.ToString();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Converts an address to its corresponding scripthash (little-endian)
+        /// </summary>
+        /// <param name="address">
+        /// String that represents the address to be converted
+        /// </param>
+        /// <returns>
+        /// Returns null when the string does not represent an address or when
+        /// it is not possible to parse the address to scripthash; otherwise returns
+        /// the string that represents the converted scripthash
+        /// </returns>
+        private string? AddressToScripthashLE(string address)
+        {
+            try
+            {
+                var bigEndScript = address.ToScriptHash(NeoSystem.Settings.AddressVersion);
+
+                return bigEndScript.ToArray().ToHexString();
             }
             catch
             {
@@ -325,7 +420,7 @@ namespace Neo.CLI
         /// String that represents the scripthash to be converted
         /// </param>
         /// <returns>
-        /// Returns null when the string does not represent an scripthash;
+        /// Returns null when the string does not represent a scripthash;
         /// otherwise, returns the string that represents the converted address
         /// </returns>
         private string? ScripthashToAddress(string script)
@@ -363,13 +458,13 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Converts an Base64 byte array to address
+        /// Converts a Base64 byte array to address
         /// </summary>
         /// <param name="bytearray">
         /// String that represents the Base64 value
         /// </param>
         /// <returns>
-        /// Returns null when the string does not represent an Base64 value or when
+        /// Returns null when the string does not represent a Base64 value or when
         /// it is not possible to parse the Base64 value to address; otherwise,
         /// returns the string that represents the converted address
         /// </returns>
@@ -395,13 +490,13 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Converts an Base64 hex string to string
+        /// Converts a Base64 hex string to string
         /// </summary>
         /// <param name="bytearray">
         /// String that represents the Base64 value
         /// </param>
         /// <returns>
-        /// Returns null when the string does not represent an Base64 value or when
+        /// Returns null when the string does not represent a Base64 value or when
         /// it is not possible to parse the Base64 value to string value or the converted
         /// string is not printable; otherwise, returns the string that represents
         /// the Base64 value.
@@ -421,13 +516,13 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Converts an Base64 hex string to big integer value
+        /// Converts a Base64 hex string to big integer value
         /// </summary>
         /// <param name="bytearray">
         /// String that represents the Base64 value
         /// </param>
         /// <returns>
-        /// Returns null when the string does not represent an Base64 value or when
+        /// Returns null when the string does not represent a Base64 value or when
         /// it is not possible to parse the Base64 value to big integer value; otherwise
         /// returns the string that represents the converted big integer
         /// </returns>
@@ -443,6 +538,214 @@ namespace Neo.CLI
             {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Converts a Base64 string to Hex string.
+        /// input: SGVsbG8gV29ybGQh
+        /// output: 48656c6c6f20576f726c6421
+        /// </summary>
+        /// <param name="base64">
+        /// String that represents the Base64 value
+        /// </param>
+        /// <returns>
+        /// Returns null when the string does not represent a Base64 value or when
+        /// it is not possible to parse the Base64 value to Hex string; otherwise
+        /// returns the string that represents the converted Hex string
+        /// </returns>
+        public static string? Base64ToHexString(string base64)
+        {
+            try
+            {
+                var bytes = Convert.FromBase64String(base64.Trim());
+                return bytes.ToHexString();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Converts a public key to neo3 address.
+        /// input:  03dab84c1243ec01ab2500e1a8c7a1546a26d734628180b0cf64e72bf776536997
+        /// output: Nd9NceysETPT9PZdWRTeQXJix68WM2x6Wv
+        /// </summary>
+        /// <param name="pubKey">public key</param>
+        /// <returns>Returns null when the string does not represent a public key; otherwise
+        /// returns the string that represents the converted neo3 address.
+        /// </returns>
+        public string? PublicKeyToAddress(string pubKey)
+        {
+            pubKey = pubKey.ToLower();
+            if (!new Regex("^(0[23][0-9a-f]{64})+$").IsMatch(pubKey)) return null;
+            return Contract.CreateSignatureContract(ECPoint.Parse(pubKey, ECCurve.Secp256r1)).ScriptHash.ToAddress(NeoSystem.Settings.AddressVersion);
+        }
+
+        /// <summary>
+        /// Converts a Private key to public key
+        /// </summary>
+        /// <param name="wif">Private key in WIF format</param>
+        /// <returns>Returns null when the string does not represent a private key; otherwise
+        /// returns the string that represents the converted public key.
+        /// </returns>
+        public static string? PrivateKeyToPublicKey(string wif)
+        {
+            try
+            {
+                var privateKey = Wallet.GetPrivateKeyFromWIF(wif);
+                var account = new KeyPair(privateKey);
+                return account.PublicKey.ToArray().ToHexString();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Converts a Private key to neo3 address
+        /// </summary>
+        /// <param name="wif">Private key in WIF format</param>
+        /// <returns>Returns null when the string does not represent a private key; otherwise
+        /// returns the string that represents the converted neo3 address.
+        /// </returns>
+        public static string? PrivateKeyToAddress(string wif)
+        {
+            try
+            {
+                var pubKey = PrivateKeyToPublicKey(wif);
+                return Contract.CreateSignatureContract(ECPoint.Parse(pubKey, ECCurve.Secp256r1)).ScriptHash.ToAddress(0x35);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Converts a Scripts to OpCode
+        /// </summary>
+        /// <param name="base64">Scripts in Base64 string</param>
+        /// <returns>Returns null when the string does not represent a scripts; otherwise
+        /// returns the string that represents the converted OpCode.
+        /// </returns>
+        public string? ScriptsToOpCode(string base64)
+        {
+            List<byte> scripts;
+            try
+            {
+                scripts = Convert.FromBase64String(base64).ToList();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+            try
+            {
+                _ = new Script(scripts.ToArray(), true);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+            return ScriptsToOpCode(scripts);
+        }
+
+        /// <summary>
+        /// Converts a Hex Scripts to OpCode
+        /// </summary>
+        /// <param name="hex">Scripts in Hex string</param>
+        /// <returns>Returns null when the string does not represent a scripts; otherwise
+        /// returns the string that represents the converted OpCode.
+        /// </returns>
+        public string? HexScriptsToOpCode(string hex)
+        {
+            List<byte> scripts;
+            try
+            {
+                scripts = hex.HexToBytes().ToList();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+            try
+            {
+                _ = new Script(scripts.ToArray(), true);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+            return ScriptsToOpCode(scripts);
+        }
+
+        private string ScriptsToOpCode(List<byte> scripts)
+        {
+            //Initialize all OpCodes
+            var OperandSizePrefixTable = new int[256];
+            var OperandSizeTable = new int[256];
+            foreach (FieldInfo field in typeof(OpCode).GetFields(BindingFlags.Public | BindingFlags.Static))
+            {
+                var attribute = field.GetCustomAttribute<OperandSizeAttribute>();
+                if (attribute == null) continue;
+                int index = (int)(OpCode)field.GetValue(null);
+                OperandSizePrefixTable[index] = attribute.SizePrefix;
+                OperandSizeTable[index] = attribute.Size;
+            }
+            //Initialize all InteropService
+            var dic = new Dictionary<uint, string>();
+            ApplicationEngine.Services.ToList().ForEach(p => dic.Add(p.Value.Hash, p.Value.Name));
+
+            //Analyzing Scripts
+            var result = new List<string>();
+            while (scripts.Count > 0)
+            {
+                var op = (OpCode)scripts[0];
+                var operandSizePrefix = OperandSizePrefixTable[scripts[0]];
+                var operandSize = OperandSizeTable[scripts[0]];
+                scripts.RemoveAt(0);
+
+                var onlyOpCode = true;
+                if (operandSize > 0)
+                {
+                    var operand = scripts.Take(operandSize).ToArray();
+                    if (op.ToString().StartsWith("PUSHINT"))
+                    {
+                        result.Add($"{op} {new BigInteger(operand)}");
+                    }
+                    else if (op == OpCode.SYSCALL)
+                    {
+                        result.Add($"{op} {dic[BitConverter.ToUInt32(operand)]}");
+                    }
+                    else
+                    {
+                        result.Add($"{op} {operand.ToHexString()}");
+                    }
+                    scripts.RemoveRange(0, operandSize);
+                    onlyOpCode = false;
+                }
+                if (operandSizePrefix > 0)
+                {
+                    var bytes = scripts.Take(operandSizePrefix).ToArray();
+                    var number = bytes.Length == 1 ? bytes[0] : (int)new BigInteger(bytes);
+                    scripts.RemoveRange(0, operandSizePrefix);
+                    var operand = scripts.Take(number).ToArray();
+
+                    var asicii = Encoding.Default.GetString(operand);
+                    asicii = asicii.Any(p => p < '0' || p > 'z') ? operand.ToHexString() : asicii;
+
+                    result.Add($"{op} {(number == 20 ? new UInt160(operand).ToString() : asicii)}");
+                    scripts.RemoveRange(0, number);
+                    onlyOpCode = false;
+                }
+                if (onlyOpCode)
+                {
+                    result.Add($"{op}");
+                }
+            }
+            return "\r\n" + string.Join("\r\n", result.ToArray());
         }
 
         /// <summary>
