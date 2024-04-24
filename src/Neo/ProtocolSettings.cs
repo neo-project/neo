@@ -175,7 +175,6 @@ namespace Neo
         {
             foreach (Hardfork hf in AllHardforks)
             {
-
                 if (!hardForks.ContainsKey(hf))
                 {
                     hardForks[hf] = 0;

@@ -106,6 +106,8 @@ namespace Neo
         {
             // Unify unhandled exceptions
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
+            Plugin.LoadPlugins();
         }
 
         /// <summary>
