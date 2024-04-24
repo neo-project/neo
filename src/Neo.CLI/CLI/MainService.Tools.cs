@@ -10,20 +10,20 @@
 // modifications are permitted.
 
 using Neo.ConsoleService;
+using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.SmartContract;
+using Neo.VM;
 using Neo.Wallets;
+using Org.BouncyCastle.Utilities.Encoders;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
-using System.Text.RegularExpressions;
-using System.Text;
-using Org.BouncyCastle.Utilities.Encoders;
-using Neo.SmartContract;
-using Neo.Cryptography.ECC;
 using System.Reflection;
-using Neo.VM;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Neo.CLI
 {
