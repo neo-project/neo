@@ -25,8 +25,11 @@ namespace Neo.Hosting.App.Extensions
             hostBuilder.ConfigureServices((context, services) =>
             {
                 //services.Configure<InvocationLifetimeOptions>(config => config.SuppressStatusMessages = true);
+
+                var protocolSettingsSection = context.Configuration.GetSection("ProtocolConfiguration");
+
                 services.Configure<NeoOptions>(context.Configuration);
-                services.AddSingleton(ProtocolSettings.Load(context.Configuration.GetRequiredSection("ProtocolConfiguration")));
+                services.AddSingleton(protocolSettingsSection.Exists() ? ProtocolSettings.Load(protocolSettingsSection) : ProtocolSettings.Default);
                 services.AddSingleton<NeoSystemHostedService>();
                 services.AddSingleton<PromptSystemHostedService>();
 
@@ -56,10 +59,13 @@ namespace Neo.Hosting.App.Extensions
 
                 var environmentName = context.HostingEnvironment.EnvironmentName;
                 var manager = new ConfigurationManager();
-                manager.AddJsonFile($"config.{environmentName}.json", optional: false);
+                manager.AddJsonFile($"config.{environmentName}.json", optional: true);
+
 
                 IConfigurationBuilder builder = manager;
-                builder.Add(new NeoConfigurationSource(manager.GetRequiredSection(NeoOptions.ConfigurationSectionName)));
+                var appConfigSection = manager.GetSection(NeoOptions.ConfigurationSectionName);
+
+                builder.Add(new NeoConfigurationSource(appConfigSection.Exists() ? appConfigSection : null));
 
                 config.AddConfiguration(manager);
 

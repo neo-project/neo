@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="config.devnet.json" />
+    <Content Include="config.localnet.json" />
     <Content Include="config.mainnet.json" />
     <Content Include="config.testnet.json" />
   </ItemGroup>
@@ -22,7 +22,7 @@
     <Content Update="config.testnet.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="config.devnet.json">
+    <Content Update="config.localnet.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

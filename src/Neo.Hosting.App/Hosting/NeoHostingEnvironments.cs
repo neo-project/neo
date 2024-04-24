@@ -13,7 +13,7 @@ namespace Neo.Hosting.App.Hosting
 {
     internal static class NeoHostingEnvironments
     {
-        public static readonly string DevNet = "DevNet";
+        public static readonly string LocalNet = "LocalNet";
 
         public static readonly string TestNet = "TestNet";
 

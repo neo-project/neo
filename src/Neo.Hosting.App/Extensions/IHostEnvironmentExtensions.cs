@@ -17,10 +17,10 @@ namespace Neo.Hosting.App.Extensions
 {
     internal static class IHostEnvironmentExtensions
     {
-        public static bool IsNeoDevNet(this IHostEnvironment hostEnvironment)
+        public static bool IsNeoLocalNet(this IHostEnvironment hostEnvironment)
         {
             ArgumentNullException.ThrowIfNull(hostEnvironment, nameof(hostEnvironment));
-            return hostEnvironment.IsEnvironment(NeoHostingEnvironments.DevNet);
+            return hostEnvironment.IsEnvironment(NeoHostingEnvironments.LocalNet);
         }
 
         public static bool IsNeoTestNet(this IHostEnvironment hostEnvironment)

@@ -32,7 +32,7 @@ namespace Neo.Hosting.App
 
         static ServiceProviderOptions CreateDefaultNeoServiceProviderOptions(HostBuilderContext context)
         {
-            var flag = context.HostingEnvironment.IsNeoDevNet();
+            var flag = context.HostingEnvironment.IsNeoLocalNet();
             return new ServiceProviderOptions
             {
                 ValidateScopes = flag,
@@ -45,7 +45,7 @@ namespace Neo.Hosting.App
             services.AddLogging(logging =>
             {
                 var isWindows = OperatingSystem.IsWindows();
-                if (isWindows && hostingContext.HostingEnvironment.IsNeoDevNet() == false)
+                if (isWindows && hostingContext.HostingEnvironment.IsNeoLocalNet() == false)
                     logging.AddFilter<EventLogLoggerProvider>(level => level >= Microsoft.Extensions.Logging.LogLevel.Warning);
 
 #if DEBUG
