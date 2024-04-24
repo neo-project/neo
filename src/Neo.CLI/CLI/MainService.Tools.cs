@@ -9,6 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.IO;
 using Neo.ConsoleService;
 using Neo.Cryptography.ECC;
 using Neo.IO;
@@ -50,6 +51,7 @@ namespace Neo.CLI
                 { "Base64 to Big Integer", Base64ToNumber },
                 { "Base64 to Hex String", Base64ToHexString },
                 { "Big Integer to Hex String", NumberToHex },
+                { "Network Id to String", NumberToHexToString },
                 { "Big Integer to Base64", NumberToBase64 },
                 { "Hex String to String", HexToString },
                 { "Hex String to Big Integer", HexToNumber },
@@ -282,6 +284,35 @@ namespace Neo.CLI
                 return numberParam.ToByteArray().ToHexString();
             }
             catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Converts a BigInteger to hex string to UTF8 string
+        /// input:  860833102
+        /// output: NEO3
+        /// </summary>
+        /// <param name="strParam">
+        /// String that represents the number to be converted
+        /// </param>
+        /// <returns>
+        /// Returns null when the string does not represent a big integer value or when
+        /// it is not possible to parse the big integer value to UTF8 string value; otherwise,
+        /// returns the string that represents the converted UTF8 string value
+        /// </returns>
+        private string? NumberToHexToString(string input)
+        {
+            if (!new Regex("^\\d+$").IsMatch(input) || input.StartsWith('0'))
+            {
+                return null;
+            }
+            try
+            {
+                return HexToString(NumberToHex(input));
+            }
+            catch (Exception)
             {
                 return null;
             }
