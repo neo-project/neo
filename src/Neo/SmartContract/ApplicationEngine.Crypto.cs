@@ -73,15 +73,6 @@ namespace Neo.SmartContract
                 var (curve, hash) = arithmetic switch
                 {
                     0x00 => (ECCurve.Secp256r1, Hasher.SHA256),
-
-/* Unmerged change from project 'Neo(net8.0)'
-Before:
-                    0x01 =>(ECCurve.Secp256r1, Hasher.Keccak256),
-                    0x10 =>(ECCurve.Secp256k1, Hasher.SHA256),
-After:
-                    0x01 => (ECCurve.Secp256r1, Hasher.Keccak256),
-                    0x10 => (ECCurve.Secp256k1, Hasher.SHA256),
-*/
                     0x01 => (ECCurve.Secp256r1, Hasher.Keccak256),
                     0x10 => (ECCurve.Secp256k1, Hasher.SHA256),
                     0x11 => (ECCurve.Secp256k1, Hasher.Keccak256),
@@ -137,15 +128,6 @@ After:
                 var (curve, hash) = arithmetic switch
                 {
                     0x00 => (ECCurve.Secp256r1, Hasher.SHA256),
-
-/* Unmerged change from project 'Neo(net8.0)'
-Before:
-                    0x01 =>(ECCurve.Secp256r1, Hasher.Keccak256),
-                    0x10 =>(ECCurve.Secp256k1, Hasher.SHA256),
-After:
-                    0x01 => (ECCurve.Secp256r1, Hasher.Keccak256),
-                    0x10 => (ECCurve.Secp256k1, Hasher.SHA256),
-*/
                     0x01 => (ECCurve.Secp256r1, Hasher.Keccak256),
                     0x10 => (ECCurve.Secp256k1, Hasher.SHA256),
                     0x11 => (ECCurve.Secp256k1, Hasher.Keccak256),

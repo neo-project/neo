@@ -102,7 +102,7 @@ namespace Neo.Cryptography
         {
             if (signature.Length != 64) return false;
 
-            if (hasher == Hasher.Keccak256 || (IsOSX && (pubkey.Curve == ECC.ECCurve.Secp256k1 || pubkey.Curve == ECC.ECCurve.Secp256r1)))
+            if (hasher == Hasher.Keccak256 || (IsOSX && pubkey.Curve == ECC.ECCurve.Secp256k1))
             {
                 ECDomainParameters domain;
                 X9ECParameters curve;
