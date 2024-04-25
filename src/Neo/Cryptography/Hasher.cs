@@ -11,8 +11,8 @@
 
 namespace Neo.Cryptography;
 
-public enum Hasher
+public enum Hasher : byte
 {
-    SHA256,
-    Keccak256,
+    SHA256 = 0x00,
+    Keccak256 = 0x01,
 }

@@ -13,6 +13,7 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P;
 using System;
+using System.Drawing;
 
 namespace Neo.SmartContract
 {
@@ -66,21 +67,22 @@ namespace Neo.SmartContract
             }
         }
 
-        protected internal bool CheckSigV2(byte arithmetic, byte[] pubkey, byte[] signature)
+        protected internal bool CheckSigV2(byte eccurve, byte hash, byte[] pubkey, byte[] signature)
         {
             try
             {
-                var (curve, hash) = arithmetic switch
+                if (!Enum.IsDefined(typeof(Hasher), hash))
+                    throw new ArgumentOutOfRangeException("Invalid hasher");
+                Hasher hasher = (Hasher)hash;
+                ECCurve curve = eccurve switch
                 {
-                    0x00 => (ECCurve.Secp256r1, Hasher.SHA256),
-                    0x01 => (ECCurve.Secp256r1, Hasher.Keccak256),
-                    0x10 => (ECCurve.Secp256k1, Hasher.SHA256),
-                    0x11 => (ECCurve.Secp256k1, Hasher.Keccak256),
-                    _ => throw new ArgumentException()
+                    0x00 => ECCurve.Secp256r1,
+                    0x01 => ECCurve.Secp256k1,
+                    _ => throw new ArgumentOutOfRangeException("Invalid curve")
                 };
-                return Crypto.VerifySignature(ScriptContainer.GetSignData(ProtocolSettings.Network), signature, pubkey, curve, hash);
+                return Crypto.VerifySignature(ScriptContainer.GetSignData(ProtocolSettings.Network), signature, pubkey, curve, hasher);
             }
-            catch (ArgumentException)
+            catch (Exception)
             {
                 return false;
             }

@@ -97,6 +97,7 @@ namespace Neo.Cryptography
         /// <param name="message">The signed message.</param>
         /// <param name="signature">The signature to be verified.</param>
         /// <param name="pubkey">The public key to be used.</param>
+        /// <param name="hasher">The hash algorithm to be used</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
         public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECC.ECPoint pubkey, Hasher hasher = Hasher.SHA256)
         {
@@ -137,7 +138,7 @@ namespace Neo.Cryptography
                 {
                     Hasher.SHA256 => signer.VerifySignature(message.Sha256(), r, s),
                     Hasher.Keccak256 => signer.VerifySignature(message.Keccak256(), r, s),
-                    _ => throw new ArgumentOutOfRangeException(nameof(hasher), hasher, null)
+                    _ => throw new ArgumentOutOfRangeException(nameof(hasher), hasher, "Invalid hasher")
                 };
             }
 
