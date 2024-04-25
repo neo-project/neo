@@ -28,6 +28,7 @@ namespace Neo.Cryptography
         private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
         private static readonly ECCurve secP256k1 = ECCurve.CreateFromFriendlyName("secP256k1");
         private static readonly X9ECParameters bouncySecp256k1 = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
+        private static readonly X9ECParameters bouncySecp256r1 = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256r1");
 
         /// <summary>
         /// Calculates the 160-bit hash value of the specified message.
@@ -97,14 +98,31 @@ namespace Neo.Cryptography
         /// <param name="signature">The signature to be verified.</param>
         /// <param name="pubkey">The public key to be used.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
-        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECC.ECPoint pubkey)
+        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECC.ECPoint pubkey, Hasher hasher = Hasher.SHA256)
         {
             if (signature.Length != 64) return false;
 
-            if (IsOSX && pubkey.Curve == ECC.ECCurve.Secp256k1)
+            if (hasher == Hasher.Keccak256 || (IsOSX && (pubkey.Curve == ECC.ECCurve.Secp256k1 || pubkey.Curve == ECC.ECCurve.Secp256r1)))
             {
-                var domain = new ECDomainParameters(bouncySecp256k1.Curve, bouncySecp256k1.G, bouncySecp256k1.N, bouncySecp256k1.H);
-                var point = bouncySecp256k1.Curve.CreatePoint(
+                ECDomainParameters domain;
+                X9ECParameters curve;
+
+                if (pubkey.Curve == ECC.ECCurve.Secp256k1)
+                {
+                    domain = new ECDomainParameters(bouncySecp256k1.Curve, bouncySecp256k1.G, bouncySecp256k1.N, bouncySecp256k1.H);
+                    curve = bouncySecp256k1;
+                }
+                else if (pubkey.Curve == ECC.ECCurve.Secp256r1)
+                {
+                    domain = new ECDomainParameters(bouncySecp256r1.Curve, bouncySecp256r1.G, bouncySecp256r1.N, bouncySecp256r1.H);
+                    curve = bouncySecp256r1;
+                }
+                else
+                {
+                    throw new ArgumentException("Unsupported curve", nameof(pubkey.Curve));
+                }
+
+                var point = curve.Curve.CreatePoint(
                     new BigInteger(pubkey.X.Value.ToString()),
                     new BigInteger(pubkey.Y.Value.ToString()));
                 var pubKey = new ECPublicKeyParameters("ECDSA", point, domain);
@@ -115,7 +133,12 @@ namespace Neo.Cryptography
                 var r = new BigInteger(1, sig, 0, 32);
                 var s = new BigInteger(1, sig, 32, 32);
 
-                return signer.VerifySignature(message.Sha256(), r, s);
+                return hasher switch
+                {
+                    Hasher.SHA256 => signer.VerifySignature(message.Sha256(), r, s),
+                    Hasher.Keccak256 => signer.VerifySignature(message.Keccak256(), r, s),
+                    _ => throw new ArgumentOutOfRangeException(nameof(hasher), hasher, null)
+                };
             }
 
             var ecdsa = CreateECDsa(pubkey);
@@ -160,9 +183,9 @@ namespace Neo.Cryptography
         /// <param name="pubkey">The public key to be used.</param>
         /// <param name="curve">The curve to be used by the ECDSA algorithm.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
-        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ReadOnlySpan<byte> pubkey, ECC.ECCurve curve)
+        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ReadOnlySpan<byte> pubkey, ECC.ECCurve curve, Hasher hasher = Hasher.SHA256)
         {
-            return VerifySignature(message, signature, ECC.ECPoint.DecodePoint(pubkey, curve));
+            return VerifySignature(message, signature, ECC.ECPoint.DecodePoint(pubkey, curve), hasher);
         }
     }
 }

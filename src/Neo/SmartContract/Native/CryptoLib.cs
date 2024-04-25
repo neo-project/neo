@@ -73,11 +73,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(Hardfork.HF_Cockatrice, CpuFee = 1 << 15)]
         public static byte[] Keccak256(byte[] data)
         {
-            KeccakDigest keccak = new(256);
-            keccak.BlockUpdate(data, 0, data.Length);
-            byte[] result = new byte[keccak.GetDigestSize()];
-            keccak.DoFinal(result, 0);
-            return result;
+            return data.Keccak256();
         }
 
         /// <summary>

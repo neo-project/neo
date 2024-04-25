@@ -30,10 +30,22 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Crypto_CheckSig = Register("System.Crypto.CheckSig", nameof(CheckSig), CheckSigPrice, CallFlags.None);
 
         /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Crypto.CheckSigV2.
+        /// Checks the secp256k1 or other non-secp256r1 signature for the current script container.
+        /// </summary>
+        public static readonly InteropDescriptor System_Crypto_CheckSigV2 = Register("System.Crypto.CheckSigV2", nameof(CheckSigV2), CheckSigPrice, CallFlags.None);
+
+        /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Crypto.CheckMultisig.
         /// Checks the signatures for the current script container.
         /// </summary>
         public static readonly InteropDescriptor System_Crypto_CheckMultisig = Register("System.Crypto.CheckMultisig", nameof(CheckMultisig), 0, CallFlags.None);
+
+        /// <summary>
+        /// The <see cref="InteropDescriptor"/> of System.Crypto.CheckMultisigV2.
+        /// Checks the secp256k1 or other non-secp256r1 signatures for the current script container.
+        /// </summary>
+        public static readonly InteropDescriptor System_Crypto_CheckMultisigV2 = Register("System.Crypto.CheckMultisigV2", nameof(CheckMultisigV2), 0, CallFlags.None);
 
         /// <summary>
         /// The implementation of System.Crypto.CheckSig.
@@ -47,6 +59,35 @@ namespace Neo.SmartContract
             try
             {
                 return Crypto.VerifySignature(ScriptContainer.GetSignData(ProtocolSettings.Network), signature, pubkey, ECCurve.Secp256r1);
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+        }
+
+        protected internal bool CheckSigV2(byte arithmetic, byte[] pubkey, byte[] signature)
+        {
+            try
+            {
+                var (curve, hash) = arithmetic switch
+                {
+                    0x00 => (ECCurve.Secp256r1, Hasher.SHA256),
+
+/* Unmerged change from project 'Neo(net8.0)'
+Before:
+                    0x01 =>(ECCurve.Secp256r1, Hasher.Keccak256),
+                    0x10 =>(ECCurve.Secp256k1, Hasher.SHA256),
+After:
+                    0x01 => (ECCurve.Secp256r1, Hasher.Keccak256),
+                    0x10 => (ECCurve.Secp256k1, Hasher.SHA256),
+*/
+                    0x01 => (ECCurve.Secp256r1, Hasher.Keccak256),
+                    0x10 => (ECCurve.Secp256k1, Hasher.SHA256),
+                    0x11 => (ECCurve.Secp256k1, Hasher.Keccak256),
+                    _ => throw new ArgumentException()
+                };
+                return Crypto.VerifySignature(ScriptContainer.GetSignData(ProtocolSettings.Network), signature, pubkey, curve, hash);
             }
             catch (ArgumentException)
             {
@@ -72,6 +113,48 @@ namespace Neo.SmartContract
                 for (int i = 0, j = 0; i < m && j < n;)
                 {
                     if (Crypto.VerifySignature(message, signatures[i], pubkeys[j], ECCurve.Secp256r1))
+                        i++;
+                    j++;
+                    if (m - i > n - j)
+                        return false;
+                }
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        protected internal bool CheckMultisigV2(byte arithmetic, byte[][] pubkeys, byte[][] signatures)
+        {
+            byte[] message = ScriptContainer.GetSignData(ProtocolSettings.Network);
+            int m = signatures.Length, n = pubkeys.Length;
+            if (n == 0 || m == 0 || m > n) throw new ArgumentException();
+            AddGas(CheckSigPrice * n * ExecFeeFactor);
+            try
+            {
+                var (curve, hash) = arithmetic switch
+                {
+                    0x00 => (ECCurve.Secp256r1, Hasher.SHA256),
+
+/* Unmerged change from project 'Neo(net8.0)'
+Before:
+                    0x01 =>(ECCurve.Secp256r1, Hasher.Keccak256),
+                    0x10 =>(ECCurve.Secp256k1, Hasher.SHA256),
+After:
+                    0x01 => (ECCurve.Secp256r1, Hasher.Keccak256),
+                    0x10 => (ECCurve.Secp256k1, Hasher.SHA256),
+*/
+                    0x01 => (ECCurve.Secp256r1, Hasher.Keccak256),
+                    0x10 => (ECCurve.Secp256k1, Hasher.SHA256),
+                    0x11 => (ECCurve.Secp256k1, Hasher.Keccak256),
+                    _ => throw new ArgumentException()
+                };
+
+                for (int i = 0, j = 0; i < m && j < n;)
+                {
+                    if (Crypto.VerifySignature(message, signatures[i], pubkeys[j], curve, hash))
                         i++;
                     j++;
                     if (m - i > n - j)
