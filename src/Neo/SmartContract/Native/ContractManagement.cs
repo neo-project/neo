@@ -93,10 +93,18 @@ namespace Neo.SmartContract.Native
                     }
 
                     // Initialize native contract for all hardforks
-                    foreach (var hf in hfs)
+                    if (hfs?.Length > 0)
                     {
-                        await contract.Initialize(engine, hf);
+                        foreach (var hf in hfs)
+                        {
+                            await contract.Initialize(engine, hf);
+                        }
                     }
+                    else
+                    {
+                        await contract.Initialize(engine, null);
+                    }
+
                     // Emit native contract notification
                     engine.SendNotification(Hash, state is null ? "Deploy" : "Update", new VM.Types.Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
                 }
