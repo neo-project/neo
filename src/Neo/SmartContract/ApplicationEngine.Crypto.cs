@@ -13,11 +13,17 @@ using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P;
 using System;
+using System.Collections.Generic;
 
 namespace Neo.SmartContract
 {
     partial class ApplicationEngine
     {
+        protected internal readonly static Dictionary<byte, ECCurve> ECCurveSelection = new(){
+            { 0x00, ECCurve.Secp256r1 },
+            { 0x01, ECCurve.Secp256k1 },
+        };
+
         /// <summary>
         /// The price of System.Crypto.CheckSig.
         /// </summary>
@@ -66,21 +72,18 @@ namespace Neo.SmartContract
             }
         }
 
-        protected internal bool CheckSigV2(byte arithmetic, byte[] pubkey, byte[] signature)
+        protected internal bool CheckSigV2(byte eccurve, byte hash, byte[] pubkey, byte[] signature)
         {
             try
             {
-                var (curve, hash) = arithmetic switch
-                {
-                    0x00 => (ECCurve.Secp256r1, Hasher.SHA256),
-                    0x01 => (ECCurve.Secp256r1, Hasher.Keccak256),
-                    0x10 => (ECCurve.Secp256k1, Hasher.SHA256),
-                    0x11 => (ECCurve.Secp256k1, Hasher.Keccak256),
-                    _ => throw new ArgumentException()
-                };
-                return Crypto.VerifySignature(ScriptContainer.GetSignData(ProtocolSettings.Network), signature, pubkey, curve, hash);
+                if (!Enum.IsDefined(typeof(Hasher), hash))
+                    throw new ArgumentOutOfRangeException("Invalid hasher");
+                Hasher hasher = (Hasher)hash;
+                if (!ECCurveSelection.TryGetValue(eccurve, out ECCurve curve))
+                    throw new ArgumentOutOfRangeException("Invalid EC curve");
+                return Crypto.VerifySignature(ScriptContainer.GetSignData(ProtocolSettings.Network), signature, pubkey, curve, hasher);
             }
-            catch (ArgumentException)
+            catch (Exception)
             {
                 return false;
             }
@@ -117,7 +120,7 @@ namespace Neo.SmartContract
             return true;
         }
 
-        protected internal bool CheckMultisigV2(byte arithmetic, byte[][] pubkeys, byte[][] signatures)
+        protected internal bool CheckMultisigV2(byte eccurve, byte hash, byte[][] pubkeys, byte[][] signatures)
         {
             byte[] message = ScriptContainer.GetSignData(ProtocolSettings.Network);
             int m = signatures.Length, n = pubkeys.Length;
@@ -125,18 +128,15 @@ namespace Neo.SmartContract
             AddGas(CheckSigPrice * n * ExecFeeFactor);
             try
             {
-                var (curve, hash) = arithmetic switch
-                {
-                    0x00 => (ECCurve.Secp256r1, Hasher.SHA256),
-                    0x01 => (ECCurve.Secp256r1, Hasher.Keccak256),
-                    0x10 => (ECCurve.Secp256k1, Hasher.SHA256),
-                    0x11 => (ECCurve.Secp256k1, Hasher.Keccak256),
-                    _ => throw new ArgumentException()
-                };
+                if (!Enum.IsDefined(typeof(Hasher), hash))
+                    throw new ArgumentOutOfRangeException("Invalid hasher");
+                Hasher hasher = (Hasher)hash;
+                if (!ECCurveSelection.TryGetValue(eccurve, out ECCurve curve))
+                    throw new ArgumentOutOfRangeException("Invalid EC curve");
 
                 for (int i = 0, j = 0; i < m && j < n;)
                 {
-                    if (Crypto.VerifySignature(message, signatures[i], pubkeys[j], curve, hash))
+                    if (Crypto.VerifySignature(message, signatures[i], pubkeys[j], curve, hasher))
                         i++;
                     j++;
                     if (m - i > n - j)
