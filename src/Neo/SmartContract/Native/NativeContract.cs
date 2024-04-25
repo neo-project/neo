@@ -270,13 +270,6 @@ namespace Neo.SmartContract.Native
         /// <returns>True if the native contract must be initialized</returns>
         internal bool IsInitializeBlock(ProtocolSettings settings, uint index, out Hardfork[] hardforks)
         {
-            // If is not configured, the Genesis is the a initialized block
-            if (index == 0 && ActiveIn is null)
-            {
-                hardforks = usedHardforks.ToArray();
-                return true;
-            }
-
             var hfs = new List<Hardfork>();
 
             // If is in the hardfork height, add them to return array
@@ -296,6 +289,13 @@ namespace Neo.SmartContract.Native
 
             // Return all initialize hardforks
             if (hfs.Count > 0)
+            {
+                hardforks = hfs.ToArray();
+                return true;
+            }
+
+            // If is not configured, the Genesis is the a initialized block
+            if (index == 0 && ActiveIn is null)
             {
                 hardforks = hfs.ToArray();
                 return true;
