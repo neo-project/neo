@@ -176,7 +176,7 @@ namespace Neo.CLI
                     hexString = hexString.Substring(2);
                 }
 
-                if (!IsHex(hexString)) throw new ArgumentException();
+                if (!hexString.All(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) throw new ArgumentException();
 
                 if (hexString.Length % 2 == 1)
                 {
