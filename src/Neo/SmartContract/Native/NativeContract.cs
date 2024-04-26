@@ -294,7 +294,7 @@ namespace Neo.SmartContract.Native
                 return true;
             }
 
-            // If is not configured, the Genesis is the a initialized block
+            // If is not configured, the Genesis is an initialization block.
             if (index == 0 && ActiveIn is null)
             {
                 hardforks = hfs.ToArray();
