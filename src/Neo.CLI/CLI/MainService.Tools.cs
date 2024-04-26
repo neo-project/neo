@@ -9,14 +9,12 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.IO;
 using Neo.ConsoleService;
 using Neo.Cryptography.ECC;
 using Neo.IO;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.Wallets;
-using Org.BouncyCastle.Utilities.Encoders;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -24,7 +22,6 @@ using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace Neo.CLI
 {
@@ -364,15 +361,33 @@ namespace Neo.CLI
         /// <returns>Correct Base64 string</returns>
         public static string Base64Fixed(string str)
         {
-            MatchCollection mc = Regex.Matches(str, @"\\u([\w]{2})([\w]{2})", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-            byte[] bts = new byte[2];
-            foreach (Match m in mc)
+            bool IsHex(string str) => str.All(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
+
+            var sb = new StringBuilder();
+            for (var i = 0; i < str.Length; i++)
             {
-                bts[0] = (byte)int.Parse(m.Groups[2].Value, NumberStyles.HexNumber);
-                bts[1] = (byte)int.Parse(m.Groups[1].Value, NumberStyles.HexNumber);
-                str = str.Replace(m.ToString(), Encoding.Unicode.GetString(bts));
+                if (str[i] == '\\' && i + 5 < str.Length && str[i + 1] == 'u')
+                {
+                    var hex = str.Substring(i + 2, 4);
+                    if (IsHex(hex))
+                    {
+                        var bts = new byte[2];
+                        bts[0] = (byte)int.Parse(hex.Substring(2, 2), NumberStyles.HexNumber);
+                        bts[1] = (byte)int.Parse(hex.Substring(0, 2), NumberStyles.HexNumber);
+                        sb.Append(Encoding.Unicode.GetString(bts));
+                        i += 5;
+                    }
+                    else
+                    {
+                        sb.Append(str[i]);
+                    }
+                }
+                else
+                {
+                    sb.Append(str[i]);
+                }
             }
-            return str;
+            return sb.ToString();
         }
 
         /// <summary>
