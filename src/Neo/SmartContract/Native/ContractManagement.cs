@@ -99,6 +99,11 @@ namespace Neo.SmartContract.Native
                         {
                             await contract.Initialize(engine, hf);
                         }
+
+                        if (contract.ActiveIn == null)
+                        {
+                            await contract.Initialize(engine, null);
+                        }
                     }
                     else
                     {
