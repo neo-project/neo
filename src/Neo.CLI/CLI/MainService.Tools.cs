@@ -117,11 +117,17 @@ namespace Neo.CLI
         /// otherwise, returns the string that represents the converted big-endian hex string.
         /// </returns>
         [ParseFunction("Little-endian to Big-endian")]
-        public string? LittleEndianToBigEndian(string hex)
+        private string? LittleEndianToBigEndian(string hex)
         {
-            hex = hex.ToLower();
-            if (!new Regex("^([0-9a-f]{2})+$").IsMatch(hex)) return null;
-            return "0x" + hex.HexToBytes().Reverse().ToArray().ToHexString(); ;
+            try
+            {
+                var clearHexString = ClearHexString(hex);
+                return "0x" + clearHexString.HexToBytes().Reverse().ToArray().ToHexString(); ;
+            }
+            catch (FormatException)
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -134,11 +140,9 @@ namespace Neo.CLI
         /// otherwise, returns the string that represents the converted little-endian hex string.
         /// </returns>
         [ParseFunction("Big-endian to Little-endian")]
-        public string? BigEndianToLittleEndian(string hex)
+        private string? BigEndianToLittleEndian(string hex)
         {
-            hex = hex.ToLower();
-            if (!new Regex("^0x([0-9a-f]{2})+$").IsMatch(hex)) return null;
-            return hex[2..].HexToBytes().Reverse().ToArray().ToHexString();
+            return hex.StartsWith("0x") ? hex[2..].HexToBytes().Reverse().ToArray().ToHexString() : null;
         }
 
         /// <summary>
@@ -618,7 +622,7 @@ namespace Neo.CLI
         /// returns the string that represents the converted neo3 address.
         /// </returns>
         [ParseFunction("Public Key to Address")]
-        public string? PublicKeyToAddress(string pubKey)
+        private string? PublicKeyToAddress(string pubKey)
         {
             pubKey = pubKey.ToLower();
             if (!new Regex("^(0[23][0-9a-f]{64})+$").IsMatch(pubKey)) return null;
@@ -676,7 +680,7 @@ namespace Neo.CLI
         /// returns the string that represents the converted OpCode.
         /// </returns>
         [ParseFunction("Base64 Smart Contract Script Analysis")]
-        public string? ScriptsToOpCode(string base64)
+        private string? ScriptsToOpCode(string base64)
         {
             List<byte> scripts;
             try
@@ -706,7 +710,7 @@ namespace Neo.CLI
         /// returns the string that represents the converted OpCode.
         /// </returns>
         [ParseFunction("Hex String Smart Contract Script Analysis")]
-        public string? HexScriptsToOpCode(string hex)
+        private string? HexScriptsToOpCode(string hex)
         {
             List<byte> scripts;
             try
