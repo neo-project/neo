@@ -624,8 +624,25 @@ namespace Neo.CLI
         [ParseFunction("Public Key to Address")]
         private string? PublicKeyToAddress(string pubKey)
         {
-            pubKey = pubKey.ToLower();
-            if (!new Regex("^(0[23][0-9a-f]{64})+$").IsMatch(pubKey)) return null;
+            bool IsValidPubKey(string pubKey)
+            {
+                if (pubKey.Length != 66) return false;
+                if (pubKey[0] != '0') return false;
+                if (pubKey[1] != '2' && pubKey[1] != '3') return false;
+
+                for (int i = 2; i < pubKey.Length; i++)
+                {
+                    char c = pubKey[i];
+                    if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            if (!IsValidPubKey(pubKey)) return null;
             return Contract.CreateSignatureContract(ECPoint.Parse(pubKey, ECCurve.Secp256r1)).ScriptHash.ToAddress(NeoSystem.Settings.AddressVersion);
         }
 
