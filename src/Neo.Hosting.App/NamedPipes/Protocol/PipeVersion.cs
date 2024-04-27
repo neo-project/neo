@@ -9,12 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Cryptography;
 using Neo.Hosting.App.Helpers;
 using Neo.Plugins;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -26,113 +24,134 @@ namespace Neo.Hosting.App.NamedPipes.Protocol
 
         // Assembly Information
         public Version Version { get; set; } = Program.ApplicationVersion;
-        public IDictionary<string, Version> Plugins { get; set; } = Plugin.Plugins.ToDictionary(k => k.Name, v => v.Version);
+        public IDictionary<string, Version> Plugins { get; set; } = Plugin.Plugins.ToDictionary(k => k.Name, v => v.Version, StringComparer.OrdinalIgnoreCase);
 
         // Computer Information
         public PlatformID Platform { get; set; } = Environment.OSVersion.Platform;
         public DateTime TimeStamp { get; set; } = DateTime.UtcNow;
-        public string MachineName { get; set; } = Environment.MachineName;
-        public string UserName { get; set; } = Environment.UserName;
+        public string? MachineName { get; set; } = Environment.MachineName;
+        public string? UserName { get; set; } = Environment.UserName;
 
         // Service Information
         public int ProcessId { get; set; } = Environment.ProcessId;
         public string? ProcessPath { get; set; } = Environment.ProcessPath;
 
-        protected override void Initialize(byte[] buffer)
+        protected override int Initialize(byte[] buffer)
         {
+            const string VERSION_NULL_STRING = "0.0.0.0";
+
             var span = buffer.AsSpan();
-            var pos = sizeof(ulong);
-            var readBytes = 0;
+            var pos = 0;
 
-            if (BitConverter.ToUInt64(span[..pos]) != Magic)
-                throw new FormatException();
+            var versionString = BinaryUtility.ReadUtf8String(span, out var count, pos);
+            pos += count;
 
-            if (BitConverter.ToUInt32(span[pos..(pos += sizeof(uint))]) != Crc32.Compute(buffer[(sizeof(ulong) + sizeof(uint))..]))
-                throw new InvalidDataException();
-
-            var itmp = BinaryUtility.From7BitEncodedInt(buffer[pos..], out readBytes);
-            Version = new Version(Encoding.UTF8.GetString(span[(pos += readBytes)..(pos += itmp)]));
-
+            Version = new(versionString ?? VERSION_NULL_STRING);
             Plugins = new Dictionary<string, Version>(StringComparer.OrdinalIgnoreCase);
 
-            itmp = BinaryUtility.From7BitEncodedInt(buffer[pos..], out readBytes);
-            pos += readBytes;
+            var arrayCount = BinaryUtility.ReadEncodedInteger(span, int.MaxValue, pos);
+            pos += arrayCount;
 
-            for (int i = 0, count = itmp; i < count; i++)
+            for (var x = 0; x < arrayCount; x++)
             {
-                itmp = BinaryUtility.From7BitEncodedInt(buffer[pos..], out readBytes);
-                var key = Encoding.UTF8.GetString(span[(pos += readBytes)..(pos += itmp)]);
+                var k = BinaryUtility.ReadUtf8String(span, out count, pos);
+                pos += count;
 
-                itmp = BinaryUtility.From7BitEncodedInt(buffer[pos..], out readBytes);
-                var value = Encoding.UTF8.GetString(span[(pos += readBytes)..(pos += itmp)]);
+                var v = BinaryUtility.ReadUtf8String(span, out count, pos);
+                pos += count;
 
-                _ = Plugins.TryAdd(key, new Version(value));
+                if (string.IsNullOrEmpty(k) == false || string.IsNullOrEmpty(v) == false)
+                    _ = Plugins.TryAdd(k!, new Version(v!));
             }
 
             Platform = (PlatformID)span[pos++];
 
-            var ltmp = BitConverter.ToInt64([.. buffer[pos..(pos += sizeof(long))].Reverse()]);
-            TimeStamp = new DateTime(ltmp);
+            var timeStampValue = BinaryUtility.ReadEncodedInteger(span, long.MaxValue, pos);
+            TimeStamp = new DateTime(timeStampValue);
+            pos += sizeof(long);
 
-            itmp = BinaryUtility.From7BitEncodedInt(buffer[pos..], out readBytes);
-            MachineName = Encoding.UTF8.GetString(span[(pos += readBytes)..(pos += itmp)]);
+            MachineName = BinaryUtility.ReadUtf8String(span, out count, pos);
+            pos += count;
 
-            itmp = BinaryUtility.From7BitEncodedInt(buffer[pos..], out readBytes);
-            UserName = Encoding.UTF8.GetString(span[(pos += readBytes)..(pos += itmp)]);
+            UserName = BinaryUtility.ReadUtf8String(span, out count, pos);
+            pos += count;
 
-            ProcessId = BinaryUtility.From7BitEncodedInt(buffer[pos..], out readBytes);
-            pos += readBytes;
+            ProcessId = BinaryUtility.ReadEncodedInteger(span, int.MaxValue, pos);
+            pos += sizeof(int);
 
-            itmp = BinaryUtility.From7BitEncodedInt(buffer[pos..], out readBytes);
-            ProcessPath = Encoding.UTF8.GetString(span[(pos += readBytes)..(pos += itmp)]);
+            ProcessPath = BinaryUtility.ReadUtf8String(span, out count, pos);
+            pos += count;
+
+            return pos;
         }
 
         public override byte[] ToArray()
         {
-            var strbuf = $"{Version}";
-            var tmp = Encoding.UTF8.GetBytes(strbuf);
-            var count = Encoding.UTF8.GetByteCount(strbuf);
+            var str = $"{Version}";
+            var count = Encoding.UTF8.GetByteCount(str);
 
-            byte[] buffer = [.. BinaryUtility.To7BitEncodedInt(count), .. tmp];
+            var dst = new byte[count];
+            var pos = dst.Length;
+            _ = BinaryUtility.WriteUtf8String(str, 0, dst, 0, count);
 
-            count = Plugins.Count;
-            buffer = [.. buffer, .. BinaryUtility.To7BitEncodedInt(count)];
-            foreach (var plugin in Plugins)
+            var size = BinaryUtility.GetByteCount(Plugins.Count);
+            Array.Resize(ref dst, dst.Length + size);
+            BinaryUtility.WriteEncodedInteger(Plugins.Count, dst, pos);
+            pos += dst.Length;
+
+            foreach (var (key, value) in Plugins)
             {
-                strbuf = plugin.Key;
-                tmp = Encoding.UTF8.GetBytes(strbuf);
-                count = Encoding.UTF8.GetByteCount(strbuf);
+                str = key;
+                count = Encoding.UTF8.GetByteCount(str);
+                size = BinaryUtility.GetByteCount(count);
+                Array.Resize(ref dst, dst.Length + size);
+                _ = BinaryUtility.WriteUtf8String(str, 0, dst, pos, count);
+                pos += dst.Length;
 
-                buffer = [.. buffer, .. BinaryUtility.To7BitEncodedInt(count), .. tmp];
-
-                strbuf = $"{plugin.Value}";
-                tmp = Encoding.UTF8.GetBytes(strbuf);
-                count = Encoding.UTF8.GetByteCount(strbuf);
-
-                buffer = [.. buffer, .. BinaryUtility.To7BitEncodedInt(count), .. tmp];
+                str = $"{value}";
+                count = Encoding.UTF8.GetByteCount(str);
+                size = BinaryUtility.GetByteCount(count);
+                Array.Resize(ref dst, dst.Length + size);
+                _ = BinaryUtility.WriteUtf8String(str, 0, dst, pos, count);
+                pos += dst.Length;
             }
 
-            buffer = [.. buffer, (byte)Platform];
-            buffer = [.. buffer, .. BitConverter.GetBytes(TimeStamp.Ticks).Reverse()];
+            dst = [.. dst, (byte)Platform];
+            pos += dst.Length;
 
-            tmp = Encoding.UTF8.GetBytes(MachineName);
-            count = Encoding.UTF8.GetByteCount(MachineName);
+            Array.Resize(ref dst, dst.Length + sizeof(long));
+            BinaryUtility.WriteEncodedInteger(TimeStamp.Ticks, dst, pos);
+            pos += dst.Length;
 
-            buffer = [.. buffer, .. BinaryUtility.To7BitEncodedInt(count), .. tmp];
+            count = MachineName != null
+                ? Encoding.UTF8.GetByteCount(MachineName)
+                : 0;
+            size = BinaryUtility.GetByteCount(count);
+            Array.Resize(ref dst, dst.Length + size);
+            _ = BinaryUtility.WriteUtf8String(MachineName, 0, dst, pos, count);
+            pos += dst.Length;
 
-            tmp = Encoding.UTF8.GetBytes(UserName);
-            count = Encoding.UTF8.GetByteCount(UserName);
+            count = UserName != null
+                ? Encoding.UTF8.GetByteCount(UserName)
+                : 0;
+            size = BinaryUtility.GetByteCount(count);
+            Array.Resize(ref dst, dst.Length + size);
+            _ = BinaryUtility.WriteUtf8String(UserName, 0, dst, pos, count);
+            pos += dst.Length;
 
-            buffer = [.. buffer, .. BinaryUtility.To7BitEncodedInt(count), .. tmp];
-            buffer = [.. buffer, .. BinaryUtility.To7BitEncodedInt(ProcessId)];
+            Array.Resize(ref dst, dst.Length + sizeof(int));
+            BinaryUtility.WriteEncodedInteger(ProcessId, dst, pos);
+            pos += dst.Length;
 
-            strbuf = ProcessPath ?? string.Empty;
-            tmp = Encoding.UTF8.GetBytes(strbuf);
-            count = Encoding.UTF8.GetByteCount(strbuf);
+            count = ProcessPath != null
+                ? Encoding.UTF8.GetByteCount(ProcessPath)
+                : 0;
+            size = BinaryUtility.GetByteCount(count);
+            Array.Resize(ref dst, dst.Length + size);
+            _ = BinaryUtility.WriteUtf8String(ProcessPath, 0, dst, pos, count);
+            //pos += dst.Length;
 
-            buffer = [.. buffer, .. BinaryUtility.To7BitEncodedInt(count), .. tmp];
-
-            return buffer;
+            return dst;
         }
     }
 }

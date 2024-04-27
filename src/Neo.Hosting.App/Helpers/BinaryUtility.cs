@@ -10,149 +10,185 @@
 // modifications are permitted.
 
 using System;
+using System.Text;
 
 namespace Neo.Hosting.App.Helpers
 {
     internal static class BinaryUtility
     {
-        public static long From7BitEncodedInt64(byte[] value, out int readBytes)
+        public static int GetByteCount(string? value)
         {
-            ulong result = 0;
-            byte byteReadJustNow;
+            var count = string.IsNullOrEmpty(value)
+                ? 0
+                : Encoding.UTF8.GetByteCount(value);
 
-            var span = value.AsSpan();
-            var pos = 0;
-            readBytes = -1;
-
-            // Read the integer 7 bits at a time. The high bit
-            // of the byte when on means to continue reading more bytes.
-            //
-            // There are two failure cases: we've read more than 10 bytes,
-            // or the tenth byte is about to cause integer overflow.
-            // This means that we can read the first 9 bytes without
-            // worrying about integer overflow.
-
-            const int MaxBytesWithoutOverflow = 9;
-            for (var shift = 0; shift < MaxBytesWithoutOverflow * 7; shift += 7)
+            count += count switch
             {
-                // ReadByte handles end of stream cases for us.
-                byteReadJustNow = span[pos++];
-                result |= (byteReadJustNow & 0x7Ful) << shift;
+                <= byte.MaxValue => sizeof(byte) + 1,
+                <= ushort.MaxValue and >= byte.MaxValue => sizeof(ushort) + 1,
+                _ => sizeof(int) + 1,
+            };
 
-                if (byteReadJustNow <= 0x7Fu)
+            return count;
+        }
+
+        public static unsafe T GetByteCount<T>(T value)
+            where T : unmanaged
+        {
+            var size = sizeof(T) + 1;
+            var srcPointer = (byte*)&value;
+
+            var count = size switch
+            {
+                sizeof(byte) => *srcPointer,
+                sizeof(ushort) => *(ushort*)srcPointer,
+                sizeof(uint) => *(uint*)srcPointer,
+                _ => *(ulong*)srcPointer,
+            };
+
+            *(ulong*)srcPointer = count;
+
+            return *(T*)srcPointer;
+        }
+
+        public static unsafe int WriteUtf8String(string? src, int srcOffset, ReadOnlySpan<byte> dst, int dstOffset, int count)
+        {
+            var size = count switch
+            {
+                <= byte.MaxValue => sizeof(byte) + 1,
+                <= ushort.MaxValue and >= byte.MaxValue => sizeof(ushort) + 1,
+                _ => sizeof(int) + 1,
+            };
+
+            var valueCount = string.IsNullOrEmpty(src)
+                ? 0
+                : Encoding.UTF8.GetByteCount(src);
+
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(srcOffset, valueCount, nameof(srcOffset));
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(valueCount, srcOffset + count, nameof(count));
+            ArgumentOutOfRangeException.ThrowIfZero(dst.Length, nameof(dst));
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(dst.Length, size + dstOffset + count, nameof(dst));
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(dstOffset, dst.Length, nameof(dstOffset));
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(dstOffset, count, nameof(dstOffset));
+
+            fixed (byte* targetPtr = dst)
+            {
+                var target = targetPtr + dstOffset;
+
+                switch (count)
                 {
-                    readBytes = pos;
-                    return (long)result; // early exit
+                    case <= byte.MaxValue:
+                        *target++ = 0xaa;
+                        *target++ = (byte)count;
+                        break;
+                    case <= ushort.MaxValue and >= byte.MaxValue:
+                        *target++ = 0xab;
+                        *(ushort*)target++ = (ushort)count;
+                        break;
+                    default:
+                        *target++ = 0xac;
+                        *(int*)target++ = count;
+                        break;
                 }
+
+                var srcSpan = new Span<char>(src?.ToCharArray(), srcOffset, count);
+                var dstSpan = new Span<byte>(target, count);
+
+                return Encoding.UTF8.GetBytes(srcSpan, dstSpan) + size;
             }
-
-            // Read the 10th byte. Since we already read 63 bits,
-            // the value of this byte must fit within 1 bit (64 - 63),
-            // and it must not have the high bit set.
-
-            byteReadJustNow = span[pos++];
-            if (byteReadJustNow > 0b_1u)
-            {
-                throw new FormatException();
-            }
-
-            result |= (ulong)byteReadJustNow << (MaxBytesWithoutOverflow * 7);
-            readBytes = pos;
-            return (long)result;
         }
-
-        public static byte[] To7BitEncodedInt64(long value)
+        public static unsafe void WriteEncodedInteger<T>(T value, byte[] dst, int start = 0)
+            where T : unmanaged
         {
-            byte[] buffer = [];
-            var uValue = (ulong)value;
+            var count = sizeof(T);
 
-            // Write out an int 7 bits at a time. The high bit of the byte,
-            // when on, tells reader to continue reading more bytes.
-            //
-            // Using the constants 0x7F and ~0x7F below offers smaller
-            // codegen than using the constant 0x80.
+            if (start + count + 1 > dst.Length)
+                throw new ArgumentOutOfRangeException(nameof(start));
 
-            while (uValue > 0x7Fu)
+            fixed (byte* targetPtr = dst)
             {
-                buffer = [.. buffer, (byte)((uint)uValue | ~0x7Fu)];
-                uValue >>= 7;
-            }
+                var target = targetPtr + start;
+                var source = (byte*)&value;
 
-            buffer = [.. buffer, (byte)uValue];
-
-            return buffer;
-        }
-
-        public static int From7BitEncodedInt(byte[] value, out int readBytes)
-        {
-            // Unlike writing, we can't delegate to the 64-bit read on
-            // 64-bit platforms. The reason for this is that we want to
-            // stop consuming bytes if we encounter an integer overflow.
-
-            uint result = 0;
-            byte byteReadJustNow;
-
-            var span = value.AsSpan();
-            var pos = 0;
-            readBytes = -1;
-
-            // Read the integer 7 bits at a time. The high bit
-            // of the byte when on means to continue reading more bytes.
-            //
-            // There are two failure cases: we've read more than 5 bytes,
-            // or the fifth byte is about to cause integer overflow.
-            // This means that we can read the first 4 bytes without
-            // worrying about integer overflow.
-
-            const int MaxBytesWithoutOverflow = 4;
-            for (var shift = 0; shift < MaxBytesWithoutOverflow * 7; shift += 7)
-            {
-                // ReadByte handles end of stream cases for us.
-                byteReadJustNow = span[pos++];
-                result |= (byteReadJustNow & 0x7Fu) << shift;
-
-                if (byteReadJustNow <= 0x7Fu)
+                *target++ = count switch
                 {
-                    readBytes = pos;
-                    return (int)result; // early exit
-                }
+                    sizeof(byte) => 0xfc,
+                    sizeof(ushort) => 0xfd,
+                    sizeof(uint) => 0xfe,
+                    _ => 0xff
+                };
+
+                for (; count > 0; count--)
+                    *target++ = *source++;
             }
-
-            // Read the 5th byte. Since we already read 28 bits,
-            // the value of this byte must fit within 4 bits (32 - 28),
-            // and it must not have the high bit set.
-
-            byteReadJustNow = span[pos++];
-            if (byteReadJustNow > 0b_1111u)
-            {
-                throw new FormatException();
-            }
-
-            result |= (uint)byteReadJustNow << (MaxBytesWithoutOverflow * 7);
-            readBytes = pos;
-            return (int)result;
         }
 
-        public static byte[] To7BitEncodedInt(int value)
+        public static unsafe string? ReadUtf8String(ReadOnlySpan<byte> src, out int count, int start = 0)
         {
-            byte[] buffer = [];
-            var uValue = (uint)value;
+            if (src.Length < 2)
+                throw new ArgumentOutOfRangeException(nameof(src));
 
-            // Write out an int 7 bits at a time. The high bit of the byte,
-            // when on, tells reader to continue reading more bytes.
-            //
-            // Using the constants 0x7F and ~0x7F below offers smaller
-            // codegen than using the constant 0x80.
-
-            while (uValue > 0x7Fu)
+            fixed (byte* sourcePtr = src)
             {
-                buffer = [.. buffer, (byte)(uValue | ~0x7Fu)];
-                uValue >>= 7;
+                var source = sourcePtr + start;
+                var length = 0;
+
+                switch (*source)
+                {
+                    case 0xaa:
+                        length += *++source;
+                        count = sizeof(byte) + 1;
+                        break;
+                    case 0xab:
+                        length += *(ushort*)++source;
+                        count = sizeof(ushort) + 1;
+                        break;
+                    case 0xac:
+                        length += *(int*)++source;
+                        count = sizeof(int) + 1;
+                        break;
+                    default:
+                        throw new ArgumentException($"Unexpected value 0x{*source:x} at index 0.", nameof(src));
+                }
+
+                if (length == 0)
+                    return null;
+
+                if (length < 0)
+                    throw new FormatException($"Length {length} is negative.");
+
+                if (length > src.Length)
+                    throw new ArgumentOutOfRangeException(nameof(src), length, $"Length {length} exceeds {src.Length}.");
+
+                var result = Encoding.UTF8.GetString(source + count - 1, length);
+                count += length;
+
+                return result;
             }
+        }
 
-            buffer = [.. buffer, (byte)uValue];
+        public static unsafe T ReadEncodedInteger<T>(ReadOnlySpan<byte> src, T max, int start = 0)
+            where T : unmanaged
+        {
+            if (sizeof(T) + start + 1 > src.Length)
+                throw new ArgumentOutOfRangeException(nameof(start));
 
-            return buffer;
+            fixed (byte* sourcePtr = src)
+            {
+                var source = sourcePtr + start;
+                var targetPtr = *source switch
+                {
+                    0xfc or 0xfd or 0xfe or 0xff => ++source,
+                    _ => throw new ArgumentException($"Unexpected value 0x{*source:x} at index 0.", nameof(src)),
+                };
+
+                var result = *(T*)targetPtr;
+
+                if (*(ulong*)targetPtr > *(ulong*)&max)
+                    throw new FormatException($"Value {result} is greater than {max}.");
+
+                return result;
+            }
         }
     }
 }

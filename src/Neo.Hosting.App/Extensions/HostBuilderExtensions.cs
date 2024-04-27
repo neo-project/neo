@@ -12,9 +12,11 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Neo.Hosting.App.Configuration;
 using Neo.Hosting.App.Hosting.Services;
 using System;
+using System.IO;
 
 namespace Neo.Hosting.App.Extensions
 {
@@ -25,13 +27,21 @@ namespace Neo.Hosting.App.Extensions
             hostBuilder.ConfigureServices((context, services) =>
             {
                 //services.Configure<InvocationLifetimeOptions>(config => config.SuppressStatusMessages = true);
+                try
+                {
+                    var protocolSettingsSection = context.Configuration.GetRequiredSection("ProtocolConfiguration");
 
-                var protocolSettingsSection = context.Configuration.GetSection("ProtocolConfiguration");
+                    services.Configure<NeoOptions>(context.Configuration);
+                    services.AddSingleton(ProtocolSettings.Load(protocolSettingsSection));
+                    services.AddSingleton<NeoSystemHostedService>();
+                    services.AddSingleton<PromptSystemHostedService>();
+                }
+                catch (InvalidOperationException)
+                {
+                    throw;
+                }
 
-                services.Configure<NeoOptions>(context.Configuration);
-                services.AddSingleton(protocolSettingsSection.Exists() ? ProtocolSettings.Load(protocolSettingsSection) : ProtocolSettings.Default);
-                services.AddSingleton<NeoSystemHostedService>();
-                services.AddSingleton<PromptSystemHostedService>();
+                byte[] data = [];
 
                 configure?.Invoke(context, services);
             });
@@ -58,16 +68,26 @@ namespace Neo.Hosting.App.Extensions
                 config.AddNeoAppConfiguration();
 
                 var environmentName = context.HostingEnvironment.EnvironmentName;
-                var manager = new ConfigurationManager();
-                manager.AddJsonFile($"config.{environmentName}.json", optional: true);
+                var jsonConfigFileName = $"config.{environmentName}.json";
+
+                try
+                {
+                    var manager = new ConfigurationManager();
+                    manager.AddJsonFile(jsonConfigFileName, optional: false);
+
+                    IConfigurationBuilder builder = manager;
+                    var appConfigSection = manager.GetSection(NeoOptions.ConfigurationSectionName);
+
+                    builder.Add(new NeoConfigurationSource(appConfigSection.Exists() ? appConfigSection : null));
+
+                    config.AddConfiguration(manager);
+                }
+                catch (FileNotFoundException)
+                {
+                    throw;
+                }
 
 
-                IConfigurationBuilder builder = manager;
-                var appConfigSection = manager.GetSection(NeoOptions.ConfigurationSectionName);
-
-                builder.Add(new NeoConfigurationSource(appConfigSection.Exists() ? appConfigSection : null));
-
-                config.AddConfiguration(manager);
 
                 configure?.Invoke(context, config);
             });

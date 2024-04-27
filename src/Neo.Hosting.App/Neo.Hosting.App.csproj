@@ -10,6 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Exceptions\**" />
+    <EmbeddedResource Remove="Exceptions\**" />
+    <None Remove="Exceptions\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="config.localnet.json" />
     <Content Include="config.mainnet.json" />
     <Content Include="config.testnet.json" />
@@ -39,10 +45,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Neo\Neo.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Exceptions\" />
   </ItemGroup>
 
   <ItemGroup>

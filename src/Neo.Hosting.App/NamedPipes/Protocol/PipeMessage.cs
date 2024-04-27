@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2024 The Neo Project.
 //
-// IPipeMessage.cs file belongs to the neo project and is free
+// PipeMessage.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
+using Neo.Hosting.App.Helpers;
 using System;
 using System.IO;
 using System.IO.Pipelines;
@@ -22,13 +23,11 @@ namespace Neo.Hosting.App.NamedPipes.Protocol
     {
         public abstract ulong Magic { get; }
 
-        protected abstract void Initialize(byte[] buffer);
+        protected abstract int Initialize(byte[] buffer);
         public abstract byte[] ToArray();
 
         public virtual async Task CopyFromAsync(Stream stream, CancellationToken cancellationToken = default)
         {
-            if (stream.CanRead == false) return;
-
             var pipeReader = PipeReader.Create(stream, new StreamPipeReaderOptions(leaveOpen: true));
 
             Exception? error = null;
@@ -42,7 +41,27 @@ namespace Neo.Hosting.App.NamedPipes.Protocol
 
                 var buffer = result.Buffer;
                 if (buffer.IsSingleSegment)
-                    Initialize([.. buffer.FirstSpan]);
+                {
+                    var srcOffset = sizeof(ulong) + sizeof(uint);
+                    byte[] src = [.. buffer.FirstSpan];
+
+                    if (srcOffset > src.Length)
+                        throw new InvalidDataException();
+
+                    var dst = new byte[buffer.FirstSpan.Length - srcOffset];
+
+                    var magic = BinaryUtility.ReadEncodedInteger(buffer.FirstSpan, ulong.MaxValue, 0);
+                    var checksum = BinaryUtility.ReadEncodedInteger(buffer.FirstSpan, uint.MaxValue, sizeof(ulong));
+
+                    if (magic != Magic)
+                        throw new FormatException();
+                    if (checksum != Crc32.Compute(src[srcOffset..]))
+                        throw new InvalidDataException();
+
+                    Buffer.BlockCopy(src, srcOffset, dst, 0, dst.Length);
+
+                    Initialize(dst);
+                }
                 else
                 {
                     byte[] tmp = [];
@@ -71,19 +90,22 @@ namespace Neo.Hosting.App.NamedPipes.Protocol
 
         public virtual async Task CopyToAsync(Stream stream, CancellationToken cancellationToken = default)
         {
-            if (stream.CanWrite == false) return;
-
             var buffer = ToArray();
             var checksum = Crc32.Compute(buffer);
             var pipeWriter = PipeWriter.Create(stream, new StreamPipeWriterOptions(leaveOpen: true));
 
             Exception? error = null;
 
+            var dstOffset = sizeof(ulong) + sizeof(uint);
+            var tmp = new byte[buffer.Length + dstOffset];
+
+            BinaryUtility.WriteEncodedInteger(Magic, tmp, 0);
+            BinaryUtility.WriteEncodedInteger(checksum, tmp, sizeof(ulong));
+            Buffer.BlockCopy(buffer, 0, tmp, dstOffset, buffer.Length);
+
             try
             {
-                await pipeWriter.WriteAsync(BitConverter.GetBytes(Magic), cancellationToken);
-                await pipeWriter.WriteAsync(BitConverter.GetBytes(checksum), cancellationToken);
-                await pipeWriter.WriteAsync(buffer, cancellationToken);
+                await pipeWriter.WriteAsync(tmp, cancellationToken);
             }
             catch (Exception ex)
             {
