@@ -334,8 +334,8 @@ namespace Neo.UnitTests.SmartContract
             byte[] pubKey = "04fd0a8c1ce5ae5570fdd46e7599c16b175bf0ebdfe9c178f1ab848fb16dac74a5d301b0534c7bcf1b3760881f0c420d17084907edd771e1c9c8e941bbf6ff9108".HexToBytes();
 
             using ScriptBuilder verificationScriptBuilder = new();
-            verificationScriptBuilder.Emit(OpCode.PUSH1); // Push curve secp256K1
-            verificationScriptBuilder.Emit(OpCode.PUSH1); // Push Keccak256 hasher
+            verificationScriptBuilder.EmitRaw([0x01]); // Push curve secp256K1
+            verificationScriptBuilder.EmitRaw([0x01]); // Push Keccak256 hasher
             verificationScriptBuilder.EmitPush(pubKey); // Push pubkey
             verificationScriptBuilder.EmitSysCall(ApplicationEngine.System_Crypto_CheckSigV2);
 

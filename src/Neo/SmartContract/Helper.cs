@@ -321,10 +321,19 @@ namespace Neo.SmartContract
                 return script;
             }
 
-            curve = script[0] == (byte)OpCode.PUSH1 ? ECCurve.Secp256k1 : ECCurve.Secp256r1;
-            hasher = script[1] == (byte)OpCode.PUSH1 ? Hasher.Keccak256 : Hasher.SHA256;
+            curve = script[0] switch
+            {
+                0x00 => ECCurve.Secp256r1,
+                0x01 => ECCurve.Secp256k1,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            hasher = script[1] switch
+            {
+                0x00 => Hasher.SHA256,
+                0x01 => Hasher.Keccak256,
+                _ => throw new ArgumentOutOfRangeException()
+            };
             return script[2..];
-
         }
 
         /// <summary>
