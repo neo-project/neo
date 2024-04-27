@@ -165,12 +165,12 @@ namespace Neo.Cryptography
 
         public static byte[] Keccak256(this ReadOnlySpan<byte> value)
         {
-            return value.Keccak256();
+            return Keccak256(value.ToArray());
         }
 
         public static byte[] Keccak256(this Span<byte> value)
         {
-            return Keccak256((ReadOnlySpan<byte>)value);
+            return Keccak256(value.ToArray());
         }
 
         public static byte[] AES256Encrypt(this byte[] plainData, byte[] key, byte[] nonce, byte[] associatedData = null)

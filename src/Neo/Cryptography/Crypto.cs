@@ -56,17 +56,30 @@ namespace Neo.Cryptography
         /// <param name="message">The message to be signed.</param>
         /// <param name="priKey">The private key to be used.</param>
         /// <param name="ecCurve">The <see cref="ECC.ECCurve"/> curve of the signature, default is <see cref="ECC.ECCurve.Secp256r1"/>.</param>
+        /// <param name="hasher">The hash algorithm of the signature, SHA256 by default</param>
         /// <returns>The ECDSA signature for the specified message.</returns>
-        public static byte[] Sign(byte[] message, byte[] priKey, ECC.ECCurve ecCurve = null)
+        public static byte[] Sign(byte[] message, byte[] priKey, ECC.ECCurve ecCurve = null, Hasher hasher = Hasher.SHA256)
         {
-            if (IsOSX && ecCurve == ECC.ECCurve.Secp256k1)
+            if (hasher == Hasher.Keccak256 || (IsOSX && ecCurve == ECC.ECCurve.Secp256k1))
             {
-                var domain = new ECDomainParameters(bouncySecp256k1.Curve, bouncySecp256k1.G, bouncySecp256k1.N, bouncySecp256k1.H);
+                ECDomainParameters domain;
+                if (ecCurve == ECC.ECCurve.Secp256k1)
+                {
+                    domain = new ECDomainParameters(bouncySecp256k1.Curve, bouncySecp256k1.G, bouncySecp256k1.N, bouncySecp256k1.H);
+                }
+                else if (ecCurve == ECC.ECCurve.Secp256r1)
+                {
+                    domain = new ECDomainParameters(bouncySecp256r1.Curve, bouncySecp256r1.G, bouncySecp256r1.N, bouncySecp256r1.H);
+                }
+                else
+                {
+                    throw new ArgumentException("Unsupported curve", nameof(ecCurve));
+                }
                 var signer = new Org.BouncyCastle.Crypto.Signers.ECDsaSigner();
                 var privateKey = new BigInteger(1, priKey);
                 var priKeyParameters = new ECPrivateKeyParameters(privateKey, domain);
                 signer.Init(true, priKeyParameters);
-                var signature = signer.GenerateSignature(message.Sha256());
+                var signature = signer.GenerateSignature(hasher == Hasher.SHA256 ? message.Sha256() : message.Keccak256());
 
                 var signatureBytes = new byte[64];
                 var rBytes = signature[0].ToByteArrayUnsigned();

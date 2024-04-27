@@ -120,7 +120,7 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
         public static bool IsMultiSigContract(ReadOnlySpan<byte> script)
         {
-            return IsMultiSigContract(script, out _, out _, null);
+            return IsMultiSigContract(script, out _, out _, null, out _, out _, out _);
         }
 
         /// <summary>
@@ -132,8 +132,22 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
         public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out int n)
         {
-            return IsMultiSigContract(script, out m, out n, null);
+            return IsMultiSigContract(script, out m, out n, null, out _, out _, out _);
         }
+
+        public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out ECPoint[] points)
+        {
+            List<ECPoint> list = [];
+            if (IsMultiSigContract(script, out m, out _, list, out _, out _, out _))
+            {
+                points = list.ToArray();
+                return true;
+            }
+
+            points = null;
+            return false;
+        }
+
 
         /// <summary>
         /// Determines whether the specified contract is a multi-signature contract.
@@ -142,34 +156,41 @@ namespace Neo.SmartContract
         /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="points">The public keys in the account.</param>
         /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
-        public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out ECPoint[] points)
+        public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out ECPoint[] points, out bool? isV2, out ECCurve? curve, out Hasher? hasher)
         {
-            List<ECPoint> list = new();
-            if (IsMultiSigContract(script, out m, out _, list))
+            List<ECPoint> list = [];
+            if (IsMultiSigContract(script, out m, out _, list, out isV2, out curve, out hasher))
             {
                 points = list.ToArray();
                 return true;
             }
-            else
-            {
-                points = null;
-                return false;
-            }
+
+            points = null;
+            return false;
         }
 
-        private static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out int n, List<ECPoint> points)
+        private static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out int n, List<ECPoint> points, out bool? isV2, out ECCurve? curve, out Hasher? hasher)
         {
             m = 0; n = 0;
             int i = 0;
-            if (script.Length < 42) return false;
-            switch (script[i])
+            if (script.Length < 42)
+            {
+                isV2 = null;
+                curve = null;
+                hasher = null;
+                return false;
+            }
+            var slice = ParseScriptV2(script, out isV2, out curve, out hasher);
+            if (isV2.Value && script.Length < 44) return false;
+
+            switch (slice[i])
             {
                 case (byte)OpCode.PUSHINT8:
-                    m = script[++i];
+                    m = slice[++i];
                     ++i;
                     break;
                 case (byte)OpCode.PUSHINT16:
-                    m = BinaryPrimitives.ReadUInt16LittleEndian(script[++i..]);
+                    m = BinaryPrimitives.ReadUInt16LittleEndian(slice[++i..]);
                     i += 2;
                     break;
                 case byte b when b >= (byte)OpCode.PUSH1 && b <= (byte)OpCode.PUSH16:
@@ -180,23 +201,23 @@ namespace Neo.SmartContract
                     return false;
             }
             if (m < 1 || m > 1024) return false;
-            while (script[i] == (byte)OpCode.PUSHDATA1)
+            while (slice[i] == (byte)OpCode.PUSHDATA1)
             {
-                if (script.Length <= i + 35) return false;
-                if (script[++i] != 33) return false;
-                points?.Add(ECPoint.DecodePoint(script.Slice(i + 1, 33), ECCurve.Secp256r1));
+                if (slice.Length <= i + 35) return false;
+                if (slice[++i] != 33) return false;
+                points?.Add(ECPoint.DecodePoint(slice.Slice(i + 1, 33), curve));
                 i += 34;
                 ++n;
             }
             if (n < m || n > 1024) return false;
-            switch (script[i])
+            switch (slice[i])
             {
                 case (byte)OpCode.PUSHINT8:
-                    if (script.Length <= i + 1 || n != script[++i]) return false;
+                    if (slice.Length <= i + 1 || n != slice[++i]) return false;
                     ++i;
                     break;
                 case (byte)OpCode.PUSHINT16:
-                    if (script.Length < i + 3 || n != BinaryPrimitives.ReadUInt16LittleEndian(script[++i..])) return false;
+                    if (slice.Length < i + 3 || n != BinaryPrimitives.ReadUInt16LittleEndian(slice[++i..])) return false;
                     i += 2;
                     break;
                 case byte b when b >= (byte)OpCode.PUSH1 && b <= (byte)OpCode.PUSH16:
@@ -206,9 +227,9 @@ namespace Neo.SmartContract
                 default:
                     return false;
             }
-            if (script.Length != i + 5) return false;
-            if (script[i++] != (byte)OpCode.SYSCALL) return false;
-            if (BinaryPrimitives.ReadUInt32LittleEndian(script[i..]) != ApplicationEngine.System_Crypto_CheckMultisig)
+            if (slice.Length != i + 5) return false;
+            if (slice[i++] != (byte)OpCode.SYSCALL) return false;
+            if (BinaryPrimitives.ReadUInt32LittleEndian(slice[i..]) != ApplicationEngine.System_Crypto_CheckMultisig)
                 return false;
             return true;
         }
@@ -220,13 +241,60 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the contract is a signature contract; otherwise, <see langword="false"/>.</returns>
         public static bool IsSignatureContract(ReadOnlySpan<byte> script)
         {
-            if (script.Length != 40) return false;
-            if (script[0] != (byte)OpCode.PUSHDATA1
-                || script[1] != 33
-                || script[35] != (byte)OpCode.SYSCALL
-                || BinaryPrimitives.ReadUInt32LittleEndian(script[36..]) != ApplicationEngine.System_Crypto_CheckSig)
+            return IsSignatureContract(script, out _, out _, out _);
+        }
+
+        public static bool IsSignatureContract(ReadOnlySpan<byte> script, out bool? isV2, out ECCurve? curve, out Hasher? hasher)
+        {
+            // The new version for supporting secp256k1 signature has 42 bytes.
+            // 1 byte curve |
+            // 1 byte hash |
+            // 1 byte pushdata1 |
+            // 1 byte length |
+            // 33 bytes pubkey |
+            // 1 bytes syscall opcode|
+            // 4 bytes syscall
+            if (script.Length is not (40 or 42))
+            {
+                isV2 = null;
+                curve = null;
+                hasher = null;
                 return false;
-            return true;
+            }
+
+            var slice = ParseScriptV2(script, out isV2, out curve, out hasher);
+
+            return slice[0] == (byte)OpCode.PUSHDATA1
+                   && slice[1] == 33
+                   && slice[35] == (byte)OpCode.SYSCALL
+                   && BinaryPrimitives.ReadUInt32LittleEndian(slice[36..]) == (isV2.Value ? ApplicationEngine.System_Crypto_CheckSigV2 : ApplicationEngine.System_Crypto_CheckSig);
+        }
+
+        /// <summary>
+        /// Checks if the verification script is using the version 2 checking logic for signature and multisig.
+        /// </summary>
+        /// <param name="script">The original verification script</param>
+        /// <param name="isV2">Indicates if the script is using the version 2 verificatoin script</param>
+        /// <param name="curve">The curve that is used for verification. Default value is ECCurve.Secp256r1.</param>
+        /// <param name="hasher">The hash algorithm used for the verification. Default value is Hasher.SHA256.</param>
+        /// <returns>The verification script without the curve and hasher</returns>
+        /// <exception cref="FormatException">Throws if the verrification script <param name="script"></param> is too short.</exception>
+        private static ReadOnlySpan<byte> ParseScriptV2(ReadOnlySpan<byte> script, out bool? isV2, out ECCurve? curve, out Hasher? hasher)
+        {
+            if (script.Length < 40) throw new FormatException("The verification script is too short.");
+            isV2 = BinaryPrimitives.ReadUInt32LittleEndian(script[^4..]) != ApplicationEngine.System_Crypto_CheckSigV2 ||
+                BinaryPrimitives.ReadUInt32LittleEndian(script[^4..]) != ApplicationEngine.System_Crypto_CheckMultisigV2;
+            curve = ECCurve.Secp256r1;
+            hasher = Hasher.SHA256;
+            if (!isV2.Value)
+            {
+                return script;
+            }
+
+            curve = script[0] == (byte)OpCode.PUSH1 ? ECCurve.Secp256k1 : ECCurve.Secp256r1;
+            hasher = script[1] == (byte)OpCode.PUSH1 ? Hasher.Keccak256 : Hasher.SHA256;
+            return script[2..];
+
         }
 
         /// <summary>

@@ -37,7 +37,7 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Crypto.CheckSigV2.
-        /// Checks the secp256k1 or other non-secp256r1 signature for the current script container.
+        /// Checks the signature (secp256k1, secp256r1, or other curve) for the current script container.
         /// </summary>
         public static readonly InteropDescriptor System_Crypto_CheckSigV2 = Register("System.Crypto.CheckSigV2", nameof(CheckSigV2), CheckSigPrice, CallFlags.None);
 
@@ -49,7 +49,7 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Crypto.CheckMultisigV2.
-        /// Checks the secp256k1 or other non-secp256r1 signatures for the current script container.
+        /// Checks the signatures (secp256k1, secp256r1, or other curve) for the current script container.
         /// </summary>
         public static readonly InteropDescriptor System_Crypto_CheckMultisigV2 = Register("System.Crypto.CheckMultisigV2", nameof(CheckMultisigV2), 0, CallFlags.None);
 
@@ -72,6 +72,15 @@ namespace Neo.SmartContract
             }
         }
 
+        /// <summary>
+        /// This is a new version check signature method that allows for different curves and hashers.
+        /// </summary>
+        /// <param name="eccurve">The ec curve</param>
+        /// <param name="hash">The hash algorithm to get the hash of the message.</param>
+        /// <param name="pubkey">The public key.</param>
+        /// <param name="signature">The signature of the message.</param>
+        /// <returns>The signature is valid or not.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Throw if the given hash algorithm or ec curve is not defined.</exception>
         protected internal bool CheckSigV2(byte eccurve, byte hash, byte[] pubkey, byte[] signature)
         {
             try
@@ -120,6 +129,15 @@ namespace Neo.SmartContract
             return true;
         }
 
+        /// <summary>
+        /// This is a new version check multisig method that allows for different curves and hashers.
+        /// </summary>
+        /// <param name="eccurve">The ec curve</param>
+        /// <param name="hash">The hash algorithm to get the hash of the message.</param>
+        /// <param name="pubkeys">The public keys.</param>
+        /// <param name="signatures">The signatures of the message.</param>
+        /// <returns>The signature is valid or not.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Throw if the given hash algorithm or ec curve is not defined.</exception>
         protected internal bool CheckMultisigV2(byte eccurve, byte hash, byte[][] pubkeys, byte[][] signatures)
         {
             byte[] message = ScriptContainer.GetSignData(ProtocolSettings.Network);

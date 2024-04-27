@@ -15,6 +15,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Cryptography.ECC;
 using Neo.IO;
+using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
@@ -27,6 +28,7 @@ using Neo.Wallets;
 using System;
 using System.Linq;
 using System.Text;
+using Array = System.Array;
 
 namespace Neo.UnitTests.SmartContract
 {
@@ -322,6 +324,42 @@ namespace Neo.UnitTests.SmartContract
             var engine = GetEngine();
 
             engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeFalse();
+        }
+
+
+        [TestMethod]
+        public void TestRuntime_CheckWitness_Secp256k1()
+        {
+            byte[] privkey = "7177f0d04c79fa0b8c91fe90c1cf1d44772d1fba6e5eb9b281a22cd3aafb51fe".HexToBytes();
+            byte[] pubKey = "04fd0a8c1ce5ae5570fdd46e7599c16b175bf0ebdfe9c178f1ab848fb16dac74a5d301b0534c7bcf1b3760881f0c420d17084907edd771e1c9c8e941bbf6ff9108".HexToBytes();
+
+            using ScriptBuilder verificationScriptBuilder = new();
+            verificationScriptBuilder.Emit(OpCode.PUSH1); // Push curve secp256K1
+            verificationScriptBuilder.Emit(OpCode.PUSH1); // Push Keccak256 hasher
+            verificationScriptBuilder.EmitPush(pubKey); // Push pubkey
+            verificationScriptBuilder.EmitSysCall(ApplicationEngine.System_Crypto_CheckSigV2);
+
+            var tx = new Transaction
+            {
+                Attributes = [],
+                NetworkFee = 0,
+                Nonce = (uint)Environment.TickCount,
+                Script = new byte[Transaction.MaxTransactionSize / 10],
+                Signers = [new Signer { Account = verificationScriptBuilder.ToArray().ToScriptHash() }],
+                SystemFee = 0,
+                ValidUntilBlock = 0,
+                Version = 0,
+                Witnesses = []
+            };
+            var tx_signature = Crypto.Sign(tx.GetSignData(TestProtocolSettings.Default.Network), privkey, ECCurve.Secp256k1, Hasher.Keccak256);
+            using ScriptBuilder invocationScriptBuilder = new();
+            invocationScriptBuilder.EmitPush(tx_signature); // Push signature
+            tx.Witnesses =
+            [
+                new Witness { InvocationScript = invocationScriptBuilder.ToArray(), VerificationScript = verificationScriptBuilder.ToArray() }
+            ];
+
+            tx.VerifyStateIndependent(TestProtocolSettings.Default).Should().Be(VerifyResult.Succeed);
         }
 
         [TestMethod]

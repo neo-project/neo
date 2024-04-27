@@ -415,13 +415,13 @@ namespace Neo.Network.P2P.Payloads
             UInt160[] hashes = GetScriptHashesForVerifying(null);
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (IsSignatureContract(witnesses[i].VerificationScript.Span))
+                if (IsSignatureContract(witnesses[i].VerificationScript.Span, out bool? isV2, out ECCurve? curve, out Hasher? hasher))
                 {
                     if (hashes[i] != witnesses[i].ScriptHash) return VerifyResult.Invalid;
-                    var pubkey = witnesses[i].VerificationScript.Span[2..35];
+                    var pubkey = isV2.Value ? witnesses[i].VerificationScript.Span[4..37] : witnesses[i].VerificationScript.Span[2..35];
                     try
                     {
-                        if (!Crypto.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript.Span[2..], pubkey, ECCurve.Secp256r1))
+                        if (!Crypto.VerifySignature(this.GetSignData(settings.Network), witnesses[i].InvocationScript.Span[2..], pubkey, curve, hasher.Value))
                             return VerifyResult.InvalidSignature;
                     }
                     catch
@@ -429,7 +429,7 @@ namespace Neo.Network.P2P.Payloads
                         return VerifyResult.Invalid;
                     }
                 }
-                else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out var m, out ECPoint[] points))
+                else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out var m, out ECPoint[] points, out isV2, out curve, out hasher))
                 {
                     if (hashes[i] != witnesses[i].ScriptHash) return VerifyResult.Invalid;
                     var signatures = GetMultiSignatures(witnesses[i].InvocationScript);
