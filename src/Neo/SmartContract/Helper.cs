@@ -38,10 +38,17 @@ namespace Neo.SmartContract
         /// Calculates the verification fee for a signature address.
         /// </summary>
         /// <returns>The calculated cost.</returns>
+        [Obsolete("This method is obsolete. Use the method with the isV2 parameter instead.")]
         public static long SignatureContractCost() =>
             ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * 2 +
             ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] +
             ApplicationEngine.CheckSigPrice;
+
+        /// <summary>
+        /// Calculates the verification fee for a signature address.
+        /// </summary>
+        /// <returns>The calculated cost.</returns>
+        public static long SignatureContractCost(bool isV2) => SignatureContractCost() + (isV2 ? ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSH1] * 2 : 0);
 
         /// <summary>
         /// Calculates the verification fee for a multi-signature address.
@@ -49,6 +56,7 @@ namespace Neo.SmartContract
         /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="n">The number of public keys in the account.</param>
         /// <returns>The calculated cost.</returns>
+        [Obsolete("This method is obsolete. Use the method with the isV2 parameter instead.")]
         public static long MultiSignatureContractCost(int m, int n)
         {
             long fee = ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * (m + n);
@@ -58,6 +66,23 @@ namespace Neo.SmartContract
                 fee += ApplicationEngine.OpCodePriceTable[(byte)(OpCode)sb.EmitPush(n).ToArray()[0]];
             fee += ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL];
             fee += ApplicationEngine.CheckSigPrice * n;
+            return fee;
+        }
+
+        /// <summary>
+        /// Calculates the verification fee for a multi-signature address.
+        /// </summary>
+        /// <param name="m">The minimum number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="n">The number of public keys in the account.</param>
+        /// <param name="isV2">If the script is v2 verification script.</param>
+        /// <returns>The calculated cost.</returns>
+        public static long MultiSignatureContractCost(int m, int n, bool isV2)
+        {
+            var fee = MultiSignatureContractCost(m, n);
+            if (isV2)
+            {
+                fee += ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSH1] * 2;
+            }
             return fee;
         }
 
@@ -133,6 +158,11 @@ namespace Neo.SmartContract
         public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out int n)
         {
             return IsMultiSigContract(script, out m, out n, null, out _, out _, out _);
+        }
+
+        public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out int n, out bool? isV2)
+        {
+            return IsMultiSigContract(script, out m, out n, null, out isV2, out _, out _);
         }
 
         public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out ECPoint[] points)
@@ -282,8 +312,8 @@ namespace Neo.SmartContract
         private static ReadOnlySpan<byte> ParseScriptV2(ReadOnlySpan<byte> script, out bool? isV2, out ECCurve? curve, out Hasher? hasher)
         {
             if (script.Length < 40) throw new FormatException("The verification script is too short.");
-            isV2 = BinaryPrimitives.ReadUInt32LittleEndian(script[^4..]) != ApplicationEngine.System_Crypto_CheckSigV2 ||
-                BinaryPrimitives.ReadUInt32LittleEndian(script[^4..]) != ApplicationEngine.System_Crypto_CheckMultisigV2;
+            isV2 = BinaryPrimitives.ReadUInt32LittleEndian(script[^4..]) == ApplicationEngine.System_Crypto_CheckSigV2 ||
+                BinaryPrimitives.ReadUInt32LittleEndian(script[^4..]) == ApplicationEngine.System_Crypto_CheckMultisigV2;
             curve = ECCurve.Secp256r1;
             hasher = Hasher.SHA256;
             if (!isV2.Value)

@@ -379,11 +379,11 @@ namespace Neo.Network.P2P.Payloads
             uint execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             for (int i = 0; i < hashes.Length; i++)
             {
-                if (IsSignatureContract(witnesses[i].VerificationScript.Span))
-                    net_fee -= execFeeFactor * SignatureContractCost();
-                else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out int m, out int n))
+                if (IsSignatureContract(witnesses[i].VerificationScript.Span, out bool? isV2, out _, out _))
+                    net_fee -= execFeeFactor * SignatureContractCost(isV2.Value);
+                else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out int m, out int n, out isV2))
                 {
-                    net_fee -= execFeeFactor * MultiSignatureContractCost(m, n);
+                    net_fee -= execFeeFactor * MultiSignatureContractCost(m, n, isV2.Value);
                 }
                 else
                 {

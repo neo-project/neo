@@ -142,16 +142,16 @@ namespace Neo.Wallets
                     if (maxExecutionCost <= 0) throw new InvalidOperationException("Insufficient GAS.");
                     networkFee += engine.GasConsumed;
                 }
-                else if (IsSignatureContract(witnessScript))
+                else if (IsSignatureContract(witnessScript, out var isV2, out _, out _))
                 {
                     size += 67 + witnessScript.GetVarSize();
-                    networkFee += exec_fee_factor * SignatureContractCost();
+                    networkFee += exec_fee_factor * SignatureContractCost(isV2.Value);
                 }
-                else if (IsMultiSigContract(witnessScript, out int m, out int n))
+                else if (IsMultiSigContract(witnessScript, out int m, out int n, out isV2))
                 {
                     int size_inv = 66 * m;
                     size += IO.Helper.GetVarSize(size_inv) + size_inv + witnessScript.GetVarSize();
-                    networkFee += exec_fee_factor * MultiSignatureContractCost(m, n);
+                    networkFee += exec_fee_factor * MultiSignatureContractCost(m, n, isV2.Value);
                 }
                 // We can support more contract types in the future.
             }
