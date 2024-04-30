@@ -49,7 +49,7 @@ namespace Neo.Hosting.App.Tests.Helpers
             _testOutputHelper.WriteLine($"   Method: {methodName}");
 
             _testOutputHelper.WriteLine(nameof(Result).PadCenter(17, '-'));
-            _testOutputHelper.WriteLine($"    Value: {actualString}");
+            _testOutputHelper.WriteLine($"    Value: {expectedString}");
             _testOutputHelper.WriteLine($"   Result: {actualHexString}");
             _testOutputHelper.WriteLine($" Expected: {expectedHexString}");
             _testOutputHelper.WriteLine($"-----------------");

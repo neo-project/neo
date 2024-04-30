@@ -22,6 +22,9 @@ namespace Neo.Hosting.App.Helpers
                 ? 0
                 : Encoding.UTF8.GetByteCount(value);
 
+            if (count > int.MaxValue)
+                throw new ArgumentOutOfRangeException(value, count, $"Value length {count} exceeds {int.MaxValue}. 2GB limit!");
+
             count += count switch
             {
                 <= byte.MaxValue => sizeof(byte) + 1,
@@ -43,6 +46,7 @@ namespace Neo.Hosting.App.Helpers
             {
                 <= byte.MaxValue => *srcPointer + sizeof(byte) + 1ul,
                 <= ushort.MaxValue and >= byte.MaxValue => *srcPointer + sizeof(ushort) + 1ul,
+                <= uint.MaxValue and >= ushort.MaxValue => *srcPointer + sizeof(uint) + 1ul,
                 _ => *srcPointer + sizeof(ulong) + 1ul,
             };
 
@@ -94,7 +98,7 @@ namespace Neo.Hosting.App.Helpers
                     default:
                         *target++ = 0xac;
                         *(int*)target++ = count;
-                        target += 3;
+                        target += sizeof(int) - 1;
                         break;
                 }
 
@@ -187,18 +191,13 @@ namespace Neo.Hosting.App.Helpers
             fixed (byte* sourcePtr = src)
             {
                 var source = sourcePtr + start;
-                var readPointer = *source switch
-                {
-                    0xfc or 0xfd or 0xfe or 0xff => source + 1,
-                    _ => throw new ArgumentException($"Unexpected value 0x{*source:x} at index {start}.", nameof(src)),
-                };
-
                 var result = *source switch
                 {
-                    0xfc => *readPointer,
-                    0xfd => *(ushort*)readPointer,
-                    0xfe => *(uint*)readPointer,
-                    _ => *(ulong*)readPointer,
+                    0xfc => *++source,
+                    0xfd => *(ushort*)++source,
+                    0xfe => *(uint*)++source,
+                    0xff => *(ulong*)++source,
+                    _ => throw new ArgumentException($"Unexpected value 0x{*source:x} at index {start}.", nameof(src)),
                 };
 
                 if (result > *(ulong*)&max)
