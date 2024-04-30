@@ -145,7 +145,7 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// The implementation of System.Contract.NativeOnPersist.
-        /// Calls to the <see cref="NativeContract.OnPersist"/> of all native contracts.
+        /// Calls to the <see cref="NativeContract.OnPersistAsync"/> of all native contracts.
         /// </summary>
         protected internal async void NativeOnPersist()
         {
@@ -156,7 +156,7 @@ namespace Neo.SmartContract
                 foreach (NativeContract contract in NativeContract.Contracts)
                 {
                     if (contract.IsActive(ProtocolSettings, PersistingBlock.Index))
-                        await contract.OnPersist(this);
+                        await contract.OnPersistAsync(this);
                 }
             }
             catch (Exception ex)
@@ -167,7 +167,7 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// The implementation of System.Contract.NativePostPersist.
-        /// Calls to the <see cref="NativeContract.PostPersist"/> of all native contracts.
+        /// Calls to the <see cref="NativeContract.PostPersistAsync"/> of all native contracts.
         /// </summary>
         protected internal async void NativePostPersist()
         {
@@ -178,7 +178,7 @@ namespace Neo.SmartContract
                 foreach (NativeContract contract in NativeContract.Contracts)
                 {
                     if (contract.IsActive(ProtocolSettings, PersistingBlock.Index))
-                        await contract.PostPersist(this);
+                        await contract.PostPersistAsync(this);
                 }
             }
             catch (Exception ex)
