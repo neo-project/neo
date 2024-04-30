@@ -23,6 +23,81 @@ namespace Neo.Hosting.App.Tests.Helpers
     {
         private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
 
+
+        [Theory]
+        [InlineData(byte.MaxValue + 1, new byte[] { 0xab, 0x00, 0x01 })]
+        [InlineData(ushort.MaxValue + 1, new byte[] { 0xac, 0x00, 0x00, 0x01, 0x00 })]
+        [InlineData(ushort.MaxValue * 2, new byte[] { 0xac, 0xfe, 0xff, 0x01, 0x00 })]
+        public void Test_ReadUtf8String_BigSizeStrings(int stringSize, byte[] prefixBuffer)
+        {
+            var className = nameof(BinaryUtility);
+            var methodName = nameof(BinaryUtility.WriteUtf8String);
+
+            var expectedBytes = new byte[stringSize];
+            Array.Fill<byte>(expectedBytes, 0x65);
+
+            var expectedString = Encoding.UTF8.GetString(expectedBytes);
+            var expectedHexString = Convert.ToHexString(expectedBytes);
+            expectedBytes = [.. prefixBuffer, .. expectedBytes];
+
+            var actualString = BinaryUtility.ReadUtf8String(expectedBytes, out var count);
+            var actualBytes = Encoding.UTF8.GetBytes(actualString!);
+            var actualHexString = Convert.ToHexString(actualBytes);
+
+            _testOutputHelper.WriteLine(nameof(Debug).PadCenter(17, '-'));
+            _testOutputHelper.WriteLine($"    Class: {className}");
+            _testOutputHelper.WriteLine($"   Method: {methodName}");
+
+            _testOutputHelper.WriteLine(nameof(Result).PadCenter(17, '-'));
+            _testOutputHelper.WriteLine($"    Value: {actualString}");
+            _testOutputHelper.WriteLine($"   Result: {actualHexString}");
+            _testOutputHelper.WriteLine($" Expected: {expectedHexString}");
+            _testOutputHelper.WriteLine($"-----------------");
+
+            Assert.Equal(expectedString, actualString);
+        }
+
+        [Theory]
+        [InlineData(byte.MaxValue + 1, new byte[] { 0xab, 0x00, 0x01 })]
+        [InlineData(ushort.MaxValue + 1, new byte[] { 0xac, 0x00, 0x00, 0x01, 0x00 })]
+        [InlineData(ushort.MaxValue * 2, new byte[] { 0xac, 0xfe, 0xff, 0x01, 0x00 })]
+        public void Test_WriteUtf8String_BigSizeStrings(int stringSize, byte[] prefixBuffer)
+        {
+            var className = nameof(BinaryUtility);
+            var methodName = nameof(BinaryUtility.WriteUtf8String);
+
+            var expectedBytes = new byte[stringSize];
+            var expectedEncodedByteSize = stringSize switch
+            {
+                <= byte.MaxValue => sizeof(byte) + 1,
+                <= ushort.MaxValue and >= byte.MaxValue => sizeof(ushort) + 1,
+                _ => sizeof(int) + 1,
+            };
+
+            Array.Fill<byte>(expectedBytes, 0x65);
+            var expectedString = Encoding.UTF8.GetString(expectedBytes);
+
+            var actualByteCount = Encoding.UTF8.GetByteCount(expectedString);
+            var actualBytes = new byte[actualByteCount + expectedEncodedByteSize];
+            var actualBytesWritten = BinaryUtility.WriteUtf8String(expectedString, 0, actualBytes, 0, actualByteCount);
+
+            expectedBytes = [.. prefixBuffer, .. expectedBytes];
+            var expectedHexString = Convert.ToHexString(expectedBytes);
+
+            _testOutputHelper.WriteLine(nameof(Debug).PadCenter(17, '-'));
+            _testOutputHelper.WriteLine($"    Class: {className}");
+            _testOutputHelper.WriteLine($"   Method: {methodName}");
+
+            _testOutputHelper.WriteLine(nameof(Result).PadCenter(17, '-'));
+            _testOutputHelper.WriteLine($"    Value: {expectedString}");
+            _testOutputHelper.WriteLine($"   Result: {Convert.ToHexString(actualBytes)}");
+            _testOutputHelper.WriteLine($" Expected: {expectedHexString}");
+            _testOutputHelper.WriteLine($"-----------------");
+
+            Assert.Equal(expectedBytes, actualBytes);
+            Assert.Equal(expectedBytes.Length, actualBytesWritten);
+        }
+
         [Theory]
         [InlineData(null, new byte[] { 0xaa, 0x00 })]
         [InlineData("a", new byte[] { 0xaa, 0x01, 0x61 })]
@@ -34,14 +109,14 @@ namespace Neo.Hosting.App.Tests.Helpers
             var expectedHexString = Convert.ToHexString(expected);
 
             var actualByteCount = Encoding.UTF8.GetByteCount(testValue ?? string.Empty);
-            var size = actualByteCount switch
+            var actualEncodedByteSize = actualByteCount switch
             {
                 <= byte.MaxValue => sizeof(byte) + 1,
                 <= ushort.MaxValue and >= byte.MaxValue => sizeof(ushort) + 1,
                 _ => sizeof(int) + 1,
             };
-            var actual = new byte[actualByteCount + size];
 
+            var actual = new byte[actualByteCount + actualEncodedByteSize];
             var actualBytesWritten = BinaryUtility.WriteUtf8String(testValue, 0, actual, 0, actualByteCount);
 
             _testOutputHelper.WriteLine(nameof(Debug).PadCenter(17, '-'));

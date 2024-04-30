@@ -89,10 +89,12 @@ namespace Neo.Hosting.App.Helpers
                     case <= ushort.MaxValue and >= byte.MaxValue:
                         *target++ = 0xab;
                         *(ushort*)target++ = (ushort)count;
+                        target++;
                         break;
                     default:
                         *target++ = 0xac;
                         *(int*)target++ = count;
+                        target += 3;
                         break;
                 }
 
