@@ -92,16 +92,22 @@ namespace Neo.SmartContract.Native
                         oldContract.Manifest = contractState.Manifest;
                     }
 
-                    // Initialize native contract
-                    await contract.Initialize(engine, null);
-
-                    // Initialize native contract for specific hardforks
+                    // Initialize native contract for all hardforks
                     if (hfs?.Length > 0)
                     {
                         foreach (var hf in hfs)
                         {
                             await contract.Initialize(engine, hf);
                         }
+
+                        if (contract.ActiveIn == null)
+                        {
+                            await contract.Initialize(engine, null);
+                        }
+                    }
+                    else
+                    {
+                        await contract.Initialize(engine, null);
                     }
 
                     // Emit native contract notification
