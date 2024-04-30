@@ -90,6 +90,12 @@ namespace Neo.Hosting.App.Tests.Helpers
         }
 
         [Theory]
+        [InlineData(0, new byte[] { 0xfc, 0x00 })]
+        [InlineData((uint)0, new byte[] { 0xfc, 0x00 })]
+        [InlineData((ushort)0, new byte[] { 0xfc, 0x00 })]
+        [InlineData((ulong)0, new byte[] { 0xfc, 0x00 })]
+        [InlineData((short)0, new byte[] { 0xfc, 0x00 })]
+        [InlineData((long)0, new byte[] { 0xfc, 0x00 })]
         [InlineData(byte.MaxValue, new byte[] { 0xfc, 0xff })]
         [InlineData(ushort.MaxValue, new byte[] { 0xfd, 0xff, 0xff })]
         [InlineData(uint.MaxValue, new byte[] { 0xfe, 0xff, 0xff, 0xff, 0xff })]
@@ -124,7 +130,11 @@ namespace Neo.Hosting.App.Tests.Helpers
         }
 
         [Theory]
-        [InlineData(new byte[] { 0xfc, 0xff }, byte.MaxValue)]
+        [InlineData(new byte[] { 0xfc, 0xff }, 255)]
+        [InlineData(new byte[] { 0xfc, 0xff }, (uint)255)]
+        [InlineData(new byte[] { 0xfc, 0xff }, (ulong)255)]
+        [InlineData(new byte[] { 0xfc, 0xff }, (ushort)255)]
+        [InlineData(new byte[] { 0xfc, 0xff }, (short)255)]
         [InlineData(new byte[] { 0xfd, 0xff, 0xff }, ushort.MaxValue)]
         [InlineData(new byte[] { 0xfe, 0xff, 0xff, 0xff, 0xff }, uint.MaxValue)]
         [InlineData(new byte[] { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff }, ulong.MaxValue)]

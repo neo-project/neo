@@ -35,21 +35,27 @@ namespace Neo.Hosting.App.Helpers
         public static unsafe T GetByteCount<T>(T value)
             where T : unmanaged
         {
-            var size = sizeof(T) + 1;
-            var srcPointer = (byte*)&value;
+            var srcPointer = (ulong*)&value;
+            var dst = new T();
+            var dstPointer = (ulong*)&dst;
 
-            var count = size switch
+            *dstPointer = *srcPointer switch
             {
-                sizeof(byte) => *srcPointer,
-                sizeof(ushort) => *(ushort*)srcPointer,
-                sizeof(uint) => *(uint*)srcPointer,
-                _ => *(ulong*)srcPointer,
+                <= byte.MaxValue => *srcPointer + sizeof(byte) + 1ul,
+                <= ushort.MaxValue and >= byte.MaxValue => *srcPointer + sizeof(ushort) + 1ul,
+                _ => *srcPointer + sizeof(ulong) + 1ul,
             };
 
-            *(ulong*)srcPointer = count;
-
-            return *(T*)srcPointer;
+            return *(T*)dstPointer;
         }
+
+        public static unsafe int GetByteCount(int value) =>
+            value switch
+            {
+                <= byte.MaxValue => sizeof(byte) + 1,
+                <= ushort.MaxValue and >= byte.MaxValue => sizeof(ushort) + 1,
+                _ => sizeof(int) + 1,
+            };
 
         public static unsafe int WriteUtf8String(string? src, int srcOffset, ReadOnlySpan<byte> dst, int dstOffset, int count)
         {
@@ -69,7 +75,6 @@ namespace Neo.Hosting.App.Helpers
             ArgumentOutOfRangeException.ThrowIfZero(dst.Length, nameof(dst));
             ArgumentOutOfRangeException.ThrowIfGreaterThan(dst.Length, size + dstOffset + count, nameof(dst));
             ArgumentOutOfRangeException.ThrowIfGreaterThan(dstOffset, dst.Length, nameof(dstOffset));
-            ArgumentOutOfRangeException.ThrowIfGreaterThan(dstOffset, count, nameof(dstOffset));
 
             fixed (byte* targetPtr = dst)
             {
@@ -100,15 +105,19 @@ namespace Neo.Hosting.App.Helpers
         public static unsafe void WriteEncodedInteger<T>(T value, byte[] dst, int start = 0)
             where T : unmanaged
         {
-            var count = sizeof(T);
-
-            if (start + count + 1 > dst.Length)
-                throw new ArgumentOutOfRangeException(nameof(start));
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(start, dst.Length, nameof(start));
 
             fixed (byte* targetPtr = dst)
             {
                 var target = targetPtr + start;
                 var source = (byte*)&value;
+                var count = Convert.ToUInt64(value) switch
+                {
+                    <= byte.MaxValue => sizeof(byte),
+                    <= ushort.MaxValue and >= byte.MaxValue => sizeof(ushort),
+                    <= uint.MaxValue and >= ushort.MaxValue => sizeof(uint),
+                    _ => sizeof(ulong),
+                };
 
                 *target++ = count switch
                 {
@@ -148,7 +157,7 @@ namespace Neo.Hosting.App.Helpers
                         count = sizeof(int) + 1;
                         break;
                     default:
-                        throw new ArgumentException($"Unexpected value 0x{*source:x} at index 0.", nameof(src));
+                        throw new ArgumentException($"Unexpected value 0x{*source:x} at index {start}.", nameof(src));
                 }
 
                 if (length == 0)
@@ -170,24 +179,30 @@ namespace Neo.Hosting.App.Helpers
         public static unsafe T ReadEncodedInteger<T>(ReadOnlySpan<byte> src, T max, int start = 0)
             where T : unmanaged
         {
-            if (sizeof(T) + start + 1 > src.Length)
-                throw new ArgumentOutOfRangeException(nameof(start));
+            if (src.Length < 2)
+                throw new ArgumentOutOfRangeException(nameof(src));
 
             fixed (byte* sourcePtr = src)
             {
                 var source = sourcePtr + start;
-                var targetPtr = *source switch
+                var readPointer = *source switch
                 {
-                    0xfc or 0xfd or 0xfe or 0xff => ++source,
-                    _ => throw new ArgumentException($"Unexpected value 0x{*source:x} at index 0.", nameof(src)),
+                    0xfc or 0xfd or 0xfe or 0xff => source + 1,
+                    _ => throw new ArgumentException($"Unexpected value 0x{*source:x} at index {start}.", nameof(src)),
                 };
 
-                var result = *(T*)targetPtr;
+                var result = *source switch
+                {
+                    0xfc => *readPointer,
+                    0xfd => *(ushort*)readPointer,
+                    0xfe => *(uint*)readPointer,
+                    _ => *(ulong*)readPointer,
+                };
 
-                if (*(ulong*)targetPtr > *(ulong*)&max)
+                if (result > *(ulong*)&max)
                     throw new FormatException($"Value {result} is greater than {max}.");
 
-                return result;
+                return (T)Convert.ChangeType(result, typeof(T));
             }
         }
     }

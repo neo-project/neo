@@ -40,36 +40,43 @@ namespace Neo.Hosting.App.NamedPipes.Protocol
                     return;
 
                 var buffer = result.Buffer;
+                var srcOffset = sizeof(ulong) + sizeof(uint) + 2;
                 if (buffer.IsSingleSegment)
                 {
-                    var srcOffset = sizeof(ulong) + sizeof(uint);
                     byte[] src = [.. buffer.FirstSpan];
 
-                    if (srcOffset > src.Length)
-                        throw new InvalidDataException();
+                    var dst = new byte[src.Length - srcOffset];
+                    Buffer.BlockCopy(src, srcOffset, dst, 0, dst.Length);
 
-                    var dst = new byte[buffer.FirstSpan.Length - srcOffset];
-
-                    var magic = BinaryUtility.ReadEncodedInteger(buffer.FirstSpan, ulong.MaxValue, 0);
-                    var checksum = BinaryUtility.ReadEncodedInteger(buffer.FirstSpan, uint.MaxValue, sizeof(ulong));
+                    var magic = BinaryUtility.ReadEncodedInteger(src, ulong.MaxValue, 0);
+                    var checksum = BinaryUtility.ReadEncodedInteger(src, uint.MaxValue, sizeof(ulong) + 1);
 
                     if (magic != Magic)
                         throw new FormatException();
-                    if (checksum != Crc32.Compute(src[srcOffset..]))
+                    if (checksum != Crc32.Compute(dst))
                         throw new InvalidDataException();
-
-                    Buffer.BlockCopy(src, srcOffset, dst, 0, dst.Length);
 
                     Initialize(dst);
                 }
                 else
                 {
-                    byte[] tmp = [];
+                    byte[] src = [];
 
                     foreach (var segment in buffer)
-                        tmp = [.. tmp, .. segment.Span];
+                        src = [.. src, .. segment.Span];
 
-                    Initialize(tmp);
+                    var dst = new byte[src.Length - srcOffset];
+                    Buffer.BlockCopy(src, srcOffset, src, 0, src.Length);
+
+                    var magic = BinaryUtility.ReadEncodedInteger(src, ulong.MaxValue, 0);
+                    var checksum = BinaryUtility.ReadEncodedInteger(src, uint.MaxValue, sizeof(ulong) + 1);
+
+                    if (magic != Magic)
+                        throw new FormatException();
+                    if (checksum != Crc32.Compute(src))
+                        throw new InvalidDataException();
+
+                    Initialize(src);
                 }
 
                 pipeReader.AdvanceTo(buffer.End);
@@ -96,11 +103,11 @@ namespace Neo.Hosting.App.NamedPipes.Protocol
 
             Exception? error = null;
 
-            var dstOffset = sizeof(ulong) + sizeof(uint);
+            var dstOffset = sizeof(ulong) + sizeof(uint) + 2;
             var tmp = new byte[buffer.Length + dstOffset];
 
             BinaryUtility.WriteEncodedInteger(Magic, tmp, 0);
-            BinaryUtility.WriteEncodedInteger(checksum, tmp, sizeof(ulong));
+            BinaryUtility.WriteEncodedInteger(checksum, tmp, sizeof(ulong) + 1);
             Buffer.BlockCopy(buffer, 0, tmp, dstOffset, buffer.Length);
 
             try
