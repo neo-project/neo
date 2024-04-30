@@ -54,13 +54,13 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Contract.NativeOnPersist.
         /// </summary>
         /// <remarks>Note: It is for internal use only. Do not use it directly in smart contracts.</remarks>
-        public static readonly InteropDescriptor System_Contract_NativeOnPersist = Register("System.Contract.NativeOnPersist", nameof(NativeOnPersist), 0, CallFlags.States);
+        public static readonly InteropDescriptor System_Contract_NativeOnPersist = Register("System.Contract.NativeOnPersist", nameof(NativeOnPersistAsync), 0, CallFlags.States);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Contract.NativePostPersist.
         /// </summary>
         /// <remarks>Note: It is for internal use only. Do not use it directly in smart contracts.</remarks>
-        public static readonly InteropDescriptor System_Contract_NativePostPersist = Register("System.Contract.NativePostPersist", nameof(NativePostPersist), 0, CallFlags.States);
+        public static readonly InteropDescriptor System_Contract_NativePostPersist = Register("System.Contract.NativePostPersist", nameof(NativePostPersistAsync), 0, CallFlags.States);
 
         /// <summary>
         /// The implementation of System.Contract.Call.
@@ -147,7 +147,7 @@ namespace Neo.SmartContract
         /// The implementation of System.Contract.NativeOnPersist.
         /// Calls to the <see cref="NativeContract.OnPersistAsync"/> of all native contracts.
         /// </summary>
-        protected internal async void NativeOnPersist()
+        protected internal async void NativeOnPersistAsync()
         {
             try
             {
@@ -169,7 +169,7 @@ namespace Neo.SmartContract
         /// The implementation of System.Contract.NativePostPersist.
         /// Calls to the <see cref="NativeContract.PostPersistAsync"/> of all native contracts.
         /// </summary>
-        protected internal async void NativePostPersist()
+        protected internal async void NativePostPersistAsync()
         {
             try
             {
