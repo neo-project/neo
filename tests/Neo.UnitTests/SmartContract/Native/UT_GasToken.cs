@@ -47,7 +47,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void Check_Decimals() => NativeContract.GAS.Decimals(_snapshot).Should().Be(8);
 
         [TestMethod]
-        public async Task Check_BalanceOfTransferAndBurn()
+        public async Task Check_BalanceOfTransferAndBurnAsync()
         {
             var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
