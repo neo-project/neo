@@ -51,14 +51,8 @@ indent_size = 2
 # Dotnet code style settings:
 [*.{cs,vb}]
 
-// Miscellaneous
+// Missing XML comment for publicly visible type or member
 dotnet_diagnostic.CS1591.severity = none
-
-# CA1012: Abstract types should not have public constructors
-dotnet_diagnostic.CA1012.severity = warning
-
-# CA1822: Make member static
-dotnet_diagnostic.CA1822.severity = warning
 
 # Avoid problematic synchronous waits
 dotnet_diagnostic.VSTHRD002.severity = none
@@ -322,15 +316,8 @@ dotnet_diagnostic.IDE2005.severity = warning
 # csharp_style_allow_blank_line_after_token_in_arrow_expression_clause_experimental
 dotnet_diagnostic.IDE2006.severity = warning
 
-// Miscellaneous
+// Missing XML comment for publicly visible type or member
 dotnet_diagnostic.CS1591.severity = none
-dotnet_diagnostic.MSB3825.severity = none
-
-# CA1012: Abstract types should not have public constructors
-dotnet_diagnostic.CA1012.severity = warning
-
-# CA1822: Make member static
-dotnet_diagnostic.CA1822.severity = warning
 
 # Avoid problematic synchronous waits
 dotnet_diagnostic.VSTHRD002.severity = none
