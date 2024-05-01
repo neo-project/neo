@@ -116,7 +116,7 @@ namespace Neo.CLI
         private string? BigEndianToLittleEndian(string hex)
         {
             bool hasHexPrefix = hex.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase);
-            hex = hex[2..];
+            hex = hasHexPrefix ? hex[2..] : hex;
             if (!hasHexPrefix || !IsHex(hex)) return null;
             return hex.HexToBytes().Reverse().ToArray().ToHexString();
         }
