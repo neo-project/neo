@@ -262,9 +262,6 @@ csharp_preserve_single_line_statements = true
 # Member can be made 'readonly'
 csharp_style_prefer_readonly_struct_member = true
 
-# Add braces
-csharp_prefer_braces = when_multiline:warning
-
 [src/{Analyzers,CodeStyle,Features,Workspaces,EditorFeatures,VisualStudio}/**/*.{cs,vb}]
 
 # Avoid "this." and "Me." if not necessary
