@@ -367,7 +367,7 @@ namespace Neo.CLI
             CurrentWallet = Wallet.Open(path, password, NeoSystem.Settings) ?? throw new NotSupportedException();
         }
 
-        public async void Start(CommandLineOptions options)
+        public async Task Start(CommandLineOptions options)
         {
             if (NeoSystem != null) return;
             bool verifyImport = !(options.NoVerify ?? false);

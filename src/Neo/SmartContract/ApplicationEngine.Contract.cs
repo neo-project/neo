@@ -14,6 +14,7 @@ using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
+using System.Threading.Tasks;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -91,14 +92,14 @@ namespace Neo.SmartContract
         /// Calls to a native contract.
         /// </summary>
         /// <param name="version">The version of the native contract to be called.</param>
-        protected internal void CallNativeContract(byte version)
+        protected internal Task CallNativeContract(byte version)
         {
             NativeContract contract = NativeContract.GetContract(CurrentScriptHash);
             if (contract is null)
                 throw new InvalidOperationException("It is not allowed to use \"System.Contract.CallNative\" directly.");
             if (!contract.IsActive(ProtocolSettings, NativeContract.Ledger.CurrentIndex(Snapshot)))
                 throw new InvalidOperationException($"The native contract {contract.Name} is not active.");
-            contract.Invoke(this, version);
+            return contract.Invoke(this, version);
         }
 
         /// <summary>
@@ -147,7 +148,7 @@ namespace Neo.SmartContract
         /// The implementation of System.Contract.NativeOnPersist.
         /// Calls to the <see cref="NativeContract.OnPersist"/> of all native contracts.
         /// </summary>
-        protected internal async void NativeOnPersist()
+        protected internal async Task NativeOnPersist()
         {
             try
             {
@@ -169,7 +170,7 @@ namespace Neo.SmartContract
         /// The implementation of System.Contract.NativePostPersist.
         /// Calls to the <see cref="NativeContract.PostPersist"/> of all native contracts.
         /// </summary>
-        protected internal async void NativePostPersist()
+        protected internal async Task NativePostPersist()
         {
             try
             {

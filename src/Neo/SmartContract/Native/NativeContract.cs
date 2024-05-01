@@ -19,6 +19,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace Neo.SmartContract.Native
 {
@@ -344,7 +345,7 @@ namespace Neo.SmartContract.Native
             return contract;
         }
 
-        internal async void Invoke(ApplicationEngine engine, byte version)
+        internal async Task Invoke(ApplicationEngine engine, byte version)
         {
             try
             {
