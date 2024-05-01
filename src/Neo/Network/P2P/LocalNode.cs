@@ -95,7 +95,7 @@ namespace Neo.Network.P2P
             for (int i = 0; i < seedList.Length; i++)
             {
                 int index = i;
-                Task.Run(() => SeedList[index] = GetIpEndPoint(seedList[index]));
+                _ = Task.Run(() => SeedList[index] = GetIpEndPoint(seedList[index]));
             }
         }
 
