@@ -183,12 +183,12 @@ namespace Neo.Network
             request.Headers.Add("Content-Type", "text/xml; charset=\"utf-8\"");
             request.Content = new StringContent(req);
             using HttpClient http = new();
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+
             using var response = http.SendAsync(request).GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+
+
             using var stream = response.EnsureSuccessStatusCode().Content.ReadAsStreamAsync().GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
+
             XmlDocument resp = new() { XmlResolver = null };
             resp.Load(stream);
             return resp;

@@ -108,23 +108,23 @@ namespace Neo.UnitTests.SmartContract.Native
             engine.LoadScript(Array.Empty<byte>());
 
             await Assert.ThrowsExceptionAsync<ArgumentOutOfRangeException>(async () =>
-                await NativeContract.GAS.BurnAsync(engine, new UInt160(to), BigInteger.MinusOne));
+                await NativeContract.GAS.Burn(engine, new UInt160(to), BigInteger.MinusOne));
 
             // Burn more than expected
 
             await Assert.ThrowsExceptionAsync<InvalidOperationException>(async () =>
-                await NativeContract.GAS.BurnAsync(engine, new UInt160(to), new BigInteger(52000500_00000001)));
+                await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(52000500_00000001)));
 
             // Real burn
 
-            await NativeContract.GAS.BurnAsync(engine, new UInt160(to), new BigInteger(1));
+            await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(1));
 
             NativeContract.GAS.BalanceOf(engine.Snapshot, to).Should().Be(5200049999999999);
 
             engine.Snapshot.GetChangeSet().Count().Should().Be(2);
 
             // Burn all
-            await NativeContract.GAS.BurnAsync(engine, new UInt160(to), new BigInteger(5200049999999999));
+            await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(5200049999999999));
 
             (keyCount - 2).Should().Be(engine.Snapshot.GetChangeSet().Count());
 

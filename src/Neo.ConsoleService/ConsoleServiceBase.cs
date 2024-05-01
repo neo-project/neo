@@ -114,9 +114,9 @@ namespace Neo.ConsoleService
                     {
                         var (command, arguments) = availableCommands[0];
                         var result = command.Method.Invoke(command.Instance, arguments);
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+
                         if (result is Task task) task.Wait();
-#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
+
                         return true;
                     }
                 default:
@@ -505,29 +505,31 @@ namespace Neo.ConsoleService
 
             try
             {
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+
                 readLineTask.Wait(_shutdownTokenSource.Token);
-#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
+
             }
             catch (OperationCanceledException)
             {
                 return null;
             }
 
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+
             return readLineTask.Result;
-#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
+
         }
 
         public virtual void RunConsole()
         {
             _running = true;
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
                 try
                 {
                     Console.Title = ServiceName;
                 }
                 catch { }
+            }
 
             Console.ForegroundColor = ConsoleColor.DarkGreen;
             Console.SetIn(new StreamReader(Console.OpenStandardInput(), Console.InputEncoding, false, ushort.MaxValue));

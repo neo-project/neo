@@ -14,7 +14,7 @@ using System.Runtime.CompilerServices;
 namespace Neo.SmartContract
 {
     [AsyncMethodBuilder(typeof(ContractTaskMethodBuilder))]
-    class ContractTask
+    internal class ContractTask
     {
         protected readonly ContractTaskAwaiter _awaiter;
 

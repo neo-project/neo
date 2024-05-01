@@ -9,9 +9,6 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Cryptography.ECC;
-using Neo.Network.P2P.Payloads;
-
 namespace Neo.SmartContract.Native
 {
     /// <summary>
@@ -31,7 +28,7 @@ namespace Neo.SmartContract.Native
             if (hardfork == ActiveIn)
             {
                 var account = Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators);
-                return MintAsync(engine, account, engine.ProtocolSettings.InitialGasDistribution, false);
+                return Mint(engine, account, engine.ProtocolSettings.InitialGasDistribution, false);
             }
             return ContractTask.CompletedTask;
         }
@@ -41,12 +38,12 @@ namespace Neo.SmartContract.Native
             long totalNetworkFee = 0;
             foreach (var tx in engine.PersistingBlock.Transactions)
             {
-                await BurnAsync(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
+                await Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
                 totalNetworkFee += tx.NetworkFee;
             }
             var validators = NEO.GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings.ValidatorsCount);
             var primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
-            await MintAsync(engine, primary, totalNetworkFee, false);
+            await Mint(engine, primary, totalNetworkFee, false);
         }
     }
 }

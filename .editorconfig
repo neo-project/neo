@@ -50,21 +50,31 @@ indent_size = 2
 
 # Dotnet code style settings:
 [*.{cs,vb}]
-# Member can be made 'readonly'
-csharp_style_prefer_readonly_struct_member = true
-dotnet_diagnostic.IDE0251.severity = warning
-dotnet_diagnostic.IDE0044.severity = warning
 
-dotnet_diagnostic.CS1591.severity = silent
+// Miscellaneous
+dotnet_diagnostic.CS1591.severity = none
+
+# CA1012: Abstract types should not have public constructors
+dotnet_diagnostic.CA1012.severity = warning
+
+# CA1822: Make member static
+dotnet_diagnostic.CA1822.severity = warning
+
+# Avoid problematic synchronous waits
+dotnet_diagnostic.VSTHRD002.severity = none
+
+# Async methods should have "Async" suffix
+dotnet_diagnostic.VSTHRD200.severity = warning
 
 # Sort using and Import directives with System.* appearing first
 dotnet_sort_system_directives_first = false
 dotnet_separate_import_directive_groups = false
+
 # Avoid "this." and "Me." if not necessary
-dotnet_style_qualification_for_field = false:refactoring
-dotnet_style_qualification_for_property = false:refactoring
-dotnet_style_qualification_for_method = false:refactoring
-dotnet_style_qualification_for_event = false:refactoring
+dotnet_style_qualification_for_field = true
+dotnet_style_qualification_for_property = true
+dotnet_style_qualification_for_method = true
+dotnet_style_qualification_for_event = true
 
 # Use language keywords instead of framework type names for type references
 dotnet_style_predefined_type_for_locals_parameters_members = true:suggestion
@@ -255,7 +265,21 @@ csharp_prefer_braces = true:silent
 csharp_preserve_single_line_blocks = true
 csharp_preserve_single_line_statements = true
 
+# Member can be made 'readonly'
+csharp_style_prefer_readonly_struct_member = true
+
+# Add braces
+csharp_prefer_braces = when_multiline:warning
+
 [src/{Analyzers,CodeStyle,Features,Workspaces,EditorFeatures,VisualStudio}/**/*.{cs,vb}]
+
+# Avoid "this." and "Me." if not necessary
+dotnet_diagnostic.IDE0003.severity = warning
+dotnet_diagnostic.IDE0009.severity = warning
+
+# Member can be made 'readonly'
+dotnet_diagnostic.IDE0251.severity = warning
+dotnet_diagnostic.IDE0044.severity = warning
 
 # IDE0003 and IDE0009: this and Me preferences
 dotnet_diagnostic.IDE0003.severity = warning
@@ -269,18 +293,7 @@ dotnet_diagnostic.IDE0073.severity = error
 dotnet_diagnostic.IDE0055.severity = warning
 
 # IDE0060: Remove unused parameter
-dotnet_diagnostic.IDE0060.severity = none
-
-# IDE0011: Add braces
-csharp_prefer_braces = when_multiline:warning
-# NOTE: We need the below severity entry for Add Braces due to https://github.com/dotnet/roslyn/issues/44201
-dotnet_diagnostic.IDE0011.severity = warning
-
-// VSTHRD002: Avoid problematic synchronous waits
-dotnet_diagnostic.VSTHRD002.severity = disab
-
-# Async methods should have "Async" suffix
-dotnet_diagnostic.VSTHRD200.severity = warning
+dotnet_diagnostic.IDE0060.severity = silent
 
 # IDE0040: Add accessibility modifiers
 dotnet_diagnostic.IDE0040.severity = warning
@@ -290,12 +303,6 @@ dotnet_diagnostic.IDE0052.severity = warning
 
 # IDE0059: Unnecessary assignment to a value
 dotnet_diagnostic.IDE0059.severity = warning
-
-# CA1012: Abstract types should not have public constructors
-dotnet_diagnostic.CA1012.severity = warning
-
-# CA1822: Make member static
-dotnet_diagnostic.CA1822.severity = warning
 
 # Prefer "var" everywhere
 dotnet_diagnostic.IDE0007.severity = warning
@@ -314,6 +321,22 @@ dotnet_diagnostic.IDE2005.severity = warning
 
 # csharp_style_allow_blank_line_after_token_in_arrow_expression_clause_experimental
 dotnet_diagnostic.IDE2006.severity = warning
+
+// Miscellaneous
+dotnet_diagnostic.CS1591.severity = none
+dotnet_diagnostic.MSB3825.severity = none
+
+# CA1012: Abstract types should not have public constructors
+dotnet_diagnostic.CA1012.severity = warning
+
+# CA1822: Make member static
+dotnet_diagnostic.CA1822.severity = warning
+
+# Avoid problematic synchronous waits
+dotnet_diagnostic.VSTHRD002.severity = none
+
+# Async methods should have "Async" suffix
+dotnet_diagnostic.VSTHRD200.severity = warning
 
 [src/{VisualStudio}/**/*.{cs,vb}]
 # CA1822: Make member static

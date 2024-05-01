@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 #pragma warning disable IDE0051
+#pragma warning disable VSTHRD200
 
 using Neo.Cryptography.ECC;
 using Neo.IO;
@@ -98,7 +99,7 @@ namespace Neo.SmartContract.Native
             await base.PostTransferAsync(engine, from, to, amount, data, callOnPayment);
             var list = engine.CurrentContext.GetState<List<GasDistribution>>();
             foreach (var distribution in list)
-                await GAS.MintAsync(engine, distribution.Account, distribution.Amount, callOnPayment);
+                await GAS.Mint(engine, distribution.Account, distribution.Amount, callOnPayment);
         }
 
         private GasDistribution DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
@@ -185,7 +186,7 @@ namespace Neo.SmartContract.Native
                 engine.Snapshot.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(System.Array.Empty<byte>()));
                 engine.Snapshot.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u), new StorageItem(5 * GAS.Factor));
                 engine.Snapshot.Add(CreateStorageKey(Prefix_RegisterPrice), new StorageItem(1000 * GAS.Factor));
-                return MintAsync(engine, Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators), TotalAmount, false);
+                return Mint(engine, Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators), TotalAmount, false);
             }
             return ContractTask.CompletedTask;
         }
@@ -227,7 +228,7 @@ namespace Neo.SmartContract.Native
             var committee = GetCommitteeFromCache(engine.Snapshot);
             var pubkey = committee[index].PublicKey;
             var account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
-            await GAS.MintAsync(engine, account, gasPerBlock * CommitteeRewardRatio / 100, false);
+            await GAS.Mint(engine, account, gasPerBlock * CommitteeRewardRatio / 100, false);
 
             // Record the cumulative reward of the voters of committee
 
@@ -350,7 +351,9 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.States)]
-        private async ContractTask<bool> VoteAsync(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
+#pragma warning disable IDE1006 // Naming Styles
+        private async ContractTask<bool> Vote(ApplicationEngine engine, UInt160 account, ECPoint voteTo)
+#pragma warning restore IDE1006 // Naming Styles
         {
             if (!engine.CheckWitnessInternal(account)) return false;
             var state_account = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_Account).Add(account))?.GetInteroperable<NeoAccountState>();
@@ -400,7 +403,7 @@ namespace Neo.SmartContract.Native
             engine.SendNotification(Hash, "Vote",
                 new VM.Types.Array(engine.ReferenceCounter) { account.ToArray(), from?.ToArray() ?? StackItem.Null, voteTo?.ToArray() ?? StackItem.Null, state_account.Balance });
             if (gasDistribution is not null)
-                await GAS.MintAsync(engine, gasDistribution.Account, gasDistribution.Amount, true);
+                await GAS.Mint(engine, gasDistribution.Account, gasDistribution.Amount, true);
             return true;
         }
 
@@ -621,3 +624,6 @@ namespace Neo.SmartContract.Native
         }
     }
 }
+
+#pragma warning restore IDE0051
+#pragma warning restore VSTHRD200

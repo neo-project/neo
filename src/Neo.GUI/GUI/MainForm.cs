@@ -25,7 +25,6 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -225,8 +224,11 @@ namespace Neo.GUI
                 else if (assetId.Equals(NativeContract.GAS.Hash))
                     symbol = NativeContract.GAS.Symbol;
                 if (symbol != null)
+                {
                     for (var i = 0; i < addresses.Length; i++)
                         listView1.Items[addresses[i].ToAddress(Service.NeoSystem.Settings.AddressVersion)].SubItems[symbol].Text = new BigDecimal(balances[i], decimals).ToString();
+                }
+
                 var amount = balances.Sum();
                 if (amount == 0)
                 {

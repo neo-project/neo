@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 #pragma warning disable IDE0051
+#pragma warning disable VSTHRD200
 
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
@@ -187,13 +188,15 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.All)]
-        private ContractTask<ContractState> DeployAsync(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
+        private ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
-            return DeployAsync(engine, nefFile, manifest, StackItem.Null);
+            return Deploy(engine, nefFile, manifest, StackItem.Null);
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.All)]
-        private async ContractTask<ContractState> DeployAsync(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
+#pragma warning disable IDE1006 // Naming Styles
+        private async ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
+#pragma warning restore IDE1006 // Naming Styles
         {
             if (engine.ScriptContainer is not Transaction tx)
                 throw new InvalidOperationException();
@@ -238,13 +241,13 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.All)]
-        private ContractTask UpdateAsync(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
+        private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
         {
-            return UpdateAsync(engine, nefFile, manifest, StackItem.Null);
+            return Update(engine, nefFile, manifest, StackItem.Null);
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.All)]
-        private ContractTask UpdateAsync(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
+        private ContractTask Update(ApplicationEngine engine, byte[] nefFile, byte[] manifest, StackItem data)
         {
             if (nefFile is null && manifest is null) throw new ArgumentException();
 
@@ -296,3 +299,5 @@ namespace Neo.SmartContract.Native
         }
     }
 }
+
+#pragma warning restore VSTHRD200

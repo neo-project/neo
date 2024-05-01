@@ -41,9 +41,9 @@ namespace Neo.CLI
                 return;
             }
 
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+
             var result = InstallPluginAsync(pluginName).GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
+
             if (result)
             {
                 var asmName = Assembly.GetExecutingAssembly().GetName().Name;
@@ -60,9 +60,9 @@ namespace Neo.CLI
         [ConsoleCommand("reinstall", Category = "Plugin Commands", Description = "Overwrite existing plugin by force.")]
         private void OnReinstallCommand(string pluginName)
         {
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+
             var result = InstallPluginAsync(pluginName, overWrite: true).GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
+
             if (result)
             {
                 var asmName = Assembly.GetExecutingAssembly().GetName().Name;
@@ -232,9 +232,9 @@ namespace Neo.CLI
         {
             try
             {
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+
                 var plugins = GetPluginListAsync().GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
+
                 if (plugins == null) return;
                 plugins
                 .Order()

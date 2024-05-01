@@ -10,9 +10,7 @@
 // modifications are permitted.
 
 using Neo.Cryptography.ECC;
-using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
-using Neo.VM;
 using System;
 using System.Threading.Tasks;
 using Array = Neo.VM.Types.Array;
@@ -31,7 +29,7 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Contract.CallNative.
         /// </summary>
         /// <remarks>Note: It is for internal use only. Do not use it directly in smart contracts.</remarks>
-        public static readonly InteropDescriptor System_Contract_CallNative = Register("System.Contract.CallNative", nameof(CallNativeContractAsync), 0, CallFlags.None);
+        public static readonly InteropDescriptor System_Contract_CallNative = Register("System.Contract.CallNative", nameof(CallNativeContract), 0, CallFlags.None);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Contract.GetCallFlags.
@@ -92,14 +90,14 @@ namespace Neo.SmartContract
         /// Calls to a native contract.
         /// </summary>
         /// <param name="version">The version of the native contract to be called.</param>
-        protected internal Task CallNativeContractAsync(byte version)
+        protected internal void CallNativeContract(byte version)
         {
             var contract = NativeContract.GetContract(CurrentScriptHash);
             if (contract is null)
                 throw new InvalidOperationException("It is not allowed to use \"System.Contract.CallNative\" directly.");
             if (!contract.IsActive(ProtocolSettings, NativeContract.Ledger.CurrentIndex(Snapshot)))
                 throw new InvalidOperationException($"The native contract {contract.Name} is not active.");
-            return contract.InvokeAsync(this, version);
+            contract.InvokeAsync(this, version).GetAwaiter().GetResult();
         }
 
         /// <summary>

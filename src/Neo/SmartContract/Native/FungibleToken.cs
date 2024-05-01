@@ -9,6 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+#pragma warning disable VSTHRD200
+
 using Neo.IO;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
@@ -70,7 +72,9 @@ namespace Neo.SmartContract.Native
             manifest.SupportedStandards = new[] { "NEP-17" };
         }
 
-        internal async ContractTask MintAsync(ApplicationEngine engine, UInt160 account, BigInteger amount, bool callOnPayment)
+#pragma warning disable IDE1006 // Naming Styles
+        internal async ContractTask Mint(ApplicationEngine engine, UInt160 account, BigInteger amount, bool callOnPayment)
+#pragma warning restore IDE1006 // Naming Styles
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
@@ -83,7 +87,9 @@ namespace Neo.SmartContract.Native
             await PostTransferAsync(engine, null, account, amount, StackItem.Null, callOnPayment);
         }
 
-        internal async ContractTask BurnAsync(ApplicationEngine engine, UInt160 account, BigInteger amount)
+#pragma warning disable IDE1006 // Naming Styles
+        internal async ContractTask Burn(ApplicationEngine engine, UInt160 account, BigInteger amount)
+#pragma warning restore IDE1006 // Naming Styles
         {
             if (amount.Sign < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (amount.IsZero) return;
@@ -129,7 +135,9 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 17, StorageFee = 50, RequiredCallFlags = CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify)]
-        private protected async ContractTask<bool> TransferAsync(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
+#pragma warning disable IDE1006 // Naming Styles
+        private protected async ContractTask<bool> Transfer(ApplicationEngine engine, UInt160 from, UInt160 to, BigInteger amount, StackItem data)
+#pragma warning restore IDE1006 // Naming Styles
         {
             if (from is null) throw new ArgumentNullException(nameof(from));
             if (to is null) throw new ArgumentNullException(nameof(to));
@@ -194,3 +202,5 @@ namespace Neo.SmartContract.Native
         }
     }
 }
+
+#pragma warning restore VSTHRD200

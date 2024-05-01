@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 #pragma warning disable IDE0051
+#pragma warning disable VSTHRD200
 
 using Neo.Cryptography;
 using Neo.IO;
@@ -71,7 +72,7 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowCall | CallFlags.AllowNotify)]
-        private ContractTask FinishAsync(ApplicationEngine engine)
+        private ContractTask Finish(ApplicationEngine engine)
         {
             if (engine.InvocationStack.Count != 2) throw new InvalidOperationException();
             if (engine.GetInvocationCounter() != 1) throw new InvalidOperationException();
@@ -178,13 +179,15 @@ namespace Neo.SmartContract.Native
                 foreach (var (account, gas) in nodes)
                 {
                     if (gas.Sign > 0)
-                        await GAS.MintAsync(engine, account, gas, false);
+                        await GAS.Mint(engine, account, gas, false);
                 }
             }
         }
 
         [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private async ContractTask RequestAsync(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForResponse)
+#pragma warning disable IDE1006 // Naming Styles
+        private async ContractTask Request(ApplicationEngine engine, string url, string filter, string callback, StackItem userData, long gasForResponse)
+#pragma warning restore IDE1006 // Naming Styles
         {
             //Check the arguments
             if (Utility.StrictUTF8.GetByteCount(url) > MaxUrlLength
@@ -197,7 +200,7 @@ namespace Neo.SmartContract.Native
 
             //Mint gas for the response
             engine.AddGas(gasForResponse);
-            await GAS.MintAsync(engine, Hash, gasForResponse, false);
+            await GAS.Mint(engine, Hash, gasForResponse, false);
 
             //Increase the request id
             var item_id = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_RequestId));
@@ -248,3 +251,6 @@ namespace Neo.SmartContract.Native
         }
     }
 }
+
+#pragma warning restore IDE0051
+#pragma warning restore VSTHRD200

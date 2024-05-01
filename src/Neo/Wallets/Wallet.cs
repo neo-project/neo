@@ -486,7 +486,7 @@ namespace Neo.Wallets
                         sb2.EmitDynamicCall(assetId, "balanceOf", CallFlags.ReadOnly, account);
                         using var engine = ApplicationEngine.Run(sb2.ToArray(), snapshot, settings: ProtocolSettings, persistingBlock: persistingBlock);
                         if (engine.State != VMState.HALT)
-                            throw new InvalidOperationException($"Execution for {assetId}.balanceOf('{account}' fault");
+                            throw new InvalidOperationException($"Execution for {assetId}.balanceOf('{account}') fault");
                         var value = engine.ResultStack.Pop().GetInteger();
                         if (value.Sign > 0) balances.Add((account, value));
                     }

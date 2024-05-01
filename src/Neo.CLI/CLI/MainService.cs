@@ -378,9 +378,9 @@ namespace Neo.CLI
             NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
             NeoSystem.AddService(this);
 
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+
             LocalNode = await NeoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance());
-#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
+
 
             // installing plugins
             var installTasks = options.Plugins?.Select(p => p).Where(p => !string.IsNullOrEmpty(p)).ToList().Select(p => InstallPluginAsync(p));

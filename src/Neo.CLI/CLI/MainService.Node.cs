@@ -111,9 +111,9 @@ namespace Neo.CLI
             });
             ReadLine();
             cancel.Cancel();
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+
             try { Task.WaitAll(task, broadcast); } catch { }
-#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
+
             Console.WriteLine();
             Console.CursorVisible = true;
         }

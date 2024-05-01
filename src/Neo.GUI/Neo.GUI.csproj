@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Copyright>2016-2023 The Neo Project</Copyright>
@@ -10,6 +10,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <Product>Neo.GUI</Product>
     <ApplicationIcon>neo.ico</ApplicationIcon>
+    <GenerateResourceWarnOnBinaryFormatterUse>false</GenerateResourceWarnOnBinaryFormatterUse>
   </PropertyGroup>
 
   <ItemGroup>

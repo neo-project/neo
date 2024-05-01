@@ -65,8 +65,8 @@ namespace Neo.UnitTests.Ledger
 
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             var balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
-            await NativeContract.GAS.BurnAsync(engine, UInt160.Zero, balance);
-            _ = NativeContract.GAS.MintAsync(engine, UInt160.Zero, 8, false);
+            await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
+            _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 8, false);
 
             // Test
             TransactionVerificationContext verificationContext = new();
@@ -87,8 +87,8 @@ namespace Neo.UnitTests.Ledger
             var snapshot = TestBlockchain.GetTestSnapshot();
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             var balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
-            await NativeContract.GAS.BurnAsync(engine, UInt160.Zero, balance);
-            _ = NativeContract.GAS.MintAsync(engine, UInt160.Zero, 8, true);
+            await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
+            _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 8, true);
 
             TransactionVerificationContext verificationContext = new();
             var tx = CreateTransactionWithFee(1, 2);
@@ -110,8 +110,8 @@ namespace Neo.UnitTests.Ledger
             var snapshot = TestBlockchain.GetTestSnapshot();
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
             var balance = NativeContract.GAS.BalanceOf(snapshot, UInt160.Zero);
-            await NativeContract.GAS.BurnAsync(engine, UInt160.Zero, balance);
-            _ = NativeContract.GAS.MintAsync(engine, UInt160.Zero, 3 + 3 + 1, true); // balance is enough for 2 transactions and 1 GAS is left.
+            await NativeContract.GAS.Burn(engine, UInt160.Zero, balance);
+            _ = NativeContract.GAS.Mint(engine, UInt160.Zero, 3 + 3 + 1, true); // balance is enough for 2 transactions and 1 GAS is left.
 
             TransactionVerificationContext verificationContext = new();
             var tx = CreateTransactionWithFee(1, 2);
