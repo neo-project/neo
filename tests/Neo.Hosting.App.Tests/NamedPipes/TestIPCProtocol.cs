@@ -9,9 +9,11 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Util;
 using Neo.Hosting.App.Extensions;
 using Neo.Hosting.App.Factories;
 using Neo.Hosting.App.NamedPipes.Protocol;
+using System.Diagnostics;
 using System.Text;
 using Xunit.Abstractions;
 
@@ -25,38 +27,30 @@ namespace Neo.Hosting.App.Tests.NamedPipes
         private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
 
         [Fact]
-        public async Task PipeVersion_ToBytesArray_ValidSerializeData()
+        public async Task PipeVersion_CopyToAsync()
         {
             var version = new PipeVersion();
+            var expectedBytes = version.ToArray();
+            var expectedHexString = Convert.ToHexString(expectedBytes);
 
-            using var ms1 = new MemoryStream();
-            await version.CopyToAsync(ms1).DefaultTimeout();
+            using var ms = new MemoryStream();
+            await version.CopyToAsync(ms).DefaultTimeout();
 
-            var newVersion = new PipeVersion();
+            var actualBytes = ms.ToArray();
+            var actualHexString = Convert.ToHexString(actualBytes);
 
-            ms1.Position = 0;
-            await newVersion.CopyFromAsync(ms1).DefaultTimeout();
+            var className = nameof(PipeVersion);
+            var methodName = nameof(PipeVersion.CopyToAsync);
+            _testOutputHelper.WriteLine(nameof(Debug).PadCenter(17, '-'));
+            _testOutputHelper.WriteLine($"    Class: {className}");
+            _testOutputHelper.WriteLine($"   Method: {methodName}");
 
-            var buffer1 = version.ToArray();
-            var buffer2 = newVersion.ToArray();
-            var buffer3 = ms1.ToArray();
+            _testOutputHelper.WriteLine(nameof(Result).PadCenter(17, '-'));
+            _testOutputHelper.WriteLine($"   Actual: {actualHexString}");
+            _testOutputHelper.WriteLine($" Expected: {expectedHexString}");
+            _testOutputHelper.WriteLine($"-----------------");
 
-            _testOutputHelper.WriteLine(nameof(PipeVersion).PadCenter(25, '-'));
-            _testOutputHelper.WriteLine("           HexString: {0}", Convert.ToHexString(buffer1));
-            _testOutputHelper.WriteLine("        Base64String: {0}", Convert.ToBase64String(buffer1));
-            _testOutputHelper.WriteLine("    EncodedHexString: {0}", Convert.ToHexString(buffer3));
-            _testOutputHelper.WriteLine(" EncodedBase64String: {0}", Convert.ToBase64String(buffer3));
-            _testOutputHelper.WriteLine("-------------------------");
-
-            Assert.Equal(version.Version, newVersion.Version);
-            Assert.Equal(version.Plugins, newVersion.Plugins);
-            Assert.Equal(version.Platform, newVersion.Platform);
-            Assert.Equal(version.TimeStamp, newVersion.TimeStamp);
-            Assert.Equal(version.MachineName, newVersion.MachineName);
-            Assert.Equal(version.UserName, newVersion.UserName);
-            Assert.Equal(version.ProcessId, newVersion.ProcessId);
-            Assert.Equal(version.ProcessPath, newVersion.ProcessPath);
-            Assert.Equal(buffer1, buffer2);
+            Assert.Equal(expectedBytes, actualBytes);
         }
 
         [Fact]

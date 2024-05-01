@@ -28,6 +28,8 @@ namespace Neo.Hosting.App
 {
     public sealed partial class Program
     {
+        internal const string DEFAULT_VERSION_STRING = "0.0.0.0";
+
         internal static int ApplicationVersionNumber { get; }
         internal static Version ApplicationVersion { get; }
         internal static bool IsRunningAsService =>

@@ -9,151 +9,119 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Neo.Hosting.App.Helpers;
+using Neo.Hosting.App.Extensions;
 using Neo.Plugins;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Neo.Hosting.App.NamedPipes.Protocol
 {
-    internal sealed class PipeVersion : PipeMessage
+    internal sealed class PipeVersion : IPipeMessage
     {
-        public override ulong Magic { get; } = 0x56455253494f4eul; // VERSION
+        public const ulong Magic = 0x56455253494f4eul; // VERSION
 
         // Assembly Information
-        public Version Version { get; set; } = Program.ApplicationVersion;
-        public IDictionary<string, Version> Plugins { get; set; } = Plugin.Plugins.ToDictionary(k => k.Name, v => v.Version, StringComparer.OrdinalIgnoreCase);
+        public int VersionNumber { get; set; }
+        public IDictionary<string, Version> Plugins { get; set; }
 
         // Computer Information
-        public PlatformID Platform { get; set; } = Environment.OSVersion.Platform;
-        public DateTime TimeStamp { get; set; } = DateTime.UtcNow;
-        public string? MachineName { get; set; } = Environment.MachineName;
-        public string? UserName { get; set; } = Environment.UserName;
+        public PlatformID Platform { get; set; }
+        public DateTime TimeStamp { get; set; }
+        public string MachineName { get; set; }
+        public string UserName { get; set; }
 
         // Service Information
-        public int ProcessId { get; set; } = Environment.ProcessId;
-        public string? ProcessPath { get; set; } = Environment.ProcessPath;
+        public int ProcessId { get; set; }
+        public string ProcessPath { get; set; }
 
-        protected override int Initialize(byte[] buffer)
+        public PipeVersion()
         {
-            const string VERSION_NULL_STRING = "0.0.0.0";
-
-            var span = buffer.AsSpan();
-            var pos = 0;
-
-            var versionString = BinaryUtility.ReadUtf8String(span, out var count, pos);
-            pos += count;
-
-            Version = new(versionString ?? VERSION_NULL_STRING);
-            Plugins = new Dictionary<string, Version>(StringComparer.OrdinalIgnoreCase);
-
-            var arrayCount = BinaryUtility.ReadEncodedInteger(span, int.MaxValue, pos);
-            pos += BinaryUtility.GetByteCount(arrayCount);
-
-            for (var x = 0; x < arrayCount; x++)
-            {
-                var k = BinaryUtility.ReadUtf8String(span, out count, pos);
-                pos += count;
-
-                var v = BinaryUtility.ReadUtf8String(span, out count, pos);
-                pos += count;
-
-                if (string.IsNullOrEmpty(k) == false || string.IsNullOrEmpty(v) == false)
-                    _ = Plugins.TryAdd(k!, new Version(v!));
-            }
-
-            Platform = (PlatformID)span[pos++];
-
-            var timeValue = BinaryUtility.ReadEncodedInteger(span, long.MaxValue, pos);
-            TimeStamp = DateTime.FromBinary(timeValue);
-            pos += sizeof(long) + 1;
-
-            MachineName = BinaryUtility.ReadUtf8String(span, out count, pos);
-            pos += count;
-
-            UserName = BinaryUtility.ReadUtf8String(span, out count, pos);
-            pos += count;
-
-            ProcessId = BinaryUtility.ReadEncodedInteger(span, int.MaxValue, pos);
-            pos += sizeof(int) + 1;
-
-            ProcessPath = BinaryUtility.ReadUtf8String(span, out count, pos);
-            pos += count;
-
-            return pos;
+            VersionNumber = Program.ApplicationVersionNumber;
+            Plugins = Plugin.Plugins.ToDictionary(k => k.Name, v => v.Version, StringComparer.OrdinalIgnoreCase);
+            Platform = Environment.OSVersion.Platform;
+            TimeStamp = DateTime.UtcNow;
+            MachineName = Environment.MachineName;
+            UserName = Environment.UserName;
+            ProcessId = Environment.ProcessId;
+            ProcessPath = Environment.ProcessPath ?? string.Empty;
         }
 
-        public override byte[] ToArray()
+        public Task CopyFromAsync(Stream stream)
         {
-            var str = $"{Version}";
-            var count = Encoding.UTF8.GetByteCount(str);
+            if (stream.CanRead == false)
+                throw new IOException();
 
-            var size = BinaryUtility.GetByteCount(str);
-            var dst = new byte[size];
-            var pos = dst.Length;
-            _ = BinaryUtility.WriteUtf8String(str, 0, dst, 0, count);
+            var magic = stream.Read<ulong>();
+            if (magic != Magic)
+                throw new InvalidDataException();
 
-            size = BinaryUtility.GetByteCount(Plugins.Count);
-            Array.Resize(ref dst, dst.Length + size);
-            BinaryUtility.WriteEncodedInteger(Plugins.Count, dst, pos);
-            pos = dst.Length;
+            var version = stream.Read<int>();
+            if (version != Program.ApplicationVersionNumber)
+                throw new InvalidDataException();
 
-            foreach (var (key, value) in Plugins)
+            VersionNumber = version;
+
+            var plugins = new Dictionary<string, Version>(StringComparer.OrdinalIgnoreCase);
+            var count = stream.Read<int>();
+
+            for (var i = 0; i < count; i++)
             {
-                str = key;
-                count = Encoding.UTF8.GetByteCount(str);
-                size = BinaryUtility.GetByteCount(str);
-                Array.Resize(ref dst, dst.Length + size);
-                _ = BinaryUtility.WriteUtf8String(str, 0, dst, pos, count);
-                pos = dst.Length;
-
-                str = $"{value}";
-                count = Encoding.UTF8.GetByteCount(str);
-                size = BinaryUtility.GetByteCount(str);
-                Array.Resize(ref dst, dst.Length + size);
-                _ = BinaryUtility.WriteUtf8String(str, 0, dst, pos, count);
-                pos = dst.Length;
+                var key = stream.ReadString();
+                if (Version.TryParse(stream.ReadString(), out var value))
+                    _ = plugins.TryAdd(key, value);
             }
 
-            dst = [.. dst, (byte)Platform];
-            pos = dst.Length;
+            Platform = stream.Read<PlatformID>();
+            TimeStamp = DateTime.FromBinary(stream.Read<long>());
+            MachineName = stream.ReadString();
+            UserName = stream.ReadString();
+            ProcessId = stream.Read<int>();
+            ProcessPath = stream.ReadString();
 
-            var timeValue = TimeStamp.ToBinary();
-            Array.Resize(ref dst, dst.Length + sizeof(long) + 1);
-            BinaryUtility.WriteEncodedInteger(timeValue, dst, pos);
-            pos = dst.Length;
+            return Task.CompletedTask;
+        }
 
-            count = MachineName != null
-                ? Encoding.UTF8.GetByteCount(MachineName)
-                : 0;
-            size = BinaryUtility.GetByteCount(MachineName);
-            Array.Resize(ref dst, dst.Length + size);
-            _ = BinaryUtility.WriteUtf8String(MachineName, 0, dst, pos, count);
-            pos = dst.Length;
+        public Task CopyToAsync(Stream stream)
+        {
+            CopyToStream(stream);
+            return stream.FlushAsync();
+        }
 
-            count = UserName != null
-                ? Encoding.UTF8.GetByteCount(UserName)
-                : 0;
-            size = BinaryUtility.GetByteCount(UserName);
-            Array.Resize(ref dst, dst.Length + size);
-            _ = BinaryUtility.WriteUtf8String(UserName, 0, dst, pos, count);
-            pos = dst.Length;
+        public Task CopyToAsync(Stream stream, CancellationToken cancellationToken = default)
+        {
+            CopyToStream(stream);
+            return stream.FlushAsync(cancellationToken);
+        }
 
-            Array.Resize(ref dst, dst.Length + sizeof(int) + 1);
-            BinaryUtility.WriteEncodedInteger(ProcessId, dst, pos);
-            pos = dst.Length;
+        public byte[] ToArray()
+        {
+            using var ms = new MemoryStream();
+            CopyToStream(ms);
+            return ms.ToArray();
+        }
 
-            count = ProcessPath != null
-                ? Encoding.UTF8.GetByteCount(ProcessPath)
-                : 0;
-            size = BinaryUtility.GetByteCount(ProcessPath);
-            Array.Resize(ref dst, dst.Length + size);
-            _ = BinaryUtility.WriteUtf8String(ProcessPath, 0, dst, pos, count);
-            //pos = dst.Length;
+        private void CopyToStream(Stream stream)
+        {
+            stream.Write(Magic);
+            stream.Write(Program.ApplicationVersionNumber);
 
-            return dst;
+            stream.Write(Plugins.Count);
+            foreach (var plugin in Plugins)
+            {
+                stream.Write(plugin.Key);
+                stream.Write($"{plugin.Value}");
+            }
+
+            stream.Write(Platform);
+            stream.Write(TimeStamp.ToBinary());
+            stream.Write(MachineName);
+            stream.Write(UserName);
+            stream.Write(ProcessId);
+            stream.Write(ProcessPath);
         }
     }
 }
