@@ -277,7 +277,7 @@ csharp_prefer_braces = when_multiline:warning
 dotnet_diagnostic.IDE0011.severity = warning
 
 // VSTHRD002: Avoid problematic synchronous waits
-dotnet_diagnostic.VSTHRD002.severity = none
+dotnet_diagnostic.VSTHRD002.severity = disab
 
 # Async methods should have "Async" suffix
 dotnet_diagnostic.VSTHRD200.severity = warning

@@ -141,7 +141,9 @@ namespace Neo
             this.TxRouter = ActorSystem.ActorOf(TransactionRouter.Props(this));
             foreach (var plugin in Plugin.Plugins)
                 plugin.OnSystemLoaded(this);
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
             Blockchain.Ask(new Blockchain.Initialize()).Wait();
+#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
         }
 
         /// <summary>
@@ -182,7 +184,9 @@ namespace Neo
                 p.Dispose();
             // Dispose will call ActorSystem.Terminate()
             ActorSystem.Dispose();
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
             ActorSystem.WhenTerminated.Wait();
+#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
             HeaderCache.Dispose();
             store.Dispose();
         }
