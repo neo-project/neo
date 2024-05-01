@@ -50,7 +50,7 @@ namespace Neo.GUI
             if (e.KeyCode == Keys.Enter)
             {
                 e.SuppressKeyPress = true;
-                string line = $"{textBox2.Text}{Environment.NewLine}";
+                var line = $"{textBox2.Text}{Environment.NewLine}";
                 textBox1.AppendText(ConsoleHelper.ReadingPassword ? "***" : line);
                 switch (textBox2.Text.ToLower())
                 {

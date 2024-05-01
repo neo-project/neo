@@ -58,7 +58,7 @@ namespace Neo.Persistence
             {
                 lock (dictionary)
                 {
-                    if (dictionary.TryGetValue(key, out Trackable trackable))
+                    if (dictionary.TryGetValue(key, out var trackable))
                     {
                         if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
                             throw new KeyNotFoundException();
@@ -89,7 +89,7 @@ namespace Neo.Persistence
         {
             lock (dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (dictionary.TryGetValue(key, out var trackable))
                 {
                     trackable.Item = value;
                     trackable.State = trackable.State switch
@@ -125,7 +125,7 @@ namespace Neo.Persistence
         public virtual void Commit()
         {
             LinkedList<StorageKey> deletedItem = new();
-            foreach (Trackable trackable in GetChangeSet())
+            foreach (var trackable in GetChangeSet())
                 switch (trackable.State)
                 {
                     case TrackState.Added:
@@ -141,7 +141,7 @@ namespace Neo.Persistence
                         deletedItem.AddFirst(trackable.Key);
                         break;
                 }
-            foreach (StorageKey key in deletedItem)
+            foreach (var key in deletedItem)
             {
                 dictionary.Remove(key);
             }
@@ -165,7 +165,7 @@ namespace Neo.Persistence
         {
             lock (dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (dictionary.TryGetValue(key, out var trackable))
                 {
                     if (trackable.State == TrackState.Added)
                     {
@@ -180,7 +180,7 @@ namespace Neo.Persistence
                 }
                 else
                 {
-                    StorageItem item = TryGetInternal(key);
+                    var item = TryGetInternal(key);
                     if (item == null) return;
                     dictionary.Add(key, new Trackable
                     {
@@ -215,7 +215,7 @@ namespace Neo.Persistence
                     throw new ArgumentException();
                 }
                 seek_prefix = null;
-                for (int i = key_prefix.Length - 1; i >= 0; i--)
+                for (var i = key_prefix.Length - 1; i >= 0; i--)
                 {
                     if (key_prefix[i] < 0xff)
                     {
@@ -251,7 +251,7 @@ namespace Neo.Persistence
         /// <returns>The entries found with the desired range.</returns>
         public IEnumerable<(StorageKey Key, StorageItem Value)> FindRange(byte[] start, byte[] end, SeekDirection direction = SeekDirection.Forward)
         {
-            ByteArrayComparer comparer = direction == SeekDirection.Forward
+            var comparer = direction == SeekDirection.Forward
                 ? ByteArrayComparer.Default
                 : ByteArrayComparer.Reverse;
             foreach (var (key, value) in Seek(start, direction))
@@ -269,7 +269,7 @@ namespace Neo.Persistence
         {
             lock (dictionary)
             {
-                foreach (StorageKey key in changeSet)
+                foreach (var key in changeSet)
                     yield return dictionary[key];
             }
         }
@@ -283,7 +283,7 @@ namespace Neo.Persistence
         {
             lock (dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (dictionary.TryGetValue(key, out var trackable))
                     return trackable.State != TrackState.Deleted && trackable.State != TrackState.NotFound;
                 return ContainsInternal(key);
             }
@@ -313,7 +313,7 @@ namespace Neo.Persistence
         {
             lock (dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (dictionary.TryGetValue(key, out var trackable))
                 {
                     if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
                     {
@@ -369,7 +369,7 @@ namespace Neo.Persistence
         {
             lock (dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (dictionary.TryGetValue(key, out var trackable))
                 {
                     if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
                     {
@@ -418,7 +418,7 @@ namespace Neo.Persistence
         {
             IEnumerable<(byte[], StorageKey, StorageItem)> cached;
             HashSet<StorageKey> cachedKeySet;
-            ByteArrayComparer comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
+            var comparer = direction == SeekDirection.Forward ? ByteArrayComparer.Default : ByteArrayComparer.Reverse;
             lock (dictionary)
             {
                 cached = dictionary
@@ -444,8 +444,8 @@ namespace Neo.Persistence
             using var e1 = cached.GetEnumerator();
             using var e2 = uncached.GetEnumerator();
             (byte[] KeyBytes, StorageKey Key, StorageItem Item) i1, i2;
-            bool c1 = e1.MoveNext();
-            bool c2 = e2.MoveNext();
+            var c1 = e1.MoveNext();
+            var c2 = e2.MoveNext();
             i1 = c1 ? e1.Current : default;
             i2 = c2 ? e2.Current : default;
             while (c1 || c2)
@@ -482,13 +482,13 @@ namespace Neo.Persistence
         {
             lock (dictionary)
             {
-                if (dictionary.TryGetValue(key, out Trackable trackable))
+                if (dictionary.TryGetValue(key, out var trackable))
                 {
                     if (trackable.State == TrackState.Deleted || trackable.State == TrackState.NotFound)
                         return null;
                     return trackable.Item;
                 }
-                StorageItem value = TryGetInternal(key);
+                var value = TryGetInternal(key);
                 if (value == null) return null;
                 dictionary.Add(key, new Trackable
                 {

@@ -42,8 +42,8 @@ namespace Neo.SmartContract.Native
             {
                 if (NativeContracts.TryGetValue(native.Id, out var value)) return value;
 
-                uint index = engine.PersistingBlock is null ? Ledger.CurrentIndex(engine.Snapshot) : engine.PersistingBlock.Index;
-                CacheEntry methods = native.GetAllowedMethods(engine.ProtocolSettings.IsHardforkEnabled, index);
+                var index = engine.PersistingBlock is null ? Ledger.CurrentIndex(engine.Snapshot) : engine.PersistingBlock.Index;
+                var methods = native.GetAllowedMethods(engine.ProtocolSettings.IsHardforkEnabled, index);
                 NativeContracts[native.Id] = methods;
                 return methods;
             }
@@ -141,9 +141,9 @@ namespace Neo.SmartContract.Native
             // Reflection to get the methods
 
             List<ContractMethodMetadata> listMethods = new();
-            foreach (MemberInfo member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
+            foreach (var member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
             {
-                ContractMethodAttribute attribute = member.GetCustomAttribute<ContractMethodAttribute>();
+                var attribute = member.GetCustomAttribute<ContractMethodAttribute>();
                 if (attribute is null) continue;
                 listMethods.Add(new ContractMethodMetadata(member, attribute));
             }
@@ -185,7 +185,7 @@ namespace Neo.SmartContract.Native
             byte[] script;
             using (ScriptBuilder sb = new())
             {
-                foreach (ContractMethodMetadata method in methodDescriptors.Where(u => u.ActiveIn is null || hfChecker(u.ActiveIn.Value, index)))
+                foreach (var method in methodDescriptors.Where(u => u.ActiveIn is null || hfChecker(u.ActiveIn.Value, index)))
                 {
                     method.Descriptor.Offset = sb.Length;
                     sb.EmitPush(0); //version
@@ -279,7 +279,7 @@ namespace Neo.SmartContract.Native
             }
 
             // If is in the hardfork height, return true
-            foreach (Hardfork hf in usedHardforks)
+            foreach (var hf in usedHardforks)
             {
                 if (!settings.Hardforks.TryGetValue(hf, out var activeIn))
                 {
@@ -325,7 +325,7 @@ namespace Neo.SmartContract.Native
         /// <returns><see langword="true"/> if the committee has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
         protected static bool CheckCommittee(ApplicationEngine engine)
         {
-            UInt160 committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.Snapshot);
+            var committeeMultiSigAddr = NEO.GetCommitteeAddress(engine.Snapshot);
             return engine.CheckWitnessInternal(committeeMultiSigAddr);
         }
 
@@ -345,36 +345,36 @@ namespace Neo.SmartContract.Native
             return contract;
         }
 
-        internal async Task Invoke(ApplicationEngine engine, byte version)
+        internal async Task InvokeAsync(ApplicationEngine engine, byte version)
         {
             try
             {
                 if (version != 0)
                     throw new InvalidOperationException($"The native contract of version {version} is not active.");
                 // Get native contracts invocation cache
-                NativeContractsCache nativeContracts = engine.GetState(() => new NativeContractsCache());
-                NativeContractsCache.CacheEntry currentAllowedMethods = nativeContracts.GetAllowedMethods(this, engine);
+                var nativeContracts = engine.GetState(() => new NativeContractsCache());
+                var currentAllowedMethods = nativeContracts.GetAllowedMethods(this, engine);
                 // Check if the method is allowed
-                ExecutionContext context = engine.CurrentContext;
-                ContractMethodMetadata method = currentAllowedMethods.Methods[context.InstructionPointer];
+                var context = engine.CurrentContext;
+                var method = currentAllowedMethods.Methods[context.InstructionPointer];
                 if (method.ActiveIn is not null && !engine.IsHardforkEnabled(method.ActiveIn.Value))
                     throw new InvalidOperationException($"Cannot call this method before hardfork {method.ActiveIn}.");
-                ExecutionContextState state = context.GetState<ExecutionContextState>();
+                var state = context.GetState<ExecutionContextState>();
                 if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                     throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
                 engine.AddGas(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
                 List<object> parameters = new();
                 if (method.NeedApplicationEngine) parameters.Add(engine);
                 if (method.NeedSnapshot) parameters.Add(engine.Snapshot);
-                for (int i = 0; i < method.Parameters.Length; i++)
+                for (var i = 0; i < method.Parameters.Length; i++)
                     parameters.Add(engine.Convert(context.EvaluationStack.Peek(i), method.Parameters[i]));
-                object returnValue = method.Handler.Invoke(this, parameters.ToArray());
+                var returnValue = method.Handler.Invoke(this, parameters.ToArray());
                 if (returnValue is ContractTask task)
                 {
                     await task;
                     returnValue = task.GetResult();
                 }
-                for (int i = 0; i < method.Parameters.Length; i++)
+                for (var i = 0; i < method.Parameters.Length; i++)
                 {
                     context.EvaluationStack.Pop();
                 }
@@ -399,17 +399,17 @@ namespace Neo.SmartContract.Native
             return contractsDictionary.ContainsKey(hash);
         }
 
-        internal virtual ContractTask Initialize(ApplicationEngine engine, Hardfork? hardFork)
+        internal virtual ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardFork)
         {
             return ContractTask.CompletedTask;
         }
 
-        internal virtual ContractTask OnPersist(ApplicationEngine engine)
+        internal virtual ContractTask OnPersistAsync(ApplicationEngine engine)
         {
             return ContractTask.CompletedTask;
         }
 
-        internal virtual ContractTask PostPersist(ApplicationEngine engine)
+        internal virtual ContractTask PostPersistAsync(ApplicationEngine engine)
         {
             return ContractTask.CompletedTask;
         }

@@ -132,8 +132,8 @@ namespace Neo.VM
             {
                 try
                 {
-                    ExecutionContext context = CurrentContext!;
-                    Instruction instruction = context.CurrentInstruction ?? Instruction.RET;
+                    var context = CurrentContext!;
+                    var instruction = context.CurrentInstruction ?? Instruction.RET;
                     PreExecuteInstruction(instruction);
 #if VMPERF
                     Console.WriteLine("op:["
@@ -223,7 +223,7 @@ namespace Neo.VM
         /// <returns>The created context.</returns>
         public ExecutionContext LoadScript(Script script, int rvcount = -1, int initialPosition = 0)
         {
-            ExecutionContext context = CreateContext(script, rvcount, initialPosition);
+            var context = CreateContext(script, rvcount, initialPosition);
             LoadContext(context);
             return context;
         }

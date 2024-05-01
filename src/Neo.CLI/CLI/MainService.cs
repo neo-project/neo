@@ -142,7 +142,7 @@ namespace Neo.CLI
 
         public void CreateWallet(string path, string password, bool createDefaultAccount = true)
         {
-            Wallet wallet = Wallet.Create(null, path, password, NeoSystem.Settings);
+            var wallet = Wallet.Create(null, path, password, NeoSystem.Settings);
             if (wallet == null)
             {
                 ConsoleHelper.Warning("Wallet files in that format are not supported, please use a .json or .db3 file extension.");
@@ -150,7 +150,7 @@ namespace Neo.CLI
             }
             if (createDefaultAccount)
             {
-                WalletAccount account = wallet.CreateAccount();
+                var account = wallet.CreateAccount();
                 ConsoleHelper.Info("   Address: ", account.Address);
                 ConsoleHelper.Info("    Pubkey: ", account.GetKey().PublicKey.EncodePoint(true).ToHexString());
                 ConsoleHelper.Info("ScriptHash: ", $"{account.ScriptHash}");
@@ -161,22 +161,22 @@ namespace Neo.CLI
 
         private IEnumerable<Block> GetBlocks(Stream stream, bool read_start = false)
         {
-            using BinaryReader r = new BinaryReader(stream);
-            uint start = read_start ? r.ReadUInt32() : 0;
-            uint count = r.ReadUInt32();
-            uint end = start + count - 1;
-            uint currentHeight = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
+            using var r = new BinaryReader(stream);
+            var start = read_start ? r.ReadUInt32() : 0;
+            var count = r.ReadUInt32();
+            var end = start + count - 1;
+            var currentHeight = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
             if (end <= currentHeight) yield break;
-            for (uint height = start; height <= end; height++)
+            for (var height = start; height <= end; height++)
             {
                 var size = r.ReadInt32();
                 if (size > Message.PayloadMaxSize)
                     throw new ArgumentException($"Block {height} exceeds the maximum allowed size");
 
-                byte[] array = r.ReadBytes(size);
+                var array = r.ReadBytes(size);
                 if (height > currentHeight)
                 {
-                    Block block = array.AsSerializable<Block>();
+                    var block = array.AsSerializable<Block>();
                     yield return block;
                 }
             }
@@ -194,7 +194,7 @@ namespace Neo.CLI
             if (File.Exists(pathAccZip))
                 using (FileStream fs = new(pathAccZip, FileMode.Open, FileAccess.Read, FileShare.Read))
                 using (ZipArchive zip = new(fs, ZipArchiveMode.Read))
-                using (Stream? zs = zip.GetEntry(pathAcc)?.Open())
+                using (var zs = zip.GetEntry(pathAcc)?.Open())
                 {
                     if (zs is not null)
                     {
@@ -210,14 +210,14 @@ namespace Neo.CLI
                 IsCompressed = p.EndsWith(".zip")
             }).OrderBy(p => p.Start);
 
-            uint height = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
+            var height = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
             foreach (var path in paths)
             {
                 if (path.Start > height + 1) break;
                 if (path.IsCompressed)
                     using (FileStream fs = new(path.FileName, FileMode.Open, FileAccess.Read, FileShare.Read))
                     using (ZipArchive zip = new(fs, ZipArchiveMode.Read))
-                    using (Stream? zs = zip.GetEntry(Path.GetFileNameWithoutExtension(path.FileName))?.Open())
+                    using (var zs = zip.GetEntry(Path.GetFileNameWithoutExtension(path.FileName))?.Open())
                     {
                         if (zs is not null)
                         {
@@ -282,7 +282,7 @@ namespace Neo.CLI
 
             // Build script
 
-            using (ScriptBuilder sb = new ScriptBuilder())
+            using (var sb = new ScriptBuilder())
             {
                 if (dataParameter is not null)
                     sb.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nef.ToArray(), manifest.ToJson().ToString(), dataParameter);
@@ -335,7 +335,7 @@ namespace Neo.CLI
 
             // Build script
 
-            using (ScriptBuilder sb = new ScriptBuilder())
+            using (var sb = new ScriptBuilder())
             {
                 if (dataParameter is null)
                     sb.EmitDynamicCall(scriptHash, "update", nef.ToArray(), manifest.ToJson().ToString());
@@ -367,19 +367,19 @@ namespace Neo.CLI
             CurrentWallet = Wallet.Open(path, password, NeoSystem.Settings) ?? throw new NotSupportedException();
         }
 
-        public async Task Start(CommandLineOptions options)
+        public async Task StartAsync(CommandLineOptions options)
         {
             if (NeoSystem != null) return;
-            bool verifyImport = !(options.NoVerify ?? false);
+            var verifyImport = !(options.NoVerify ?? false);
 
-            ProtocolSettings protocol = ProtocolSettings.Load("config.json");
+            var protocol = ProtocolSettings.Load("config.json");
             CustomProtocolSettings(options, protocol);
             CustomApplicationSettings(options, Settings.Default);
             NeoSystem = new NeoSystem(protocol, Settings.Default.Storage.Engine, string.Format(Settings.Default.Storage.Path, protocol.Network.ToString("X8")));
             NeoSystem.AddService(this);
 
 #pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
-            LocalNode = NeoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance()).Result;
+            LocalNode = await NeoSystem.LocalNode.Ask<LocalNode>(new LocalNode.GetInstance());
 #pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
 
             // installing plugins
@@ -395,12 +395,12 @@ namespace Neo.CLI
                 RegisterCommand(plugin, plugin.Name);
             }
 
-            using (IEnumerator<Block> blocksBeingImported = GetBlocksFromFile().GetEnumerator())
+            using (var blocksBeingImported = GetBlocksFromFile().GetEnumerator())
             {
                 while (true)
                 {
-                    List<Block> blocksToImport = new List<Block>();
-                    for (int i = 0; i < 10; i++)
+                    var blocksToImport = new List<Block>();
+                    for (var i = 0; i < 10; i++)
                     {
                         if (!blocksBeingImported.MoveNext()) break;
                         blocksToImport.Add(blocksBeingImported.Current);
@@ -460,11 +460,11 @@ namespace Neo.CLI
 
         private void WriteBlocks(uint start, uint count, string path, bool writeStart)
         {
-            uint end = start + count - 1;
-            using FileStream fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096, FileOptions.WriteThrough);
+            var end = start + count - 1;
+            using var fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096, FileOptions.WriteThrough);
             if (fs.Length > 0)
             {
-                byte[] buffer = new byte[sizeof(uint)];
+                var buffer = new byte[sizeof(uint)];
                 if (writeStart)
                 {
                     fs.Seek(sizeof(uint), SeekOrigin.Begin);
@@ -493,10 +493,10 @@ namespace Neo.CLI
 
             using (var percent = new ConsolePercent(start, end))
             {
-                for (uint i = start; i <= end; i++)
+                for (var i = start; i <= end; i++)
                 {
-                    Block block = NativeContract.Ledger.GetBlock(NeoSystem.StoreView, i);
-                    byte[] array = block.ToArray();
+                    var block = NativeContract.Ledger.GetBlock(NeoSystem.StoreView, i);
+                    var array = block.ToArray();
                     fs.Write(BitConverter.GetBytes(array.Length), 0, sizeof(int));
                     fs.Write(array, 0, array.Length);
                     percent.Value = i;
@@ -522,7 +522,7 @@ namespace Neo.CLI
         {
             if (NoWallet()) return;
 
-            Signer[] signers = Array.Empty<Signer>();
+            var signers = Array.Empty<Signer>();
             var snapshot = NeoSystem.StoreView;
 
             if (account != null)
@@ -535,10 +535,10 @@ namespace Neo.CLI
 
             try
             {
-                Transaction tx = CurrentWallet!.MakeTransaction(snapshot, script, account, signers, maxGas: gas);
+                var tx = CurrentWallet!.MakeTransaction(snapshot, script, account, signers, maxGas: gas);
                 ConsoleHelper.Info("Invoking script with: ", $"'{Convert.ToBase64String(tx.Script.Span)}'");
 
-                using (ApplicationEngine engine = ApplicationEngine.Run(tx.Script, snapshot, container: tx, settings: NeoSystem.Settings, gas: gas))
+                using (var engine = ApplicationEngine.Run(tx.Script, snapshot, container: tx, settings: NeoSystem.Settings, gas: gas))
                 {
                     PrintExecutionOutput(engine, true);
                     if (engine.State == VMState.FAULT) return;
@@ -583,7 +583,7 @@ namespace Neo.CLI
                 }
             }
 
-            ContractState contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, scriptHash);
+            var contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, scriptHash);
             if (contract == null)
             {
                 ConsoleHelper.Error("Contract does not exist.");
@@ -602,7 +602,7 @@ namespace Neo.CLI
 
             byte[] script;
 
-            using (ScriptBuilder scriptBuilder = new ScriptBuilder())
+            using (var scriptBuilder = new ScriptBuilder())
             {
                 scriptBuilder.EmitDynamicCall(scriptHash, operation, parameters.ToArray());
                 script = scriptBuilder.ToArray();
@@ -614,7 +614,7 @@ namespace Neo.CLI
                 tx.Script = script;
             }
 
-            using ApplicationEngine engine = ApplicationEngine.Run(script, NeoSystem.StoreView, container: verifiable, settings: NeoSystem.Settings, gas: gas);
+            using var engine = ApplicationEngine.Run(script, NeoSystem.StoreView, container: verifiable, settings: NeoSystem.Settings, gas: gas);
             PrintExecutionOutput(engine, showStack);
             result = engine.State == VMState.FAULT ? StackItem.Null : engine.ResultStack.Peek();
             return engine.State != VMState.FAULT;

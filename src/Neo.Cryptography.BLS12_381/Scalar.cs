@@ -62,7 +62,7 @@ public readonly struct Scalar : IEquatable<Scalar>, INumber<Scalar>
         if (data.Length != Size)
             throw new FormatException($"The argument `{nameof(data)}` must contain {Size} bytes.");
 
-        ref readonly Scalar ref_ = ref Unsafe.As<byte, Scalar>(ref MemoryMarshal.GetReference(data));
+        ref readonly var ref_ = ref Unsafe.As<byte, Scalar>(ref MemoryMarshal.GetReference(data));
 
         try
         {
@@ -70,7 +70,7 @@ public readonly struct Scalar : IEquatable<Scalar>, INumber<Scalar>
         }
         finally
         {
-            ReadOnlySpan<ulong> u64 = MemoryMarshal.Cast<byte, ulong>(data);
+            var u64 = MemoryMarshal.Cast<byte, ulong>(data);
             ulong borrow = 0;
             (_, borrow) = Sbb(u64[0], MODULUS_LIMBS_64[0], borrow);
             (_, borrow) = Sbb(u64[1], MODULUS_LIMBS_64[1], borrow);
@@ -92,7 +92,7 @@ public readonly struct Scalar : IEquatable<Scalar>, INumber<Scalar>
         if (data.Length != Size * 2)
             throw new FormatException($"The argument `{nameof(data)}` must contain {Size * 2} bytes.");
 
-        ReadOnlySpan<Scalar> d = MemoryMarshal.Cast<byte, Scalar>(data);
+        var d = MemoryMarshal.Cast<byte, Scalar>(data);
         return d[0] * R2 + d[1] * R3;
     }
 
@@ -101,7 +101,7 @@ public readonly struct Scalar : IEquatable<Scalar>, INumber<Scalar>
         if (data.Length != SizeL)
             throw new FormatException($"The argument `{nameof(data)}` must contain {SizeL} entries.");
 
-        ReadOnlySpan<Scalar> span = MemoryMarshal.Cast<ulong, Scalar>(data);
+        var span = MemoryMarshal.Cast<ulong, Scalar>(data);
         return span[0] * R2;
     }
 
@@ -119,10 +119,10 @@ public readonly struct Scalar : IEquatable<Scalar>, INumber<Scalar>
 
     public override string ToString()
     {
-        byte[] bytes = ToArray();
+        var bytes = ToArray();
         StringBuilder sb = new();
         sb.Append("0x");
-        for (int i = bytes.Length - 1; i >= 0; i--)
+        for (var i = bytes.Length - 1; i >= 0; i--)
             sb.AppendFormat("{0:x2}", bytes[i]);
         return sb.ToString();
     }
@@ -164,7 +164,7 @@ public readonly struct Scalar : IEquatable<Scalar>, INumber<Scalar>
 
         // Turn into canonical form by computing
         // (a.R) / R = a
-        Scalar result = MontgomeryReduce(self[0], self[1], self[2], self[3], 0, 0, 0, 0);
+        var result = MontgomeryReduce(self[0], self[1], self[2], self[3], 0, 0, 0, 0);
         return result.GetSpan().ToArray();
     }
 
@@ -225,7 +225,7 @@ public readonly struct Scalar : IEquatable<Scalar>, INumber<Scalar>
         // Initialize z as the 2^S root of unity.
         var z = ROOT_OF_UNITY;
 
-        for (uint max_v = S; max_v >= 1; max_v--)
+        for (var max_v = S; max_v >= 1; max_v--)
         {
             uint k = 1;
             var tmp = b.Square();
@@ -259,9 +259,9 @@ public readonly struct Scalar : IEquatable<Scalar>, INumber<Scalar>
             throw new ArgumentException($"The length of the parameter `{nameof(by)}` must be {SizeL}.");
 
         var res = One;
-        for (int j = by.Length - 1; j >= 0; j--)
+        for (var j = by.Length - 1; j >= 0; j--)
         {
-            for (int i = 63; i >= 0; i--)
+            for (var i = 63; i >= 0; i--)
             {
                 res = res.Square();
                 var tmp = res;
@@ -276,7 +276,7 @@ public readonly struct Scalar : IEquatable<Scalar>, INumber<Scalar>
     {
         static void SquareAssignMulti(ref Scalar n, int num_times)
         {
-            for (int i = 0; i < num_times; i++)
+            for (var i = 0; i < num_times; i++)
             {
                 n = n.Square();
             }
@@ -496,7 +496,7 @@ public readonly struct Scalar : IEquatable<Scalar>, INumber<Scalar>
 
         // `tmp` could be `MODULUS` if `self` was zero. Create a mask that is
         // zero if `self` was zero, and `u64::max_value()` if self was nonzero.
-        ulong mask = a.IsZero ? ulong.MinValue : ulong.MaxValue;
+        var mask = a.IsZero ? ulong.MinValue : ulong.MaxValue;
 
         ReadOnlySpan<ulong> tmp = stackalloc[] { d0 & mask, d1 & mask, d2 & mask, d3 & mask };
         return MemoryMarshal.Cast<ulong, Scalar>(tmp)[0];

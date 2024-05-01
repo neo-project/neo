@@ -24,7 +24,7 @@ namespace Neo.GUI
             InitializeComponent();
             if (asset == null)
             {
-                foreach (UInt160 assetId in NEP5Watched)
+                foreach (var assetId in NEP5Watched)
                 {
                     try
                     {
@@ -46,10 +46,10 @@ namespace Neo.GUI
 
         public TxOutListBoxItem[] GetOutputs()
         {
-            AssetDescriptor asset = (AssetDescriptor)comboBox1.SelectedItem;
+            var asset = (AssetDescriptor)comboBox1.SelectedItem;
             return textBox1.Lines.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p =>
             {
-                string[] line = p.Split(new[] { ' ', '\t', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                var line = p.Split(new[] { ' ', '\t', ',' }, StringSplitOptions.RemoveEmptyEntries);
                 return new TxOutListBoxItem
                 {
                     AssetName = asset.AssetName,

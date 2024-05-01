@@ -89,14 +89,14 @@ namespace Neo.IO.Caching
         {
             if (_array.Length == _count)
             {
-                int newSize = _array.Length * GrowthFactor;
+                var newSize = _array.Length * GrowthFactor;
                 if (_head == 0)
                 {
                     Array.Resize(ref _array, newSize);
                 }
                 else
                 {
-                    T[] buffer = new T[newSize];
+                    var buffer = new T[newSize];
                     Array.Copy(_array, _head, buffer, 0, _array.Length - _head);
                     Array.Copy(_array, 0, buffer, _array.Length - _head, _head);
                     _array = buffer;
@@ -145,7 +145,7 @@ namespace Neo.IO.Caching
         {
             if (_count == 0)
                 throw new InvalidOperationException("The queue is empty");
-            T result = _array[_head];
+            var result = _array[_head];
             ++_head;
             _head %= _array.Length;
             --_count;
@@ -194,7 +194,7 @@ namespace Neo.IO.Caching
             }
             else if (_array.Length * TrimThreshold >= _count)
             {
-                T[] arr = new T[_count];
+                var arr = new T[_count];
                 CopyTo(arr, 0);
                 _array = arr;
                 _head = 0;
@@ -228,14 +228,14 @@ namespace Neo.IO.Caching
         /// <returns>An array containing the queue's items</returns>
         public T[] ToArray()
         {
-            T[] result = new T[_count];
+            var result = new T[_count];
             CopyTo(result, 0);
             return result;
         }
 
         public IEnumerator<T> GetEnumerator()
         {
-            for (int i = 0; i < _count; i++)
+            for (var i = 0; i < _count; i++)
                 yield return _array[(_head + i) % _array.Length];
         }
 

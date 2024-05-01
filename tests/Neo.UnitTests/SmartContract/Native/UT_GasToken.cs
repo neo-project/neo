@@ -51,8 +51,8 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot = _snapshot.CreateSnapshot();
             var persistingBlock = new Block { Header = new Header { Index = 1000 } };
-            byte[] from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
-            byte[] to = new byte[20];
+            var from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
+            var to = new byte[20];
             var supply = NativeContract.GAS.TotalSupply(snapshot);
             supply.Should().Be(5200000050000000); // 3000000000000000 + 50000000 (neo holder reward)
 
@@ -108,23 +108,23 @@ namespace Neo.UnitTests.SmartContract.Native
             engine.LoadScript(Array.Empty<byte>());
 
             await Assert.ThrowsExceptionAsync<ArgumentOutOfRangeException>(async () =>
-                await NativeContract.GAS.Burn(engine, new UInt160(to), BigInteger.MinusOne));
+                await NativeContract.GAS.BurnAsync(engine, new UInt160(to), BigInteger.MinusOne));
 
             // Burn more than expected
 
             await Assert.ThrowsExceptionAsync<InvalidOperationException>(async () =>
-                await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(52000500_00000001)));
+                await NativeContract.GAS.BurnAsync(engine, new UInt160(to), new BigInteger(52000500_00000001)));
 
             // Real burn
 
-            await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(1));
+            await NativeContract.GAS.BurnAsync(engine, new UInt160(to), new BigInteger(1));
 
             NativeContract.GAS.BalanceOf(engine.Snapshot, to).Should().Be(5200049999999999);
 
             engine.Snapshot.GetChangeSet().Count().Should().Be(2);
 
             // Burn all
-            await NativeContract.GAS.Burn(engine, new UInt160(to), new BigInteger(5200049999999999));
+            await NativeContract.GAS.BurnAsync(engine, new UInt160(to), new BigInteger(5200049999999999));
 
             (keyCount - 2).Should().Be(engine.Snapshot.GetChangeSet().Count());
 
@@ -142,7 +142,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
         internal static StorageKey CreateStorageKey(byte prefix, byte[] key = null)
         {
-            byte[] buffer = GC.AllocateUninitializedArray<byte>(sizeof(byte) + (key?.Length ?? 0));
+            var buffer = GC.AllocateUninitializedArray<byte>(sizeof(byte) + (key?.Length ?? 0));
             buffer[0] = prefix;
             key?.CopyTo(buffer.AsSpan(1));
             return new()

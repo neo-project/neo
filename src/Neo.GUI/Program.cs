@@ -28,8 +28,8 @@ namespace Neo
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            using FileStream fs = new FileStream("error.log", FileMode.Create, FileAccess.Write, FileShare.None);
-            using StreamWriter w = new StreamWriter(fs);
+            using var fs = new FileStream("error.log", FileMode.Create, FileAccess.Write, FileShare.None);
+            using var w = new StreamWriter(fs);
             if (e.ExceptionObject is Exception ex)
             {
                 PrintErrorLogs(w, ex);
@@ -59,11 +59,11 @@ namespace Neo
             catch { }
             if (xdoc != null)
             {
-                Version version = Assembly.GetExecutingAssembly().GetName().Version;
-                Version minimum = Version.Parse(xdoc.Element("update").Attribute("minimum").Value);
+                var version = Assembly.GetExecutingAssembly().GetName().Version;
+                var minimum = Version.Parse(xdoc.Element("update").Attribute("minimum").Value);
                 if (version < minimum)
                 {
-                    using UpdateDialog dialog = new UpdateDialog(xdoc);
+                    using var dialog = new UpdateDialog(xdoc);
                     dialog.ShowDialog();
                     return;
                 }
@@ -80,7 +80,7 @@ namespace Neo
             writer.WriteLine(ex.StackTrace);
             if (ex is AggregateException ex2)
             {
-                foreach (Exception inner in ex2.InnerExceptions)
+                foreach (var inner in ex2.InnerExceptions)
                 {
                     writer.WriteLine();
                     PrintErrorLogs(writer, inner);

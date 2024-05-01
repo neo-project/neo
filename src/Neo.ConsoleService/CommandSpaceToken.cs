@@ -41,8 +41,8 @@ namespace Neo.ConsoleService
         /// <returns>CommandSpaceToken</returns>
         internal static CommandSpaceToken Parse(string commandLine, ref int index)
         {
-            int offset = index;
-            int count = 0;
+            var offset = index;
+            var count = 0;
 
             for (int ix = index, max = commandLine.Length; ix < max; ix++)
             {

@@ -31,7 +31,7 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Contract.CallNative.
         /// </summary>
         /// <remarks>Note: It is for internal use only. Do not use it directly in smart contracts.</remarks>
-        public static readonly InteropDescriptor System_Contract_CallNative = Register("System.Contract.CallNative", nameof(CallNativeContract), 0, CallFlags.None);
+        public static readonly InteropDescriptor System_Contract_CallNative = Register("System.Contract.CallNative", nameof(CallNativeContractAsync), 0, CallFlags.None);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Contract.GetCallFlags.
@@ -55,13 +55,13 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Contract.NativeOnPersist.
         /// </summary>
         /// <remarks>Note: It is for internal use only. Do not use it directly in smart contracts.</remarks>
-        public static readonly InteropDescriptor System_Contract_NativeOnPersist = Register("System.Contract.NativeOnPersist", nameof(NativeOnPersist), 0, CallFlags.States);
+        public static readonly InteropDescriptor System_Contract_NativeOnPersist = Register("System.Contract.NativeOnPersist", nameof(NativeOnPersistAsync), 0, CallFlags.States);
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Contract.NativePostPersist.
         /// </summary>
         /// <remarks>Note: It is for internal use only. Do not use it directly in smart contracts.</remarks>
-        public static readonly InteropDescriptor System_Contract_NativePostPersist = Register("System.Contract.NativePostPersist", nameof(NativePostPersist), 0, CallFlags.States);
+        public static readonly InteropDescriptor System_Contract_NativePostPersist = Register("System.Contract.NativePostPersist", nameof(NativePostPersistAsync), 0, CallFlags.States);
 
         /// <summary>
         /// The implementation of System.Contract.Call.
@@ -77,13 +77,13 @@ namespace Neo.SmartContract
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
 
-            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
+            var contract = NativeContract.ContractManagement.GetContract(Snapshot, contractHash);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}.{method}");
-            ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method, args.Count);
+            var md = contract.Manifest.Abi.GetMethod(method, args.Count);
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
-            bool hasReturnValue = md.ReturnType != ContractParameterType.Void;
+            var hasReturnValue = md.ReturnType != ContractParameterType.Void;
 
-            ExecutionContext context = CallContractInternal(contract, md, callFlags, hasReturnValue, args);
+            var context = CallContractInternal(contract, md, callFlags, hasReturnValue, args);
             context.GetState<ExecutionContextState>().IsDynamicCall = true;
         }
 
@@ -92,14 +92,14 @@ namespace Neo.SmartContract
         /// Calls to a native contract.
         /// </summary>
         /// <param name="version">The version of the native contract to be called.</param>
-        protected internal Task CallNativeContract(byte version)
+        protected internal Task CallNativeContractAsync(byte version)
         {
-            NativeContract contract = NativeContract.GetContract(CurrentScriptHash);
+            var contract = NativeContract.GetContract(CurrentScriptHash);
             if (contract is null)
                 throw new InvalidOperationException("It is not allowed to use \"System.Contract.CallNative\" directly.");
             if (!contract.IsActive(ProtocolSettings, NativeContract.Ledger.CurrentIndex(Snapshot)))
                 throw new InvalidOperationException($"The native contract {contract.Name} is not active.");
-            return contract.Invoke(this, version);
+            return contract.InvokeAsync(this, version);
         }
 
         /// <summary>
@@ -121,7 +121,7 @@ namespace Neo.SmartContract
         /// <returns>The hash of the account.</returns>
         internal protected UInt160 CreateStandardAccount(ECPoint pubKey)
         {
-            long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
+            var fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                 ? CheckSigPrice
                 : 1 << 8;
             AddGas(fee * ExecFeeFactor);
@@ -137,7 +137,7 @@ namespace Neo.SmartContract
         /// <returns>The hash of the account.</returns>
         internal protected UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
         {
-            long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
+            var fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                 ? CheckSigPrice * pubKeys.Length
                 : 1 << 8;
             AddGas(fee * ExecFeeFactor);
@@ -146,18 +146,18 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// The implementation of System.Contract.NativeOnPersist.
-        /// Calls to the <see cref="NativeContract.OnPersist"/> of all native contracts.
+        /// Calls to the <see cref="NativeContract.OnPersistAsync"/> of all native contracts.
         /// </summary>
-        protected internal async Task NativeOnPersist()
+        protected internal async Task NativeOnPersistAsync()
         {
             try
             {
                 if (Trigger != TriggerType.OnPersist)
                     throw new InvalidOperationException();
-                foreach (NativeContract contract in NativeContract.Contracts)
+                foreach (var contract in NativeContract.Contracts)
                 {
                     if (contract.IsActive(ProtocolSettings, PersistingBlock.Index))
-                        await contract.OnPersist(this);
+                        await contract.OnPersistAsync(this);
                 }
             }
             catch (Exception ex)
@@ -168,18 +168,18 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// The implementation of System.Contract.NativePostPersist.
-        /// Calls to the <see cref="NativeContract.PostPersist"/> of all native contracts.
+        /// Calls to the <see cref="NativeContract.PostPersistAsync"/> of all native contracts.
         /// </summary>
-        protected internal async Task NativePostPersist()
+        protected internal async Task NativePostPersistAsync()
         {
             try
             {
                 if (Trigger != TriggerType.PostPersist)
                     throw new InvalidOperationException();
-                foreach (NativeContract contract in NativeContract.Contracts)
+                foreach (var contract in NativeContract.Contracts)
                 {
                     if (contract.IsActive(ProtocolSettings, PersistingBlock.Index))
-                        await contract.PostPersist(this);
+                        await contract.PostPersistAsync(this);
                 }
             }
             catch (Exception ex)

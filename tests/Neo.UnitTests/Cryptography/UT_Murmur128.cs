@@ -22,14 +22,14 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestGetHashSize()
         {
-            Murmur128 murmur128 = new Murmur128(1);
+            var murmur128 = new Murmur128(1);
             murmur128.HashSize.Should().Be(128);
         }
 
         [TestMethod]
         public void TestHashCore()
         {
-            byte[] array = Encoding.ASCII.GetBytes("hello");
+            var array = Encoding.ASCII.GetBytes("hello");
             array.Murmur128(123u).ToHexString().ToString().Should().Be("0bc59d0ad25fde2982ed65af61227a0e");
 
             array = Encoding.ASCII.GetBytes("world");

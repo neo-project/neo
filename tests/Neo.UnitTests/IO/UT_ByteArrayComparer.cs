@@ -22,7 +22,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestCompare()
         {
-            ByteArrayComparer comparer = ByteArrayComparer.Default;
+            var comparer = ByteArrayComparer.Default;
             byte[] x = null, y = null;
             comparer.Compare(x, y).Should().Be(0);
 

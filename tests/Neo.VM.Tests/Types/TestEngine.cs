@@ -23,14 +23,14 @@ namespace Neo.Test.Types
 
         private static JumpTable ComposeJumpTable()
         {
-            JumpTable jumpTable = new JumpTable();
+            var jumpTable = new JumpTable();
             jumpTable[OpCode.SYSCALL] = OnSysCall;
             return jumpTable;
         }
 
         private static void OnSysCall(ExecutionEngine engine, Instruction instruction)
         {
-            uint method = instruction.TokenU32;
+            var method = instruction.TokenU32;
 
             if (method == 0x77777777)
             {

@@ -50,7 +50,7 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The deserialized attribute.</returns>
         public static TransactionAttribute DeserializeFrom(ref MemoryReader reader)
         {
-            TransactionAttributeType type = (TransactionAttributeType)reader.ReadByte();
+            var type = (TransactionAttributeType)reader.ReadByte();
             if (ReflectionCache<TransactionAttributeType>.CreateInstance(type) is not TransactionAttribute attribute)
                 throw new FormatException();
             attribute.DeserializeWithoutType(ref reader);

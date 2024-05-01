@@ -39,7 +39,7 @@ namespace Neo.SmartContract.Manifest
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
-            Struct @struct = (Struct)stackItem;
+            var @struct = (Struct)stackItem;
             Methods = ((Array)@struct[0]).Select(p => p.ToInteroperable<ContractMethodDescriptor>()).ToArray();
             Events = ((Array)@struct[1]).Select(p => p.ToInteroperable<ContractEventDescriptor>()).ToArray();
         }

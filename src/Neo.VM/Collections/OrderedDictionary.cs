@@ -108,7 +108,7 @@ namespace Neo.VM.Collections
 
         void ICollection<KeyValuePair<TKey, TValue>>.CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
-            for (int i = 0; i < collection.Count; i++)
+            for (var i = 0; i < collection.Count; i++)
                 array[i + arrayIndex] = new KeyValuePair<TKey, TValue>(collection[i].Key, collection[i].Value);
         }
 

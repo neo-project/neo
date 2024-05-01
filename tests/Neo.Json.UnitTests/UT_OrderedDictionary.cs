@@ -32,7 +32,7 @@ namespace Neo.Json.UnitTests
         {
             od.Clear();
             od.Count.Should().Be(0);
-            od.TryGetValue("a", out uint i).Should().BeFalse();
+            od.TryGetValue("a", out var i).Should().BeFalse();
         }
 
         [TestMethod]
@@ -87,9 +87,9 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestTryGetValue()
         {
-            od.TryGetValue("a", out uint i).Should().BeTrue();
+            od.TryGetValue("a", out var i).Should().BeTrue();
             i.Should().Be(1);
-            od.TryGetValue("d", out uint j).Should().BeFalse();
+            od.TryGetValue("d", out var j).Should().BeFalse();
             j.Should().Be(0);
         }
 

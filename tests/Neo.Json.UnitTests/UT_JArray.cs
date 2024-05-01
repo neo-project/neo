@@ -129,14 +129,14 @@ namespace Neo.Json.UnitTests
                 bob
             };
 
-            JObject[] jObjects1 = new JObject[2];
+            var jObjects1 = new JObject[2];
             jArray.CopyTo(jObjects1, 0);
             var jAlice1 = jObjects1[0];
             var jBob1 = jObjects1[1];
             Assert.AreEqual(alice, jAlice1);
             Assert.AreEqual(bob, jBob1);
 
-            JObject[] jObjects2 = new JObject[4];
+            var jObjects2 = new JObject[4];
             jArray.CopyTo(jObjects2, 2);
             var jAlice2 = jObjects2[2];
             var jBob2 = jObjects2[3];
@@ -233,7 +233,7 @@ namespace Neo.Json.UnitTests
                 alice,
                 bob
             };
-            int i = 0;
+            var i = 0;
             foreach (var item in jArray)
             {
                 if (i % 2 == 0) item.Should().Be(alice);

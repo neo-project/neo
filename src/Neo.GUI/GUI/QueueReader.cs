@@ -39,7 +39,7 @@ namespace Neo.GUI
 
         public override int Read()
         {
-            int c = Peek();
+            var c = Peek();
             if (c != -1)
                 if (++index >= current.Length)
                     current = null;

@@ -26,24 +26,24 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestAsSerializableGeneric()
         {
-            byte[] caseArray = new byte[] { 0x00,0x00,0x00,0x00,0x00,
+            var caseArray = new byte[] { 0x00,0x00,0x00,0x00,0x00,
                                             0x00,0x00,0x00,0x00,0x00,
                                             0x00,0x00,0x00,0x00,0x00,
                                             0x00,0x00,0x00,0x00,0x00 };
-            UInt160 result = Neo.IO.Helper.AsSerializable<UInt160>(caseArray);
+            var result = Neo.IO.Helper.AsSerializable<UInt160>(caseArray);
             Assert.AreEqual(UInt160.Zero, result);
         }
 
         [TestMethod]
         public void TestReadFixedBytes()
         {
-            byte[] data = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+            var data = new byte[] { 0x01, 0x02, 0x03, 0x04 };
 
             // Less data
 
             using (BinaryReader reader = new(new MemoryStream(data), Encoding.UTF8, false))
             {
-                byte[] result = Neo.IO.Helper.ReadFixedBytes(reader, 3);
+                var result = Neo.IO.Helper.ReadFixedBytes(reader, 3);
 
                 Assert.AreEqual("010203", result.ToHexString());
                 Assert.AreEqual(3, reader.BaseStream.Position);
@@ -53,7 +53,7 @@ namespace Neo.UnitTests.IO
 
             using (BinaryReader reader = new(new MemoryStream(data), Encoding.UTF8, false))
             {
-                byte[] result = Neo.IO.Helper.ReadFixedBytes(reader, 4);
+                var result = Neo.IO.Helper.ReadFixedBytes(reader, 4);
 
                 Assert.AreEqual("01020304", result.ToHexString());
                 Assert.AreEqual(4, reader.BaseStream.Position);
@@ -109,15 +109,15 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestAsSerializable()
         {
-            for (int i = 0; i < 2; i++)
+            for (var i = 0; i < 2; i++)
             {
                 if (i == 0)
                 {
-                    byte[] caseArray = new byte[] { 0x00,0x00,0x00,0x00,0x00,
+                    var caseArray = new byte[] { 0x00,0x00,0x00,0x00,0x00,
                                                     0x00,0x00,0x00,0x00,0x00,
                                                     0x00,0x00,0x00,0x00,0x00,
                                                     0x00,0x00,0x00,0x00,0x00 };
-                    ISerializable result = Neo.IO.Helper.AsSerializable(caseArray, typeof(UInt160));
+                    var result = Neo.IO.Helper.AsSerializable(caseArray, typeof(UInt160));
                     Assert.AreEqual(UInt160.Zero, result);
                 }
                 else
@@ -140,7 +140,7 @@ namespace Neo.UnitTests.IO
             // Compress
 
             data = new byte[255];
-            for (int x = 0; x < data.Length; x++) data[x] = 1;
+            for (var x = 0; x < data.Length; x++) data[x] = 1;
 
             byteArray = Neo.IO.Helper.CompressLz4(data);
             result = Neo.IO.Helper.DecompressLz4(byteArray.Span, byte.MaxValue);
@@ -155,7 +155,7 @@ namespace Neo.UnitTests.IO
 
             // Error length
 
-            byte[] data_wrong = byteArray.ToArray();
+            var data_wrong = byteArray.ToArray();
             data_wrong[0]++;
             Assert.ThrowsException<FormatException>(() => Neo.IO.Helper.DecompressLz4(data_wrong, byte.MaxValue));
         }
@@ -163,8 +163,8 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestAsSerializableArray()
         {
-            byte[] byteArray = Neo.IO.Helper.ToByteArray(new UInt160[] { UInt160.Zero });
-            UInt160[] result = Neo.IO.Helper.AsSerializableArray<UInt160>(byteArray);
+            var byteArray = Neo.IO.Helper.ToByteArray(new UInt160[] { UInt160.Zero });
+            var result = Neo.IO.Helper.AsSerializableArray<UInt160>(byteArray);
             Assert.AreEqual(1, result.Length);
             Assert.AreEqual(UInt160.Zero, result[0]);
         }
@@ -172,21 +172,21 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestGetVarSizeInt()
         {
-            for (int i = 0; i < 3; i++)
+            for (var i = 0; i < 3; i++)
             {
                 if (i == 0)
                 {
-                    int result = Neo.IO.Helper.GetVarSize(1);
+                    var result = Neo.IO.Helper.GetVarSize(1);
                     Assert.AreEqual(1, result);
                 }
                 else if (i == 1)
                 {
-                    int result = Neo.IO.Helper.GetVarSize(0xFFFF);
+                    var result = Neo.IO.Helper.GetVarSize(0xFFFF);
                     Assert.AreEqual(3, result);
                 }
                 else
                 {
-                    int result = Neo.IO.Helper.GetVarSize(0xFFFFFF);
+                    var result = Neo.IO.Helper.GetVarSize(0xFFFFFF);
                     Assert.AreEqual(5, result);
                 }
             }
@@ -229,11 +229,11 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestGetVarSizeGeneric()
         {
-            for (int i = 0; i < 9; i++)
+            for (var i = 0; i < 9; i++)
             {
                 if (i == 0)
                 {
-                    int result = Neo.IO.Helper.GetVarSize(new UInt160[] { UInt160.Zero });
+                    var result = Neo.IO.Helper.GetVarSize(new UInt160[] { UInt160.Zero });
                     Assert.AreEqual(21, result);
                 }
                 else if (i == 1)//sbyte
@@ -243,7 +243,7 @@ namespace Neo.UnitTests.IO
                         TestEnum0.case1
                     };
                     IReadOnlyCollection<TestEnum0> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
+                    var result = Neo.IO.Helper.GetVarSize(testList);
                     Assert.AreEqual(2, result);
                 }
                 else if (i == 2)//byte
@@ -253,7 +253,7 @@ namespace Neo.UnitTests.IO
                         TestEnum1.case1
                     };
                     IReadOnlyCollection<TestEnum1> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
+                    var result = Neo.IO.Helper.GetVarSize(testList);
                     Assert.AreEqual(2, result);
                 }
                 else if (i == 3)//short
@@ -263,7 +263,7 @@ namespace Neo.UnitTests.IO
                         TestEnum2.case1
                     };
                     IReadOnlyCollection<TestEnum2> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
+                    var result = Neo.IO.Helper.GetVarSize(testList);
                     Assert.AreEqual(3, result);
                 }
                 else if (i == 4)//ushort
@@ -273,7 +273,7 @@ namespace Neo.UnitTests.IO
                         TestEnum3.case1
                     };
                     IReadOnlyCollection<TestEnum3> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
+                    var result = Neo.IO.Helper.GetVarSize(testList);
                     Assert.AreEqual(3, result);
                 }
                 else if (i == 5)//int
@@ -283,7 +283,7 @@ namespace Neo.UnitTests.IO
                         TestEnum4.case1
                     };
                     IReadOnlyCollection<TestEnum4> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
+                    var result = Neo.IO.Helper.GetVarSize(testList);
                     Assert.AreEqual(5, result);
                 }
                 else if (i == 6)//uint
@@ -293,7 +293,7 @@ namespace Neo.UnitTests.IO
                         TestEnum5.case1
                     };
                     IReadOnlyCollection<TestEnum5> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
+                    var result = Neo.IO.Helper.GetVarSize(testList);
                     Assert.AreEqual(5, result);
                 }
                 else if (i == 7)//long
@@ -303,7 +303,7 @@ namespace Neo.UnitTests.IO
                         TestEnum6.case1
                     };
                     IReadOnlyCollection<TestEnum6> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize(testList);
+                    var result = Neo.IO.Helper.GetVarSize(testList);
                     Assert.AreEqual(9, result);
                 }
                 else if (i == 8)
@@ -313,7 +313,7 @@ namespace Neo.UnitTests.IO
                         1
                     };
                     IReadOnlyCollection<int> testList = initList.AsReadOnly();
-                    int result = Neo.IO.Helper.GetVarSize<int>(testList);
+                    var result = Neo.IO.Helper.GetVarSize<int>(testList);
                     Assert.AreEqual(5, result);
                 }
             }
@@ -322,7 +322,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestGetVarSizeString()
         {
-            int result = Neo.IO.Helper.GetVarSize("AA");
+            var result = Neo.IO.Helper.GetVarSize("AA");
             Assert.AreEqual(3, result);
         }
 
@@ -333,7 +333,7 @@ namespace Neo.UnitTests.IO
             BinaryWriter writer = new(stream);
             Neo.IO.Helper.Write(writer, UInt160.Zero);
             MemoryReader reader = new(stream.ToArray());
-            UInt160 result = Neo.IO.Helper.ReadSerializable<UInt160>(ref reader);
+            var result = Neo.IO.Helper.ReadSerializable<UInt160>(ref reader);
             Assert.AreEqual(UInt160.Zero, result);
         }
 
@@ -344,7 +344,7 @@ namespace Neo.UnitTests.IO
             BinaryWriter writer = new(stream);
             Neo.IO.Helper.Write(writer, new UInt160[] { UInt160.Zero });
             MemoryReader reader = new(stream.ToArray());
-            UInt160[] resultArray = Neo.IO.Helper.ReadSerializableArray<UInt160>(ref reader);
+            var resultArray = Neo.IO.Helper.ReadSerializableArray<UInt160>(ref reader);
             Assert.AreEqual(1, resultArray.Length);
             Assert.AreEqual(UInt160.Zero, resultArray[0]);
         }
@@ -357,14 +357,14 @@ namespace Neo.UnitTests.IO
             Neo.IO.Helper.WriteVarBytes(writer, new byte[] { 0xAA, 0xAA });
             stream.Seek(0, SeekOrigin.Begin);
             BinaryReader reader = new(stream);
-            byte[] byteArray = Neo.IO.Helper.ReadVarBytes(reader, 10);
+            var byteArray = Neo.IO.Helper.ReadVarBytes(reader, 10);
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0xAA, 0xAA }), Encoding.Default.GetString(byteArray));
         }
 
         [TestMethod]
         public void TestReadVarInt()
         {
-            for (int i = 0; i < 4; i++)
+            for (var i = 0; i < 4; i++)
             {
                 if (i == 0)
                 {
@@ -373,7 +373,7 @@ namespace Neo.UnitTests.IO
                     Neo.IO.Helper.WriteVarInt(writer, 0xFFFF);
                     stream.Seek(0, SeekOrigin.Begin);
                     BinaryReader reader = new(stream);
-                    ulong result = Neo.IO.Helper.ReadVarInt(reader, 0xFFFF);
+                    var result = Neo.IO.Helper.ReadVarInt(reader, 0xFFFF);
                     Assert.AreEqual((ulong)0xFFFF, result);
                 }
                 else if (i == 1)
@@ -383,7 +383,7 @@ namespace Neo.UnitTests.IO
                     Neo.IO.Helper.WriteVarInt(writer, 0xFFFFFFFF);
                     stream.Seek(0, SeekOrigin.Begin);
                     BinaryReader reader = new(stream);
-                    ulong result = Neo.IO.Helper.ReadVarInt(reader, 0xFFFFFFFF);
+                    var result = Neo.IO.Helper.ReadVarInt(reader, 0xFFFFFFFF);
                     Assert.AreEqual(0xFFFFFFFF, result);
                 }
                 else
@@ -402,7 +402,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestToArray()
         {
-            byte[] byteArray = Neo.IO.Helper.ToArray(UInt160.Zero);
+            var byteArray = Neo.IO.Helper.ToArray(UInt160.Zero);
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x00,0x00,0x00,0x00,0x00,
                                                                     0x00,0x00,0x00,0x00,0x00,
                                                                     0x00,0x00,0x00,0x00,0x00,
@@ -412,7 +412,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestToByteArrayGeneric()
         {
-            byte[] byteArray = Neo.IO.Helper.ToByteArray(new UInt160[] { UInt160.Zero });
+            var byteArray = Neo.IO.Helper.ToByteArray(new UInt160[] { UInt160.Zero });
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01,0x00,0x00,0x00,0x00,0x00,
                                                                          0x00,0x00,0x00,0x00,0x00,
                                                                          0x00,0x00,0x00,0x00,0x00,
@@ -426,7 +426,7 @@ namespace Neo.UnitTests.IO
             BinaryWriter writer = new(stream);
             Neo.IO.Helper.Write(writer, UInt160.Zero);
             stream.Seek(0, SeekOrigin.Begin);
-            byte[] byteArray = new byte[stream.Length];
+            var byteArray = new byte[stream.Length];
             stream.Read(byteArray, 0, (int)stream.Length);
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x00,0x00,0x00,0x00,0x00,
                                                                     0x00,0x00,0x00,0x00,0x00,
@@ -441,7 +441,7 @@ namespace Neo.UnitTests.IO
             BinaryWriter writer = new(stream);
             Neo.IO.Helper.Write(writer, new UInt160[] { UInt160.Zero });
             stream.Seek(0, SeekOrigin.Begin);
-            byte[] byteArray = new byte[stream.Length];
+            var byteArray = new byte[stream.Length];
             stream.Read(byteArray, 0, (int)stream.Length);
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01,0x00,0x00,0x00,0x00,0x00,
                                                                          0x00,0x00,0x00,0x00,0x00,
@@ -452,7 +452,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestWriteFixedString()
         {
-            for (int i = 0; i < 5; i++)
+            for (var i = 0; i < 5; i++)
             {
                 if (i == 0)
                 {
@@ -481,9 +481,9 @@ namespace Neo.UnitTests.IO
                     BinaryWriter writer = new(stream);
                     Neo.IO.Helper.WriteFixedString(writer, "AA", Encoding.UTF8.GetBytes("AA").Length + 1);
                     stream.Seek(0, SeekOrigin.Begin);
-                    byte[] byteArray = new byte[stream.Length];
+                    var byteArray = new byte[stream.Length];
                     stream.Read(byteArray, 0, (int)stream.Length);
-                    byte[] newArray = new byte[Encoding.UTF8.GetBytes("AA").Length + 1];
+                    var newArray = new byte[Encoding.UTF8.GetBytes("AA").Length + 1];
                     Encoding.UTF8.GetBytes("AA").CopyTo(newArray, 0);
                     Assert.AreEqual(Encoding.Default.GetString(newArray), Encoding.Default.GetString(byteArray));
                 }
@@ -497,7 +497,7 @@ namespace Neo.UnitTests.IO
             BinaryWriter writer = new(stream);
             Neo.IO.Helper.WriteVarBytes(writer, new byte[] { 0xAA });
             stream.Seek(0, SeekOrigin.Begin);
-            byte[] byteArray = new byte[stream.Length];
+            var byteArray = new byte[stream.Length];
             stream.Read(byteArray, 0, (int)stream.Length);
             Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0x01, 0xAA }), Encoding.Default.GetString(byteArray));
         }
@@ -505,7 +505,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestWriteVarInt()
         {
-            for (int i = 0; i < 5; i++)
+            for (var i = 0; i < 5; i++)
             {
                 if (i == 0)
                 {
@@ -520,7 +520,7 @@ namespace Neo.UnitTests.IO
                     BinaryWriter writer = new(stream);
                     Neo.IO.Helper.WriteVarInt(writer, 0xFC);
                     stream.Seek(0, SeekOrigin.Begin);
-                    byte[] byteArray = new byte[stream.Length];
+                    var byteArray = new byte[stream.Length];
                     stream.Read(byteArray, 0, (int)stream.Length);
                     Assert.AreEqual(0xFC, byteArray[0]);
                 }
@@ -530,7 +530,7 @@ namespace Neo.UnitTests.IO
                     BinaryWriter writer = new(stream);
                     Neo.IO.Helper.WriteVarInt(writer, 0xFFFF);
                     stream.Seek(0, SeekOrigin.Begin);
-                    byte[] byteArray = new byte[stream.Length];
+                    var byteArray = new byte[stream.Length];
                     stream.Read(byteArray, 0, (int)stream.Length);
                     Assert.AreEqual(0xFD, byteArray[0]);
                     Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0xFF, 0xFF }), Encoding.Default.GetString(byteArray.Skip(1).Take(byteArray.Length - 1).ToArray()));
@@ -541,7 +541,7 @@ namespace Neo.UnitTests.IO
                     BinaryWriter writer = new(stream);
                     Neo.IO.Helper.WriteVarInt(writer, 0xFFFFFFFF);
                     stream.Seek(0, SeekOrigin.Begin);
-                    byte[] byteArray = new byte[stream.Length];
+                    var byteArray = new byte[stream.Length];
                     stream.Read(byteArray, 0, (int)stream.Length);
                     Assert.AreEqual(0xFE, byteArray[0]);
                     Assert.AreEqual(0xFFFFFFFF, BitConverter.ToUInt32(byteArray, 1));
@@ -552,7 +552,7 @@ namespace Neo.UnitTests.IO
                     BinaryWriter writer = new(stream);
                     Neo.IO.Helper.WriteVarInt(writer, 0xAEFFFFFFFF);
                     stream.Seek(0, SeekOrigin.Begin);
-                    byte[] byteArray = new byte[stream.Length];
+                    var byteArray = new byte[stream.Length];
                     stream.Read(byteArray, 0, (int)stream.Length);
                     Assert.AreEqual(0xFF, byteArray[0]);
                     Assert.AreEqual(Encoding.Default.GetString(new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00 }), Encoding.Default.GetString(byteArray.Skip(1).Take(byteArray.Length - 1).ToArray()));
@@ -567,7 +567,7 @@ namespace Neo.UnitTests.IO
             BinaryWriter writer = new(stream);
             Neo.IO.Helper.WriteVarString(writer, "a");
             stream.Seek(0, SeekOrigin.Begin);
-            byte[] byteArray = new byte[stream.Length];
+            var byteArray = new byte[stream.Length];
             stream.Read(byteArray, 0, (int)stream.Length);
             Assert.AreEqual(0x01, byteArray[0]);
             Assert.AreEqual(0x61, byteArray[1]);

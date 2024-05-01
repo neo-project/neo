@@ -49,14 +49,14 @@ public readonly struct G1Projective : IEquatable<G1Projective>
     {
         // Is (xz, yz, z) equal to (x'z', y'z', z') when converted to affine?
 
-        Fp x1 = a.X * b.Z;
-        Fp x2 = b.X * a.Z;
+        var x1 = a.X * b.Z;
+        var x2 = b.X * a.Z;
 
-        Fp y1 = a.Y * b.Z;
-        Fp y2 = b.Y * a.Z;
+        var y1 = a.Y * b.Z;
+        var y2 = b.Y * a.Z;
 
-        bool self_is_zero = a.Z.IsZero;
-        bool other_is_zero = b.Z.IsZero;
+        var self_is_zero = a.Z.IsZero;
+        var other_is_zero = b.Z.IsZero;
 
         // Both point at infinity. Or neither point at infinity, coordinates are the same.
         return (self_is_zero & other_is_zero) | ((!self_is_zero) & (!other_is_zero) & x1 == x2 & y1 == y2);
@@ -90,22 +90,22 @@ public readonly struct G1Projective : IEquatable<G1Projective>
 
     private static Fp MulBy3B(in Fp a)
     {
-        Fp b = a + a;
+        var b = a + a;
         b += b;
         return b + b + b;
     }
 
     public G1Projective Double()
     {
-        Fp t0 = Y.Square();
-        Fp z3 = t0 + t0;
+        var t0 = Y.Square();
+        var z3 = t0 + t0;
         z3 += z3;
         z3 += z3;
-        Fp t1 = Y * Z;
-        Fp t2 = Z.Square();
+        var t1 = Y * Z;
+        var t2 = Z.Square();
         t2 = MulBy3B(in t2);
-        Fp x3 = t2 * z3;
-        Fp y3 = t0 + t2;
+        var x3 = t2 * z3;
+        var y3 = t0 + t2;
         z3 = t1 * z3;
         t1 = t2 + t2;
         t2 = t1 + t2;
@@ -122,28 +122,28 @@ public readonly struct G1Projective : IEquatable<G1Projective>
 
     public static G1Projective operator +(in G1Projective a, in G1Projective b)
     {
-        Fp t0 = a.X * b.X;
-        Fp t1 = a.Y * b.Y;
-        Fp t2 = a.Z * b.Z;
-        Fp t3 = a.X + a.Y;
-        Fp t4 = b.X + b.Y;
+        var t0 = a.X * b.X;
+        var t1 = a.Y * b.Y;
+        var t2 = a.Z * b.Z;
+        var t3 = a.X + a.Y;
+        var t4 = b.X + b.Y;
         t3 *= t4;
         t4 = t0 + t1;
         t3 -= t4;
         t4 = a.Y + a.Z;
-        Fp x3 = b.Y + b.Z;
+        var x3 = b.Y + b.Z;
         t4 *= x3;
         x3 = t1 + t2;
         t4 -= x3;
         x3 = a.X + a.Z;
-        Fp y3 = b.X + b.Z;
+        var y3 = b.X + b.Z;
         x3 *= y3;
         y3 = t0 + t2;
         y3 = x3 - y3;
         x3 = t0 + t0;
         t0 = x3 + t0;
         t2 = MulBy3B(in t2);
-        Fp z3 = t1 + t2;
+        var z3 = t1 + t2;
         t1 -= t2;
         y3 = MulBy3B(in y3);
         x3 = t4 * y3;
@@ -161,21 +161,21 @@ public readonly struct G1Projective : IEquatable<G1Projective>
 
     public static G1Projective operator +(in G1Projective a, in G1Affine b)
     {
-        Fp t0 = a.X * b.X;
-        Fp t1 = a.Y * b.Y;
-        Fp t3 = b.X + b.Y;
-        Fp t4 = a.X + a.Y;
+        var t0 = a.X * b.X;
+        var t1 = a.Y * b.Y;
+        var t3 = b.X + b.Y;
+        var t4 = a.X + a.Y;
         t3 *= t4;
         t4 = t0 + t1;
         t3 -= t4;
         t4 = b.Y * a.Z;
         t4 += a.Y;
-        Fp y3 = b.X * a.Z;
+        var y3 = b.X * a.Z;
         y3 += a.X;
-        Fp x3 = t0 + t0;
+        var x3 = t0 + t0;
         t0 = x3 + t0;
-        Fp t2 = MulBy3B(in a.Z);
-        Fp z3 = t1 + t2;
+        var t2 = MulBy3B(in a.Z);
+        var z3 = t1 + t2;
         t1 -= t2;
         y3 = MulBy3B(in y3);
         x3 = t4 * y3;
@@ -214,13 +214,13 @@ public readonly struct G1Projective : IEquatable<G1Projective>
 
     public static G1Projective operator *(in G1Projective a, byte[] b)
     {
-        int length = b.Length;
+        var length = b.Length;
         if (length != 32)
             throw new ArgumentException($"The argument {nameof(b)} must be 32 bytes.");
 
-        G1Projective acc = Identity;
+        var acc = Identity;
 
-        foreach (bool bit in b
+        foreach (var bit in b
             .SelectMany(p => Enumerable.Range(0, 8).Select(q => ((p >> q) & 1) == 1))
             .Reverse()
             .Skip(1))
@@ -239,10 +239,10 @@ public readonly struct G1Projective : IEquatable<G1Projective>
 
     internal G1Projective MulByX()
     {
-        G1Projective xself = Identity;
+        var xself = Identity;
 
-        ulong x = BLS_X >> 1;
-        G1Projective tmp = this;
+        var x = BLS_X >> 1;
+        var tmp = this;
         while (x > 0)
         {
             tmp = tmp.Double();
@@ -268,13 +268,13 @@ public readonly struct G1Projective : IEquatable<G1Projective>
 
     public static void BatchNormalize(ReadOnlySpan<G1Projective> p, Span<G1Affine> q)
     {
-        int length = p.Length;
+        var length = p.Length;
         if (length != q.Length)
             throw new ArgumentException($"{nameof(p)} and {nameof(q)} must have the same length.");
 
         Span<Fp> x = stackalloc Fp[length];
-        Fp acc = Fp.One;
-        for (int i = 0; i < length; i++)
+        var acc = Fp.One;
+        for (var i = 0; i < length; i++)
         {
             x[i] = acc;
             acc = ConditionalSelect(acc * p[i].Z, in acc, p[i].IsIdentity);
@@ -282,10 +282,10 @@ public readonly struct G1Projective : IEquatable<G1Projective>
 
         acc = acc.Invert();
 
-        for (int i = length - 1; i >= 0; i--)
+        for (var i = length - 1; i >= 0; i--)
         {
-            bool skip = p[i].IsIdentity;
-            Fp tmp = x[i] * acc;
+            var skip = p[i].IsIdentity;
+            var tmp = x[i] * acc;
             acc = ConditionalSelect(acc * p[i].Z, in acc, skip);
             G1Affine qi = new(p[i].X * tmp, p[i].Y * tmp);
             q[i] = ConditionalSelect(in qi, in G1Affine.Identity, skip);

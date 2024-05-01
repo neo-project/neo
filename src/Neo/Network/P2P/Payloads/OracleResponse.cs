@@ -86,7 +86,7 @@ namespace Neo.Network.P2P.Payloads
 
         public override JObject ToJson()
         {
-            JObject json = base.ToJson();
+            var json = base.ToJson();
             json["id"] = Id;
             json["code"] = Code;
             json["result"] = Convert.ToBase64String(Result.Span);
@@ -97,10 +97,10 @@ namespace Neo.Network.P2P.Payloads
         {
             if (tx.Signers.Any(p => p.Scopes != WitnessScope.None)) return false;
             if (!tx.Script.Span.SequenceEqual(FixedScript)) return false;
-            OracleRequest request = NativeContract.Oracle.GetRequest(snapshot, Id);
+            var request = NativeContract.Oracle.GetRequest(snapshot, Id);
             if (request is null) return false;
             if (tx.NetworkFee + tx.SystemFee != request.GasForResponse) return false;
-            UInt160 oracleAccount = Contract.GetBFTAddress(NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, NativeContract.Ledger.CurrentIndex(snapshot) + 1));
+            var oracleAccount = Contract.GetBFTAddress(NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, NativeContract.Ledger.CurrentIndex(snapshot) + 1));
             return tx.Signers.Any(p => p.Account.Equals(oracleAccount));
         }
     }

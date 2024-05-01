@@ -38,7 +38,7 @@ namespace Neo.CLI
 
         private void Handle(RootCommand command, CommandLineOptions options, InvocationContext context)
         {
-            _ = Start(options);
+            _ = StartAsync(options);
         }
 
         private static void CustomProtocolSettings(CommandLineOptions options, ProtocolSettings settings)

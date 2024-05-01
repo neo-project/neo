@@ -54,7 +54,7 @@ namespace Neo.SmartContract.Manifest
 
         void IInteroperable.FromStackItem(StackItem stackItem)
         {
-            Struct @struct = (Struct)stackItem;
+            var @struct = (Struct)stackItem;
             Contract = @struct[0] switch
             {
                 Null => ContractPermissionDescriptor.CreateWildcard(),

@@ -90,7 +90,7 @@ namespace Neo.CLI
 
             var asset = new AssetDescriptor(NeoSystem.StoreView, NeoSystem.Settings, tokenHash);
 
-            if (!OnInvokeWithResult(tokenHash, "balanceOf", out StackItem balanceResult, null, new JArray(arg))) return;
+            if (!OnInvokeWithResult(tokenHash, "balanceOf", out var balanceResult, null, new JArray(arg))) return;
 
             var balance = new BigDecimal(((PrimitiveType)balanceResult).GetInteger(), asset.Decimals);
 
@@ -105,7 +105,7 @@ namespace Neo.CLI
         [ConsoleCommand("name", Category = "NEP17 Commands")]
         private void OnNameCommand(UInt160 tokenHash)
         {
-            ContractState contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, tokenHash);
+            var contract = NativeContract.ContractManagement.GetContract(NeoSystem.StoreView, tokenHash);
             if (contract == null) Console.WriteLine($"Contract hash not exist: {tokenHash}");
             else ConsoleHelper.Info("Result: ", contract.Manifest.Name);
         }
@@ -117,7 +117,7 @@ namespace Neo.CLI
         [ConsoleCommand("decimals", Category = "NEP17 Commands")]
         private void OnDecimalsCommand(UInt160 tokenHash)
         {
-            if (!OnInvokeWithResult(tokenHash, "decimals", out StackItem result)) return;
+            if (!OnInvokeWithResult(tokenHash, "decimals", out var result)) return;
 
             ConsoleHelper.Info("Result: ", $"{((PrimitiveType)result).GetInteger()}");
         }
@@ -129,7 +129,7 @@ namespace Neo.CLI
         [ConsoleCommand("totalSupply", Category = "NEP17 Commands")]
         private void OnTotalSupplyCommand(UInt160 tokenHash)
         {
-            if (!OnInvokeWithResult(tokenHash, "totalSupply", out StackItem result)) return;
+            if (!OnInvokeWithResult(tokenHash, "totalSupply", out var result)) return;
 
             var asset = new AssetDescriptor(NeoSystem.StoreView, NeoSystem.Settings, tokenHash);
             var totalSupply = new BigDecimal(((PrimitiveType)result).GetInteger(), asset.Decimals);

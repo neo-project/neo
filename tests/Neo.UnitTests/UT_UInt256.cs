@@ -45,7 +45,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestCompareTo()
         {
-            byte[] temp = new byte[32];
+            var temp = new byte[32];
             temp[31] = 0x01;
             UInt256 result = new(temp);
             Assert.AreEqual(0, UInt256.Zero.CompareTo(UInt256.Zero));
@@ -70,7 +70,7 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestEquals()
         {
-            byte[] temp = new byte[32];
+            var temp = new byte[32];
             temp[31] = 0x01;
             UInt256 result = new(temp);
             Assert.AreEqual(true, UInt256.Zero.Equals(UInt256.Zero));
@@ -105,11 +105,11 @@ namespace Neo.UnitTests.IO
         {
             Action action = () => UInt256.Parse(null);
             action.Should().Throw<FormatException>();
-            UInt256 result = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000000");
+            var result = UInt256.Parse("0x0000000000000000000000000000000000000000000000000000000000000000");
             Assert.AreEqual(UInt256.Zero, result);
             Action action1 = () => UInt256.Parse("000000000000000000000000000000000000000000000000000000000000000");
             action1.Should().Throw<FormatException>();
-            UInt256 result1 = UInt256.Parse("0000000000000000000000000000000000000000000000000000000000000000");
+            var result1 = UInt256.Parse("0000000000000000000000000000000000000000000000000000000000000000");
             Assert.AreEqual(UInt256.Zero, result1);
         }
 

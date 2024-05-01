@@ -30,7 +30,7 @@ namespace Neo.UnitTests
         public void GetSignData()
         {
             TestVerifiable verifiable = new();
-            byte[] res = verifiable.GetSignData(TestProtocolSettings.Default.Network);
+            var res = verifiable.GetSignData(TestProtocolSettings.Default.Network);
             res.ToHexString().Should().Be("4e454f3350b51da6bb366be3ea50140cda45ba7df575287c0371000b2037ed3898ff8bf5");
         }
 
@@ -38,15 +38,15 @@ namespace Neo.UnitTests
         public void Sign()
         {
             TestVerifiable verifiable = new();
-            byte[] res = verifiable.Sign(new KeyPair(TestUtils.GetByteArray(32, 0x42)), TestProtocolSettings.Default.Network);
+            var res = verifiable.Sign(new KeyPair(TestUtils.GetByteArray(32, 0x42)), TestProtocolSettings.Default.Network);
             res.Length.Should().Be(64);
         }
 
         [TestMethod]
         public void ToScriptHash()
         {
-            byte[] testByteArray = TestUtils.GetByteArray(64, 0x42);
-            UInt160 res = testByteArray.ToScriptHash();
+            var testByteArray = TestUtils.GetByteArray(64, 0x42);
+            var res = testByteArray.ToScriptHash();
             res.Should().Be(UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302"));
         }
 
@@ -71,13 +71,13 @@ namespace Neo.UnitTests
         {
             string nullStr = null;
             _ = nullStr.HexToBytes().ToHexString().Should().Be(Array.Empty<byte>().ToHexString());
-            string emptyStr = "";
+            var emptyStr = "";
             emptyStr.HexToBytes().ToHexString().Should().Be(Array.Empty<byte>().ToHexString());
-            string str1 = "hab";
+            var str1 = "hab";
             Action action = () => str1.HexToBytes();
             action.Should().Throw<FormatException>();
-            string str2 = "0102";
-            byte[] bytes = str2.HexToBytes();
+            var str2 = "0102";
+            var bytes = str2.HexToBytes();
             bytes.ToHexString().Should().Be(new byte[] { 0x01, 0x02 }.ToHexString());
         }
 
@@ -167,12 +167,12 @@ namespace Neo.UnitTests
         {
             byte[] nullStr = null;
             Assert.ThrowsException<NullReferenceException>(() => nullStr.ToHexString());
-            byte[] empty = Array.Empty<byte>();
+            var empty = Array.Empty<byte>();
             empty.ToHexString().Should().Be("");
             empty.ToHexString(false).Should().Be("");
             empty.ToHexString(true).Should().Be("");
 
-            byte[] str1 = new byte[] { (byte)'n', (byte)'e', (byte)'o' };
+            var str1 = new byte[] { (byte)'n', (byte)'e', (byte)'o' };
             str1.ToHexString().Should().Be("6e656f");
             str1.ToHexString(false).Should().Be("6e656f");
             str1.ToHexString(true).Should().Be("6f656e");
@@ -186,14 +186,14 @@ namespace Neo.UnitTests
             var asm = AppDomain.CurrentDomain.GetAssemblies()
                 .Where(u => u.FullName == "Anonymously Hosted DynamicMethods Assembly, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null")
                 .FirstOrDefault();
-            string version = asm?.GetVersion() ?? "";
+            var version = asm?.GetVersion() ?? "";
             version.Should().Be("0.0.0");
         }
 
         [TestMethod]
         public void TestToByteArrayStandard()
         {
-            BigInteger number = BigInteger.Zero;
+            var number = BigInteger.Zero;
             Assert.AreEqual("", number.ToByteArrayStandard().ToHexString());
 
             number = BigInteger.One;

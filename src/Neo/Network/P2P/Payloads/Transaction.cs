@@ -188,7 +188,7 @@ namespace Neo.Network.P2P.Payloads
 
         void ISerializable.Deserialize(ref MemoryReader reader)
         {
-            int startPosition = reader.Position;
+            var startPosition = reader.Position;
             DeserializeUnsigned(ref reader);
             Witnesses = reader.ReadSerializableArray<Witness>(Signers.Length);
             if (Witnesses.Length != Signers.Length) throw new FormatException();
@@ -197,12 +197,12 @@ namespace Neo.Network.P2P.Payloads
 
         private static TransactionAttribute[] DeserializeAttributes(ref MemoryReader reader, int maxCount)
         {
-            int count = (int)reader.ReadVarInt((ulong)maxCount);
-            TransactionAttribute[] attributes = new TransactionAttribute[count];
+            var count = (int)reader.ReadVarInt((ulong)maxCount);
+            var attributes = new TransactionAttribute[count];
             HashSet<TransactionAttributeType> hashset = new();
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
-                TransactionAttribute attribute = TransactionAttribute.DeserializeFrom(ref reader);
+                var attribute = TransactionAttribute.DeserializeFrom(ref reader);
                 if (!attribute.AllowMultiple && !hashset.Add(attribute.Type))
                     throw new FormatException();
                 attributes[i] = attribute;
@@ -212,13 +212,13 @@ namespace Neo.Network.P2P.Payloads
 
         private static Signer[] DeserializeSigners(ref MemoryReader reader, int maxCount)
         {
-            int count = (int)reader.ReadVarInt((ulong)maxCount);
+            var count = (int)reader.ReadVarInt((ulong)maxCount);
             if (count == 0) throw new FormatException();
-            Signer[] signers = new Signer[count];
+            var signers = new Signer[count];
             HashSet<UInt160> hashset = new();
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
-                Signer signer = reader.ReadSerializable<Signer>();
+                var signer = reader.ReadSerializable<Signer>();
                 if (!hashset.Add(signer.Account)) throw new FormatException();
                 signers[i] = signer;
             }
@@ -343,7 +343,7 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The result of the verification.</returns>
         public VerifyResult Verify(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictsList)
         {
-            VerifyResult result = VerifyStateIndependent(settings);
+            var result = VerifyStateIndependent(settings);
             if (result != VerifyResult.Succeed) return result;
             return VerifyStateDependent(settings, snapshot, context, conflictsList);
         }
@@ -358,36 +358,36 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The result of the verification.</returns>
         public virtual VerifyResult VerifyStateDependent(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictsList)
         {
-            uint height = NativeContract.Ledger.CurrentIndex(snapshot);
+            var height = NativeContract.Ledger.CurrentIndex(snapshot);
             if (ValidUntilBlock <= height || ValidUntilBlock > height + settings.MaxValidUntilBlockIncrement)
                 return VerifyResult.Expired;
-            UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
-            foreach (UInt160 hash in hashes)
+            var hashes = GetScriptHashesForVerifying(snapshot);
+            foreach (var hash in hashes)
                 if (NativeContract.Policy.IsBlocked(snapshot, hash))
                     return VerifyResult.PolicyFail;
             if (!(context?.CheckTransaction(this, conflictsList, snapshot) ?? true)) return VerifyResult.InsufficientFunds;
             long attributesFee = 0;
-            foreach (TransactionAttribute attribute in Attributes)
+            foreach (var attribute in Attributes)
                 if (!attribute.Verify(snapshot, this))
                     return VerifyResult.InvalidAttribute;
                 else
                     attributesFee += attribute.CalculateNetworkFee(snapshot, this);
-            long net_fee = NetworkFee - (Size * NativeContract.Policy.GetFeePerByte(snapshot)) - attributesFee;
+            var net_fee = NetworkFee - (Size * NativeContract.Policy.GetFeePerByte(snapshot)) - attributesFee;
             if (net_fee < 0) return VerifyResult.InsufficientFunds;
 
             if (net_fee > MaxVerificationGas) net_fee = MaxVerificationGas;
-            uint execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
-            for (int i = 0; i < hashes.Length; i++)
+            var execFeeFactor = NativeContract.Policy.GetExecFeeFactor(snapshot);
+            for (var i = 0; i < hashes.Length; i++)
             {
                 if (IsSignatureContract(witnesses[i].VerificationScript.Span))
                     net_fee -= execFeeFactor * SignatureContractCost();
-                else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out int m, out int n))
+                else if (IsMultiSigContract(witnesses[i].VerificationScript.Span, out var m, out int n))
                 {
                     net_fee -= execFeeFactor * MultiSignatureContractCost(m, n);
                 }
                 else
                 {
-                    if (!this.VerifyWitness(settings, snapshot, hashes[i], witnesses[i], net_fee, out long fee))
+                    if (!this.VerifyWitness(settings, snapshot, hashes[i], witnesses[i], net_fee, out var fee))
                         return VerifyResult.Invalid;
                     net_fee -= fee;
                 }
@@ -412,8 +412,8 @@ namespace Neo.Network.P2P.Payloads
             {
                 return VerifyResult.InvalidScript;
             }
-            UInt160[] hashes = GetScriptHashesForVerifying(null);
-            for (int i = 0; i < hashes.Length; i++)
+            var hashes = GetScriptHashesForVerifying(null);
+            for (var i = 0; i < hashes.Length; i++)
             {
                 if (IsSignatureContract(witnesses[i].VerificationScript.Span))
                 {
@@ -477,8 +477,8 @@ namespace Neo.Network.P2P.Payloads
 
         private static ReadOnlyMemory<byte>[] GetMultiSignatures(ReadOnlyMemory<byte> script)
         {
-            ReadOnlySpan<byte> span = script.Span;
-            int i = 0;
+            var span = script.Span;
+            var i = 0;
             var signatures = new List<ReadOnlyMemory<byte>>();
             while (i < script.Length)
             {

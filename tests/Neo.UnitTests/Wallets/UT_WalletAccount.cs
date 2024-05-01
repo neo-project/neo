@@ -43,14 +43,14 @@ namespace Neo.UnitTests.Wallets
         [TestMethod]
         public void TestGetAddress()
         {
-            MyWalletAccount walletAccount = new MyWalletAccount(UInt160.Zero);
+            var walletAccount = new MyWalletAccount(UInt160.Zero);
             walletAccount.Address.Should().Be("NKuyBkoGdZZSLyPbJEetheRhMjeznFZszf");
         }
 
         [TestMethod]
         public void TestGetWatchOnly()
         {
-            MyWalletAccount walletAccount = new MyWalletAccount(UInt160.Zero);
+            var walletAccount = new MyWalletAccount(UInt160.Zero);
             walletAccount.WatchOnly.Should().BeTrue();
             walletAccount.Contract = new Contract();
             walletAccount.WatchOnly.Should().BeFalse();

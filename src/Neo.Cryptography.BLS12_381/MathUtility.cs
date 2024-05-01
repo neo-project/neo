@@ -15,21 +15,21 @@ static class MathUtility
 {
     public static (ulong result, ulong carry) Adc(ulong a, ulong b, ulong carry)
     {
-        ulong result = unchecked(a + b + carry);
+        var result = unchecked(a + b + carry);
         carry = ((a & b) | ((a | b) & (~result))) >> 63;
         return (result, carry);
     }
 
     public static (ulong result, ulong borrow) Sbb(ulong a, ulong b, ulong borrow)
     {
-        ulong result = unchecked(a - b - borrow);
+        var result = unchecked(a - b - borrow);
         borrow = (((~a) & b) | (~(a ^ b)) & result) >> 63;
         return (result, borrow);
     }
 
     public static (ulong low, ulong high) Mac(ulong z, ulong x, ulong y, ulong carry)
     {
-        ulong high = BigMul(x, y, out ulong low);
+        var high = BigMul(x, y, out var low);
         (low, carry) = Adc(low, carry, 0);
         (high, _) = Adc(high, 0, carry);
         (low, carry) = Adc(low, z, 0);
@@ -51,14 +51,14 @@ static class MathUtility
         // low and high dwords of each operand
 
         // Use 32-bit uints to optimize the fallback for 32-bit platforms.
-        uint al = (uint)a;
-        uint ah = (uint)(a >> 32);
-        uint bl = (uint)b;
-        uint bh = (uint)(b >> 32);
+        var al = (uint)a;
+        var ah = (uint)(a >> 32);
+        var bl = (uint)b;
+        var bh = (uint)(b >> 32);
 
-        ulong mull = ((ulong)al) * bl;
-        ulong t = ((ulong)ah) * bl + (mull >> 32);
-        ulong tl = ((ulong)al) * bh + (uint)t;
+        var mull = ((ulong)al) * bl;
+        var t = ((ulong)ah) * bl + (mull >> 32);
+        var tl = ((ulong)al) * bh + (uint)t;
 
         low = tl << 32 | (uint)mull;
 

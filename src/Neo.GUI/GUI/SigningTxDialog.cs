@@ -33,7 +33,7 @@ namespace Neo.GUI
                 MessageBox.Show(Strings.SigningFailedNoDataMessage);
                 return;
             }
-            ContractParametersContext context = ContractParametersContext.Parse(textBox1.Text, Service.NeoSystem.StoreView);
+            var context = ContractParametersContext.Parse(textBox1.Text, Service.NeoSystem.StoreView);
             if (!Service.CurrentWallet.Sign(context))
             {
                 MessageBox.Show(Strings.SigningFailedKeyNotFoundMessage);
@@ -51,7 +51,7 @@ namespace Neo.GUI
 
         private void button4_Click(object sender, EventArgs e)
         {
-            ContractParametersContext context = ContractParametersContext.Parse(textBox2.Text, Service.NeoSystem.StoreView);
+            var context = ContractParametersContext.Parse(textBox2.Text, Service.NeoSystem.StoreView);
             if (!(context.Verifiable is Transaction tx))
             {
                 MessageBox.Show("Only support to broadcast transaction.");

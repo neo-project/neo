@@ -31,7 +31,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestGetKeyForItem()
         {
-            Transaction tx = new Transaction()
+            var tx = new Transaction()
             {
                 Version = 0,
                 Nonce = 1,
@@ -45,7 +45,7 @@ namespace Neo.UnitTests.IO.Caching
             };
             relayCache.Add(tx);
             relayCache.Contains(tx).Should().BeTrue();
-            relayCache.TryGet(tx.Hash, out IInventory tmp).Should().BeTrue();
+            relayCache.TryGet(tx.Hash, out var tmp).Should().BeTrue();
             (tmp is Transaction).Should().BeTrue();
         }
     }

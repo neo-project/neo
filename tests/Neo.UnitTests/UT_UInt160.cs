@@ -29,23 +29,23 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestGernerator1()
         {
-            UInt160 uInt160 = new UInt160();
+            var uInt160 = new UInt160();
             Assert.IsNotNull(uInt160);
         }
 
         [TestMethod]
         public void TestGernerator2()
         {
-            UInt160 uInt160 = new UInt160(new byte[20]);
+            var uInt160 = new UInt160(new byte[20]);
             Assert.IsNotNull(uInt160);
         }
 
         [TestMethod]
         public void TestCompareTo()
         {
-            byte[] temp = new byte[20];
+            var temp = new byte[20];
             temp[19] = 0x01;
-            UInt160 result = new UInt160(temp);
+            var result = new UInt160(temp);
             Assert.AreEqual(0, UInt160.Zero.CompareTo(UInt160.Zero));
             Assert.AreEqual(-1, UInt160.Zero.CompareTo(result));
             Assert.AreEqual(1, result.CompareTo(UInt160.Zero));
@@ -54,9 +54,9 @@ namespace Neo.UnitTests.IO
         [TestMethod]
         public void TestEquals()
         {
-            byte[] temp = new byte[20];
+            var temp = new byte[20];
             temp[19] = 0x01;
-            UInt160 result = new UInt160(temp);
+            var result = new UInt160(temp);
             Assert.AreEqual(true, UInt160.Zero.Equals(UInt160.Zero));
             Assert.AreEqual(false, UInt160.Zero.Equals(result));
             Assert.AreEqual(false, result.Equals(null));
@@ -67,11 +67,11 @@ namespace Neo.UnitTests.IO
         {
             Action action = () => UInt160.Parse(null);
             action.Should().Throw<FormatException>();
-            UInt160 result = UInt160.Parse("0x0000000000000000000000000000000000000000");
+            var result = UInt160.Parse("0x0000000000000000000000000000000000000000");
             Assert.AreEqual(UInt160.Zero, result);
             Action action1 = () => UInt160.Parse("000000000000000000000000000000000000000");
             action1.Should().Throw<FormatException>();
-            UInt160 result1 = UInt160.Parse("0000000000000000000000000000000000000000");
+            var result1 = UInt160.Parse("0000000000000000000000000000000000000000");
             Assert.AreEqual(UInt160.Zero, result1);
         }
 

@@ -32,7 +32,7 @@ namespace Neo.UnitTests.Extensions
 
             if (engine.Execute() != VMState.HALT)
             {
-                Exception exception = engine.FaultException;
+                var exception = engine.FaultException;
                 while (exception?.InnerException != null) exception = exception.InnerException;
                 throw exception ?? new InvalidOperationException();
             }
@@ -59,7 +59,7 @@ namespace Neo.UnitTests.Extensions
 
             if (engine.Execute() != VMState.HALT)
             {
-                Exception exception = engine.FaultException;
+                var exception = engine.FaultException;
                 while (exception?.InnerException != null) exception = exception.InnerException;
                 throw exception ?? new InvalidOperationException();
             }
@@ -82,7 +82,7 @@ namespace Neo.UnitTests.Extensions
 
             if (engine.Execute() != VMState.HALT)
             {
-                Exception exception = engine.FaultException;
+                var exception = engine.FaultException;
                 while (exception?.InnerException != null) exception = exception.InnerException;
                 throw exception ?? new InvalidOperationException();
             }
@@ -114,7 +114,7 @@ namespace Neo.UnitTests.Extensions
 
             if (engine.Execute() != VMState.HALT)
             {
-                Exception exception = engine.FaultException;
+                var exception = engine.FaultException;
                 while (exception?.InnerException != null) exception = exception.InnerException;
                 throw exception ?? new InvalidOperationException();
             }

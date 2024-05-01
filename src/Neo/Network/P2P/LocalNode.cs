@@ -91,10 +91,10 @@ namespace Neo.Network.P2P
             this.SeedList = new IPEndPoint[system.Settings.SeedList.Length];
 
             // Start dns resolution in parallel
-            string[] seedList = system.Settings.SeedList;
-            for (int i = 0; i < seedList.Length; i++)
+            var seedList = system.Settings.SeedList;
+            for (var i = 0; i < seedList.Length; i++)
             {
-                int index = i;
+                var index = i;
                 _ = Task.Run(() => SeedList[index] = GetIpEndPoint(seedList[index]));
             }
         }
@@ -129,7 +129,7 @@ namespace Neo.Network.P2P
 
         private static IPEndPoint GetIPEndpointFromHostPort(string hostNameOrAddress, int port)
         {
-            if (IPAddress.TryParse(hostNameOrAddress, out IPAddress ipAddress))
+            if (IPAddress.TryParse(hostNameOrAddress, out var ipAddress))
                 return new IPEndPoint(ipAddress, port);
             IPHostEntry entry;
             try
@@ -151,7 +151,7 @@ namespace Neo.Network.P2P
 
             try
             {
-                string[] p = hostAndPort.Split(':');
+                var p = hostAndPort.Split(':');
                 return GetIPEndpointFromHostPort(p[0], int.Parse(p[1]));
             }
             catch { }
@@ -253,7 +253,7 @@ namespace Neo.Network.P2P
             // otherwise, don't relay.
             if (inventory is Block block)
             {
-                foreach (KeyValuePair<IActorRef, RemoteNode> kvp in RemoteNodes)
+                foreach (var kvp in RemoteNodes)
                 {
                     if (block.Index > kvp.Value.LastBlockIndex)
                         kvp.Key.Tell(message);

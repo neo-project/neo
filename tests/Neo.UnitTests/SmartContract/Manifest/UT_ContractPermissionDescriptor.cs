@@ -22,11 +22,11 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestCreateByECPointAndIsWildcard()
         {
-            byte[] privateKey = new byte[32];
-            RandomNumberGenerator rng = RandomNumberGenerator.Create();
+            var privateKey = new byte[32];
+            var rng = RandomNumberGenerator.Create();
             rng.GetBytes(privateKey);
-            KeyPair key = new KeyPair(privateKey);
-            ContractPermissionDescriptor contractPermissionDescriptor = ContractPermissionDescriptor.Create(key.PublicKey);
+            var key = new KeyPair(privateKey);
+            var contractPermissionDescriptor = ContractPermissionDescriptor.Create(key.PublicKey);
             Assert.IsNotNull(contractPermissionDescriptor);
             Assert.AreEqual(key.PublicKey, contractPermissionDescriptor.Group);
             Assert.AreEqual(false, contractPermissionDescriptor.IsWildcard);
@@ -35,12 +35,12 @@ namespace Neo.UnitTests.SmartContract.Manifest
         [TestMethod]
         public void TestFromAndToJson()
         {
-            byte[] privateKey = new byte[32];
-            RandomNumberGenerator rng = RandomNumberGenerator.Create();
+            var privateKey = new byte[32];
+            var rng = RandomNumberGenerator.Create();
             rng.GetBytes(privateKey);
-            KeyPair key = new KeyPair(privateKey);
-            ContractPermissionDescriptor temp = ContractPermissionDescriptor.Create(key.PublicKey);
-            ContractPermissionDescriptor result = ContractPermissionDescriptor.FromJson(temp.ToJson());
+            var key = new KeyPair(privateKey);
+            var temp = ContractPermissionDescriptor.Create(key.PublicKey);
+            var result = ContractPermissionDescriptor.FromJson(temp.ToJson());
             Assert.AreEqual(null, result.Hash);
             Assert.AreEqual(result.Group, result.Group);
         }

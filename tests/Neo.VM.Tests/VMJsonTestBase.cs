@@ -102,7 +102,7 @@ namespace Neo.Test
         {
             AssertAreEqual(result == null ? 0 : result.Length, stack.Count, message + "Stack is different");
 
-            int x = 0;
+            var x = 0;
             foreach (var context in stack)
             {
                 var opcode = context.InstructionPointer >= context.Script.Length ? OpCode.RET : context.Script[context.InstructionPointer];
@@ -236,7 +236,7 @@ namespace Neo.Test
             if (item == null) return null;
 
             JToken value;
-            string type = item.GetType().Name;
+            var type = item.GetType().Name;
 
             switch (item)
             {

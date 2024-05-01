@@ -46,25 +46,25 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void TestSetAndGet()
         {
-            byte[] privateKey1 = new byte[32];
+            var privateKey1 = new byte[32];
             var rng1 = System.Security.Cryptography.RandomNumberGenerator.Create();
             rng1.GetBytes(privateKey1);
-            KeyPair key1 = new KeyPair(privateKey1);
-            byte[] privateKey2 = new byte[32];
+            var key1 = new KeyPair(privateKey1);
+            var privateKey2 = new byte[32];
             var rng2 = System.Security.Cryptography.RandomNumberGenerator.Create();
             rng2.GetBytes(privateKey2);
-            KeyPair key2 = new KeyPair(privateKey2);
-            ECPoint[] publicKeys = new ECPoint[2];
+            var key2 = new KeyPair(privateKey2);
+            var publicKeys = new ECPoint[2];
             publicKeys[0] = key1.PublicKey;
             publicKeys[1] = key2.PublicKey;
             publicKeys = publicKeys.OrderBy(p => p).ToArray();
 
-            List<Role> roles = new List<Role>() { Role.StateValidator, Role.Oracle, Role.NeoFSAlphabetNode, Role.P2PNotary };
+            var roles = new List<Role>() { Role.StateValidator, Role.Oracle, Role.NeoFSAlphabetNode, Role.P2PNotary };
             foreach (var role in roles)
             {
                 var snapshot1 = _snapshot.CreateSnapshot();
-                UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
-                List<NotifyEventArgs> notifications = new List<NotifyEventArgs>();
+                var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
+                var notifications = new List<NotifyEventArgs>();
                 EventHandler<NotifyEventArgs> ev = (o, e) => notifications.Add(e);
                 ApplicationEngine.Notify += ev;
                 var ret = NativeContract.RoleManagement.Call(

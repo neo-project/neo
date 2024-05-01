@@ -61,7 +61,7 @@ namespace Neo.Wallets
         /// <returns>The converted script hash.</returns>
         public static UInt160 ToScriptHash(this string address, byte version)
         {
-            byte[] data = address.Base58CheckDecode();
+            var data = address.Base58CheckDecode();
             if (data.Length != 21)
                 throw new FormatException();
             if (data[0] != version)
@@ -72,8 +72,8 @@ namespace Neo.Wallets
         internal static byte[] XOR(byte[] x, byte[] y)
         {
             if (x.Length != y.Length) throw new ArgumentException();
-            byte[] r = new byte[x.Length];
-            for (int i = 0; i < r.Length; i++)
+            var r = new byte[x.Length];
+            for (var i = 0; i < r.Length; i++)
                 r[i] = (byte)(x[i] ^ y[i]);
             return r;
         }
@@ -89,22 +89,22 @@ namespace Neo.Wallets
         /// <returns>The network fee of the transaction.</returns>
         public static long CalculateNetworkFee(this Transaction tx, DataCache snapshot, ProtocolSettings settings, Func<UInt160, byte[]> accountScript, long maxExecutionCost = ApplicationEngine.TestModeGas)
         {
-            UInt160[] hashes = tx.GetScriptHashesForVerifying(snapshot);
+            var hashes = tx.GetScriptHashesForVerifying(snapshot);
 
             // base size for transaction: includes const_header + signers + attributes + script + hashes
             int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize() + tx.Script.GetVarSize() + IO.Helper.GetVarSize(hashes.Length), index = -1;
-            uint exec_fee_factor = NativeContract.Policy.GetExecFeeFactor(snapshot);
+            var exec_fee_factor = NativeContract.Policy.GetExecFeeFactor(snapshot);
             long networkFee = 0;
-            foreach (UInt160 hash in hashes)
+            foreach (var hash in hashes)
             {
                 index++;
-                byte[] witnessScript = accountScript(hash);
+                var witnessScript = accountScript(hash);
                 byte[] invocationScript = null;
 
                 if (tx.Witnesses != null && witnessScript is null)
                 {
                     // Try to find the script in the witnesses
-                    Witness witness = tx.Witnesses[index];
+                    var witness = tx.Witnesses[index];
                     witnessScript = witness?.VerificationScript.ToArray();
 
                     if (witnessScript is null || witnessScript.Length == 0)
@@ -132,7 +132,7 @@ namespace Neo.Wallets
                     size += Array.Empty<byte>().GetVarSize() + invSize;
 
                     // Check verify cost
-                    using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: settings, gas: maxExecutionCost);
+                    using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot.CreateSnapshot(), settings: settings, gas: maxExecutionCost);
                     engine.LoadContract(contract, md, CallFlags.ReadOnly);
                     if (invocationScript != null) engine.LoadScript(invocationScript, configureState: p => p.CallFlags = CallFlags.None);
                     if (engine.Execute() == VMState.FAULT) throw new ArgumentException($"Smart contract {contract.Hash} verification fault.");
@@ -147,16 +147,16 @@ namespace Neo.Wallets
                     size += 67 + witnessScript.GetVarSize();
                     networkFee += exec_fee_factor * SignatureContractCost();
                 }
-                else if (IsMultiSigContract(witnessScript, out int m, out int n))
+                else if (IsMultiSigContract(witnessScript, out var m, out int n))
                 {
-                    int size_inv = 66 * m;
+                    var size_inv = 66 * m;
                     size += IO.Helper.GetVarSize(size_inv) + size_inv + witnessScript.GetVarSize();
                     networkFee += exec_fee_factor * MultiSignatureContractCost(m, n);
                 }
                 // We can support more contract types in the future.
             }
             networkFee += size * NativeContract.Policy.GetFeePerByte(snapshot);
-            foreach (TransactionAttribute attr in tx.Attributes)
+            foreach (var attr in tx.Attributes)
             {
                 networkFee += attr.CalculateNetworkFee(snapshot, tx);
             }

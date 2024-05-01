@@ -32,7 +32,7 @@ namespace Neo.ConsoleService
         {
             var currentColor = new ConsoleColorSet();
 
-            for (int i = 0; i < values.Length; i++)
+            for (var i = 0; i < values.Length; i++)
             {
                 if (i % 2 == 0)
                     InfoColor.Apply();
@@ -125,7 +125,7 @@ namespace Neo.ConsoleService
         public static SecureString ReadSecureString(string prompt)
         {
             const string t = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
-            SecureString securePwd = new SecureString();
+            var securePwd = new SecureString();
             ConsoleKeyInfo key;
 
             if (!string.IsNullOrEmpty(prompt))

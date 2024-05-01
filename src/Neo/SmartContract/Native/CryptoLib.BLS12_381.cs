@@ -107,7 +107,7 @@ partial class CryptoLib
     [ContractMethod(CpuFee = 1 << 21)]
     public static InteropInterface Bls12381Mul(InteropInterface x, byte[] mul, bool neg)
     {
-        Scalar X = neg ? -Scalar.FromBytes(mul) : Scalar.FromBytes(mul);
+        var X = neg ? -Scalar.FromBytes(mul) : Scalar.FromBytes(mul);
         return x.GetInterface<object>() switch
         {
             G1Affine p => new(p * X),
@@ -128,13 +128,13 @@ partial class CryptoLib
     [ContractMethod(CpuFee = 1 << 23)]
     public static InteropInterface Bls12381Pairing(InteropInterface g1, InteropInterface g2)
     {
-        G1Affine g1a = g1.GetInterface<object>() switch
+        var g1a = g1.GetInterface<object>() switch
         {
             G1Affine g => g,
             G1Projective g => new(g),
             _ => throw new ArgumentException($"Bls12381 operation fault, type:format, error:type mismatch")
         };
-        G2Affine g2a = g2.GetInterface<object>() switch
+        var g2a = g2.GetInterface<object>() switch
         {
             G2Affine g => g,
             G2Projective g => new(g),

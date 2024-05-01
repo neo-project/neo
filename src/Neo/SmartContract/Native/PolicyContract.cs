@@ -66,7 +66,7 @@ namespace Neo.SmartContract.Native
 
         internal PolicyContract() : base() { }
 
-        internal override ContractTask Initialize(ApplicationEngine engine, Hardfork? hardfork)
+        internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
         {
             if (hardfork == ActiveIn)
             {
@@ -120,7 +120,7 @@ namespace Neo.SmartContract.Native
         public uint GetAttributeFee(DataCache snapshot, byte attributeType)
         {
             if (!Enum.IsDefined(typeof(TransactionAttributeType), attributeType)) throw new InvalidOperationException();
-            StorageItem entry = snapshot.TryGet(CreateStorageKey(Prefix_AttributeFee).Add(attributeType));
+            var entry = snapshot.TryGet(CreateStorageKey(Prefix_AttributeFee).Add(attributeType));
             if (entry == null) return DefaultAttributeFee;
 
             return (uint)(BigInteger)entry;

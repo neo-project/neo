@@ -51,13 +51,13 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestCreateInstance()
         {
-            object item1 = ReflectionCache<MyTestEnum>.CreateInstance(MyTestEnum.Item1, null);
+            var item1 = ReflectionCache<MyTestEnum>.CreateInstance(MyTestEnum.Item1, null);
             (item1 is TestItem1).Should().BeTrue();
 
-            object item2 = ReflectionCache<MyTestEnum>.CreateInstance(MyTestEnum.Item2, null);
+            var item2 = ReflectionCache<MyTestEnum>.CreateInstance(MyTestEnum.Item2, null);
             (item2 is TestItem2).Should().BeTrue();
 
-            object item3 = ReflectionCache<MyTestEnum>.CreateInstance((MyTestEnum)0x02, null);
+            var item3 = ReflectionCache<MyTestEnum>.CreateInstance((MyTestEnum)0x02, null);
             item3.Should().BeNull();
         }
 
@@ -78,10 +78,10 @@ namespace Neo.UnitTests.IO.Caching
         public void TestCreateInstance2()
         {
             TestItem defaultItem = new TestItem1();
-            object item2 = ReflectionCache<MyTestEnum>.CreateInstance(MyTestEnum.Item2, defaultItem);
+            var item2 = ReflectionCache<MyTestEnum>.CreateInstance(MyTestEnum.Item2, defaultItem);
             (item2 is TestItem2).Should().BeTrue();
 
-            object item1 = ReflectionCache<MyTestEnum>.CreateInstance((MyTestEnum)0x02, new TestItem1());
+            var item1 = ReflectionCache<MyTestEnum>.CreateInstance((MyTestEnum)0x02, new TestItem1());
             (item1 is TestItem1).Should().BeTrue();
         }
     }

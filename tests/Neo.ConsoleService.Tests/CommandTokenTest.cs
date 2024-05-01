@@ -89,7 +89,7 @@ namespace Neo.ConsoleService.Tests
         {
             Assert.AreEqual(compare.Length, args.Length);
 
-            for (int x = 0; x < args.Length; x++)
+            for (var x = 0; x < args.Length; x++)
             {
                 var a = args[x];
                 var b = compare[x];

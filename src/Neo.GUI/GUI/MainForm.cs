@@ -51,8 +51,8 @@ namespace Neo.GUI
 
             if (xdoc != null)
             {
-                Version version = Assembly.GetExecutingAssembly().GetName().Version;
-                Version latest = Version.Parse(xdoc.Element("update").Attribute("latest").Value);
+                var version = Assembly.GetExecutingAssembly().GetName().Version;
+                var latest = Version.Parse(xdoc.Element("update").Attribute("latest").Value);
                 if (version < latest)
                 {
                     toolStripStatusLabel3.Tag = xdoc;
@@ -64,7 +64,7 @@ namespace Neo.GUI
 
         private void AddAccount(WalletAccount account, bool selected = false)
         {
-            ListViewItem item = listView1.Items[account.Address];
+            var item = listView1.Items[account.Address];
             if (item != null)
             {
                 if (!account.WatchOnly && ((WalletAccount)item.Tag).WatchOnly)
@@ -75,7 +75,7 @@ namespace Neo.GUI
             }
             if (item == null)
             {
-                string groupName = account.WatchOnly ? "watchOnlyGroup" : IsSignatureContract(account.Contract.Script) ? "standardContractGroup" : "nonstandardContractGroup";
+                var groupName = account.WatchOnly ? "watchOnlyGroup" : IsSignatureContract(account.Contract.Script) ? "standardContractGroup" : "nonstandardContractGroup";
                 item = listView1.Items.Add(new ListViewItem(new[]
                 {
                     new ListViewItem.ListViewSubItem
@@ -146,7 +146,7 @@ namespace Neo.GUI
             listView1.Items.Clear();
             if (wallet != null)
             {
-                foreach (WalletAccount account in wallet.GetAccounts().ToArray())
+                foreach (var account in wallet.GetAccounts().ToArray())
                 {
                     AddAccount(account);
                 }
@@ -158,8 +158,8 @@ namespace Neo.GUI
         {
             foreach (ListViewItem item in listView3.Items)
             {
-                uint? height = item.Tag as uint?;
-                int? confirmations = (int)NativeContract.Ledger.CurrentIndex(Service.NeoSystem.StoreView) - (int?)height + 1;
+                var height = item.Tag as uint?;
+                var confirmations = (int)NativeContract.Ledger.CurrentIndex(Service.NeoSystem.StoreView) - (int?)height + 1;
                 if (confirmations <= 0) confirmations = null;
                 item.SubItems["confirmations"].Text = confirmations?.ToString() ?? Strings.Unconfirmed;
             }
@@ -180,12 +180,12 @@ namespace Neo.GUI
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            uint height = NativeContract.Ledger.CurrentIndex(Service.NeoSystem.StoreView);
-            uint headerHeight = Service.NeoSystem.HeaderCache.Last?.Index ?? height;
+            var height = NativeContract.Ledger.CurrentIndex(Service.NeoSystem.StoreView);
+            var headerHeight = Service.NeoSystem.HeaderCache.Last?.Index ?? height;
 
             lbl_height.Text = $"{height}/{headerHeight}";
             lbl_count_node.Text = Service.LocalNode.ConnectedCount.ToString();
-            TimeSpan persistence_span = DateTime.UtcNow - persistence_time;
+            var persistence_span = DateTime.UtcNow - persistence_time;
             if (persistence_span < TimeSpan.Zero) persistence_span = TimeSpan.Zero;
             if (persistence_span > Service.NeoSystem.Settings.TimePerBlock)
             {
@@ -199,41 +199,41 @@ namespace Neo.GUI
             if (Service.CurrentWallet is null) return;
             if (!check_nep5_balance || persistence_span < TimeSpan.FromSeconds(2)) return;
             check_nep5_balance = false;
-            UInt160[] addresses = Service.CurrentWallet.GetAccounts().Select(p => p.ScriptHash).ToArray();
+            var addresses = Service.CurrentWallet.GetAccounts().Select(p => p.ScriptHash).ToArray();
             if (addresses.Length == 0) return;
             using var snapshot = Service.NeoSystem.GetSnapshot();
-            foreach (UInt160 assetId in NEP5Watched)
+            foreach (var assetId in NEP5Watched)
             {
                 byte[] script;
-                using (ScriptBuilder sb = new ScriptBuilder())
+                using (var sb = new ScriptBuilder())
                 {
-                    for (int i = addresses.Length - 1; i >= 0; i--)
+                    for (var i = addresses.Length - 1; i >= 0; i--)
                         sb.EmitDynamicCall(assetId, "balanceOf", addresses[i]);
                     sb.Emit(OpCode.DEPTH, OpCode.PACK);
                     sb.EmitDynamicCall(assetId, "decimals");
                     sb.EmitDynamicCall(assetId, "name");
                     script = sb.ToArray();
                 }
-                using ApplicationEngine engine = ApplicationEngine.Run(script, snapshot, gas: 0_20000000L * addresses.Length);
+                using var engine = ApplicationEngine.Run(script, snapshot, gas: 0_20000000L * addresses.Length);
                 if (engine.State.HasFlag(VMState.FAULT)) continue;
-                string name = engine.ResultStack.Pop().GetString();
-                byte decimals = (byte)engine.ResultStack.Pop().GetInteger();
-                BigInteger[] balances = ((VMArray)engine.ResultStack.Pop()).Select(p => p.GetInteger()).ToArray();
+                var name = engine.ResultStack.Pop().GetString();
+                var decimals = (byte)engine.ResultStack.Pop().GetInteger();
+                var balances = ((VMArray)engine.ResultStack.Pop()).Select(p => p.GetInteger()).ToArray();
                 string symbol = null;
                 if (assetId.Equals(NativeContract.NEO.Hash))
                     symbol = NativeContract.NEO.Symbol;
                 else if (assetId.Equals(NativeContract.GAS.Hash))
                     symbol = NativeContract.GAS.Symbol;
                 if (symbol != null)
-                    for (int i = 0; i < addresses.Length; i++)
+                    for (var i = 0; i < addresses.Length; i++)
                         listView1.Items[addresses[i].ToAddress(Service.NeoSystem.Settings.AddressVersion)].SubItems[symbol].Text = new BigDecimal(balances[i], decimals).ToString();
-                BigInteger amount = balances.Sum();
+                var amount = balances.Sum();
                 if (amount == 0)
                 {
                     listView2.Items.RemoveByKey(assetId.ToString());
                     continue;
                 }
-                BigDecimal balance = new BigDecimal(amount, decimals);
+                var balance = new BigDecimal(amount, decimals);
                 if (listView2.Items.ContainsKey(assetId.ToString()))
                 {
                     listView2.Items[assetId.ToString()].SubItems["value"].Text = balance.ToString();
@@ -274,14 +274,14 @@ namespace Neo.GUI
 
         private void 创建钱包数据库NToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using CreateWalletDialog dialog = new CreateWalletDialog();
+            using var dialog = new CreateWalletDialog();
             if (dialog.ShowDialog() != DialogResult.OK) return;
             Service.CreateWallet(dialog.WalletPath, dialog.Password);
         }
 
         private void 打开钱包数据库OToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using OpenWalletDialog dialog = new OpenWalletDialog();
+            using var dialog = new OpenWalletDialog();
             if (dialog.ShowDialog() != DialogResult.OK) return;
             try
             {
@@ -295,7 +295,7 @@ namespace Neo.GUI
 
         private void 修改密码CToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using ChangePasswordDialog dialog = new ChangePasswordDialog();
+            using var dialog = new ChangePasswordDialog();
             if (dialog.ShowDialog() != DialogResult.OK) return;
             if (Service.CurrentWallet.ChangePassword(dialog.OldPassword, dialog.NewPassword))
             {
@@ -317,12 +317,12 @@ namespace Neo.GUI
         private void 转账TToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Transaction tx;
-            using (TransferDialog dialog = new TransferDialog())
+            using (var dialog = new TransferDialog())
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
                 tx = dialog.GetTransaction();
             }
-            using (InvokeContractDialog dialog = new InvokeContractDialog(tx))
+            using (var dialog = new InvokeContractDialog(tx))
             {
                 if (dialog.ShowDialog() != DialogResult.OK) return;
                 tx = dialog.GetTransaction();
@@ -332,7 +332,7 @@ namespace Neo.GUI
 
         private void 签名SToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using SigningTxDialog dialog = new SigningTxDialog();
+            using var dialog = new SigningTxDialog();
             dialog.ShowDialog();
         }
 
@@ -341,12 +341,12 @@ namespace Neo.GUI
             try
             {
                 byte[] script;
-                using (DeployContractDialog dialog = new DeployContractDialog())
+                using (var dialog = new DeployContractDialog())
                 {
                     if (dialog.ShowDialog() != DialogResult.OK) return;
                     script = dialog.GetScript();
                 }
-                using (InvokeContractDialog dialog = new InvokeContractDialog(script))
+                using (var dialog = new InvokeContractDialog(script))
                 {
                     if (dialog.ShowDialog() != DialogResult.OK) return;
                     Helper.SignAndShowInformation(dialog.GetTransaction());
@@ -357,7 +357,7 @@ namespace Neo.GUI
 
         private void invokeContractToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using InvokeContractDialog dialog = new InvokeContractDialog();
+            using var dialog = new InvokeContractDialog();
             if (dialog.ShowDialog() != DialogResult.OK) return;
             try
             {
@@ -374,12 +374,12 @@ namespace Neo.GUI
             try
             {
                 byte[] script;
-                using (ElectionDialog dialog = new ElectionDialog())
+                using (var dialog = new ElectionDialog())
                 {
                     if (dialog.ShowDialog() != DialogResult.OK) return;
                     script = dialog.GetScript();
                 }
-                using (InvokeContractDialog dialog = new InvokeContractDialog(script))
+                using (var dialog = new InvokeContractDialog(script))
                 {
                     if (dialog.ShowDialog() != DialogResult.OK) return;
                     Helper.SignAndShowInformation(dialog.GetTransaction());
@@ -390,7 +390,7 @@ namespace Neo.GUI
 
         private void signDataToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using SigningDialog dialog = new SigningDialog();
+            using var dialog = new SigningDialog();
             dialog.ShowDialog();
         }
 
@@ -439,7 +439,7 @@ namespace Neo.GUI
         private void 创建新地址NToolStripMenuItem_Click(object sender, EventArgs e)
         {
             listView1.SelectedIndices.Clear();
-            WalletAccount account = Service.CurrentWallet.CreateAccount();
+            var account = Service.CurrentWallet.CreateAccount();
             AddAccount(account, true);
             if (Service.CurrentWallet is NEP6Wallet wallet)
                 wallet.Save();
@@ -447,10 +447,10 @@ namespace Neo.GUI
 
         private void importWIFToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using ImportPrivateKeyDialog dialog = new ImportPrivateKeyDialog();
+            using var dialog = new ImportPrivateKeyDialog();
             if (dialog.ShowDialog() != DialogResult.OK) return;
             listView1.SelectedIndices.Clear();
-            foreach (string wif in dialog.WifStrings)
+            foreach (var wif in dialog.WifStrings)
             {
                 WalletAccount account;
                 try
@@ -469,13 +469,13 @@ namespace Neo.GUI
 
         private void importWatchOnlyAddressToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            string text = InputBox.Show(Strings.Address, Strings.ImportWatchOnlyAddress);
+            var text = InputBox.Show(Strings.Address, Strings.ImportWatchOnlyAddress);
             if (string.IsNullOrEmpty(text)) return;
-            using (StringReader reader = new StringReader(text))
+            using (var reader = new StringReader(text))
             {
                 while (true)
                 {
-                    string address = reader.ReadLine();
+                    var address = reader.ReadLine();
                     if (address == null) break;
                     address = address.Trim();
                     if (string.IsNullOrEmpty(address)) continue;
@@ -488,7 +488,7 @@ namespace Neo.GUI
                     {
                         continue;
                     }
-                    WalletAccount account = Service.CurrentWallet.CreateAccount(scriptHash);
+                    var account = Service.CurrentWallet.CreateAccount(scriptHash);
                     AddAccount(account, true);
                 }
             }
@@ -498,15 +498,15 @@ namespace Neo.GUI
 
         private void 多方签名MToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using CreateMultiSigContractDialog dialog = new CreateMultiSigContractDialog();
+            using var dialog = new CreateMultiSigContractDialog();
             if (dialog.ShowDialog() != DialogResult.OK) return;
-            Contract contract = dialog.GetContract();
+            var contract = dialog.GetContract();
             if (contract == null)
             {
                 MessageBox.Show(Strings.AddContractFailedMessage);
                 return;
             }
-            WalletAccount account = Service.CurrentWallet.CreateAccount(contract, dialog.GetKey());
+            var account = Service.CurrentWallet.CreateAccount(contract, dialog.GetKey());
             if (Service.CurrentWallet is NEP6Wallet wallet)
                 wallet.Save();
             listView1.SelectedIndices.Clear();
@@ -515,10 +515,10 @@ namespace Neo.GUI
 
         private void 自定义CToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using ImportCustomContractDialog dialog = new ImportCustomContractDialog();
+            using var dialog = new ImportCustomContractDialog();
             if (dialog.ShowDialog() != DialogResult.OK) return;
-            Contract contract = dialog.GetContract();
-            WalletAccount account = Service.CurrentWallet.CreateAccount(contract, dialog.GetKey());
+            var contract = dialog.GetContract();
+            var account = Service.CurrentWallet.CreateAccount(contract, dialog.GetKey());
             if (Service.CurrentWallet is NEP6Wallet wallet)
                 wallet.Save();
             listView1.SelectedIndices.Clear();
@@ -527,15 +527,15 @@ namespace Neo.GUI
 
         private void 查看私钥VToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            WalletAccount account = (WalletAccount)listView1.SelectedItems[0].Tag;
-            using ViewPrivateKeyDialog dialog = new ViewPrivateKeyDialog(account);
+            var account = (WalletAccount)listView1.SelectedItems[0].Tag;
+            using var dialog = new ViewPrivateKeyDialog(account);
             dialog.ShowDialog();
         }
 
         private void viewContractToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            WalletAccount account = (WalletAccount)listView1.SelectedItems[0].Tag;
-            using ViewContractDialog dialog = new ViewContractDialog(account.Contract);
+            var account = (WalletAccount)listView1.SelectedItems[0].Tag;
+            using var dialog = new ViewContractDialog(account.Contract);
             dialog.ShowDialog();
         }
 
@@ -543,14 +543,14 @@ namespace Neo.GUI
         {
             try
             {
-                WalletAccount account = (WalletAccount)listView1.SelectedItems[0].Tag;
+                var account = (WalletAccount)listView1.SelectedItems[0].Tag;
                 byte[] script;
-                using (VotingDialog dialog = new VotingDialog(account.ScriptHash))
+                using (var dialog = new VotingDialog(account.ScriptHash))
                 {
                     if (dialog.ShowDialog() != DialogResult.OK) return;
                     script = dialog.GetScript();
                 }
-                using (InvokeContractDialog dialog = new InvokeContractDialog(script))
+                using (var dialog = new InvokeContractDialog(script))
                 {
                     if (dialog.ShowDialog() != DialogResult.OK) return;
                     Helper.SignAndShowInformation(dialog.GetTransaction());
@@ -572,8 +572,8 @@ namespace Neo.GUI
         {
             if (MessageBox.Show(Strings.DeleteAddressConfirmationMessage, Strings.DeleteAddressConfirmationCaption, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
                 return;
-            WalletAccount[] accounts = listView1.SelectedItems.OfType<ListViewItem>().Select(p => (WalletAccount)p.Tag).ToArray();
-            foreach (WalletAccount account in accounts)
+            var accounts = listView1.SelectedItems.OfType<ListViewItem>().Select(p => (WalletAccount)p.Tag).ToArray();
+            foreach (var account in accounts)
             {
                 listView1.Items.RemoveByKey(account.Address);
                 Service.CurrentWallet.DeleteAccount(account.ScriptHash);
@@ -609,7 +609,7 @@ namespace Neo.GUI
 
         private void toolStripStatusLabel3_Click(object sender, EventArgs e)
         {
-            using UpdateDialog dialog = new UpdateDialog((XDocument)toolStripStatusLabel3.Tag);
+            using var dialog = new UpdateDialog((XDocument)toolStripStatusLabel3.Tag);
             dialog.ShowDialog();
         }
     }

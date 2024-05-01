@@ -32,7 +32,7 @@ namespace Neo.GUI
             if (listBox1.SelectedIndex < 0) return;
             listBox2.Items.Clear();
             if (Service.CurrentWallet == null) return;
-            UInt160 hash = ((string)listBox1.SelectedItem).ToScriptHash(Service.NeoSystem.Settings.AddressVersion);
+            var hash = ((string)listBox1.SelectedItem).ToScriptHash(Service.NeoSystem.Settings.AddressVersion);
             var parameters = context.GetParameters(hash);
             if (parameters == null)
             {
@@ -40,7 +40,7 @@ namespace Neo.GUI
                 if (parameterList != null)
                 {
                     var pList = new List<ContractParameter>();
-                    for (int i = 0; i < parameterList.Length; i++)
+                    for (var i = 0; i < parameterList.Length; i++)
                     {
                         pList.Add(new ContractParameter(parameterList[i]));
                         context.Add(Service.CurrentWallet.GetAccount(hash).Contract, i, null);
@@ -60,7 +60,7 @@ namespace Neo.GUI
 
         private void button1_Click(object sender, EventArgs e)
         {
-            string input = InputBox.Show("ParametersContext", "ParametersContext");
+            var input = InputBox.Show("ParametersContext", "ParametersContext");
             if (string.IsNullOrEmpty(input)) return;
             try
             {
@@ -89,7 +89,7 @@ namespace Neo.GUI
         {
             if (listBox1.SelectedIndex < 0) return;
             if (listBox2.SelectedIndex < 0) return;
-            ContractParameter parameter = (ContractParameter)listBox2.SelectedItem;
+            var parameter = (ContractParameter)listBox2.SelectedItem;
             parameter.SetValue(textBox2.Text);
             listBox2.Items[listBox2.SelectedIndex] = parameter;
             textBox1.Text = textBox2.Text;
@@ -104,7 +104,7 @@ namespace Neo.GUI
                 return;
             }
             tx.Witnesses = context.GetWitnesses();
-            Blockchain.RelayResult reason = Service.NeoSystem.Blockchain.Ask<Blockchain.RelayResult>(tx).Result;
+            var reason = Service.NeoSystem.Blockchain.Ask<Blockchain.RelayResult>(tx).Result;
             if (reason.Result == VerifyResult.Succeed)
             {
                 InformationBox.Show(tx.Hash.ToString(), Strings.RelaySuccessText, Strings.RelaySuccessTitle);

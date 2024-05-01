@@ -36,9 +36,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var hashes = new UInt256[InvPayload.MaxHashesCount + 1];
 
-            for (int x = 0; x < hashes.Length; x++)
+            for (var x = 0; x < hashes.Length; x++)
             {
-                byte[] data = new byte[32];
+                var data = new byte[32];
                 Array.Copy(BitConverter.GetBytes(x), data, 4);
                 hashes[x] = new UInt256(data);
             }

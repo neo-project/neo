@@ -169,7 +169,7 @@ namespace Neo.Network.P2P
 
             if (isTrusted) TrustedIpAddresses.Add(endPoint.Address);
             // If connections with the peer greater than or equal to MaxConnectionsPerAddress, return.
-            if (ConnectedAddresses.TryGetValue(endPoint.Address, out int count) && count >= MaxConnectionsPerAddress)
+            if (ConnectedAddresses.TryGetValue(endPoint.Address, out var count) && count >= MaxConnectionsPerAddress)
                 return;
             if (ConnectedPeers.Values.Contains(endPoint)) return;
             ImmutableInterlocked.Update(ref ConnectingPeers, p =>
@@ -182,8 +182,8 @@ namespace Neo.Network.P2P
 
         private static bool IsIntranetAddress(IPAddress address)
         {
-            byte[] data = address.MapToIPv4().GetAddressBytes();
-            uint value = BinaryPrimitives.ReadUInt32BigEndian(data);
+            var data = address.MapToIPv4().GetAddressBytes();
+            var value = BinaryPrimitives.ReadUInt32BigEndian(data);
             return (value & 0xff000000) == 0x0a000000 || (value & 0xff000000) == 0x7f000000 || (value & 0xfff00000) == 0xac100000 || (value & 0xffff0000) == 0xc0a80000 || (value & 0xffff0000) == 0xa9fe0000;
         }
 
@@ -268,7 +268,7 @@ namespace Neo.Network.P2P
                 return;
             }
 
-            ConnectedAddresses.TryGetValue(remote.Address, out int count);
+            ConnectedAddresses.TryGetValue(remote.Address, out var count);
             if (count >= MaxConnectionsPerAddress)
             {
                 Sender.Tell(Tcp.Abort.Instance);
@@ -276,7 +276,7 @@ namespace Neo.Network.P2P
             else
             {
                 ConnectedAddresses[remote.Address] = count + 1;
-                IActorRef connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
+                var connection = Context.ActorOf(ProtocolProps(Sender, remote, local), $"connection_{Guid.NewGuid()}");
                 Context.Watch(connection);
                 Sender.Tell(new Tcp.Register(connection));
                 ConnectedPeers.TryAdd(connection, remote);
@@ -309,9 +309,9 @@ namespace Neo.Network.P2P
 
         private void OnTerminated(IActorRef actorRef)
         {
-            if (ConnectedPeers.TryRemove(actorRef, out IPEndPoint endPoint))
+            if (ConnectedPeers.TryRemove(actorRef, out var endPoint))
             {
-                ConnectedAddresses.TryGetValue(endPoint.Address, out int count);
+                ConnectedAddresses.TryGetValue(endPoint.Address, out var count);
                 if (count > 0) count--;
                 if (count == 0)
                     ConnectedAddresses.Remove(endPoint.Address);
@@ -330,9 +330,9 @@ namespace Neo.Network.P2P
                 NeedMorePeers(MinDesiredConnections - ConnectedPeers.Count);
 
             Random rand = new();
-            IPEndPoint[] endpoints = UnconnectedPeers.OrderBy(u => rand.Next()).Take(MinDesiredConnections - ConnectedPeers.Count).ToArray();
+            var endpoints = UnconnectedPeers.OrderBy(u => rand.Next()).Take(MinDesiredConnections - ConnectedPeers.Count).ToArray();
             ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Except(endpoints));
-            foreach (IPEndPoint endpoint in endpoints)
+            foreach (var endpoint in endpoints)
             {
                 ConnectToPeer(endpoint);
             }

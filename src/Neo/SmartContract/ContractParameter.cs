@@ -100,7 +100,7 @@ namespace Neo.SmartContract
             switch (Type)
             {
                 case ContractParameterType.Signature:
-                    byte[] signature = text.HexToBytes();
+                    var signature = text.HexToBytes();
                     if (signature.Length != 64) throw new FormatException();
                     Value = signature;
                     break;
@@ -210,7 +210,7 @@ namespace Neo.SmartContract
                         context.Add(parameter);
                         StringBuilder sb = new();
                         sb.Append('[');
-                        foreach (ContractParameter item in data)
+                        foreach (var item in data)
                         {
                             sb.Append(ToString(item, context));
                             sb.Append(", ");

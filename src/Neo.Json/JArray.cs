@@ -113,7 +113,7 @@ namespace Neo.Json
         internal override void Write(Utf8JsonWriter writer)
         {
             writer.WriteStartArray();
-            foreach (JToken? item in items)
+            foreach (var item in items)
             {
                 if (item is null)
                     writer.WriteNullValue();
@@ -127,7 +127,7 @@ namespace Neo.Json
         {
             var cloned = new JArray();
 
-            foreach (JToken? item in items)
+            foreach (var item in items)
             {
                 cloned.Add(item?.Clone());
             }

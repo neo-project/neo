@@ -95,7 +95,7 @@ namespace Neo.VM
         {
             if (value >= -1 && value <= 16) return Emit(OpCode.PUSH0 + (byte)(int)value);
             Span<byte> buffer = stackalloc byte[32];
-            if (!value.TryWriteBytes(buffer, out int bytesWritten, isUnsigned: false, isBigEndian: false))
+            if (!value.TryWriteBytes(buffer, out var bytesWritten, isUnsigned: false, isBigEndian: false))
                 throw new ArgumentOutOfRangeException(nameof(value));
             return bytesWritten switch
             {
@@ -191,8 +191,8 @@ namespace Neo.VM
 
         private static ReadOnlySpan<byte> PadRight(Span<byte> buffer, int dataLength, int padLength, bool negative)
         {
-            byte pad = negative ? (byte)0xff : (byte)0;
-            for (int x = dataLength; x < padLength; x++)
+            var pad = negative ? (byte)0xff : (byte)0;
+            for (var x = dataLength; x < padLength; x++)
                 buffer[x] = pad;
             return buffer[..padLength];
         }

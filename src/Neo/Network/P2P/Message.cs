@@ -66,7 +66,7 @@ namespace Neo.Network.P2P
                 _payload_compressed = payload?.ToArray() ?? Array.Empty<byte>()
             };
 
-            bool tryCompression =
+            var tryCompression =
                 command == MessageCommand.Block ||
                 command == MessageCommand.Extensible ||
                 command == MessageCommand.Transaction ||
@@ -93,7 +93,7 @@ namespace Neo.Network.P2P
         private void DecompressPayload()
         {
             if (_payload_compressed.Length == 0) return;
-            ReadOnlyMemory<byte> decompressed = Flags.HasFlag(MessageFlags.Compressed)
+            var decompressed = Flags.HasFlag(MessageFlags.Compressed)
                 ? _payload_compressed.Span.DecompressLz4(PayloadMaxSize)
                 : _payload_compressed;
             Payload = ReflectionCache<MessageCommand>.CreateSerializable(Command, decompressed);

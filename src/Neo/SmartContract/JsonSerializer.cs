@@ -107,7 +107,7 @@ namespace Neo.SmartContract
                     case Array array:
                         writer.WriteStartArray();
                         stack.Push(JsonTokenType.EndArray);
-                        for (int i = array.Count - 1; i >= 0; i--)
+                        for (var i = array.Count - 1; i >= 0; i--)
                             stack.Push(array[i]);
                         break;
                     case JsonTokenType.EndArray:
@@ -167,7 +167,7 @@ namespace Neo.SmartContract
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
         public static StackItem Deserialize(ApplicationEngine engine, JToken json, ExecutionEngineLimits limits, ReferenceCounter referenceCounter = null)
         {
-            uint maxStackSize = limits.MaxStackSize;
+            var maxStackSize = limits.MaxStackSize;
             return Deserialize(engine, json, ref maxStackSize, referenceCounter);
         }
 
@@ -183,7 +183,7 @@ namespace Neo.SmartContract
                 case JArray array:
                     {
                         List<StackItem> list = new(array.Count);
-                        foreach (JToken obj in array)
+                        foreach (var obj in array)
                             list.Add(Deserialize(engine, obj, ref maxStackSize, referenceCounter));
                         return new Array(referenceCounter, list);
                     }

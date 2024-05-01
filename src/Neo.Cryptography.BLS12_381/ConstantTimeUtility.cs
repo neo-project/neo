@@ -18,14 +18,14 @@ public static class ConstantTimeUtility
 {
     public static bool ConstantTimeEq<T>(in T a, in T b) where T : unmanaged
     {
-        ReadOnlySpan<byte> a_bytes = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref Unsafe.AsRef(in a), 1));
-        ReadOnlySpan<byte> b_bytes = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref Unsafe.AsRef(in b), 1));
-        ReadOnlySpan<ulong> a_u64 = MemoryMarshal.Cast<byte, ulong>(a_bytes);
-        ReadOnlySpan<ulong> b_u64 = MemoryMarshal.Cast<byte, ulong>(b_bytes);
+        var a_bytes = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref Unsafe.AsRef(in a), 1));
+        var b_bytes = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref Unsafe.AsRef(in b), 1));
+        var a_u64 = MemoryMarshal.Cast<byte, ulong>(a_bytes);
+        var b_u64 = MemoryMarshal.Cast<byte, ulong>(b_bytes);
         ulong f = 0;
-        for (int i = 0; i < a_u64.Length; i++)
+        for (var i = 0; i < a_u64.Length; i++)
             f |= a_u64[i] ^ b_u64[i];
-        for (int i = a_u64.Length * sizeof(ulong); i < a_bytes.Length; i++)
+        for (var i = a_u64.Length * sizeof(ulong); i < a_bytes.Length; i++)
             f |= (ulong)a_bytes[i] ^ a_bytes[i];
         return f == 0;
     }

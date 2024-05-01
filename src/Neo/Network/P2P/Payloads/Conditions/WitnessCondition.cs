@@ -46,8 +46,8 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <returns>The deserialized <see cref="WitnessCondition"/> array.</returns>
         protected static WitnessCondition[] DeserializeConditions(ref MemoryReader reader, int maxNestDepth)
         {
-            WitnessCondition[] conditions = new WitnessCondition[reader.ReadVarInt(MaxSubitems)];
-            for (int i = 0; i < conditions.Length; i++)
+            var conditions = new WitnessCondition[reader.ReadVarInt(MaxSubitems)];
+            for (var i = 0; i < conditions.Length; i++)
                 conditions[i] = DeserializeFrom(ref reader, maxNestDepth);
             return conditions;
         }
@@ -60,7 +60,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <returns>The deserialized <see cref="WitnessCondition"/>.</returns>
         public static WitnessCondition DeserializeFrom(ref MemoryReader reader, int maxNestDepth)
         {
-            WitnessConditionType type = (WitnessConditionType)reader.ReadByte();
+            var type = (WitnessConditionType)reader.ReadByte();
             if (ReflectionCache<WitnessConditionType>.CreateInstance(type) is not WitnessCondition condition)
                 throw new FormatException();
             condition.DeserializeWithoutType(ref reader, maxNestDepth);
@@ -103,7 +103,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
         /// <returns>The converted <see cref="WitnessCondition"/>.</returns>
         public static WitnessCondition FromJson(JObject json, int maxNestDepth)
         {
-            WitnessConditionType type = Enum.Parse<WitnessConditionType>(json["type"].GetString());
+            var type = Enum.Parse<WitnessConditionType>(json["type"].GetString());
             if (ReflectionCache<WitnessConditionType>.CreateInstance(type) is not WitnessCondition condition)
                 throw new FormatException("Invalid WitnessConditionType.");
             condition.ParseJson(json, maxNestDepth);

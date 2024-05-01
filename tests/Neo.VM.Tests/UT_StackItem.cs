@@ -200,7 +200,7 @@ namespace Neo.Test
                 new Struct { 1, 2, 3 }
             };
             a.Add(a);
-            Array aa = (Array)a.DeepCopy();
+            var aa = (Array)a.DeepCopy();
             Assert.AreNotEqual(a, aa);
             Assert.AreSame(aa, aa[^1]);
             Assert.IsTrue(a[^2].Equals(aa[^2], ExecutionEngineLimits.Default));

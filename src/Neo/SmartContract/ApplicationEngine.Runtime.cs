@@ -212,15 +212,15 @@ namespace Neo.SmartContract
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
 
-            ExecutionContextState state = CurrentContext.GetState<ExecutionContextState>();
-            ExecutionContext context = LoadScript(new Script(script, true), configureState: p =>
+            var state = CurrentContext.GetState<ExecutionContextState>();
+            var context = LoadScript(new Script(script, true), configureState: p =>
             {
                 p.CallingContext = CurrentContext;
                 p.CallFlags = callFlags & state.CallFlags & CallFlags.ReadOnly;
                 p.IsDynamicCall = true;
             });
 
-            for (int i = args.Count - 1; i >= 0; i--)
+            for (var i = args.Count - 1; i >= 0; i--)
                 context.EvaluationStack.Push(args[i]);
         }
 
@@ -232,7 +232,7 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the account has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
         protected internal bool CheckWitness(byte[] hashOrPubkey)
         {
-            UInt160 hash = hashOrPubkey.Length switch
+            var hash = hashOrPubkey.Length switch
             {
                 20 => new UInt160(hashOrPubkey),
                 33 => Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(hashOrPubkey, ECCurve.Secp256r1)).ToScriptHash(),
@@ -253,19 +253,19 @@ namespace Neo.SmartContract
             if (ScriptContainer is Transaction tx)
             {
                 Signer[] signers;
-                OracleResponse response = tx.GetAttribute<OracleResponse>();
+                var response = tx.GetAttribute<OracleResponse>();
                 if (response is null)
                 {
                     signers = tx.Signers;
                 }
                 else
                 {
-                    OracleRequest request = NativeContract.Oracle.GetRequest(Snapshot, response.Id);
+                    var request = NativeContract.Oracle.GetRequest(Snapshot, response.Id);
                     signers = NativeContract.Ledger.GetTransaction(Snapshot, request.OriginalTxid).Signers;
                 }
-                Signer signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
+                var signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
                 if (signer is null) return false;
-                foreach (WitnessRule rule in signer.GetAllRules())
+                foreach (var rule in signer.GetAllRules())
                 {
                     if (rule.Condition.Match(this))
                         return rule.Action == WitnessRuleAction.Allow;
@@ -330,7 +330,7 @@ namespace Neo.SmartContract
             if (state.Length > MaxNotificationSize) throw new ArgumentException("Message is too long.", nameof(state));
             try
             {
-                string message = Utility.StrictUTF8.GetString(state);
+                var message = Utility.StrictUTF8.GetString(state);
                 Log?.Invoke(this, new LogEventArgs(ScriptContainer, CurrentScriptHash, message));
             }
             catch
@@ -353,8 +353,8 @@ namespace Neo.SmartContract
                 return;
             }
             if (eventName.Length > MaxEventName) throw new ArgumentException(null, nameof(eventName));
-            string name = Utility.StrictUTF8.GetString(eventName);
-            ContractState contract = CurrentContext.GetState<ExecutionContextState>().Contract;
+            var name = Utility.StrictUTF8.GetString(eventName);
+            var contract = CurrentContext.GetState<ExecutionContextState>().Contract;
             if (contract is null)
                 throw new InvalidOperationException("Notifications are not allowed in dynamic scripts.");
             var @event = contract.Manifest.Abi.Events.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.Ordinal));
@@ -362,7 +362,7 @@ namespace Neo.SmartContract
                 throw new InvalidOperationException($"Event `{name}` does not exist.");
             if (@event.Parameters.Length != state.Count)
                 throw new InvalidOperationException("The number of the arguments does not match the formal parameters of the event.");
-            for (int i = 0; i < @event.Parameters.Length; i++)
+            for (var i = 0; i < @event.Parameters.Length; i++)
             {
                 var p = @event.Parameters[i];
                 if (!CheckItemType(state[i], p.Type))
@@ -411,7 +411,7 @@ namespace Neo.SmartContract
             IEnumerable<NotifyEventArgs> notifications = Notifications;
             if (hash != null) // must filter by scriptHash
                 notifications = notifications.Where(p => p.ScriptHash == hash);
-            NotifyEventArgs[] array = notifications.ToArray();
+            var array = notifications.ToArray();
             if (array.Length > Limits.MaxStackSize) throw new InvalidOperationException();
             return array;
         }
@@ -442,7 +442,7 @@ namespace Neo.SmartContract
 
         private static bool CheckItemType(StackItem item, ContractParameterType type)
         {
-            StackItemType aType = item.Type;
+            var aType = item.Type;
             if (aType == StackItemType.Pointer) return false;
             switch (type)
             {

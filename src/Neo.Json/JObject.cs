@@ -34,7 +34,7 @@ namespace Neo.Json
         {
             get
             {
-                if (Properties.TryGetValue(name, out JToken? value))
+                if (Properties.TryGetValue(name, out var value))
                     return value;
                 return null;
             }

@@ -203,7 +203,7 @@ namespace Neo.SmartContract.Native
             }
             else
             {
-                int index = mem.AsSpan(start).IndexOf(value);
+                var index = mem.AsSpan(start).IndexOf(value);
                 if (index < 0) return -1;
                 return index + start;
             }
@@ -220,7 +220,7 @@ namespace Neo.SmartContract.Native
         private static string[] StringSplit([MaxLength(MaxInputLength)] string str, string separator, bool removeEmptyEntries)
         {
             if (separator is null) throw new ArgumentNullException(nameof(separator));
-            StringSplitOptions options = removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None;
+            var options = removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None;
             return str.Split(separator, options);
         }
 
@@ -230,8 +230,8 @@ namespace Neo.SmartContract.Native
             // return the length of the string in elements
             // it should return 1 for both  "🦆" and "ã"
 
-            TextElementEnumerator enumerator = StringInfo.GetTextElementEnumerator(str);
-            int count = 0;
+            var enumerator = StringInfo.GetTextElementEnumerator(str);
+            var count = 0;
 
             while (enumerator.MoveNext())
             {

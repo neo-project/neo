@@ -130,8 +130,8 @@ namespace Neo
         /// <returns>The loaded <see cref="ProtocolSettings"/>.</returns>
         public static ProtocolSettings Load(string path, bool optional = true)
         {
-            IConfigurationRoot config = new ConfigurationBuilder().AddJsonFile(path, optional).Build();
-            IConfigurationSection section = config.GetSection("ProtocolConfiguration");
+            var config = new ConfigurationBuilder().AddJsonFile(path, optional).Build();
+            var section = config.GetSection("ProtocolConfiguration");
             var settings = Load(section);
             CheckingHardfork(settings);
             return settings;
@@ -173,7 +173,7 @@ namespace Neo
         /// <returns>Processed hardfork configuration</returns>
         private static Dictionary<Hardfork, uint> EnsureOmmitedHardforks(Dictionary<Hardfork, uint> hardForks)
         {
-            foreach (Hardfork hf in AllHardforks)
+            foreach (var hf in AllHardforks)
             {
                 if (!hardForks.ContainsKey(hf))
                 {
@@ -196,17 +196,17 @@ namespace Neo
                 .OrderBy(allHardforks.IndexOf)
                 .ToList();
 
-            for (int i = 0; i < sortedHardforks.Count - 1; i++)
+            for (var i = 0; i < sortedHardforks.Count - 1; i++)
             {
-                int currentIndex = allHardforks.IndexOf(sortedHardforks[i]);
-                int nextIndex = allHardforks.IndexOf(sortedHardforks[i + 1]);
+                var currentIndex = allHardforks.IndexOf(sortedHardforks[i]);
+                var nextIndex = allHardforks.IndexOf(sortedHardforks[i + 1]);
 
                 // If they aren't consecutive, return false.
                 if (nextIndex - currentIndex > 1)
                     throw new ArgumentException("Hardfork configuration is not continuous.");
             }
             // Check that block numbers are not higher in earlier hardforks than in later ones
-            for (int i = 0; i < sortedHardforks.Count - 1; i++)
+            for (var i = 0; i < sortedHardforks.Count - 1; i++)
             {
                 if (settings.Hardforks[sortedHardforks[i]] > settings.Hardforks[sortedHardforks[i + 1]])
                 {
@@ -224,7 +224,7 @@ namespace Neo
         /// <returns>True if enabled</returns>
         public bool IsHardforkEnabled(Hardfork hardfork, uint index)
         {
-            if (Hardforks.TryGetValue(hardfork, out uint height))
+            if (Hardforks.TryGetValue(hardfork, out var height))
             {
                 // If the hardfork has a specific height in the configuration, check the block height.
                 return index >= height;

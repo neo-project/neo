@@ -199,7 +199,7 @@ namespace Neo.Test
         {
             using ScriptBuilder sb = new();
 
-            for (int x = 0; x < ExecutionEngineLimits.Default.MaxStackSize; x++)
+            for (var x = 0; x < ExecutionEngineLimits.Default.MaxStackSize; x++)
                 sb.Emit(OpCode.PUSH1);
 
             // Good with MaxStackSize

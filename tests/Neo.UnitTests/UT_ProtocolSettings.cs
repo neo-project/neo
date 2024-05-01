@@ -24,9 +24,9 @@ namespace Neo.UnitTests
         [TestMethod]
         public void CheckFirstLetterOfAddresses()
         {
-            UInt160 min = UInt160.Parse("0x0000000000000000000000000000000000000000");
+            var min = UInt160.Parse("0x0000000000000000000000000000000000000000");
             min.ToAddress(TestProtocolSettings.Default.AddressVersion)[0].Should().Be('N');
-            UInt160 max = UInt160.Parse("0xffffffffffffffffffffffffffffffffffffffff");
+            var max = UInt160.Parse("0xffffffffffffffffffffffffffffffffffffffff");
             max.ToAddress(TestProtocolSettings.Default.AddressVersion)[0].Should().Be('N');
         }
 
@@ -52,11 +52,11 @@ namespace Neo.UnitTests
         [TestMethod]
         public void HardForkTestBAndNotA()
         {
-            string json = CreateHKSettings("\"HF_Basilisk\": 4120000");
+            var json = CreateHKSettings("\"HF_Basilisk\": 4120000");
 
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
-            ProtocolSettings settings = ProtocolSettings.Load(file, false);
+            var settings = ProtocolSettings.Load(file, false);
             File.Delete(file);
 
             settings.Hardforks[Hardfork.HF_Aspidochelone].Should().Be(0);
@@ -74,11 +74,11 @@ namespace Neo.UnitTests
         [TestMethod]
         public void HardForkTestAAndNotB()
         {
-            string json = CreateHKSettings("\"HF_Aspidochelone\": 0");
+            var json = CreateHKSettings("\"HF_Aspidochelone\": 0");
 
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
-            ProtocolSettings settings = ProtocolSettings.Load(file, false);
+            var settings = ProtocolSettings.Load(file, false);
             File.Delete(file);
 
             settings.Hardforks[Hardfork.HF_Aspidochelone].Should().Be(0);
@@ -96,11 +96,11 @@ namespace Neo.UnitTests
         [TestMethod]
         public void HardForkTestNone()
         {
-            string json = CreateHKSettings("");
+            var json = CreateHKSettings("");
 
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
-            ProtocolSettings settings = ProtocolSettings.Load(file, false);
+            var settings = ProtocolSettings.Load(file, false);
             File.Delete(file);
 
             settings.Hardforks[Hardfork.HF_Aspidochelone].Should().Be(0);
@@ -117,7 +117,7 @@ namespace Neo.UnitTests
         [TestMethod]
         public void HardForkTestAMoreThanB()
         {
-            string json = CreateHKSettings("\"HF_Aspidochelone\": 4120001, \"HF_Basilisk\": 4120000");
+            var json = CreateHKSettings("\"HF_Aspidochelone\": 4120001, \"HF_Basilisk\": 4120000");
             var file = Path.GetTempFileName();
             File.WriteAllText(file, json);
             Assert.ThrowsException<ArgumentException>(() => ProtocolSettings.Load(file, false));

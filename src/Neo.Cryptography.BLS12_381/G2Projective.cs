@@ -205,7 +205,7 @@ public readonly struct G2Projective : IEquatable<G2Projective>
         //
         // We skip the leading bit because it's always unset for Fq
         // elements.
-        foreach (bool bit in b
+        foreach (var bit in b
             .SelectMany(p => Enumerable.Range(0, 8).Select(q => ((p >> q) & 1) == 1))
             .Reverse()
             .Skip(1))
@@ -311,13 +311,13 @@ public readonly struct G2Projective : IEquatable<G2Projective>
 
     public static void BatchNormalize(ReadOnlySpan<G2Projective> p, Span<G2Affine> q)
     {
-        int length = p.Length;
+        var length = p.Length;
         if (length != q.Length)
             throw new ArgumentException($"{nameof(p)} and {nameof(q)} must have the same length.");
 
         Span<Fp2> x = stackalloc Fp2[length];
-        Fp2 acc = Fp2.One;
-        for (int i = 0; i < length; i++)
+        var acc = Fp2.One;
+        for (var i = 0; i < length; i++)
         {
             // We use the `x` field of `G2Affine` to store the product
             // of previous z-coordinates seen.
@@ -331,9 +331,9 @@ public readonly struct G2Projective : IEquatable<G2Projective>
         // that are not are skipped.
         acc = acc.Invert();
 
-        for (int i = length - 1; i >= 0; i--)
+        for (var i = length - 1; i >= 0; i--)
         {
-            bool skip = p[i].IsIdentity;
+            var skip = p[i].IsIdentity;
 
             // Compute tmp = 1/z
             var tmp = x[i] * acc;

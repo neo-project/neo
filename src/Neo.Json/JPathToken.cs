@@ -18,7 +18,7 @@ namespace Neo.Json
 
         public static IEnumerable<JPathToken> Parse(string expr)
         {
-            for (int i = 0; i < expr.Length; i++)
+            for (var i = 0; i < expr.Length; i++)
             {
                 JPathToken token = new();
                 switch (expr[i])
@@ -71,10 +71,10 @@ namespace Neo.Json
 
         private static string ParseString(string expr, int start)
         {
-            int end = start + 1;
+            var end = start + 1;
             while (end < expr.Length)
             {
-                char c = expr[end];
+                var c = expr[end];
                 end++;
                 if (c == '\'') return expr[start..end];
             }
@@ -83,10 +83,10 @@ namespace Neo.Json
 
         public static string ParseIdentifier(string expr, int start)
         {
-            int end = start + 1;
+            var end = start + 1;
             while (end < expr.Length)
             {
-                char c = expr[end];
+                var c = expr[end];
                 if (c == '_' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9')
                     end++;
                 else
@@ -97,10 +97,10 @@ namespace Neo.Json
 
         private static string ParseNumber(string expr, int start)
         {
-            int end = start + 1;
+            var end = start + 1;
             while (end < expr.Length)
             {
-                char c = expr[end];
+                var c = expr[end];
                 if (c >= '0' && c <= '9')
                     end++;
                 else
@@ -111,18 +111,18 @@ namespace Neo.Json
 
         private static JPathToken DequeueToken(Queue<JPathToken> tokens)
         {
-            if (!tokens.TryDequeue(out JPathToken? token))
+            if (!tokens.TryDequeue(out var token))
                 throw new FormatException();
             return token;
         }
 
         public static void ProcessJsonPath(ref JToken?[] objects, Queue<JPathToken> tokens)
         {
-            int maxDepth = 6;
-            int maxObjects = 1024;
+            var maxDepth = 6;
+            var maxObjects = 1024;
             while (tokens.Count > 0)
             {
-                JPathToken token = DequeueToken(tokens);
+                var token = DequeueToken(tokens);
                 switch (token.Type)
                 {
                     case JPathTokenType.Dot:
@@ -139,7 +139,7 @@ namespace Neo.Json
 
         private static void ProcessDot(ref JToken?[] objects, ref int maxDepth, int maxObjects, Queue<JPathToken> tokens)
         {
-            JPathToken token = DequeueToken(tokens);
+            var token = DequeueToken(tokens);
             switch (token.Type)
             {
                 case JPathTokenType.Asterisk:
@@ -158,7 +158,7 @@ namespace Neo.Json
 
         private static void ProcessBracket(ref JToken?[] objects, ref int maxDepth, int maxObjects, Queue<JPathToken> tokens)
         {
-            JPathToken token = DequeueToken(tokens);
+            var token = DequeueToken(tokens);
             switch (token.Type)
             {
                 case JPathTokenType.Asterisk:
@@ -170,7 +170,7 @@ namespace Neo.Json
                     ProcessSlice(ref objects, ref maxDepth, maxObjects, tokens, 0);
                     break;
                 case JPathTokenType.Number:
-                    JPathToken next = DequeueToken(tokens);
+                    var next = DequeueToken(tokens);
                     switch (next.Type)
                     {
                         case JPathTokenType.Colon:
@@ -208,7 +208,7 @@ namespace Neo.Json
         private static void ProcessRecursiveDescent(ref JToken?[] objects, ref int maxDepth, int maxObjects, Queue<JPathToken> tokens)
         {
             List<JToken?> results = new();
-            JPathToken token = DequeueToken(tokens);
+            var token = DequeueToken(tokens);
             if (token.Type != JPathTokenType.Identifier) throw new FormatException();
             while (objects.Length > 0)
             {
@@ -221,7 +221,7 @@ namespace Neo.Json
 
         private static void ProcessSlice(ref JToken?[] objects, ref int maxDepth, int maxObjects, Queue<JPathToken> tokens, int start)
         {
-            JPathToken token = DequeueToken(tokens);
+            var token = DequeueToken(tokens);
             switch (token.Type)
             {
                 case JPathTokenType.Number:
@@ -242,7 +242,7 @@ namespace Neo.Json
             List<JPathToken> items = new() { first };
             while (true)
             {
-                JPathToken token = DequeueToken(tokens);
+                var token = DequeueToken(tokens);
                 if (token.Type != first.Type) throw new FormatException();
                 items.Add(token);
                 token = DequeueToken(tokens);
@@ -276,7 +276,7 @@ namespace Neo.Json
         {
             static IEnumerable<JToken?> GetProperties(JObject obj, string[] names)
             {
-                foreach (string name in names)
+                foreach (var name in names)
                     if (obj.ContainsProperty(name))
                         yield return obj[name];
             }
@@ -290,9 +290,9 @@ namespace Neo.Json
         {
             static IEnumerable<JToken?> GetElements(JArray array, int[] indexes)
             {
-                foreach (int index in indexes)
+                foreach (var index in indexes)
                 {
-                    int i = index >= 0 ? index : index + array.Count;
+                    var i = index >= 0 ? index : index + array.Count;
                     if (i >= 0 && i < array.Count)
                         yield return array[i];
                 }
@@ -309,10 +309,10 @@ namespace Neo.Json
             --maxDepth;
             objects = objects.OfType<JArray>().SelectMany(p =>
             {
-                int iStart = start >= 0 ? start : start + p.Count;
+                var iStart = start >= 0 ? start : start + p.Count;
                 if (iStart < 0) iStart = 0;
-                int iEnd = end > 0 ? end : end + p.Count;
-                int count = iEnd - iStart;
+                var iEnd = end > 0 ? end : end + p.Count;
+                var count = iEnd - iStart;
                 return p.Skip(iStart).Take(count);
             }).ToArray();
             if (objects.Length > maxObjects) throw new InvalidOperationException(nameof(maxObjects));

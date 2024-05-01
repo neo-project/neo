@@ -38,7 +38,7 @@ namespace Neo.VM
 
         internal void Clear()
         {
-            foreach (StackItem item in innerList)
+            foreach (var item in innerList)
                 referenceCounter.RemoveStackReference(item);
             innerList.Clear();
         }

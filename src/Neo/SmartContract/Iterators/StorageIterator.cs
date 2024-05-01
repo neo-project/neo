@@ -41,13 +41,13 @@ namespace Neo.SmartContract.Iterators
 
         public StackItem Value(ReferenceCounter referenceCounter)
         {
-            ReadOnlyMemory<byte> key = enumerator.Current.Key.Key;
-            ReadOnlyMemory<byte> value = enumerator.Current.Value.Value;
+            var key = enumerator.Current.Key.Key;
+            var value = enumerator.Current.Value.Value;
 
             if (options.HasFlag(FindOptions.RemovePrefix))
                 key = key[prefixLength..];
 
-            StackItem item = options.HasFlag(FindOptions.DeserializeValues)
+            var item = options.HasFlag(FindOptions.DeserializeValues)
                 ? BinarySerializer.Deserialize(value, ExecutionEngineLimits.Default, referenceCounter)
                 : value;
 

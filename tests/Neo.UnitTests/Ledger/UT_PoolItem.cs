@@ -46,15 +46,15 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void PoolItem_CompareTo_Fee()
         {
-            int size1 = 51;
-            int netFeeSatoshi1 = 1;
+            var size1 = 51;
+            var netFeeSatoshi1 = 1;
             var tx1 = GenerateTx(netFeeSatoshi1, size1);
-            int size2 = 51;
-            int netFeeSatoshi2 = 2;
+            var size2 = 51;
+            var netFeeSatoshi2 = 2;
             var tx2 = GenerateTx(netFeeSatoshi2, size2);
 
-            PoolItem pitem1 = new PoolItem(tx1);
-            PoolItem pitem2 = new PoolItem(tx2);
+            var pitem1 = new PoolItem(tx1);
+            var pitem2 = new PoolItem(tx2);
 
             Console.WriteLine($"item1 time {pitem1.Timestamp} item2 time {pitem2.Timestamp}");
             // pitem1 < pitem2 (fee) => -1
@@ -66,22 +66,22 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void PoolItem_CompareTo_Hash()
         {
-            int sizeFixed = 51;
-            int netFeeSatoshiFixed = 1;
+            var sizeFixed = 51;
+            var netFeeSatoshiFixed = 1;
 
             var tx1 = GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(0x80, netFeeSatoshiFixed, sizeFixed);
             var tx2 = GenerateTxWithFirstByteOfHashLessThanOrEqualTo(0x79, netFeeSatoshiFixed, sizeFixed);
 
             tx1.Attributes = new TransactionAttribute[] { new HighPriorityAttribute() };
 
-            PoolItem pitem1 = new PoolItem(tx1);
-            PoolItem pitem2 = new PoolItem(tx2);
+            var pitem1 = new PoolItem(tx1);
+            var pitem2 = new PoolItem(tx2);
 
             // Different priority
             pitem2.CompareTo(pitem1).Should().Be(-1);
 
             // Bulk test
-            for (int testRuns = 0; testRuns < 30; testRuns++)
+            for (var testRuns = 0; testRuns < 30; testRuns++)
             {
                 tx1 = GenerateTxWithFirstByteOfHashGreaterThanOrEqualTo(0x80, netFeeSatoshiFixed, sizeFixed);
                 tx2 = GenerateTxWithFirstByteOfHashLessThanOrEqualTo(0x79, netFeeSatoshiFixed, sizeFixed);
@@ -102,12 +102,12 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void PoolItem_CompareTo_Equals()
         {
-            int sizeFixed = 500;
-            int netFeeSatoshiFixed = 10;
+            var sizeFixed = 500;
+            var netFeeSatoshiFixed = 10;
             var tx = GenerateTx(netFeeSatoshiFixed, sizeFixed, new byte[] { 0x13, 0x37 });
 
-            PoolItem pitem1 = new PoolItem(tx);
-            PoolItem pitem2 = new PoolItem(tx);
+            var pitem1 = new PoolItem(tx);
+            var pitem2 = new PoolItem(tx);
 
             // pitem1 == pitem2 (fee) => 0
             pitem1.CompareTo(pitem2).Should().Be(0);
@@ -140,7 +140,7 @@ namespace Neo.UnitTests.Ledger
         // Generate Transaction with different sizes and prices
         public static Transaction GenerateTx(long networkFee, int size, byte[] overrideScriptBytes = null)
         {
-            Transaction tx = new Transaction
+            var tx = new Transaction
             {
                 Nonce = (uint)TestRandom.Next(),
                 Script = overrideScriptBytes ?? new byte[0],
@@ -160,7 +160,7 @@ namespace Neo.UnitTests.Ledger
             tx.Attributes.Length.Should().Be(0);
             tx.Signers.Length.Should().Be(0);
 
-            int diff = size - tx.Size;
+            var diff = size - tx.Size;
             if (diff < 0) throw new ArgumentException();
             if (diff > 0)
                 tx.Witnesses[0].VerificationScript = new byte[diff];

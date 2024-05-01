@@ -47,7 +47,7 @@ namespace Neo.IO.Actors
             if (envelope.Message is Idle) return;
             if (dropper(envelope.Message, high.Concat(low).Select(p => p.Message)))
                 return;
-            ConcurrentQueue<Envelope> queue = priority_generator(envelope.Message) ? high : low;
+            var queue = priority_generator(envelope.Message) ? high : low;
             queue.Enqueue(envelope);
         }
 

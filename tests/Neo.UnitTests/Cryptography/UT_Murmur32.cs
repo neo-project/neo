@@ -21,7 +21,7 @@ namespace Neo.UnitTests.Cryptography
         [TestMethod]
         public void TestGetHashSize()
         {
-            Murmur32 murmur3 = new Murmur32(1);
+            var murmur3 = new Murmur32(1);
             murmur3.HashSize.Should().Be(32);
         }
 

@@ -99,10 +99,10 @@ namespace Neo.VM
 
         private static void Run(string name, string poc)
         {
-            byte[] script = Convert.FromBase64String(poc);
+            var script = Convert.FromBase64String(poc);
             using ExecutionEngine engine = new();
             engine.LoadScript(script);
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            var stopwatch = Stopwatch.StartNew();
             engine.Execute();
             stopwatch.Stop();
             Debug.Assert(engine.State == VMState.HALT);

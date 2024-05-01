@@ -77,7 +77,7 @@ namespace Neo.GUI
 
         private void button1_Click(object sender, EventArgs e)
         {
-            using PayToDialog dialog = new PayToDialog(asset: Asset, scriptHash: ScriptHash);
+            using var dialog = new PayToDialog(asset: Asset, scriptHash: ScriptHash);
             if (dialog.ShowDialog() != DialogResult.OK) return;
             listBox1.Items.Add(dialog.GetOutput());
             ItemsChanged?.Invoke(this, EventArgs.Empty);
@@ -94,7 +94,7 @@ namespace Neo.GUI
 
         private void button3_Click(object sender, EventArgs e)
         {
-            using BulkPayDialog dialog = new BulkPayDialog(Asset);
+            using var dialog = new BulkPayDialog(Asset);
             if (dialog.ShowDialog() != DialogResult.OK) return;
             listBox1.Items.AddRange(dialog.GetOutputs());
             ItemsChanged?.Invoke(this, EventArgs.Empty);

@@ -101,7 +101,7 @@ namespace Neo.VM
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                Instruction? current = CurrentInstruction;
+                var current = CurrentInstruction;
                 if (current is null) return null;
                 return GetInstruction(InstructionPointer + current.Size);
             }
@@ -151,7 +151,7 @@ namespace Neo.VM
         /// <returns>The custom data of the specified type.</returns>
         public T GetState<T>(Func<T>? factory = null) where T : class, new()
         {
-            if (!shared_states.States.TryGetValue(typeof(T), out object? value))
+            if (!shared_states.States.TryGetValue(typeof(T), out var value))
             {
                 value = factory is null ? new T() : factory();
                 shared_states.States[typeof(T)] = value;
@@ -161,7 +161,7 @@ namespace Neo.VM
 
         internal bool MoveNext()
         {
-            Instruction? current = CurrentInstruction;
+            var current = CurrentInstruction;
             if (current is null) return false;
             InstructionPointer += current.Size;
             return InstructionPointer < Script.Length;

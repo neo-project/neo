@@ -45,7 +45,7 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The created payload.</returns>
         public static FilterLoadPayload Create(BloomFilter filter)
         {
-            byte[] buffer = new byte[filter.M / 8];
+            var buffer = new byte[filter.M / 8];
             filter.GetBits(buffer);
             return new FilterLoadPayload
             {

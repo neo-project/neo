@@ -45,7 +45,7 @@ namespace Neo.VM.StronglyConnectedComponents
             stack.Push(v);
             v.OnStack = true;
 
-            foreach (T w in v.Successors)
+            foreach (var w in v.Successors)
             {
                 if (w.DFN < 0)
                 {

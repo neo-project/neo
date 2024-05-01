@@ -29,7 +29,7 @@ namespace Neo.CLI
         [ConsoleCommand("export blocks", Category = "Blockchain Commands")]
         private void OnExportBlocksStartCountCommand(uint start, uint count = uint.MaxValue, string? path = null)
         {
-            uint height = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
+            var height = NativeContract.Ledger.CurrentIndex(NeoSystem.StoreView);
             if (height < start)
             {
                 ConsoleHelper.Error("invalid start height.");
@@ -69,7 +69,7 @@ namespace Neo.CLI
                     return;
                 }
 
-                DateTime blockDatetime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+                var blockDatetime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
                 blockDatetime = blockDatetime.AddMilliseconds(block.Timestamp).ToLocalTime();
 
                 ConsoleHelper.Info("", "-------------", "Block", "-------------");
@@ -127,7 +127,7 @@ namespace Neo.CLI
 
                 var block = NativeContract.Ledger.GetHeader(NeoSystem.StoreView, tx.BlockIndex);
 
-                DateTime transactionDatetime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+                var transactionDatetime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
                 transactionDatetime = transactionDatetime.AddMilliseconds(block.Timestamp).ToLocalTime();
 
                 ConsoleHelper.Info("", "-------------", "Transaction", "-------------");

@@ -79,8 +79,8 @@ namespace Neo.UnitTests.Cryptography.ECC
             ECFieldElement element = new(new BigInteger(100), ECCurve.Secp256k1);
             element.Sqrt().Should().Be(new ECFieldElement(BigInteger.Parse("115792089237316195423570985008687907853269984665640564039457584007908834671653"), ECCurve.Secp256k1));
 
-            ConstructorInfo constructor = typeof(ECCurve).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(BigInteger), typeof(BigInteger), typeof(BigInteger), typeof(BigInteger), typeof(byte[]) }, null);
-            ECCurve testCruve = constructor.Invoke(new object[] {
+            var constructor = typeof(ECCurve).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(BigInteger), typeof(BigInteger), typeof(BigInteger), typeof(BigInteger), typeof(byte[]) }, null);
+            var testCruve = constructor.Invoke(new object[] {
                 BigInteger.Parse("00FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFF0", NumberStyles.AllowHexSpecifier),
                 BigInteger.Parse("00FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFF00", NumberStyles.AllowHexSpecifier),
                 BigInteger.Parse("005AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B", NumberStyles.AllowHexSpecifier),
@@ -93,7 +93,7 @@ namespace Neo.UnitTests.Cryptography.ECC
         [TestMethod]
         public void TestToByteArray()
         {
-            byte[] result = new byte[32];
+            var result = new byte[32];
             result[31] = 100;
             new ECFieldElement(new BigInteger(100), ECCurve.Secp256k1).ToByteArray().Should().BeEquivalentTo(result);
 

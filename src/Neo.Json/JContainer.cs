@@ -23,7 +23,7 @@ public abstract class JContainer : JToken
 
     public void CopyTo(JToken?[] array, int arrayIndex)
     {
-        for (int i = 0; i < Count && i + arrayIndex < array.Length; i++)
+        for (var i = 0; i < Count && i + arrayIndex < array.Length; i++)
             array[i + arrayIndex] = Children[i];
     }
 }

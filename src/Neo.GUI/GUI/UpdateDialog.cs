@@ -30,9 +30,9 @@ namespace Neo.GUI
         public UpdateDialog(XDocument xdoc)
         {
             InitializeComponent();
-            Version latest = Version.Parse(xdoc.Element("update").Attribute("latest").Value);
+            var latest = Version.Parse(xdoc.Element("update").Attribute("latest").Value);
             textBox1.Text = latest.ToString();
-            XElement release = xdoc.Element("update").Elements("release").First(p => p.Attribute("version").Value == latest.ToString());
+            var release = xdoc.Element("update").Elements("release").First(p => p.Attribute("version").Value == latest.ToString());
             textBox2.Text = release.Element("changes").Value.Replace("\n", Environment.NewLine);
             download_url = release.Attribute("file").Value;
         }
@@ -52,16 +52,16 @@ namespace Neo.GUI
             button1.Enabled = false;
             button2.Enabled = false;
             download_path = "update.zip";
-            using (Stream responseStream = await http.GetStreamAsync(download_url))
+            using (var responseStream = await http.GetStreamAsync(download_url))
             using (FileStream fileStream = new(download_path, FileMode.Create, FileAccess.Write, FileShare.None))
             {
                 await responseStream.CopyToAsync(fileStream);
             }
-            DirectoryInfo di = new DirectoryInfo("update");
+            var di = new DirectoryInfo("update");
             if (di.Exists) di.Delete(true);
             di.Create();
             ZipFile.ExtractToDirectory(download_path, di.Name);
-            FileSystemInfo[] fs = di.GetFileSystemInfos();
+            var fs = di.GetFileSystemInfos();
             if (fs.Length == 1 && fs[0] is DirectoryInfo directory)
             {
                 directory.MoveTo("update2");

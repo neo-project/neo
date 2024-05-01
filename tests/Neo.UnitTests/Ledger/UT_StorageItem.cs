@@ -38,7 +38,7 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Value_Set()
         {
-            byte[] val = new byte[] { 0x42, 0x32 };
+            var val = new byte[] { 0x42, 0x32 };
             uut.Value = val;
             uut.Value.Length.Should().Be(2);
             uut.Value.Span[0].Should().Be(val[0]);
@@ -64,11 +64,11 @@ namespace Neo.UnitTests.Ledger
         {
             uut.Value = TestUtils.GetByteArray(10, 0x42);
 
-            StorageItem newSi = uut.Clone();
+            var newSi = uut.Clone();
             var span = newSi.Value.Span;
             span.Length.Should().Be(10);
             span[0].Should().Be(0x42);
-            for (int i = 1; i < 10; i++)
+            for (var i = 1; i < 10; i++)
             {
                 span[i].Should().Be(0x20);
             }
@@ -77,13 +77,13 @@ namespace Neo.UnitTests.Ledger
         [TestMethod]
         public void Deserialize()
         {
-            byte[] data = new byte[] { 66, 32, 32, 32, 32, 32, 32, 32, 32, 32 };
+            var data = new byte[] { 66, 32, 32, 32, 32, 32, 32, 32, 32, 32 };
             MemoryReader reader = new(data);
             uut.Deserialize(ref reader);
             var span = uut.Value.Span;
             span.Length.Should().Be(10);
             span[0].Should().Be(0x42);
-            for (int i = 1; i < 10; i++)
+            for (var i = 1; i < 10; i++)
             {
                 span[i].Should().Be(0x20);
             }
@@ -95,19 +95,19 @@ namespace Neo.UnitTests.Ledger
             uut.Value = TestUtils.GetByteArray(10, 0x42);
 
             byte[] data;
-            using (MemoryStream stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
-                using (BinaryWriter writer = new BinaryWriter(stream, Encoding.ASCII, true))
+                using (var writer = new BinaryWriter(stream, Encoding.ASCII, true))
                 {
                     uut.Serialize(writer);
                     data = stream.ToArray();
                 }
             }
 
-            byte[] requiredData = new byte[] { 66, 32, 32, 32, 32, 32, 32, 32, 32, 32 };
+            var requiredData = new byte[] { 66, 32, 32, 32, 32, 32, 32, 32, 32, 32 };
 
             data.Length.Should().Be(requiredData.Length);
-            for (int i = 0; i < requiredData.Length; i++)
+            for (var i = 0; i < requiredData.Length; i++)
             {
                 data[i].Should().Be(requiredData[i]);
             }
@@ -117,7 +117,7 @@ namespace Neo.UnitTests.Ledger
         public void TestFromReplica()
         {
             uut.Value = TestUtils.GetByteArray(10, 0x42);
-            StorageItem dest = new StorageItem();
+            var dest = new StorageItem();
             dest.FromReplica(uut);
             dest.Value.Should().BeEquivalentTo(uut.Value);
         }

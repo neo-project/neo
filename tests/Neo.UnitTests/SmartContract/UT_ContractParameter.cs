@@ -35,7 +35,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestGenerator2()
         {
             ContractParameter contractParameter1 = new(ContractParameterType.Signature);
-            byte[] expectedArray1 = new byte[64];
+            var expectedArray1 = new byte[64];
             Assert.IsNotNull(contractParameter1);
             Assert.AreEqual(Encoding.Default.GetString(expectedArray1), Encoding.Default.GetString((byte[])contractParameter1.Value));
 
@@ -56,7 +56,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(new UInt256(), contractParameter5.Value);
 
             ContractParameter contractParameter6 = new(ContractParameterType.ByteArray);
-            byte[] expectedArray6 = Array.Empty<byte>();
+            var expectedArray6 = Array.Empty<byte>();
             Assert.IsNotNull(contractParameter6);
             Assert.AreEqual(Encoding.Default.GetString(expectedArray6), Encoding.Default.GetString((byte[])contractParameter6.Value));
 
@@ -84,47 +84,47 @@ namespace Neo.UnitTests.SmartContract
         public void TestFromAndToJson()
         {
             ContractParameter contractParameter1 = new(ContractParameterType.Signature);
-            JObject jobject1 = contractParameter1.ToJson();
+            var jobject1 = contractParameter1.ToJson();
             Assert.AreEqual(jobject1.ToString(), ContractParameter.FromJson(jobject1).ToJson().ToString());
 
             ContractParameter contractParameter2 = new(ContractParameterType.Boolean);
-            JObject jobject2 = contractParameter2.ToJson();
+            var jobject2 = contractParameter2.ToJson();
             Assert.AreEqual(jobject2.ToString(), ContractParameter.FromJson(jobject2).ToJson().ToString());
 
             ContractParameter contractParameter3 = new(ContractParameterType.Integer);
-            JObject jobject3 = contractParameter3.ToJson();
+            var jobject3 = contractParameter3.ToJson();
             Assert.AreEqual(jobject3.ToString(), ContractParameter.FromJson(jobject3).ToJson().ToString());
 
             ContractParameter contractParameter4 = new(ContractParameterType.Hash160);
-            JObject jobject4 = contractParameter4.ToJson();
+            var jobject4 = contractParameter4.ToJson();
             Assert.AreEqual(jobject4.ToString(), ContractParameter.FromJson(jobject4).ToJson().ToString());
 
             ContractParameter contractParameter5 = new(ContractParameterType.Hash256);
-            JObject jobject5 = contractParameter5.ToJson();
+            var jobject5 = contractParameter5.ToJson();
             Assert.AreEqual(jobject5.ToString(), ContractParameter.FromJson(jobject5).ToJson().ToString());
 
             ContractParameter contractParameter6 = new(ContractParameterType.ByteArray);
-            JObject jobject6 = contractParameter6.ToJson();
+            var jobject6 = contractParameter6.ToJson();
             Assert.AreEqual(jobject6.ToString(), ContractParameter.FromJson(jobject6).ToJson().ToString());
 
             ContractParameter contractParameter7 = new(ContractParameterType.PublicKey);
-            JObject jobject7 = contractParameter7.ToJson();
+            var jobject7 = contractParameter7.ToJson();
             Assert.AreEqual(jobject7.ToString(), ContractParameter.FromJson(jobject7).ToJson().ToString());
 
             ContractParameter contractParameter8 = new(ContractParameterType.String);
-            JObject jobject8 = contractParameter8.ToJson();
+            var jobject8 = contractParameter8.ToJson();
             Assert.AreEqual(jobject8.ToString(), ContractParameter.FromJson(jobject8).ToJson().ToString());
 
             ContractParameter contractParameter9 = new(ContractParameterType.Array);
-            JObject jobject9 = contractParameter9.ToJson();
+            var jobject9 = contractParameter9.ToJson();
             Assert.AreEqual(jobject9.ToString(), ContractParameter.FromJson(jobject9).ToJson().ToString());
 
             ContractParameter contractParameter10 = new(ContractParameterType.Map);
-            JObject jobject10 = contractParameter10.ToJson();
+            var jobject10 = contractParameter10.ToJson();
             Assert.AreEqual(jobject10.ToString(), ContractParameter.FromJson(jobject10).ToJson().ToString());
 
             ContractParameter contractParameter11 = new(ContractParameterType.String);
-            JObject jobject11 = contractParameter11.ToJson();
+            var jobject11 = contractParameter11.ToJson();
             jobject11["type"] = "Void";
             Action action = () => ContractParameter.FromJson(jobject11);
             action.Should().Throw<ArgumentException>();
@@ -134,7 +134,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestSetValue()
         {
             ContractParameter contractParameter1 = new(ContractParameterType.Signature);
-            byte[] expectedArray1 = new byte[64];
+            var expectedArray1 = new byte[64];
             contractParameter1.SetValue(new byte[64].ToHexString());
             Assert.AreEqual(Encoding.Default.GetString(expectedArray1), Encoding.Default.GetString((byte[])contractParameter1.Value));
             Action action1 = () => contractParameter1.SetValue(new byte[50].ToHexString());
@@ -158,17 +158,17 @@ namespace Neo.UnitTests.SmartContract
 
             ContractParameter contractParameter6 = new(ContractParameterType.ByteArray);
             contractParameter6.SetValue("2222");
-            byte[] expectedArray6 = new byte[2];
+            var expectedArray6 = new byte[2];
             expectedArray6[0] = 0x22;
             expectedArray6[1] = 0x22;
             Assert.AreEqual(Encoding.Default.GetString(expectedArray6), Encoding.Default.GetString((byte[])contractParameter6.Value));
 
             ContractParameter contractParameter7 = new(ContractParameterType.PublicKey);
             Random random7 = new();
-            byte[] privateKey7 = new byte[32];
-            for (int j = 0; j < privateKey7.Length; j++)
+            var privateKey7 = new byte[32];
+            for (var j = 0; j < privateKey7.Length; j++)
                 privateKey7[j] = (byte)random7.Next(256);
-            ECPoint publicKey7 = ECCurve.Secp256r1.G * privateKey7;
+            var publicKey7 = ECCurve.Secp256r1.G * privateKey7;
             contractParameter7.SetValue(publicKey7.ToString());
             Assert.AreEqual(true, publicKey7.Equals(contractParameter7.Value));
 

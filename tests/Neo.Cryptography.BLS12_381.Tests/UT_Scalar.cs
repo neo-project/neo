@@ -31,7 +31,7 @@ public class UT_Scalar
         // by totient(2**64) - 1
 
         var inv = 1ul;
-        for (int i = 0; i < 63; i++)
+        for (var i = 0; i < 63; i++)
         {
             inv = unchecked(inv * inv);
             inv = unchecked(inv * MODULUS_LIMBS_64[0]);
@@ -239,13 +239,13 @@ public class UT_Scalar
     {
         var cur = LARGEST;
 
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
             var tmp = cur;
             tmp *= cur;
 
             var tmp2 = Scalar.Zero;
-            foreach (bool b in cur
+            foreach (var b in cur
                 .ToArray()
                 .SelectMany(p => Enumerable.Range(0, 8).Select(q => ((p >> q) & 1) == 1))
                 .Reverse())
@@ -270,13 +270,13 @@ public class UT_Scalar
     {
         var cur = LARGEST;
 
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
             var tmp = cur;
             tmp = tmp.Square();
 
             var tmp2 = Scalar.Zero;
-            foreach (bool b in cur
+            foreach (var b in cur
                 .ToArray()
                 .SelectMany(p => Enumerable.Range(0, 8).Select(q => ((p >> q) & 1) == 1))
                 .Reverse())
@@ -305,7 +305,7 @@ public class UT_Scalar
 
         var tmp = R2;
 
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
             var tmp2 = tmp.Invert();
             tmp2 *= tmp;
@@ -331,7 +331,7 @@ public class UT_Scalar
         var r2 = R;
         var r3 = R;
 
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
             r1 = r1.Invert();
             r2 = r2.PowVartime(q_minus_2);
@@ -361,7 +361,7 @@ public class UT_Scalar
 
         var none_count = 0;
 
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
             Scalar square_root;
             try

@@ -75,7 +75,7 @@ namespace Neo.SmartContract.Native
         {
             KeccakDigest keccak = new(256);
             keccak.BlockUpdate(data, 0, data.Length);
-            byte[] result = new byte[keccak.GetDigestSize()];
+            var result = new byte[keccak.GetDigestSize()];
             keccak.DoFinal(result, 0);
             return result;
         }

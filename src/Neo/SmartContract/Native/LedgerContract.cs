@@ -34,9 +34,9 @@ namespace Neo.SmartContract.Native
 
         internal LedgerContract() : base() { }
 
-        internal override ContractTask OnPersist(ApplicationEngine engine)
+        internal override ContractTask OnPersistAsync(ApplicationEngine engine)
         {
-            TransactionState[] transactions = engine.PersistingBlock.Transactions.Select(p => new TransactionState
+            var transactions = engine.PersistingBlock.Transactions.Select(p => new TransactionState
             {
                 BlockIndex = engine.PersistingBlock.Index,
                 Transaction = p,
@@ -44,7 +44,7 @@ namespace Neo.SmartContract.Native
             }).ToArray();
             engine.Snapshot.Add(CreateStorageKey(Prefix_BlockHash).AddBigEndian(engine.PersistingBlock.Index), new StorageItem(engine.PersistingBlock.Hash.ToArray()));
             engine.Snapshot.Add(CreateStorageKey(Prefix_Block).Add(engine.PersistingBlock.Hash), new StorageItem(Trim(engine.PersistingBlock).ToArray()));
-            foreach (TransactionState tx in transactions)
+            foreach (var tx in transactions)
             {
                 // It's possible that there are previously saved malicious conflict records for this transaction.
                 // If so, then remove it and store the relevant transaction itself.
@@ -65,9 +65,9 @@ namespace Neo.SmartContract.Native
             return ContractTask.CompletedTask;
         }
 
-        internal override ContractTask PostPersist(ApplicationEngine engine)
+        internal override ContractTask PostPersistAsync(ApplicationEngine engine)
         {
-            HashIndexState state = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_CurrentBlock), () => new StorageItem(new HashIndexState())).GetInteroperable<HashIndexState>();
+            var state = engine.Snapshot.GetAndChange(CreateStorageKey(Prefix_CurrentBlock), () => new StorageItem(new HashIndexState())).GetInteroperable<HashIndexState>();
             state.Hash = engine.PersistingBlock.Hash;
             state.Index = engine.PersistingBlock.Index;
             return ContractTask.CompletedTask;
@@ -80,7 +80,7 @@ namespace Neo.SmartContract.Native
 
         private bool IsTraceableBlock(DataCache snapshot, uint index, uint maxTraceableBlocks)
         {
-            uint currentIndex = CurrentIndex(snapshot);
+            var currentIndex = CurrentIndex(snapshot);
             if (index > currentIndex) return false;
             return index + maxTraceableBlocks > currentIndex;
         }
@@ -93,7 +93,7 @@ namespace Neo.SmartContract.Native
         /// <returns>The hash of the block.</returns>
         public UInt256 GetBlockHash(DataCache snapshot, uint index)
         {
-            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_BlockHash).AddBigEndian(index));
+            var item = snapshot.TryGet(CreateStorageKey(Prefix_BlockHash).AddBigEndian(index));
             if (item is null) return null;
             return new UInt256(item.Value.Span);
         }
@@ -178,7 +178,7 @@ namespace Neo.SmartContract.Native
         /// <returns>The trimmed block.</returns>
         public TrimmedBlock GetTrimmedBlock(DataCache snapshot, UInt256 hash)
         {
-            StorageItem item = snapshot.TryGet(CreateStorageKey(Prefix_Block).Add(hash));
+            var item = snapshot.TryGet(CreateStorageKey(Prefix_Block).Add(hash));
             if (item is null) return null;
             return item.Value.AsSerializable<TrimmedBlock>();
         }
@@ -194,7 +194,7 @@ namespace Neo.SmartContract.Native
             else
                 throw new ArgumentException(null, nameof(indexOrHash));
             if (hash is null) return null;
-            TrimmedBlock block = GetTrimmedBlock(engine.Snapshot, hash);
+            var block = GetTrimmedBlock(engine.Snapshot, hash);
             if (block is null || !IsTraceableBlock(engine.Snapshot, block.Index, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
             return block;
         }
@@ -207,7 +207,7 @@ namespace Neo.SmartContract.Native
         /// <returns>The block with the specified hash.</returns>
         public Block GetBlock(DataCache snapshot, UInt256 hash)
         {
-            TrimmedBlock state = GetTrimmedBlock(snapshot, hash);
+            var state = GetTrimmedBlock(snapshot, hash);
             if (state is null) return null;
             return new Block
             {
@@ -224,7 +224,7 @@ namespace Neo.SmartContract.Native
         /// <returns>The block with the specified index.</returns>
         public Block GetBlock(DataCache snapshot, uint index)
         {
-            UInt256 hash = GetBlockHash(snapshot, index);
+            var hash = GetBlockHash(snapshot, index);
             if (hash is null) return null;
             return GetBlock(snapshot, hash);
         }
@@ -248,7 +248,7 @@ namespace Neo.SmartContract.Native
         /// <returns>The block header with the specified index.</returns>
         public Header GetHeader(DataCache snapshot, uint index)
         {
-            UInt256 hash = GetBlockHash(snapshot, index);
+            var hash = GetBlockHash(snapshot, index);
             if (hash is null) return null;
             return GetHeader(snapshot, hash);
         }
@@ -280,7 +280,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates, Name = "getTransaction")]
         private Transaction GetTransactionForContract(ApplicationEngine engine, UInt256 hash)
         {
-            TransactionState state = GetTransactionState(engine.Snapshot, hash);
+            var state = GetTransactionState(engine.Snapshot, hash);
             if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
             return state.Transaction;
         }
@@ -288,7 +288,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private Signer[] GetTransactionSigners(ApplicationEngine engine, UInt256 hash)
         {
-            TransactionState state = GetTransactionState(engine.Snapshot, hash);
+            var state = GetTransactionState(engine.Snapshot, hash);
             if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
             return state.Transaction.Signers;
         }
@@ -296,7 +296,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private VMState GetTransactionVMState(ApplicationEngine engine, UInt256 hash)
         {
-            TransactionState state = GetTransactionState(engine.Snapshot, hash);
+            var state = GetTransactionState(engine.Snapshot, hash);
             if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return VMState.NONE;
             return state.State;
         }
@@ -304,7 +304,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         private int GetTransactionHeight(ApplicationEngine engine, UInt256 hash)
         {
-            TransactionState state = GetTransactionState(engine.Snapshot, hash);
+            var state = GetTransactionState(engine.Snapshot, hash);
             if (state is null || !IsTraceableBlock(engine.Snapshot, state.BlockIndex, engine.ProtocolSettings.MaxTraceableBlocks)) return -1;
             return (int)state.BlockIndex;
         }
@@ -320,7 +320,7 @@ namespace Neo.SmartContract.Native
             else
                 throw new ArgumentException(null, nameof(blockIndexOrHash));
             if (hash is null) return null;
-            TrimmedBlock block = GetTrimmedBlock(engine.Snapshot, hash);
+            var block = GetTrimmedBlock(engine.Snapshot, hash);
             if (block is null || !IsTraceableBlock(engine.Snapshot, block.Index, engine.ProtocolSettings.MaxTraceableBlocks)) return null;
             if (txIndex < 0 || txIndex >= block.Hashes.Length)
                 throw new ArgumentOutOfRangeException(nameof(txIndex));

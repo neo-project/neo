@@ -50,7 +50,7 @@ namespace Neo.VM
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                int prefixSize = OperandSizePrefixTable[(int)OpCode];
+                var prefixSize = OperandSizePrefixTable[(int)OpCode];
                 return prefixSize > 0
                     ? 1 + prefixSize + Operand.Length
                     : 1 + OperandSizeTable[(int)OpCode];
@@ -179,11 +179,11 @@ namespace Neo.VM
 
         static Instruction()
         {
-            foreach (FieldInfo field in typeof(OpCode).GetFields(BindingFlags.Public | BindingFlags.Static))
+            foreach (var field in typeof(OpCode).GetFields(BindingFlags.Public | BindingFlags.Static))
             {
-                OperandSizeAttribute? attribute = field.GetCustomAttribute<OperandSizeAttribute>();
+                var attribute = field.GetCustomAttribute<OperandSizeAttribute>();
                 if (attribute == null) continue;
-                int index = (int)(OpCode)field.GetValue(null)!;
+                var index = (int)(OpCode)field.GetValue(null)!;
                 OperandSizePrefixTable[index] = attribute.SizePrefix;
                 OperandSizeTable[index] = attribute.Size;
             }
@@ -197,9 +197,9 @@ namespace Neo.VM
 
         internal Instruction(ReadOnlyMemory<byte> script, int ip) : this((OpCode)script.Span[ip++])
         {
-            ReadOnlySpan<byte> span = script.Span;
-            int operandSizePrefix = OperandSizePrefixTable[(int)OpCode];
-            int operandSize = 0;
+            var span = script.Span;
+            var operandSizePrefix = OperandSizePrefixTable[(int)OpCode];
+            var operandSize = 0;
             switch (operandSizePrefix)
             {
                 case 0:

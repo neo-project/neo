@@ -85,7 +85,7 @@ readonly struct MillerLoopResult
             var x = BLS_X;
             var tmp = Fp12.One;
             var found_one = false;
-            foreach (bool i in Enumerable.Range(0, 64).Select(b => ((x >> b) & 1) == 1).Reverse())
+            foreach (var i in Enumerable.Range(0, 64).Select(b => ((x >> b) & 1) == 1).Reverse())
             {
                 if (found_one)
                     tmp = CyclotomicSquare(tmp);

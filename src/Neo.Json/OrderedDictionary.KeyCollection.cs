@@ -38,7 +38,7 @@ partial class OrderedDictionary<TKey, TValue>
 
         public void CopyTo(TKey[] array, int arrayIndex)
         {
-            for (int i = 0; i < internalCollection.Count && i + arrayIndex < array.Length; i++)
+            for (var i = 0; i < internalCollection.Count && i + arrayIndex < array.Length; i++)
                 array[i + arrayIndex] = internalCollection[i].Key;
         }
 

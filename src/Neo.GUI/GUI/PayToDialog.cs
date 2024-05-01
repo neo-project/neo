@@ -23,7 +23,7 @@ namespace Neo.GUI
             InitializeComponent();
             if (asset is null)
             {
-                foreach (UInt160 assetId in NEP5Watched)
+                foreach (var assetId in NEP5Watched)
                 {
                     try
                     {
@@ -50,7 +50,7 @@ namespace Neo.GUI
 
         public TxOutListBoxItem GetOutput()
         {
-            AssetDescriptor asset = (AssetDescriptor)comboBox1.SelectedItem;
+            var asset = (AssetDescriptor)comboBox1.SelectedItem;
             return new TxOutListBoxItem
             {
                 AssetName = asset.AssetName,
@@ -89,8 +89,8 @@ namespace Neo.GUI
                 button1.Enabled = false;
                 return;
             }
-            AssetDescriptor asset = (AssetDescriptor)comboBox1.SelectedItem;
-            if (!BigDecimal.TryParse(textBox2.Text, asset.Decimals, out BigDecimal amount))
+            var asset = (AssetDescriptor)comboBox1.SelectedItem;
+            if (!BigDecimal.TryParse(textBox2.Text, asset.Decimals, out var amount))
             {
                 button1.Enabled = false;
                 return;

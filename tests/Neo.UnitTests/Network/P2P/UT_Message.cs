@@ -170,7 +170,7 @@ namespace Neo.UnitTests.Network.P2P
 
             buffer.Length.Should().Be(56);
 
-            byte[] script = new byte[100];
+            var script = new byte[100];
             Array.Fill(script, (byte)OpCode.PUSH2);
             payload.Script = script;
             msg = Message.Create(MessageCommand.Transaction, payload);

@@ -77,7 +77,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestEnumerator()
         {
-            int[] arr = new int[3] { 1, 2, 3 };
+            var arr = new int[3] { 1, 2, 3 };
             var queue = new IndexedQueue<int>(arr);
 
             arr.SequenceEqual(queue).Should().BeTrue();
@@ -86,7 +86,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestCopyTo()
         {
-            int[] arr = new int[3];
+            var arr = new int[3];
             var queue = new IndexedQueue<int>(new int[] { 1, 2, 3 });
 
             Assert.ThrowsException<ArgumentNullException>(() => queue.CopyTo(null, 0));

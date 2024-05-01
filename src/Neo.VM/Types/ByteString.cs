@@ -58,7 +58,7 @@ namespace Neo.VM.Types
 
         internal override bool Equals(StackItem? other, ExecutionEngineLimits limits)
         {
-            uint maxComparableSize = limits.MaxComparableSize;
+            var maxComparableSize = limits.MaxComparableSize;
             return Equals(other, ref maxComparableSize);
         }
 

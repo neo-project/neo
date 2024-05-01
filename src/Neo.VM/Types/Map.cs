@@ -50,7 +50,7 @@ namespace Neo.VM.Types
                 if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
                 if (ReferenceCounter != null)
                 {
-                    if (dictionary.TryGetValue(key, out StackItem? old_value))
+                    if (dictionary.TryGetValue(key, out var old_value))
                         ReferenceCounter.RemoveReference(old_value, this);
                     else
                         ReferenceCounter.AddReference(key, this);
@@ -116,7 +116,7 @@ namespace Neo.VM.Types
 
         internal override StackItem DeepCopy(Dictionary<StackItem, StackItem> refMap, bool asImmutable)
         {
-            if (refMap.TryGetValue(this, out StackItem? mappedItem)) return mappedItem;
+            if (refMap.TryGetValue(this, out var mappedItem)) return mappedItem;
             Map result = new(ReferenceCounter);
             refMap.Add(this, result);
             foreach (var (k, v) in dictionary)
@@ -149,7 +149,7 @@ namespace Neo.VM.Types
             if (key.Size > MaxKeySize)
                 throw new ArgumentException($"MaxKeySize exceed: {key.Size}");
             if (IsReadOnly) throw new InvalidOperationException("The object is readonly.");
-            if (!dictionary.Remove(key, out StackItem? old_value))
+            if (!dictionary.Remove(key, out var old_value))
                 return false;
             ReferenceCounter?.RemoveReference(key, this);
             ReferenceCounter?.RemoveReference(old_value, this);

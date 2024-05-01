@@ -51,7 +51,7 @@ namespace Neo.SmartContract
         /// <returns>The calculated cost.</returns>
         public static long MultiSignatureContractCost(int m, int n)
         {
-            long fee = ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * (m + n);
+            var fee = ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * (m + n);
             using (ScriptBuilder sb = new())
                 fee += ApplicationEngine.OpCodePriceTable[(byte)(OpCode)sb.EmitPush(m).ToArray()[0]];
             using (ScriptBuilder sb = new())
@@ -79,7 +79,7 @@ namespace Neo.SmartContract
         /// <remarks>Note: The <see cref="Script"/> passed to this method should be constructed with strict mode.</remarks>
         public static void Check(this Script script, ContractAbi abi)
         {
-            foreach (ContractMethodDescriptor method in abi.Methods)
+            foreach (var method in abi.Methods)
                 script.GetInstruction(method.Offset);
             abi.GetMethod(string.Empty, 0); // Trigger the construction of ContractAbi.methodDictionary to check the uniqueness of the method names.
             _ = abi.Events.ToDictionary(p => p.Name); // Check the uniqueness of the event names.
@@ -160,7 +160,7 @@ namespace Neo.SmartContract
         private static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out int n, List<ECPoint> points)
         {
             m = 0; n = 0;
-            int i = 0;
+            var i = 0;
             if (script.Length < 42) return false;
             switch (script[i])
             {
@@ -295,9 +295,9 @@ namespace Neo.SmartContract
                 return false;
             }
             if (hashes.Length != verifiable.Witnesses.Length) return false;
-            for (int i = 0; i < hashes.Length; i++)
+            for (var i = 0; i < hashes.Length; i++)
             {
-                if (!verifiable.VerifyWitness(settings, snapshot, hashes[i], verifiable.Witnesses[i], gas, out long fee))
+                if (!verifiable.VerifyWitness(settings, snapshot, hashes[i], verifiable.Witnesses[i], gas, out var fee))
                     return false;
                 gas -= fee;
             }
@@ -316,13 +316,13 @@ namespace Neo.SmartContract
             {
                 return false;
             }
-            using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CreateSnapshot(), null, settings, gas))
+            using (var engine = ApplicationEngine.Create(TriggerType.Verification, verifiable, snapshot?.CreateSnapshot(), null, settings, gas))
             {
                 if (witness.VerificationScript.Length == 0)
                 {
-                    ContractState cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
+                    var cs = NativeContract.ContractManagement.GetContract(snapshot, hash);
                     if (cs is null) return false;
-                    ContractMethodDescriptor md = cs.Manifest.Abi.GetMethod("verify", -1);
+                    var md = cs.Manifest.Abi.GetMethod("verify", -1);
                     if (md?.ReturnType != ContractParameterType.Boolean) return false;
                     engine.LoadContract(cs, md, CallFlags.ReadOnly);
                 }

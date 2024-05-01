@@ -26,27 +26,27 @@ namespace Neo.SmartContract.Native
         {
         }
 
-        internal override ContractTask Initialize(ApplicationEngine engine, Hardfork? hardfork)
+        internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
         {
             if (hardfork == ActiveIn)
             {
-                UInt160 account = Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators);
-                return Mint(engine, account, engine.ProtocolSettings.InitialGasDistribution, false);
+                var account = Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators);
+                return MintAsync(engine, account, engine.ProtocolSettings.InitialGasDistribution, false);
             }
             return ContractTask.CompletedTask;
         }
 
-        internal override async ContractTask OnPersist(ApplicationEngine engine)
+        internal override async ContractTask OnPersistAsync(ApplicationEngine engine)
         {
             long totalNetworkFee = 0;
-            foreach (Transaction tx in engine.PersistingBlock.Transactions)
+            foreach (var tx in engine.PersistingBlock.Transactions)
             {
-                await Burn(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
+                await BurnAsync(engine, tx.Sender, tx.SystemFee + tx.NetworkFee);
                 totalNetworkFee += tx.NetworkFee;
             }
-            ECPoint[] validators = NEO.GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings.ValidatorsCount);
-            UInt160 primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
-            await Mint(engine, primary, totalNetworkFee, false);
+            var validators = NEO.GetNextBlockValidators(engine.Snapshot, engine.ProtocolSettings.ValidatorsCount);
+            var primary = Contract.CreateSignatureRedeemScript(validators[engine.PersistingBlock.PrimaryIndex]).ToScriptHash();
+            await MintAsync(engine, primary, totalNetworkFee, false);
         }
     }
 }

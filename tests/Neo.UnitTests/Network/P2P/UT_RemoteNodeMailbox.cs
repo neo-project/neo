@@ -37,7 +37,7 @@ namespace Neo.UnitTests.Network.P2P
         [TestInitialize]
         public void TestSetup()
         {
-            Akka.Actor.ActorSystem system = Sys;
+            var system = Sys;
             var config = TestKit.DefaultConfig;
             var akkaSettings = new Akka.Actor.Settings(system, config);
             uut = new RemoteNodeMailbox(akkaSettings, config);
@@ -96,7 +96,7 @@ namespace Neo.UnitTests.Network.P2P
             ISerializable s = null;
             Message msg; // multiple uses
             // empty queue
-            IEnumerable<object> emptyQueue = Enumerable.Empty<object>();
+            var emptyQueue = Enumerable.Empty<object>();
 
             // any random object (non Message) should be dropped
             object obj = null;

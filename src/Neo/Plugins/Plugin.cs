@@ -118,12 +118,12 @@ namespace Neo.Plugins
 
             AssemblyName an = new(args.Name);
 
-            Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name) ??
+            var assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == args.Name) ??
                                 AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == an.Name);
             if (assembly != null) return assembly;
 
-            string filename = an.Name + ".dll";
-            string path = filename;
+            var filename = an.Name + ".dll";
+            var path = filename;
             if (!File.Exists(path)) path = Combine(GetDirectoryName(System.AppContext.BaseDirectory), filename);
             if (!File.Exists(path)) path = Combine(PluginsDirectory, filename);
             if (!File.Exists(path)) path = Combine(PluginsDirectory, args.RequestingAssembly.GetName().Name, filename);
@@ -155,12 +155,12 @@ namespace Neo.Plugins
 
         private static void LoadPlugin(Assembly assembly)
         {
-            foreach (Type type in assembly.ExportedTypes)
+            foreach (var type in assembly.ExportedTypes)
             {
                 if (!type.IsSubclassOf(typeof(Plugin))) continue;
                 if (type.IsAbstract) continue;
 
-                ConstructorInfo constructor = type.GetConstructor(Type.EmptyTypes);
+                var constructor = type.GetConstructor(Type.EmptyTypes);
                 try
                 {
                     constructor?.Invoke(null);
@@ -176,7 +176,7 @@ namespace Neo.Plugins
         {
             if (!Directory.Exists(PluginsDirectory)) return;
             List<Assembly> assemblies = new();
-            foreach (string rootPath in Directory.GetDirectories(PluginsDirectory))
+            foreach (var rootPath in Directory.GetDirectories(PluginsDirectory))
             {
                 foreach (var filename in Directory.EnumerateFiles(rootPath, "*.dll", SearchOption.TopDirectoryOnly))
                 {
@@ -187,7 +187,7 @@ namespace Neo.Plugins
                     catch { }
                 }
             }
-            foreach (Assembly assembly in assemblies)
+            foreach (var assembly in assemblies)
             {
                 LoadPlugin(assembly);
             }

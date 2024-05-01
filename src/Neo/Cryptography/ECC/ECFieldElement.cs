@@ -54,16 +54,16 @@ namespace Neo.Cryptography.ECC
 
         private static BigInteger[] FastLucasSequence(BigInteger p, BigInteger P, BigInteger Q, BigInteger k)
         {
-            int n = (int)VM.Utility.GetBitLength(k);
-            int s = k.GetLowestSetBit();
+            var n = (int)VM.Utility.GetBitLength(k);
+            var s = k.GetLowestSetBit();
 
             BigInteger Uh = 1;
             BigInteger Vl = 2;
-            BigInteger Vh = P;
+            var Vh = P;
             BigInteger Ql = 1;
             BigInteger Qh = 1;
 
-            for (int j = n - 1; j >= s + 1; --j)
+            for (var j = n - 1; j >= s + 1; --j)
             {
                 Ql = (Ql * Qh).Mod(p);
 
@@ -89,7 +89,7 @@ namespace Neo.Cryptography.ECC
             Vl = (Vh * Vl - P * Ql).Mod(p);
             Ql = (Ql * Qh).Mod(p);
 
-            for (int j = 1; j <= s; ++j)
+            for (var j = 1; j <= s; ++j)
             {
                 Uh = Uh * Vl * p;
                 Vl = ((Vl * Vl) - (Ql << 1)).Mod(p);
@@ -111,14 +111,14 @@ namespace Neo.Cryptography.ECC
                 ECFieldElement z = new(BigInteger.ModPow(Value, (curve.Q >> 2) + 1, curve.Q), curve);
                 return z.Square().Equals(this) ? z : null;
             }
-            BigInteger qMinusOne = curve.Q - 1;
-            BigInteger legendreExponent = qMinusOne >> 1;
+            var qMinusOne = curve.Q - 1;
+            var legendreExponent = qMinusOne >> 1;
             if (BigInteger.ModPow(Value, legendreExponent, curve.Q) != 1)
                 return null;
-            BigInteger u = qMinusOne >> 2;
-            BigInteger k = (u << 1) + 1;
-            BigInteger Q = this.Value;
-            BigInteger fourQ = (Q << 2).Mod(curve.Q);
+            var u = qMinusOne >> 2;
+            var k = (u << 1) + 1;
+            var Q = this.Value;
+            var fourQ = (Q << 2).Mod(curve.Q);
             BigInteger U, V;
             do
             {
@@ -129,7 +129,7 @@ namespace Neo.Cryptography.ECC
                     P = rand.NextBigInteger((int)VM.Utility.GetBitLength(curve.Q));
                 }
                 while (P >= curve.Q || BigInteger.ModPow(P * P - fourQ, legendreExponent, curve.Q) != qMinusOne);
-                BigInteger[] result = FastLucasSequence(curve.Q, P, Q, k);
+                var result = FastLucasSequence(curve.Q, P, Q, k);
                 U = result[0];
                 V = result[1];
                 if ((V * V).Mod(curve.Q) == fourQ)
@@ -153,10 +153,10 @@ namespace Neo.Cryptography.ECC
 
         public byte[] ToByteArray()
         {
-            byte[] data = Value.ToByteArray(isUnsigned: true, isBigEndian: true);
+            var data = Value.ToByteArray(isUnsigned: true, isBigEndian: true);
             if (data.Length == 32)
                 return data;
-            byte[] buffer = new byte[32];
+            var buffer = new byte[32];
             Buffer.BlockCopy(data, 0, buffer, buffer.Length - data.Length, data.Length);
             return buffer;
         }

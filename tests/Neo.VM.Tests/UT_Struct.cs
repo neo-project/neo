@@ -24,7 +24,7 @@ namespace Neo.Test
         public UT_Struct()
         {
             @struct = new Struct { 1 };
-            for (int i = 0; i < 20000; i++)
+            for (var i = 0; i < 20000; i++)
                 @struct = new Struct { @struct };
         }
 
@@ -32,7 +32,7 @@ namespace Neo.Test
         public void TestClone()
         {
             Struct s1 = new() { 1, new Struct { 2 } };
-            Struct s2 = s1.Clone(ExecutionEngineLimits.Default);
+            var s2 = s1.Clone(ExecutionEngineLimits.Default);
             s1[0] = 3;
             Assert.AreEqual(1, s2[0]);
             ((Struct)s1[1])[0] = 3;
@@ -54,17 +54,17 @@ namespace Neo.Test
         [TestMethod]
         public void TestEqualsDos()
         {
-            string payloadStr = new string('h', 65535);
+            var payloadStr = new string('h', 65535);
             Struct s1 = new();
             Struct s2 = new();
-            for (int i = 0; i < 2; i++)
+            for (var i = 0; i < 2; i++)
             {
                 s1.Add(payloadStr);
                 s2.Add(payloadStr);
             }
             Assert.ThrowsException<InvalidOperationException>(() => s1.Equals(s2, ExecutionEngineLimits.Default));
 
-            for (int i = 0; i < 1000; i++)
+            for (var i = 0; i < 1000; i++)
             {
                 s1.Add(payloadStr);
                 s2.Add(payloadStr);

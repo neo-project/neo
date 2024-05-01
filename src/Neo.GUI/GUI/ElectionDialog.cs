@@ -30,8 +30,8 @@ namespace Neo.GUI
 
         public byte[] GetScript()
         {
-            ECPoint pubkey = (ECPoint)comboBox1.SelectedItem;
-            using ScriptBuilder sb = new ScriptBuilder();
+            var pubkey = (ECPoint)comboBox1.SelectedItem;
+            using var sb = new ScriptBuilder();
             sb.EmitDynamicCall(NativeContract.NEO.Hash, "registerValidator", pubkey);
             return sb.ToArray();
         }

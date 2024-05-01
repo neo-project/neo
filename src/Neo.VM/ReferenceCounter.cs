@@ -88,13 +88,13 @@ namespace Neo.VM
                     Tarjan tarjan = new(tracked_items);
                     cached_components = tarjan.Invoke();
                 }
-                foreach (StackItem item in tracked_items)
+                foreach (var item in tracked_items)
                     item.Reset();
                 for (var node = cached_components.First; node != null;)
                 {
                     var component = node.Value;
-                    bool on_stack = false;
-                    foreach (StackItem item in component)
+                    var on_stack = false;
+                    foreach (var item in component)
                     {
                         if (item.StackReferences > 0 || item.ObjectReferences?.Values.Any(p => p.References > 0 && p.Item.OnStack) == true)
                         {
@@ -104,19 +104,19 @@ namespace Neo.VM
                     }
                     if (on_stack)
                     {
-                        foreach (StackItem item in component)
+                        foreach (var item in component)
                             item.OnStack = true;
                         node = node.Next;
                     }
                     else
                     {
-                        foreach (StackItem item in component)
+                        foreach (var item in component)
                         {
                             tracked_items.Remove(item);
                             if (item is CompoundType compound)
                             {
                                 references_count -= compound.SubItemsCount;
-                                foreach (StackItem subitem in compound.SubItems)
+                                foreach (var subitem in compound.SubItems)
                                 {
                                     if (component.Contains(subitem)) continue;
                                     if (!NeedTrack(subitem)) continue;

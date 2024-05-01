@@ -64,8 +64,8 @@ namespace Neo.UnitTests.SmartContract
         public void TestCreateDummyBlock()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
-            byte[] SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
-            ApplicationEngine engine = ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshot, settings: TestProtocolSettings.Default);
+            var SyscallSystemRuntimeCheckWitnessHash = new byte[] { 0x68, 0xf8, 0x27, 0xec, 0x8c };
+            var engine = ApplicationEngine.Run(SyscallSystemRuntimeCheckWitnessHash, snapshot, settings: TestProtocolSettings.Default);
             engine.PersistingBlock.Version.Should().Be(0);
             engine.PersistingBlock.PrevHash.Should().Be(TestBlockchain.TheNeoSystem.GenesisBlock.Hash);
             engine.PersistingBlock.MerkleRoot.Should().Be(new UInt256());
@@ -87,10 +87,10 @@ namespace Neo.UnitTests.SmartContract
                 .OrderBy(h => allHardforks.IndexOf(h))
                 .ToList();
 
-            for (int i = 0; i < sortedHardforks.Count - 1; i++)
+            for (var i = 0; i < sortedHardforks.Count - 1; i++)
             {
-                int currentIndex = allHardforks.IndexOf(sortedHardforks[i]);
-                int nextIndex = allHardforks.IndexOf(sortedHardforks[i + 1]);
+                var currentIndex = allHardforks.IndexOf(sortedHardforks[i]);
+                var nextIndex = allHardforks.IndexOf(sortedHardforks[i + 1]);
 
                 // If they aren't consecutive, return false.
                 var inc = nextIndex - currentIndex;
@@ -98,7 +98,7 @@ namespace Neo.UnitTests.SmartContract
             }
 
             // Check that block numbers are not higher in earlier hardforks than in later ones
-            for (int i = 0; i < sortedHardforks.Count - 1; i++)
+            for (var i = 0; i < sortedHardforks.Count - 1; i++)
             {
                 (setting[sortedHardforks[i]] > setting[sortedHardforks[i + 1]]).Should().Be(false);
             }

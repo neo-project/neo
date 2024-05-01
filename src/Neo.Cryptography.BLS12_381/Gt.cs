@@ -83,7 +83,7 @@ public readonly struct Gt : IEquatable<Gt>
             // a valid element, which requires that it is non-zero.
             if (!inner.IsZero)
             {
-                ref MillerLoopResult result = ref Unsafe.As<Fp12, MillerLoopResult>(ref inner);
+                ref var result = ref Unsafe.As<Fp12, MillerLoopResult>(ref inner);
                 return result.FinalExponentiation();
             }
         }
@@ -120,7 +120,7 @@ public readonly struct Gt : IEquatable<Gt>
         //
         // We skip the leading bit because it's always unset for Fq
         // elements.
-        foreach (bool bit in b
+        foreach (var bit in b
             .ToArray()
             .SelectMany(p => Enumerable.Range(0, 8).Select(q => ((p >> q) & 1) == 1))
             .Reverse()

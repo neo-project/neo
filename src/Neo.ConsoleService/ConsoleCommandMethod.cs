@@ -71,8 +71,8 @@ namespace Neo.ConsoleService
         /// <returns>True if is this command</returns>
         public bool IsThisCommand(CommandToken[] tokens, out int consumedArgs)
         {
-            int checks = Verbs.Length;
-            bool quoted = false;
+            var checks = Verbs.Length;
+            var quoted = false;
             var tokenList = new List<CommandToken>(tokens);
 
             while (checks > 0 && tokenList.Count > 0)

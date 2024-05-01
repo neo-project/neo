@@ -77,7 +77,7 @@ namespace Neo.SmartContract
         /// <returns>The storage context for the current contract.</returns>
         protected internal StorageContext GetStorageContext()
         {
-            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
+            var contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
             return new StorageContext
             {
                 Id = contract.Id,
@@ -92,7 +92,7 @@ namespace Neo.SmartContract
         /// <returns>The storage context for the current contract.</returns>
         protected internal StorageContext GetReadOnlyContext()
         {
-            ContractState contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
+            var contract = NativeContract.ContractManagement.GetContract(Snapshot, CurrentScriptHash);
             return new StorageContext
             {
                 Id = contract.Id,
@@ -153,8 +153,8 @@ namespace Neo.SmartContract
                 throw new ArgumentException(null, nameof(options));
             if ((options.HasFlag(FindOptions.PickField0) || options.HasFlag(FindOptions.PickField1)) && !options.HasFlag(FindOptions.DeserializeValues))
                 throw new ArgumentException(null, nameof(options));
-            byte[] prefix_key = StorageKey.CreateSearchPrefix(context.Id, prefix);
-            SeekDirection direction = options.HasFlag(FindOptions.Backwards) ? SeekDirection.Backward : SeekDirection.Forward;
+            var prefix_key = StorageKey.CreateSearchPrefix(context.Id, prefix);
+            var direction = options.HasFlag(FindOptions.Backwards) ? SeekDirection.Backward : SeekDirection.Forward;
             return new StorageIterator(Snapshot.Find(prefix_key, direction).GetEnumerator(), prefix.Length, options);
         }
 
@@ -177,7 +177,7 @@ namespace Neo.SmartContract
                 Id = context.Id,
                 Key = key
             };
-            StorageItem item = Snapshot.GetAndChange(skey);
+            var item = Snapshot.GetAndChange(skey);
             if (item is null)
             {
                 newDataSize = key.Length + value.Length;

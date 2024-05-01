@@ -33,7 +33,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Size_Get()
         {
-            UInt256 val256 = UInt256.Zero;
+            var val256 = UInt256.Zero;
             TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _, out _);
             // blockbase 4 + 64 + 1 + 32 + 4 + 4 + 20 + 4
             // header 1
@@ -43,7 +43,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void GetHashCodeTest()
         {
-            UInt256 val256 = UInt256.Zero;
+            var val256 = UInt256.Zero;
             TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _, out _);
             uut.GetHashCode().Should().Be(uut.Hash.GetHashCode());
         }
@@ -51,7 +51,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void TrimTest()
         {
-            UInt256 val256 = UInt256.Zero;
+            var val256 = UInt256.Zero;
             var snapshot = TestBlockchain.GetTestSnapshot().CreateSnapshot();
             TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _, out _);
             uut.Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() };
@@ -86,8 +86,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Deserialize()
         {
-            UInt256 val256 = UInt256.Zero;
-            TestUtils.SetupHeaderWithValues(new Header(), val256, out UInt256 merkRoot, out UInt160 val160, out ulong timestampVal, out ulong nonceVal, out uint indexVal, out Witness scriptVal);
+            var val256 = UInt256.Zero;
+            TestUtils.SetupHeaderWithValues(new Header(), val256, out var merkRoot, out var val160, out var timestampVal, out var nonceVal, out var indexVal, out var scriptVal);
 
             uut.MerkleRoot = merkRoot; // need to set for deserialise to be valid
 
@@ -145,7 +145,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Serialize()
         {
-            UInt256 val256 = UInt256.Zero;
+            var val256 = UInt256.Zero;
             TestUtils.SetupHeaderWithValues(uut, val256, out _, out _, out _, out _, out _, out _);
 
             var hex = "0000000000000000000000000000000000000000000000000000000000000000000000007227ba7b747f1a98f68679d4a98b68927646ab195a6f56b542ca5a0e6a412662e913ff854c00000000000000000000000000000000000000000000000000000000000000000000000001000111";
