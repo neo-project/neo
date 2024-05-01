@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka.TestKit" Version="1.5.18" />
-    <PackageReference Include="Akka.TestKit.Xunit2" Version="1.5.18" />
+    <PackageReference Include="Akka.TestKit" Version="1.5.20" />
+    <PackageReference Include="Akka.TestKit.Xunit2" Version="1.5.20" />
     <PackageReference Include="Moq" Version="4.20.70" />
   </ItemGroup>
 
@@ -30,8 +30,8 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
-    <PackageReference Include="MSTest.TestAdapter" Version="3.2.2" />
-    <PackageReference Include="MSTest.TestFramework" Version="3.2.2" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.3.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.3.1" />
   </ItemGroup>
 
 </Project>

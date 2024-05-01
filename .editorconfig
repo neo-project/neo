@@ -162,15 +162,20 @@ dotnet_naming_style.pascal_case_style.capitalization = pascal_case
 
 file_header_template = Copyright (C) 2015-2024 The Neo Project.\n\n{fileName} file belongs to the neo project and is free\nsoftware distributed under the MIT software license, see the\naccompanying file LICENSE in the main directory of the\nrepository or http://www.opensource.org/licenses/mit-license.php\nfor more details.\n\nRedistribution and use in source and binary forms with or without\nmodifications are permitted.
 
-# Require file header
-dotnet_diagnostic.IDE0073.severity = error
-
 # RS0016: Only enable if API files are present
 dotnet_public_api_analyzer.require_api_files = true
 
-# IDE0055: Fix formatting
-# Workaround for https://github.com/dotnet/roslyn/issues/70570
-dotnet_diagnostic.IDE0055.severity = warning
+# Async methods should have "Async" suffix
+dotnet_naming_rule.async_methods_end_in_async.symbols = any_async_methods
+dotnet_naming_rule.async_methods_end_in_async.style = end_in_async
+dotnet_naming_rule.async_methods_end_in_async.severity = warning
+
+dotnet_naming_symbols.any_async_methods.applicable_kinds = method
+dotnet_naming_symbols.any_async_methods.applicable_accessibilities = *
+dotnet_naming_symbols.any_async_methods.required_modifiers = async
+
+dotnet_naming_style.end_in_async.required_suffix = Async
+dotnet_naming_style.end_in_async.capitalization = pascal_case
 
 # CSharp code style settings:
 [*.cs]
@@ -199,9 +204,9 @@ csharp_style_allow_blank_line_after_token_in_conditional_expression_experimental
 csharp_style_allow_blank_line_after_token_in_arrow_expression_clause_experimental = false
 
 # Prefer "var" everywhere
-csharp_style_var_for_built_in_types = true:suggestion
-csharp_style_var_when_type_is_apparent = true:suggestion
-csharp_style_var_elsewhere = true:suggestion
+csharp_style_var_for_built_in_types = true:warning
+csharp_style_var_when_type_is_apparent = true:warning
+csharp_style_var_elsewhere = true:warning
 
 # Prefer method-like constructs to have a block body
 csharp_style_expression_bodied_methods = false:none
@@ -250,15 +255,32 @@ csharp_prefer_braces = true:silent
 csharp_preserve_single_line_blocks = true
 csharp_preserve_single_line_statements = true
 
+[src/{Analyzers,CodeStyle,Features,Workspaces,EditorFeatures,VisualStudio}/**/*.{cs,vb}]
+
+# IDE0003 and IDE0009: this and Me preferences
+dotnet_diagnostic.IDE0003.severity = warning
+dotnet_diagnostic.IDE0009.severity = warning
+
+# Require file header
+dotnet_diagnostic.IDE0073.severity = error
+
+# IDE0055: Fix formatting
+# Workaround for https://github.com/dotnet/roslyn/issues/70570
+dotnet_diagnostic.IDE0055.severity = warning
+
 # IDE0060: Remove unused parameter
 dotnet_diagnostic.IDE0060.severity = none
-
-[src/{Analyzers,CodeStyle,Features,Workspaces,EditorFeatures,VisualStudio}/**/*.{cs,vb}]
 
 # IDE0011: Add braces
 csharp_prefer_braces = when_multiline:warning
 # NOTE: We need the below severity entry for Add Braces due to https://github.com/dotnet/roslyn/issues/44201
 dotnet_diagnostic.IDE0011.severity = warning
+
+// VSTHRD002: Avoid problematic synchronous waits
+dotnet_diagnostic.VSTHRD002.severity = none
+
+# Async methods should have "Async" suffix
+dotnet_diagnostic.VSTHRD200.severity = warning
 
 # IDE0040: Add accessibility modifiers
 dotnet_diagnostic.IDE0040.severity = warning
@@ -277,9 +299,6 @@ dotnet_diagnostic.CA1822.severity = warning
 
 # Prefer "var" everywhere
 dotnet_diagnostic.IDE0007.severity = warning
-csharp_style_var_for_built_in_types = true:warning
-csharp_style_var_when_type_is_apparent = true:warning
-csharp_style_var_elsewhere = true:warning
 
 # csharp_style_allow_embedded_statements_on_same_line_experimental
 dotnet_diagnostic.IDE2001.severity = warning
