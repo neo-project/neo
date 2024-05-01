@@ -19,7 +19,6 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 using System.Threading.Tasks;
 
 namespace Neo.UnitTests.Ledger
@@ -58,7 +57,7 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
-        public async Task TestDuplicateOracle()
+        public async Task TestDuplicateOracleAsync()
         {
             // Fake balance
             var snapshot = TestBlockchain.GetTestSnapshot();
@@ -82,7 +81,7 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
-        public async Task TestTransactionSenderFee()
+        public async Task TestTransactionSenderFeeAsync()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
@@ -105,7 +104,7 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
-        public async Task TestTransactionSenderFeeWithConflicts()
+        public async Task TestTransactionSenderFeeWithConflictsAsync()
         {
             var snapshot = TestBlockchain.GetTestSnapshot();
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestBlockchain.TheNeoSystem.Settings, gas: long.MaxValue);
