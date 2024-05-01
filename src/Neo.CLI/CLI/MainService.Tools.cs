@@ -25,16 +25,6 @@ using System.Text;
 
 namespace Neo.CLI
 {
-    public class ParseFunctionAttribute : Attribute
-    {
-        public string Description { get; }
-
-        public ParseFunctionAttribute(string description)
-        {
-            Description = description;
-        }
-    }
-
     partial class MainService
     {
         /// <summary>
@@ -529,6 +519,24 @@ namespace Neo.CLI
             }
         }
 
+        private bool IsValidPubKey(string pubKey)
+        {
+            if (pubKey.Length != 66) return false;
+            if (pubKey[0] != '0') return false;
+            if (pubKey[1] != '2' && pubKey[1] != '3') return false;
+
+            for (var i = 2; i < pubKey.Length; i++)
+            {
+                var c = pubKey[i];
+                if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         /// <summary>
         /// Public Key to Address
         /// input:  03dab84c1243ec01ab2500e1a8c7a1546a26d734628180b0cf64e72bf776536997
@@ -537,24 +545,6 @@ namespace Neo.CLI
         [ParseFunction("Public Key to Address")]
         private string? PublicKeyToAddress(string pubKey)
         {
-            bool IsValidPubKey(string pubKey)
-            {
-                if (pubKey.Length != 66) return false;
-                if (pubKey[0] != '0') return false;
-                if (pubKey[1] != '2' && pubKey[1] != '3') return false;
-
-                for (int i = 2; i < pubKey.Length; i++)
-                {
-                    char c = pubKey[i];
-                    if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')))
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
             if (!IsValidPubKey(pubKey)) return null;
             return Contract.CreateSignatureContract(ECPoint.Parse(pubKey, ECCurve.Secp256r1)).ScriptHash.ToAddress(NeoSystem.Settings.AddressVersion);
         }
