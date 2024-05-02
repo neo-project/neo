@@ -12,13 +12,11 @@
 using Neo.ConsoleService;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
-using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM.Types;
 using Neo.Wallets;
 using System;
 using System.Linq;
-using Array = System.Array;
 
 namespace Neo.CLI
 {
@@ -45,8 +43,8 @@ namespace Neo.CLI
             Transaction tx;
             try
             {
-                tx = CurrentWallet!.MakeTransaction(snapshot, new[]
-                {
+                tx = CurrentWallet!.MakeTransaction(snapshot,
+                [
                     new TransferOutput
                     {
                         AssetId = tokenHash,
@@ -54,7 +52,7 @@ namespace Neo.CLI
                         ScriptHash = to,
                         Data = data
                     }
-                }, from: from, cosigners: signersAccounts?.Select(p => new Signer
+                ], from: from, cosigners: signersAccounts?.Select(p => new Signer
                 {
                     // default access for transfers should be valid only for first invocation
                     Scopes = WitnessScope.CalledByEntry,

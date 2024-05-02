@@ -267,6 +267,9 @@ csharp_style_prefer_readonly_struct_member = true
 
 [src/{Analyzers,CodeStyle,Features,Workspaces,EditorFeatures,VisualStudio}/**/*.{cs,vb}]
 
+# Use collection expression for array
+dotnet_diagnostic.IDE0300.severity = warning
+
 # Avoid "this." and "Me." if not necessary
 dotnet_diagnostic.IDE0003.severity = warning
 dotnet_diagnostic.IDE0009.severity = warning

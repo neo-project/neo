@@ -12,7 +12,6 @@
 using Neo.ConsoleService;
 using Neo.Json;
 using Neo.Network.P2P.Payloads;
-using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using System;
 using System.Linq;
