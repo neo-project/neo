@@ -35,13 +35,13 @@ namespace Neo.UnitTests.Ledger
                 BlockIndex = 1,
                 Transaction = new Transaction()
                 {
-                    Attributes = Array.Empty<TransactionAttribute>(),
+                    Attributes = [],
                     Script = new byte[] { (byte)OpCode.PUSH1 },
-                    Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
-                    Witnesses = new Witness[] { new Witness() {
+                    Signers = [new Signer() { Account = UInt160.Zero }],
+                    Witnesses = [ new Witness() {
                         InvocationScript=Array.Empty<byte>(),
                         VerificationScript=Array.Empty<byte>()
-                    } }
+                    } ]
                 }
             };
             originTrimmed = new TransactionState

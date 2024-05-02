@@ -198,7 +198,7 @@ namespace Neo.CLI
             else
             {
                 var account = CurrentWallet.GetAccount(scriptHash);
-                keys = account?.HasKey != true ? Array.Empty<KeyPair>() : new[] { account.GetKey() };
+                keys = account?.HasKey != true ? Array.Empty<KeyPair>() : [account.GetKey()];
             }
             if (path == null)
                 foreach (var key in keys)
@@ -537,7 +537,7 @@ namespace Neo.CLI
                     Scopes = WitnessScope.CalledByEntry,
                     Account = p
                 })
-                .ToArray() ?? Array.Empty<Signer>());
+                .ToArray() ?? []);
             }
             catch (Exception e)
             {
@@ -585,7 +585,7 @@ namespace Neo.CLI
             if (sender != null)
             {
                 if (signerAccounts == null)
-                    signerAccounts = new UInt160[1] { sender };
+                    signerAccounts = [sender];
                 else if (signerAccounts.Contains(sender) && signerAccounts[0] != sender)
                 {
                     var signersList = signerAccounts.ToList();
@@ -603,7 +603,7 @@ namespace Neo.CLI
             {
                 Signers = signers,
                 Attributes = conflict,
-                Witnesses = Array.Empty<Witness>(),
+                Witnesses = [],
             };
 
             try

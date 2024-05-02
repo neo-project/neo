@@ -74,7 +74,7 @@ namespace Neo.SmartContract.Manifest
 
         public IEnumerator<T> GetEnumerator()
         {
-            if (_data == null) return ((IReadOnlyList<T>)Array.Empty<T>()).GetEnumerator();
+            if (_data == null) return ((IReadOnlyList<T>)[]).GetEnumerator();
 
             return ((IReadOnlyList<T>)_data).GetEnumerator();
         }

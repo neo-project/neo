@@ -17,7 +17,7 @@ namespace Neo.IO.Caching
 {
     internal static class ReflectionCache<T> where T : Enum
     {
-        private static readonly Dictionary<T, Type> dictionary = new();
+        private static readonly Dictionary<T, Type> dictionary = [];
 
         public static int Count => dictionary.Count;
 

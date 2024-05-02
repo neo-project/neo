@@ -115,7 +115,7 @@ namespace Neo.Ledger
         }
 
         internal class Initialize { }
-        private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new(); public HashSet<IActorRef> Nodes = new(); }
+        private class UnverifiedBlocksList { public LinkedList<Block> Blocks = new(); public HashSet<IActorRef> Nodes = []; }
 
         public static event CommittingHandler Committing;
         public static event CommittedHandler Committed;
@@ -123,8 +123,8 @@ namespace Neo.Ledger
         private readonly static Script onPersistScript, postPersistScript;
         private const int MaxTxToReverifyPerIdle = 10;
         private readonly NeoSystem system;
-        private readonly Dictionary<UInt256, Block> block_cache = new();
-        private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = new();
+        private readonly Dictionary<UInt256, Block> block_cache = [];
+        private readonly Dictionary<uint, UnverifiedBlocksList> block_cache_unverified = [];
         private ImmutableHashSet<UInt160> extensibleWitnessWhiteList;
 
         static Blockchain()
@@ -268,7 +268,7 @@ namespace Neo.Ledger
             if (block.Index == currentHeight + 1)
             {
                 var block_persist = block;
-                List<Block> blocksToPersistList = new();
+                List<Block> blocksToPersistList = [];
                 while (true)
                 {
                     blocksToPersistList.Add(block_persist);
@@ -419,7 +419,7 @@ namespace Neo.Ledger
         {
             using (var snapshot = system.GetSnapshot())
             {
-                List<ApplicationExecuted> all_application_executed = new();
+                List<ApplicationExecuted> all_application_executed = [];
                 TransactionState[] transactionStates;
                 using (var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, system.Settings, 0))
                 {

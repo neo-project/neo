@@ -15,7 +15,7 @@ namespace Neo.Persistence;
 
 public static class StoreFactory
 {
-    private static readonly Dictionary<string, IStoreProvider> providers = new();
+    private static readonly Dictionary<string, IStoreProvider> providers = [];
 
     static StoreFactory()
     {

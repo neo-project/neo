@@ -23,7 +23,7 @@ namespace Neo.VM
     /// </summary>
     public sealed class EvaluationStack : IReadOnlyList<StackItem>
     {
-        private readonly List<StackItem> innerList = new();
+        private readonly List<StackItem> innerList = [];
         private readonly ReferenceCounter referenceCounter;
 
         internal EvaluationStack(ReferenceCounter referenceCounter)

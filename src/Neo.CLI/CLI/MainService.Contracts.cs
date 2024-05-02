@@ -74,7 +74,7 @@ namespace Neo.CLI
             if (sender != null)
             {
                 if (signerAccounts == null)
-                    signerAccounts = new[] { sender };
+                    signerAccounts = [sender];
                 else if (signerAccounts.Contains(sender) && signerAccounts[0] != sender)
                 {
                     var signersList = signerAccounts.ToList();
@@ -141,7 +141,7 @@ namespace Neo.CLI
                 if (sender != null)
                 {
                     if (signerAccounts == null)
-                        signerAccounts = new UInt160[1] { sender };
+                        signerAccounts = [sender];
                     else if (signerAccounts.Contains(sender) && signerAccounts[0] != sender)
                     {
                         var signersList = signerAccounts.ToList();
@@ -159,8 +159,8 @@ namespace Neo.CLI
             var tx = new Transaction
             {
                 Signers = signers,
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Witnesses = Array.Empty<Witness>(),
+                Attributes = [],
+                Witnesses = [],
             };
 
             if (!OnInvokeWithResult(scriptHash, operation, out _, tx, contractParameters, gas: (long)gas.Value)) return;

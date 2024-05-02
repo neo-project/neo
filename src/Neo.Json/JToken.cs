@@ -177,7 +177,7 @@ public abstract class JToken
 
     private static JArray ReadArray(ref Utf8JsonReader reader)
     {
-        JArray array = new();
+        JArray array = [];
         while (reader.Read())
         {
             switch (reader.TokenType)
@@ -269,7 +269,7 @@ public abstract class JToken
 
     public JArray JsonPath(string expr)
     {
-        JToken?[] objects = { this };
+        JToken?[] objects = [this];
         if (expr.Length == 0) return objects;
         Queue<JPathToken> tokens = new(JPathToken.Parse(expr));
         var first = tokens.Dequeue();

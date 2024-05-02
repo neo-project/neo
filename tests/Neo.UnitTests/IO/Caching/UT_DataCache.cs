@@ -172,13 +172,13 @@ namespace Neo.UnitTests.IO.Caching
             // null and empty with the forward direction -> finds everything.
             items = myDataCache.Find(null);
             items.Count().Should().Be(4);
-            items = myDataCache.Find(new byte[] { });
+            items = myDataCache.Find([]);
             items.Count().Should().Be(4);
 
             // null and empty with the backwards direction -> miserably fails.
             Action action = () => myDataCache.Find(null, SeekDirection.Backward);
             action.Should().Throw<ArgumentException>();
-            action = () => myDataCache.Find(new byte[] { }, SeekDirection.Backward);
+            action = () => myDataCache.Find([], SeekDirection.Backward);
             action.Should().Throw<ArgumentException>();
 
             items = myDataCache.Find(k1, SeekDirection.Backward);

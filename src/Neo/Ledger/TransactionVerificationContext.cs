@@ -26,12 +26,12 @@ namespace Neo.Ledger
         /// <summary>
         /// Store all verified unsorted transactions' senders' fee currently in the memory pool.
         /// </summary>
-        private readonly Dictionary<UInt160, BigInteger> senderFee = new();
+        private readonly Dictionary<UInt160, BigInteger> senderFee = [];
 
         /// <summary>
         /// Store oracle responses
         /// </summary>
-        private readonly Dictionary<ulong, UInt256> oracleResponses = new();
+        private readonly Dictionary<ulong, UInt256> oracleResponses = [];
 
         /// <summary>
         /// Adds a verified <see cref="Transaction"/> to the context.

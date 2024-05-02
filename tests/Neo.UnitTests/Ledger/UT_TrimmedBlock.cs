@@ -41,7 +41,7 @@ namespace Neo.UnitTests.Ledger
                         VerificationScript = new[] { (byte)OpCode.PUSH1 }
                     },
                 },
-                Hashes = Array.Empty<UInt256>()
+                Hashes = []
             };
         }
 
@@ -72,7 +72,7 @@ namespace Neo.UnitTests.Ledger
             UT_SmartContractHelper.TransactionAdd(snapshot, state1, state2);
 
             var tblock = GetTrimmedBlockWithNoTransaction();
-            tblock.Hashes = new UInt256[] { tx1.Hash, tx2.Hash };
+            tblock.Hashes = [tx1.Hash, tx2.Hash];
             UT_SmartContractHelper.BlocksAdd(snapshot, tblock.Hash, tblock);
 
             var block = NativeContract.Ledger.GetBlock(snapshot, tblock.Hash);
@@ -98,7 +98,7 @@ namespace Neo.UnitTests.Ledger
         public void TestGetSize()
         {
             var tblock = GetTrimmedBlockWithNoTransaction();
-            tblock.Hashes = new UInt256[] { TestUtils.GetTransaction(UInt160.Zero).Hash };
+            tblock.Hashes = [TestUtils.GetTransaction(UInt160.Zero).Hash];
             tblock.Size.Should().Be(146); // 138 + 8
         }
 
@@ -106,7 +106,7 @@ namespace Neo.UnitTests.Ledger
         public void TestDeserialize()
         {
             var tblock = GetTrimmedBlockWithNoTransaction();
-            tblock.Hashes = new UInt256[] { TestUtils.GetTransaction(UInt160.Zero).Hash };
+            tblock.Hashes = [TestUtils.GetTransaction(UInt160.Zero).Hash];
             var newBlock = new TrimmedBlock();
             using (MemoryStream ms = new(1024))
             using (BinaryWriter writer = new(ms))

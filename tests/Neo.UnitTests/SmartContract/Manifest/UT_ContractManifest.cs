@@ -62,14 +62,14 @@ namespace Neo.UnitTests.SmartContract.Manifest
             Assert.AreEqual(manifest.ToJson().ToString(), json);
 
             var check = TestUtils.CreateDefaultManifest();
-            check.Permissions = new[]
-            {
+            check.Permissions =
+            [
                 new ContractPermission()
                 {
                     Contract = ContractPermissionDescriptor.Create(UInt160.Zero),
                     Methods = WildcardContainer<string>.Create("method1", "method2")
                 }
-            };
+            ];
             Assert.AreEqual(manifest.ToJson().ToString(), check.ToJson().ToString());
         }
 
@@ -120,7 +120,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             Assert.AreEqual(manifest.ToJson().ToString(), json);
 
             var check = TestUtils.CreateDefaultManifest();
-            check.Groups = new ContractGroup[] { new ContractGroup() { PubKey = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1), Signature = "41414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141".HexToBytes() } };
+            check.Groups = [new ContractGroup() { PubKey = ECPoint.Parse("03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c", ECCurve.Secp256r1), Signature = "41414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141".HexToBytes() }];
             Assert.AreEqual(manifest.ToJson().ToString(), check.ToJson().ToString());
         }
 

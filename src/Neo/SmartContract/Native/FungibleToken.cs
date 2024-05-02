@@ -69,7 +69,7 @@ namespace Neo.SmartContract.Native
 
         protected override void OnManifestCompose(ContractManifest manifest)
         {
-            manifest.SupportedStandards = new[] { "NEP-17" };
+            manifest.SupportedStandards = ["NEP-17"];
         }
 
 #pragma warning disable IDE1006 // Naming Styles

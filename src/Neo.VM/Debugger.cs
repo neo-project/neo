@@ -19,7 +19,7 @@ namespace Neo.VM
     public class Debugger
     {
         private readonly ExecutionEngine engine;
-        private readonly Dictionary<Script, HashSet<uint>> break_points = new();
+        private readonly Dictionary<Script, HashSet<uint>> break_points = [];
 
         /// <summary>
         /// Create a debugger on the specified <see cref="ExecutionEngine"/>.
@@ -39,7 +39,7 @@ namespace Neo.VM
         {
             if (!break_points.TryGetValue(script, out var hashset))
             {
-                hashset = new HashSet<uint>();
+                hashset = [];
                 break_points.Add(script, hashset);
             }
             hashset.Add(position);

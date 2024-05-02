@@ -29,7 +29,7 @@ namespace Neo.UnitTests
             var mock = new Mock<Contract>();
             mock.SetupGet(p => p.ScriptHash).Returns(hash);
             mock.Object.Script = Contract.CreateSignatureRedeemScript(key.PublicKey);
-            mock.Object.ParameterList = new[] { ContractParameterType.Signature };
+            mock.Object.ParameterList = [ContractParameterType.Signature];
             Contract = mock.Object;
         }
 

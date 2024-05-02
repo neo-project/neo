@@ -109,7 +109,7 @@ namespace Neo.UnitTests.IO.Caching
         [TestMethod]
         public void TestAddRange()
         {
-            string[] range = { "hello", "world" };
+            string[] range = ["hello", "world"];
             cache.AddRange(range);
             cache.Count.Should().Be(2);
             cache.Contains("hello").Should().BeTrue();

@@ -99,7 +99,7 @@ namespace Neo.UnitTests.IO.Caching
             arr[1].Should().Be(2);
             arr[2].Should().Be(3);
 
-            arr = queue.ToArray();
+            arr = [.. queue];
 
             arr[0].Should().Be(1);
             arr[1].Should().Be(2);

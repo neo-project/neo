@@ -43,8 +43,8 @@ namespace Neo.Persistence
             public TrackState State;
         }
 
-        private readonly Dictionary<StorageKey, Trackable> dictionary = new();
-        private readonly HashSet<StorageKey> changeSet = new();
+        private readonly Dictionary<StorageKey, Trackable> dictionary = [];
+        private readonly HashSet<StorageKey> changeSet = [];
 
         /// <summary>
         /// Reads a specified entry from the cache. If the entry is not in the cache, it will be automatically loaded from the underlying storage.
@@ -433,7 +433,7 @@ namespace Neo.Persistence
                     .ToArray();
                 cachedKeySet = new HashSet<StorageKey>(dictionary.Keys);
             }
-            var uncached = SeekInternal(keyOrPrefix ?? Array.Empty<byte>(), direction)
+            var uncached = SeekInternal(keyOrPrefix ?? [], direction)
                 .Where(p => !cachedKeySet.Contains(p.Key))
                 .Select(p =>
                 (

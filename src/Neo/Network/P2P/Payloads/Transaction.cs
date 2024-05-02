@@ -199,7 +199,7 @@ namespace Neo.Network.P2P.Payloads
         {
             var count = (int)reader.ReadVarInt((ulong)maxCount);
             var attributes = new TransactionAttribute[count];
-            HashSet<TransactionAttributeType> hashset = new();
+            HashSet<TransactionAttributeType> hashset = [];
             for (var i = 0; i < count; i++)
             {
                 var attribute = TransactionAttribute.DeserializeFrom(ref reader);
@@ -215,7 +215,7 @@ namespace Neo.Network.P2P.Payloads
             var count = (int)reader.ReadVarInt((ulong)maxCount);
             if (count == 0) throw new FormatException();
             var signers = new Signer[count];
-            HashSet<UInt160> hashset = new();
+            HashSet<UInt160> hashset = [];
             for (var i = 0; i < count; i++)
             {
                 var signer = reader.ReadSerializable<Signer>();
@@ -488,7 +488,7 @@ namespace Neo.Network.P2P.Payloads
                 signatures.Add(script[i..(i + 64)]);
                 i += 64;
             }
-            return signatures.ToArray();
+            return [.. signatures];
         }
     }
 }

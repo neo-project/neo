@@ -23,7 +23,7 @@ namespace Neo.UnitTests.SmartContract
     public class UT_ContractState
     {
         ContractState contract;
-        readonly byte[] script = { 0x01 };
+        readonly byte[] script = [0x01];
         ContractManifest manifest;
 
         [TestInitialize]
@@ -36,7 +36,7 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Compiler = nameof(ScriptBuilder),
                     Source = string.Empty,
-                    Tokens = Array.Empty<MethodToken>(),
+                    Tokens = [],
                     Script = script
                 },
                 Hash = script.ToScriptHash(),

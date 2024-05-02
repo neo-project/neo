@@ -395,7 +395,7 @@ namespace Neo.SmartContract
         {
             NotifyEventArgs notification = new(ScriptContainer, hash, eventName, (Array)state.DeepCopy(asImmutable: true));
             Notify?.Invoke(this, notification);
-            notifications ??= new List<NotifyEventArgs>();
+            notifications ??= [];
             notifications.Add(notification);
             CurrentContext.GetState<ExecutionContextState>().NotificationCount++;
         }

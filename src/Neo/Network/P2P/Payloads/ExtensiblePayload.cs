@@ -81,7 +81,7 @@ namespace Neo.Network.P2P.Payloads
         {
             get
             {
-                return new[] { Witness };
+                return [Witness];
             }
             set
             {
@@ -109,7 +109,7 @@ namespace Neo.Network.P2P.Payloads
 
         UInt160[] IVerifiable.GetScriptHashesForVerifying(DataCache snapshot)
         {
-            return new[] { Sender }; // This address should be checked by consumer
+            return [Sender]; // This address should be checked by consumer
         }
 
         void ISerializable.Serialize(BinaryWriter writer)

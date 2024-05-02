@@ -570,7 +570,7 @@ namespace Neo.CLI
         /// <returns>Return true if it was successful</returns>
         private bool OnInvokeWithResult(UInt160 scriptHash, string operation, out StackItem result, IVerifiable? verifiable = null, JArray? contractParameters = null, bool showStack = true, long gas = TestModeGas)
         {
-            List<ContractParameter> parameters = new();
+            List<ContractParameter> parameters = [];
 
             if (contractParameters != null)
             {

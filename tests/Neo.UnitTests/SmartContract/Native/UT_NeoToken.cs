@@ -40,7 +40,7 @@ namespace Neo.UnitTests.SmartContract.Native
             _persistingBlock = new Block
             {
                 Header = new Header(),
-                Transactions = Array.Empty<Transaction>()
+                Transactions = []
             };
         }
 
@@ -364,7 +364,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     PrevHash = UInt256.Zero,
                     Witness = new Witness() { InvocationScript = Array.Empty<byte>(), VerificationScript = Array.Empty<byte>() }
                 },
-                Transactions = Array.Empty<Transaction>()
+                Transactions = []
             };
             for (var i = 0; i < TestProtocolSettings.Default.CommitteeMembersCount - 1; i++)
             {
@@ -471,7 +471,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     NextConsensus = UInt160.Zero,
                     PrevHash = UInt256.Zero
                 },
-                Transactions = Array.Empty<Transaction>()
+                Transactions = []
             };
 
             Check_PostPersist(snapshot, persistingBlock).Should().BeTrue();
@@ -645,7 +645,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     NextConsensus = UInt160.Zero,
                     PrevHash = UInt256.Zero
                 },
-                Transactions = Array.Empty<Transaction>()
+                Transactions = []
             };
             Check_OnPersist(snapshot, persistingBlock).Should().BeTrue();
 
@@ -774,7 +774,7 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.Add(CreateStorageKey(1), new StorageItem(new BigInteger(30000000)));
 
             var standbyCommittee = TestProtocolSettings.Default.StandbyCommittee.OrderBy(p => p).ToArray();
-            CachedCommittee cachedCommittee = new();
+            CachedCommittee cachedCommittee = [];
             for (var i = 0; i < TestProtocolSettings.Default.CommitteeMembersCount; i++)
             {
                 var member = standbyCommittee[i];
@@ -800,7 +800,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     NextConsensus = UInt160.Zero,
                     PrevHash = UInt256.Zero
                 },
-                Transactions = Array.Empty<Transaction>()
+                Transactions = []
             };
             Check_PostPersist(snapshot, persistingBlock).Should().BeTrue();
 
@@ -826,7 +826,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     NextConsensus = UInt160.Zero,
                     PrevHash = UInt256.Zero
                 },
-                Transactions = Array.Empty<Transaction>()
+                Transactions = []
             };
             Check_PostPersist(snapshot, persistingBlock).Should().BeTrue();
 
@@ -847,7 +847,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     NextConsensus = UInt160.Zero,
                     PrevHash = UInt256.Zero
                 },
-                Transactions = Array.Empty<Transaction>()
+                Transactions = []
             };
             Check_PostPersist(snapshot, persistingBlock).Should().BeTrue();
 

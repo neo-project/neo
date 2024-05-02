@@ -45,7 +45,7 @@ namespace Neo.IO.Caching
             Count = 0;
             this.bucketCapacity = bucketCapacity;
             this.maxBucketCount = maxBucketCount;
-            sets.AddFirst(new HashSet<T>());
+            sets.AddFirst([]);
         }
 
         public bool Add(T item)
@@ -87,7 +87,7 @@ namespace Neo.IO.Caching
                         Count--;
                         if (set.Count == 0)
                         {
-                            removeList ??= new List<HashSet<T>>();
+                            removeList ??= [];
                             removeList.Add(set);
                         }
                         break;

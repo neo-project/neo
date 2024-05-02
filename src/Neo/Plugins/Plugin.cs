@@ -28,7 +28,7 @@ namespace Neo.Plugins
         /// <summary>
         /// A list of all loaded plugins.
         /// </summary>
-        public static readonly List<Plugin> Plugins = new();
+        public static readonly List<Plugin> Plugins = [];
 
         /// <summary>
         /// The directory containing the plugin folders. Files can be contained in any subdirectory.
@@ -175,7 +175,7 @@ namespace Neo.Plugins
         internal static void LoadPlugins()
         {
             if (!Directory.Exists(PluginsDirectory)) return;
-            List<Assembly> assemblies = new();
+            List<Assembly> assemblies = [];
             foreach (var rootPath in Directory.GetDirectories(PluginsDirectory))
             {
                 foreach (var filename in Directory.EnumerateFiles(rootPath, "*.dll", SearchOption.TopDirectoryOnly))

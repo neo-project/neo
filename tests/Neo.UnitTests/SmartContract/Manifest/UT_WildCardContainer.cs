@@ -75,7 +75,7 @@ namespace Neo.UnitTests.SmartContract.Manifest
             var enumerator = container.GetEnumerator();
             enumerator.Should().Be(rs.GetEnumerator());
 
-            s = new string[] { "hello", "world" };
+            s = ["hello", "world"];
             container = WildcardContainer<string>.Create(s);
             enumerator = container.GetEnumerator();
             foreach (var _ in s)

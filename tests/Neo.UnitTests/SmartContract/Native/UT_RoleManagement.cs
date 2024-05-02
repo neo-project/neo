@@ -57,7 +57,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var publicKeys = new ECPoint[2];
             publicKeys[0] = key1.PublicKey;
             publicKeys[1] = key2.PublicKey;
-            publicKeys = publicKeys.OrderBy(p => p).ToArray();
+            publicKeys = [.. publicKeys.OrderBy(p => p)];
 
             var roles = new List<Role>() { Role.StateValidator, Role.Oracle, Role.NeoFSAlphabetNode, Role.P2PNotary };
             foreach (var role in roles)

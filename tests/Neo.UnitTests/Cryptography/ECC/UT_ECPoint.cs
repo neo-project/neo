@@ -72,18 +72,18 @@ namespace Neo.UnitTests.Cryptography.ECC
         [TestMethod]
         public void TestDecodePoint()
         {
-            byte[] input1 = { 0 };
+            byte[] input1 = [0];
             Action action = () => ECPoint.DecodePoint(input1, ECCurve.Secp256k1);
             action.Should().Throw<FormatException>();
 
-            byte[] input2 = { 4, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152, 72,
-                58, 218, 119, 38, 163, 196, 101, 93, 164, 251, 252, 14, 17, 8, 168, 253, 23, 180, 72, 166, 133, 84, 25, 156, 71, 208, 143, 251, 16, 212, 184 };
+            byte[] input2 = [ 4, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152, 72,
+                58, 218, 119, 38, 163, 196, 101, 93, 164, 251, 252, 14, 17, 8, 168, 253, 23, 180, 72, 166, 133, 84, 25, 156, 71, 208, 143, 251, 16, 212, 184 ];
             ECPoint.DecodePoint(input2, ECCurve.Secp256k1).Should().Be(ECCurve.Secp256k1.G);
             action = () => ECPoint.DecodePoint(input2.Take(32).ToArray(), ECCurve.Secp256k1);
             action.Should().Throw<FormatException>();
 
-            byte[] input3 = { 2, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152 };
-            byte[] input4 = { 3, 107, 23, 209, 242, 225, 44, 66, 71, 248, 188, 230, 229, 99, 164, 64, 242, 119, 3, 125, 129, 45, 235, 51, 160, 244, 161, 57, 69, 216, 152, 194, 150 };
+            byte[] input3 = [2, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152];
+            byte[] input4 = [3, 107, 23, 209, 242, 225, 44, 66, 71, 248, 188, 230, 229, 99, 164, 64, 242, 119, 3, 125, 129, 45, 235, 51, 160, 244, 161, 57, 69, 216, 152, 194, 150];
             ECPoint.DecodePoint(input3, ECCurve.Secp256k1).Should().Be(ECCurve.Secp256k1.G);
             ECPoint.DecodePoint(input4, ECCurve.Secp256r1).Should().Be(ECCurve.Secp256r1.G);
 
@@ -94,7 +94,7 @@ namespace Neo.UnitTests.Cryptography.ECC
         [TestMethod]
         public void TestDeserializeFrom()
         {
-            byte[] input1 = { 0 };
+            byte[] input1 = [0];
             MemoryReader reader1 = new(input1);
             try
             {
@@ -103,8 +103,8 @@ namespace Neo.UnitTests.Cryptography.ECC
             }
             catch (FormatException) { }
 
-            byte[] input2 = { 4, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152, 72,
-                58, 218, 119, 38, 163, 196, 101, 93, 164, 251, 252, 14, 17, 8, 168, 253, 23, 180, 72, 166, 133, 84, 25, 156, 71, 208, 143, 251, 16, 212, 184 };
+            byte[] input2 = [ 4, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152, 72,
+                58, 218, 119, 38, 163, 196, 101, 93, 164, 251, 252, 14, 17, 8, 168, 253, 23, 180, 72, 166, 133, 84, 25, 156, 71, 208, 143, 251, 16, 212, 184 ];
             MemoryReader reader2 = new(input2);
             ECPoint.DeserializeFrom(ref reader2, ECCurve.Secp256k1).Should().Be(ECCurve.Secp256k1.G);
             reader2 = new(input2.Take(32).ToArray());
@@ -115,10 +115,10 @@ namespace Neo.UnitTests.Cryptography.ECC
             }
             catch (FormatException) { }
 
-            byte[] input3 = { 2, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152 };
+            byte[] input3 = [2, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152];
             MemoryReader reader3 = new(input3);
             ECPoint.DeserializeFrom(ref reader3, ECCurve.Secp256k1).Should().Be(ECCurve.Secp256k1.G);
-            byte[] input4 = { 3, 107, 23, 209, 242, 225, 44, 66, 71, 248, 188, 230, 229, 99, 164, 64, 242, 119, 3, 125, 129, 45, 235, 51, 160, 244, 161, 57, 69, 216, 152, 194, 150 };
+            byte[] input4 = [3, 107, 23, 209, 242, 225, 44, 66, 71, 248, 188, 230, 229, 99, 164, 64, 242, 119, 3, 125, 129, 45, 235, 51, 160, 244, 161, 57, 69, 216, 152, 194, 150];
             MemoryReader reader4 = new(input4);
             ECPoint.DeserializeFrom(ref reader4, ECCurve.Secp256r1).Should().Be(ECCurve.Secp256r1.G);
 
@@ -135,21 +135,21 @@ namespace Neo.UnitTests.Cryptography.ECC
         public void TestEncodePoint()
         {
             var point = new ECPoint(null, null, ECCurve.Secp256k1);
-            byte[] result1 = { 0 };
+            byte[] result1 = [0];
             point.EncodePoint(true).Should().BeEquivalentTo(result1);
 
             point = ECCurve.Secp256k1.G;
-            byte[] result2 = { 4, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152, 72,
-                58, 218, 119, 38, 163, 196, 101, 93, 164, 251, 252, 14, 17, 8, 168, 253, 23, 180, 72, 166, 133, 84, 25, 156, 71, 208, 143, 251, 16, 212, 184 };
+            byte[] result2 = [ 4, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152, 72,
+                58, 218, 119, 38, 163, 196, 101, 93, 164, 251, 252, 14, 17, 8, 168, 253, 23, 180, 72, 166, 133, 84, 25, 156, 71, 208, 143, 251, 16, 212, 184 ];
             point.EncodePoint(false).Should().BeEquivalentTo(result2);
             point.EncodePoint(false).Should().BeEquivalentTo(result2);
 
-            byte[] result3 = { 2, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152 };
+            byte[] result3 = [2, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152];
             point.EncodePoint(true).Should().BeEquivalentTo(result3);
             point.EncodePoint(true).Should().BeEquivalentTo(result3);
 
             point = ECCurve.Secp256r1.G;
-            byte[] result4 = { 3, 107, 23, 209, 242, 225, 44, 66, 71, 248, 188, 230, 229, 99, 164, 64, 242, 119, 3, 125, 129, 45, 235, 51, 160, 244, 161, 57, 69, 216, 152, 194, 150 };
+            byte[] result4 = [3, 107, 23, 209, 242, 225, 44, 66, 71, 248, 188, 230, 229, 99, 164, 64, 242, 119, 3, 125, 129, 45, 235, 51, 160, 244, 161, 57, 69, 216, 152, 194, 150];
             point.EncodePoint(true).Should().BeEquivalentTo(result4);
             point.EncodePoint(true).Should().BeEquivalentTo(result4);
 
@@ -217,15 +217,15 @@ namespace Neo.UnitTests.Cryptography.ECC
         [TestMethod]
         public void TestFromBytes()
         {
-            byte[] input1 = { 0 };
+            byte[] input1 = [0];
             Action action = () => ECPoint.FromBytes(input1, ECCurve.Secp256k1);
             action.Should().Throw<FormatException>();
 
-            byte[] input2 = { 4, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152, 72,
-                58, 218, 119, 38, 163, 196, 101, 93, 164, 251, 252, 14, 17, 8, 168, 253, 23, 180, 72, 166, 133, 84, 25, 156, 71, 208, 143, 251, 16, 212, 184 };
+            byte[] input2 = [ 4, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152, 72,
+                58, 218, 119, 38, 163, 196, 101, 93, 164, 251, 252, 14, 17, 8, 168, 253, 23, 180, 72, 166, 133, 84, 25, 156, 71, 208, 143, 251, 16, 212, 184 ];
             ECPoint.FromBytes(input2, ECCurve.Secp256k1).Should().Be(ECCurve.Secp256k1.G);
 
-            byte[] input3 = { 2, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152 };
+            byte[] input3 = [2, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152];
             ECPoint.FromBytes(input3, ECCurve.Secp256k1).Should().Be(ECCurve.Secp256k1.G);
             ECPoint.FromBytes(input2.Skip(1).ToArray(), ECCurve.Secp256k1).Should().Be(ECCurve.Secp256k1.G);
 
@@ -297,8 +297,8 @@ namespace Neo.UnitTests.Cryptography.ECC
         {
             var point = new ECPoint(null, null, ECCurve.Secp256k1);
             ISerializable serializable = point;
-            byte[] input = { 4, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152,
-                72, 58, 218, 119, 38, 163, 196, 101, 93, 164, 251, 252, 14, 17, 8, 168, 253, 23, 180, 72, 166, 133, 84, 25, 156, 71, 208, 143, 251, 16, 212, 184 };
+            byte[] input = [ 4, 121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152,
+                72, 58, 218, 119, 38, 163, 196, 101, 93, 164, 251, 252, 14, 17, 8, 168, 253, 23, 180, 72, 166, 133, 84, 25, 156, 71, 208, 143, 251, 16, 212, 184 ];
             MemoryReader reader = new(input);
             serializable.Deserialize(ref reader);
             point.X.Should().Be(ECCurve.Secp256k1.G.X);
@@ -341,7 +341,7 @@ namespace Neo.UnitTests.Cryptography.ECC
             n = null;
             action.Should().Throw<ArgumentNullException>();
 
-            n = new byte[] { 1 };
+            n = [1];
             action.Should().Throw<ArgumentException>();
 
             p = ECCurve.Secp256k1.Infinity;

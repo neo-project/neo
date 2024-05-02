@@ -46,14 +46,14 @@ namespace Neo.UnitTests
                 ECPoint.Parse("02cd5a5547119e24feaa7c2a0f37b8c9366216bab7054de0065c9be42084003c8a", ECCurve.Secp256r1)
             },
             ValidatorsCount = 7,
-            SeedList = new[]
-            {
+            SeedList =
+            [
                 "seed1.neo.org:10333",
                 "seed2.neo.org:10333",
                 "seed3.neo.org:10333",
                 "seed4.neo.org:10333",
                 "seed5.neo.org:10333"
-            },
+            ],
             MillisecondsPerBlock = ProtocolSettings.Default.MillisecondsPerBlock,
             MaxTransactionsPerBlock = ProtocolSettings.Default.MaxTransactionsPerBlock,
             MemoryPoolMaxTransactions = ProtocolSettings.Default.MemoryPoolMaxTransactions,

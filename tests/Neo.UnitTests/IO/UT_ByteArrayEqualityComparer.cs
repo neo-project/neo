@@ -32,8 +32,8 @@ namespace Neo.UnitTests
             Assert.IsFalse(check.Equals(a, null));
             Assert.IsTrue(check.Equals(null, null));
 
-            Assert.IsFalse(check.Equals(a, new byte[] { 1, 2, 3 }));
-            Assert.IsTrue(check.Equals(Array.Empty<byte>(), Array.Empty<byte>()));
+            Assert.IsFalse(check.Equals(a, [1, 2, 3]));
+            Assert.IsTrue(check.Equals([], []));
 
             b[8]++;
             Assert.IsFalse(check.Equals(a, b));

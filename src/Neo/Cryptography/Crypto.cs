@@ -24,7 +24,7 @@ namespace Neo.Cryptography
     /// </summary>
     public static class Crypto
     {
-        private static readonly ECDsaCache CacheECDsa = new();
+        private static readonly ECDsaCache CacheECDsa = [];
         private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
         private static readonly ECCurve secP256k1 = ECCurve.CreateFromFriendlyName("secP256k1");
         private static readonly X9ECParameters bouncySecp256k1 = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");

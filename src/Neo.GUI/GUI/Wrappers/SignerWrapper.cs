@@ -21,8 +21,8 @@ namespace Neo.GUI.Wrappers
         [TypeConverter(typeof(UIntBaseConverter))]
         public UInt160 Account { get; set; }
         public WitnessScope Scopes { get; set; }
-        public List<UInt160> AllowedContracts { get; set; } = new List<UInt160>();
-        public List<ECPoint> AllowedGroups { get; set; } = new List<ECPoint>();
+        public List<UInt160> AllowedContracts { get; set; } = [];
+        public List<ECPoint> AllowedGroups { get; set; } = [];
 
         public Signer Unwrap()
         {
@@ -30,8 +30,8 @@ namespace Neo.GUI.Wrappers
             {
                 Account = Account,
                 Scopes = Scopes,
-                AllowedContracts = AllowedContracts.ToArray(),
-                AllowedGroups = AllowedGroups.ToArray()
+                AllowedContracts = [.. AllowedContracts],
+                AllowedGroups = [.. AllowedGroups]
             };
         }
     }

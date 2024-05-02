@@ -35,12 +35,12 @@ namespace Neo.UnitTests
             {
                 Name = "testManifest",
                 Groups = new ContractGroup[0],
-                SupportedStandards = Array.Empty<string>(),
+                SupportedStandards = [],
                 Abi = new ContractAbi()
                 {
                     Events = new ContractEventDescriptor[0],
-                    Methods = new[]
-                    {
+                    Methods =
+                    [
                         new ContractMethodDescriptor
                         {
                             Name = "testMethod",
@@ -49,9 +49,9 @@ namespace Neo.UnitTests
                             Offset = 0,
                             Safe = true
                         }
-                    }
+                    ]
                 },
-                Permissions = new[] { ContractPermission.DefaultPermission },
+                Permissions = [ContractPermission.DefaultPermission],
                 Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(),
                 Extra = null
             };
@@ -60,8 +60,8 @@ namespace Neo.UnitTests
         public static ContractManifest CreateManifest(string method, ContractParameterType returnType, params ContractParameterType[] parameterTypes)
         {
             var manifest = CreateDefaultManifest();
-            manifest.Abi.Methods = new ContractMethodDescriptor[]
-            {
+            manifest.Abi.Methods =
+            [
                 new ContractMethodDescriptor()
                 {
                     Name = method,
@@ -72,7 +72,7 @@ namespace Neo.UnitTests
                     }).ToArray(),
                     ReturnType = returnType
                 }
-            };
+            ];
             return manifest;
         }
 
@@ -116,20 +116,20 @@ namespace Neo.UnitTests
             return new Transaction
             {
                 Script = new byte[] { (byte)OpCode.PUSH2 },
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = new[]{ new Signer()
+                Attributes = [],
+                Signers = [ new Signer()
                 {
                     Account = sender,
                     Scopes = WitnessScope.CalledByEntry,
-                    AllowedContracts = Array.Empty<UInt160>(),
-                    AllowedGroups = Array.Empty<ECPoint>(),
-                    Rules = Array.Empty<WitnessRule>(),
-                } },
-                Witnesses = new Witness[]{ new Witness
+                    AllowedContracts = [],
+                    AllowedGroups = [],
+                    Rules = [],
+                } ],
+                Witnesses = [ new Witness
                 {
                     InvocationScript = Array.Empty<byte>(),
                     VerificationScript = Array.Empty<byte>()
-                } }
+                } ]
             };
         }
 
@@ -139,7 +139,7 @@ namespace Neo.UnitTests
             {
                 Compiler = "",
                 Source = "",
-                Tokens = Array.Empty<MethodToken>(),
+                Tokens = [],
                 Script = new byte[] { 0x01, 0x01, 0x01, 0x01 }
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
@@ -158,7 +158,7 @@ namespace Neo.UnitTests
             {
                 Compiler = "",
                 Source = "",
-                Tokens = Array.Empty<MethodToken>(),
+                Tokens = [],
                 Script = script
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
@@ -241,16 +241,16 @@ namespace Neo.UnitTests
             return new Transaction
             {
                 Script = randomBytes,
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = new Signer[] { new Signer() { Account = UInt160.Zero } },
-                Witnesses = new[]
-                {
+                Attributes = [],
+                Signers = [new Signer() { Account = UInt160.Zero }],
+                Witnesses =
+                [
                     new Witness
                     {
                         InvocationScript = new byte[0],
                         VerificationScript = new byte[0]
                     }
-                }
+                ]
             };
         }
 

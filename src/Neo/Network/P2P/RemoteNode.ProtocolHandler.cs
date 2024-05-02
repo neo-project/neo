@@ -44,7 +44,7 @@ namespace Neo.Network.P2P
             remove => handlers.Remove(value);
         }
 
-        private static readonly List<MessageReceivedHandler> handlers = new();
+        private static readonly List<MessageReceivedHandler> handlers = [];
         private readonly PendingKnownHashesCollection pendingKnownHashes = new();
         private readonly HashSetCache<UInt256> knownHashes;
         private readonly HashSetCache<UInt256> sentHashes;
@@ -195,7 +195,7 @@ namespace Neo.Network.P2P
             var state = NativeContract.Ledger.GetTrimmedBlock(snapshot, hash);
             if (state == null) return;
             var currentHeight = NativeContract.Ledger.CurrentIndex(snapshot);
-            List<UInt256> hashes = new();
+            List<UInt256> hashes = [];
             for (uint i = 1; i <= count; i++)
             {
                 var index = state.Index + i;
@@ -206,7 +206,7 @@ namespace Neo.Network.P2P
                 hashes.Add(hash);
             }
             if (hashes.Count == 0) return;
-            EnqueueMessage(Message.Create(MessageCommand.Inv, InvPayload.Create(InventoryType.Block, hashes.ToArray())));
+            EnqueueMessage(Message.Create(MessageCommand.Inv, InvPayload.Create(InventoryType.Block, [.. hashes])));
         }
 
         private void OnGetBlockByIndexMessageReceived(GetBlockByIndexPayload payload)
@@ -278,7 +278,7 @@ namespace Neo.Network.P2P
 
             if (notFound.Count > 0)
             {
-                foreach (var entry in InvPayload.CreateGroup(payload.Type, notFound.ToArray()))
+                foreach (var entry in InvPayload.CreateGroup(payload.Type, [.. notFound]))
                     EnqueueMessage(Message.Create(MessageCommand.NotFound, entry));
             }
         }
@@ -293,7 +293,7 @@ namespace Neo.Network.P2P
         {
             var snapshot = system.StoreView;
             if (payload.IndexStart > NativeContract.Ledger.CurrentIndex(snapshot)) return;
-            List<Header> headers = new();
+            List<Header> headers = [];
             var count = payload.Count == -1 ? HeadersPayload.MaxHeadersCount : (uint)payload.Count;
             for (uint i = 0; i < count; i++)
             {
@@ -302,7 +302,7 @@ namespace Neo.Network.P2P
                 headers.Add(header);
             }
             if (headers.Count == 0) return;
-            EnqueueMessage(Message.Create(MessageCommand.Headers, HeadersPayload.Create(headers.ToArray())));
+            EnqueueMessage(Message.Create(MessageCommand.Headers, HeadersPayload.Create([.. headers])));
         }
 
         private void OnHeadersMessageReceived(HeadersPayload payload)

@@ -121,7 +121,7 @@ namespace Neo.ConsoleService
                 lastToken = token;
             }
 
-            return list.ToArray();
+            return [.. list];
         }
 
         /// <summary>

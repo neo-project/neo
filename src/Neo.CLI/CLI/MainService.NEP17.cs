@@ -60,7 +60,7 @@ namespace Neo.CLI
                     Scopes = WitnessScope.CalledByEntry,
                     Account = p
                 })
-                .ToArray() ?? Array.Empty<Signer>());
+                .ToArray() ?? []);
             }
             catch (InvalidOperationException e)
             {

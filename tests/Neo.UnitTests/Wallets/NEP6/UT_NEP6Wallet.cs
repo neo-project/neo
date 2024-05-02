@@ -84,9 +84,9 @@ namespace Neo.UnitTests.Wallets.NEP6
             var acc = uut.CreateAccount("FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632549".HexToBytes());
             var tx = new Transaction()
             {
-                Attributes = Array.Empty<TransactionAttribute>(),
+                Attributes = [],
                 Script = new byte[1],
-                Signers = new Signer[] { new Signer() { Account = acc.ScriptHash } },
+                Signers = [new Signer() { Account = acc.ScriptHash }],
             };
             var ctx = new ContractParametersContext(TestBlockchain.GetTestSnapshot(), tx, TestProtocolSettings.Default.Network);
             Assert.IsTrue(uut.Sign(ctx));
@@ -260,7 +260,7 @@ namespace Neo.UnitTests.Wallets.NEP6
         [TestMethod]
         public void TestGetAccounts()
         {
-            Dictionary<UInt160, KeyPair> keys = new();
+            Dictionary<UInt160, KeyPair> keys = [];
             var privateKey = new byte[32];
             using (var rng = RandomNumberGenerator.Create())
             {

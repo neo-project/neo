@@ -67,7 +67,7 @@ namespace Neo.UnitTests.SmartContract
             var publicKeys = new Neo.Cryptography.ECC.ECPoint[2];
             publicKeys[0] = key1.PublicKey;
             publicKeys[1] = key2.PublicKey;
-            publicKeys = publicKeys.OrderBy(p => p).ToArray();
+            publicKeys = [.. publicKeys.OrderBy(p => p)];
             var contract = Contract.CreateMultiSigContract(2, publicKeys);
             var expectedArray = new byte[77];
             expectedArray[0] = (byte)OpCode.PUSH2;
@@ -100,7 +100,7 @@ namespace Neo.UnitTests.SmartContract
             var publicKeys = new Neo.Cryptography.ECC.ECPoint[2];
             publicKeys[0] = key1.PublicKey;
             publicKeys[1] = key2.PublicKey;
-            publicKeys = publicKeys.OrderBy(p => p).ToArray();
+            publicKeys = [.. publicKeys.OrderBy(p => p)];
             Action action = () => Contract.CreateMultiSigRedeemScript(0, publicKeys);
             action.Should().Throw<ArgumentException>();
             var script = Contract.CreateMultiSigRedeemScript(2, publicKeys);
@@ -166,7 +166,7 @@ namespace Neo.UnitTests.SmartContract
 
             var fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * 2 + ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice);
 
-            using (var engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, null, settings: TestBlockchain.TheNeoSystem.Settings))
+            using (var engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = [], Attributes = [] }, null, settings: TestBlockchain.TheNeoSystem.Settings))
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();
@@ -188,13 +188,13 @@ namespace Neo.UnitTests.SmartContract
             var publicKeys = new Neo.Cryptography.ECC.ECPoint[2];
             publicKeys[0] = key1.PublicKey;
             publicKeys[1] = key2.PublicKey;
-            publicKeys = publicKeys.OrderBy(p => p).ToArray();
+            publicKeys = [.. publicKeys.OrderBy(p => p)];
             var verification = Contract.CreateMultiSigRedeemScript(2, publicKeys);
             var invocation = new ScriptBuilder().EmitPush(UInt160.Zero).EmitPush(UInt160.Zero).ToArray();
 
             var fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * (2 + 2) + ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHINT8] * 2 + ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice * 2);
 
-            using (var engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>() }, null, settings: TestBlockchain.TheNeoSystem.Settings))
+            using (var engine = ApplicationEngine.Create(TriggerType.Verification, new Transaction { Signers = [], Attributes = [] }, null, settings: TestBlockchain.TheNeoSystem.Settings))
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();

@@ -63,7 +63,7 @@ namespace Neo.Network.P2P
                 Flags = MessageFlags.None,
                 Command = command,
                 Payload = payload,
-                _payload_compressed = payload?.ToArray() ?? Array.Empty<byte>()
+                _payload_compressed = payload?.ToArray() ?? []
             };
 
             var tryCompression =

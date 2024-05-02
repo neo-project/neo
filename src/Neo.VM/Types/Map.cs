@@ -28,7 +28,7 @@ namespace Neo.VM.Types
         /// </summary>
         public const int MaxKeySize = 64;
 
-        private readonly OrderedDictionary<PrimitiveType, StackItem> dictionary = new();
+        private readonly OrderedDictionary<PrimitiveType, StackItem> dictionary = [];
 
         /// <summary>
         /// Gets or sets the element that has the specified key in the map.

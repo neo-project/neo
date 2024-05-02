@@ -30,7 +30,7 @@ namespace Neo.ConsoleService
         public CommandStringToken(int offset, string value) : base(CommandTokenType.String, offset)
         {
             Value = value;
-            RequireQuotes = value.IndexOfAny(new char[] { '\'', '"' }) != -1;
+            RequireQuotes = value.IndexOfAny(['\'', '"']) != -1;
         }
 
         /// <summary>

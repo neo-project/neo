@@ -183,7 +183,7 @@ namespace Neo.SmartContract.Native
             {
                 var cachedCommittee = new CachedCommittee(engine.ProtocolSettings.StandbyCommittee.Select(p => (p, BigInteger.Zero)));
                 engine.Snapshot.Add(CreateStorageKey(Prefix_Committee), new StorageItem(cachedCommittee));
-                engine.Snapshot.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem(System.Array.Empty<byte>()));
+                engine.Snapshot.Add(CreateStorageKey(Prefix_VotersCount), new StorageItem([]));
                 engine.Snapshot.Add(CreateStorageKey(Prefix_GasPerBlock).AddBigEndian(0u), new StorageItem(5 * GAS.Factor));
                 engine.Snapshot.Add(CreateStorageKey(Prefix_RegisterPrice), new StorageItem(1000 * GAS.Factor));
                 return Mint(engine, Contract.GetBFTAddress(engine.ProtocolSettings.StandbyValidators), TotalAmount, false);
@@ -467,7 +467,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 16, RequiredCallFlags = CallFlags.ReadStates)]
         public ECPoint[] GetCommittee(DataCache snapshot)
         {
-            return GetCommitteeFromCache(snapshot).Select(p => p.PublicKey).OrderBy(p => p).ToArray();
+            return [.. GetCommitteeFromCache(snapshot).Select(p => p.PublicKey).OrderBy(p => p)];
         }
 
         /// <summary>
@@ -507,7 +507,7 @@ namespace Neo.SmartContract.Native
         /// <returns>The public keys of the validators.</returns>
         public ECPoint[] ComputeNextBlockValidators(DataCache snapshot, ProtocolSettings settings)
         {
-            return ComputeCommitteeMembers(snapshot, settings).Select(p => p.PublicKey).Take(settings.ValidatorsCount).OrderBy(p => p).ToArray();
+            return [.. ComputeCommitteeMembers(snapshot, settings).Select(p => p.PublicKey).Take(settings.ValidatorsCount).OrderBy(p => p)];
         }
 
         private IEnumerable<(ECPoint PublicKey, BigInteger Votes)> ComputeCommitteeMembers(DataCache snapshot, ProtocolSettings settings)
@@ -539,11 +539,14 @@ namespace Neo.SmartContract.Native
         /// <returns>The public keys of the validators.</returns>
         public ECPoint[] GetNextBlockValidators(DataCache snapshot, int validatorsCount)
         {
-            return GetCommitteeFromCache(snapshot)
-                .Take(validatorsCount)
-                .Select(p => p.PublicKey)
-                .OrderBy(p => p)
-                .ToArray();
+            return
+            [
+                .. GetCommitteeFromCache(snapshot)
+                                .Take(validatorsCount)
+                                .Select(p => p.PublicKey)
+                                .OrderBy(p => p)
+,
+            ];
         }
 
         /// <summary>

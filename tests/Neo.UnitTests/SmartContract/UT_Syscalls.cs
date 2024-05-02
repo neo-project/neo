@@ -33,14 +33,14 @@ namespace Neo.UnitTests.SmartContract
             var tx = new Transaction()
             {
                 Script = new byte[] { 0x01 },
-                Attributes = Array.Empty<TransactionAttribute>(),
-                Signers = Array.Empty<Signer>(),
+                Attributes = [],
+                Signers = [],
                 NetworkFee = 0x02,
                 SystemFee = 0x03,
                 Nonce = 0x04,
                 ValidUntilBlock = 0x05,
                 Version = 0x06,
-                Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
+                Witnesses = [new Witness() { VerificationScript = new byte[] { 0x07 } }],
             };
 
             var block = new TrimmedBlock()
@@ -59,7 +59,7 @@ namespace Neo.UnitTests.SmartContract
                     PrimaryIndex = 1,
                     NextConsensus = UInt160.Zero,
                 },
-                Hashes = new[] { tx.Hash }
+                Hashes = [tx.Hash]
             };
 
             var snapshot = TestBlockchain.GetTestSnapshot();
@@ -133,23 +133,23 @@ namespace Neo.UnitTests.SmartContract
             var tx = new Transaction()
             {
                 Script = new byte[] { 0x01 },
-                Signers = new Signer[] {
+                Signers = [
                     new Signer()
                     {
                         Account = UInt160.Zero,
                         Scopes = WitnessScope.None,
-                        AllowedContracts = Array.Empty<UInt160>(),
-                        AllowedGroups = Array.Empty<ECPoint>(),
-                        Rules = Array.Empty<WitnessRule>(),
+                        AllowedContracts = [],
+                        AllowedGroups = [],
+                        Rules = [],
                     }
-                },
-                Attributes = Array.Empty<TransactionAttribute>(),
+                ],
+                Attributes = [],
                 NetworkFee = 0x02,
                 SystemFee = 0x03,
                 Nonce = 0x04,
                 ValidUntilBlock = 0x05,
                 Version = 0x06,
-                Witnesses = new Witness[] { new Witness() { VerificationScript = new byte[] { 0x07 } } },
+                Witnesses = [new Witness() { VerificationScript = new byte[] { 0x07 } }],
             };
 
             engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot);

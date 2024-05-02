@@ -17,7 +17,7 @@ namespace Neo.IO.Caching;
 abstract class KeyedCollectionSlim<TKey, TItem> where TKey : notnull
 {
     private readonly LinkedList<TItem> _items = new();
-    private readonly Dictionary<TKey, LinkedListNode<TItem>> dict = new();
+    private readonly Dictionary<TKey, LinkedListNode<TItem>> dict = [];
 
     public int Count => dict.Count;
     public TItem First => _items.First.Value;

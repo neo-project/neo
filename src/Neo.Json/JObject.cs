@@ -18,7 +18,7 @@ namespace Neo.Json
     /// </summary>
     public class JObject : JContainer
     {
-        private readonly OrderedDictionary<string, JToken?> properties = new();
+        private readonly OrderedDictionary<string, JToken?> properties = [];
 
         /// <summary>
         /// Gets or sets the properties of the JSON object.

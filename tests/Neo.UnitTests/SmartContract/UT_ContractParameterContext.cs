@@ -128,15 +128,15 @@ namespace Neo.UnitTests.SmartContract
             //singleSign
 
             var context = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
-            context.AddSignature(contract, key.PublicKey, new byte[] { 0x01 }).Should().BeTrue();
+            context.AddSignature(contract, key.PublicKey, [0x01]).Should().BeTrue();
 
             var contract1 = Contract.CreateSignatureContract(key.PublicKey);
-            contract1.ParameterList = Array.Empty<ContractParameterType>();
+            contract1.ParameterList = [];
             context = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
-            context.AddSignature(contract1, key.PublicKey, new byte[] { 0x01 }).Should().BeFalse();
+            context.AddSignature(contract1, key.PublicKey, [0x01]).Should().BeFalse();
 
-            contract1.ParameterList = new[] { ContractParameterType.Signature, ContractParameterType.Signature };
-            Action action1 = () => context.AddSignature(contract1, key.PublicKey, new byte[] { 0x01 });
+            contract1.ParameterList = [ContractParameterType.Signature, ContractParameterType.Signature];
+            Action action1 = () => context.AddSignature(contract1, key.PublicKey, [0x01]);
             action1.Should().Throw<NotSupportedException>();
 
             //multiSign
@@ -155,12 +155,12 @@ namespace Neo.UnitTests.SmartContract
             var multiSender = UInt160.Parse("0xf76b51bc6605ac3cfcd188173af0930507f51210");
             tx = TestUtils.GetTransaction(multiSender);
             context = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
-            context.AddSignature(multiSignContract, key.PublicKey, new byte[] { 0x01 }).Should().BeTrue();
-            context.AddSignature(multiSignContract, key2.PublicKey, new byte[] { 0x01 }).Should().BeTrue();
+            context.AddSignature(multiSignContract, key.PublicKey, [0x01]).Should().BeTrue();
+            context.AddSignature(multiSignContract, key2.PublicKey, [0x01]).Should().BeTrue();
 
             tx = TestUtils.GetTransaction(singleSender);
             context = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
-            context.AddSignature(multiSignContract, key.PublicKey, new byte[] { 0x01 }).Should().BeFalse();
+            context.AddSignature(multiSignContract, key.PublicKey, [0x01]).Should().BeFalse();
 
             tx = TestUtils.GetTransaction(multiSender);
             context = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
@@ -169,7 +169,7 @@ namespace Neo.UnitTests.SmartContract
                                               0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                                               0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x03 };
             var key3 = new KeyPair(privateKey3);
-            context.AddSignature(multiSignContract, key3.PublicKey, new byte[] { 0x01 }).Should().BeFalse();
+            context.AddSignature(multiSignContract, key3.PublicKey, [0x01]).Should().BeFalse();
         }
     }
 }

@@ -27,7 +27,7 @@ namespace Neo.VM
             {
                 Script = script;
                 EvaluationStack = new EvaluationStack(referenceCounter);
-                States = new Dictionary<Type, object>();
+                States = [];
             }
         }
     }

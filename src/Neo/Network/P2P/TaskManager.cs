@@ -59,9 +59,9 @@ namespace Neo.Network.P2P
         /// A set of known hashes, of inventories or payloads, already received.
         /// </summary>
         private readonly HashSetCache<UInt256> knownHashes;
-        private readonly Dictionary<UInt256, int> globalInvTasks = new();
-        private readonly Dictionary<uint, int> globalIndexTasks = new();
-        private readonly Dictionary<IActorRef, TaskSession> sessions = new();
+        private readonly Dictionary<UInt256, int> globalInvTasks = [];
+        private readonly Dictionary<uint, int> globalIndexTasks = [];
+        private readonly Dictionary<IActorRef, TaskSession> sessions = [];
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
         private uint lastSeenPersistedIndex = 0;
 
@@ -132,7 +132,7 @@ namespace Neo.Network.P2P
                 session.InvTasks[hash] = TimeProvider.Current.UtcNow;
             }
 
-            foreach (var group in InvPayload.CreateGroup(payload.Type, hashes.ToArray()))
+            foreach (var group in InvPayload.CreateGroup(payload.Type, [.. hashes]))
                 Sender.Tell(Message.Create(MessageCommand.GetData, group));
         }
 
@@ -372,7 +372,7 @@ namespace Neo.Network.P2P
                     session.AvailableTasks.Remove(hashes);
                     foreach (var hash in hashes)
                         session.InvTasks[hash] = DateTime.UtcNow;
-                    foreach (var group in InvPayload.CreateGroup(InventoryType.Block, hashes.ToArray()))
+                    foreach (var group in InvPayload.CreateGroup(InventoryType.Block, [.. hashes]))
                         remoteNode.Tell(Message.Create(MessageCommand.GetData, group));
                     return;
                 }

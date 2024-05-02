@@ -150,7 +150,7 @@ namespace Neo.CLI
         {
             var equals = message.Trim().Split('=');
 
-            if (equals.Length == 1) return new[] { message };
+            if (equals.Length == 1) return [message];
 
             var messages = new List<string>();
             foreach (var t in @equals)
@@ -170,7 +170,7 @@ namespace Neo.CLI
                 }
             }
 
-            return messages.ToArray();
+            return [.. messages];
         }
     }
 }

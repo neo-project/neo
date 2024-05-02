@@ -25,7 +25,7 @@ namespace Neo.VM
     {
         private readonly ReadOnlyMemory<byte> _value;
         private readonly bool strictMode;
-        private readonly Dictionary<int, Instruction> _instructions = new();
+        private readonly Dictionary<int, Instruction> _instructions = [];
 
         /// <summary>
         /// The length of the script.

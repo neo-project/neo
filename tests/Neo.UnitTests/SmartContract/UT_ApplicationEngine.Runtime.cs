@@ -43,27 +43,27 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Abi = new()
                     {
-                        Events = new[]
-                        {
+                        Events =
+                        [
                             new ContractEventDescriptor
                             {
                                 Name = "e1",
-                                Parameters = new[]
-                                {
+                                Parameters =
+                                [
                                     new ContractParameterDefinition
                                     {
                                         Type = ContractParameterType.Array
                                     }
-                                }
+                                ]
                             }
-                        }
+                        ]
                     }
                 }
             };
 
             // circular
 
-            VM.Types.Array array = new();
+            VM.Types.Array array = [];
             array.Add(array);
 
             Assert.ThrowsException<NotSupportedException>(() => engine.RuntimeNotify(Encoding.ASCII.GetBytes("e1"), array));
@@ -139,12 +139,12 @@ namespace Neo.UnitTests.SmartContract
                 Version = 0,
                 Nonce = 2083236893,
                 ValidUntilBlock = 0,
-                Signers = Array.Empty<Signer>(),
-                Attributes = Array.Empty<TransactionAttribute>(),
+                Signers = [],
+                Attributes = [],
                 Script = Array.Empty<byte>(),
                 SystemFee = 0,
                 NetworkFee = 0,
-                Witnesses = Array.Empty<Witness>()
+                Witnesses = []
             };
 
             using var engine_1 = ApplicationEngine.Create(TriggerType.Application, tx_1, null, TestBlockchain.TheNeoSystem.GenesisBlock, settings: TestBlockchain.TheNeoSystem.Settings, gas: 1100_00000000);

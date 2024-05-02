@@ -57,20 +57,20 @@ namespace Neo.UnitTests.SmartContract
 
                 snapshot.DeleteContract(scriptHash2);
                 var contract = TestUtils.GetContract(script.ToArray(), TestUtils.CreateManifest("test", ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.Integer));
-                contract.Manifest.Abi.Events = new[]
-                {
+                contract.Manifest.Abi.Events =
+                [
                     new ContractEventDescriptor
                     {
                         Name = "testEvent2",
-                        Parameters = new[]
-                        {
+                        Parameters =
+                        [
                             new ContractParameterDefinition
                             {
                                 Type = ContractParameterType.Any
                             }
-                        }
+                        ]
                     }
-                };
+                ];
                 snapshot.AddContract(scriptHash2, contract);
             }
 
@@ -125,14 +125,14 @@ namespace Neo.UnitTests.SmartContract
                     {
                         Abi = new()
                         {
-                            Events = new[]
-                            {
+                            Events =
+                            [
                                 new ContractEventDescriptor
                                 {
                                     Name = "testEvent1",
-                                    Parameters = System.Array.Empty<ContractParameterDefinition>()
+                                    Parameters = []
                                 }
-                            }
+                            ]
                         }
                     }
                 };
@@ -194,14 +194,14 @@ namespace Neo.UnitTests.SmartContract
                     {
                         Abi = new()
                         {
-                            Events = new[]
-                            {
+                            Events =
+                            [
                                 new ContractEventDescriptor
                                 {
                                     Name = "testEvent1",
-                                    Parameters = System.Array.Empty<ContractParameterDefinition>()
+                                    Parameters = []
                                 }
-                            }
+                            ]
                         }
                     }
                 };
@@ -292,8 +292,8 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestRuntime_CheckWitness()
         {
-            byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
+            byte[] privateKey = [ 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01];
             var keyPair = new KeyPair(privateKey);
             var pubkey = keyPair.PublicKey;
 
@@ -304,18 +304,18 @@ namespace Neo.UnitTests.SmartContract
             engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeTrue();
             engine.CheckWitness(((Transaction)engine.ScriptContainer).Sender.ToArray()).Should().BeTrue();
 
-            ((Transaction)engine.ScriptContainer).Signers = System.Array.Empty<Signer>();
+            ((Transaction)engine.ScriptContainer).Signers = [];
             engine.CheckWitness(pubkey.EncodePoint(true)).Should().BeFalse();
 
-            Action action = () => engine.CheckWitness(System.Array.Empty<byte>());
+            Action action = () => engine.CheckWitness([]);
             action.Should().Throw<ArgumentException>();
         }
 
         [TestMethod]
         public void TestRuntime_CheckWitness_Null_ScriptContainer()
         {
-            byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
+            byte[] privateKey = [ 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01];
             var keyPair = new KeyPair(privateKey);
             var pubkey = keyPair.PublicKey;
 
@@ -398,8 +398,8 @@ namespace Neo.UnitTests.SmartContract
             var engine = GetEngine(true);
             var iv = engine.ScriptContainer;
             var message = iv.GetSignData(TestProtocolSettings.Default.Network);
-            byte[] privateKey = { 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
+            byte[] privateKey = [ 0x01,0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01];
             KeyPair keyPair = new(privateKey);
             var pubkey = keyPair.PublicKey;
             var signature = Crypto.Sign(message, privateKey);
@@ -528,7 +528,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 Id = state.Id,
                 IsReadOnly = false
-            }, new byte[] { 0x01 }).Value.Span.ToHexString().Should().Be(storageItem.Value.Span.ToHexString());
+            }, [0x01]).Value.Span.ToHexString().Should().Be(storageItem.Value.Span.ToHexString());
         }
 
         [TestMethod]
@@ -549,17 +549,17 @@ namespace Neo.UnitTests.SmartContract
 
             //key.Length > MaxStorageKeySize
             key = new byte[ApplicationEngine.MaxStorageKeySize + 1];
-            value = new byte[] { 0x02 };
+            value = [0x02];
             Assert.ThrowsException<ArgumentException>(() => engine.Put(storageContext, key, value));
 
             //value.Length > MaxStorageValueSize
-            key = new byte[] { 0x01 };
+            key = [0x01];
             value = new byte[ushort.MaxValue + 1];
             Assert.ThrowsException<ArgumentException>(() => engine.Put(storageContext, key, value));
 
             //context.IsReadOnly
-            key = new byte[] { 0x01 };
-            value = new byte[] { 0x02 };
+            key = [0x01];
+            value = [0x02];
             storageContext.IsReadOnly = true;
             Assert.ThrowsException<ArgumentException>(() => engine.Put(storageContext, key, value));
 
@@ -579,14 +579,14 @@ namespace Neo.UnitTests.SmartContract
             snapshot.Add(storageKey, storageItem);
             engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(new byte[] { 0x01 });
-            key = new byte[] { 0x01 };
-            value = new byte[] { 0x02 };
+            key = [0x01];
+            value = [0x02];
             storageContext.IsReadOnly = false;
             engine.Put(storageContext, key, value);
 
             //value length == 0
-            key = new byte[] { 0x01 };
-            value = System.Array.Empty<byte>();
+            key = [0x01];
+            value = [];
             engine.Put(storageContext, key, value);
         }
 

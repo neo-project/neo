@@ -39,7 +39,7 @@ namespace Neo.SmartContract
             {
                 Script = contract.Script;
                 Parameters = contract.ParameterList.Select(p => new ContractParameter { Type = p }).ToArray();
-                Signatures = new Dictionary<ECPoint, byte[]>();
+                Signatures = [];
             }
 
             public ContextItem(JObject json)
@@ -111,7 +111,7 @@ namespace Neo.SmartContract
         {
             Verifiable = verifiable;
             Snapshot = snapshot;
-            ContextItems = new Dictionary<UInt160, ContextItem>();
+            ContextItems = [];
             Network = network;
         }
 
@@ -313,7 +313,7 @@ namespace Neo.SmartContract
                 witnesses[i] = new Witness
                 {
                     InvocationScript = sb.ToArray(),
-                    VerificationScript = item.Script ?? Array.Empty<byte>()
+                    VerificationScript = item.Script ?? []
                 };
             }
             return witnesses;

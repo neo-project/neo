@@ -35,7 +35,7 @@ namespace Neo.SmartContract.Native
                 public byte[] Script { get; set; }
             }
 
-            internal Dictionary<int, CacheEntry> NativeContracts { get; set; } = new Dictionary<int, CacheEntry>();
+            internal Dictionary<int, CacheEntry> NativeContracts { get; set; } = [];
 
             public CacheEntry GetAllowedMethods(NativeContract native, ApplicationEngine engine)
             {
@@ -49,8 +49,8 @@ namespace Neo.SmartContract.Native
         }
 
         public delegate bool IsHardforkEnabledDelegate(Hardfork hf, uint index);
-        private static readonly List<NativeContract> contractsList = new();
-        private static readonly Dictionary<UInt160, NativeContract> contractsDictionary = new();
+        private static readonly List<NativeContract> contractsList = [];
+        private static readonly Dictionary<UInt160, NativeContract> contractsDictionary = [];
         private readonly ImmutableHashSet<Hardfork> usedHardforks;
         private readonly ReadOnlyCollection<ContractMethodMetadata> methodDescriptors;
         private readonly ReadOnlyCollection<ContractEventAttribute> eventsDescriptors;
@@ -139,7 +139,7 @@ namespace Neo.SmartContract.Native
 
             // Reflection to get the methods
 
-            List<ContractMethodMetadata> listMethods = new();
+            List<ContractMethodMetadata> listMethods = [];
             foreach (var member in GetType().GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
             {
                 var attribute = member.GetCustomAttribute<ContractMethodAttribute>();
@@ -150,10 +150,10 @@ namespace Neo.SmartContract.Native
 
             // Reflection to get the events
             eventsDescriptors =
-                GetType().GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)?.
+                GetType().GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, [], null)?.
                 GetCustomAttributes<ContractEventAttribute>().
                 // Take into account not only the contract constructor, but also the base type constructor for proper FungibleToken events handling.
-                Concat(GetType().BaseType?.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, Array.Empty<Type>(), null)?.
+                Concat(GetType().BaseType?.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, [], null)?.
                 GetCustomAttributes<ContractEventAttribute>()).
                 OrderBy(p => p.Order).ToList().AsReadOnly();
 
@@ -178,7 +178,7 @@ namespace Neo.SmartContract.Native
         /// <returns>The <see cref="NativeContractsCache"/>.</returns>
         private NativeContractsCache.CacheEntry GetAllowedMethods(IsHardforkEnabledDelegate hfChecker, uint index)
         {
-            Dictionary<int, ContractMethodMetadata> methods = new();
+            Dictionary<int, ContractMethodMetadata> methods = [];
 
             // Reflection to get the ContractMethods
             byte[] script;
@@ -223,7 +223,7 @@ namespace Neo.SmartContract.Native
             {
                 Compiler = "neo-core-v3.0",
                 Source = string.Empty,
-                Tokens = Array.Empty<MethodToken>(),
+                Tokens = [],
                 Script = allowedMethods.Script
             };
             nef.CheckSum = NefFile.ComputeChecksum(nef);
@@ -232,8 +232,8 @@ namespace Neo.SmartContract.Native
             var manifest = new ContractManifest()
             {
                 Name = Name,
-                Groups = Array.Empty<ContractGroup>(),
-                SupportedStandards = Array.Empty<string>(),
+                Groups = [],
+                SupportedStandards = [],
                 Abi = new ContractAbi()
                 {
                     Events = eventsDescriptors
@@ -242,7 +242,7 @@ namespace Neo.SmartContract.Native
                     Methods = allowedMethods.Methods.Values
                         .Select(p => p.Descriptor).ToArray()
                 },
-                Permissions = new[] { ContractPermission.DefaultPermission },
+                Permissions = [ContractPermission.DefaultPermission],
                 Trusts = WildcardContainer<ContractPermissionDescriptor>.Create(),
                 Extra = null
             };
@@ -362,12 +362,12 @@ namespace Neo.SmartContract.Native
                 if (!state.CallFlags.HasFlag(method.RequiredCallFlags))
                     throw new InvalidOperationException($"Cannot call this method with the flag {state.CallFlags}.");
                 engine.AddGas(method.CpuFee * engine.ExecFeeFactor + method.StorageFee * engine.StoragePrice);
-                List<object> parameters = new();
+                List<object> parameters = [];
                 if (method.NeedApplicationEngine) parameters.Add(engine);
                 if (method.NeedSnapshot) parameters.Add(engine.Snapshot);
                 for (var i = 0; i < method.Parameters.Length; i++)
                     parameters.Add(engine.Convert(context.EvaluationStack.Peek(i), method.Parameters[i]));
-                var returnValue = method.Handler.Invoke(this, parameters.ToArray());
+                var returnValue = method.Handler.Invoke(this, [.. parameters]);
                 if (returnValue is ContractTask task)
                 {
                     await task;

@@ -210,13 +210,13 @@ public readonly struct Scalar : IEquatable<Scalar>, INumber<Scalar>
 
         // w = self^((t - 1) // 2)
         //   = self^6104339283789297388802252303364915521546564123189034618274734669823
-        var w = this.PowVartime(new ulong[]
-        {
+        var w = this.PowVartime(
+        [
             0x7fff_2dff_7fff_ffff,
             0x04d0_ec02_a9de_d201,
             0x94ce_bea4_199c_ec04,
             0x0000_0000_39f6_d3a9
-        });
+        ]);
 
         var v = S;
         var x = this * w;
@@ -409,7 +409,7 @@ public readonly struct Scalar : IEquatable<Scalar>, INumber<Scalar>
         (r7, _) = Adc(r7, carry2, carry);
 
         // Result may be within MODULUS of the correct value
-        ReadOnlySpan<ulong> tmp = stackalloc[] { r4, r5, r6, r7 };
+        ReadOnlySpan<ulong> tmp = [r4, r5, r6, r7];
         return MemoryMarshal.Cast<ulong, Scalar>(tmp)[0] - MODULUS;
     }
 
@@ -459,7 +459,7 @@ public readonly struct Scalar : IEquatable<Scalar>, INumber<Scalar>
         (d2, carry) = Adc(d2, MODULUS_LIMBS_64[2] & borrow, carry);
         (d3, _) = Adc(d3, MODULUS_LIMBS_64[3] & borrow, carry);
 
-        ReadOnlySpan<ulong> tmp = stackalloc[] { d0, d1, d2, d3 };
+        ReadOnlySpan<ulong> tmp = [d0, d1, d2, d3];
         return MemoryMarshal.Cast<ulong, Scalar>(tmp)[0];
     }
 
@@ -476,7 +476,7 @@ public readonly struct Scalar : IEquatable<Scalar>, INumber<Scalar>
 
         // Attempt to subtract the modulus, to ensure the value
         // is smaller than the modulus.
-        ReadOnlySpan<ulong> tmp = stackalloc[] { d0, d1, d2, d3 };
+        ReadOnlySpan<ulong> tmp = [d0, d1, d2, d3];
         return MemoryMarshal.Cast<ulong, Scalar>(tmp)[0] - MODULUS;
     }
 
@@ -498,7 +498,7 @@ public readonly struct Scalar : IEquatable<Scalar>, INumber<Scalar>
         // zero if `self` was zero, and `u64::max_value()` if self was nonzero.
         var mask = a.IsZero ? ulong.MinValue : ulong.MaxValue;
 
-        ReadOnlySpan<ulong> tmp = stackalloc[] { d0 & mask, d1 & mask, d2 & mask, d3 & mask };
+        ReadOnlySpan<ulong> tmp = [d0 & mask, d1 & mask, d2 & mask, d3 & mask];
         return MemoryMarshal.Cast<ulong, Scalar>(tmp)[0];
     }
 

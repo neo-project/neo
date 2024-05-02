@@ -62,7 +62,7 @@ namespace Neo.UnitTests.SmartContract
             var contractState = TestUtils.GetContract(script);
 
             var skey = TestUtils.GetStorageKey(contractState.Id, key);
-            var sItem = TestUtils.GetStorageItem(System.Array.Empty<byte>());
+            var sItem = TestUtils.GetStorageItem([]);
 
             var snapshot = TestBlockchain.GetTestSnapshot();
             snapshot.Add(skey, sItem);

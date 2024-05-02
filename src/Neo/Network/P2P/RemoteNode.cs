@@ -210,7 +210,7 @@ namespace Neo.Network.P2P
 
             if (localNode.ListenerTcpPort > 0) capabilities.Add(new ServerCapability(NodeCapabilityType.TcpServer, (ushort)localNode.ListenerTcpPort));
 
-            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(system.Settings.Network, LocalNode.Nonce, LocalNode.UserAgent, capabilities.ToArray())));
+            SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(system.Settings.Network, LocalNode.Nonce, LocalNode.UserAgent, [.. capabilities])));
         }
 
         protected override void PostStop()

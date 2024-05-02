@@ -147,7 +147,7 @@ namespace Neo
         public static bool TryParse(string s, byte decimals, out BigDecimal result)
         {
             var e = 0;
-            var index = s.IndexOfAny(new[] { 'e', 'E' });
+            var index = s.IndexOfAny(['e', 'E']);
             if (index >= 0)
             {
                 if (!sbyte.TryParse(s[(index + 1)..], out var e_temp))

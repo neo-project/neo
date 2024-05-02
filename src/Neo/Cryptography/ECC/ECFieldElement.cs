@@ -96,7 +96,7 @@ namespace Neo.Cryptography.ECC
                 Ql = (Ql * Ql).Mod(p);
             }
 
-            return new BigInteger[] { Uh, Vl };
+            return [Uh, Vl];
         }
 
         public override int GetHashCode()

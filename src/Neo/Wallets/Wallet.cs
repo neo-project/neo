@@ -36,7 +36,7 @@ namespace Neo.Wallets
     /// </summary>
     public abstract class Wallet
     {
-        private static readonly List<IWalletFactory> factories = new() { NEP6WalletFactory.Instance };
+        private static readonly List<IWalletFactory> factories = [NEP6WalletFactory.Instance];
 
         /// <summary>
         /// The <see cref="Neo.ProtocolSettings"/> to be used by the wallet.
@@ -395,7 +395,7 @@ namespace Neo.Wallets
                     List<Signer> list = new(cosigners);
                     list.RemoveAt(i);
                     list.Insert(0, cosigners[i]);
-                    return list.ToArray();
+                    return [.. list];
                 }
             }
             return cosigners.Prepend(new Signer
@@ -470,9 +470,9 @@ namespace Neo.Wallets
             }
             else
             {
-                accounts = new[] { from };
+                accounts = [from];
             }
-            var cosignerList = cosigners?.ToDictionary(p => p.Account) ?? new Dictionary<UInt160, Signer>();
+            var cosignerList = cosigners?.ToDictionary(p => p.Account) ?? [];
             byte[] script;
             List<(UInt160 Account, BigInteger Value)> balances_gas = null;
             using (ScriptBuilder sb = new())
@@ -495,7 +495,7 @@ namespace Neo.Wallets
                         throw new InvalidOperationException($"It does not have enough balance, expected: {sum} found: {sum_balance}");
                     foreach (var output in group)
                     {
-                        balances = balances.OrderBy(p => p.Value).ToList();
+                        balances = [.. balances.OrderBy(p => p.Value)];
                         var balances_used = FindPayingAccounts(balances, output.Value.Value);
                         foreach (var (account, value) in balances_used)
                         {
@@ -524,7 +524,7 @@ namespace Neo.Wallets
             if (balances_gas is null)
                 balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
 
-            return MakeTransaction(snapshot, script, cosignerList.Values.ToArray(), Array.Empty<TransactionAttribute>(), balances_gas, persistingBlock: persistingBlock);
+            return MakeTransaction(snapshot, script, [.. cosignerList.Values], [], balances_gas, persistingBlock: persistingBlock);
         }
 
         /// <summary>
@@ -547,10 +547,10 @@ namespace Neo.Wallets
             }
             else
             {
-                accounts = new[] { sender };
+                accounts = [sender];
             }
             var balances_gas = accounts.Select(p => (Account: p, Value: NativeContract.GAS.BalanceOf(snapshot, p))).Where(p => p.Value.Sign > 0).ToList();
-            return MakeTransaction(snapshot, script, cosigners ?? Array.Empty<Signer>(), attributes ?? Array.Empty<TransactionAttribute>(), balances_gas, maxGas, persistingBlock: persistingBlock);
+            return MakeTransaction(snapshot, script, cosigners ?? [], attributes ?? [], balances_gas, maxGas, persistingBlock: persistingBlock);
         }
 
         private Transaction MakeTransaction(DataCache snapshot, ReadOnlyMemory<byte> script, Signer[] cosigners, TransactionAttribute[] attributes, List<(UInt160 Account, BigInteger Value)> balances_gas, long maxGas = ApplicationEngine.TestModeGas, Block persistingBlock = null)

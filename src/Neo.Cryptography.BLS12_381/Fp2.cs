@@ -169,8 +169,8 @@ public readonly struct Fp2 : IEquatable<Fp2>, INumber<Fp2>
         // Each of these is a "sum of products", which we can compute efficiently.
 
         return new(
-            Fp.SumOfProducts(stackalloc[] { a.C0, -a.C1 }, stackalloc[] { b.C0, b.C1 }),
-            Fp.SumOfProducts(stackalloc[] { a.C0, a.C1 }, stackalloc[] { b.C1, b.C0 })
+            Fp.SumOfProducts([a.C0, -a.C1], [b.C0, b.C1]),
+            Fp.SumOfProducts([a.C0, a.C1], [b.C1, b.C0])
         );
     }
 
@@ -195,15 +195,15 @@ public readonly struct Fp2 : IEquatable<Fp2>, INumber<Fp2>
         // with constant time modifications.
 
         // a1 = self^((p - 3) / 4)
-        var a1 = this.PowVartime(new ulong[]
-        {
+        var a1 = this.PowVartime(
+        [
             0xee7f_bfff_ffff_eaaa,
             0x07aa_ffff_ac54_ffff,
             0xd9cc_34a8_3dac_3d89,
             0xd91d_d2e1_3ce1_44af,
             0x92c6_e9ed_90d2_eb35,
             0x0680_447a_8e5f_f9a6
-        });
+        ]);
 
         // alpha = a1^2 * self = self^((p - 3) / 2 + 1) = self^((p - 1) / 2)
         var alpha = a1.Square() * this;
@@ -212,14 +212,14 @@ public readonly struct Fp2 : IEquatable<Fp2>, INumber<Fp2>
         var x0 = a1 * this;
 
         // (1 + alpha)^((q - 1) // 2) * x0
-        var sqrt = (alpha + One).PowVartime(new ulong[] {
+        var sqrt = (alpha + One).PowVartime([
             0xdcff_7fff_ffff_d555,
             0x0f55_ffff_58a9_ffff,
             0xb398_6950_7b58_7b12,
             0xb23b_a5c2_79c2_895f,
             0x258d_d3db_21a5_d66b,
             0x0d00_88f5_1cbf_f34d,
-        }) * x0;
+        ]) * x0;
 
         // In the event that alpha = -1, the element is order p - 1 and so
         // we're just trying to get the square of an element of the subfield

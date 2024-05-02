@@ -20,7 +20,7 @@ namespace Neo.SmartContract.Native
     abstract class InteroperableList<T> : IList<T>, IInteroperable
     {
         private List<T> list;
-        private List<T> List => list ??= new();
+        private List<T> List => list ??= [];
 
         public T this[int index] { get => List[index]; set => List[index] = value; }
         public int Count => List.Count;
