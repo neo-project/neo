@@ -12,7 +12,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
-using Neo.Json;
 using Neo.SmartContract;
 using System;
 using System.Collections.Generic;
@@ -187,8 +186,10 @@ namespace Neo.UnitTests.SmartContract
             ContractParameter contractParameter1 = new();
             Assert.AreEqual("(null)", contractParameter1.ToString());
 
-            ContractParameter contractParameter2 = new(ContractParameterType.ByteArray);
-            contractParameter2.Value = new byte[1];
+            ContractParameter contractParameter2 = new(ContractParameterType.ByteArray)
+            {
+                Value = new byte[1]
+            };
             Assert.AreEqual("00", contractParameter2.ToString());
 
             ContractParameter contractParameter3 = new(ContractParameterType.Array);

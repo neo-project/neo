@@ -30,7 +30,7 @@ namespace Neo.Json
         /// <param name="value">The value of the JSON token.</param>
         public JString(string value)
         {
-            this.Value = value ?? throw new ArgumentNullException(nameof(value));
+            Value = value ?? throw new ArgumentNullException(nameof(value));
         }
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace Neo.Json
             }
             if (obj is string str)
             {
-                return this.Value == str;
+                return Value == str;
             }
             return false;
         }

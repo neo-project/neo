@@ -25,7 +25,7 @@ namespace Neo.Cryptography.ECC
                 throw new ArgumentNullException(nameof(curve));
             if (value >= curve.Q)
                 throw new ArgumentException("x value too large in field element");
-            this.Value = value;
+            Value = value;
             this.curve = curve;
         }
 
@@ -117,7 +117,7 @@ namespace Neo.Cryptography.ECC
                 return null;
             var u = qMinusOne >> 2;
             var k = (u << 1) + 1;
-            var Q = this.Value;
+            var Q = Value;
             var fourQ = (Q << 2).Mod(curve.Q);
             BigInteger U, V;
             do

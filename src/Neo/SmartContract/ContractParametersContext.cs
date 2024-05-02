@@ -37,16 +37,16 @@ namespace Neo.SmartContract
 
             public ContextItem(Contract contract)
             {
-                this.Script = contract.Script;
-                this.Parameters = contract.ParameterList.Select(p => new ContractParameter { Type = p }).ToArray();
-                this.Signatures = new Dictionary<ECPoint, byte[]>();
+                Script = contract.Script;
+                Parameters = contract.ParameterList.Select(p => new ContractParameter { Type = p }).ToArray();
+                Signatures = new Dictionary<ECPoint, byte[]>();
             }
 
             public ContextItem(JObject json)
             {
-                this.Script = json["script"] is JToken.Null ? null : Convert.FromBase64String(json["script"].AsString());
-                this.Parameters = ((JArray)json["parameters"]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray();
-                this.Signatures = ((JObject)json["signatures"]).Properties.Select(p => new
+                Script = json["script"] is JToken.Null ? null : Convert.FromBase64String(json["script"].AsString());
+                Parameters = ((JArray)json["parameters"]).Select(p => ContractParameter.FromJson((JObject)p)).ToArray();
+                Signatures = ((JObject)json["signatures"]).Properties.Select(p => new
                 {
                     PublicKey = ECPoint.Parse(p.Key, ECCurve.Secp256r1),
                     Signature = Convert.FromBase64String(p.Value.AsString())
@@ -57,7 +57,7 @@ namespace Neo.SmartContract
             {
                 JObject json = new();
                 json["script"] = Script == null ? null : Convert.ToBase64String(Script);
-                json["parameters"] = new JArray(Parameters.Select(p => p.ToJson()));
+                json["parameters"] = new JArray((JToken)Parameters.Select(p => p.ToJson()));
                 json["signatures"] = new JObject();
                 foreach (var signature in Signatures)
                     json["signatures"][signature.Key.ToString()] = Convert.ToBase64String(signature.Value);
@@ -109,10 +109,10 @@ namespace Neo.SmartContract
         /// <param name="network">The magic number of the network.</param>
         public ContractParametersContext(DataCache snapshot, IVerifiable verifiable, uint network)
         {
-            this.Verifiable = verifiable;
-            this.Snapshot = snapshot;
-            this.ContextItems = new Dictionary<UInt160, ContextItem>();
-            this.Network = network;
+            Verifiable = verifiable;
+            Snapshot = snapshot;
+            ContextItems = new Dictionary<UInt160, ContextItem>();
+            Network = network;
         }
 
         /// <summary>

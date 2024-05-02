@@ -91,7 +91,7 @@ namespace Neo.GUI
             var sb = new StringBuilder();
             sb.AppendLine($"VM State: {engine.State}");
             sb.AppendLine($"Gas Consumed: {engine.GasConsumed}");
-            sb.AppendLine($"Evaluation Stack: {new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()))}");
+            sb.AppendLine($"Evaluation Stack: {new JArray((JToken)engine.ResultStack.Select(p => p.ToParameter().ToJson()))}");
             textBox7.Text = sb.ToString();
             if (engine.State != VMState.FAULT)
             {

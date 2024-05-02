@@ -48,14 +48,14 @@ namespace Neo.Wallets
         {
             if (privateKey.Length != 32 && privateKey.Length != 96 && privateKey.Length != 104)
                 throw new ArgumentException(null, nameof(privateKey));
-            this.PrivateKey = privateKey[^32..];
+            PrivateKey = privateKey[^32..];
             if (privateKey.Length == 32)
             {
-                this.PublicKey = Cryptography.ECC.ECCurve.Secp256r1.G * privateKey;
+                PublicKey = Cryptography.ECC.ECCurve.Secp256r1.G * privateKey;
             }
             else
             {
-                this.PublicKey = Cryptography.ECC.ECPoint.FromBytes(privateKey, Cryptography.ECC.ECCurve.Secp256r1);
+                PublicKey = Cryptography.ECC.ECPoint.FromBytes(privateKey, Cryptography.ECC.ECCurve.Secp256r1);
             }
         }
 

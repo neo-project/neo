@@ -626,7 +626,7 @@ namespace Neo.CLI
             ConsoleHelper.Info("Gas Consumed: ", new BigDecimal((BigInteger)engine.GasConsumed, NativeContract.GAS.Decimals).ToString());
 
             if (showStack)
-                ConsoleHelper.Info("Result Stack: ", new JArray(engine.ResultStack.Select(p => p.ToJson())).ToString());
+                ConsoleHelper.Info("Result Stack: ", new JArray((JToken?)engine.ResultStack.Select(p => p.ToJson())).ToString());
 
             if (engine.State == VMState.FAULT)
                 ConsoleHelper.Error(GetExceptionMessage(engine.FaultException));
