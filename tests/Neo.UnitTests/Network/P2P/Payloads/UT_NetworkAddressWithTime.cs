@@ -49,7 +49,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.ThrowsException<FormatException>(() => NetworkAddressWithTime.Create(IPAddress.Any, 1,
                 [
-                    new ServerCapability(NodeCapabilityType.TcpServer, 22) ,
+                    new ServerCapability(NodeCapabilityType.TcpServer, 22),
                     new ServerCapability(NodeCapabilityType.TcpServer, 22)
                 ]).ToArray().AsSerializable<NetworkAddressWithTime>());
         }

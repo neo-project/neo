@@ -139,11 +139,11 @@ public readonly struct Fp12 : IEquatable<Fp12>, INumber<Fp12>
             Fp.FromRawUnchecked(
             [
             0x0708_9552_b319_d465,
-            0xc669_5f92_b50a_8313,
-            0x97e8_3ccc_d117_228f,
-            0xa35b_aeca_b2dc_29ee,
-            0x1ce3_93ea_5daa_ce4d,
-            0x08f2_220f_b0fb_66eb
+                0xc669_5f92_b50a_8313,
+                0x97e8_3ccc_d117_228f,
+                0xa35b_aeca_b2dc_29ee,
+                0x1ce3_93ea_5daa_ce4d,
+                0x08f2_220f_b0fb_66eb
         ]), Fp.FromRawUnchecked(
         [
             0xb2f6_6aad_4ce5_d646,

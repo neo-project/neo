@@ -99,7 +99,7 @@ namespace Neo.UnitTests.Ledger
                     {
                         AssetId = NativeContract.GAS.Hash,
                         ScriptHash = account,
-                        Value = new BigDecimal(BigInteger.One,8)
+                        Value = new BigDecimal(BigInteger.One, 8)
                     }
                 ],
                 account);

@@ -152,9 +152,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             [
                     new TransferOutput()
                     {
-                         AssetId = NativeContract.GAS.Hash,
-                         ScriptHash = acc.ScriptHash,
-                         Value = new BigDecimal(BigInteger.One,8)
+                        AssetId = NativeContract.GAS.Hash,
+                        ScriptHash = acc.ScriptHash,
+                        Value = new BigDecimal(BigInteger.One, 8)
                     }
             ], acc.ScriptHash);
 
@@ -220,9 +220,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             [
                     new TransferOutput()
                     {
-                         AssetId = NativeContract.GAS.Hash,
-                         ScriptHash = acc.ScriptHash,
-                         Value = new BigDecimal(BigInteger.One,8)
+                        AssetId = NativeContract.GAS.Hash,
+                        ScriptHash = acc.ScriptHash,
+                        Value = new BigDecimal(BigInteger.One, 8)
                     }
             ], acc.ScriptHash);
 
@@ -1170,9 +1170,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             [
                     new TransferOutput()
                     {
-                         AssetId = NativeContract.GAS.Hash,
-                         ScriptHash = acc.ScriptHash,
-                         Value = new BigDecimal(BigInteger.One,8)
+                        AssetId = NativeContract.GAS.Hash,
+                        ScriptHash = acc.ScriptHash,
+                        Value = new BigDecimal(BigInteger.One, 8)
                     }
             ], acc.ScriptHash);
 
@@ -1259,9 +1259,9 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             [
                     new TransferOutput()
                     {
-                         AssetId = NativeContract.GAS.Hash,
-                         ScriptHash = acc.ScriptHash,
-                         Value = new BigDecimal(BigInteger.One,8)
+                        AssetId = NativeContract.GAS.Hash,
+                        ScriptHash = acc.ScriptHash,
+                        Value = new BigDecimal(BigInteger.One, 8)
                     }
             ], acc.ScriptHash);
 

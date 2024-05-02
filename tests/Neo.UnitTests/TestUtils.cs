@@ -117,19 +117,19 @@ namespace Neo.UnitTests
             {
                 Script = new byte[] { (byte)OpCode.PUSH2 },
                 Attributes = [],
-                Signers = [ new Signer()
+                Signers = [new Signer()
                 {
                     Account = sender,
                     Scopes = WitnessScope.CalledByEntry,
                     AllowedContracts = [],
                     AllowedGroups = [],
                     Rules = [],
-                } ],
-                Witnesses = [ new Witness
+                }],
+                Witnesses = [new Witness
                 {
                     InvocationScript = Array.Empty<byte>(),
                     VerificationScript = Array.Empty<byte>()
-                } ]
+                }]
             };
         }
 

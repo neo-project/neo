@@ -300,10 +300,10 @@ namespace Neo.UnitTests.Wallets
             [
                 new TransferOutput()
                 {
-                     AssetId = NativeContract.GAS.Hash,
-                     ScriptHash = account.ScriptHash,
-                     Value = new BigDecimal(BigInteger.One,8),
-                     Data = "Dec 12th"
+                    AssetId = NativeContract.GAS.Hash,
+                    ScriptHash = account.ScriptHash,
+                    Value = new BigDecimal(BigInteger.One, 8),
+                    Data = "Dec 12th"
                 }
             ], UInt160.Zero);
             action.Should().Throw<InvalidOperationException>();
@@ -312,10 +312,10 @@ namespace Neo.UnitTests.Wallets
             [
                 new TransferOutput()
                 {
-                     AssetId = NativeContract.GAS.Hash,
-                     ScriptHash = account.ScriptHash,
-                     Value = new BigDecimal(BigInteger.One,8),
-                     Data = "Dec 12th"
+                    AssetId = NativeContract.GAS.Hash,
+                    ScriptHash = account.ScriptHash,
+                    Value = new BigDecimal(BigInteger.One, 8),
+                    Data = "Dec 12th"
                 }
             ], account.ScriptHash);
             action.Should().Throw<InvalidOperationException>();
@@ -324,10 +324,10 @@ namespace Neo.UnitTests.Wallets
             [
                 new TransferOutput()
                 {
-                     AssetId = UInt160.Zero,
-                     ScriptHash = account.ScriptHash,
-                     Value = new BigDecimal(BigInteger.One,8),
-                     Data = "Dec 12th"
+                    AssetId = UInt160.Zero,
+                    ScriptHash = account.ScriptHash,
+                    Value = new BigDecimal(BigInteger.One, 8),
+                    Data = "Dec 12th"
                 }
             ], account.ScriptHash);
             action.Should().Throw<InvalidOperationException>();
@@ -345,9 +345,9 @@ namespace Neo.UnitTests.Wallets
             [
                 new TransferOutput()
                 {
-                     AssetId = NativeContract.GAS.Hash,
-                     ScriptHash = account.ScriptHash,
-                     Value = new BigDecimal(BigInteger.One,8)
+                    AssetId = NativeContract.GAS.Hash,
+                    ScriptHash = account.ScriptHash,
+                    Value = new BigDecimal(BigInteger.One, 8)
                 }
             ]);
             tx.Should().NotBeNull();
@@ -356,10 +356,10 @@ namespace Neo.UnitTests.Wallets
             [
                 new TransferOutput()
                 {
-                     AssetId = NativeContract.NEO.Hash,
-                     ScriptHash = account.ScriptHash,
-                     Value = new BigDecimal(BigInteger.One,8),
-                     Data = "Dec 12th"
+                    AssetId = NativeContract.NEO.Hash,
+                    ScriptHash = account.ScriptHash,
+                    Value = new BigDecimal(BigInteger.One, 8),
+                    Data = "Dec 12th"
                 }
             ]);
             tx.Should().NotBeNull();
@@ -387,7 +387,7 @@ namespace Neo.UnitTests.Wallets
             var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
             entry.GetInteroperable<AccountState>().Balance = 1000000 * NativeContract.GAS.Factor;
 
-            var tx = wallet.MakeTransaction(snapshot, Array.Empty<byte>(), account.ScriptHash, [ new Signer()
+            var tx = wallet.MakeTransaction(snapshot, Array.Empty<byte>(), account.ScriptHash, [new Signer()
             {
                 Account = account.ScriptHash,
                 Scopes = WitnessScope.CalledByEntry

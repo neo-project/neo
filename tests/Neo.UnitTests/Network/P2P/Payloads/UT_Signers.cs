@@ -65,7 +65,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Scopes = WitnessScope.WitnessRules,
                 Account = UInt160.Zero,
-                Rules = [ new WitnessRule()
+                Rules = [new WitnessRule()
                 {
                     Action = WitnessRuleAction.Allow,
                     Condition = new AndCondition()
@@ -80,7 +80,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                                     {
                                         Expressions =
                                         [
-                                            new BooleanCondition() { Expression=true }
+                                            new BooleanCondition() { Expression = true }
                                         ]
                                     }
                                 ]
@@ -103,7 +103,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             {
                 Scopes = WitnessScope.WitnessRules,
                 Account = UInt160.Zero,
-                Rules = [ new WitnessRule()
+                Rules = [new WitnessRule()
                 {
                     Action = WitnessRuleAction.Allow,
                     Condition = new OrCondition()
@@ -118,7 +118,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                                     {
                                         Expressions =
                                         [
-                                            new BooleanCondition() { Expression=true }
+                                            new BooleanCondition() { Expression = true }
                                         ]
                                     }
                                 ]

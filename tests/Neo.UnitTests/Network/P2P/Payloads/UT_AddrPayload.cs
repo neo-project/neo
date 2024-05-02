@@ -35,10 +35,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void DeserializeAndSerialize()
         {
-            var test = AddrPayload.Create([ new NetworkAddressWithTime()
+            var test = AddrPayload.Create([new NetworkAddressWithTime()
             {
                 Address = IPAddress.Any,
-                Capabilities = new Neo.Network.P2P.Capabilities.NodeCapability[0], Timestamp = 1
+                Capabilities = new Neo.Network.P2P.Capabilities.NodeCapability[0],
+                Timestamp = 1
             }
             ]);
             var clone = test.ToArray().AsSerializable<AddrPayload>();
