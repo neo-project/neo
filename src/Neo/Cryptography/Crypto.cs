@@ -28,6 +28,7 @@ namespace Neo.Cryptography
         private static readonly bool IsOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
         private static readonly ECCurve secP256k1 = ECCurve.CreateFromFriendlyName("secP256k1");
         private static readonly X9ECParameters bouncySecp256k1 = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
+        private static readonly X9ECParameters bouncySecp256r1 = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256r1");
 
         /// <summary>
         /// Calculates the 160-bit hash value of the specified message.
@@ -50,22 +51,30 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
-        /// Signs the specified message using the ECDSA algorithm.
+        /// Signs the specified message using the ECDSA algorithm and specified hash algorithm.
         /// </summary>
         /// <param name="message">The message to be signed.</param>
         /// <param name="priKey">The private key to be used.</param>
         /// <param name="ecCurve">The <see cref="ECC.ECCurve"/> curve of the signature, default is <see cref="ECC.ECCurve.Secp256r1"/>.</param>
+        /// <param name="hasher">The hash algorithm to hash the message, default is SHA256.</param>
         /// <returns>The ECDSA signature for the specified message.</returns>
-        public static byte[] Sign(byte[] message, byte[] priKey, ECC.ECCurve ecCurve = null)
+        public static byte[] Sign(byte[] message, byte[] priKey, ECC.ECCurve ecCurve = null, Hasher hasher = Hasher.SHA256)
         {
-            if (IsOSX && ecCurve == ECC.ECCurve.Secp256k1)
+            if (hasher == Hasher.Keccak256 || (IsOSX && ecCurve == ECC.ECCurve.Secp256k1))
             {
-                var domain = new ECDomainParameters(bouncySecp256k1.Curve, bouncySecp256k1.G, bouncySecp256k1.N, bouncySecp256k1.H);
+                var domain =
+                    ecCurve == null || ecCurve == ECC.ECCurve.Secp256r1 ? new ECDomainParameters(bouncySecp256r1.Curve, bouncySecp256r1.G, bouncySecp256r1.N, bouncySecp256r1.H) :
+                    ecCurve == ECC.ECCurve.Secp256k1 ? new ECDomainParameters(bouncySecp256k1.Curve, bouncySecp256k1.G, bouncySecp256k1.N, bouncySecp256k1.H) :
+                    throw new NotSupportedException(nameof(ecCurve));
                 var signer = new Org.BouncyCastle.Crypto.Signers.ECDsaSigner();
                 var privateKey = new BigInteger(1, priKey);
                 var priKeyParameters = new ECPrivateKeyParameters(privateKey, domain);
                 signer.Init(true, priKeyParameters);
-                var signature = signer.GenerateSignature(message.Sha256());
+                var messageHash =
+                    hasher == Hasher.SHA256 ? message.Sha256() :
+                    hasher == Hasher.Keccak256 ? message.Keccak256() :
+                    throw new NotSupportedException(nameof(hasher));
+                var signature = signer.GenerateSignature(messageHash);
 
                 var signatureBytes = new byte[64];
                 var rBytes = signature[0].ToByteArrayUnsigned();
@@ -87,24 +96,35 @@ namespace Neo.Cryptography
                 Curve = curve,
                 D = priKey,
             });
-            return ecdsa.SignData(message, HashAlgorithmName.SHA256);
+            var hashAlg =
+                hasher == Hasher.SHA256 ? HashAlgorithmName.SHA256 :
+                throw new NotSupportedException(nameof(hasher));
+            return ecdsa.SignData(message, hashAlg);
         }
 
         /// <summary>
-        /// Verifies that a digital signature is appropriate for the provided key and message.
+        /// Verifies that a digital signature is appropriate for the provided key, message and hash algorithm.
         /// </summary>
         /// <param name="message">The signed message.</param>
         /// <param name="signature">The signature to be verified.</param>
         /// <param name="pubkey">The public key to be used.</param>
+        /// <param name="hasher">The hash algorithm to be used to hash the message, the default is SHA256.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
-        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECC.ECPoint pubkey)
+        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ECC.ECPoint pubkey, Hasher hasher = Hasher.SHA256)
         {
             if (signature.Length != 64) return false;
 
-            if (IsOSX && pubkey.Curve == ECC.ECCurve.Secp256k1)
+            if (hasher == Hasher.Keccak256 || (IsOSX && pubkey.Curve == ECC.ECCurve.Secp256k1))
             {
-                var domain = new ECDomainParameters(bouncySecp256k1.Curve, bouncySecp256k1.G, bouncySecp256k1.N, bouncySecp256k1.H);
-                var point = bouncySecp256k1.Curve.CreatePoint(
+                var domain =
+                    pubkey.Curve == ECC.ECCurve.Secp256r1 ? new ECDomainParameters(bouncySecp256r1.Curve, bouncySecp256r1.G, bouncySecp256r1.N, bouncySecp256r1.H) :
+                    pubkey.Curve == ECC.ECCurve.Secp256k1 ? new ECDomainParameters(bouncySecp256k1.Curve, bouncySecp256k1.G, bouncySecp256k1.N, bouncySecp256k1.H) :
+                    throw new NotSupportedException(nameof(pubkey.Curve));
+                var curve =
+                    pubkey.Curve == ECC.ECCurve.Secp256r1 ? bouncySecp256r1.Curve :
+                    bouncySecp256k1.Curve;
+
+                var point = curve.CreatePoint(
                     new BigInteger(pubkey.X.Value.ToString()),
                     new BigInteger(pubkey.Y.Value.ToString()));
                 var pubKey = new ECPublicKeyParameters("ECDSA", point, domain);
@@ -115,11 +135,19 @@ namespace Neo.Cryptography
                 var r = new BigInteger(1, sig, 0, 32);
                 var s = new BigInteger(1, sig, 32, 32);
 
-                return signer.VerifySignature(message.Sha256(), r, s);
+                var messageHash =
+                    hasher == Hasher.SHA256 ? message.Sha256() :
+                    hasher == Hasher.Keccak256 ? message.Keccak256() :
+                    throw new NotSupportedException(nameof(hasher));
+
+                return signer.VerifySignature(messageHash, r, s);
             }
 
             var ecdsa = CreateECDsa(pubkey);
-            return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
+            var hashAlg =
+                hasher == Hasher.SHA256 ? HashAlgorithmName.SHA256 :
+                throw new NotSupportedException(nameof(hasher));
+            return ecdsa.VerifyData(message, signature, hashAlg);
         }
 
         /// <summary>
@@ -153,16 +181,17 @@ namespace Neo.Cryptography
         }
 
         /// <summary>
-        /// Verifies that a digital signature is appropriate for the provided key and message.
+        /// Verifies that a digital signature is appropriate for the provided key, curve, message and hasher.
         /// </summary>
         /// <param name="message">The signed message.</param>
         /// <param name="signature">The signature to be verified.</param>
         /// <param name="pubkey">The public key to be used.</param>
         /// <param name="curve">The curve to be used by the ECDSA algorithm.</param>
+        /// <param name="hasher">The hash algorithm to be used hash the message, the default is SHA256.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
-        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ReadOnlySpan<byte> pubkey, ECC.ECCurve curve)
+        public static bool VerifySignature(ReadOnlySpan<byte> message, ReadOnlySpan<byte> signature, ReadOnlySpan<byte> pubkey, ECC.ECCurve curve, Hasher hasher = Hasher.SHA256)
         {
-            return VerifySignature(message, signature, ECC.ECPoint.DecodePoint(pubkey, curve));
+            return VerifySignature(message, signature, ECC.ECPoint.DecodePoint(pubkey, curve), hasher);
         }
     }
 }
