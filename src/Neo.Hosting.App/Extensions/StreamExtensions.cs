@@ -28,6 +28,14 @@ namespace Neo.Hosting.App.Extensions
             stream.Write(span);
         }
 
+        public static void Write<T>(this Stream stream, ref T value)
+            where T : unmanaged
+        {
+            var tSpan = MemoryMarshal.CreateSpan(ref value, 1);
+            var span = MemoryMarshal.AsBytes(tSpan);
+            stream.Write(span);
+        }
+
         public static void Write<T>(this Stream stream, T[] values)
             where T : unmanaged
         {

@@ -41,7 +41,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol
         public PipeVersion()
         {
             VersionNumber = Program.ApplicationVersionNumber;
-            Plugins = Plugin.Plugins.ToDictionary(k => k.Name, v => v.Version, StringComparer.OrdinalIgnoreCase);
+            Plugins = Plugin.Plugins.ToDictionary(k => k.Name, v => v.Version, StringComparer.InvariantCultureIgnoreCase);
             Platform = Environment.OSVersion.Platform;
             TimeStamp = DateTime.UtcNow;
             MachineName = Environment.MachineName;
@@ -65,7 +65,7 @@ namespace Neo.Hosting.App.NamedPipes.Protocol
 
             VersionNumber = version;
 
-            var plugins = new Dictionary<string, Version>(StringComparer.OrdinalIgnoreCase);
+            var plugins = new Dictionary<string, Version>(StringComparer.InvariantCultureIgnoreCase);
             var count = stream.Read<int>();
 
             for (var i = 0; i < count; i++)
@@ -85,14 +85,11 @@ namespace Neo.Hosting.App.NamedPipes.Protocol
             return Task.CompletedTask;
         }
 
-        public Task CopyToAsync(Stream stream)
-        {
-            CopyToStream(stream);
-            return stream.FlushAsync();
-        }
-
         public Task CopyToAsync(Stream stream, CancellationToken cancellationToken = default)
         {
+            if (stream.CanWrite == false)
+                throw new IOException();
+
             CopyToStream(stream);
             return stream.FlushAsync(cancellationToken);
         }
@@ -106,6 +103,9 @@ namespace Neo.Hosting.App.NamedPipes.Protocol
 
         private void CopyToStream(Stream stream)
         {
+            if (stream.CanWrite == false)
+                throw new IOException();
+
             stream.Write(Magic);
             stream.Write(Program.ApplicationVersionNumber);
 

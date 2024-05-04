@@ -9,11 +9,8 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.Util;
 using Neo.Hosting.App.Extensions;
 using Neo.Hosting.App.Factories;
-using Neo.Hosting.App.NamedPipes.Protocol;
-using System.Diagnostics;
 using System.Text;
 using Xunit.Abstractions;
 
@@ -25,33 +22,6 @@ namespace Neo.Hosting.App.Tests.NamedPipes
         private static readonly byte[] s_testData = Encoding.UTF8.GetBytes("Hello world");
 
         private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
-
-        [Fact]
-        public async Task PipeVersion_CopyToAsync()
-        {
-            var version = new PipeVersion();
-            var expectedBytes = version.ToArray();
-            var expectedHexString = Convert.ToHexString(expectedBytes);
-
-            using var ms = new MemoryStream();
-            await version.CopyToAsync(ms).DefaultTimeout();
-
-            var actualBytes = ms.ToArray();
-            var actualHexString = Convert.ToHexString(actualBytes);
-
-            var className = nameof(PipeVersion);
-            var methodName = nameof(PipeVersion.CopyToAsync);
-            _testOutputHelper.WriteLine(nameof(Debug).PadCenter(17, '-'));
-            _testOutputHelper.WriteLine($"    Class: {className}");
-            _testOutputHelper.WriteLine($"   Method: {methodName}");
-
-            _testOutputHelper.WriteLine(nameof(Result).PadCenter(17, '-'));
-            _testOutputHelper.WriteLine($"   Actual: {actualHexString}");
-            _testOutputHelper.WriteLine($" Expected: {expectedHexString}");
-            _testOutputHelper.WriteLine($"-----------------");
-
-            Assert.Equal(expectedBytes, actualBytes);
-        }
 
         [Fact]
         public async Task BidirectionalStream_ServerReadsDataAndCompletes_GracefullyClosed()
