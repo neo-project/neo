@@ -398,17 +398,17 @@ namespace Neo.SmartContract.Native
             return contractsDictionary.ContainsKey(hash);
         }
 
-        internal virtual ContractTask Initialize(ApplicationEngine engine, Hardfork? hardFork)
+        internal virtual ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardFork)
         {
             return ContractTask.CompletedTask;
         }
 
-        internal virtual ContractTask OnPersist(ApplicationEngine engine)
+        internal virtual ContractTask OnPersistAsync(ApplicationEngine engine)
         {
             return ContractTask.CompletedTask;
         }
 
-        internal virtual ContractTask PostPersist(ApplicationEngine engine)
+        internal virtual ContractTask PostPersistAsync(ApplicationEngine engine)
         {
             return ContractTask.CompletedTask;
         }
