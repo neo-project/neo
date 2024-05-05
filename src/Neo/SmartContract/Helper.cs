@@ -184,7 +184,14 @@ namespace Neo.SmartContract
             {
                 if (script.Length <= i + 35) return false;
                 if (script[++i] != 33) return false;
-                points?.Add(ECPoint.DecodePoint(script.Slice(i + 1, 33), ECCurve.Secp256r1));
+                try
+                {
+                    points?.Add(ECPoint.DecodePoint(script.Slice(i + 1, 33), ECCurve.Secp256r1));
+                }
+                catch (Exception) // Script may contain any data, thus exceptions are allowed on point decoding.
+                {
+                    return false;
+                }
                 i += 34;
                 ++n;
             }
