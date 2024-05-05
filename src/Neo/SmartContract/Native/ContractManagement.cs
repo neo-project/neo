@@ -105,7 +105,7 @@ namespace Neo.SmartContract.Native
                     {
                         foreach (var hf in hfs)
                         {
-                            await contract.Initialize(engine, hf);
+                            await contract.InitializeAsync(engine, hf);
                         }
                     }
 
