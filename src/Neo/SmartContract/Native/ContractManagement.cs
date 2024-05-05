@@ -99,7 +99,8 @@ namespace Neo.SmartContract.Native
                         oldContract.Manifest = contractState.Manifest;
                     }
 
-                    // Initialize native contract for all hardforks
+                    // Initialize native contract for all hardforks that are active starting from the persisting block.
+                    // If the contract is active starting from some non-nil hardfork, then this hardfork is also included into hfs.
                     if (hfs?.Length > 0)
                     {
                         foreach (var hf in hfs)
