@@ -81,8 +81,12 @@ namespace Neo.SmartContract.Native
                         engine.Snapshot.Add(CreateStorageKey(Prefix_Contract).Add(contract.Hash), new StorageItem(contractState));
                         engine.Snapshot.Add(CreateStorageKey(Prefix_ContractHash).AddBigEndian(contract.Id), new StorageItem(contract.Hash.ToArray()));
 
-                        // Initialize the native smart contract
-                        await contract.Initialize(engine, null);
+                        // Initialize the native smart contract if it's active starting from the genesis.
+                        // If it's not the case, then hardfork-based initialization will be performed down below.
+                        if (contract.ActiveIn is null)
+                        {
+                            await contract.InitializeAsync(engine, null);
+                        }
                     }
                     else
                     {
