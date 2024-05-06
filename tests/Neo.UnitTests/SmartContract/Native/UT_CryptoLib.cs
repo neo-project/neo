@@ -475,7 +475,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Continue construction of 'verifyWithECDsa' call.
             vrf.Emit(OpCode.PUSH4, OpCode.PACK); // pack arguments for 'verifyWithECDsa' call.
-            vrf.EmitAppCallNoArgs(CryptoLib.CryptoLib.Hash, "verifyWithECDsa", CallFlags.All); // emit the call to 'verifyWithECDsa' itself.
+            vrf.EmitAppCallNoArgs(CryptoLib.CryptoLib.Hash, "verifyWithECDsa", CallFlags.None); // emit the call to 'verifyWithECDsa' itself.
 
             // Account is a hash of verification script.
             var vrfScript = vrf.ToArray();
@@ -547,7 +547,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // 62       CAT          
             // 63       PUSH4        
             // 64       PACK         
-            // 65       PUSH15       
+            // 65       PUSH0
             // 66       PUSHDATA1    766572696679576974684543447361 ("verifyWithECDsa")
             // 83       PUSHDATA1    1bf575ab1189688413610a35a12886cde0b66c72 ("NNToUmdQBe5n8o53BTzjTFAnSEcpouyy3B", "0x726cb6e0cd8628a1350a611384688911ab75f51b")
             // 105      SYSCALL      System.Contract.Call (627d5b52)
@@ -692,7 +692,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 OpCode.PICKITEM,           // pick pub at index pubCnt.
                 OpCode.LDLOC2,             // load msg.
                 OpCode.PUSH4, OpCode.PACK); // pack 4 arguments for 'verifyWithECDsa' call.
-            vrf.EmitAppCallNoArgs(CryptoLib.CryptoLib.Hash, "verifyWithECDsa", CallFlags.All); // emit the call to 'verifyWithECDsa' itself.
+            vrf.EmitAppCallNoArgs(CryptoLib.CryptoLib.Hash, "verifyWithECDsa", CallFlags.None); // emit the call to 'verifyWithECDsa' itself.
 
             // Update loop variables.
             vrf.Emit(OpCode.LDLOC3, OpCode.ADD, OpCode.STLOC3, // increment sigCnt if signature is valid.
@@ -830,7 +830,7 @@ namespace Neo.UnitTests.SmartContract.Native
             // 205      LDLOC2       
             // 206      PUSH4        
             // 207      PACK         
-            // 208      PUSH15       
+            // 208      PUSH0
             // 209      PUSHDATA1    766572696679576974684543447361 ("verifyWithECDsa")
             // 226      PUSHDATA1    1bf575ab1189688413610a35a12886cde0b66c72 ("NNToUmdQBe5n8o53BTzjTFAnSEcpouyy3B", "0x726cb6e0cd8628a1350a611384688911ab75f51b")
             // 248      SYSCALL      System.Contract.Call (627d5b52)
