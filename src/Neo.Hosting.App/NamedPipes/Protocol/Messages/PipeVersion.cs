@@ -18,11 +18,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Hosting.App.NamedPipes.Protocol
+namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 {
     internal sealed class PipeVersion : IPipeMessage
     {
-        public const ulong Magic = 0x56455253494f4eul; // VERSION
+        public const ulong Magic = 0x4e4f4953524556ul; // VERSION
 
         // Assembly Information
         public int VersionNumber { get; set; }
@@ -49,6 +49,8 @@ namespace Neo.Hosting.App.NamedPipes.Protocol
             ProcessId = Environment.ProcessId;
             ProcessPath = Environment.ProcessPath ?? string.Empty;
         }
+
+        public int Size => 0;
 
         public Task CopyFromAsync(Stream stream)
         {

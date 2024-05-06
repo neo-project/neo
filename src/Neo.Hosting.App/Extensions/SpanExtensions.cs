@@ -118,6 +118,12 @@ namespace Neo.Hosting.App.Extensions
             return s_utf8NoBom.GetChars(byteSpan, charSpan) + (sizeof(int) * 2);
         }
 
+        public static char[] ReadCharArray(this Span<byte> span, int start = 0)
+        {
+            span.ReadCharArray(out var results, start);
+            return results;
+        }
+
         public static int ReadString(this Span<byte> span, out string result, int start = 0)
         {
             var byteLength = span.Read<int>(start);
@@ -125,6 +131,12 @@ namespace Neo.Hosting.App.Extensions
             span.Slice(sizeof(int) + start, byteLength).CopyTo(bytes);
             result = s_utf8NoBom.GetString(bytes);
             return byteLength + sizeof(int);
+        }
+
+        public static string ReadString(this Span<byte> span, int start = 0)
+        {
+            span.ReadString(out var result, start);
+            return result;
         }
 
         public static int ReadArray<T>(this Span<byte> span, out T[] results, int start = 0)
@@ -141,6 +153,13 @@ namespace Neo.Hosting.App.Extensions
             span.Slice(sizeof(int) + start, bytes.Length).CopyTo(bytes);
 
             return bytes.Length + sizeof(int);
+        }
+
+        public static T[] ReadArray<T>(this Span<byte> span, int start = 0)
+            where T : unmanaged
+        {
+            span.ReadArray(out T[] results, start);
+            return results;
         }
     }
 }

@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-namespace Neo.Hosting.App.NamedPipes.Protocol
+namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 {
     internal interface IPipeException
     {

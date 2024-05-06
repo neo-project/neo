@@ -31,7 +31,7 @@ namespace Neo.Hosting.App.NamedPipes
         NamedPipeServerStream IPooledObjectPolicy<NamedPipeServerStream>.Create()
         {
             var pipeOptions = NamedPipeOptions.Asynchronous | NamedPipeOptions.WriteThrough;
-            if (!_hasFirstPipeStarted)
+            if (_hasFirstPipeStarted == false)
                 pipeOptions |= NamedPipeOptions.FirstPipeInstance;
             if (_options.CurrentUserOnly)
                 pipeOptions |= NamedPipeOptions.CurrentUserOnly;

@@ -15,16 +15,20 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Hosting.App.NamedPipes.Protocol
+namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 {
     internal sealed class PipeMessage<TMessage> : IPipeMessage, IPipeException
         where TMessage : class, IPipeMessage, new()
     {
-        public const ulong Magic = 0x4d45535341474531ul; // MESSAGE1
+        public const ulong Magic = 0x314547415353454dul; // MESSAGE1
 
         public TMessage Payload { get; private set; }
 
         public PipeException Exception { get; private set; }
+
+        public int Size =>
+            Payload.Size +
+            Exception.Size;
 
         public PipeMessage()
         {
@@ -39,8 +43,8 @@ namespace Neo.Hosting.App.NamedPipes.Protocol
                 Exception = new()
                 {
                     IsEmpty = exception is null,
-                    Message = exception?.InnerException?.Message ?? exception?.Message,
-                    StackTrace = exception?.InnerException?.StackTrace ?? exception?.StackTrace,
+                    Message = exception?.InnerException?.Message ?? exception?.Message ?? string.Empty,
+                    StackTrace = exception?.InnerException?.StackTrace ?? exception?.StackTrace ?? string.Empty,
                 },
             };
 

@@ -13,10 +13,11 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Neo.Hosting.App.NamedPipes.Protocol
+namespace Neo.Hosting.App.NamedPipes.Protocol.Messages
 {
     internal interface IPipeMessage
     {
+        int Size { get; }
         Task CopyToAsync(Stream stream, CancellationToken cancellationToken = default);
         Task CopyFromAsync(Stream stream);
         byte[] ToArray();

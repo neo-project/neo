@@ -10,7 +10,7 @@
 // modifications are permitted.
 
 using Neo.Hosting.App.Extensions;
-using Neo.Hosting.App.NamedPipes.Protocol;
+using Neo.Hosting.App.NamedPipes.Protocol.Messages;
 using Neo.Hosting.App.Tests.UTHelpers;
 using Xunit.Abstractions;
 
