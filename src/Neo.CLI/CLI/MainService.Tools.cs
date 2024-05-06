@@ -101,94 +101,6 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Hex String to Big Integer
-        /// input:  40e201
-        /// output: 123456
-        /// </summary>
-        [ParseFunction("Hex String to Big Integer")]
-        private string? HexToNumber(string hexString)
-        {
-            try
-            {
-                var clearHexString = ClearHexString(hexString);
-                var bytes = clearHexString.HexToBytes();
-                var number = new BigInteger(bytes);
-
-                return number.ToString();
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Formats a string value to a default hexadecimal representation of a byte array
-        /// </summary>
-        /// <param name="hexString">
-        /// The string value to be formatted
-        /// </param>
-        /// <returns>
-        /// Returns the formatted string.
-        /// </returns>
-        /// <exception cref="ArgumentException">
-        /// Throw when is the string is not a valid hex representation of a byte array.
-        /// </exception>
-        private string ClearHexString(string hexString)
-        {
-            bool hasHexPrefix = hexString.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase);
-
-            try
-            {
-                if (hasHexPrefix)
-                {
-                    hexString = hexString.Substring(2);
-                }
-
-                if (!hexString.All(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) throw new ArgumentException();
-
-                if (hexString.Length % 2 == 1)
-                {
-                    // if the length is an odd number, it cannot be parsed to a byte array
-                    // it may be a valid hex string, so include a leading zero to parse correctly
-                    hexString = "0" + hexString;
-                }
-
-                if (hasHexPrefix)
-                {
-                    // if the input value starts with '0x', the first byte is the less significant
-                    // to parse correctly, reverse the byte array
-                    return hexString.HexToBytes().Reverse().ToArray().ToHexString();
-                }
-            }
-            catch (FormatException)
-            {
-                throw new ArgumentException();
-            }
-
-            return hexString;
-        }
-
-        /// <summary>
-        /// String to Hex String
-        /// input:  Hello World!
-        /// output: 48656c6c6f20576f726c6421
-        /// </summary>
-        [ParseFunction("String to Hex String")]
-        private string? StringToHex(string strParam)
-        {
-            try
-            {
-                var bytesParam = Utility.StrictUTF8.GetBytes(strParam);
-                return bytesParam.ToHexString();
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
         /// String to Base64
         /// input:  Hello World!
         /// output: SGVsbG8gV29ybGQh
@@ -201,28 +113,6 @@ namespace Neo.CLI
                 byte[] bytearray = Utility.StrictUTF8.GetBytes(strParam);
                 string base64 = Convert.ToBase64String(bytearray.AsSpan());
                 return base64;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Big Integer to Hex String
-        /// input:  123456
-        /// output: 40e201
-        /// </summary>
-        [ParseFunction("Big Integer to Hex String")]
-        private string? NumberToHex(string strParam)
-        {
-            try
-            {
-                if (!BigInteger.TryParse(strParam, out var numberParam))
-                {
-                    return null;
-                }
-                return numberParam.ToByteArray().ToHexString();
             }
             catch
             {
@@ -462,25 +352,6 @@ namespace Neo.CLI
         }
 
         /// <summary>
-        /// Base64 to Hex String.
-        /// input: SGVsbG8gV29ybGQh
-        /// output: 0x48656C6C6F20576F726C6421
-        /// </summary>
-        [ParseFunction("Base64 to Hex String")]
-        private string? Base64ToHexString(string base64)
-        {
-            try
-            {
-                var bytes = Convert.FromBase64String(base64.Trim());
-                return $"0x{Convert.ToHexString(bytes)}";
-            }
-            catch (Exception)
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
         /// Public Key to Address
         /// input:  03dab84c1243ec01ab2500e1a8c7a1546a26d734628180b0cf64e72bf776536997
         /// output: NU7RJrzNgCSnoPLxmcY7C72fULkpaGiSpJ
@@ -552,44 +423,6 @@ namespace Neo.CLI
             try
             {
                 scripts = Convert.FromBase64String(base64).ToList();
-            }
-            catch (Exception)
-            {
-                return null;
-            }
-            try
-            {
-                _ = new Script(scripts.ToArray(), true);
-            }
-            catch (Exception)
-            {
-                return null;
-            }
-            return ScriptsToOpCode(scripts);
-        }
-
-        /// <summary>
-        /// Hex String Smart Contract Script Analysis
-        /// input: 0c0464617461020065cd1d0c14f75cac05cf569b5576e304b3695fd63423c4a20a0c14f75cac05cf569b5576e304b3695fd63423c4a20a14c01f0c087472616e736665720c14a3526e298cd762e41585fff0a1af9b6b6d171ba541627d5b52
-        /// output:
-        /// PUSHDATA1 data
-        /// PUSHINT32 500000000
-        /// PUSHDATA1 0x0aa2c42334d65f69b304e376559b56cf05ac5cf7
-        /// PUSHDATA1 0x0aa2c42334d65f69b304e376559b56cf05ac5cf7
-        /// PUSH4
-        /// PACK
-        /// PUSH15
-        /// PUSHDATA1 transfer
-        /// PUSHDATA1 0xa51b176d6b9bafa1f0ff8515e462d78c296e52a3
-        /// SYSCALL System.Contract.Call
-        /// </summary>
-        [ParseFunction("Hex String Smart Contract Script Analysis")]
-        private string? HexScriptsToOpCode(string hex)
-        {
-            List<byte> scripts;
-            try
-            {
-                scripts = hex.HexToBytes().ToList();
             }
             catch (Exception)
             {
