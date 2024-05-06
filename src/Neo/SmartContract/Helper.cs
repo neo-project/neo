@@ -361,22 +361,5 @@ namespace Neo.SmartContract
             }
             return true;
         }
-
-        /// <summary>
-        /// Emits an <see cref="Instruction"/> with <see cref="OpCode.SYSCALL"/> System.Contract.Call with the specified parameters.
-        /// </summary>
-        /// <param name="builder">Neo VM script builder, <see cref="ScriptBuilder"/>.</param>
-        /// <param name="contractHash">Hash of the contract to call.</param>
-        /// <param name="method">Method of the contract to call.</param>
-        /// <param name="f">Call flags allowed during the call, <see cref="CallFlags"/>.</param>
-        /// <returns>A reference to this instance after the emit operation has completed.</returns>
-        public static ScriptBuilder EmitAppCallNoArgs(this ScriptBuilder builder, UInt160 contractHash, string method, CallFlags f)
-        {
-            builder.EmitPush((byte)f);
-            builder.EmitPush(method);
-            builder.EmitPush(contractHash);
-            builder.EmitSysCall(ApplicationEngine.System_Contract_Call);
-            return builder;
-        }
     }
 }

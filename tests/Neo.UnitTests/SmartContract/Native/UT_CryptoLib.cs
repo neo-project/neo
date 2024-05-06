@@ -475,7 +475,7 @@ namespace Neo.UnitTests.SmartContract.Native
 
             // Continue construction of 'verifyWithECDsa' call.
             vrf.Emit(OpCode.PUSH4, OpCode.PACK); // pack arguments for 'verifyWithECDsa' call.
-            vrf.EmitAppCallNoArgs(CryptoLib.CryptoLib.Hash, "verifyWithECDsa", CallFlags.None); // emit the call to 'verifyWithECDsa' itself.
+            EmitAppCallNoArgs(vrf, CryptoLib.CryptoLib.Hash, "verifyWithECDsa", CallFlags.None); // emit the call to 'verifyWithECDsa' itself.
 
             // Account is a hash of verification script.
             var vrfScript = vrf.ToArray();
@@ -692,7 +692,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 OpCode.PICKITEM,           // pick pub at index pubCnt.
                 OpCode.LDLOC2,             // load msg.
                 OpCode.PUSH4, OpCode.PACK); // pack 4 arguments for 'verifyWithECDsa' call.
-            vrf.EmitAppCallNoArgs(CryptoLib.CryptoLib.Hash, "verifyWithECDsa", CallFlags.None); // emit the call to 'verifyWithECDsa' itself.
+            EmitAppCallNoArgs(vrf, CryptoLib.CryptoLib.Hash, "verifyWithECDsa", CallFlags.None); // emit the call to 'verifyWithECDsa' itself.
 
             // Update loop variables.
             vrf.Emit(OpCode.LDLOC3, OpCode.ADD, OpCode.STLOC3, // increment sigCnt if signature is valid.
@@ -844,6 +844,17 @@ namespace Neo.UnitTests.SmartContract.Native
             // 261      LDLOC3       
             // 262      LDLOC6       
             // 263      NUMEQUAL
+        }
+
+        // EmitAppCallNoArgs is a helper method that emits all parameters of System.Contract.Call interop
+        // except the method arguments.
+        private static ScriptBuilder EmitAppCallNoArgs(ScriptBuilder builder, UInt160 contractHash, string method, CallFlags f)
+        {
+            builder.EmitPush((byte)f);
+            builder.EmitPush(method);
+            builder.EmitPush(contractHash);
+            builder.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            return builder;
         }
 
         [TestMethod]
