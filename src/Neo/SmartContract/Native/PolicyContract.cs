@@ -66,7 +66,7 @@ namespace Neo.SmartContract.Native
 
         internal PolicyContract() : base() { }
 
-        internal override ContractTask Initialize(ApplicationEngine engine, Hardfork? hardfork)
+        internal override ContractTask InitializeAsync(ApplicationEngine engine, Hardfork? hardfork)
         {
             if (hardfork == ActiveIn)
             {
